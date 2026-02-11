@@ -11,7 +11,7 @@
 
 import { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
 import { ThreadBuilder } from '@modular-agent/sdk/core/execution/thread-builder';
-import { ExecutionContext } from '@modular-agent/sdk/core/execution/context/execution-context';
+import { ExecutionContext } from '../../core/execution/context/execution-context';
 import { NodeType } from '@modular-agent/types/node';
 import { EdgeType } from '@modular-agent/types/edge';
 import { TriggerActionType } from '@modular-agent/types/trigger';

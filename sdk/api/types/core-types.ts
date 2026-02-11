@@ -3,9 +3,9 @@
  * 定义核心执行相关的类型
  */
 
-import type { UserInteractionHandler } from '@modular-agent/types/interaction';
+import type { UserInteractionHandler } from '@modular-agent/types';
 import type { ThreadOptions } from '@modular-agent/types/thread';
-import type { ExecutionContext } from '@modular-agent/sdk/core/execution/context/execution-context';
+import type { ExecutionContext } from '../../core/execution/context/execution-context';
 
 /**
  * SDK配置选项

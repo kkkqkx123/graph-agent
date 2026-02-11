@@ -5,6 +5,7 @@
 
 import type { Tool } from '@modular-agent/types/tool';
 import type { StatelessToolConfig } from '@modular-agent/types/tool';
+import type { ThreadContext } from '@modular-agent/types/common';
 import { ToolError } from '@modular-agent/types/errors';
 import type { IToolExecutor } from '@modular-agent/types/tool';
 

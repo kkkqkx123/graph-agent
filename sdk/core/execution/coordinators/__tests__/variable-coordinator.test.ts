@@ -8,7 +8,7 @@ import { ThreadContext } from '../../context/thread-context';
 import { EventManager } from '../../../services/event-manager';
 import { EventType } from '@modular-agent/types/events';
 import { ValidationError } from '@modular-agent/types/errors';
-import { VariableAccessor } from '@modular-agent/common-utils/variable-accessor';
+import { VariableAccessor } from '@modular-agent/common-utils';
 import type { VariableScope } from '@modular-agent/types/common';
 
 // Mock 依赖

@@ -6,6 +6,7 @@
 
 // HTTP相关
 export * from './http';
+export * from './http/errors';
 
 // 工具函数
 export * from './utils';

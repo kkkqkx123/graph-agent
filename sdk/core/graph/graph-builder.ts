@@ -17,7 +17,7 @@ import type {
 import { GraphData } from '../entities/graph-data';
 import { GraphValidator } from '../validation/graph-validator';
 import { generateSubgraphNamespace, generateNamespacedNodeId, generateNamespacedEdgeId } from '@modular-agent/common-utils/id-utils';
-import { generateId } from '../../utils';
+import { generateId } from '@modular-agent/common-utils';
 import { SUBGRAPH_METADATA_KEYS } from '@modular-agent/types/subgraph';
 
 /**

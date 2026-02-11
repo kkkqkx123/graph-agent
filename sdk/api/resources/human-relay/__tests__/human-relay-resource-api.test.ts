@@ -3,7 +3,7 @@
  */
 
 import { HumanRelayResourceAPI, type HumanRelayConfig, type HumanRelayFilter } from '../human-relay-resource-api';
-import type { HumanRelayHandler, HumanRelayRequest, HumanRelayResponse } from '@modular-agent/types/human-relay';
+import type { HumanRelayHandler, HumanRelayRequest, HumanRelayResponse } from '@modular-agent/types';
 import { SingletonRegistry } from '@modular-agent/sdk/core/execution/context/singleton-registry';
 import { EventManager } from '@modular-agent/sdk/core/services/event-manager';
 import { EventType } from '@modular-agent/types/events';

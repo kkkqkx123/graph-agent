@@ -30,7 +30,7 @@ import type { ID } from '@modular-agent/types/common';
 import { getTriggerHandler } from '../handlers/trigger-handlers';
 import { ValidationError, ExecutionError } from '@modular-agent/types/errors';
 import { EventType } from '@modular-agent/types/events';
-import { now } from '../../../utils';
+import { now } from '@modular-agent/common-utils';
 import type { ThreadRegistry } from '../../services/thread-registry';
 import type { WorkflowRegistry } from '../../services/workflow-registry';
 import type { GlobalMessageStorage } from '../../services/global-message-storage';

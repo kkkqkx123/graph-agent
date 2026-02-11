@@ -6,7 +6,7 @@
 import type { Node, VariableNodeConfig } from '@modular-agent/types/node';
 import type { Thread } from '@modular-agent/types/thread';
 import { ValidationError } from '@modular-agent/types/errors';
-import { now } from '../../../../utils';
+import { now } from '@modular-agent/common-utils';
 import { resolvePath } from '@modular-agent/common-utils/evalutor/path-resolver';
 
 /**

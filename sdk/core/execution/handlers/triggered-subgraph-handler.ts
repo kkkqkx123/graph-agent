@@ -20,7 +20,7 @@ import { ThreadContext } from '../context/thread-context';
 import type { EventManager } from '../../services/event-manager';
 import { EventType } from '@modular-agent/types/events';
 import type { ThreadResult } from '@modular-agent/types/thread';
-import { now } from '../../../utils';
+import { now } from '@modular-agent/common-utils';
 import { createSubgraphMetadata } from './subgraph-handler';
 
 /**

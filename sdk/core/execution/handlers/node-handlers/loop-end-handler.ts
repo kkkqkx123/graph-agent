@@ -8,7 +8,7 @@ import type { Thread } from '@modular-agent/types/thread';
 import type { Condition, EvaluationContext } from '@modular-agent/types/condition';
 import { ExecutionError, NotFoundError } from '@modular-agent/types/errors';
 import { conditionEvaluator } from '@modular-agent/common-utils/evalutor/condition-evaluator';
-import { now } from '../../../../utils';
+import { now } from '@modular-agent/common-utils';
 
 /**
  * 循环状态

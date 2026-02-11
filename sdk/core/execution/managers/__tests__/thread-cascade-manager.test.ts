@@ -10,7 +10,7 @@ import { eventManager } from '../../../services/event-manager';
 import { workflowRegistry } from '../../../services/workflow-registry';
 import { toolService } from '../../../services/tool-service';
 import { ThreadStatus, ThreadType } from '@modular-agent/types/thread';
-import { generateId, now } from '../../../../utils';
+import { generateId, now } from '@modular-agent/common-utils';
 import type { Thread } from '@modular-agent/types/thread';
 import type { Graph } from '@modular-agent/types/graph';
 import { ThreadContext } from '../../context/thread-context';

@@ -10,7 +10,7 @@ import type {
   TriggerTemplateFilter
 } from '@modular-agent/types/trigger-template';
 import { GenericResourceAPI } from '../generic-resource-api';
-import type { APIDependencies } from '@modular-agent/sdk/core/api-dependencies';
+import type { APIDependencies } from '../../core/api-dependencies';
 
 
 /**

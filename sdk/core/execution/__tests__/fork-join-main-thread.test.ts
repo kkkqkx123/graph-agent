@@ -6,7 +6,7 @@
 import { ThreadContext } from '../context/thread-context';
 import { ThreadBuilder } from '../thread-builder';
 import { ExecutionContext } from '../context/execution-context';
-import { join, ForkConfig } from '@modular-agent/common-utils/thread-operations';
+import { join, ForkConfig } from '@modular-agent/common-utils';
 import { ThreadOperationCoordinator } from '../coordinators/thread-operation-coordinator';
 import { ConversationManager } from '../managers/conversation-manager';
 import type { Thread } from '@modular-agent/types/thread';

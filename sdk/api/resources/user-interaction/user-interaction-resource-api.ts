@@ -20,9 +20,9 @@ import {
 } from '../../validation/validation-strategy';
 
 import { GenericResourceAPI } from '../generic-resource-api';
-import type { ExecutionResult } from '@modular-agent/types/execution-result';
-import { success, failure } from '@modular-agent/types/execution-result';
-import type { UserInteractionHandler, UserInteractionRequest } from '@modular-agent/types/interaction';
+import type { ExecutionResult } from '@modular-agent/sdk/api/types/execution-result';
+import { success, failure } from '@modular-agent/sdk/api/types/execution-result';
+import type { UserInteractionHandler, UserInteractionRequest } from '@modular-agent/types';
 import { EventType } from '@modular-agent/types/events';
 import type {
   UserInteractionRequestedEvent,
@@ -31,7 +31,7 @@ import type {
   UserInteractionFailedEvent
 } from '@modular-agent/types/events';
 import { ExecutionError } from '@modular-agent/types/errors';
-import type { APIDependencies } from '@modular-agent/sdk/core/api-dependencies';
+import type { APIDependencies } from '../../core/api-dependencies';
 
 /**
  * 用户交互配置

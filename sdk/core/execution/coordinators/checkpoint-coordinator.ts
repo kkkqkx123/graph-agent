@@ -14,7 +14,7 @@ import { ConversationManager } from '../managers/conversation-manager';
 import { VariableStateManager } from '../managers/variable-state-manager';
 import { ThreadContext } from '../context/thread-context';
 import { ExecutionContext } from '../context/execution-context';
-import { generateId, now } from '../../../utils';
+import { generateId, now } from '@modular-agent/common-utils';
 
 /**
  * 检查点依赖项

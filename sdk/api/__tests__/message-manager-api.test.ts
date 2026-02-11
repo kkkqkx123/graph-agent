@@ -3,14 +3,14 @@
  */
 
 import { MessageManagerAPI } from '../operations/conversation/message-manager-api';
-import { threadRegistry } from '@modular-agent/sdk/core/services/thread-registry';
+import { threadRegistry } from '../../../core/services/thread-registry';
 import { ThreadContext } from '@modular-agent/sdk/core/execution/context/thread-context';
 import { ConversationManager } from '@modular-agent/sdk/core/execution/managers/conversation-manager';
 import type { Thread } from '@modular-agent/types/thread';
 import { ThreadStatus } from '@modular-agent/types/thread';
 import { NotFoundError } from '@modular-agent/types/errors';
 import type { LLMMessage } from '@modular-agent/types/llm';
-import { ExecutionContext } from '@modular-agent/sdk/core/execution/context/execution-context';
+import { ExecutionContext } from '../../core/execution/context/execution-context';
 
 describe('MessageManagerAPI', () => {
   let api: MessageManagerAPI;

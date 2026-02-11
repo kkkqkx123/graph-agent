@@ -5,6 +5,7 @@
 
 import type { Tool } from '@modular-agent/types/tool';
 import type { RestToolConfig } from '@modular-agent/types/tool';
+import type { ThreadContext } from '@modular-agent/types/common';
 import { NetworkError, ToolError, ValidationError, TimeoutError, CircuitBreakerOpenError } from '@modular-agent/types/errors';
 import {
   BadRequestError,
@@ -16,8 +17,8 @@ import {
   RateLimitError,
   InternalServerError,
   ServiceUnavailableError
-} from '@modular-agent/common-utils';
-import { HttpTransport } from '@modular-agent/common-utils';
+} from '@modular-agent/common-utils/http/errors';
+import { HttpTransport } from '@modular-agent/common-utils/http/transport';
 import type { IToolExecutor } from '@modular-agent/types/tool';
 
 /**

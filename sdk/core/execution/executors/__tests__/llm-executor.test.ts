@@ -3,7 +3,7 @@
  */
 
 import { LLMExecutor } from '../llm-executor';
-import { LLMWrapper } from '@modular-agent/common-utils/llm/wrapper';
+import { LLMWrapper } from '@modular-agent/common-utils';
 import type { LLMMessage, LLMResult } from '@modular-agent/types/llm';
 import { ExecutionError } from '@modular-agent/types/errors';
 

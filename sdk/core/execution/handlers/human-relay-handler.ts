@@ -20,11 +20,11 @@
  */
 
 import type { LLMMessage } from '@modular-agent/types/llm';
-import type { HumanRelayRequest, HumanRelayResponse, HumanRelayExecutionResult, HumanRelayHandler, HumanRelayContext } from '@modular-agent/types/human-relay';
+import type { HumanRelayRequest, HumanRelayResponse, HumanRelayExecutionResult, HumanRelayHandler, HumanRelayContext } from '@modular-agent/types';
 import type { EventManager } from '../../services/event-manager';
 import type { ThreadContext } from '../context/thread-context';
 import { EventType } from '@modular-agent/types/events';
-import { generateId, now } from '../../../utils';
+import { generateId, now } from '@modular-agent/common-utils';
 
 /**
  * HumanRelay 任务接口

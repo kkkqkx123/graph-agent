@@ -2,10 +2,10 @@
  * DisableTriggerCommand - 禁用触发器
  */
 
-import { BaseCommand } from '@modular-agent/types/command';
-import { CommandValidationResult } from '@modular-agent/types/command';
+import { BaseCommand } from '@modular-agent/sdk/api/types/command';
+import { CommandValidationResult } from '@modular-agent/sdk/api/types/command';
 import { NotFoundError } from '@modular-agent/types/errors';
-import type { APIDependencies } from '@modular-agent/sdk/core/api-dependencies';
+import type { APIDependencies } from '../../core/api-dependencies';
 
 /**
  * 禁用触发器参数

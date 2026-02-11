@@ -4,7 +4,7 @@
  */
 
 import { GenericResourceAPI } from '../generic-resource-api';
-import { threadRegistry, type ThreadRegistry } from '@modular-agent/sdk/core/services/thread-registry';
+import { threadRegistry, type ThreadRegistry } from '../../../core/services/thread-registry';
 import type { Thread } from '@modular-agent/types/thread';
 import { NotFoundError } from '@modular-agent/types/errors';
 

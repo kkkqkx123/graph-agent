@@ -7,11 +7,13 @@ export * from './common';
 
 // 核心实体类型
 export * from './workflow';
+export * from './workflow-reference';
 export * from './node';
 export * from './node-template';
 export * from './edge';
 export * from './graph';
 export * from './condition';
+export * from './subgraph';
 
 // 执行相关类型
 export * from './thread';
@@ -24,7 +26,10 @@ export * from './trigger-template';
 // 集成类型
 export * from './tool';
 export * from './llm';
+export * from './code';
 export * from './checkpoint';
 export * from './checkpoint-storage';
 export * from './interaction';
 export * from './human-relay';
+export * from './result';
+export * from './http';

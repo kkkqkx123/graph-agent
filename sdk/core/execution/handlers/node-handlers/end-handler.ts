@@ -6,7 +6,7 @@
 import type { Node } from '@modular-agent/types/node';
 import type { Thread } from '@modular-agent/types/thread';
 import { ThreadStatus } from '@modular-agent/types/thread';
-import { now, diffTimestamp } from '../../../../utils';
+import { now, diffTimestamp } from '@modular-agent/common-utils';
 
 /**
  * 检查节点是否可以执行

@@ -10,7 +10,7 @@
 
 import type { BaseEvent, EventType, EventListener } from '@modular-agent/types/events';
 import { ValidationError } from '@modular-agent/types/errors';
-import { now, generateId } from '../../utils';
+import { now, generateId } from '@modular-agent/common-utils';
 
 /**
  * 监听器包装器

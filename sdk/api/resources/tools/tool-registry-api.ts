@@ -10,10 +10,10 @@ import {
 } from '../../validation/validation-strategy';
 
 import type { Tool } from '@modular-agent/types/tool';
-import type { ToolFilter } from '@modular-agent/types/tools-types';
+import type { ToolFilter } from '@modular-agent/sdk/api/types/tools-types';
 import { NotFoundError } from '@modular-agent/types/errors';
 import { GenericResourceAPI } from '../generic-resource-api';
-import type { APIDependencies } from '@modular-agent/sdk/core/api-dependencies';
+import type { APIDependencies } from '../../core/api-dependencies';
 
 /**
  * ToolRegistryAPI - 工具资源管理API

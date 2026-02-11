@@ -5,7 +5,7 @@
 
 import { NotFoundError } from '@modular-agent/types/errors';
 import { ThreadStatus } from '@modular-agent/types/thread';
-import { generateId, now } from '../../../../utils';
+import { generateId, now } from '@modular-agent/common-utils';
 import type { Thread } from '@modular-agent/types/thread';
 import type { Graph } from '@modular-agent/types/graph';
 

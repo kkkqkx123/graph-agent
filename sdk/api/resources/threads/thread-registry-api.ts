@@ -4,12 +4,12 @@
  * 重构版本：继承GenericResourceAPI，提高代码复用性和一致性
  */
 
-import { threadRegistry as globalThreadRegistry, type ThreadRegistry } from '@modular-agent/sdk/core/services/thread-registry';
+import { threadRegistry as globalThreadRegistry, type ThreadRegistry } from '../../../core/services/thread-registry';
 import type { Thread, ThreadResult, ThreadStatus } from '@modular-agent/types/thread';
-import type { ThreadFilter, ThreadSummary } from '@modular-agent/types/registry-types';
+import type { ThreadFilter, ThreadSummary } from '@modular-agent/sdk/api/types/registry-types';
 import { GenericResourceAPI } from '../generic-resource-api';
-import { getErrorMessage } from '@modular-agent/types/execution-result';
-import type { APIDependencies } from '@modular-agent/sdk/core/api-dependencies';
+import { getErrorMessage } from '@modular-agent/sdk/api/types/execution-result';
+import type { APIDependencies } from '../../core/api-dependencies';
 
 
 /**
@@ -52,7 +52,7 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
    * @returns 线程实例数组
    */
   protected async getAllResources(): Promise<Thread[]> {
-    return this.dependencies.getThreadRegistry().getAll().map(ctx => ctx.thread);
+    return this.dependencies.getThreadRegistry().getAll().map((ctx: any) => ctx.thread);
   }
 
   /**

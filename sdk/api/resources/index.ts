@@ -60,7 +60,7 @@ import { UserInteractionResourceAPI, type UserInteractionConfig, type UserIntera
 import { HumanRelayResourceAPI, type HumanRelayConfig, type HumanRelayFilter } from './human-relay/human-relay-resource-api';
 
 // 配置依赖接口
-import type { APIDependencies } from '@modular-agent/sdk/core/api-dependencies';
+import type { APIDependencies } from '../core/api-dependencies';
 
 // 重新导出所有资源管理API
 export { GenericResourceAPI };

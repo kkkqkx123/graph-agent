@@ -7,8 +7,8 @@ import { CancelThreadCommand } from '../cancel-thread-command';
 import { ExecuteThreadCommand } from '../execute-thread-command';
 import { PauseThreadCommand } from '../pause-thread-command';
 import { ResumeThreadCommand } from '../resume-thread-command';
-import { ThreadLifecycleCoordinator } from '@modular-agent/sdk/core/execution/coordinators/thread-lifecycle-coordinator';
-import { ExecutionContext } from '@modular-agent/sdk/core/execution/context/execution-context';
+import { ThreadLifecycleCoordinator } from '../../core/execution/coordinators/thread-lifecycle-coordinator';
+import { ExecutionContext } from '../../core/execution/context/execution-context';
 import type { ThreadResult, ThreadOptions } from '@modular-agent/types/thread';
 
 // Mock ThreadLifecycleCoordinator

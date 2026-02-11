@@ -6,8 +6,8 @@
 import type { Node, CodeNodeConfig } from '@modular-agent/types/node';
 import type { Thread } from '@modular-agent/types/thread';
 import { ValidationError } from '@modular-agent/types/errors';
-import { now } from '../../../../utils';
-import { codeService } from '@modular-agent/sdk/core/services/code-service';
+import { now } from '@modular-agent/common-utils';
+import { codeService } from '../../../services/code-service';
 
 /**
  * 检查节点是否可以执行

@@ -11,7 +11,7 @@
 import type { Node, ContextProcessorNodeConfig } from '@modular-agent/types/node';
 import type { Thread } from '@modular-agent/types/thread';
 import { ValidationError, ExecutionError } from '@modular-agent/types/errors';
-import { now } from '../../../../utils';
+import { now } from '@modular-agent/common-utils';
 import type { LLMMessage } from '@modular-agent/types/llm';
 
 /**

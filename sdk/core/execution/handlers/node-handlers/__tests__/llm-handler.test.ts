@@ -35,7 +35,7 @@ jest.mock('../../../../../utils', () => ({
 }));
 
 import { LLMExecutionCoordinator } from '../../../coordinators/llm-execution-coordinator';
-import { LLMWrapper } from '@modular-agent/common-utils/llm/wrapper';
+import { LLMWrapper } from '@modular-agent/common-utils';
 import { executeHumanRelay } from '../../human-relay-handler';
 
 describe('llm-handler', () => {

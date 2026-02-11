@@ -10,10 +10,10 @@
 
 import type { Node, UserInteractionNodeConfig } from '@modular-agent/types/node';
 import type { Thread } from '@modular-agent/types/thread';
-import type { UserInteractionHandler as AppUserInteractionHandler, UserInteractionRequest } from '@modular-agent/types/interaction';
+import type { UserInteractionHandler as AppUserInteractionHandler, UserInteractionRequest } from '@modular-agent/types';
 import type { VariableScope } from '@modular-agent/types/common';
 import { ExecutionError } from '@modular-agent/types/errors';
-import { generateId, now } from '../../../../utils';
+import { generateId, now } from '@modular-agent/common-utils';
 
 /**
  * 用户交互执行上下文

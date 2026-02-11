@@ -12,8 +12,8 @@ import {
 
 import { GenericResourceAPI } from '../generic-resource-api';
 import type { WorkflowDefinition } from '@modular-agent/types/workflow';
-import type { WorkflowFilter, WorkflowSummary } from '@modular-agent/types/registry-types';
-import type { APIDependencies } from '@modular-agent/sdk/core/api-dependencies';
+import type { WorkflowFilter, WorkflowSummary } from '@modular-agent/sdk/api/types/registry-types';
+import type { APIDependencies } from '../../core/api-dependencies';
 
 /**
  * WorkflowRegistryAPI - 工作流管理API
@@ -265,7 +265,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
     }
 
     // 应用过滤条件
-    return summaries.filter(summary => {
+    return summaries.filter((summary: WorkflowSummary) => {
       if (filter.id && !summary.id.includes(filter.id)) {
         return false;
       }

@@ -14,13 +14,81 @@
             "types": "./dist/core/index.d.ts",
             "import": "./dist/core/index.js"
         },
+        "./core/api-dependencies": {
+            "types": "./dist/api/core/api-dependencies.d.ts",
+            "import": "./dist/api/core/api-dependencies.js"
+        },
+        "./core/execution/context/execution-context": {
+            "types": "./dist/core/execution/context/execution-context.d.ts",
+            "import": "./dist/core/execution/context/execution-context.js"
+        },
+        "./core/execution/coordinators/checkpoint-coordinator": {
+            "types": "./dist/core/execution/coordinators/checkpoint-coordinator.d.ts",
+            "import": "./dist/core/execution/coordinators/checkpoint-coordinator.js"
+        },
+        "./core/execution/coordinators/thread-lifecycle-coordinator": {
+            "types": "./dist/core/execution/coordinators/thread-lifecycle-coordinator.d.ts",
+            "import": "./dist/core/execution/coordinators/thread-lifecycle-coordinator.js"
+        },
+        "./core/llm/wrapper": {
+            "types": "./dist/core/llm/wrapper.d.ts",
+            "import": "./dist/core/llm/wrapper.js"
+        },
+        "./core/services/code-service": {
+            "types": "./dist/core/services/code-service.d.ts",
+            "import": "./dist/core/services/code-service.js"
+        },
+        "./core/services/global-message-storage": {
+            "types": "./dist/core/services/global-message-storage.d.ts",
+            "import": "./dist/core/services/global-message-storage.js"
+        },
+        "./core/services/thread-registry": {
+            "types": "./dist/core/services/thread-registry.d.ts",
+            "import": "./dist/core/services/thread-registry.js"
+        },
+        "./core/storage/memory-checkpoint-storage": {
+            "types": "./dist/core/storage/memory-checkpoint-storage.d.ts",
+            "import": "./dist/core/storage/memory-checkpoint-storage.js"
+        },
         "./api": {
             "types": "./dist/api/index.d.ts",
             "import": "./dist/api/index.js"
         },
-        "./utils": {
-            "types": "./dist/utils/index.d.ts",
-            "import": "./dist/utils/index.js"
+        "./api/types/command": {
+            "types": "./dist/api/types/command.d.ts",
+            "import": "./dist/api/types/command.js"
+        },
+        "./api/types/execution-result": {
+            "types": "./dist/api/types/execution-result.d.ts",
+            "import": "./dist/api/types/execution-result.js"
+        },
+        "./api/types/code-types": {
+            "types": "./dist/api/types/code-types.d.ts",
+            "import": "./dist/api/types/code-types.js"
+        },
+        "./api/types/tools-types": {
+            "types": "./dist/api/types/tools-types.d.ts",
+            "import": "./dist/api/types/tools-types.js"
+        },
+        "./api/types/management-types": {
+            "types": "./dist/api/types/management-types.d.ts",
+            "import": "./dist/api/types/management-types.js"
+        },
+        "./api/types/registry-types": {
+            "types": "./dist/api/types/registry-types.d.ts",
+            "import": "./dist/api/types/registry-types.js"
+        },
+        "./api/types/subscription": {
+            "types": "./dist/api/types/subscription.d.ts",
+            "import": "./dist/api/types/subscription.js"
+        },
+        "./api/types/interaction": {
+            "types": "./dist/api/types/core-types.d.ts",
+            "import": "./dist/api/types/core-types.js"
+        },
+        "./api/types/human-relay": {
+            "types": "./dist/api/types/core-types.d.ts",
+            "import": "./dist/api/types/core-types.js"
         }
     },
     "files": [
@@ -50,7 +118,8 @@
         "@modular-agent/types": "workspace:*",
         "@modular-agent/common-utils": "workspace:*",
         "@modular-agent/tool-executors": "workspace:*",
-        "tiktoken": "^1.0.22"
+        "tiktoken": "^1.0.22",
+        "zod": "4.3.6"
     },
     "devDependencies": {},
     "engines": {

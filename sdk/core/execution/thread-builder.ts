@@ -13,7 +13,7 @@ import { ThreadType, ErrorHandlingStrategy } from '@modular-agent/types/thread';
 import { ConversationManager } from './managers/conversation-manager';
 import { ThreadContext } from './context/thread-context';
 import { NodeType } from '@modular-agent/types/node';
-import { generateId, now as getCurrentTimestamp } from '../../utils';
+import { generateId, now as getCurrentTimestamp } from '@modular-agent/common-utils';
 import { VariableCoordinator } from './coordinators/variable-coordinator';
 import { VariableStateManager } from './managers/variable-state-manager';
 import { ValidationError } from '@modular-agent/types/errors';

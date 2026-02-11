@@ -9,13 +9,13 @@
  */
 
 import type { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
-import type { ThreadRegistry } from '@modular-agent/sdk/core/services/thread-registry';
+import type { ThreadRegistry } from '../../../core/services/thread-registry';
 import type { EventManager } from '@modular-agent/sdk/core/services/event-manager';
 import type { CheckpointStateManager } from '@modular-agent/sdk/core/execution/managers/checkpoint-state-manager';
 import type { ToolService } from '@modular-agent/sdk/core/services/tool-service';
 import type { LLMExecutor } from '@modular-agent/sdk/core/execution/executors/llm-executor';
 import type { GraphRegistry } from '@modular-agent/sdk/core/services/graph-registry';
-import type { CodeService } from '@modular-agent/sdk/core/services/code-service';
+import type { CodeService } from '../../../services/code-service';
 import type { NodeTemplateRegistry } from '@modular-agent/sdk/core/services/node-template-registry';
 import type { TriggerTemplateRegistry } from '@modular-agent/sdk/core/services/trigger-template-registry';
 

@@ -22,4 +22,4 @@ export { LLMExecutionCoordinator } from './llm-execution-coordinator';
 export { ThreadLifecycleCoordinator } from './thread-lifecycle-coordinator';
 export { ThreadOperationCoordinator } from './thread-operation-coordinator';
 export { VariableCoordinator } from './variable-coordinator';
-export { VariableAccessor, VariableNamespace } from '@modular-agent/common-utils/variable-accessor';
+export { VariableAccessor, VariableNamespace } from '../utils/variable-accessor';

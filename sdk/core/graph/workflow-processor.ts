@@ -21,7 +21,7 @@ import { GraphValidator } from '../validation/graph-validator';
 import { nodeTemplateRegistry } from '../services/node-template-registry';
 import { triggerTemplateRegistry } from '../services/trigger-template-registry';
 import { WorkflowValidator } from '../validation/workflow-validator';
-import { now } from '../../utils';
+import { now } from '@modular-agent/common-utils';
 import { ValidationError } from '@modular-agent/types/errors';
 
 export interface ProcessOptions extends GraphBuildOptions {

@@ -5,13 +5,13 @@
  */
 
 import type { NodeTemplate } from '@modular-agent/types/node-template';
-import type { NodeTemplateFilter, NodeTemplateSummary } from '@modular-agent/types/registry-types';
+import type { NodeTemplateFilter, NodeTemplateSummary } from '@modular-agent/sdk/api/types/registry-types';
 import { ValidationError } from '@modular-agent/types/errors';
 import type { Result } from '@modular-agent/types/result';
 import { ok, err } from '@modular-agent/common-utils/result-utils';
 import { NodeType } from '@modular-agent/types/node';
 import { GenericResourceAPI } from '../generic-resource-api';
-import type { APIDependencies } from '@modular-agent/sdk/core/api-dependencies';
+import type { APIDependencies } from '../../core/api-dependencies';
 
 
 /**
@@ -112,7 +112,7 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
       return summaries;
     }
 
-    return summaries.filter(summary => {
+    return summaries.filter((summary: NodeTemplateSummary) => {
       if (filter.name && !summary.name.includes(filter.name)) {
         return false;
       }

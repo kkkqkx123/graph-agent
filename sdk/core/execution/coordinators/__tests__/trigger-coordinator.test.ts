@@ -9,7 +9,7 @@ import { TriggerStateManager } from '../../managers/trigger-state-manager';
 import { EventType } from '@modular-agent/types/events';
 import { ValidationError, ExecutionError } from '@modular-agent/types/errors';
 import { TriggerActionType, TriggerStatus, TriggerType } from '@modular-agent/types/trigger';
-import { now } from '../../../../utils';
+import { now } from '@modular-agent/common-utils';
 
 // Mock 依赖
 jest.mock('../../../services/thread-registry');

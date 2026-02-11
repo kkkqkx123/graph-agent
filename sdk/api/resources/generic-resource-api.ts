@@ -7,8 +7,8 @@
  * - Strategy模式：通过抽象方法支持不同的资源类型
  */
 
-import type { ExecutionResult } from '@modular-agent/types/execution-result';
-import { success, failure } from '@modular-agent/types/execution-result';
+import type { ExecutionResult } from '@modular-agent/sdk/api/types/execution-result';
+import { success, failure } from '@modular-agent/sdk/api/types/execution-result';
 import { SDKError } from '@modular-agent/types/errors';
 
 /**

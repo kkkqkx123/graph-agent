@@ -28,7 +28,7 @@ import type { EventManager } from '../services/event-manager';
 import type { WorkflowRegistry } from '../services/workflow-registry';
 import { NotFoundError } from '@modular-agent/types/errors';
 import { ThreadStatus } from '@modular-agent/types/thread';
-import { now, diffTimestamp } from '../../utils';
+import { now, diffTimestamp } from '@modular-agent/common-utils';
 import { NodeExecutionCoordinator } from './coordinators/node-execution-coordinator';
 import { handleNodeFailure, handleExecutionError } from './handlers/error-handler';
 import {

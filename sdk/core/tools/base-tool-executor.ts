@@ -8,7 +8,7 @@ import type { Tool } from '@modular-agent/types/tool';
 import type { ThreadContext } from '../execution/context/thread-context';
 import { TimeoutError, ValidationError, NetworkError, HttpError } from '@modular-agent/types/errors';
 import { RateLimitError } from '@modular-agent/common-utils/http/errors';
-import { now, diffTimestamp } from '../../utils';
+import { now, diffTimestamp } from '@modular-agent/common-utils';
 
 /**
  * 工具执行选项

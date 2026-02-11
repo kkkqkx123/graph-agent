@@ -8,9 +8,9 @@
  * - 支持测试隔离
  */
 
-import { ExecutionContext } from '@modular-agent/sdk/core/execution/context/execution-context';
+import { ExecutionContext } from '../../core/execution/context/execution-context';
 import { APIDependencies } from './api-dependencies';
-import { codeService } from '@modular-agent/sdk/core/services/code-service';
+import { codeService } from '../../../services/code-service';
 import { nodeTemplateRegistry } from '@modular-agent/sdk/core/services/node-template-registry';
 import { triggerTemplateRegistry } from '@modular-agent/sdk/core/services/trigger-template-registry';
 

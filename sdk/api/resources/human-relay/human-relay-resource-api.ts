@@ -21,9 +21,9 @@ import {
 } from '../../validation/validation-strategy';
 
 import { GenericResourceAPI } from '../generic-resource-api';
-import type { ExecutionResult } from '@modular-agent/types/execution-result';
-import { success, failure } from '@modular-agent/types/execution-result';
-import type { HumanRelayHandler, HumanRelayRequest, HumanRelayResponse } from '@modular-agent/types/human-relay';
+import type { ExecutionResult } from '@modular-agent/sdk/api/types/execution-result';
+import { success, failure } from '@modular-agent/sdk/api/types/execution-result';
+import type { HumanRelayHandler, HumanRelayRequest, HumanRelayResponse } from '@modular-agent/types';
 import { EventType } from '@modular-agent/types/events';
 import type {
   HumanRelayRequestedEvent,
@@ -31,7 +31,7 @@ import type {
   HumanRelayProcessedEvent,
   HumanRelayFailedEvent
 } from '@modular-agent/types/events';
-import type { APIDependencies } from '@modular-agent/sdk/core/api-dependencies';
+import type { APIDependencies } from '../../core/api-dependencies';
 
 /**
  * Human Relay配置

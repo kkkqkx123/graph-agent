@@ -15,9 +15,10 @@
  * - 并发安全
  */
 
-import type { ID, TriggerStatus, TriggerRuntimeState } from '@modular-agent/types/trigger';
+import type { TriggerStatus, TriggerRuntimeState } from '@modular-agent/types/trigger';
+import type { ID } from '@modular-agent/types/common';
 import { ValidationError, ExecutionError, NotFoundError } from '@modular-agent/types/errors';
-import { now } from '../../../utils';
+import { now } from '@modular-agent/common-utils';
 import type { LifecycleCapable } from './lifecycle-capable';
 
 /**

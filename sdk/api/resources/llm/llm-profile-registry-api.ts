@@ -4,12 +4,12 @@
  * 重构版本：继承GenericResourceAPI，提高代码复用性和一致性
  */
 
-import { ProfileManager } from '@modular-agent/sdk/core/llm/profile-manager';
+import { ProfileManager } from '../../../core/llm/profile-manager';
 import type { LLMProfile, LLMProvider } from '@modular-agent/types/llm';
 import { ValidationError, NotFoundError, SDKError, ErrorCode } from '@modular-agent/types/errors';
 import { GenericResourceAPI } from '../generic-resource-api';
-import { getErrorMessage } from '@modular-agent/types/execution-result';
-import type { APIDependencies } from '@modular-agent/sdk/core/api-dependencies';
+import { getErrorMessage } from '@modular-agent/sdk/api/types/execution-result';
+import type { APIDependencies } from '../../core/api-dependencies';
 
 /**
  * Profile模板类型

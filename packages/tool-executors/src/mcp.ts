@@ -6,6 +6,7 @@
 
 import type { Tool } from '@modular-agent/types/tool';
 import type { McpToolConfig } from '@modular-agent/types/tool';
+import type { ThreadContext } from '@modular-agent/types/common';
 import { NetworkError, ToolError, ConfigurationError } from '@modular-agent/types/errors';
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import { Readable, Writable } from 'stream';

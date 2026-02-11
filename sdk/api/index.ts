@@ -13,7 +13,7 @@ export {
   CommandValidationResult,
   validationSuccess,
   validationFailure
-} from '@modular-agent/types/command';
+} from '@modular-agent/sdk/api/types/command';
 
 export { CommandExecutor } from './common/command-executor';
 
@@ -28,17 +28,17 @@ export {
   queryFailure,
   isQuerySuccess,
   isQueryFailure
-} from '@modular-agent/types/query';
+} from '@modular-agent/sdk/api/types/query';
 
 // Subscription模式核心
 export {
   Subscription,
   BaseSubscription,
   SubscriptionMetadata
-} from '@modular-agent/types/subscription';
+} from '@modular-agent/sdk/api/types/subscription';
 
 // 统一类型
-export { ExecutionResult, success, failure, isSuccess, isFailure, getData, getError } from '@modular-agent/types/execution-result';
+export { ExecutionResult, success, failure, isSuccess, isFailure, getData, getError } from '@modular-agent/sdk/api/types/execution-result';
 export { ExecutionOptions, DEFAULT_EXECUTION_OPTIONS, mergeExecutionOptions } from '@modular-agent/types/execution-options';
 
 // 全局SDK实例
@@ -83,7 +83,7 @@ export {
   APIEventType,
   type APIEventData,
   type APIEventListener
-} from '@modular-agent/types/event-types';
+} from '@modular-agent/sdk/api/types/event-types';
 
 // 事件系统实现
 export {

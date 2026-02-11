@@ -12,10 +12,10 @@ import {
 
 import type { Script } from '@modular-agent/types/code';
 import { ScriptType } from '@modular-agent/types/code';
-import type { ScriptFilter, ScriptRegistrationConfig } from '@modular-agent/types/code-types';
+import type { ScriptFilter, ScriptRegistrationConfig } from '@modular-agent/sdk/api/types/code-types';
 import { NotFoundError } from '@modular-agent/types/errors';
 import { GenericResourceAPI } from '../generic-resource-api';
-import type { APIDependencies } from '@modular-agent/sdk/core/api-dependencies';
+import type { APIDependencies } from '../../core/api-dependencies';
 
 /**
  * ScriptRegistryAPI - 脚本资源管理API

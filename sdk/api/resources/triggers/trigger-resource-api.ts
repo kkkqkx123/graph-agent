@@ -4,11 +4,11 @@
  */
 
 import { GenericResourceAPI } from '../generic-resource-api';
-import { threadRegistry, type ThreadRegistry } from '@modular-agent/sdk/core/services/thread-registry';
+import { threadRegistry, type ThreadRegistry } from '../../../core/services/thread-registry';
 import { TriggerStatus } from '@modular-agent/types/trigger';
 import type { Trigger } from '@modular-agent/types/trigger';
 import { NotFoundError } from '@modular-agent/types/errors';
-import type { TriggerFilter } from '@modular-agent/types/management-types';
+import type { TriggerFilter } from '@modular-agent/sdk/api/types/management-types';
 
 /**
  * TriggerResourceAPI - 触发器资源管理API

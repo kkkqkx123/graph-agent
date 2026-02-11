@@ -11,11 +11,11 @@
 import { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
 import { ThreadBuilder } from '@modular-agent/sdk/core/execution/thread-builder';
 import { ThreadContext } from '@modular-agent/sdk/core/execution/context/thread-context';
-import { CheckpointCoordinator } from '@modular-agent/sdk/core/execution/coordinators/checkpoint-coordinator';
+import { CheckpointCoordinator } from '../../core/execution/coordinators/checkpoint-coordinator';
 import { CheckpointStateManager } from '@modular-agent/sdk/core/execution/managers/checkpoint-state-manager';
-import { MemoryCheckpointStorage } from '@modular-agent/sdk/core/storage/memory-checkpoint-storage';
-import { GlobalMessageStorage } from '@modular-agent/sdk/core/services/global-message-storage';
-import { ThreadRegistry } from '@modular-agent/sdk/core/services/thread-registry';
+import { MemoryCheckpointStorage } from '../../core/storage/memory-checkpoint-storage';
+import { GlobalMessageStorage } from '../../core/services/global-message-storage';
+import { ThreadRegistry } from '../../../core/services/thread-registry';
 import { NodeType } from '@modular-agent/types/node';
 import { EdgeType } from '@modular-agent/types/edge';
 import { ThreadStatus } from '@modular-agent/types/thread';

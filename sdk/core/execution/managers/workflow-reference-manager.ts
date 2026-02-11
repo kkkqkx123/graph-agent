@@ -12,7 +12,7 @@ import type {
   WorkflowReferenceRelation,
   WorkflowReferenceType
 } from '@modular-agent/types/workflow-reference';
-import { checkWorkflowReferences as checkReferences } from '@modular-agent/common-utils/workflow-reference-checker';
+import { checkWorkflowReferences as checkReferences } from '../utils/workflow-reference-checker';
 
 export class WorkflowReferenceManager {
   private referenceRelations: Map<string, WorkflowReferenceRelation[]> = new Map();

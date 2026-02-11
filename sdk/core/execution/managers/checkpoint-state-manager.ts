@@ -6,9 +6,9 @@
 import type { Checkpoint } from '@modular-agent/types/checkpoint';
 import type { CheckpointStorage, CheckpointStorageMetadata, CleanupPolicy, CleanupResult } from '@modular-agent/types/checkpoint-storage';
 import { LifecycleCapable } from './lifecycle-capable';
-import { serializeCheckpoint, deserializeCheckpoint } from '@modular-agent/common-utils/checkpoint-serializer';
-import { createCleanupStrategy } from '@modular-agent/common-utils/checkpoint-cleanup-policy';
-import { generateId, now } from '../../../utils';
+import { serializeCheckpoint, deserializeCheckpoint } from '../utils/checkpoint-serializer';
+import { createCleanupStrategy } from '../utils/checkpoint-cleanup-policy';
+import { generateId, now } from '@modular-agent/common-utils';
 
 /**
  * 从检查点提取存储元数据
@@ -177,7 +177,7 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
    * @param options 查询选项
    * @returns 检查点ID数组
    */
-  async list(options?: import('../../../types/checkpoint-storage').CheckpointListOptions): Promise<string[]> {
+  async list(options?: import('@modular-agent/types/checkpoint-storage').CheckpointListOptions): Promise<string[]> {
     return this.storage.list(options);
   }
 

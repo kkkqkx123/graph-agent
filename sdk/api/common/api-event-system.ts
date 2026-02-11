@@ -12,7 +12,7 @@ import {
   APIEventType,
   APIEventData,
   APIEventListener
-} from '@modular-agent/types/event-types';
+} from '@modular-agent/sdk/api/types/event-types';
 
 // 重新导出类型定义，保持向后兼容
 export {

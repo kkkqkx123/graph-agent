@@ -15,7 +15,7 @@
  */
 
 import type { LLMMessage, LLMResult } from '@modular-agent/types/llm';
-import { LLMWrapper } from '@modular-agent/common-utils/llm/wrapper';
+import { LLMWrapper } from '../../llm/wrapper';
 import { ExecutionError } from '@modular-agent/types/errors';
 
 /**

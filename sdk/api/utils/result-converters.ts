@@ -4,8 +4,8 @@
  */
 
 import type { Result } from '@modular-agent/types/result';
-import type { ExecutionResult, ExecutionError } from '@modular-agent/types/execution-result';
-import { success, failure, isSuccess, isFailure } from '@modular-agent/types/execution-result';
+import type { ExecutionResult, ExecutionError } from '@modular-agent/sdk/api/types/execution-result';
+import { success, failure, isSuccess, isFailure } from '@modular-agent/sdk/api/types/execution-result';
 import { ok, err } from '@modular-agent/common-utils/result-utils';
 
 /**

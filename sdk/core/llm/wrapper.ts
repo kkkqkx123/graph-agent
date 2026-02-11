@@ -11,9 +11,9 @@ import type {
   LLMProfile
 } from '@modular-agent/types/llm';
 import { ProfileManager } from './profile-manager';
-import { ClientFactory } from './client-factory';
+import { ClientFactory } from '@modular-agent/common-utils';
 import { ConfigurationError, LLMError } from '@modular-agent/types/errors';
-import { now, diffTimestamp } from '../../utils';
+import { now, diffTimestamp } from '@modular-agent/common-utils';
 
 /**
  * LLM包装器类

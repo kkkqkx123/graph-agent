@@ -19,9 +19,9 @@ export type { AllAPIs } from './api/core/api-factory';
 
 // Export common utilities
 // Result类型 - 从核心层导入
-export { ok, err, tryCatch, tryCatchAsync, all, any } from './utils/result-utils';
+export { ok, err, tryCatch, tryCatchAsync, all, any } from '@modular-agent/common-utils/result-utils';
 export type { Result, Ok, Err } from '@modular-agent/types/result';
-export * from './api/utils/observable';
+export * from '@modular-agent/common-utils/observable';
 
 // Export execution result types
 export * from './api/types/execution-result';

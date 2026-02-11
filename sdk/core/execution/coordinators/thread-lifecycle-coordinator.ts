@@ -27,17 +27,17 @@ import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager';
 import {
   waitForThreadPaused,
   waitForThreadCancelled
-} from '@modular-agent/common-utils/event/event-waiter';
+} from '../utils/event/event-waiter';
 import { ThreadCascadeManager } from '../managers/thread-cascade-manager';
 import { ExecutionContext } from '../context/execution-context';
-import { now } from '../../../utils';
+import { now } from '@modular-agent/common-utils';
 import { globalMessageStorage } from '../../services/global-message-storage';
 import {
   buildThreadCompletedEvent,
   buildThreadFailedEvent,
   buildThreadCancelledEvent
-} from '@modular-agent/common-utils/event/event-builder';
-import { emit } from '@modular-agent/common-utils/event/event-emitter';
+} from '../utils/event/event-builder';
+import { emit } from '../utils/event/event-emitter';
 
 /**
  * Thread 生命周期协调器

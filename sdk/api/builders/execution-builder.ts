@@ -7,9 +7,9 @@
 import type { ThreadResult, ThreadOptions } from '@modular-agent/types/thread';
 import { ok, err } from '@modular-agent/common-utils/result-utils';
 import type { Result } from '@modular-agent/types/result';
-import { Observable, Observer, create } from '@modular-agent/common-utils/observable';
+import { Observable, create } from '@modular-agent/common-utils/observable';
 import { ExecuteThreadCommand } from '../operations/commands/execution/execute-thread-command';
-import { isSuccess, isFailure } from '@modular-agent/types/execution-result';
+import { isSuccess } from '@modular-agent/sdk/api/types/execution-result';
 
 /**
  * ExecutionBuilder - 流畅的执行构建器
@@ -121,9 +121,9 @@ export class ExecutionBuilder {
         workflowId: this.workflowId,
         options: this.options
       });
-      
+
       const executionResult = await command.execute();
-      
+
       // 处理ExecutionResult类型
       if (isSuccess(executionResult)) {
         return ok(executionResult.data);
@@ -296,9 +296,9 @@ export class ExecutionBuilder {
       workflowId: this.workflowId!,
       options: this.options
     });
-    
+
     const executionResult = await command.execute();
-    
+
     // 处理ExecutionResult类型
     if (isSuccess(executionResult)) {
       return ok(executionResult.data);

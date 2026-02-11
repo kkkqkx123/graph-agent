@@ -11,9 +11,9 @@
 import type { Node, LLMNodeConfig } from '@modular-agent/types/node';
 import type { Thread } from '@modular-agent/types/thread';
 import { ExecutionError } from '@modular-agent/types/errors';
-import { now, diffTimestamp } from '../../../../utils';
+import { now, diffTimestamp } from '@modular-agent/common-utils';
 import { LLMExecutionCoordinator } from '../../coordinators/llm-execution-coordinator';
-import { LLMWrapper } from '@modular-agent/common-utils/llm/wrapper';
+import { LLMWrapper } from '../../../llm/wrapper';
 import { executeHumanRelay } from '../human-relay-handler';
 import type { EventManager } from '../../../services/event-manager';
 

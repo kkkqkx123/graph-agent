@@ -11,7 +11,7 @@
 import { APIFactory, type SDKAPIConfig } from './api-factory';
 import { APIDependencies } from './api-dependencies';
 import { SDKAPIDependencies } from './sdk-api-dependencies';
-import { getData } from '@modular-agent/types/execution-result';
+import { getData } from '@modular-agent/sdk/api/types/execution-result';
 import type { SDKOptions, SDKDependencies } from '@modular-agent/types';
 
 /**

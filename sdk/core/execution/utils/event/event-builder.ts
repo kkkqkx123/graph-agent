@@ -8,7 +8,7 @@
  * - 统一格式：确保所有事件对象格式一致
  */
 
-import { now } from '../../../../utils';
+import { now } from '@modular-agent/common-utils';
 import type { Thread, ThreadResult, NodeExecutionResult } from '@modular-agent/types/thread';
 import type {
   ThreadStartedEvent,
