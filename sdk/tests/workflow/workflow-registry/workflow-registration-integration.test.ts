@@ -18,7 +18,6 @@ import { NodeType } from '../../../types/node';
 import { EdgeType } from '../../../types/edge';
 import { TriggerActionType } from '../../../types/trigger';
 import type { WorkflowDefinition } from '../../../types/workflow';
-import { ProcessedWorkflowDefinition } from '../../../types/workflow';
 import type { NodeTemplate, TriggerTemplate } from '../../../types';
 import type { WorkflowTrigger } from '../../../types/trigger';
 import { ValidationError } from '../../../types/errors';
@@ -35,7 +34,7 @@ describe('Workflow加载与注册集成测试', () => {
       getThreadsByWorkflow: jest.fn(() => []),
       getAllThreads: jest.fn(() => [])
     };
-    
+
     registry = new WorkflowRegistry({
       maxRecursionDepth: 10,
       threadRegistry: mockThreadRegistry
@@ -634,12 +633,12 @@ describe('Workflow加载与注册集成测试', () => {
       // 预处理会展开子工作流，所以应该能看到子工作流的节点
       const allNodes = Array.from(processed.graph.nodes.values());
       const nodeIds = allNodes.map(n => n.id);
-      
+
       // 应该包含主工作流的节点
       expect(nodeIds).toContain('start');
       expect(nodeIds).toContain('node1');
       expect(nodeIds).toContain('end');
-      
+
       // 应该包含子工作流的节点（展开后，节点ID会被重命名以避免冲突）
       // 子工作流的节点ID会被添加前缀，格式为：node_sg_<hash>_<original-id>
       const subgraphNodes = nodeIds.filter(id => id.startsWith('node_sg_'));

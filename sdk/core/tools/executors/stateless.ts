@@ -5,7 +5,6 @@
 
 import type { Tool } from '../../../types/tool';
 import type { StatelessToolConfig } from '../../../types/tool';
-import type { ThreadContext } from '../../execution/context/thread-context';
 import { ToolError } from '../../../types/errors';
 import { BaseToolExecutor } from '../base-tool-executor';
 
@@ -17,13 +16,11 @@ export class StatelessToolExecutor extends BaseToolExecutor {
    * 执行无状态工具
    * @param tool 工具定义
    * @param parameters 工具参数
-   * @param threadContext 线程上下文（可选，无状态工具不使用）
    * @returns 执行结果
    */
   protected async doExecute(
     tool: Tool,
     parameters: Record<string, any>,
-    threadContext?: ThreadContext
   ): Promise<any> {
     // 获取执行函数
     const config = tool.config as StatelessToolConfig;

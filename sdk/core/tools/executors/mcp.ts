@@ -1,6 +1,7 @@
 /**
  * MCP协议工具执行器
  * 执行MCP协议工具
+ * 目前使用stdio
  */
 
 import type { Tool } from '../../../types/tool';
@@ -181,7 +182,7 @@ class McpSession {
     });
 
     this.sessionId = result.serverInfo?.name || 'unknown';
-    
+
     // 发送initialized通知
     await this.sendMessage('notifications/initialized', {});
   }
