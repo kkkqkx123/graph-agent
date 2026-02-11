@@ -70,16 +70,16 @@ function resolveIterable(iterableConfig: any, thread: Thread): any {
   if (typeof iterableConfig === 'string') {
     const varExprPattern = /^\{\{([\w.]+)\}\}$/;
     const match = iterableConfig.match(varExprPattern);
-    
+
     if (match && match[1]) {
       // 这是一个变量表达式，需要从thread中解析
       const varPath = match[1];
       const parts = varPath.split('.');
       const scope = parts[0];
-      
+
       try {
         let value: any;
-        
+
         // 根据作用域获取变量
         switch (scope) {
           case 'input':
@@ -89,35 +89,35 @@ function resolveIterable(iterableConfig: any, thread: Thread): any {
               value = value?.[parts[i]!];
             }
             break;
-            
+
           case 'output':
             value = thread.output;
             for (let i = 1; i < parts.length; i++) {
               value = value?.[parts[i]!];
             }
             break;
-            
+
           case 'global':
             value = thread.variableScopes.global;
             for (let i = 1; i < parts.length; i++) {
               value = value?.[parts[i]!];
             }
             break;
-            
+
           case 'thread':
             value = thread.variableScopes.thread;
             for (let i = 1; i < parts.length; i++) {
               value = value?.[parts[i]!];
             }
             break;
-            
+
           default:
             throw new ValidationError(
               `Invalid variable scope '${scope}'. Supported scopes: input, output, global, thread`,
               'iterable.scope'
             );
         }
-        
+
         if (value === undefined) {
           throw new ExecutionError(
             `Variable '${varPath}' not found in thread context`,
@@ -126,7 +126,7 @@ function resolveIterable(iterableConfig: any, thread: Thread): any {
             { varPath, iterableConfig }
           );
         }
-        
+
         return value;
       } catch (error) {
         if (error instanceof ExecutionError || error instanceof ValidationError) {
@@ -141,7 +141,7 @@ function resolveIterable(iterableConfig: any, thread: Thread): any {
       }
     }
   }
-  
+
   // 直接值，验证类型
   if (!isValidIterable(iterableConfig)) {
     throw new ValidationError(
@@ -149,7 +149,7 @@ function resolveIterable(iterableConfig: any, thread: Thread): any {
       'iterable'
     );
   }
-  
+
   return iterableConfig;
 }
 
@@ -295,7 +295,7 @@ export async function loopStartHandler(thread: Thread, node: Node, context?: any
   }
 
   const config = node.config as LoopStartNodeConfig;
-  
+
   // 获取或初始化循环状态
   let loopState = getLoopState(thread, config.loopId);
 
@@ -320,9 +320,9 @@ export async function loopStartHandler(thread: Thread, node: Node, context?: any
       iterationCount: 0,
       variableName: variableName
     };
-    
+
     setLoopState(thread, loopState);
-    
+
     // 进入新的循环作用域
     if (!thread.variableScopes) {
       thread.variableScopes = {
@@ -332,7 +332,7 @@ export async function loopStartHandler(thread: Thread, node: Node, context?: any
         loop: []
       };
     }
-    
+
     // 创建新的循环作用域并初始化该作用域的变量
     const newLoopScope: Record<string, any> = {};
     for (const variable of thread.variables) {
@@ -349,7 +349,7 @@ export async function loopStartHandler(thread: Thread, node: Node, context?: any
   if (!shouldContinue) {
     // 循环结束，清理循环状态
     clearLoopState(thread, config.loopId);
-    
+
     // 退出循环作用域
     if (thread.variableScopes && thread.variableScopes.loop.length > 0) {
       thread.variableScopes.loop.pop();
@@ -374,7 +374,7 @@ export async function loopStartHandler(thread: Thread, node: Node, context?: any
 
   // 更新循环状态
   updateLoopState(loopState);
-  
+
   // 保存更新后的循环状态到作用域
   setLoopState(thread, loopState);
 
@@ -385,13 +385,6 @@ export async function loopStartHandler(thread: Thread, node: Node, context?: any
     nodeType: node.type,
     status: 'COMPLETED',
     timestamp: now(),
-    data: {
-      loopId: config.loopId,
-      variableName: loopState.variableName,
-      currentValue,
-      iterationCount: loopState.iterationCount,
-      shouldContinue: true
-    }
   });
 
   // 返回执行结果

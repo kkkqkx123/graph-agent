@@ -210,14 +210,6 @@ export async function loopEndHandler(thread: Thread, node: Node, context?: any):
     nodeType: node.type,
     status: 'COMPLETED',
     timestamp: now(),
-    data: {
-      loopId: config.loopId,
-      shouldContinue,
-      shouldBreak,
-      loopConditionMet,
-      iterationCount: loopState.iterationCount,
-      nextNodeId: shouldContinue ? config.loopStartNodeId : undefined
-    }
   });
 
   // 返回执行结果

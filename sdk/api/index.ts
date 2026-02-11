@@ -66,7 +66,6 @@ export { TriggerResourceAPI } from './resources/triggers/trigger-resource-api';
 export {
   EventResourceAPI
 } from './resources/events/event-resource-api';
-export { ConfigurationAPI } from './resources/configuration/configuration-api';
 
 // 通用资源API基类和工具
 export { GenericResourceAPI } from './resources/generic-resource-api';

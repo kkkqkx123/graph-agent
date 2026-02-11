@@ -81,7 +81,6 @@ export async function codeHandler(thread: Thread, node: Node, context?: any): Pr
       nodeType: node.type,
       status: 'COMPLETED',
       timestamp: now(),
-      data: result
     });
 
     // 返回执行结果
