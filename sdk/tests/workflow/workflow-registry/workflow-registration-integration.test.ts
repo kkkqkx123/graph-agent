@@ -18,7 +18,7 @@ import { NodeType } from '@modular-agent/types/node';
 import { EdgeType } from '@modular-agent/types/edge';
 import { TriggerActionType } from '@modular-agent/types/trigger';
 import type { WorkflowDefinition } from '@modular-agent/types/workflow';
-import type { NodeTemplate, TriggerTemplate } from '../../../types';
+import type { NodeTemplate, TriggerTemplate } from '@modular-agent/types';
 import type { WorkflowTrigger } from '@modular-agent/types/trigger';
 import { ValidationError } from '@modular-agent/types/errors';
 

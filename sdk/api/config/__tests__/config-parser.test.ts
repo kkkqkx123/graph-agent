@@ -7,7 +7,7 @@
  */
 
 import { ConfigParser } from '../config-parser';
-import { ConfigFormat } from '../types';
+import { ConfigFormat } from '@modular-agent/types';
 import { ConfigTransformer } from '../config-transformer';
 import { parseJson, stringifyJson, validateJsonSyntax } from '../json-parser';
 import { parseToml, validateTomlSyntax } from '../toml-parser';

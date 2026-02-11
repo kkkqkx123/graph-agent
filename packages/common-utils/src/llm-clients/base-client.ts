@@ -12,7 +12,7 @@ import type {
   LLMProfile
 } from '@modular-agent/types/llm';
 import { HttpClient, SseTransport } from '../http';
-import { initialVersion } from '../../utils';
+import { initialVersion } from '../utils';
 
 /**
  * LLM客户端抽象基类

@@ -4,8 +4,8 @@
  */
 
 import { GraphData } from '../../../entities/graph-data';
-import type { GraphNode, GraphEdge, Node } from '../../../../types';
-import { NodeType, EdgeType } from '../../../../types';
+import type { GraphNode, GraphEdge, Node } from '@modular-agent/types';
+import { NodeType, EdgeType } from '@modular-agent/types';
 import { analyzeGraph, collectForkJoinPairs } from '../graph-analyzer';
 
 /**

@@ -16,7 +16,7 @@
  * - 直接依赖具体实现，不使用接口抽象
  */
 
-import type { Thread, VariableScope } from '../../../types';
+import type { Thread, VariableScope } from '@modular-agent/types';
 import type { ID } from '@modular-agent/types/common';
 import type { TriggerRuntimeState } from '@modular-agent/types/trigger';
 import type { StatefulToolFactory } from '@modular-agent/types/tool';

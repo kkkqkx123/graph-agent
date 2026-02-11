@@ -43,5 +43,6 @@
     "test": "jest",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {}
+  "dependencies": {},
+  "devDependencies": {}
 }

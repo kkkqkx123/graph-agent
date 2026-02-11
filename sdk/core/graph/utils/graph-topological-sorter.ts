@@ -3,7 +3,7 @@
  * 提供图的拓扑排序算法（Kahn算法）
  */
 
-import type { ID, TopologicalSortResult, Graph } from '../../../types';
+import type { ID, TopologicalSortResult, Graph } from '@modular-agent/types';
 import { detectCycles } from './graph-cycle-detector';
 
 /**

@@ -3,7 +3,7 @@
  * 负责将配置文件格式转换为WorkflowDefinition
  */
 
-import type { WorkflowConfigFile, IConfigTransformer } from './types';
+import type { WorkflowConfigFile, IConfigTransformer } from '@modular-agent/types';
 import type { WorkflowDefinition } from '@modular-agent/types/workflow';
 import type { Node } from '@modular-agent/types/node';
 import type { Edge as EdgeType } from '@modular-agent/types/edge';

@@ -13,7 +13,7 @@ import type {
   LLMMessage,
   LLMToolCall
 } from '@modular-agent/types/llm';
-import { generateId } from '../../../utils';
+import { generateId } from '../../utils';
 import { convertToolsToGeminiFormat } from '../../llm/tool-converter';
 import { extractAndFilterSystemMessages } from '../../llm/message-helper';
 

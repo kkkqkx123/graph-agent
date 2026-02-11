@@ -4,8 +4,8 @@
  * 所有函数都是无状态的纯函数
  */
 
-import type { ParsedConfig } from '../types';
-import { ConfigType } from '../types';
+import type { ParsedConfig } from '@modular-agent/types';
+import { ConfigType } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types/result';
 import { ValidationError } from '@modular-agent/types/errors';
 import { validateScriptConfig } from '../validators/script-validator';

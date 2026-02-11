@@ -5,8 +5,8 @@
  */
 
 import type { WorkflowDefinition } from '@modular-agent/types/workflow';
-import type { ConfigFile } from '../types';
-import { ConfigType } from '../types';
+import type { ConfigFile } from '@modular-agent/types';
+import { ConfigType } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils/result-utils';
 import type { Result } from '@modular-agent/types/result';
 import { ValidationError } from '@modular-agent/types/errors';

@@ -11,7 +11,7 @@ import type {
   PreprocessValidationResult,
   ID,
   Graph
-} from '../../types';
+} from '@modular-agent/types';
 import { ProcessedWorkflowDefinition } from '@modular-agent/types/workflow';
 import type { Node } from '@modular-agent/types/node';
 import type { WorkflowTrigger } from '@modular-agent/types/trigger';

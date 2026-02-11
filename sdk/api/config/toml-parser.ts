@@ -3,7 +3,7 @@
  * 负责解析TOML格式的配置文件
  */
 
-import type { WorkflowConfigFile } from './types';
+import type { WorkflowConfigFile } from '@modular-agent/types';
 import { ConfigurationError } from '@modular-agent/types/errors';
 
 /**

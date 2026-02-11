@@ -31,8 +31,8 @@ import type {
   NodeMap,
   EdgeMap,
   Graph,
-} from '../../types';
-import type { ID } from '../../types';
+} from '@modular-agent/types';
+import type { ID } from '@modular-agent/types';
 
 /**
  * 图数据结构类

@@ -5,8 +5,8 @@
 
 import { GraphData } from '../../entities/graph-data';
 import { GraphNavigator } from '../graph-navigator';
-import type { GraphNode, GraphEdge, Condition } from '../../../types';
-import { NodeType, EdgeType } from '../../../types';
+import type { GraphNode, GraphEdge, Condition } from '@modular-agent/types';
+import { NodeType, EdgeType } from '@modular-agent/types';
 
 /**
  * 创建简单的线性图：START -> LLM -> END

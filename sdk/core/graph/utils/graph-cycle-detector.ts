@@ -3,7 +3,7 @@
  * 提供图的环检测算法
  */
 
-import type { ID, CycleDetectionResult, Graph } from '../../../types';
+import type { ID, CycleDetectionResult, Graph } from '@modular-agent/types';
 
 /**
  * 检测图中的环（使用DFS）

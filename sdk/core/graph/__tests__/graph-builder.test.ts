@@ -5,8 +5,8 @@
 
 import { GraphBuilder } from '../graph-builder';
 import { GraphData } from '../../entities/graph-data';
-import type { WorkflowDefinition, GraphNode, GraphEdge } from '../../../types';
-import { NodeType, EdgeType } from '../../../types';
+import type { WorkflowDefinition, GraphNode, GraphEdge } from '@modular-agent/types';
+import { NodeType, EdgeType } from '@modular-agent/types';
 
 /**
  * 创建简单的工作流定义

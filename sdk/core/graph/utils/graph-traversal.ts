@@ -3,7 +3,7 @@
  * 提供图的深度优先和广度优先遍历算法
  */
 
-import type { ID, Graph } from '../../../types';
+import type { ID, Graph } from '@modular-agent/types';
 
 /**
  * 深度优先遍历

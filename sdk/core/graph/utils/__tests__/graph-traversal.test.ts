@@ -4,8 +4,8 @@
  */
 
 import { GraphData } from '../../../entities/graph-data';
-import type { GraphNode, GraphEdge } from '../../../../types';
-import { NodeType, EdgeType } from '../../../../types';
+import type { GraphNode, GraphEdge } from '@modular-agent/types';
+import { NodeType, EdgeType } from '@modular-agent/types';
 import { dfs, bfs, getReachableNodes, getNodesReachingTo } from '../graph-traversal';
 
 /**

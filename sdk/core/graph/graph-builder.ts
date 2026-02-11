@@ -13,7 +13,7 @@ import type {
   GraphBuildOptions,
   SubgraphMergeOptions,
   SubgraphMergeResult,
-} from '../../types';
+} from '@modular-agent/types';
 import { GraphData } from '../entities/graph-data';
 import { GraphValidator } from '../validation/graph-validator';
 import { generateSubgraphNamespace, generateNamespacedNodeId, generateNamespacedEdgeId } from '@modular-agent/common-utils/id-utils';

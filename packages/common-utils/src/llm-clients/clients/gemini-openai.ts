@@ -14,7 +14,7 @@ import type {
   LLMMessage,
   LLMToolCall
 } from '@modular-agent/types/llm';
-import { generateId } from '../../../utils';
+import { generateId } from '../../utils';
 import { convertToolsToOpenAIFormat } from '../../llm/tool-converter';
 
 /**

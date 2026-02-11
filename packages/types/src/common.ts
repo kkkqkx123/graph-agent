@@ -38,3 +38,19 @@ export type Metadata = Record<string, any>;
  * 定义工作流中变量的作用域级别
  */
 export type VariableScope = 'global' | 'thread' | 'subgraph' | 'loop';
+
+/**
+ * ThreadContext 接口
+ * 线程执行上下文，用于有状态工具的线程隔离
+ */
+export interface ThreadContext {
+  /**
+   * 注册有状态工具工厂
+   */
+  registerStatefulTool(toolName: string, factory: any): void;
+  
+  /**
+   * 获取有状态工具实例
+   */
+  getStatefulTool(toolName: string): any;
+}

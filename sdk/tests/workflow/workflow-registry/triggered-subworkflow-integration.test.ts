@@ -16,7 +16,7 @@ import { EdgeType } from '@modular-agent/types/edge';
 import { TriggerActionType } from '@modular-agent/types/trigger';
 import type { WorkflowDefinition } from '@modular-agent/types/workflow';
 import { ValidationError } from '@modular-agent/types/errors';
-import { EventType } from '../../../types';
+import { EventType } from '@modular-agent/types';
 
 describe('触发子工作流集成测试', () => {
   let registry: WorkflowRegistry;

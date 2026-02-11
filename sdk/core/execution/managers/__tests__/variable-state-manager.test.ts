@@ -1,5 +1,5 @@
 import { VariableStateManager } from '../variable-state-manager';
-import type { ThreadVariable, WorkflowVariable } from '../../../../types';
+import type { ThreadVariable, WorkflowVariable } from '@modular-agent/types';
 
 describe('VariableStateManager', () => {
   let manager: VariableStateManager;

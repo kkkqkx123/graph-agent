@@ -278,7 +278,7 @@ export type {
   TriggerTemplateFilter,
   TriggerTemplateSummary,
   TriggerFilter
-} from './types';
+} from '@modular-agent/types';
 
 // ============================================================================
 // 配置解析模块

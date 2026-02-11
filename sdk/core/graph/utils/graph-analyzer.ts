@@ -3,7 +3,7 @@
  * 提供图的完整分析功能，整合所有分析算法
  */
 
-import type { ID, NodeType, EdgeType, GraphAnalysisResult, ForkJoinValidationResult, Graph } from '../../../types';
+import type { ID, NodeType, EdgeType, GraphAnalysisResult, ForkJoinValidationResult, Graph } from '@modular-agent/types';
 import { detectCycles } from './graph-cycle-detector';
 import { analyzeReachability } from './graph-reachability-analyzer';
 import { topologicalSort } from './graph-topological-sorter';

@@ -36,8 +36,8 @@ import type {
   NodeType,
   GraphValidationOptions,
   GraphAnalysisResult,
-} from '../../types';
-import { ValidationError } from '../../types';
+} from '@modular-agent/types';
+import { ValidationError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types/result';
 import { ok, err } from '@modular-agent/common-utils/result-utils';
 import { GraphData } from '../entities/graph-data';

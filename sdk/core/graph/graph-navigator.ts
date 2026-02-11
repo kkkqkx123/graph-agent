@@ -16,7 +16,7 @@ import type {
   Condition,
   Edge,
   Graph,
-} from '../../types';
+} from '@modular-agent/types';
 import { getReachableNodes } from './utils/graph-traversal';
 
 /**

@@ -3,7 +3,7 @@
  * 提供图的可达性分析算法
  */
 
-import type { ID, ReachabilityResult, Graph } from '../../../types';
+import type { ID, ReachabilityResult, Graph } from '@modular-agent/types';
 import { getReachableNodes, getNodesReachingTo } from './graph-traversal';
 
 /**
