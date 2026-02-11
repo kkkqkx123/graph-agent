@@ -3,7 +3,7 @@
  */
 
 import { WorkflowBuilder } from '../workflow-builder';
-import { NodeType } from '../../../types/node';
+import { NodeType } from '@modular-agent/types/node';
 
 describe('WorkflowBuilder', () => {
   describe('创建工作流', () => {

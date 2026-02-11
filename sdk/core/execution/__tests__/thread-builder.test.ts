@@ -5,11 +5,11 @@
 import { ThreadBuilder } from '../thread-builder';
 import { ThreadContext } from '../context/thread-context';
 import { ExecutionContext } from '../context/execution-context';
-import { ValidationError } from '../../../types/errors';
-import { NodeType } from '../../../types/node';
-import { ProcessedWorkflowDefinition } from '../../../types/workflow';
+import { ValidationError } from '@modular-agent/types/errors';
+import { NodeType } from '@modular-agent/types/node';
+import { ProcessedWorkflowDefinition } from '@modular-agent/types/workflow';
 import { GraphData } from '../../entities/graph-data';
-import type { ThreadOptions } from '../../../types/thread';
+import type { ThreadOptions } from '@modular-agent/types/thread';
 
 // Mock 依赖
 class MockWorkflowRegistry {

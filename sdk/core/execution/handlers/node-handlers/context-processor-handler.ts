@@ -8,11 +8,11 @@
  * - 返回执行结果
  */
 
-import type { Node, ContextProcessorNodeConfig } from '../../../../types/node';
-import type { Thread } from '../../../../types/thread';
-import { ValidationError, ExecutionError } from '../../../../types/errors';
+import type { Node, ContextProcessorNodeConfig } from '@modular-agent/types/node';
+import type { Thread } from '@modular-agent/types/thread';
+import { ValidationError, ExecutionError } from '@modular-agent/types/errors';
 import { now } from '../../../../utils';
-import type { LLMMessage } from '../../../../types/llm';
+import type { LLMMessage } from '@modular-agent/types/llm';
 
 /**
  * 上下文处理器执行数据

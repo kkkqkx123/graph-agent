@@ -3,9 +3,9 @@
  */
 
 import { ClientFactory } from '../client-factory';
-import type { LLMProfile } from '../../../types/llm';
-import { LLMProvider } from '../../../types/llm';
-import { ConfigurationError } from '../../../types/errors';
+import type { LLMProfile } from '@modular-agent/types/llm';
+import { LLMProvider } from '@modular-agent/types/llm';
+import { ConfigurationError } from '@modular-agent/types/errors';
 
 // Mock所有客户端类
 jest.mock('../clients/openai-chat', () => ({

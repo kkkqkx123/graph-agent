@@ -4,7 +4,7 @@
 
 import { emitHookEvent } from '../event-emitter';
 import type { HookExecutionContext } from '../../index';
-import { EventType } from '../../../../../../types/events';
+import { EventType } from '@modular-agent/types/events';
 
 describe('event-emitter', () => {
   describe('emitHookEvent', () => {

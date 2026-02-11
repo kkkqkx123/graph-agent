@@ -10,12 +10,12 @@ import {
   validateEnum
 } from '../../validation/validation-strategy';
 
-import type { Script } from '../../../types/code';
-import { ScriptType } from '../../../types/code';
-import type { ScriptFilter, ScriptRegistrationConfig } from '../../types/code-types';
-import { NotFoundError } from '../../../types/errors';
+import type { Script } from '@modular-agent/types/code';
+import { ScriptType } from '@modular-agent/types/code';
+import type { ScriptFilter, ScriptRegistrationConfig } from '@modular-agent/types/code-types';
+import { NotFoundError } from '@modular-agent/types/errors';
 import { GenericResourceAPI } from '../generic-resource-api';
-import type { APIDependencies } from '../../core/api-dependencies';
+import type { APIDependencies } from '@modular-agent/sdk/core/api-dependencies';
 
 /**
  * ScriptRegistryAPI - 脚本资源管理API

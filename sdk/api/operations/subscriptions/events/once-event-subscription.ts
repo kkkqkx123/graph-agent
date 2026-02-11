@@ -2,9 +2,9 @@
  * OnceEventSubscription - 注册一次性事件监听器
  */
 
-import { BaseSubscription, SubscriptionMetadata } from '../../../types/subscription';
-import type { EventType, EventListener, BaseEvent } from '../../../../types/events';
-import type { APIDependencies } from '../../../core/api-dependencies';
+import { BaseSubscription, SubscriptionMetadata } from '@modular-agent/types/subscription';
+import type { EventType, EventListener, BaseEvent } from '@modular-agent/types/events';
+import type { APIDependencies } from '@modular-agent/sdk/core/api-dependencies';
 
 /**
  * 注册一次性事件监听器参数

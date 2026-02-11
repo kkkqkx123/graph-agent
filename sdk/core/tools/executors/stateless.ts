@@ -3,9 +3,9 @@
  * 执行应用层提供的无状态函数工具
  */
 
-import type { Tool } from '../../../types/tool';
-import type { StatelessToolConfig } from '../../../types/tool';
-import { ToolError } from '../../../types/errors';
+import type { Tool } from '@modular-agent/types/tool';
+import type { StatelessToolConfig } from '@modular-agent/types/tool';
+import { ToolError } from '@modular-agent/types/errors';
 import { BaseToolExecutor } from '../base-tool-executor';
 
 /**

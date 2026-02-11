@@ -8,12 +8,12 @@
  * - 返回执行结果
  */
 
-import type { Node, LLMNodeConfig } from '../../../../types/node';
-import type { Thread } from '../../../../types/thread';
-import { ExecutionError } from '../../../../types/errors';
+import type { Node, LLMNodeConfig } from '@modular-agent/types/node';
+import type { Thread } from '@modular-agent/types/thread';
+import { ExecutionError } from '@modular-agent/types/errors';
 import { now, diffTimestamp } from '../../../../utils';
 import { LLMExecutionCoordinator } from '../../coordinators/llm-execution-coordinator';
-import { LLMWrapper } from '../../../llm/wrapper';
+import { LLMWrapper } from '@modular-agent/common-utils/llm/wrapper';
 import { executeHumanRelay } from '../human-relay-handler';
 import type { EventManager } from '../../../services/event-manager';
 

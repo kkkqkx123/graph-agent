@@ -10,7 +10,7 @@ import type {
   LLMRequest,
   LLMResult,
   LLMProfile
-} from '../../types/llm';
+} from '@modular-agent/types/llm';
 import { HttpClient, SseTransport } from '../http';
 import { initialVersion } from '../../utils';
 

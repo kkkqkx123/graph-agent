@@ -11,8 +11,8 @@ import { ConfigFormat } from '../types';
 import { ConfigTransformer } from '../config-transformer';
 import { parseJson, stringifyJson, validateJsonSyntax } from '../json-parser';
 import { parseToml, validateTomlSyntax } from '../toml-parser';
-import { NodeType } from '../../../types/node';
-import { EdgeType } from '../../../types/edge';
+import { NodeType } from '@modular-agent/types/node';
+import { EdgeType } from '@modular-agent/types/edge';
 
 describe('ConfigParser', () => {
   let parser: ConfigParser;

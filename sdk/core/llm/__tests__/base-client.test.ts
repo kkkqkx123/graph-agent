@@ -3,7 +3,7 @@
  */
 
 import { BaseLLMClient } from '../base-client';
-import type { LLMProfile, LLMRequest, LLMResult } from '../../../types/llm';
+import type { LLMProfile, LLMRequest, LLMResult } from '@modular-agent/types/llm';
 
 // 创建测试用的具体实现
 class TestLLMClient extends BaseLLMClient {

@@ -3,11 +3,11 @@
  */
 
 import { llmHandler } from '../llm-handler';
-import type { Node, LLMNodeConfig } from '../../../../../types/node';
-import { NodeType } from '../../../../../types/node';
-import type { Thread } from '../../../../../types/thread';
-import { ThreadStatus } from '../../../../../types/thread';
-import { ExecutionError } from '../../../../../types/errors';
+import type { Node, LLMNodeConfig } from '@modular-agent/types/node';
+import { NodeType } from '@modular-agent/types/node';
+import type { Thread } from '@modular-agent/types/thread';
+import { ThreadStatus } from '@modular-agent/types/thread';
+import { ExecutionError } from '@modular-agent/types/errors';
 
 // Mock LLMExecutionCoordinator
 jest.mock('../../../coordinators/llm-execution-coordinator', () => ({
@@ -35,7 +35,7 @@ jest.mock('../../../../../utils', () => ({
 }));
 
 import { LLMExecutionCoordinator } from '../../../coordinators/llm-execution-coordinator';
-import { LLMWrapper } from '../../../../llm/wrapper';
+import { LLMWrapper } from '@modular-agent/common-utils/llm/wrapper';
 import { executeHumanRelay } from '../../human-relay-handler';
 
 describe('llm-handler', () => {

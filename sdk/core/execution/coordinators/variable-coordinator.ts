@@ -16,14 +16,14 @@
  */
 
 import type { ThreadContext } from '../context/thread-context';
-import type { Thread } from '../../../types/thread';
-import type { VariableScope } from '../../../types/common';
+import type { Thread } from '@modular-agent/types/thread';
+import type { VariableScope } from '@modular-agent/types/common';
 import type { EventManager } from '../../services/event-manager';
-import { EventType } from '../../../types/events';
+import { EventType } from '@modular-agent/types/events';
 import { now } from '../../../utils';
-import { ValidationError, ExecutionError } from '../../../types/errors';
+import { ValidationError, ExecutionError } from '@modular-agent/types/errors';
 import { VariableStateManager } from '../managers/variable-state-manager';
-import { VariableAccessor } from '../utils/variable-accessor';
+import { VariableAccessor } from '@modular-agent/common-utils/variable-accessor';
 
 /**
  * VariableCoordinator - 变量协调器

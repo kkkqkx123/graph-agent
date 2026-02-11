@@ -16,7 +16,7 @@
  */
 
 import type { EventManager } from '../../../services/event-manager';
-import { EventType } from '../../../../types/events';
+import { EventType } from '@modular-agent/types/events';
 
 /**
  * 等待Thread暂停事件

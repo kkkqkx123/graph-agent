@@ -6,14 +6,14 @@
 
 import type { ParsedConfig } from '../types';
 import { ConfigType, ConfigFormat } from '../types';
-import type { Result } from '../../../types/result';
-import { ValidationError } from '../../../types/errors';
+import type { Result } from '@modular-agent/types/result';
+import { ValidationError } from '@modular-agent/types/errors';
 import { validateWorkflowConfig } from '../validators/workflow-validator';
 import { ConfigTransformer } from '../config-transformer';
-import type { WorkflowDefinition } from '../../../types/workflow';
+import type { WorkflowDefinition } from '@modular-agent/types/workflow';
 import { stringifyJson } from '../json-parser';
-import { ConfigurationError } from '../../../types/errors';
-import { ok } from '../../../utils/result-utils';
+import { ConfigurationError } from '@modular-agent/types/errors';
+import { ok } from '@modular-agent/common-utils/result-utils';
 
 /**
  * 验证Workflow配置

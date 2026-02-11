@@ -3,9 +3,9 @@
  * 提供统一的验证函数，返回 Result<T, ValidationError[]> 类型
  */
 
-import { ValidationError } from '../../types/errors';
-import type { Result } from '../../types/result';
-import { ok, err } from '../../utils/result-utils';
+import { ValidationError } from '@modular-agent/types/errors';
+import type { Result } from '@modular-agent/types/result';
+import { ok, err } from '@modular-agent/common-utils/result-utils';
 
 /**
  * 验证必需字段

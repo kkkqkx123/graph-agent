@@ -3,9 +3,9 @@
  */
 
 import { ToolService } from '../tool-service';
-import type { Tool } from '../../../types/tool';
-import { ToolType } from '../../../types/tool';
-import { NotFoundError } from '../../../types/errors';
+import type { Tool } from '@modular-agent/types/tool';
+import { ToolType } from '@modular-agent/types/tool';
+import { NotFoundError } from '@modular-agent/types/errors';
 
 describe('ToolService', () => {
   let service: ToolService;

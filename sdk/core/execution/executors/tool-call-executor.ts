@@ -16,9 +16,9 @@
 
 import type { ToolService } from '../../services/tool-service';
 import type { EventManager } from '../../services/event-manager';
-import type { Tool } from '../../../types/tool';
-import { safeEmit } from '../utils/event/event-emitter';
-import { EventType } from '../../../types/events';
+import type { Tool } from '@modular-agent/types/tool';
+import { safeEmit } from '@modular-agent/common-utils/event/event-emitter';
+import { EventType } from '@modular-agent/types/events';
 import { now } from '../../../utils';
 import type { ConversationManager } from '../managers/conversation-manager';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils';

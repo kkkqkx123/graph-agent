@@ -2,9 +2,9 @@
  * ResumeThreadCommand - 恢复线程命令
  */
 
-import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
-import type { ThreadResult } from '../../../../types/thread';
-import { ThreadLifecycleCoordinator } from '../../../../core/execution/coordinators/thread-lifecycle-coordinator';
+import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '@modular-agent/types/command';
+import type { ThreadResult } from '@modular-agent/types/thread';
+import { ThreadLifecycleCoordinator } from '@modular-agent/sdk/core/execution/coordinators/thread-lifecycle-coordinator';
 
 /**
  * 恢复线程命令

@@ -5,11 +5,11 @@
  * subgraph节点在执行阶段不存在，故不需要任何处理
  */
 
-import { NodeType } from '../../../types/node';
-import type { Node } from '../../../types/node';
-import { ValidationError } from '../../../types/errors';
-import type { Result } from '../../../types/result';
-import { ok, err } from '../../../utils/result-utils';
+import { NodeType } from '@modular-agent/types/node';
+import type { Node } from '@modular-agent/types/node';
+import { ValidationError } from '@modular-agent/types/errors';
+import type { Result } from '@modular-agent/types/result';
+import { ok, err } from '@modular-agent/common-utils/result-utils';
 
 export { validateForkNode } from './fork-validator';
 export { validateJoinNode } from './join-validator';

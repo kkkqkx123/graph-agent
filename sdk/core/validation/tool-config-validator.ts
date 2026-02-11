@@ -12,11 +12,11 @@ import type {
   StatefulToolConfig,
   RestToolConfig,
   McpToolConfig 
-} from '../../types/tool';
-import { ToolType } from '../../types/tool';
-import { ValidationError } from '../../types/errors';
-import type { Result } from '../../types/result';
-import { ok, err } from '../../utils/result-utils';
+} from '@modular-agent/types/tool';
+import { ToolType } from '@modular-agent/types/tool';
+import { ValidationError } from '@modular-agent/types/errors';
+import type { Result } from '@modular-agent/types/result';
+import { ok, err } from '@modular-agent/common-utils/result-utils';
 
 /**
  * 工具参数属性schema

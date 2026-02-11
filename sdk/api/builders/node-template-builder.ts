@@ -3,11 +3,11 @@
  * 提供流畅的链式API来创建和注册节点模板
  */
 
-import type { NodeTemplate } from '../../types/node-template';
-import type { NodeType, NodeConfig } from '../../types/node';
-import type { Metadata } from '../../types/common';
-import { now } from '../../utils/timestamp-utils';
-import { nodeTemplateRegistry } from '../../core/services/node-template-registry';
+import type { NodeTemplate } from '@modular-agent/types/node-template';
+import type { NodeType, NodeConfig } from '@modular-agent/types/node';
+import type { Metadata } from '@modular-agent/types/common';
+import { now } from '@modular-agent/common-utils/timestamp-utils';
+import { nodeTemplateRegistry } from '@modular-agent/sdk/core/services/node-template-registry';
 
 /**
  * NodeTemplateBuilder - 节点模板构建器

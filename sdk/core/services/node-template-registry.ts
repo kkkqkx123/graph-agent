@@ -5,10 +5,10 @@
  * 本模块导出全局单例实例，不导出类定义
  */
 
-import type { NodeTemplate, NodeTemplateSummary } from '../../types/node-template';
-import type { Node } from '../../types/node';
-import { NodeType } from '../../types/node';
-import { ValidationError, NotFoundError } from '../../types/errors';
+import type { NodeTemplate, NodeTemplateSummary } from '@modular-agent/types/node-template';
+import type { Node } from '@modular-agent/types/node';
+import { NodeType } from '@modular-agent/types/node';
+import { ValidationError, NotFoundError } from '@modular-agent/types/errors';
 import { validateNodeByType } from '../validation/node-validation';
 
 /**

@@ -3,8 +3,8 @@
  * 提供事件驱动的流式响应处理
  */
 
-import { ExecutionError } from '../../types/errors';
-import type { LLMMessage, LLMResult } from '../../types/llm';
+import { ExecutionError } from '@modular-agent/types/errors';
+import type { LLMMessage, LLMResult } from '@modular-agent/types/llm';
 import {
   MessageStreamEvent,
   MessageStreamEventType,

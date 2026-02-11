@@ -1,5 +1,5 @@
 import { ConditionEvaluator, conditionEvaluator } from '../condition-evaluator';
-import type { Condition, EvaluationContext } from '../../../types/condition';
+import type { Condition, EvaluationContext } from '@modular-agent/types/condition';
 
 describe('ConditionEvaluator', () => {
   let evaluator: ConditionEvaluator;

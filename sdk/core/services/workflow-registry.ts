@@ -14,12 +14,12 @@ import type {
   WorkflowMetadata,
   WorkflowRelationship,
   WorkflowHierarchy
-} from '../../types/workflow';
-import { ProcessedWorkflowDefinition } from '../../types/workflow';
-import type { WorkflowReferenceInfo, WorkflowReferenceRelation, WorkflowReferenceType } from '../../types/workflow-reference';
+} from '@modular-agent/types/workflow';
+import { ProcessedWorkflowDefinition } from '@modular-agent/types/workflow';
+import type { WorkflowReferenceInfo, WorkflowReferenceRelation, WorkflowReferenceType } from '@modular-agent/types/workflow-reference';
 import { processWorkflow, type ProcessOptions } from '../graph/workflow-processor';
 import { WorkflowReferenceManager } from '../execution/managers/workflow-reference-manager';
-import { ValidationError } from '../../types/errors';
+import { ValidationError } from '@modular-agent/types/errors';
 
 /**
  * 工作流摘要信息

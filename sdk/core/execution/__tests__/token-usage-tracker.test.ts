@@ -3,7 +3,7 @@
  */
 
 import { TokenUsageTracker } from '../token-usage-tracker';
-import type { LLMMessage } from '../../../types/llm';
+import type { LLMMessage } from '@modular-agent/types/llm';
 
 describe('TokenUsageTracker', () => {
   let tracker: TokenUsageTracker;

@@ -3,9 +3,9 @@
  * 负责执行LOOP_START节点，初始化循环变量，设置循环条件
  */
 
-import type { Node, LoopStartNodeConfig } from '../../../../types/node';
-import type { Thread } from '../../../../types/thread';
-import { ExecutionError, ValidationError } from '../../../../types/errors';
+import type { Node, LoopStartNodeConfig } from '@modular-agent/types/node';
+import type { Thread } from '@modular-agent/types/thread';
+import { ExecutionError, ValidationError } from '@modular-agent/types/errors';
 import { now } from '../../../../utils';
 
 /**

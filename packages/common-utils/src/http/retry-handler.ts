@@ -5,7 +5,7 @@
  * 提供指数退避重试策略，自动处理可重试的错误
  */
 
-import { TimeoutError, NetworkError, HttpError } from '../../types/errors';
+import { TimeoutError, NetworkError, HttpError } from '@modular-agent/types/errors';
 import {
   RateLimitError,
 } from './errors';

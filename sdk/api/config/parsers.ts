@@ -9,10 +9,10 @@
  * - 不操作注册表
  */
 
-import type { WorkflowDefinition } from '../../types/workflow';
-import type { NodeTemplate } from '../../types/node-template';
-import type { TriggerTemplate } from '../../types/trigger-template';
-import type { Script } from '../../types/code';
+import type { WorkflowDefinition } from '@modular-agent/types/workflow';
+import type { NodeTemplate } from '@modular-agent/types/node-template';
+import type { TriggerTemplate } from '@modular-agent/types/trigger-template';
+import type { Script } from '@modular-agent/types/code';
 import { ConfigFormat, ConfigType } from './types';
 import type { ParsedConfig } from './types';
 import { ConfigParser } from './config-parser';

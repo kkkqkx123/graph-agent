@@ -3,10 +3,10 @@
  */
 
 import { UserInteractionResourceAPI, type UserInteractionConfig, type UserInteractionFilter } from '../user-interaction-resource-api';
-import type { UserInteractionHandler, UserInteractionRequest } from '../../../../types/interaction';
-import { SingletonRegistry } from '../../../../core/execution/context/singleton-registry';
-import { EventManager } from '../../../../core/services/event-manager';
-import { EventType } from '../../../../types/events';
+import type { UserInteractionHandler, UserInteractionRequest } from '@modular-agent/types/interaction';
+import { SingletonRegistry } from '@modular-agent/sdk/core/execution/context/singleton-registry';
+import { EventManager } from '@modular-agent/sdk/core/services/event-manager';
+import { EventType } from '@modular-agent/types/events';
 
 // Mock SingletonRegistry
 jest.mock('../../../../core/execution/context/singleton-registry');

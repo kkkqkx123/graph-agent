@@ -5,11 +5,11 @@
 import { ThreadExecutor } from '../thread-executor';
 import { ThreadContext } from '../context/thread-context';
 import { ExecutionContext } from '../context/execution-context';
-import { NotFoundError } from '../../../types/errors';
-import { ThreadStatus } from '../../../types/thread';
-import type { NodeExecutionResult } from '../../../types/thread';
-import type { Node } from '../../../types/node';
-import { NodeType } from '../../../types/node';
+import { NotFoundError } from '@modular-agent/types/errors';
+import { ThreadStatus } from '@modular-agent/types/thread';
+import type { NodeExecutionResult } from '@modular-agent/types/thread';
+import type { Node } from '@modular-agent/types/node';
+import { NodeType } from '@modular-agent/types/node';
 
 // Mock 依赖
 class MockNodeExecutionCoordinator {

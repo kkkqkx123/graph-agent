@@ -8,14 +8,14 @@
  * - 返回批量验证结果
  */
 
-import type { WorkflowDefinition } from '../../../types/workflow';
-import type { NodeTemplate } from '../../../types/node-template';
-import type { TriggerTemplate } from '../../../types/trigger-template';
-import type { Script } from '../../../types/code';
+import type { WorkflowDefinition } from '@modular-agent/types/workflow';
+import type { NodeTemplate } from '@modular-agent/types/node-template';
+import type { TriggerTemplate } from '@modular-agent/types/trigger-template';
+import type { Script } from '@modular-agent/types/code';
 import type { ConfigFile } from '../types';
-import { ok, err } from '../../../utils/result-utils';
-import type { Result } from '../../../types/result';
-import { ValidationError } from '../../../types/errors';
+import { ok, err } from '@modular-agent/common-utils/result-utils';
+import type { Result } from '@modular-agent/types/result';
+import { ValidationError } from '@modular-agent/types/errors';
 import { validateWorkflowConfig } from './workflow-validator';
 import { validateNodeTemplateConfig } from './node-template-validator';
 import { validateTriggerTemplateConfig } from './trigger-template-validator';

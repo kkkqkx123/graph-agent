@@ -7,7 +7,7 @@ import type {
   CheckpointStorage,
   CheckpointStorageMetadata,
   CheckpointListOptions
-} from '../../types/checkpoint-storage';
+} from '@modular-agent/types/checkpoint-storage';
 
 /**
  * 内存存储实现

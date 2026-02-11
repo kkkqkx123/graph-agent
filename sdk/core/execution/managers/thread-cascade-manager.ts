@@ -14,7 +14,7 @@
 
 import type { ThreadRegistry } from '../../services/thread-registry';
 import { ThreadLifecycleManager } from './thread-lifecycle-manager';
-import type { Thread } from '../../../types/thread';
+import type { Thread } from '@modular-agent/types/thread';
 
 /**
  * ThreadCascadeManager - Thread级联管理器

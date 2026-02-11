@@ -11,9 +11,9 @@ import {
   validateTriggerReference,
   validateTriggers
 } from '../trigger-validator';
-import { EventType } from '../../../types/events';
-import { TriggerActionType } from '../../../types/trigger';
-import { ValidationError } from '../../../types/errors';
+import { EventType } from '@modular-agent/types/events';
+import { TriggerActionType } from '@modular-agent/types/trigger';
+import { ValidationError } from '@modular-agent/types/errors';
 
 describe('validateTriggerCondition', () => {
   it('应该验证有效的触发条件', () => {

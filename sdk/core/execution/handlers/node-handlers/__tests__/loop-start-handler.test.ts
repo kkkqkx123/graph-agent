@@ -3,10 +3,10 @@
  */
 
 import { loopStartHandler } from '../loop-start-handler';
-import type { Node, LoopStartNodeConfig } from '../../../../../types/node';
-import type { Thread } from '../../../../../types/thread';
-import { ValidationError, ExecutionError } from '../../../../../types/errors';
-import { ThreadStatus } from '../../../../../types/thread';
+import type { Node, LoopStartNodeConfig } from '@modular-agent/types/node';
+import type { Thread } from '@modular-agent/types/thread';
+import { ValidationError, ExecutionError } from '@modular-agent/types/errors';
+import { ThreadStatus } from '@modular-agent/types/thread';
 
 describe('loop-start-handler', () => {
   let mockThread: Thread;

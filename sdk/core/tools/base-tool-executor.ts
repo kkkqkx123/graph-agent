@@ -4,10 +4,10 @@
  */
 
 import { z } from 'zod';
-import type { Tool } from '../../types/tool';
+import type { Tool } from '@modular-agent/types/tool';
 import type { ThreadContext } from '../execution/context/thread-context';
-import { TimeoutError, ValidationError, NetworkError, HttpError } from '../../types/errors';
-import { RateLimitError } from '../http/errors';
+import { TimeoutError, ValidationError, NetworkError, HttpError } from '@modular-agent/types/errors';
+import { RateLimitError } from '@modular-agent/common-utils/http/errors';
 import { now, diffTimestamp } from '../../utils';
 
 /**

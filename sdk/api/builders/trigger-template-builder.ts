@@ -3,11 +3,11 @@
  * 提供流畅的链式API来创建和注册触发器模板
  */
 
-import type { TriggerTemplate } from '../../types/trigger-template';
-import type { TriggerCondition, TriggerAction } from '../../types/trigger';
-import type { Metadata } from '../../types/common';
-import { now } from '../../utils/timestamp-utils';
-import { triggerTemplateRegistry } from '../../core/services/trigger-template-registry';
+import type { TriggerTemplate } from '@modular-agent/types/trigger-template';
+import type { TriggerCondition, TriggerAction } from '@modular-agent/types/trigger';
+import type { Metadata } from '@modular-agent/types/common';
+import { now } from '@modular-agent/common-utils/timestamp-utils';
+import { triggerTemplateRegistry } from '@modular-agent/sdk/core/services/trigger-template-registry';
 
 /**
  * TriggerTemplateBuilder - 触发器模板构建器

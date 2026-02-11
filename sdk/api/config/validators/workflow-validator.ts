@@ -4,13 +4,13 @@
  * 注意：实际验证逻辑委托给 WorkflowValidator，这里仅作为适配器
  */
 
-import type { WorkflowDefinition } from '../../../types/workflow';
+import type { WorkflowDefinition } from '@modular-agent/types/workflow';
 import type { ConfigFile } from '../types';
 import { ConfigType } from '../types';
-import { ok, err } from '../../../utils/result-utils';
-import type { Result } from '../../../types/result';
-import { ValidationError } from '../../../types/errors';
-import { WorkflowValidator } from '../../../core/validation/workflow-validator';
+import { ok, err } from '@modular-agent/common-utils/result-utils';
+import type { Result } from '@modular-agent/types/result';
+import { ValidationError } from '@modular-agent/types/errors';
+import { WorkflowValidator } from '@modular-agent/sdk/core/validation/workflow-validator';
 
 /**
  * 验证工作流配置

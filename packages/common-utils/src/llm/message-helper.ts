@@ -3,7 +3,7 @@
  * 提供消息提取、过滤等辅助功能
  */
 
-import type { LLMMessage } from '../../types/llm';
+import type { LLMMessage } from '@modular-agent/types/llm';
 
 /**
  * 提取系统消息

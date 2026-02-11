@@ -3,9 +3,9 @@
  * 负责执行触发器触发的孤立子工作流
  */
 
-import type { TriggerAction, TriggerExecutionResult } from '../../../../types/trigger';
-import type { ExecuteTriggeredSubgraphActionConfig } from '../../../../types/trigger';
-import { NotFoundError, ValidationError } from '../../../../types/errors';
+import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types/trigger';
+import type { ExecuteTriggeredSubgraphActionConfig } from '@modular-agent/types/trigger';
+import { NotFoundError, ValidationError } from '@modular-agent/types/errors';
 import { ExecutionContext } from '../../context/execution-context';
 import {
   executeSingleTriggeredSubgraph,

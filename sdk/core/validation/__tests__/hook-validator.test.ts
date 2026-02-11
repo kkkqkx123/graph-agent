@@ -3,7 +3,7 @@
  */
 
 import { validateHook, validateHooks } from '../hook-validator';
-import { HookType } from '../../../types/node';
+import { HookType } from '@modular-agent/types/node';
 
 describe('validateHook', () => {
   const nodeId = 'test-node-1';

@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from '@jest/globals';
-import type { LLMMessage } from '../../../types/llm';
+import type { LLMMessage } from '@modular-agent/types/llm';
 import {
   extractSystemMessage,
   filterSystemMessages,

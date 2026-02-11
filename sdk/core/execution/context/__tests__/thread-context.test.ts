@@ -1,7 +1,7 @@
 import { ThreadContext } from '../thread-context';
 import type { Thread, VariableScope } from '../../../../types';
-import type { LLMMessage } from '../../../../types/llm';
-import type { WorkflowDefinition } from '../../../../types/workflow';
+import type { LLMMessage } from '@modular-agent/types/llm';
+import type { WorkflowDefinition } from '@modular-agent/types/workflow';
 import { ConversationManager } from '../../managers/conversation-manager';
 import { GraphNavigator } from '../../../graph/graph-navigator';
 

@@ -3,7 +3,7 @@
  */
 
 import { ToolConfigValidator } from '../tool-config-validator';
-import { ToolType } from '../../../types/tool';
+import { ToolType } from '@modular-agent/types/tool';
 
 describe('ToolConfigValidator', () => {
   let validator: ToolConfigValidator;

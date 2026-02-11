@@ -4,10 +4,10 @@
 
 import { GraphValidator } from '../graph-validator';
 import { GraphData } from '../../entities/graph-data';
-import { NodeType } from '../../../types/node';
-import { EdgeType } from '../../../types/edge';
-import type { GraphNode, GraphEdge } from '../../../types/graph';
-import type { Node } from '../../../types/node';
+import { NodeType } from '@modular-agent/types/node';
+import { EdgeType } from '@modular-agent/types/edge';
+import type { GraphNode, GraphEdge } from '@modular-agent/types/graph';
+import type { Node } from '@modular-agent/types/node';
 
 describe('GraphValidator', () => {
   let graph: GraphData;

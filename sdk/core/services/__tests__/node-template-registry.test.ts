@@ -3,8 +3,8 @@
  */
 
 import { NodeTemplateRegistry } from '../node-template-registry';
-import { NodeType } from '../../../types/node';
-import { ValidationError, NotFoundError } from '../../../types/errors';
+import { NodeType } from '@modular-agent/types/node';
+import { ValidationError, NotFoundError } from '@modular-agent/types/errors';
 
 describe('NodeTemplateRegistry', () => {
   let registry: NodeTemplateRegistry;

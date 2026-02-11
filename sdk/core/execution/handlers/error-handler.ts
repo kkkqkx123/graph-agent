@@ -16,12 +16,12 @@
  */
 
 import { ThreadContext } from '../context/thread-context';
-import type { Node } from '../../../types/node';
-import type { NodeExecutionResult } from '../../../types/thread';
-import { ErrorHandlingStrategy } from '../../../types/thread';
+import type { Node } from '@modular-agent/types/node';
+import type { NodeExecutionResult } from '@modular-agent/types/thread';
+import { ErrorHandlingStrategy } from '@modular-agent/types/thread';
 import type { EventManager } from '../../services/event-manager';
-import { EventType } from '../../../types/events';
-import type { ErrorEvent } from '../../../types/events';
+import { EventType } from '@modular-agent/types/events';
+import type { ErrorEvent } from '@modular-agent/types/events';
 import { now } from '../../../utils';
 
 /**

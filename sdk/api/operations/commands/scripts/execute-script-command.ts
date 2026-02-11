@@ -2,10 +2,10 @@
  * ExecuteScriptCommand - 执行脚本命令
  */
 
-import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
-import type { ScriptOptions } from '../../../types/code-types';
-import type { ScriptExecutionResult } from '../../../../types/code';
-import type { APIDependencies } from '../../../core/api-dependencies';
+import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '@modular-agent/types/command';
+import type { ScriptOptions } from '@modular-agent/types/code-types';
+import type { ScriptExecutionResult } from '@modular-agent/types/code';
+import type { APIDependencies } from '@modular-agent/sdk/core/api-dependencies';
 
 /**
  * 执行脚本命令

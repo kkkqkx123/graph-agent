@@ -19,15 +19,15 @@
  * - 触发器管理（由 ThreadBuilder 在创建 ThreadContext 时处理）
  */
 
-import type { ThreadResult } from '../../types/thread';
-import type { Node } from '../../types/node';
-import type { NodeExecutionResult } from '../../types/thread';
-import type { ID } from '../../types/common';
+import type { ThreadResult } from '@modular-agent/types/thread';
+import type { Node } from '@modular-agent/types/node';
+import type { NodeExecutionResult } from '@modular-agent/types/thread';
+import type { ID } from '@modular-agent/types/common';
 import { ThreadContext } from './context/thread-context';
 import type { EventManager } from '../services/event-manager';
 import type { WorkflowRegistry } from '../services/workflow-registry';
-import { NotFoundError } from '../../types/errors';
-import { ThreadStatus } from '../../types/thread';
+import { NotFoundError } from '@modular-agent/types/errors';
+import { ThreadStatus } from '@modular-agent/types/thread';
 import { now, diffTimestamp } from '../../utils';
 import { NodeExecutionCoordinator } from './coordinators/node-execution-coordinator';
 import { handleNodeFailure, handleExecutionError } from './handlers/error-handler';

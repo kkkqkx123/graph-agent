@@ -3,9 +3,9 @@
  */
 
 import { TriggerTemplateBuilder } from '../trigger-template-builder';
-import { EventType } from '../../../types/events';
-import { TriggerActionType } from '../../../types/trigger';
-import { triggerTemplateRegistry } from '../../../core/services/trigger-template-registry';
+import { EventType } from '@modular-agent/types/events';
+import { TriggerActionType } from '@modular-agent/types/trigger';
+import { triggerTemplateRegistry } from '@modular-agent/sdk/core/services/trigger-template-registry';
 
 // Mock the registry
 jest.mock('../../../../core/services/trigger-template-registry', () => ({

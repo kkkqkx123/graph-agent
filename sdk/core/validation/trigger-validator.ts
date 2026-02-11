@@ -4,13 +4,13 @@
  */
 
 import { z } from 'zod';
-import type { WorkflowTrigger, TriggerCondition, TriggerAction, ExecuteTriggeredSubgraphActionConfig } from '../../types/trigger';
-import type { TriggerReference } from '../../types/trigger-template';
-import { TriggerActionType } from '../../types/trigger';
-import { EventType } from '../../types/events';
-import { ValidationError } from '../../types/errors';
-import type { Result } from '../../types/result';
-import { ok, err } from '../../utils/result-utils';
+import type { WorkflowTrigger, TriggerCondition, TriggerAction, ExecuteTriggeredSubgraphActionConfig } from '@modular-agent/types/trigger';
+import type { TriggerReference } from '@modular-agent/types/trigger-template';
+import { TriggerActionType } from '@modular-agent/types/trigger';
+import { EventType } from '@modular-agent/types/events';
+import { ValidationError } from '@modular-agent/types/errors';
+import type { Result } from '@modular-agent/types/result';
+import { ok, err } from '@modular-agent/common-utils/result-utils';
 
 /**
  * 触发条件schema

@@ -12,11 +12,9 @@ import type {
   LLMProfile,
   LLMMessage,
   LLMToolCall
-} from '../../../types/llm';
-import { buildAuthHeaders, mergeAuthHeaders } from '../../../utils/http/auth-builder';
-import { extractParameters } from '../../../utils/http/parameter-builder';
-import { convertToolsToAnthropicFormat } from '../../../utils/llm/tool-converter';
-import { extractAndFilterSystemMessages } from '../../../utils/llm/message-helper';
+} from '@modular-agent/types/llm';
+import { convertToolsToAnthropicFormat } from '../../llm/tool-converter';
+import { extractAndFilterSystemMessages } from '../../llm/message-helper';
 
 /**
  * Anthropic客户端
@@ -59,17 +57,12 @@ export class AnthropicClient extends BaseLLMClient {
    * 构建请求头
    */
   private buildHeaders(): Record<string, string> {
-    const authHeaders = buildAuthHeaders(this.profile.provider, this.profile.apiKey);
-
-    return mergeAuthHeaders(
-      {
-        'Content-Type': 'application/json',
-        'anthropic-version': this.apiVersion,
-        'anthropic-dangerous-direct-browser-access': 'false',
-        ...authHeaders
-      },
-      this.profile.headers
-    );
+    return {
+      'Content-Type': 'application/json',
+      'anthropic-version': this.apiVersion,
+      'anthropic-dangerous-direct-browser-access': 'false',
+      ...this.profile.headers
+    };
   }
 
   /**
@@ -89,10 +82,9 @@ export class AnthropicClient extends BaseLLMClient {
     }
     body.messages = this.convertMessages(filteredMessages);
 
-    // 合并其他参数（排除 max_tokens）
+    // 合并其他参数
     if (request.parameters) {
-      const { extracted, remaining } = extractParameters(request.parameters, ['max_tokens']);
-      Object.assign(body, remaining);
+      Object.assign(body, request.parameters);
     }
 
     // 添加工具

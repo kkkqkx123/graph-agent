@@ -6,8 +6,8 @@
  * 所有函数都是纯函数，不持有任何状态
  */
 
-import type { LLMMessage, LLMUsage } from '../../../types/llm';
-import { encodeText, encodeObject, estimateTokensFallback } from '../../../utils/token-encoder';
+import type { LLMMessage, LLMUsage } from '@modular-agent/types/llm';
+import { encodeText, encodeObject, estimateTokensFallback } from '@modular-agent/common-utils/token-encoder';
 
 /**
  * 估算消息的 Token 使用量（基于 tiktoken 的精确方法）

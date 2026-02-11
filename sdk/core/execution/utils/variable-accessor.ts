@@ -27,8 +27,8 @@
  */
 
 import type { ThreadContext } from '../context/thread-context';
-import type { VariableScope } from '../../../types/common';
-import { resolvePath } from '../../../utils/evalutor/path-resolver';
+import type { VariableScope } from '@modular-agent/types/common';
+import { resolvePath } from '@modular-agent/common-utils/evalutor/path-resolver';
 
 /**
  * 变量命名空间

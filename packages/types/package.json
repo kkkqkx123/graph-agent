@@ -4,12 +4,44 @@
   "description": "类型定义包",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./common": {
+      "types": "./dist/common.d.ts",
+      "import": "./dist/common.js"
+    },
+    "./result": {
+      "types": "./dist/result.d.ts",
+      "import": "./dist/result.js"
+    },
+    "./llm": {
+      "types": "./dist/llm.d.ts",
+      "import": "./dist/llm.js"
+    },
+    "./tool": {
+      "types": "./dist/tool.d.ts",
+      "import": "./dist/tool.js"
+    },
+    "./errors": {
+      "types": "./dist/errors.d.ts",
+      "import": "./dist/errors.js"
+    },
+    "./http": {
+      "types": "./dist/http.d.ts",
+      "import": "./dist/http.js"
+    },
+    "./condition": {
+      "types": "./dist/condition.d.ts",
+      "import": "./dist/condition.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "test": "jest",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "zod": "4.3.6"
-  }
+  "dependencies": {}
 }

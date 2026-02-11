@@ -1,6 +1,6 @@
 import { ConversationManager, ConversationManagerOptions } from '../conversation-manager';
-import { ValidationError } from '../../../../types/errors';
-import type { LLMMessage } from '../../../../types/llm';
+import { ValidationError } from '@modular-agent/types/errors';
+import type { LLMMessage } from '@modular-agent/types/llm';
 import { EventManager } from '../../../services/event-manager';
 
 describe('ConversationManager', () => {

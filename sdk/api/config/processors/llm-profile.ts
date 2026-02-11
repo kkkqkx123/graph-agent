@@ -6,10 +6,10 @@
 
 import type { ParsedConfig } from '../types';
 import { ConfigType } from '../types';
-import type { Result } from '../../../types/result';
-import { ValidationError } from '../../../types/errors';
+import type { Result } from '@modular-agent/types/result';
+import { ValidationError } from '@modular-agent/types/errors';
 import { validateLLMProfileConfig } from '../validators/llm-profile-validator';
-import { ok } from '../../../utils/result-utils';
+import { ok } from '@modular-agent/common-utils/result-utils';
 
 /**
  * 验证LLM Profile配置

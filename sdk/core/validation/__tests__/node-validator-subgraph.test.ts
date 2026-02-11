@@ -5,10 +5,10 @@
  */
 
 import { NodeValidator } from '../node-validator';
-import { NodeType } from '../../../types/node';
-import type { Node } from '../../../types/node';
-import type { Result } from '../../../types/result';
-import { ValidationError } from '../../../types/errors';
+import { NodeType } from '@modular-agent/types/node';
+import type { Node } from '@modular-agent/types/node';
+import type { Result } from '@modular-agent/types/result';
+import { ValidationError } from '@modular-agent/types/errors';
 
 describe('NodeValidator - Subgraph Node Validation', () => {
   let validator: NodeValidator;

@@ -3,10 +3,10 @@
  * 负责执行命令并管理中间件链
  */
 
-import type { Command, CommandValidationResult } from '../types/command';
-import type { ExecutionResult } from '../types/execution-result';
-import { failure } from '../types/execution-result';
-import { SDKError } from '../../types/errors';
+import type { Command, CommandValidationResult } from '@modular-agent/types/command';
+import type { ExecutionResult } from '@modular-agent/types/execution-result';
+import { failure } from '@modular-agent/types/execution-result';
+import { SDKError } from '@modular-agent/types/errors';
 
 /**
  * Command执行器

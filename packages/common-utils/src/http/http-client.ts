@@ -8,13 +8,13 @@ import type {
   HttpClientConfig,
   HttpRequestOptions,
   HttpResponse,
-} from '../../types/http';
+} from '@modular-agent/types/http';
 import {
   NetworkError,
   TimeoutError,
   CircuitBreakerOpenError,
   HttpError,
-} from '../../types/errors';
+} from '@modular-agent/types/errors';
 import {
   BadRequestError,
   UnauthorizedError,
@@ -29,8 +29,6 @@ import {
 import { executeWithRetry, type RetryConfig } from './retry-handler';
 import { CircuitBreaker } from './circuit-breaker';
 import { RateLimiter } from './rate-limiter';
-import { mergeHeaders } from '../../utils/http/header-builder';
-import { getPlatformHeaders } from '../../utils/http/platform-info';
 
 /**
  * HTTP客户端
@@ -170,7 +168,7 @@ export class HttpClient {
   /**
    * 日志记录辅助方法
    */
-  private log(level: keyof import('../../types/http').HttpLogger, msg: string, context?: any) {
+  private log(level: keyof import('@modular-agent/types/http').HttpLogger, msg: string, context?: any) {
     if (!this.config.logger?.[level]) return;
     this.config.logger[level]!(msg, context);
   }
@@ -188,12 +186,11 @@ export class HttpClient {
 
     this.log('info', `[HTTP] ${method} ${url} starting`);
 
-    // 使用新的 mergeHeaders 工具，添加平台诊断头
-    const headers = mergeHeaders(
-      this.config.defaultHeaders || {},
-      getPlatformHeaders(),
-      options.headers || {}
-    );
+    // 合并请求头
+    const headers = {
+      ...this.config.defaultHeaders,
+      ...options.headers
+    };
 
     // 构建请求体
     let body: string | undefined;

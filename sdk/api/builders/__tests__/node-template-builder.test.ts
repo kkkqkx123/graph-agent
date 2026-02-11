@@ -3,8 +3,8 @@
  */
 
 import { NodeTemplateBuilder } from '../node-template-builder';
-import { NodeType } from '../../../types/node';
-import { nodeTemplateRegistry } from '../../../core/services/node-template-registry';
+import { NodeType } from '@modular-agent/types/node';
+import { nodeTemplateRegistry } from '@modular-agent/sdk/core/services/node-template-registry';
 
 // Mock the registry
 jest.mock('../../../../core/services/node-template-registry', () => ({

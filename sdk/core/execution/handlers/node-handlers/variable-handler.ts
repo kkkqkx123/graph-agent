@@ -3,11 +3,11 @@
  * 负责执行VARIABLE节点，执行变量表达式，更新变量值
  */
 
-import type { Node, VariableNodeConfig } from '../../../../types/node';
-import type { Thread } from '../../../../types/thread';
-import { ValidationError } from '../../../../types/errors';
+import type { Node, VariableNodeConfig } from '@modular-agent/types/node';
+import type { Thread } from '@modular-agent/types/thread';
+import { ValidationError } from '@modular-agent/types/errors';
 import { now } from '../../../../utils';
-import { resolvePath } from '../../../../utils/evalutor/path-resolver';
+import { resolvePath } from '@modular-agent/common-utils/evalutor/path-resolver';
 
 /**
  * 检查节点是否可以执行

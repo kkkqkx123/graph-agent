@@ -12,10 +12,10 @@
 
 import type { ParsedConfig, IConfigParser } from './types';
 import { ConfigFormat, ConfigType } from './types';
-import type { WorkflowDefinition } from '../../types/workflow';
+import type { WorkflowDefinition } from '@modular-agent/types/workflow';
 import { parseToml } from './toml-parser';
 import { parseJson } from './json-parser';
-import { ConfigurationError } from '../../types/errors';
+import { ConfigurationError } from '@modular-agent/types/errors';
 import {
   validateWorkflow,
   validateNodeTemplate,

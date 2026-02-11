@@ -3,8 +3,8 @@
  */
 
 import { CodeRegistry } from '../code-registry';
-import { ScriptType } from '../../../types/code';
-import { ValidationError, NotFoundError } from '../../../types/errors';
+import { ScriptType } from '@modular-agent/types/code';
+import { ValidationError, NotFoundError } from '@modular-agent/types/errors';
 
 describe('CodeRegistry', () => {
   let registry: CodeRegistry;

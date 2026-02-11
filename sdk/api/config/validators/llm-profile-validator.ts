@@ -3,13 +3,13 @@
  * 负责验证LLM Profile配置的有效性
  */
 
-import type { LLMProfile } from '../../../types/llm';
+import type { LLMProfile } from '@modular-agent/types/llm';
 import type { ConfigFile } from '../types';
 import { ConfigType } from '../types';
-import { ok, err } from '../../../utils/result-utils';
-import type { Result } from '../../../types/result';
-import { ValidationError } from '../../../types/errors';
-import { LLMProvider } from '../../../types/llm';
+import { ok, err } from '@modular-agent/common-utils/result-utils';
+import type { Result } from '@modular-agent/types/result';
+import { ValidationError } from '@modular-agent/types/errors';
+import { LLMProvider } from '@modular-agent/types/llm';
 import {
   validateRequiredFields,
   validateStringField,

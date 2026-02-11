@@ -2,9 +2,9 @@
  * GenerateCommand - LLM生成命令
  */
 
-import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
-import type { LLMRequest, LLMResult } from '../../../../types/llm';
-import { LLMWrapper } from '../../../../core/llm/wrapper';
+import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '@modular-agent/types/command';
+import type { LLMRequest, LLMResult } from '@modular-agent/types/llm';
+import { LLMWrapper } from '@modular-agent/sdk/core/llm/wrapper';
 
 /**
  * LLM生成命令

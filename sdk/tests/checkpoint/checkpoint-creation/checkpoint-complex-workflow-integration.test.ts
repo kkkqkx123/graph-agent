@@ -8,16 +8,16 @@
  * - 父子线程关系的正确重建
  */
 
-import { WorkflowRegistry } from '../../../core/services/workflow-registry';
-import { ThreadBuilder } from '../../../core/execution/thread-builder';
-import { CheckpointCoordinator } from '../../../core/execution/coordinators/checkpoint-coordinator';
-import { CheckpointStateManager } from '../../../core/execution/managers/checkpoint-state-manager';
-import { MemoryCheckpointStorage } from '../../../core/storage/memory-checkpoint-storage';
-import { GlobalMessageStorage } from '../../../core/services/global-message-storage';
-import { ThreadRegistry } from '../../../core/services/thread-registry';
-import { NodeType } from '../../../types/node';
-import { EdgeType } from '../../../types/edge';
-import type { WorkflowDefinition } from '../../../types/workflow';
+import { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
+import { ThreadBuilder } from '@modular-agent/sdk/core/execution/thread-builder';
+import { CheckpointCoordinator } from '@modular-agent/sdk/core/execution/coordinators/checkpoint-coordinator';
+import { CheckpointStateManager } from '@modular-agent/sdk/core/execution/managers/checkpoint-state-manager';
+import { MemoryCheckpointStorage } from '@modular-agent/sdk/core/storage/memory-checkpoint-storage';
+import { GlobalMessageStorage } from '@modular-agent/sdk/core/services/global-message-storage';
+import { ThreadRegistry } from '@modular-agent/sdk/core/services/thread-registry';
+import { NodeType } from '@modular-agent/types/node';
+import { EdgeType } from '@modular-agent/types/edge';
+import type { WorkflowDefinition } from '@modular-agent/types/workflow';
 
 describe('复杂工作流结构检查点集成测试', () => {
   let workflowRegistry: WorkflowRegistry;

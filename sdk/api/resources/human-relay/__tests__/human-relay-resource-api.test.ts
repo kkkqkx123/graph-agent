@@ -3,10 +3,10 @@
  */
 
 import { HumanRelayResourceAPI, type HumanRelayConfig, type HumanRelayFilter } from '../human-relay-resource-api';
-import type { HumanRelayHandler, HumanRelayRequest, HumanRelayResponse } from '../../../../types/human-relay';
-import { SingletonRegistry } from '../../../../core/execution/context/singleton-registry';
-import { EventManager } from '../../../../core/services/event-manager';
-import { EventType } from '../../../../types/events';
+import type { HumanRelayHandler, HumanRelayRequest, HumanRelayResponse } from '@modular-agent/types/human-relay';
+import { SingletonRegistry } from '@modular-agent/sdk/core/execution/context/singleton-registry';
+import { EventManager } from '@modular-agent/sdk/core/services/event-manager';
+import { EventType } from '@modular-agent/types/events';
 
 // Mock SingletonRegistry
 jest.mock('../../../../core/execution/context/singleton-registry');

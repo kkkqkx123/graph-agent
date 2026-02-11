@@ -8,8 +8,8 @@
  * 本模块导出全局单例实例，不导出类定义
  */
 
-import type { BaseEvent, EventType, EventListener } from '../../types/events';
-import { ValidationError } from '../../types/errors';
+import type { BaseEvent, EventType, EventListener } from '@modular-agent/types/events';
+import { ValidationError } from '@modular-agent/types/errors';
 import { now, generateId } from '../../utils';
 
 /**

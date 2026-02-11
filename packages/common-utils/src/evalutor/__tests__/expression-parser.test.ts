@@ -1,5 +1,5 @@
 import { ExpressionEvaluator, parseExpression, parseValue, parseCompoundExpression } from '../expression-parser';
-import type { EvaluationContext } from '../../../types/condition';
+import type { EvaluationContext } from '@modular-agent/types/condition';
 
 describe('ExpressionParser', () => {
   describe('parse', () => {

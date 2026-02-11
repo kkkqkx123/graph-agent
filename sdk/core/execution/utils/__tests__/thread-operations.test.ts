@@ -3,15 +3,15 @@
  */
 
 import { fork, join, copy, ForkConfig, JoinStrategy, JoinResult } from '../thread-operations';
-import type { Thread } from '../../../../types/thread';
+import type { Thread } from '@modular-agent/types/thread';
 import type { ThreadContext } from '../../context/thread-context';
 import type { ThreadBuilder } from '../../thread-builder';
 import type { ThreadRegistry } from '../../../services/thread-registry';
-import { ExecutionError, TimeoutError, ValidationError } from '../../../../types/errors';
-import { ThreadStatus } from '../../../../types/thread';
+import { ExecutionError, TimeoutError, ValidationError } from '@modular-agent/types/errors';
+import { ThreadStatus } from '@modular-agent/types/thread';
 import { ExecutionState } from '../../context/execution-state';
 import { ConversationManager } from '../../managers/conversation-manager';
-import type { Graph, GraphNode, GraphEdge } from '../../../../types/graph';
+import type { Graph, GraphNode, GraphEdge } from '@modular-agent/types/graph';
 
 // Mock types for testing
 type MockThreadContext = Partial<ThreadContext> & {

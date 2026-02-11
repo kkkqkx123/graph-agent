@@ -3,8 +3,8 @@
  */
 
 import { WorkflowRegistryAPI } from '../workflow-registry-api';
-import type { APIDependencies } from '../../../core/api-dependencies';
-import type { WorkflowDefinition } from '../../../../types/workflow';
+import type { APIDependencies } from '@modular-agent/sdk/core/api-dependencies';
+import type { WorkflowDefinition } from '@modular-agent/types/workflow';
 
 // Mock dependencies
 const mockWorkflowRegistry = {

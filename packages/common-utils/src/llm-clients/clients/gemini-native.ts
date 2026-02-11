@@ -12,11 +12,10 @@ import type {
   LLMProfile,
   LLMMessage,
   LLMToolCall
-} from '../../../types/llm';
+} from '@modular-agent/types/llm';
 import { generateId } from '../../../utils';
-import { buildAuthHeaders, mergeAuthHeaders } from '../../../utils/http/auth-builder';
-import { convertToolsToGeminiFormat } from '../../../utils/llm/tool-converter';
-import { extractAndFilterSystemMessages } from '../../../utils/llm/message-helper';
+import { convertToolsToGeminiFormat } from '../../llm/tool-converter';
+import { extractAndFilterSystemMessages } from '../../llm/message-helper';
 
 /**
  * Gemini Native客户端
@@ -59,15 +58,10 @@ export class GeminiNativeClient extends BaseLLMClient {
    * 注意：Gemini Native API 使用 query 参数传递 API key，不在 headers 中
    */
   private buildHeaders(): Record<string, string> {
-    const authHeaders = buildAuthHeaders(this.profile.provider, this.profile.apiKey);
-
-    return mergeAuthHeaders(
-      {
-        'Content-Type': 'application/json',
-        ...authHeaders
-      },
-      this.profile.headers
-    );
+    return {
+      'Content-Type': 'application/json',
+      ...this.profile.headers
+    };
   }
 
   /**

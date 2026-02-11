@@ -7,7 +7,7 @@ import {
   MessageStreamEventType,
   type MessageStreamTextEvent
 } from '../message-stream-events';
-import type { LLMMessage, LLMResult } from '../../../types/llm';
+import type { LLMMessage, LLMResult } from '@modular-agent/types/llm';
 
 describe('MessageStream', () => {
   let stream: MessageStream;

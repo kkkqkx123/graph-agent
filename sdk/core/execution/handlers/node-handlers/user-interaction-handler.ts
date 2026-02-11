@@ -8,11 +8,11 @@
  * - 返回执行结果
  */
 
-import type { Node, UserInteractionNodeConfig } from '../../../../types/node';
-import type { Thread } from '../../../../types/thread';
-import type { UserInteractionHandler as AppUserInteractionHandler, UserInteractionRequest } from '../../../../types/interaction';
-import type { VariableScope } from '../../../../types/common';
-import { ExecutionError } from '../../../../types/errors';
+import type { Node, UserInteractionNodeConfig } from '@modular-agent/types/node';
+import type { Thread } from '@modular-agent/types/thread';
+import type { UserInteractionHandler as AppUserInteractionHandler, UserInteractionRequest } from '@modular-agent/types/interaction';
+import type { VariableScope } from '@modular-agent/types/common';
+import { ExecutionError } from '@modular-agent/types/errors';
 import { generateId, now } from '../../../../utils';
 
 /**

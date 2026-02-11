@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@modular-agent/types": "workspace:*"
+    "@modular-agent/types": "workspace:*",
+    "zod": "4.3.6"
   }
 }

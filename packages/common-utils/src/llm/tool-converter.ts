@@ -3,7 +3,7 @@
  * 提供不同 LLM 提供商的工具定义格式转换
  */
 
-import type { ToolSchema } from '../../types/tool';
+import type { ToolSchema } from '@modular-agent/types/tool';
 
 /**
  * OpenAI 格式的工具定义

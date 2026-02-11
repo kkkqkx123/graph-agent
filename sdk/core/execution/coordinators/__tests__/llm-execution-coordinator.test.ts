@@ -7,11 +7,11 @@ import { ConversationManager } from '../../managers/conversation-manager';
 import { LLMExecutor } from '../../executors/llm-executor';
 import { ToolCallExecutor } from '../../executors/tool-call-executor';
 import { EventManager } from '../../../services/event-manager';
-import { EventType } from '../../../../types/events';
-import { ExecutionError } from '../../../../types/errors';
+import { EventType } from '@modular-agent/types/events';
+import { ExecutionError } from '@modular-agent/types/errors';
 import { now } from '../../../../utils';
-import { UserInteractionOperationType } from '../../../../types/interaction';
-import type { ToolApprovalData } from '../../../../types/interaction';
+import { UserInteractionOperationType } from '@modular-agent/types/interaction';
+import type { ToolApprovalData } from '@modular-agent/types/interaction';
 
 // Mock 依赖
 jest.mock('../../managers/conversation-manager');

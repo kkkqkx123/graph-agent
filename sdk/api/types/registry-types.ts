@@ -3,7 +3,7 @@
  * 定义工作流、线程、节点模板注册表相关的类型
  */
 
-import type { ThreadStatus } from '../../types/thread';
+import type { ThreadStatus } from '@modular-agent/types/thread';
 
 /**
  * 工作流过滤器

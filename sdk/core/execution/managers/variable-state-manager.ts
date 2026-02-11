@@ -15,10 +15,10 @@
  * - 原子操作，保证状态一致性
  */
 
-import type { ThreadVariable } from '../../../types/thread';
-import type { VariableScope } from '../../../types/common';
-import type { WorkflowVariable } from '../../../types/workflow';
-import { ValidationError } from '../../../types/errors';
+import type { ThreadVariable } from '@modular-agent/types/thread';
+import type { VariableScope } from '@modular-agent/types/common';
+import type { WorkflowVariable } from '@modular-agent/types/workflow';
+import { ValidationError } from '@modular-agent/types/errors';
 import type { LifecycleCapable } from './lifecycle-capable';
 
 /**

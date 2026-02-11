@@ -38,10 +38,10 @@ import type {
   GraphAnalysisResult,
 } from '../../types';
 import { ValidationError } from '../../types';
-import type { Result } from '../../types/result';
-import { ok, err } from '../../utils/result-utils';
+import type { Result } from '@modular-agent/types/result';
+import { ok, err } from '@modular-agent/common-utils/result-utils';
 import { GraphData } from '../entities/graph-data';
-import { SUBGRAPH_METADATA_KEYS } from '../../types/subgraph';
+import { SUBGRAPH_METADATA_KEYS } from '@modular-agent/types/subgraph';
 import { analyzeGraph } from '../graph/utils/graph-analyzer';
 import { detectCycles } from '../graph/utils/graph-cycle-detector';
 import { analyzeReachability } from '../graph/utils/graph-reachability-analyzer';

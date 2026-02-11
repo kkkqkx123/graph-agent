@@ -3,11 +3,11 @@
  * 负责执行CODE节点，执行脚本代码，支持多种脚本语言
  */
 
-import type { Node, CodeNodeConfig } from '../../../../types/node';
-import type { Thread } from '../../../../types/thread';
-import { ValidationError } from '../../../../types/errors';
+import type { Node, CodeNodeConfig } from '@modular-agent/types/node';
+import type { Thread } from '@modular-agent/types/thread';
+import { ValidationError } from '@modular-agent/types/errors';
 import { now } from '../../../../utils';
-import { codeService } from '../../../../core/services/code-service';
+import { codeService } from '@modular-agent/sdk/core/services/code-service';
 
 /**
  * 检查节点是否可以执行

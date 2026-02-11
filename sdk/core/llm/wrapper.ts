@@ -9,10 +9,10 @@ import type {
   LLMRequest,
   LLMResult,
   LLMProfile
-} from '../../types/llm';
+} from '@modular-agent/types/llm';
 import { ProfileManager } from './profile-manager';
 import { ClientFactory } from './client-factory';
-import { ConfigurationError, LLMError } from '../../types/errors';
+import { ConfigurationError, LLMError } from '@modular-agent/types/errors';
 import { now, diffTimestamp } from '../../utils';
 
 /**

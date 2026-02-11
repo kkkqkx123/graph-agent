@@ -3,10 +3,10 @@
  * 执行应用层提供的有状态工具，通过ThreadContext实现线程隔离
  */
 
-import type { Tool } from '../../../types/tool';
-import type { StatefulToolConfig } from '../../../types/tool';
+import type { Tool } from '@modular-agent/types/tool';
+import type { StatefulToolConfig } from '@modular-agent/types/tool';
 import type { ThreadContext } from '../../execution/context/thread-context';
-import { ToolError } from '../../../types/errors';
+import { ToolError } from '@modular-agent/types/errors';
 import { BaseToolExecutor } from '../base-tool-executor';
 
 /**

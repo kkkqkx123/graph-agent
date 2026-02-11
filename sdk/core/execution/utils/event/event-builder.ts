@@ -9,7 +9,7 @@
  */
 
 import { now } from '../../../../utils';
-import type { Thread, ThreadResult, NodeExecutionResult } from '../../../../types/thread';
+import type { Thread, ThreadResult, NodeExecutionResult } from '@modular-agent/types/thread';
 import type {
   ThreadStartedEvent,
   ThreadCompletedEvent,
@@ -39,8 +39,8 @@ import type {
   TriggeredSubgraphStartedEvent,
   TriggeredSubgraphCompletedEvent,
   TriggeredSubgraphFailedEvent
-} from '../../../../types/events';
-import { EventType } from '../../../../types/events';
+} from '@modular-agent/types/events';
+import { EventType } from '@modular-agent/types/events';
 
 /**
  * 构建线程开始事件

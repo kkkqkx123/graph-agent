@@ -21,17 +21,17 @@ import {
 } from '../../validation/validation-strategy';
 
 import { GenericResourceAPI } from '../generic-resource-api';
-import type { ExecutionResult } from '../../types/execution-result';
-import { success, failure } from '../../types/execution-result';
-import type { HumanRelayHandler, HumanRelayRequest, HumanRelayResponse } from '../../../types/human-relay';
-import { EventType } from '../../../types/events';
+import type { ExecutionResult } from '@modular-agent/types/execution-result';
+import { success, failure } from '@modular-agent/types/execution-result';
+import type { HumanRelayHandler, HumanRelayRequest, HumanRelayResponse } from '@modular-agent/types/human-relay';
+import { EventType } from '@modular-agent/types/events';
 import type {
   HumanRelayRequestedEvent,
   HumanRelayRespondedEvent,
   HumanRelayProcessedEvent,
   HumanRelayFailedEvent
-} from '../../../types/events';
-import type { APIDependencies } from '../../core/api-dependencies';
+} from '@modular-agent/types/events';
+import type { APIDependencies } from '@modular-agent/sdk/core/api-dependencies';
 
 /**
  * Human Relay配置

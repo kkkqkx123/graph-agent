@@ -3,9 +3,9 @@
  */
 
 import { customHandler } from '../custom-handler';
-import type { TriggerAction, TriggerExecutionResult } from '../../../../../types/trigger';
-import { TriggerActionType } from '../../../../../types/trigger';
-import { ValidationError } from '../../../../../types/errors';
+import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types/trigger';
+import { TriggerActionType } from '@modular-agent/types/trigger';
+import { ValidationError } from '@modular-agent/types/errors';
 
 describe('custom-handler', () => {
   let mockAction: TriggerAction;

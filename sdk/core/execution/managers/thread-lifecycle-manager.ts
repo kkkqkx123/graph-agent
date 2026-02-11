@@ -18,10 +18,10 @@
  * - 触发器处理函数（通过Coordinator）
  */
 
-import type { Thread, ThreadStatus, ThreadResult } from '../../../types/thread';
+import type { Thread, ThreadStatus, ThreadResult } from '@modular-agent/types/thread';
 import type { EventManager } from '../../services/event-manager';
 import { globalMessageStorage } from '../../services/global-message-storage';
-import { validateTransition } from '../utils/thread-state-validator';
+import { validateTransition } from '@modular-agent/common-utils/thread-state-validator';
 import {
   buildThreadStartedEvent,
   buildThreadStateChangedEvent,
@@ -30,10 +30,10 @@ import {
   buildThreadCompletedEvent,
   buildThreadFailedEvent,
   buildThreadCancelledEvent
-} from '../utils/event/event-builder';
+} from '@modular-agent/common-utils/event/event-builder';
 import {
   emit
-} from '../utils/event/event-emitter';
+} from '@modular-agent/common-utils/event/event-emitter';
 import { now } from '../../../utils';
 
 /**

@@ -13,7 +13,7 @@ export {
   CommandValidationResult,
   validationSuccess,
   validationFailure
-} from './types/command';
+} from '@modular-agent/types/command';
 
 export { CommandExecutor } from './common/command-executor';
 
@@ -28,18 +28,18 @@ export {
   queryFailure,
   isQuerySuccess,
   isQueryFailure
-} from './types/query';
+} from '@modular-agent/types/query';
 
 // Subscription模式核心
 export {
   Subscription,
   BaseSubscription,
   SubscriptionMetadata
-} from './types/subscription';
+} from '@modular-agent/types/subscription';
 
 // 统一类型
-export { ExecutionResult, success, failure, isSuccess, isFailure, getData, getError } from './types/execution-result';
-export { ExecutionOptions, DEFAULT_EXECUTION_OPTIONS, mergeExecutionOptions } from './types/execution-options';
+export { ExecutionResult, success, failure, isSuccess, isFailure, getData, getError } from '@modular-agent/types/execution-result';
+export { ExecutionOptions, DEFAULT_EXECUTION_OPTIONS, mergeExecutionOptions } from '@modular-agent/types/execution-options';
 
 // 全局SDK实例
 export { sdk } from './core/sdk';
@@ -83,7 +83,7 @@ export {
   APIEventType,
   type APIEventData,
   type APIEventListener
-} from './types/event-types';
+} from '@modular-agent/types/event-types';
 
 // 事件系统实现
 export {
@@ -188,10 +188,10 @@ export type { OffEventParams } from './operations/subscriptions/events/off-event
 // ============================================================================
 // 验证API
 // ============================================================================
-export { WorkflowValidator as WorkflowValidatorAPI } from '../core/validation';
-export { CodeConfigValidator as CodeConfigValidatorAPI } from '../core/validation';
-export { ToolConfigValidator as ToolConfigValidatorAPI } from '../core/validation';
-export { validateHook as validateHookAPI, validateHooks as validateHooksAPI } from '../core/validation';
+export { WorkflowValidator as WorkflowValidatorAPI } from '@modular-agent/sdk/core/validation';
+export { CodeConfigValidator as CodeConfigValidatorAPI } from '@modular-agent/sdk/core/validation';
+export { ToolConfigValidator as ToolConfigValidatorAPI } from '@modular-agent/sdk/core/validation';
+export { validateHook as validateHookAPI, validateHooks as validateHooksAPI } from '@modular-agent/sdk/core/validation';
 export {
   validateTriggerCondition as validateTriggerConditionAPI,
   validateExecuteTriggeredSubgraphActionConfig as validateExecuteTriggeredSubgraphActionConfigAPI,
@@ -199,7 +199,7 @@ export {
   validateWorkflowTrigger as validateWorkflowTriggerAPI,
   validateTriggerReference as validateTriggerReferenceAPI,
   validateTriggers as validateTriggersAPI
-} from '../core/validation';
+} from '@modular-agent/sdk/core/validation';
 
 // ============================================================================
 // 构建器
@@ -231,8 +231,8 @@ export type {
 // 工具函数
 // ============================================================================
 // Result类型 - 从核心层导入
-export { ok, err, tryCatch, tryCatchAsync, all, any } from '../utils/result-utils';
-export type { Result, Ok, Err } from '../types/result';
+export { ok, err, tryCatch, tryCatchAsync, all, any } from '@modular-agent/common-utils/result-utils';
+export type { Result, Ok, Err } from '@modular-agent/types/result';
 
 // ============================================================================
 // Observable响应式编程

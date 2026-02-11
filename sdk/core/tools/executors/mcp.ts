@@ -4,11 +4,11 @@
  * 目前使用stdio
  */
 
-import type { Tool } from '../../../types/tool';
-import type { McpToolConfig } from '../../../types/tool';
+import type { Tool } from '@modular-agent/types/tool';
+import type { McpToolConfig } from '@modular-agent/types/tool';
 import type { ThreadContext } from '../../execution/context/thread-context';
 import { BaseToolExecutor } from '../base-tool-executor';
-import { NetworkError, ToolError, ConfigurationError } from '../../../types/errors';
+import { NetworkError, ToolError, ConfigurationError } from '@modular-agent/types/errors';
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import { Readable, Writable } from 'stream';
 import { EventEmitter } from 'events';

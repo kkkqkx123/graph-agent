@@ -22,7 +22,7 @@
  * - 运行时通过 GraphRegistry 管理，确保不可变性
  */
 
-import { ConfigurationError } from '../../types/errors';
+import { ConfigurationError } from '@modular-agent/types/errors';
 import type {
   GraphNode,
   GraphEdge,

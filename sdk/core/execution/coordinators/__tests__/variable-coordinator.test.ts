@@ -6,10 +6,10 @@ import { VariableCoordinator } from '../variable-coordinator';
 import { VariableStateManager } from '../../managers/variable-state-manager';
 import { ThreadContext } from '../../context/thread-context';
 import { EventManager } from '../../../services/event-manager';
-import { EventType } from '../../../../types/events';
-import { ValidationError } from '../../../../types/errors';
-import { VariableAccessor } from '../../utils/variable-accessor';
-import type { VariableScope } from '../../../../types/common';
+import { EventType } from '@modular-agent/types/events';
+import { ValidationError } from '@modular-agent/types/errors';
+import { VariableAccessor } from '@modular-agent/common-utils/variable-accessor';
+import type { VariableScope } from '@modular-agent/types/common';
 
 // Mock 依赖
 jest.mock('../../managers/variable-state-manager');

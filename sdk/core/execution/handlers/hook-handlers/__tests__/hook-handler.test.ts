@@ -6,10 +6,10 @@ import {
   executeHook,
   type HookExecutionContext
 } from '../hook-handler';
-import { HookType } from '../../../../../types/node';
-import type { Node, NodeHook } from '../../../../../types/node';
-import type { Thread, NodeExecutionResult } from '../../../../../types/thread';
-import type { NodeCustomEvent } from '../../../../../types/events';
+import { HookType } from '@modular-agent/types/node';
+import type { Node, NodeHook } from '@modular-agent/types/node';
+import type { Thread, NodeExecutionResult } from '@modular-agent/types/thread';
+import type { NodeCustomEvent } from '@modular-agent/types/events';
 
 // Mock condition-evaluator
 jest.mock('../../../../../utils/evalutor/condition-evaluator', () => ({

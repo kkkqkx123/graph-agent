@@ -6,10 +6,10 @@
 import type { WorkflowRegistry } from '../../services/workflow-registry';
 import type { ThreadRegistry } from '../../services/thread-registry';
 import type { ThreadContext } from '../context/thread-context';
-import type { WorkflowTrigger } from '../../../types/trigger';
-import { TriggerActionType } from '../../../types/trigger';
-import type { TriggerReference } from '../../../types/trigger-template';
-import type { WorkflowReference, WorkflowReferenceInfo } from '../../../types/workflow-reference';
+import type { WorkflowTrigger } from '@modular-agent/types/trigger';
+import { TriggerActionType } from '@modular-agent/types/trigger';
+import type { TriggerReference } from '@modular-agent/types/trigger-template';
+import type { WorkflowReference, WorkflowReferenceInfo } from '@modular-agent/types/workflow-reference';
 
 /**
  * 检查工作流是否被引用

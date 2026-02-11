@@ -3,11 +3,11 @@
  */
 
 import { routeHandler } from '../route-handler';
-import type { Node, RouteNodeConfig } from '../../../../../types/node';
-import { NodeType } from '../../../../../types/node';
-import type { Thread } from '../../../../../types/thread';
-import { ThreadStatus } from '../../../../../types/thread';
-import { ExecutionError } from '../../../../../types/errors';
+import type { Node, RouteNodeConfig } from '@modular-agent/types/node';
+import { NodeType } from '@modular-agent/types/node';
+import type { Thread } from '@modular-agent/types/thread';
+import { ThreadStatus } from '@modular-agent/types/thread';
+import { ExecutionError } from '@modular-agent/types/errors';
 
 describe('route-handler', () => {
   let mockThread: Thread;

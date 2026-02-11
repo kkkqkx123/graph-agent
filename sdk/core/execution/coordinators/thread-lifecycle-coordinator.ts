@@ -18,16 +18,16 @@
  * - Manager只作为内部实现细节供Coordinator使用
  */
 
-import { NotFoundError } from '../../../types/errors';
-import type { ThreadOptions, ThreadResult } from '../../../types/thread';
-import { ThreadStatus } from '../../../types/thread';
+import { NotFoundError } from '@modular-agent/types/errors';
+import type { ThreadOptions, ThreadResult } from '@modular-agent/types/thread';
+import { ThreadStatus } from '@modular-agent/types/thread';
 import { ThreadBuilder } from '../thread-builder';
 import { ThreadExecutor } from '../thread-executor';
 import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager';
 import {
   waitForThreadPaused,
   waitForThreadCancelled
-} from '../utils/event/event-waiter';
+} from '@modular-agent/common-utils/event/event-waiter';
 import { ThreadCascadeManager } from '../managers/thread-cascade-manager';
 import { ExecutionContext } from '../context/execution-context';
 import { now } from '../../../utils';
@@ -36,8 +36,8 @@ import {
   buildThreadCompletedEvent,
   buildThreadFailedEvent,
   buildThreadCancelledEvent
-} from '../utils/event/event-builder';
-import { emit } from '../utils/event/event-emitter';
+} from '@modular-agent/common-utils/event/event-builder';
+import { emit } from '@modular-agent/common-utils/event/event-emitter';
 
 /**
  * Thread 生命周期协调器

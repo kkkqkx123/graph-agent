@@ -8,14 +8,14 @@
  * - 与其他服务的集成
  */
 
-import { CheckpointResourceAPI } from '../../../api/resources/checkpoints/checkpoint-resource-api';
-import { ThreadRegistry } from '../../../core/services/thread-registry';
-import { WorkflowRegistry } from '../../../core/services/workflow-registry';
-import { SingletonRegistry } from '../../../core/execution/context/singleton-registry';
-import type { WorkflowDefinition } from '../../../types/workflow';
-import { NodeType } from '../../../types/node';
-import { EdgeType } from '../../../types/edge';
-import { ThreadStatus } from '../../../types/thread';
+import { CheckpointResourceAPI } from '@modular-agent/sdk/api/resources/checkpoints/checkpoint-resource-api';
+import { ThreadRegistry } from '@modular-agent/sdk/core/services/thread-registry';
+import { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
+import { SingletonRegistry } from '@modular-agent/sdk/core/execution/context/singleton-registry';
+import type { WorkflowDefinition } from '@modular-agent/types/workflow';
+import { NodeType } from '@modular-agent/types/node';
+import { EdgeType } from '@modular-agent/types/edge';
+import { ThreadStatus } from '@modular-agent/types/thread';
 
 // 模拟外部系统
 class MockMonitoringService {

@@ -29,9 +29,6 @@
         "esModuleInterop": true,
         "baseUrl": ".",
         "paths": {
-            "@types/*": [
-                "types/*"
-            ],
             "@core/*": [
                 "core/*"
             ],
@@ -45,7 +42,6 @@
     },
     "include": [
         "index.ts",
-        "types/**/*",
         "core/**/*",
         "api/**/*",
         "utils/**/*"

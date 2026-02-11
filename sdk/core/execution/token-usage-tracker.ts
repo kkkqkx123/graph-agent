@@ -15,8 +15,8 @@
  * - 支持历史记录和精确回退
  */
 
-import type { LLMMessage, LLMUsage, TokenUsageHistory, TokenUsageStatistics, TokenUsageStats } from '../../types/llm';
-import { generateId } from '../../utils/id-utils';
+import type { LLMMessage, LLMUsage, TokenUsageHistory, TokenUsageStatistics, TokenUsageStats } from '@modular-agent/types/llm';
+import { generateId } from '@modular-agent/common-utils/id-utils';
 import { estimateTokens as estimateTokensUtil, getTokenUsage as getTokenUsageUtil, isTokenLimitExceeded as isTokenLimitExceededUtil } from './utils/token-utils';
 
 /**

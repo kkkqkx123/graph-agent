@@ -5,8 +5,8 @@
  * 支持默认Profile的自动管理
  */
 
-import type { LLMProfile } from '../../types/llm';
-import { ValidationError, NotFoundError } from '../../types/errors';
+import type { LLMProfile } from '@modular-agent/types/llm';
+import { ValidationError, NotFoundError } from '@modular-agent/types/errors';
 
 /**
  * Profile管理器类

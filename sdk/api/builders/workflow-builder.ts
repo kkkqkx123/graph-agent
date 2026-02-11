@@ -3,18 +3,18 @@
  * 提供流畅的链式API来构建工作流定义，支持从模板添加节点和触发器
  */
 
-import type { WorkflowDefinition, WorkflowVariable, WorkflowConfig, WorkflowMetadata } from '../../types/workflow';
-import type { Node, NodeConfig } from '../../types/node';
-import type { Edge } from '../../types/edge';
-import type { Condition } from '../../types/condition';
-import type { WorkflowTrigger } from '../../types/trigger';
-import type { TriggerReference } from '../../types/trigger-template';
-import { NodeType } from '../../types/node';
-import { EdgeType } from '../../types/edge';
-import { generateId } from '../../utils/id-utils';
-import { now } from '../../utils/timestamp-utils';
-import { nodeTemplateRegistry } from '../../core/services/node-template-registry';
-import { triggerTemplateRegistry } from '../../core/services/trigger-template-registry';
+import type { WorkflowDefinition, WorkflowVariable, WorkflowConfig, WorkflowMetadata } from '@modular-agent/types/workflow';
+import type { Node, NodeConfig } from '@modular-agent/types/node';
+import type { Edge } from '@modular-agent/types/edge';
+import type { Condition } from '@modular-agent/types/condition';
+import type { WorkflowTrigger } from '@modular-agent/types/trigger';
+import type { TriggerReference } from '@modular-agent/types/trigger-template';
+import { NodeType } from '@modular-agent/types/node';
+import { EdgeType } from '@modular-agent/types/edge';
+import { generateId } from '@modular-agent/common-utils/id-utils';
+import { now } from '@modular-agent/common-utils/timestamp-utils';
+import { nodeTemplateRegistry } from '@modular-agent/sdk/core/services/node-template-registry';
+import { triggerTemplateRegistry } from '@modular-agent/sdk/core/services/trigger-template-registry';
 import { ConfigParser, ConfigFormat } from '../config';
 
 /**

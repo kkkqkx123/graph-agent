@@ -7,8 +7,8 @@
  * 触发子工作流是通过触发器的 ExecuteTriggeredSubgraphActionConfig 中的 triggeredWorkflowId 指定的
  */
 
-import type { Node } from '../../../types/node';
-import { ValidationError } from '../../../types/errors';
+import type { Node } from '@modular-agent/types/node';
+import { ValidationError } from '@modular-agent/types/errors';
 
 /**
  * 子工作流配置接口

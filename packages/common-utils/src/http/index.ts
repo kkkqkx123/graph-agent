@@ -33,4 +33,4 @@ export type {
   HttpRequestOptions,
   HttpResponse,
   HttpClientConfig,
-} from '../../types/http';
+} from '@modular-agent/types/http';

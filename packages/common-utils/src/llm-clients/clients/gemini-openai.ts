@@ -13,12 +13,9 @@ import type {
   LLMProfile,
   LLMMessage,
   LLMToolCall
-} from '../../../types/llm';
+} from '@modular-agent/types/llm';
 import { generateId } from '../../../utils';
-import { buildAuthHeaders, mergeAuthHeaders } from '../../../utils/http/auth-builder';
-import { extractParameters } from '../../../utils/http/parameter-builder';
-import { convertToolsToOpenAIFormat } from '../../../utils/llm/tool-converter';
-import { filterSystemMessages } from '../../../utils/llm/message-helper';
+import { convertToolsToOpenAIFormat } from '../../llm/tool-converter';
 
 /**
  * Gemini OpenAI兼容客户端
@@ -58,15 +55,10 @@ export class GeminiOpenAIClient extends BaseLLMClient {
    * 构建请求头
    */
   private buildHeaders(): Record<string, string> {
-    const authHeaders = buildAuthHeaders(this.profile.provider, this.profile.apiKey);
-
-    return mergeAuthHeaders(
-      {
-        'Content-Type': 'application/json',
-        ...authHeaders
-      },
-      this.profile.headers
-    );
+    return {
+      'Content-Type': 'application/json',
+      ...this.profile.headers
+    };
   }
 
   /**
@@ -76,14 +68,12 @@ export class GeminiOpenAIClient extends BaseLLMClient {
   private buildRequestBody(request: LLMRequest, stream: boolean = false): any {
     const body: any = {
       model: this.profile.model,
-      messages: this.convertMessages(filterSystemMessages(request.messages)),
+      messages: this.convertMessages(request.messages),
       stream
     };
 
-    // 合并参数（提取特殊参数到顶层，其他参数直接合并）
+    // 合并参数
     if (request.parameters) {
-      const { extracted, remaining } = extractParameters(request.parameters, []);
-      // thinking_budget 和 cached_content 已经在 extracted 中，直接合并所有参数
       Object.assign(body, request.parameters);
     }
 

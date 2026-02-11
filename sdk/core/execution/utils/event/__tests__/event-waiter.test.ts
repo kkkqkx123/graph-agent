@@ -12,7 +12,7 @@ import {
   waitForAnyLifecycleEvent
 } from '../event-waiter';
 import { eventManager } from '../../../../services/event-manager';
-import { EventType } from '../../../../../types/events';
+import { EventType } from '@modular-agent/types/events';
 
 describe('EventWaiter', () => {
   afterEach(() => {

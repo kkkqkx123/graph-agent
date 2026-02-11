@@ -4,13 +4,13 @@
  * 注意：实际验证逻辑完全委托给 trigger-validator 函数，这里仅作为适配器
  */
 
-import type { TriggerTemplate } from '../../../types/trigger-template';
+import type { TriggerTemplate } from '@modular-agent/types/trigger-template';
 import type { ConfigFile } from '../types';
 import { ConfigType } from '../types';
-import { ok, err } from '../../../utils/result-utils';
-import type { Result } from '../../../types/result';
-import { ValidationError } from '../../../types/errors';
-import { validateWorkflowTrigger } from '../../../core/validation/trigger-validator';
+import { ok, err } from '@modular-agent/common-utils/result-utils';
+import type { Result } from '@modular-agent/types/result';
+import { ValidationError } from '@modular-agent/types/errors';
+import { validateWorkflowTrigger } from '@modular-agent/sdk/core/validation/trigger-validator';
 import {
   validateRequiredFields,
   validateNumberField

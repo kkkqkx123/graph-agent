@@ -5,8 +5,8 @@
 
 import * as eventEmitter from '../event-emitter';
 import type { EventManager } from '../../../../services/event-manager';
-import { EventType } from '../../../../../types/events';
-import type { Event } from '../../../../../types/events';
+import { EventType } from '@modular-agent/types/events';
+import type { Event } from '@modular-agent/types/events';
 
 jest.setTimeout(1000);
 

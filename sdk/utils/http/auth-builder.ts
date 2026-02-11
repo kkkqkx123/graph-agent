@@ -3,7 +3,7 @@
  * 统一管理各提供商的认证方式
  */
 
-import { LLMProvider } from '../../types/llm';
+import { LLMProvider } from '@modular-agent/types/llm';
 
 /**
  * 为 LLM 提供商构建认证头

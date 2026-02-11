@@ -3,8 +3,8 @@
  */
 
 import { LLMWrapper } from '../wrapper';
-import type { LLMProfile, LLMRequest, LLMResult } from '../../../types/llm';
-import { ConfigurationError, LLMError } from '../../../types/errors';
+import type { LLMProfile, LLMRequest, LLMResult } from '@modular-agent/types/llm';
+import { ConfigurationError, LLMError } from '@modular-agent/types/errors';
 import { BaseLLMClient } from '../base-client';
 
 describe('LLMWrapper', () => {

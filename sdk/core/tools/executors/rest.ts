@@ -3,11 +3,11 @@
  * 执行REST API调用
  */
 
-import type { Tool } from '../../../types/tool';
-import type { RestToolConfig } from '../../../types/tool';
+import type { Tool } from '@modular-agent/types/tool';
+import type { RestToolConfig } from '@modular-agent/types/tool';
 import type { ThreadContext } from '../../execution/context/thread-context';
 import { BaseToolExecutor } from '../base-tool-executor';
-import { NetworkError, ToolError, ValidationError, TimeoutError, CircuitBreakerOpenError } from '../../../types/errors';
+import { NetworkError, ToolError, ValidationError, TimeoutError, CircuitBreakerOpenError } from '@modular-agent/types/errors';
 import {
   BadRequestError,
   UnauthorizedError,
@@ -18,8 +18,8 @@ import {
   RateLimitError,
   InternalServerError,
   ServiceUnavailableError
-} from '../../http/errors';
-import { HttpTransport } from '../../http/transport';
+} from '@modular-agent/common-utils/http/errors';
+import { HttpTransport } from '@modular-agent/common-utils/http/transport';
 
 /**
  * REST工具执行器

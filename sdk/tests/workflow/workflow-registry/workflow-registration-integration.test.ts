@@ -10,17 +10,17 @@
  * - 异常路径处理
  */
 
-import { WorkflowRegistry } from '../../../core/services/workflow-registry';
-import { WorkflowValidator } from '../../../core/validation/workflow-validator';
-import { nodeTemplateRegistry } from '../../../core/services/node-template-registry';
-import { triggerTemplateRegistry } from '../../../core/services/trigger-template-registry';
-import { NodeType } from '../../../types/node';
-import { EdgeType } from '../../../types/edge';
-import { TriggerActionType } from '../../../types/trigger';
-import type { WorkflowDefinition } from '../../../types/workflow';
+import { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
+import { WorkflowValidator } from '@modular-agent/sdk/core/validation/workflow-validator';
+import { nodeTemplateRegistry } from '@modular-agent/sdk/core/services/node-template-registry';
+import { triggerTemplateRegistry } from '@modular-agent/sdk/core/services/trigger-template-registry';
+import { NodeType } from '@modular-agent/types/node';
+import { EdgeType } from '@modular-agent/types/edge';
+import { TriggerActionType } from '@modular-agent/types/trigger';
+import type { WorkflowDefinition } from '@modular-agent/types/workflow';
 import type { NodeTemplate, TriggerTemplate } from '../../../types';
-import type { WorkflowTrigger } from '../../../types/trigger';
-import { ValidationError } from '../../../types/errors';
+import type { WorkflowTrigger } from '@modular-agent/types/trigger';
+import { ValidationError } from '@modular-agent/types/errors';
 
 describe('Workflow加载与注册集成测试', () => {
   let registry: WorkflowRegistry;

@@ -3,8 +3,8 @@
  * 提供函数式的检查点创建接口
  */
 
-import type { ID } from '../../../../types/common';
-import type { CheckpointMetadata } from '../../../../types/checkpoint';
+import type { ID } from '@modular-agent/types/common';
+import type { CheckpointMetadata } from '@modular-agent/types/checkpoint';
 import type { ThreadRegistry } from '../../../services/thread-registry';
 import type { WorkflowRegistry } from '../../../services/workflow-registry';
 import type { GlobalMessageStorage } from '../../../services/global-message-storage';

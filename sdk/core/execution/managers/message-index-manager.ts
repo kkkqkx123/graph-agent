@@ -9,8 +9,8 @@
  * 4. 支持批次回退操作
  */
 
-import type { LLMMessage, MessageMarkMap } from '../../../types/llm';
-import { ExecutionError } from '../../../types/errors';
+import type { LLMMessage, MessageMarkMap } from '@modular-agent/types/llm';
+import { ExecutionError } from '@modular-agent/types/errors';
 
 /**
  * 消息索引管理器类

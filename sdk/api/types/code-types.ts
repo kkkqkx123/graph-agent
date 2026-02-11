@@ -3,7 +3,7 @@
  * 定义脚本API相关的类型和接口
  */
 
-import type { Script, ScriptType, ScriptExecutionOptions, ScriptExecutionResult } from '../../types/code';
+import type { Script, ScriptType, ScriptExecutionOptions, ScriptExecutionResult } from '@modular-agent/types/code';
 
 /**
  * 脚本过滤条件

@@ -9,13 +9,13 @@
  * 5. 缺失依赖时抛出明确错误
  */
 
-import { WorkflowRegistry } from '../../core/services/workflow-registry';
-import { ThreadBuilder } from '../../core/execution/thread-builder';
-import { ExecutionContext } from '../../core/execution/context/execution-context';
-import { NodeType } from '../../types/node';
-import { EdgeType } from '../../types/edge';
-import { TriggerActionType } from '../../types/trigger';
-import { ValidationError } from '../../types/errors';
+import { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
+import { ThreadBuilder } from '@modular-agent/sdk/core/execution/thread-builder';
+import { ExecutionContext } from '@modular-agent/sdk/core/execution/context/execution-context';
+import { NodeType } from '@modular-agent/types/node';
+import { EdgeType } from '@modular-agent/types/edge';
+import { TriggerActionType } from '@modular-agent/types/trigger';
+import { ValidationError } from '@modular-agent/types/errors';
 
 describe('Workflow Preprocessing Integration', () => {
   let workflowRegistry: WorkflowRegistry;

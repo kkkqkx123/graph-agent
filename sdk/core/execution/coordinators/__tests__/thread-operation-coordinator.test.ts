@@ -3,12 +3,12 @@
  * 使用手动模拟来避免复杂的依赖链
  */
 
-import { NotFoundError } from '../../../../types/errors';
-import { ThreadStatus } from '../../../../types/thread';
+import { NotFoundError } from '@modular-agent/types/errors';
+import { ThreadStatus } from '@modular-agent/types/thread';
 import { generateId, now } from '../../../../utils';
-import type { Thread } from '../../../../types/thread';
-import type { Graph } from '../../../../types/graph';
-import type { ForkConfig, JoinResult } from '../../utils/thread-operations';
+import type { Thread } from '@modular-agent/types/thread';
+import type { Graph } from '@modular-agent/types/graph';
+import type { ForkConfig, JoinResult } from '@modular-agent/common-utils/thread-operations';
 
 // Mock ThreadContext 类
 class MockThreadContext {

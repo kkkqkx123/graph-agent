@@ -10,7 +10,7 @@
  */
 
 import { z } from 'zod';
-import { ValidationError } from '../../types/errors';
+import { ValidationError } from '@modular-agent/types/errors';
 
 /**
  * 安全配置

@@ -20,18 +20,18 @@ import {
 } from '../../validation/validation-strategy';
 
 import { GenericResourceAPI } from '../generic-resource-api';
-import type { ExecutionResult } from '../../types/execution-result';
-import { success, failure } from '../../types/execution-result';
-import type { UserInteractionHandler, UserInteractionRequest } from '../../../types/interaction';
-import { EventType } from '../../../types/events';
+import type { ExecutionResult } from '@modular-agent/types/execution-result';
+import { success, failure } from '@modular-agent/types/execution-result';
+import type { UserInteractionHandler, UserInteractionRequest } from '@modular-agent/types/interaction';
+import { EventType } from '@modular-agent/types/events';
 import type {
   UserInteractionRequestedEvent,
   UserInteractionRespondedEvent,
   UserInteractionProcessedEvent,
   UserInteractionFailedEvent
-} from '../../../types/events';
-import { ExecutionError } from '../../../types/errors';
-import type { APIDependencies } from '../../core/api-dependencies';
+} from '@modular-agent/types/events';
+import { ExecutionError } from '@modular-agent/types/errors';
+import type { APIDependencies } from '@modular-agent/sdk/core/api-dependencies';
 
 /**
  * 用户交互配置

@@ -4,9 +4,9 @@
  */
 
 import { GenericResourceAPI } from '../generic-resource-api';
-import { threadRegistry, type ThreadRegistry } from '../../../core/services/thread-registry';
-import type { LLMMessage } from '../../../types/llm';
-import { NotFoundError } from '../../../types/errors';
+import { threadRegistry, type ThreadRegistry } from '@modular-agent/sdk/core/services/thread-registry';
+import type { LLMMessage } from '@modular-agent/types/llm';
+import { NotFoundError } from '@modular-agent/types/errors';
 
 /**
  * 消息过滤器

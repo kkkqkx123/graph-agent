@@ -4,7 +4,7 @@
  * 由于需要导入llm type且仅内部使用，不适合集中在全局定义中
  */
 
-import type { LLMMessage, LLMResult } from '../../types/llm';
+import type { LLMMessage, LLMResult } from '@modular-agent/types/llm';
 
 /**
  * 消息流事件类型枚举

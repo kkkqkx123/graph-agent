@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from '@jest/globals';
 import { buildAuthHeaders, mergeAuthHeaders } from '../auth-builder';
-import { LLMProvider } from '../../../types/llm';
+import { LLMProvider } from '@modular-agent/types/llm';
 
 describe('auth-builder', () => {
   describe('buildAuthHeaders', () => {

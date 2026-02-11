@@ -12,9 +12,8 @@ import type {
   LLMProfile,
   LLMMessage,
   LLMToolCall
-} from '../../../types/llm';
-import { buildAuthHeaders, mergeAuthHeaders } from '../../../utils/http/auth-builder';
-import { convertToolsToOpenAIFormat } from '../../../utils/llm/tool-converter';
+} from '@modular-agent/types/llm';
+import { convertToolsToOpenAIFormat } from '../../llm/tool-converter';
 
 /**
  * OpenAI Chat客户端
@@ -54,15 +53,10 @@ export class OpenAIChatClient extends BaseLLMClient {
    * 构建请求头
    */
   private buildHeaders(): Record<string, string> {
-    const authHeaders = buildAuthHeaders(this.profile.provider, this.profile.apiKey);
-
-    return mergeAuthHeaders(
-      {
-        'Content-Type': 'application/json',
-        ...authHeaders
-      },
-      this.profile.headers
-    );
+    return {
+      'Content-Type': 'application/json',
+      ...this.profile.headers
+    };
   }
 
   /**

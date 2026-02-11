@@ -4,8 +4,8 @@
  */
 
 import { GenericResourceAPI } from '../generic-resource-api';
-import type { BaseEvent } from '../../../types/events';
-import type { EventFilter } from '../../types/management-types';
+import type { BaseEvent } from '@modular-agent/types/events';
+import type { EventFilter } from '@modular-agent/types/management-types';
 
 /**
  * 事件统计信息

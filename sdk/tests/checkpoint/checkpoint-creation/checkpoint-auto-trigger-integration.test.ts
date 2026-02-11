@@ -7,18 +7,18 @@
  * - 不同触发类型的检查点创建
  */
 
-import { WorkflowRegistry } from '../../../core/services/workflow-registry';
-import { ThreadBuilder } from '../../../core/execution/thread-builder';
-import { CheckpointCoordinator } from '../../../core/execution/coordinators/checkpoint-coordinator';
-import { CheckpointStateManager } from '../../../core/execution/managers/checkpoint-state-manager';
-import { MemoryCheckpointStorage } from '../../../core/storage/memory-checkpoint-storage';
-import { GlobalMessageStorage } from '../../../core/services/global-message-storage';
-import { ThreadRegistry } from '../../../core/services/thread-registry';
-import { NodeType, HookType } from '../../../types/node';
-import { EdgeType } from '../../../types/edge';
-import { CheckpointTriggerType } from '../../../types/checkpoint';
-import type { WorkflowDefinition } from '../../../types/workflow';
-import type { Node } from '../../../types/node';
+import { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
+import { ThreadBuilder } from '@modular-agent/sdk/core/execution/thread-builder';
+import { CheckpointCoordinator } from '@modular-agent/sdk/core/execution/coordinators/checkpoint-coordinator';
+import { CheckpointStateManager } from '@modular-agent/sdk/core/execution/managers/checkpoint-state-manager';
+import { MemoryCheckpointStorage } from '@modular-agent/sdk/core/storage/memory-checkpoint-storage';
+import { GlobalMessageStorage } from '@modular-agent/sdk/core/services/global-message-storage';
+import { ThreadRegistry } from '@modular-agent/sdk/core/services/thread-registry';
+import { NodeType, HookType } from '@modular-agent/types/node';
+import { EdgeType } from '@modular-agent/types/edge';
+import { CheckpointTriggerType } from '@modular-agent/types/checkpoint';
+import type { WorkflowDefinition } from '@modular-agent/types/workflow';
+import type { Node } from '@modular-agent/types/node';
 
 describe('检查点自动触发机制集成测试', () => {
   let workflowRegistry: WorkflowRegistry;

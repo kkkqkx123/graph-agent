@@ -3,7 +3,7 @@
  * 定义脚本执行的基本信息和配置
  */
 
-import type { ID, Timestamp, Metadata } from './common';
+import type { ID, Metadata } from './common';
 
 /**
  * 脚本类型枚举

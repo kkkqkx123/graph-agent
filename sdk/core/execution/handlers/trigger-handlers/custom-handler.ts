@@ -3,8 +3,8 @@
  * 负责执行自定义的触发动作
  */
 
-import type { TriggerAction, TriggerExecutionResult } from '../../../../types/trigger';
-import { ValidationError } from '../../../../types/errors';
+import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types/trigger';
+import { ValidationError } from '@modular-agent/types/errors';
 
 /**
  * 创建成功结果

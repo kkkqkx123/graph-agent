@@ -24,17 +24,17 @@
  */
 
 import { z } from 'zod';
-import type { WorkflowDefinition } from '../../types/workflow';
-import type { Node } from '../../types/node';
-import { NodeType } from '../../types/node';
-import { ValidationError } from '../../types/errors';
-import type { Result } from '../../types/result';
-import { ok, err } from '../../utils/result-utils';
+import type { WorkflowDefinition } from '@modular-agent/types/workflow';
+import type { Node } from '@modular-agent/types/node';
+import { NodeType } from '@modular-agent/types/node';
+import { ValidationError } from '@modular-agent/types/errors';
+import type { Result } from '@modular-agent/types/result';
+import { ok, err } from '@modular-agent/common-utils/result-utils';
 import { validateNodeByType } from './node-validation';
 import { validateHooks } from './hook-validator';
 import { validateTriggers } from './trigger-validator';
 import { SelfReferenceValidationStrategy } from './strategies/self-reference-validation-strategy';
-import { ErrorHandlingStrategy } from '../../types/thread';
+import { ErrorHandlingStrategy } from '@modular-agent/types/thread';
 
 /**
  * 工作流变量schema

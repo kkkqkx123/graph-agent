@@ -10,11 +10,11 @@
  * - 暂停、恢复、取消等生命周期操作
  */
 
-import { WorkflowRegistry } from '../core/services/workflow-registry';
-import { ExecutionContext } from '../core/execution/context/execution-context';
-import { NodeType } from '../types/node';
-import { EdgeType } from '../types/edge';
-import type { WorkflowDefinition } from '../types/workflow';
+import { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
+import { ExecutionContext } from '@modular-agent/sdk/core/execution/context/execution-context';
+import { NodeType } from '@modular-agent/types/node';
+import { EdgeType } from '@modular-agent/types/edge';
+import type { WorkflowDefinition } from '@modular-agent/types/workflow';
 
 describe.skip('工作流执行引擎完整执行和生命周期管理集成测试', () => {
   let workflowRegistry: WorkflowRegistry;

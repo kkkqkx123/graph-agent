@@ -9,16 +9,16 @@
  * - 性能和多线程测试
  */
 
-import { WorkflowRegistry } from '../core/services/workflow-registry';
-import { graphRegistry } from '../core/services/graph-registry';
-import { ThreadBuilder } from '../core/execution/thread-builder';
-import { ThreadContext } from '../core/execution/context/thread-context';
-import { ExecutionContext } from '../core/execution/context/execution-context';
-import { NodeType } from '../types/node';
-import { EdgeType } from '../types/edge';
-import { ValidationError } from '../types/errors';
-import type { WorkflowDefinition } from '../types/workflow';
-import type { ThreadOptions } from '../types/thread';
+import { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
+import { graphRegistry } from '@modular-agent/sdk/core/services/graph-registry';
+import { ThreadBuilder } from '@modular-agent/sdk/core/execution/thread-builder';
+import { ThreadContext } from '@modular-agent/sdk/core/execution/context/thread-context';
+import { ExecutionContext } from '@modular-agent/sdk/core/execution/context/execution-context';
+import { NodeType } from '@modular-agent/types/node';
+import { EdgeType } from '@modular-agent/types/edge';
+import { ValidationError } from '@modular-agent/types/errors';
+import type { WorkflowDefinition } from '@modular-agent/types/workflow';
+import type { ThreadOptions } from '@modular-agent/types/thread';
 
 describe('Thread构建到执行实例创建集成测试', () => {
   let workflowRegistry: WorkflowRegistry;

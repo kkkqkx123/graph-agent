@@ -12,8 +12,8 @@
  * - 简洁：导出具体函数而非类
  */
 
-import type { ThreadStatus } from '../../../types/thread';
-import { ValidationError } from '../../../types/errors';
+import type { ThreadStatus } from '@modular-agent/types/thread';
+import { ValidationError } from '@modular-agent/types/errors';
 
 /**
  * 状态转换规则定义

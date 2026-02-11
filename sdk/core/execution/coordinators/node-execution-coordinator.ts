@@ -16,26 +16,26 @@
  */
 
 import { ThreadContext } from '../context/thread-context';
-import type { Node } from '../../../types/node';
-import type { NodeExecutionResult } from '../../../types/thread';
+import type { Node } from '@modular-agent/types/node';
+import type { NodeExecutionResult } from '@modular-agent/types/thread';
 import type { EventManager } from '../../services/event-manager';
-import type { UserInteractionHandler } from '../../../types/interaction';
-import type { HumanRelayHandler } from '../../../types/human-relay';
+import type { UserInteractionHandler } from '@modular-agent/types/interaction';
+import type { HumanRelayHandler } from '@modular-agent/types/human-relay';
 import { LLMExecutionCoordinator } from './llm-execution-coordinator';
 import { enterSubgraph, exitSubgraph, getSubgraphInput, getSubgraphOutput } from '../handlers/subgraph-handler';
-import { EventType } from '../../../types/events';
-import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '../../../types/events';
-import { ExecutionError } from '../../../types/errors';
+import { EventType } from '@modular-agent/types/events';
+import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '@modular-agent/types/events';
+import { ExecutionError } from '@modular-agent/types/errors';
 import { executeHook } from '../handlers/hook-handlers';
-import { HookType } from '../../../types/node';
-import { NodeType } from '../../../types/node';
+import { HookType } from '@modular-agent/types/node';
+import { NodeType } from '@modular-agent/types/node';
 import { now, diffTimestamp } from '../../../utils';
 import { getNodeHandler } from '../handlers/node-handlers';
-import { SUBGRAPH_METADATA_KEYS, SubgraphBoundaryType } from '../../../types/subgraph';
+import { SUBGRAPH_METADATA_KEYS, SubgraphBoundaryType } from '@modular-agent/types/subgraph';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils';
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils';
 import { resolveCheckpointConfig } from '../handlers/checkpoint-handlers/checkpoint-config-resolver';
-import { CheckpointTriggerType } from '../../../types/checkpoint';
+import { CheckpointTriggerType } from '@modular-agent/types/checkpoint';
 
 /**
  * 节点执行协调器

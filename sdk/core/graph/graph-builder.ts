@@ -16,9 +16,9 @@ import type {
 } from '../../types';
 import { GraphData } from '../entities/graph-data';
 import { GraphValidator } from '../validation/graph-validator';
-import { generateSubgraphNamespace, generateNamespacedNodeId, generateNamespacedEdgeId } from '../../utils/id-utils';
+import { generateSubgraphNamespace, generateNamespacedNodeId, generateNamespacedEdgeId } from '@modular-agent/common-utils/id-utils';
 import { generateId } from '../../utils';
-import { SUBGRAPH_METADATA_KEYS } from '../../types/subgraph';
+import { SUBGRAPH_METADATA_KEYS } from '@modular-agent/types/subgraph';
 
 /**
  * 图构建器类

@@ -3,10 +3,10 @@
  */
 
 import { loopEndHandler } from '../loop-end-handler';
-import type { Node, LoopEndNodeConfig } from '../../../../../types/node';
-import type { Thread } from '../../../../../types/thread';
-import { NotFoundError, ExecutionError } from '../../../../../types/errors';
-import { ThreadStatus } from '../../../../../types/thread';
+import type { Node, LoopEndNodeConfig } from '@modular-agent/types/node';
+import type { Thread } from '@modular-agent/types/thread';
+import { NotFoundError, ExecutionError } from '@modular-agent/types/errors';
+import { ThreadStatus } from '@modular-agent/types/thread';
 
 // Mock condition-evaluator
 jest.mock('../../../../../utils/evalutor/condition-evaluator', () => ({

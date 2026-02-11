@@ -15,13 +15,13 @@
  * - 上下文压缩通过触发器+子工作流实现，不在此模块
  */
 
-import type { LLMMessage, LLMUsage, MessageMarkMap, TokenUsageHistory, TokenUsageStats } from '../../../types/llm';
-import { ValidationError } from '../../../types/errors';
+import type { LLMMessage, LLMUsage, MessageMarkMap, TokenUsageHistory, TokenUsageStats } from '@modular-agent/types/llm';
+import { ValidationError } from '@modular-agent/types/errors';
 import { TokenUsageTracker } from '../token-usage-tracker';
 import { MessageIndexManager } from './message-index-manager';
 import type { EventManager } from '../../services/event-manager';
-import type { TokenLimitExceededEvent } from '../../../types/events';
-import { EventType } from '../../../types/events';
+import type { TokenLimitExceededEvent } from '@modular-agent/types/events';
+import { EventType } from '@modular-agent/types/events';
 import type { LifecycleCapable } from './lifecycle-capable';
 
 /**

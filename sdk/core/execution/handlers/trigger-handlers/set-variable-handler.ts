@@ -3,8 +3,8 @@
  * 负责执行设置变量的触发动作
  */
 
-import type { TriggerAction, TriggerExecutionResult } from '../../../../types/trigger';
-import { NotFoundError, ValidationError } from '../../../../types/errors';
+import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types/trigger';
+import { NotFoundError, ValidationError } from '@modular-agent/types/errors';
 import { ExecutionContext } from '../../context/execution-context';
 
 /**

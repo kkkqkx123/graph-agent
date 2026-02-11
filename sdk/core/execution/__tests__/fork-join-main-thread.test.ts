@@ -6,11 +6,11 @@
 import { ThreadContext } from '../context/thread-context';
 import { ThreadBuilder } from '../thread-builder';
 import { ExecutionContext } from '../context/execution-context';
-import { join, ForkConfig } from '../utils/thread-operations';
+import { join, ForkConfig } from '@modular-agent/common-utils/thread-operations';
 import { ThreadOperationCoordinator } from '../coordinators/thread-operation-coordinator';
 import { ConversationManager } from '../managers/conversation-manager';
-import type { Thread } from '../../../types/thread';
-import { ThreadStatus } from '../../../types/thread';
+import type { Thread } from '@modular-agent/types/thread';
+import { ThreadStatus } from '@modular-agent/types/thread';
 
 describe('Fork/Join 主线程上下文处理', () => {
   let executionContext: ExecutionContext;

@@ -4,8 +4,8 @@
  */
 
 import { NodeValidator } from '../node-validator';
-import { NodeType } from '../../../types/node';
-import type { Node } from '../../../types/node';
+import { NodeType } from '@modular-agent/types/node';
+import type { Node } from '@modular-agent/types/node';
 
 describe('NodeValidator', () => {
   let validator: NodeValidator;

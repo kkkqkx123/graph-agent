@@ -3,7 +3,7 @@
  */
 
 import { ExecutionBuilder } from '../execution-builder';
-import type { ThreadResult } from '../../../types/thread';
+import type { ThreadResult } from '@modular-agent/types/thread';
 
 describe('ExecutionBuilder - 异步执行', () => {
   let mockExecutor: any;

@@ -3,10 +3,10 @@
  */
 
 import { skipNodeHandler } from '../skip-node-handler';
-import type { TriggerAction, TriggerExecutionResult } from '../../../../../types/trigger';
-import { TriggerActionType } from '../../../../../types/trigger';
-import { ValidationError, NotFoundError } from '../../../../../types/errors';
-import { EventType } from '../../../../../types/events';
+import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types/trigger';
+import { TriggerActionType } from '@modular-agent/types/trigger';
+import { ValidationError, NotFoundError } from '@modular-agent/types/errors';
+import { EventType } from '@modular-agent/types/events';
 import { ExecutionContext } from '../../../context/execution-context';
 
 // Mock ExecutionContext

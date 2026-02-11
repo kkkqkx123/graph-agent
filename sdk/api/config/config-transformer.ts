@@ -4,9 +4,9 @@
  */
 
 import type { WorkflowConfigFile, IConfigTransformer } from './types';
-import type { WorkflowDefinition } from '../../types/workflow';
-import type { Node } from '../../types/node';
-import type { Edge as EdgeType } from '../../types/edge';
+import type { WorkflowDefinition } from '@modular-agent/types/workflow';
+import type { Node } from '@modular-agent/types/node';
+import type { Edge as EdgeType } from '@modular-agent/types/edge';
 
 /**
  * 配置转换器类

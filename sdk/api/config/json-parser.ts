@@ -4,7 +4,7 @@
  */
 
 import type { WorkflowConfigFile } from './types';
-import { ConfigurationError } from '../../types/errors';
+import { ConfigurationError } from '@modular-agent/types/errors';
 
 /**
  * 解析JSON内容

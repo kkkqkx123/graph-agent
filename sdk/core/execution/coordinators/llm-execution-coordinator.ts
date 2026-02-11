@@ -13,21 +13,21 @@
  * - 职责分离：将具体执行逻辑委托给专门组件
  */
 
-import type { LLMMessage } from '../../../types/llm';
-import type { WorkflowConfig } from '../../../types/workflow';
+import type { LLMMessage } from '@modular-agent/types/llm';
+import type { WorkflowConfig } from '@modular-agent/types/workflow';
 import { ConversationManager } from '../managers/conversation-manager';
 import { LLMExecutor } from '../executors/llm-executor';
 import { type ToolService } from '../../services/tool-service';
 import type { EventManager } from '../../services/event-manager';
-import { safeEmit } from '../utils/event/event-emitter';
-import { EventType } from '../../../types/events';
-import { UserInteractionOperationType } from '../../../types/interaction';
-import type { ToolApprovalData } from '../../../types/interaction';
+import { safeEmit } from '@modular-agent/common-utils/event/event-emitter';
+import { EventType } from '@modular-agent/types/events';
+import { UserInteractionOperationType } from '@modular-agent/types/interaction';
+import type { ToolApprovalData } from '@modular-agent/types/interaction';
 import { now } from '../../../utils';
 import { ToolCallExecutor } from '../executors/tool-call-executor';
 import { TokenUsageTracker } from '../token-usage-tracker';
-import { ExecutionError } from '../../../types/errors';
-import { generateId } from '../../../utils/id-utils';
+import { ExecutionError } from '@modular-agent/types/errors';
+import { generateId } from '@modular-agent/common-utils/id-utils';
 import { CheckpointCoordinator } from './checkpoint-coordinator';
 import type { ExecutionContext } from '../context/execution-context';
 import { globalMessageStorage } from '../../services/global-message-storage';

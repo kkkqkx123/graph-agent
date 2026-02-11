@@ -2,10 +2,10 @@
  * EnableTriggerCommand - 启用触发器
  */
 
-import { BaseCommand } from '../../../types/command';
-import { CommandValidationResult } from '../../../types/command';
-import { NotFoundError } from '../../../../types/errors';
-import type { APIDependencies } from '../../../core/api-dependencies';
+import { BaseCommand } from '@modular-agent/types/command';
+import { CommandValidationResult } from '@modular-agent/types/command';
+import { NotFoundError } from '@modular-agent/types/errors';
+import type { APIDependencies } from '@modular-agent/sdk/core/api-dependencies';
 
 /**
  * 启用触发器参数

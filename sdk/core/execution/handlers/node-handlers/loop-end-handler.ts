@@ -3,11 +3,11 @@
  * 负责执行LOOP_END节点，更新循环变量，检查中断条件
  */
 
-import type { Node, LoopEndNodeConfig } from '../../../../types/node';
-import type { Thread } from '../../../../types/thread';
-import type { Condition, EvaluationContext } from '../../../../types/condition';
-import { ExecutionError, NotFoundError } from '../../../../types/errors';
-import { conditionEvaluator } from '../../../../utils/evalutor/condition-evaluator';
+import type { Node, LoopEndNodeConfig } from '@modular-agent/types/node';
+import type { Thread } from '@modular-agent/types/thread';
+import type { Condition, EvaluationContext } from '@modular-agent/types/condition';
+import { ExecutionError, NotFoundError } from '@modular-agent/types/errors';
+import { conditionEvaluator } from '@modular-agent/common-utils/evalutor/condition-evaluator';
 import { now } from '../../../../utils';
 
 /**

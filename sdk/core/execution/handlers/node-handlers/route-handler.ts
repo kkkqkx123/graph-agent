@@ -3,11 +3,11 @@
  * 负责执行ROUTE节点，根据条件选择下一个节点
  */
 
-import { ExecutionError } from '../../../../types/errors';
-import type { Node, RouteNodeConfig } from '../../../../types/node';
-import type { Thread } from '../../../../types/thread';
-import type { Condition, EvaluationContext } from '../../../../types/condition';
-import { conditionEvaluator } from '../../../../utils/evalutor/condition-evaluator';
+import { ExecutionError } from '@modular-agent/types/errors';
+import type { Node, RouteNodeConfig } from '@modular-agent/types/node';
+import type { Thread } from '@modular-agent/types/thread';
+import type { Condition, EvaluationContext } from '@modular-agent/types/condition';
+import { conditionEvaluator } from '@modular-agent/common-utils/evalutor/condition-evaluator';
 
 /**
  * 检查节点是否可以执行

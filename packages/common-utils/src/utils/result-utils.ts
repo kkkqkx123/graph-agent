@@ -1,4 +1,4 @@
-import type { Result, Ok, Err } from '../types/result';
+import type { Result, Ok, Err } from '@modular-agent/types/result';
 
 /**
  * 创建成功结果

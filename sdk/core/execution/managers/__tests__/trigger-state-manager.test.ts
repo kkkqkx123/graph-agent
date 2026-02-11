@@ -4,8 +4,8 @@
  */
 
 import { TriggerStateManager, type TriggerRuntimeState } from '../trigger-state-manager';
-import { TriggerStatus } from '../../../../types/trigger';
-import { ID } from '../../../../types/common';
+import { TriggerStatus } from '@modular-agent/types/trigger';
+import { ID } from '@modular-agent/types/common';
 
 describe('TriggerStateManager', () => {
   let stateManager: TriggerStateManager;

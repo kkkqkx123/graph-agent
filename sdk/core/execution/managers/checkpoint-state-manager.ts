@@ -3,11 +3,11 @@
  * 有状态服务，维护检查点的内部状态
  */
 
-import type { Checkpoint } from '../../../types/checkpoint';
-import type { CheckpointStorage, CheckpointStorageMetadata, CleanupPolicy, CleanupResult } from '../../../types/checkpoint-storage';
+import type { Checkpoint } from '@modular-agent/types/checkpoint';
+import type { CheckpointStorage, CheckpointStorageMetadata, CleanupPolicy, CleanupResult } from '@modular-agent/types/checkpoint-storage';
 import { LifecycleCapable } from './lifecycle-capable';
-import { serializeCheckpoint, deserializeCheckpoint } from '../utils/checkpoint-serializer';
-import { createCleanupStrategy } from '../utils/checkpoint-cleanup-policy';
+import { serializeCheckpoint, deserializeCheckpoint } from '@modular-agent/common-utils/checkpoint-serializer';
+import { createCleanupStrategy } from '@modular-agent/common-utils/checkpoint-cleanup-policy';
 import { generateId, now } from '../../../utils';
 
 /**

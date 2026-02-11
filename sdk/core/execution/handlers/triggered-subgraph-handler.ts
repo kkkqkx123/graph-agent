@@ -15,11 +15,11 @@
  * - 触发子工作流异步执行，不阻塞主工作流
  */
 
-import type { ID } from '../../../types/common';
+import type { ID } from '@modular-agent/types/common';
 import { ThreadContext } from '../context/thread-context';
 import type { EventManager } from '../../services/event-manager';
-import { EventType } from '../../../types/events';
-import type { ThreadResult } from '../../../types/thread';
+import { EventType } from '@modular-agent/types/events';
+import type { ThreadResult } from '@modular-agent/types/thread';
 import { now } from '../../../utils';
 import { createSubgraphMetadata } from './subgraph-handler';
 

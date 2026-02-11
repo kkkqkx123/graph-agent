@@ -7,7 +7,7 @@ import {
   getTokenUsage,
   isTokenLimitExceeded
 } from '../token-utils';
-import type { LLMMessage, LLMUsage } from '../../../../types/llm';
+import type { LLMMessage, LLMUsage } from '@modular-agent/types/llm';
 
 describe('token-utils', () => {
   describe('estimateTokens', () => {

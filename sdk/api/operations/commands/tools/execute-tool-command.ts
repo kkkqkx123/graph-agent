@@ -2,9 +2,9 @@
  * ExecuteToolCommand - 执行工具命令
  */
 
-import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
-import type { ToolOptions, ToolExecutionResult } from '../../../types/tools-types';
-import type { APIDependencies } from '../../../core/api-dependencies';
+import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '@modular-agent/types/command';
+import type { ToolOptions, ToolExecutionResult } from '@modular-agent/types/tools-types';
+import type { APIDependencies } from '@modular-agent/sdk/core/api-dependencies';
 
 /**
  * 执行工具命令

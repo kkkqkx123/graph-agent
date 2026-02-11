@@ -3,8 +3,8 @@
  * Fork节点作为占位符，实际的Fork操作由ThreadExecutor调用ThreadCoordinator处理
  */
 
-import type { Node } from '../../../../types/node';
-import type { Thread } from '../../../../types/thread';
+import type { Node } from '@modular-agent/types/node';
+import type { Thread } from '@modular-agent/types/thread';
 
 /**
  * 检查节点是否可以执行

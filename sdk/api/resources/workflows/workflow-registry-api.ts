@@ -11,9 +11,9 @@ import {
 } from '../../validation/validation-strategy';
 
 import { GenericResourceAPI } from '../generic-resource-api';
-import type { WorkflowDefinition } from '../../../types/workflow';
-import type { WorkflowFilter, WorkflowSummary } from '../../types/registry-types';
-import type { APIDependencies } from '../../core/api-dependencies';
+import type { WorkflowDefinition } from '@modular-agent/types/workflow';
+import type { WorkflowFilter, WorkflowSummary } from '@modular-agent/types/registry-types';
+import type { APIDependencies } from '@modular-agent/sdk/core/api-dependencies';
 
 /**
  * WorkflowRegistryAPI - 工作流管理API

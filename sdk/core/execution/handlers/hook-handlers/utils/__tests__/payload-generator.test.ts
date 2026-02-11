@@ -8,8 +8,8 @@ import {
   resolveTemplateVariable,
   getVariableValue
 } from '../payload-generator';
-import type { NodeHook } from '../../../../../../types/node';
-import { HookType } from '../../../../../../types/node';
+import type { NodeHook } from '@modular-agent/types/node';
+import { HookType } from '@modular-agent/types/node';
 import type { HookEvaluationContext } from '../context-builder';
 
 describe('payload-generator', () => {

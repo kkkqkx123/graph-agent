@@ -6,9 +6,9 @@ import { NodeExecutionCoordinator } from '../node-execution-coordinator';
 import { ThreadContext } from '../../context/thread-context';
 import { EventManager } from '../../../services/event-manager';
 import { LLMExecutionCoordinator } from '../llm-execution-coordinator';
-import { EventType } from '../../../../types/events';
-import { ExecutionError } from '../../../../types/errors';
-import { NodeType, HookType } from '../../../../types/node';
+import { EventType } from '@modular-agent/types/events';
+import { ExecutionError } from '@modular-agent/types/errors';
+import { NodeType, HookType } from '@modular-agent/types/node';
 
 // Mock 依赖
 jest.mock('../../context/thread-context');

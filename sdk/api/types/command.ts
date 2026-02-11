@@ -4,7 +4,7 @@
  */
 
 import type { ExecutionResult } from './execution-result';
-import { SDKError } from '../../types/errors';
+import { SDKError } from '@modular-agent/types/errors';
 
 /**
  * 命令元数据

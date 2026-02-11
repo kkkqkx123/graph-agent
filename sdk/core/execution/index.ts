@@ -36,7 +36,7 @@ export { ConversationManager, type ConversationState } from './managers/conversa
 export type { ConversationManagerOptions } from './managers/conversation-manager';
 export { TokenUsageTracker } from './token-usage-tracker';
 export type { TokenUsageTrackerOptions, FullTokenUsageStats } from './token-usage-tracker';
-export type { TokenUsageStats } from '../../types/llm';
+export type { TokenUsageStats } from '@modular-agent/types/llm';
 
 // 消息索引管理
 export { MessageIndexManager } from './managers/message-index-manager';

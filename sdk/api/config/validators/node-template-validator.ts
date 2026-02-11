@@ -4,14 +4,14 @@
  * 注意：实际验证逻辑委托给 NodeValidator，这里仅作为适配器
  */
 
-import type { NodeTemplate } from '../../../types/node-template';
+import type { NodeTemplate } from '@modular-agent/types/node-template';
 import type { ConfigFile } from '../types';
 import { ConfigType } from '../types';
-import { ok, err } from '../../../utils/result-utils';
-import type { Result } from '../../../types/result';
-import { ValidationError } from '../../../types/errors';
-import { NodeValidator } from '../../../core/validation/node-validator';
-import { NodeType } from '../../../types/node';
+import { ok, err } from '@modular-agent/common-utils/result-utils';
+import type { Result } from '@modular-agent/types/result';
+import { ValidationError } from '@modular-agent/types/errors';
+import { NodeValidator } from '@modular-agent/sdk/core/validation/node-validator';
+import { NodeType } from '@modular-agent/types/node';
 import {
   validateRequiredFields,
   validateStringField,

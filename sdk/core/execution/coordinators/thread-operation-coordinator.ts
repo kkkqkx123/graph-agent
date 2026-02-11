@@ -14,13 +14,13 @@
  * - 专门处理 Thread 结构变更操作
  */
 
-import type { ForkConfig, JoinResult } from '../utils/thread-operations';
+import type { ForkConfig, JoinResult } from '@modular-agent/common-utils/thread-operations';
 import { type ThreadRegistry } from '../../services/thread-registry';
 import { ThreadBuilder } from '../thread-builder';
 import type { EventManager } from '../../services/event-manager';
 import type { WorkflowRegistry } from '../../services/workflow-registry';
-import { NotFoundError } from '../../../types/errors';
-import { fork, join, copy } from '../utils/thread-operations';
+import { NotFoundError } from '@modular-agent/types/errors';
+import { fork, join, copy } from '@modular-agent/common-utils/thread-operations';
 import { ExecutionContext } from '../context/execution-context';
 
 /**

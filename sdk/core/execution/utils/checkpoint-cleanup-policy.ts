@@ -22,7 +22,7 @@ import type {
   CountBasedCleanupPolicy,
   SizeBasedCleanupPolicy,
   CheckpointCleanupStrategy
-} from '../../../types/checkpoint-storage';
+} from '@modular-agent/types/checkpoint-storage';
 
 /**
  * 基于时间的清理策略实现

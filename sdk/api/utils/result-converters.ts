@@ -3,10 +3,10 @@
  * 提供 Result 和 ExecutionResult 之间的转换功能
  */
 
-import type { Result } from '../../types/result';
-import type { ExecutionResult, ExecutionError } from '../types/execution-result';
-import { success, failure, isSuccess, isFailure } from '../types/execution-result';
-import { ok, err } from '../../utils/result-utils';
+import type { Result } from '@modular-agent/types/result';
+import type { ExecutionResult, ExecutionError } from '@modular-agent/types/execution-result';
+import { success, failure, isSuccess, isFailure } from '@modular-agent/types/execution-result';
+import { ok, err } from '@modular-agent/common-utils/result-utils';
 
 /**
  * 将 Result 转换为 ExecutionResult

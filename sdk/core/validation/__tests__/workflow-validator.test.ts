@@ -4,11 +4,11 @@
  */
 
 import { WorkflowValidator } from '../workflow-validator';
-import { NodeType } from '../../../types/node';
-import { EdgeType } from '../../../types/edge';
-import type { WorkflowDefinition } from '../../../types/workflow';
-import type { Result } from '../../../types/result';
-import { ValidationError } from '../../../types/errors';
+import { NodeType } from '@modular-agent/types/node';
+import { EdgeType } from '@modular-agent/types/edge';
+import type { WorkflowDefinition } from '@modular-agent/types/workflow';
+import type { Result } from '@modular-agent/types/result';
+import { ValidationError } from '@modular-agent/types/errors';
 
 describe('WorkflowValidator', () => {
   let validator: WorkflowValidator;

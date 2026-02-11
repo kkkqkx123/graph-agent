@@ -3,9 +3,9 @@
  * 负责执行END节点，标记工作流的结束，收集执行结果
  */
 
-import type { Node } from '../../../../types/node';
-import type { Thread } from '../../../../types/thread';
-import { ThreadStatus } from '../../../../types/thread';
+import type { Node } from '@modular-agent/types/node';
+import type { Thread } from '@modular-agent/types/thread';
+import { ThreadStatus } from '@modular-agent/types/thread';
 import { now, diffTimestamp } from '../../../../utils';
 
 /**

@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from '@jest/globals';
-import type { ToolSchema, ToolParameters } from '../../../types/tool';
+import type { ToolSchema, ToolParameters } from '@modular-agent/types/tool';
 import {
   convertToolsToOpenAIFormat,
   convertToolsToAnthropicFormat,

@@ -8,14 +8,14 @@
  * - 触发子工作流的错误路径处理
  */
 
-import { WorkflowRegistry } from '../../../core/services/workflow-registry';
-import { WorkflowValidator } from '../../../core/validation/workflow-validator';
-import { graphRegistry } from '../../../core/services/graph-registry';
-import { NodeType } from '../../../types/node';
-import { EdgeType } from '../../../types/edge';
-import { TriggerActionType } from '../../../types/trigger';
-import type { WorkflowDefinition } from '../../../types/workflow';
-import { ValidationError } from '../../../types/errors';
+import { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
+import { WorkflowValidator } from '@modular-agent/sdk/core/validation/workflow-validator';
+import { graphRegistry } from '@modular-agent/sdk/core/services/graph-registry';
+import { NodeType } from '@modular-agent/types/node';
+import { EdgeType } from '@modular-agent/types/edge';
+import { TriggerActionType } from '@modular-agent/types/trigger';
+import type { WorkflowDefinition } from '@modular-agent/types/workflow';
+import { ValidationError } from '@modular-agent/types/errors';
 import { EventType } from '../../../types';
 
 describe('触发子工作流集成测试', () => {

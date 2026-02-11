@@ -3,8 +3,8 @@
  */
 
 import { RestToolExecutor } from '../executors/rest';
-import { Tool, ToolType } from '../../../types/tool';
-import { ValidationError, ToolError } from '../../../types/errors';
+import { Tool, ToolType } from '@modular-agent/types/tool';
+import { ValidationError, ToolError } from '@modular-agent/types/errors';
 
 describe('RestToolExecutor', () => {
   let executor: RestToolExecutor;

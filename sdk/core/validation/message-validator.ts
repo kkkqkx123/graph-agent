@@ -5,10 +5,10 @@
  */
 
 import { z } from 'zod';
-import type { LLMMessage, LLMMessageRole, LLMToolCall } from '../../types/llm';
-import { ValidationError } from '../../types/errors';
-import { ok, err } from '../../utils/result-utils';
-import type { Result } from '../../types/result';
+import type { LLMMessage, LLMMessageRole, LLMToolCall } from '@modular-agent/types/llm';
+import { ValidationError } from '@modular-agent/types/errors';
+import { ok, err } from '@modular-agent/common-utils/result-utils';
+import type { Result } from '@modular-agent/types/result';
 
 /**
  * 文本内容项schema

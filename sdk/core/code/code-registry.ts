@@ -3,8 +3,8 @@
  * 负责脚本定义的管理
  */
 
-import type { Script } from '../../types/code';
-import { ValidationError, NotFoundError } from '../../types/errors';
+import type { Script } from '@modular-agent/types/code';
+import { ValidationError, NotFoundError } from '@modular-agent/types/errors';
 
 /**
  * 脚本注册表类

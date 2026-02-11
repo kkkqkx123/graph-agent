@@ -8,16 +8,16 @@
  * - 最少保留数量保护机制
  */
 
-import { CheckpointStateManager } from '../../../core/execution/managers/checkpoint-state-manager';
-import { MemoryCheckpointStorage } from '../../../core/storage/memory-checkpoint-storage';
-import { GlobalMessageStorage } from '../../../core/services/global-message-storage';
-import { ThreadRegistry } from '../../../core/services/thread-registry';
-import { WorkflowRegistry } from '../../../core/services/workflow-registry';
-import { ThreadBuilder } from '../../../core/execution/thread-builder';
-import { CheckpointCoordinator } from '../../../core/execution/coordinators/checkpoint-coordinator';
-import type { CleanupPolicy } from '../../../types/checkpoint-storage';
-import { NodeType } from '../../../types/node';
-import { EdgeType } from '../../../types/edge';
+import { CheckpointStateManager } from '@modular-agent/sdk/core/execution/managers/checkpoint-state-manager';
+import { MemoryCheckpointStorage } from '@modular-agent/sdk/core/storage/memory-checkpoint-storage';
+import { GlobalMessageStorage } from '@modular-agent/sdk/core/services/global-message-storage';
+import { ThreadRegistry } from '@modular-agent/sdk/core/services/thread-registry';
+import { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
+import { ThreadBuilder } from '@modular-agent/sdk/core/execution/thread-builder';
+import { CheckpointCoordinator } from '@modular-agent/sdk/core/execution/coordinators/checkpoint-coordinator';
+import type { CleanupPolicy } from '@modular-agent/types/checkpoint-storage';
+import { NodeType } from '@modular-agent/types/node';
+import { EdgeType } from '@modular-agent/types/edge';
 
 describe('检查点清理策略集成测试', () => {
   let workflowRegistry: WorkflowRegistry;
