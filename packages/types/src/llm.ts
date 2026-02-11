@@ -150,6 +150,21 @@ export interface TokenUsageHistory {
 }
 
 /**
+ * Token使用统计
+ * 包含单次API调用的token使用信息
+ */
+export interface TokenUsageStats {
+  /** 提示 Token 数 */
+  promptTokens: number;
+  /** 完成 Token 数 */
+  completionTokens: number;
+  /** 总 Token 数 */
+  totalTokens: number;
+  /** 原始 API 响应的详细信息 */
+  rawUsage?: any;
+}
+
+/**
  * Token使用统计信息
  * 提供历史记录的统计分析
  */

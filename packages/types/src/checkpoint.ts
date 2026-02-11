@@ -6,9 +6,8 @@
 import { ThreadStatus } from './thread';
 import type { NodeExecutionResult } from './thread';
 import type { ID, Timestamp, Metadata } from './common';
-import type { TriggerRuntimeState } from '../core/execution/managers/trigger-state-manager';
-import type { MessageMarkMap } from './llm';
-import type { TokenUsageStats } from '../core/execution/token-usage-tracker';
+import type { TriggerRuntimeState } from './trigger';
+import type { MessageMarkMap, TokenUsageStats } from './llm';
 
 /**
  * 线程状态快照类型

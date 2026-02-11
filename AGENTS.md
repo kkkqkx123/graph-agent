@@ -70,9 +70,9 @@ modular-agent-framework/
 │   └── ...
 ├── packages/                   # Shared packages
 │   ├── common-utils/          # Common utilities
+│   ├── types/                 # Type Definition
 │   └── ...
 ├── sdk/                        # Core SDK module
-│   ├── types/                 # Type definitions
 │   ├── core/                  # Core execution logic
 │   ├── api/                   # External API interfaces
 │   └── utils/                 # Utility functions

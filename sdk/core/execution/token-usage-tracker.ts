@@ -15,23 +15,9 @@
  * - 支持历史记录和精确回退
  */
 
-import type { LLMMessage, LLMUsage, TokenUsageHistory, TokenUsageStatistics } from '../../types/llm';
+import type { LLMMessage, LLMUsage, TokenUsageHistory, TokenUsageStatistics, TokenUsageStats } from '../../types/llm';
 import { generateId } from '../../utils/id-utils';
 import { estimateTokens as estimateTokensUtil, getTokenUsage as getTokenUsageUtil, isTokenLimitExceeded as isTokenLimitExceededUtil } from './utils/token-utils';
-
-/**
- * Token 使用统计
- */
-export interface TokenUsageStats {
-  /** 提示 Token 数 */
-  promptTokens: number;
-  /** 完成 Token 数 */
-  completionTokens: number;
-  /** 总 Token 数 */
-  totalTokens: number;
-  /** 原始 API 响应的详细信息 */
-  rawUsage?: any;
-}
 
 /**
  * 完整的 Token 使用统计（包含当前累计和生命周期统计）

@@ -16,7 +16,8 @@
  * - CheckpointCleanupPolicy: 检查点清理策略
  */
 
-export { TriggerStateManager, type TriggerRuntimeState } from "./trigger-state-manager";
+export { TriggerStateManager } from "./trigger-state-manager";
+export type { TriggerRuntimeState } from "../../../types/trigger";
 export { VariableStateManager } from "./variable-state-manager";
 export { type LifecycleCapable } from "./lifecycle-capable";
 

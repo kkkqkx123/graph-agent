@@ -15,30 +15,10 @@
  * - 并发安全
  */
 
-import type { ID } from '../../../types/common';
-import type { TriggerStatus } from '../../../types/trigger';
+import type { ID, TriggerStatus, TriggerRuntimeState } from '../../../types/trigger';
 import { ValidationError, ExecutionError, NotFoundError } from '../../../types/errors';
 import { now } from '../../../utils';
 import type { LifecycleCapable } from './lifecycle-capable';
-
-/**
- * 触发器运行时状态接口
- * 只包含运行时状态，不包含触发器定义
- */
-export interface TriggerRuntimeState {
-  /** 触发器 ID */
-  triggerId: ID;
-  /** 线程 ID */
-  threadId: ID;
-  /** 工作流 ID */
-  workflowId: ID;
-  /** 触发器状态 */
-  status: TriggerStatus;
-  /** 触发次数 */
-  triggerCount: number;
-  /** 最后更新时间 */
-  updatedAt: number;
-}
 
 /**
  * TriggerStateManager - 触发器状态管理器

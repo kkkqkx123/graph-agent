@@ -4,15 +4,16 @@
  * 提供统一的LLM调用接口，支持多种LLM提供商
  */
 
-// 核心类
+// SDK级别核心类
 export { LLMWrapper } from './wrapper';
-export { ClientFactory } from './client-factory';
-export { BaseLLMClient } from './base-client';
+export { ProfileManager } from './profile-manager';
 
-// 工具类
-export { MessageStream } from './message-stream';
+// 基础设施（从common-utils导入）
+export { ClientFactory } from '@modular-agent/common-utils';
+export { BaseLLMClient } from '@modular-agent/common-utils';
+export { MessageStream } from '@modular-agent/common-utils';
 
-// 事件类型
+// 事件类型（从common-utils导入）
 export {
   MessageStreamEventType,
   type MessageStreamEvent,
@@ -25,15 +26,15 @@ export {
   type MessageStreamErrorEvent,
   type MessageStreamAbortEvent,
   type MessageStreamEndEvent
-} from './message-stream-events';
+} from '@modular-agent/common-utils';
 
-// OpenAI客户端
-export { OpenAIChatClient } from './clients/openai-chat';
-export { OpenAIResponseClient } from './clients/openai-response';
+// OpenAI客户端（从common-utils导入）
+export { OpenAIChatClient } from '@modular-agent/common-utils';
+export { OpenAIResponseClient } from '@modular-agent/common-utils';
 
-// Anthropic客户端
-export { AnthropicClient } from './clients/anthropic';
+// Anthropic客户端（从common-utils导入）
+export { AnthropicClient } from '@modular-agent/common-utils';
 
-// Gemini客户端
-export { GeminiNativeClient } from './clients/gemini-native';
-export { GeminiOpenAIClient } from './clients/gemini-openai';
+// Gemini客户端（从common-utils导入）
+export { GeminiNativeClient } from '@modular-agent/common-utils';
+export { GeminiOpenAIClient } from '@modular-agent/common-utils';

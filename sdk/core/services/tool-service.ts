@@ -10,24 +10,25 @@
  * - 通过依赖注入传入 Mock
  */
 
-import type { Tool } from '../../types/tool';
+import type { Tool } from '@modular-agent/types';
 import type { ThreadContext } from '../execution/context/thread-context';
-import { ToolType } from '../../types/tool';
-import { NotFoundError, ToolError } from '../../types/errors';
+import { ToolType } from '@modular-agent/types';
+import { NotFoundError, ToolError } from '@modular-agent/types';
 import { ToolRegistry } from '../tools/tool-registry';
-import { BaseToolExecutor } from '../tools/base-tool-executor';
-import type { ToolExecutionOptions, ToolExecutionResult } from '../tools/base-tool-executor';
-import { StatelessToolExecutor } from '../tools/executors/stateless';
-import { StatefulToolExecutor } from '../tools/executors/stateful';
-import { RestToolExecutor } from '../tools/executors/rest';
-import { McpToolExecutor } from '../tools/executors/mcp';
+import type { IToolExecutor } from '../tools/interfaces/tool-executor';
+import type { ToolExecutionOptions, ToolExecutionResult } from '@modular-agent/types';
+import { ToolExecutorHelper } from '../tools/utils/tool-executor-helper';
+import { StatelessExecutor } from '@modular-agent/tool-executors';
+import { StatefulExecutor } from '@modular-agent/tool-executors';
+import { RestExecutor } from '@modular-agent/tool-executors';
+import { McpExecutor } from '@modular-agent/tool-executors';
 
 /**
  * 工具服务类
  */
 class ToolService {
   private registry: ToolRegistry;
-  private executors: Map<string, BaseToolExecutor> = new Map();
+  private executors: Map<string, IToolExecutor> = new Map();
 
   constructor() {
     this.registry = new ToolRegistry();
@@ -38,10 +39,11 @@ class ToolService {
    * 初始化执行器
    */
   private initializeExecutors(): void {
-    this.executors.set(ToolType.STATELESS, new StatelessToolExecutor());
-    this.executors.set(ToolType.STATEFUL, new StatefulToolExecutor());
-    this.executors.set(ToolType.REST, new RestToolExecutor());
-    this.executors.set(ToolType.MCP, new McpToolExecutor());
+    // 直接使用packages中的实现
+    this.executors.set(ToolType.STATELESS, new StatelessExecutor());
+    this.executors.set(ToolType.STATEFUL, new StatefulExecutor());
+    this.executors.set(ToolType.REST, new RestExecutor());
+    this.executors.set(ToolType.MCP, new McpExecutor());
   }
 
   /**
@@ -159,9 +161,15 @@ class ToolService {
       );
     }
 
-    // 执行工具
+    // 使用ToolExecutorHelper执行（带验证、重试、超时）
     try {
-      return await executor.execute(tool, parameters, options, threadContext);
+      return await ToolExecutorHelper.executeWithRetry(
+        executor,
+        tool,
+        parameters,
+        options,
+        threadContext
+      );
     } catch (error) {
       if (error instanceof Error) {
         throw new ToolError(

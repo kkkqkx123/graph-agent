@@ -18,6 +18,7 @@
 
 import type { Thread, VariableScope } from '../../../types';
 import type { ID } from '../../../types/common';
+import type { TriggerRuntimeState } from '../../../types/trigger';
 import type { StatefulToolFactory } from '../../../types/tool';
 import type { LLMMessage } from '../../../types/llm';
 import type { WorkflowDefinition } from '../../../types/workflow';
@@ -25,7 +26,7 @@ import { ConversationManager } from '../managers/conversation-manager';
 import { VariableCoordinator } from '../coordinators/variable-coordinator';
 import { VariableStateManager } from '../managers/variable-state-manager';
 import { TriggerCoordinator } from '../coordinators/trigger-coordinator';
-import { TriggerStateManager, type TriggerRuntimeState } from '../managers/trigger-state-manager';
+import { TriggerStateManager } from '../managers/trigger-state-manager';
 import { GraphNavigator, type NavigationResult } from '../../graph/graph-navigator';
 import { ExecutionState } from './execution-state';
 import type { ThreadRegistry } from '../../services/thread-registry';

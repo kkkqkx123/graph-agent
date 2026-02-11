@@ -35,7 +35,8 @@ export { VariableStateManager } from './managers/variable-state-manager';
 export { ConversationManager, type ConversationState } from './managers/conversation-manager';
 export type { ConversationManagerOptions } from './managers/conversation-manager';
 export { TokenUsageTracker } from './token-usage-tracker';
-export type { TokenUsageStats, TokenUsageTrackerOptions, FullTokenUsageStats } from './token-usage-tracker';
+export type { TokenUsageTrackerOptions, FullTokenUsageStats } from './token-usage-tracker';
+export type { TokenUsageStats } from '../../types/llm';
 
 // 消息索引管理
 export { MessageIndexManager } from './managers/message-index-manager';

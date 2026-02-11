@@ -22,7 +22,8 @@
 import type {
   Trigger,
   TriggerStatus,
-  WorkflowTrigger
+  WorkflowTrigger,
+  TriggerRuntimeState
 } from '../../../types/trigger';
 import type { BaseEvent, NodeCustomEvent } from '../../../types/events';
 import type { ID } from '../../../types/common';
@@ -33,7 +34,7 @@ import { now } from '../../../utils';
 import type { ThreadRegistry } from '../../services/thread-registry';
 import type { WorkflowRegistry } from '../../services/workflow-registry';
 import type { GlobalMessageStorage } from '../../services/global-message-storage';
-import { TriggerStateManager, type TriggerRuntimeState } from '../managers/trigger-state-manager';
+import { TriggerStateManager } from '../managers/trigger-state-manager';
 import { CheckpointStateManager } from '../managers/checkpoint-state-manager';
 import { convertToTrigger } from '../../../types/trigger';
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils';

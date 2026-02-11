@@ -51,6 +51,9 @@
     "author": "Modular Agent Framework Team",
     "license": "MIT",
     "dependencies": {
+        "@modular-agent/types": "workspace:*",
+        "@modular-agent/common-utils": "workspace:*",
+        "@modular-agent/tool-executors": "workspace:*",
         "tiktoken": "^1.0.22"
     },
     "devDependencies": {},

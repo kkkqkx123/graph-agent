@@ -167,6 +167,26 @@ export interface WorkflowTrigger {
 }
 
 /**
+ * 触发器运行时状态接口
+ * 只包含运行时状态，不包含触发器定义
+ * 用于状态管理器和检查点中保存触发器的运行时状态
+ */
+export interface TriggerRuntimeState {
+  /** 触发器 ID */
+  triggerId: ID;
+  /** 线程 ID */
+  threadId: ID;
+  /** 工作流 ID */
+  workflowId: ID;
+  /** 触发器状态 */
+  status: TriggerStatus;
+  /** 触发次数 */
+  triggerCount: number;
+  /** 最后更新时间 */
+  updatedAt: Timestamp;
+}
+
+/**
  * 将WorkflowTrigger转换为Trigger
  * @param workflowTrigger workflow触发器定义
  * @param workflowId 工作流ID

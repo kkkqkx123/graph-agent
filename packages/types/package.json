@@ -1,7 +1,7 @@
 {
-  "name": "@modular-agent/common-utils",
+  "name": "@modular-agent/types",
   "version": "1.0.0",
-  "description": "Common utilities for Modular Agent Framework",
+  "description": "类型定义包",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -10,6 +10,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@modular-agent/types": "workspace:*"
+    "zod": "4.3.6"
   }
 }

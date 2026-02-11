@@ -1,30 +1,9 @@
 /**
- * SDK类型定义统一导出
+ * SDK类型定义
+ * 
+ * 本模块重新导出 @modular-agent/types 包的所有类型
+ * 以保持向后兼容性，支持旧的相对路径导入
  */
 
-// 基础类型
-export * from './common';
-
-// 核心实体类型
-export * from './workflow';
-export * from './node';
-export * from './node-template';
-export * from './edge';
-export * from './graph';
-export * from './condition';
-
-// 执行相关类型
-export * from './thread';
-export * from './execution';
-export * from './events';
-export * from './errors';
-export * from './trigger';
-export * from './trigger-template';
-
-// 集成类型
-export * from './tool';
-export * from './llm';
-export * from './checkpoint';
-export * from './checkpoint-storage';
-export * from './interaction';
-export * from './human-relay';
+// 重新导出所有类型定义
+export * from '@modular-agent/types';

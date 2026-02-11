@@ -28,9 +28,6 @@
   ],
   "author": "Modular Agent Framework Team",
   "license": "MIT",
-  "dependencies": {
-    "zod": "^4.3.6"
-  },
   "devDependencies": {
     "turbo": "^2.8.3",
     "typescript": "^5.9.3",

@@ -1,7 +1,7 @@
 {
-  "name": "@modular-agent/common-utils",
+  "name": "@modular-agent/tool-executors",
   "version": "1.0.0",
-  "description": "Common utilities for Modular Agent Framework",
+  "description": "工具执行器包",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@modular-agent/types": "workspace:*"
+    "@modular-agent/types": "workspace:*",
+    "@modular-agent/common-utils": "workspace:*"
   }
 }
