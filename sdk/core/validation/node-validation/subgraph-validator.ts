@@ -23,7 +23,7 @@ const subgraphNodeConfigSchema = z.object({
     z.string().min(1, 'Output mapping key cannot be empty'),
     z.string().min(1, 'Output mapping value cannot be empty')
   ).optional().default({}),
-  async: z.boolean()
+  async: z.boolean().optional().default(false)
 });
 
 /**

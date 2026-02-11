@@ -195,7 +195,7 @@ describe('execute-triggered-subgraph-handler', () => {
     it('应该使用默认的waitForCompletion值', async () => {
       mockAction.parameters = {
         triggeredWorkflowId
-        // waitForCompletion未设置，应该使用默认值false
+        // waitForCompletion未设置，应该使用默认值true
       };
 
       const mockMainThreadContext = {
@@ -230,7 +230,7 @@ describe('execute-triggered-subgraph-handler', () => {
       await executeTriggeredSubgraphHandler(mockAction, triggerId, mockExecutionContext);
 
       const lastCall = (executeSingleTriggeredSubgraph as jest.Mock).mock.calls[0];
-      expect(lastCall[0].config.waitForCompletion).toBe(false);
+      expect(lastCall[0].config.waitForCompletion).toBe(true);
     });
   });
 
@@ -627,6 +627,262 @@ describe('execute-triggered-subgraph-handler', () => {
         expect(result.triggerId).toBe(testTriggerId);
         expect(result.success).toBe(true);
       }
+    });
+  });
+
+  describe('mergeOptions配置测试', () => {
+    it('应该根据includeVariables选择性传递变量', async () => {
+      mockAction.parameters = {
+        triggeredWorkflowId,
+        waitForCompletion: true,
+        mergeOptions: {
+          includeVariables: ['var1', 'var3']
+        }
+      };
+
+      const mockMainThreadContext = {
+        getAllVariables: jest.fn().mockReturnValue({
+          var1: 'value1',
+          var2: 'value2',
+          var3: 'value3'
+        }),
+        getOutput: jest.fn().mockReturnValue({}),
+        getInput: jest.fn().mockReturnValue({}),
+        getWorkflowId: jest.fn(),
+        getThreadId: jest.fn(),
+        thread: {}
+      };
+
+      const mockThreadRegistry = {
+        get: jest.fn().mockReturnValue(mockMainThreadContext)
+      };
+
+      const mockWorkflowRegistry = {
+        get: jest.fn().mockReturnValue({ id: triggeredWorkflowId })
+      };
+
+      (executeSingleTriggeredSubgraph as jest.Mock).mockResolvedValue({
+        subgraphContext: { getOutput: jest.fn().mockReturnValue({}) },
+        executionTime: 1000
+      });
+
+      const { ThreadExecutor } = await import('../../../thread-executor');
+      (ThreadExecutor as jest.Mock).mockReturnValue({});
+
+      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry as any);
+      mockExecutionContext.getWorkflowRegistry.mockReturnValue(mockWorkflowRegistry as any);
+      mockExecutionContext.getCurrentThreadId.mockReturnValue(threadId);
+
+      await executeTriggeredSubgraphHandler(mockAction, triggerId, mockExecutionContext);
+
+      const lastCall = (executeSingleTriggeredSubgraph as jest.Mock).mock.calls[0];
+      expect(lastCall[0].input.variables).toEqual({
+        var1: 'value1',
+        var3: 'value3'
+      });
+      expect(lastCall[0].input.variables).not.toHaveProperty('var2');
+    });
+
+    it('应该根据includeConversationHistory传递对话历史', async () => {
+      mockAction.parameters = {
+        triggeredWorkflowId,
+        waitForCompletion: true,
+        mergeOptions: {
+          includeConversationHistory: true
+        }
+      };
+
+      const mockConversationHistory = [
+        { role: 'user', content: 'Hello' },
+        { role: 'assistant', content: 'Hi there' }
+      ];
+
+      const mockMainThreadContext = {
+        getAllVariables: jest.fn().mockReturnValue({}),
+        getOutput: jest.fn().mockReturnValue({}),
+        getInput: jest.fn().mockReturnValue({}),
+        getConversationHistory: jest.fn().mockReturnValue(mockConversationHistory),
+        getWorkflowId: jest.fn(),
+        getThreadId: jest.fn(),
+        thread: {}
+      };
+
+      const mockThreadRegistry = {
+        get: jest.fn().mockReturnValue(mockMainThreadContext)
+      };
+
+      const mockWorkflowRegistry = {
+        get: jest.fn().mockReturnValue({ id: triggeredWorkflowId })
+      };
+
+      (executeSingleTriggeredSubgraph as jest.Mock).mockResolvedValue({
+        subgraphContext: { getOutput: jest.fn().mockReturnValue({}) },
+        executionTime: 1000
+      });
+
+      const { ThreadExecutor } = await import('../../../thread-executor');
+      (ThreadExecutor as jest.Mock).mockReturnValue({});
+
+      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry as any);
+      mockExecutionContext.getWorkflowRegistry.mockReturnValue(mockWorkflowRegistry as any);
+      mockExecutionContext.getCurrentThreadId.mockReturnValue(threadId);
+
+      await executeTriggeredSubgraphHandler(mockAction, triggerId, mockExecutionContext);
+
+      const lastCall = (executeSingleTriggeredSubgraph as jest.Mock).mock.calls[0];
+      expect(lastCall[0].input.conversationHistory).toEqual(mockConversationHistory);
+    });
+
+    it('应该在不配置mergeOptions时传递所有变量（向后兼容）', async () => {
+      mockAction.parameters = {
+        triggeredWorkflowId,
+        waitForCompletion: true
+        // 不配置mergeOptions
+      };
+
+      const mockMainThreadContext = {
+        getAllVariables: jest.fn().mockReturnValue({
+          var1: 'value1',
+          var2: 'value2',
+          var3: 'value3'
+        }),
+        getOutput: jest.fn().mockReturnValue({}),
+        getInput: jest.fn().mockReturnValue({}),
+        getWorkflowId: jest.fn(),
+        getThreadId: jest.fn(),
+        thread: {}
+      };
+
+      const mockThreadRegistry = {
+        get: jest.fn().mockReturnValue(mockMainThreadContext)
+      };
+
+      const mockWorkflowRegistry = {
+        get: jest.fn().mockReturnValue({ id: triggeredWorkflowId })
+      };
+
+      (executeSingleTriggeredSubgraph as jest.Mock).mockResolvedValue({
+        subgraphContext: { getOutput: jest.fn().mockReturnValue({}) },
+        executionTime: 1000
+      });
+
+      const { ThreadExecutor } = await import('../../../thread-executor');
+      (ThreadExecutor as jest.Mock).mockReturnValue({});
+
+      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry as any);
+      mockExecutionContext.getWorkflowRegistry.mockReturnValue(mockWorkflowRegistry as any);
+      mockExecutionContext.getCurrentThreadId.mockReturnValue(threadId);
+
+      await executeTriggeredSubgraphHandler(mockAction, triggerId, mockExecutionContext);
+
+      const lastCall = (executeSingleTriggeredSubgraph as jest.Mock).mock.calls[0];
+      expect(lastCall[0].input.variables).toEqual({
+        var1: 'value1',
+        var2: 'value2',
+        var3: 'value3'
+      });
+      expect(lastCall[0].input).not.toHaveProperty('conversationHistory');
+    });
+
+    it('应该处理includeVariables为空数组的情况', async () => {
+      mockAction.parameters = {
+        triggeredWorkflowId,
+        waitForCompletion: true,
+        mergeOptions: {
+          includeVariables: []
+        }
+      };
+
+      const mockMainThreadContext = {
+        getAllVariables: jest.fn().mockReturnValue({
+          var1: 'value1',
+          var2: 'value2'
+        }),
+        getOutput: jest.fn().mockReturnValue({}),
+        getInput: jest.fn().mockReturnValue({}),
+        getWorkflowId: jest.fn(),
+        getThreadId: jest.fn(),
+        thread: {}
+      };
+
+      const mockThreadRegistry = {
+        get: jest.fn().mockReturnValue(mockMainThreadContext)
+      };
+
+      const mockWorkflowRegistry = {
+        get: jest.fn().mockReturnValue({ id: triggeredWorkflowId })
+      };
+
+      (executeSingleTriggeredSubgraph as jest.Mock).mockResolvedValue({
+        subgraphContext: { getOutput: jest.fn().mockReturnValue({}) },
+        executionTime: 1000
+      });
+
+      const { ThreadExecutor } = await import('../../../thread-executor');
+      (ThreadExecutor as jest.Mock).mockReturnValue({});
+
+      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry as any);
+      mockExecutionContext.getWorkflowRegistry.mockReturnValue(mockWorkflowRegistry as any);
+      mockExecutionContext.getCurrentThreadId.mockReturnValue(threadId);
+
+      await executeTriggeredSubgraphHandler(mockAction, triggerId, mockExecutionContext);
+
+      const lastCall = (executeSingleTriggeredSubgraph as jest.Mock).mock.calls[0];
+      expect(lastCall[0].input.variables).toEqual({});
+    });
+
+    it('应该同时使用includeVariables和includeConversationHistory', async () => {
+      mockAction.parameters = {
+        triggeredWorkflowId,
+        waitForCompletion: true,
+        mergeOptions: {
+          includeVariables: ['var1'],
+          includeConversationHistory: true
+        }
+      };
+
+      const mockConversationHistory = [
+        { role: 'user', content: 'Test message' }
+      ];
+
+      const mockMainThreadContext = {
+        getAllVariables: jest.fn().mockReturnValue({
+          var1: 'value1',
+          var2: 'value2'
+        }),
+        getOutput: jest.fn().mockReturnValue({}),
+        getInput: jest.fn().mockReturnValue({}),
+        getConversationHistory: jest.fn().mockReturnValue(mockConversationHistory),
+        getWorkflowId: jest.fn(),
+        getThreadId: jest.fn(),
+        thread: {}
+      };
+
+      const mockThreadRegistry = {
+        get: jest.fn().mockReturnValue(mockMainThreadContext)
+      };
+
+      const mockWorkflowRegistry = {
+        get: jest.fn().mockReturnValue({ id: triggeredWorkflowId })
+      };
+
+      (executeSingleTriggeredSubgraph as jest.Mock).mockResolvedValue({
+        subgraphContext: { getOutput: jest.fn().mockReturnValue({}) },
+        executionTime: 1000
+      });
+
+      const { ThreadExecutor } = await import('../../../thread-executor');
+      (ThreadExecutor as jest.Mock).mockReturnValue({});
+
+      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry as any);
+      mockExecutionContext.getWorkflowRegistry.mockReturnValue(mockWorkflowRegistry as any);
+      mockExecutionContext.getCurrentThreadId.mockReturnValue(threadId);
+
+      await executeTriggeredSubgraphHandler(mockAction, triggerId, mockExecutionContext);
+
+      const lastCall = (executeSingleTriggeredSubgraph as jest.Mock).mock.calls[0];
+      expect(lastCall[0].input.variables).toEqual({ var1: 'value1' });
+      expect(lastCall[0].input.conversationHistory).toEqual(mockConversationHistory);
     });
   });
 });

@@ -3,7 +3,7 @@
  * Fork节点作为占位符，实际的Fork操作由ThreadExecutor调用ThreadCoordinator处理
  */
 
-import type { Node, ForkNodeConfig } from '../../../../types/node';
+import type { Node } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 
 /**

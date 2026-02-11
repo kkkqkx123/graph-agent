@@ -145,6 +145,42 @@ class WorkflowRegistry {
   }
 
   /**
+   * 检查工作流是否有外部依赖（SUBGRAPH节点）
+   * @param workflow 工作流定义
+   * @returns 是否有外部依赖
+   */
+  hasExternalDependencies(workflow: WorkflowDefinition): boolean {
+    // 检查是否包含SUBGRAPH节点
+    return workflow.nodes.some(node => node.type === 'SUBGRAPH');
+  }
+
+  /**
+   * 确保工作流已预处理（统一预处理入口）
+   * @param workflowId 工作流ID
+   * @returns 处理后的工作流定义
+   * @throws ValidationError 如果工作流不存在或预处理失败
+   */
+  async ensureProcessed(workflowId: string): Promise<ProcessedWorkflowDefinition> {
+    // 检查缓存
+    let processed = this.getProcessed(workflowId);
+    if (processed) return processed;
+    
+    // 获取原始定义
+    const workflow = this.get(workflowId);
+    if (!workflow) {
+      throw new ValidationError(
+        `Workflow with ID '${workflowId}' not found`,
+        'workflowId'
+      );
+    }
+    
+    // 预处理（会递归处理所有子工作流）
+    processed = await this.preprocessAndStore(workflow);
+    
+    return processed;
+  }
+
+  /**
    * 注册工作流定义
    * @param workflow 工作流定义
    * @throws ValidationError 如果工作流定义无效或ID已存在
@@ -169,6 +205,33 @@ class WorkflowRegistry {
 
     // 保存工作流定义
     this.workflows.set(workflow.id, workflow);
+    
+    // 仅预处理无外部依赖的工作流
+    // 有依赖的工作流延迟到Thread构建时预处理，以确保所有依赖都已注册
+    if (!this.hasExternalDependencies(workflow)) {
+      // 注意：这里不 await，因为 register 是同步方法
+      // 预处理会在后台进行，但通常很快完成
+      this.preprocessAndStore(workflow).catch(error => {
+        // 使用 SDK 错误系统包装错误
+        const wrappedError = new ValidationError(
+          `Failed to preprocess workflow '${workflow.id}': ${error instanceof Error ? error.message : String(error)}`,
+          'workflow',
+          workflow.id,
+          {
+            workflowId: workflow.id,
+            workflowName: workflow.name,
+            originalError: error instanceof Error ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack
+            } : String(error)
+          }
+        );
+        
+        // 记录错误到控制台（开发调试用）
+        console.error(`[WorkflowRegistry] Preprocessing failed for workflow '${workflow.id}':`, wrappedError);
+      });
+    }
   }
 
   /**
@@ -483,7 +546,7 @@ class WorkflowRegistry {
       analyzeReachability: true,
     };
 
-    const processed = processWorkflow(workflow, processOptions);
+    const processed = await processWorkflow(workflow, processOptions);
 
     // 缓存处理结果
     this.processedWorkflows.set(workflow.id, processed);

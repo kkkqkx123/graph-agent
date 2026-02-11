@@ -200,6 +200,13 @@ export function convertToTrigger(
 export interface ExecuteTriggeredSubgraphActionConfig {
   /** 触发子工作流ID（包含 START_FROM_TRIGGER 节点的工作流） */
   triggeredWorkflowId: ID;
-  /** 是否等待完成（默认false，异步执行） */
+  /** 是否等待完成（默认true，同步执行） */
   waitForCompletion?: boolean;
+  /** 数据合并选项 */
+  mergeOptions?: {
+    /** 要传递的变量名称列表，undefined表示传递所有变量 */
+    includeVariables?: string[];
+    /** 是否传递对话历史（提示词消息数组） */
+    includeConversationHistory?: boolean;
+  };
 }

@@ -87,53 +87,6 @@ export function validateStringLength(
 }
 
 /**
- * 验证数值范围
- * @param value 数值
- * @param fieldName 字段名称
- * @param min 最小值
- * @param max 最大值
- * @returns 验证错误数组
- */
-export function validateNumberRange(
-  value: number,
-  fieldName: string,
-  min: number,
-  max: number
-): Result<number, ValidationError[]> {
-  const errors: ValidationError[] = [];
-  
-  if (typeof value !== 'number' || isNaN(value)) {
-    errors.push(new ValidationError(
-      `${fieldName}必须是数字`,
-      fieldName,
-      value
-    ));
-    return err(errors);
-  }
-  
-  if (value < min) {
-    errors.push(new ValidationError(
-      `${fieldName}不能小于${min}`,
-      fieldName,
-      value
-    ));
-  }
-  if (value > max) {
-    errors.push(new ValidationError(
-      `${fieldName}不能大于${max}`,
-      fieldName,
-      value
-    ));
-  }
-  
-  if (errors.length === 0) {
-    return ok(value);
-  } else {
-    return err(errors);
-  }
-}
-
-/**
  * 验证正数
  * @param value 数值
  * @param fieldName 字段名称
@@ -322,22 +275,4 @@ export function validateEnum<T>(
   } else {
     return err(errors);
   }
-}
-
-/**
- * 合并多个验证错误数组
- * @param errorsArrays 验证错误数组列表
- * @returns 合并后的验证错误数组
- */
-export function mergeValidationErrors(...errorsArrays: ValidationError[][]): ValidationError[] {
-  return errorsArrays.flat();
-}
-
-/**
- * 检查验证是否通过
- * @param result 验证结果
- * @returns 是否验证通过
- */
-export function isValid<T>(result: Result<T, ValidationError[]>): boolean {
-  return result.isOk();
 }

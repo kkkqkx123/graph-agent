@@ -53,32 +53,13 @@ export class ThreadBuilder {
    * @returns ThreadContext实例
    */
   async build(workflowId: string, options: ThreadOptions = {}): Promise<ThreadContext> {
-    // 步骤1：确保获取ProcessedWorkflowDefinition
-    let processedWorkflow = this.workflowRegistry.getProcessed(workflowId);
+    // 统一使用 ensureProcessed 确保工作流已预处理
+    // 这会自动处理：
+    // 1. 无依赖工作流：已在注册时预处理，直接返回缓存
+    // 2. 有依赖工作流：延迟到此时预处理，确保所有依赖都已注册
+    const processedWorkflow = await this.workflowRegistry.ensureProcessed(workflowId);
 
-    if (!processedWorkflow) {
-      // 尝试获取原始工作流并预处理
-      const workflow = this.workflowRegistry.get(workflowId);
-      if (!workflow) {
-        throw new ValidationError(
-          `Workflow with ID '${workflowId}' not found in registry`,
-          'workflowId'
-        );
-      }
-
-      // 预处理并存储
-      processedWorkflow = await this.workflowRegistry.preprocessAndStore(workflow);
-
-      // 再次检查，确保预处理成功
-      if (!processedWorkflow) {
-        throw new ValidationError(
-          `Failed to preprocess workflow with ID '${workflowId}'`,
-          'workflowId'
-        );
-      }
-    }
-
-    // 步骤2：从ProcessedWorkflowDefinition构建
+    // 从ProcessedWorkflowDefinition构建
     return this.buildFromProcessedDefinition(processedWorkflow, options);
   }
 

@@ -169,12 +169,12 @@ export class GraphBuilder {
    * @param currentDepth 当前递归深度
    * @returns 合并结果
    */
-  static processSubgraphs(
+  static async processSubgraphs(
     graph: GraphData,
     workflowRegistry: any,
     maxRecursionDepth: number = 10,
     currentDepth: number = 0
-  ): SubgraphMergeResult {
+  ): Promise<SubgraphMergeResult> {
     const nodeIdMapping = new Map<ID, ID>();
     const edgeIdMapping = new Map<ID, ID>();
     const addedNodeIds: ID[] = [];
@@ -217,11 +217,27 @@ export class GraphBuilder {
       }
 
       const subworkflowId = subgraphConfig.subgraphId;
-      const subworkflow = workflowRegistry.get(subworkflowId);
-
-      if (!subworkflow) {
-        errors.push(`Subworkflow (${subworkflowId}) not found for SUBGRAPH node (${subgraphNode.id})`);
-        continue;
+      
+      // 确保子工作流已完整预处理（包括引用展开和嵌套子工作流处理）
+      let processedSubworkflow = workflowRegistry.getProcessed(subworkflowId);
+      
+      if (!processedSubworkflow) {
+        // 如果子工作流未预处理，先预处理它
+        const subworkflow = workflowRegistry.get(subworkflowId);
+        if (!subworkflow) {
+          errors.push(`Subworkflow (${subworkflowId}) not found for SUBGRAPH node (${subgraphNode.id})`);
+          continue;
+        }
+        
+        // 预处理子工作流（会递归处理其所有引用和嵌套子工作流）
+        await workflowRegistry.preprocessAndStore(subworkflow);
+        
+        // 重新获取预处理后的子工作流
+        processedSubworkflow = workflowRegistry.getProcessed(subworkflowId);
+        if (!processedSubworkflow) {
+          errors.push(`Failed to preprocess subworkflow (${subworkflowId}) for SUBGRAPH node (${subgraphNode.id})`);
+          continue;
+        }
       }
 
       // 记录子工作流ID
@@ -230,22 +246,8 @@ export class GraphBuilder {
       // 生成命名空间
       const namespace = generateSubgraphNamespace(subworkflowId, subgraphNode.id);
 
-      // 构建子工作流图
-      const subgraphBuildOptions: GraphBuildOptions = {
-        validate: true,
-        computeTopologicalOrder: true,
-        detectCycles: true,
-        analyzeReachability: true,
-        maxRecursionDepth,
-        currentDepth: currentDepth + 1,
-        workflowRegistry,
-      };
-
-      const subgraphBuildResult = this.buildAndValidate(subworkflow, subgraphBuildOptions);
-      if (!subgraphBuildResult.isValid) {
-        errors.push(`Failed to build subworkflow (${subworkflowId}): ${subgraphBuildResult.errors.join(', ')}`);
-        continue;
-      }
+      // 使用预处理后的子工作流图
+      const subgraph = processedSubworkflow.graph as GraphData;
 
       // 合并子工作流图
       const mergeOptions: SubgraphMergeOptions & {
@@ -267,7 +269,7 @@ export class GraphBuilder {
 
       const mergeResult = this.mergeGraph(
         graph,
-        subgraphBuildResult.graph,
+        subgraph,
         subgraphNode.id,
         mergeOptions
       );

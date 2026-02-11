@@ -67,7 +67,7 @@ export async function executeTriggeredSubgraphHandler(
 
   try {
     const parameters = action.parameters as ExecuteTriggeredSubgraphActionConfig;
-    const { triggeredWorkflowId, waitForCompletion = false } = parameters;
+    const { triggeredWorkflowId, waitForCompletion = true } = parameters;
 
     if (!triggeredWorkflowId) {
       throw new ValidationError('Missing required parameter: triggeredWorkflowId', 'triggeredWorkflowId');
@@ -89,18 +89,39 @@ export async function executeTriggeredSubgraphHandler(
 
     // 获取工作流注册表
     const workflowRegistry = context.getWorkflowRegistry();
-    const triggeredWorkflow = workflowRegistry.get(triggeredWorkflowId);
+    
+    // 确保triggered子工作流已完整预处理（包括引用展开）
+    const processedTriggeredWorkflow = await workflowRegistry.ensureProcessed(triggeredWorkflowId);
 
-    if (!triggeredWorkflow) {
+    if (!processedTriggeredWorkflow) {
       throw new NotFoundError(`Triggered workflow not found: ${triggeredWorkflowId}`, 'Workflow', triggeredWorkflowId);
     }
 
-    // 从主线程上下文获取所有执行上下文
-    const input = {
-      variables: mainThreadContext.getAllVariables(),
+    // 从主线程上下文获取执行上下文
+    const input: Record<string, any> = {
       output: mainThreadContext.getOutput(),
       input: mainThreadContext.getInput()
     };
+
+    // 根据mergeOptions配置选择性传递变量
+    if (parameters.mergeOptions?.includeVariables) {
+      const allVariables = mainThreadContext.getAllVariables();
+      input['variables'] = {};
+      for (const varName of parameters.mergeOptions.includeVariables) {
+        if (varName in allVariables) {
+          input['variables'][varName] = allVariables[varName];
+        }
+      }
+    } else {
+      // 未配置includeVariables时，传递所有变量（保持向后兼容）
+      // 未配置includeVariables时，传递所有变量（保持向后兼容）
+      input['variables'] = mainThreadContext.getAllVariables();
+    }
+
+    // 根据mergeOptions配置选择性传递对话历史
+    if (parameters.mergeOptions?.includeConversationHistory) {
+      input['conversationHistory'] = mainThreadContext.getConversationHistory();
+    }
 
     // 创建 ThreadExecutor 实例（作为 SubgraphContextFactory 和 SubgraphExecutor）
     const threadExecutor = new ThreadExecutor(context);

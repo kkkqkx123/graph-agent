@@ -32,10 +32,10 @@ export interface ProcessOptions extends GraphBuildOptions {
 /**
  * 预处理工作流
  */
-export function processWorkflow(
+export async function processWorkflow(
   workflow: WorkflowDefinition,
   options: ProcessOptions = {}
-): ProcessedWorkflowDefinition {
+): Promise<ProcessedWorkflowDefinition> {
   const validator = new WorkflowValidator();
 
   // 1. 验证工作流定义
@@ -84,7 +84,7 @@ export function processWorkflow(
   const subworkflowIds = new Set<ID>();
 
   if (options.workflowRegistry) {
-    const subgraphResult = GraphBuilder.processSubgraphs(
+    const subgraphResult = await GraphBuilder.processSubgraphs(
       buildResult.graph,
       options.workflowRegistry,
       options.maxRecursionDepth ?? 10
@@ -130,7 +130,27 @@ export function processWorkflow(
     }
   }
 
-  // 7. 验证图
+  // 7. 处理触发器引用的工作流
+  if (options.workflowRegistry) {
+    const triggeredWorkflowIds = extractTriggeredWorkflowIds(expandedTriggers);
+    
+    for (const triggeredWorkflowId of triggeredWorkflowIds) {
+      // 确保触发器引用的工作流已预处理
+      const processedTriggeredWorkflow = await options.workflowRegistry.ensureProcessed(triggeredWorkflowId);
+      
+      if (!processedTriggeredWorkflow) {
+        throw new ValidationError(
+          `Triggered workflow '${triggeredWorkflowId}' referenced in triggers not found or failed to preprocess`,
+          'workflow.triggers'
+        );
+      }
+      
+      // 记录触发器引用的工作流ID
+      subworkflowIds.add(triggeredWorkflowId);
+    }
+  }
+
+  // 8. 验证图
   const graphValidationResult = GraphValidator.validate(buildResult.graph);
   if (graphValidationResult.isErr()) {
     const errors = graphValidationResult.error.map((e: { message: string }) => e.message).join(', ');
@@ -140,10 +160,10 @@ export function processWorkflow(
     );
   }
 
-  // 8. 分析图
+  // 9. 分析图
   const graphAnalysis = GraphValidator.analyze(buildResult.graph);
 
-  // 9. 创建预处理验证结果
+  // 10. 创建预处理验证结果
   const preprocessValidation: PreprocessValidationResult = {
     isValid: true,
     errors: [],
@@ -151,7 +171,7 @@ export function processWorkflow(
     validatedAt: now(),
   };
 
-  // 10. 创建处理后的工作流定义
+  // 11. 创建处理后的工作流定义
   // 注意：buildResult.graph 是 GraphData 类型，实现了 Graph 接口
   return {
     ...expandedWorkflow,
@@ -261,4 +281,27 @@ function expandTriggerReferences(triggers: (WorkflowTrigger | TriggerReference)[
 function isTriggerReference(trigger: WorkflowTrigger | TriggerReference): boolean {
   const triggerObj = trigger as any;
   return triggerObj && typeof triggerObj === 'object' && 'templateName' in triggerObj;
+}
+
+/**
+ * 从触发器列表中提取所有 EXECUTE_TRIGGERED_SUBGRAPH 动作引用的工作流ID
+ * @param triggers 触发器列表
+ * @returns 触发的工作流ID集合
+ */
+function extractTriggeredWorkflowIds(triggers: WorkflowTrigger[]): Set<string> {
+  const triggeredWorkflowIds = new Set<string>();
+  
+  for (const trigger of triggers) {
+    const triggerObj = trigger as any;
+    
+    // 检查 action 类型是否为 EXECUTE_TRIGGERED_SUBGRAPH
+    if (triggerObj?.action?.type === 'execute_triggered_subgraph') {
+      const triggeredWorkflowId = triggerObj.action.parameters?.triggeredWorkflowId;
+      if (triggeredWorkflowId) {
+        triggeredWorkflowIds.add(triggeredWorkflowId);
+      }
+    }
+  }
+  
+  return triggeredWorkflowIds;
 }

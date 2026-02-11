@@ -56,7 +56,7 @@ export interface TriggeredSubgraphTask {
      * 是否等待子工作流完成
      *
      * 行为差异:
-     * - true: 同步执行，调用者会阻塞直到子工作流完成
+     * - true: 同步执行（默认），调用者会阻塞直到子工作流完成
      *        返回的 TriggerExecutionResult 包含子工作流的实际执行结果
      * - false: 异步执行，调用者立即返回，子工作流在后台执行
      *         返回的 TriggerExecutionResult 只表示任务已提交
