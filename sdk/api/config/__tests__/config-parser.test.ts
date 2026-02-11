@@ -7,7 +7,7 @@
  */
 
 import { ConfigParser } from '../config-parser';
-import { ConfigFormat } from '@modular-agent/types';
+import { ConfigFormat } from '../types';
 import { ConfigTransformer } from '../config-transformer';
 import { parseJson, stringifyJson, validateJsonSyntax } from '../json-parser';
 import { parseToml, validateTomlSyntax } from '../toml-parser';
@@ -59,7 +59,7 @@ describe('ConfigParser', () => {
 
     test('应该成功解析有效的JSON配置', () => {
       const result = parser.parse(validJsonConfig, ConfigFormat.JSON);
-      
+
       expect(result.format).toBe(ConfigFormat.JSON);
       expect(result.config.id).toBe('test-workflow');
       expect(result.config.name).toBe('测试工作流');
@@ -70,7 +70,7 @@ describe('ConfigParser', () => {
     test('应该验证配置的有效性', () => {
       const parsed = parser.parse(validJsonConfig, ConfigFormat.JSON);
       const validationResult = parser.validate(parsed);
-      
+
       expect(validationResult.isOk()).toBe(true);
     });
 
@@ -84,10 +84,10 @@ describe('ConfigParser', () => {
         "createdAt": 0,
         "updatedAt": 0
       }`;
-      
+
       const parsed = parser.parse(invalidJsonConfig, ConfigFormat.JSON);
       const validationResult = parser.validate(parsed);
-      
+
       expect(validationResult.isErr()).toBe(true);
       if (validationResult.isErr()) {
         expect(validationResult.error.length).toBeGreaterThan(0);
@@ -96,7 +96,7 @@ describe('ConfigParser', () => {
 
     test('应该将配置转换为WorkflowDefinition', () => {
       const workflowDef = parser.parseAndTransform(validJsonConfig, ConfigFormat.JSON);
-      
+
       expect(workflowDef.id).toBe('test-workflow');
       expect(workflowDef.name).toBe('测试工作流');
       expect(workflowDef.nodes).toHaveLength(2);
@@ -155,13 +155,13 @@ describe('ConfigParser', () => {
         "createdAt": 0,
         "updatedAt": 0
       }`;
-      
+
       const workflowDef = parser.parseAndTransform(
         configWithParams,
         ConfigFormat.JSON,
         { model: 'gpt-4-turbo' }
       );
-      
+
       const llmNode = workflowDef.nodes[1]!;
       expect(llmNode.type).toBe(NodeType.LLM);
       expect((llmNode.config as any).profileId).toBe('gpt-4-turbo');
@@ -185,10 +185,10 @@ describe('ConfigParser', () => {
         }),
         ConfigFormat.JSON
       );
-      
+
       const exported = parser.exportWorkflow(workflowDef, ConfigFormat.JSON);
       const parsed = JSON.parse(exported);
-      
+
       expect(parsed.id).toBe('test-workflow');
       expect(parsed.name).toBe('测试工作流');
     });
@@ -231,7 +231,7 @@ describe('ConfigTransformer', () => {
     } as any;
 
     const workflowDef = transformer.transformToWorkflow(configFile);
-    
+
     expect(workflowDef.nodes[0]!.id).toBe('start');
     expect(workflowDef.nodes[0]!.type).toBe('START');
     expect(workflowDef.nodes[0]!.outgoingEdgeIds).toEqual([]);
@@ -255,7 +255,7 @@ describe('ConfigTransformer', () => {
     } as any;
 
     const workflowDef = transformer.transformToWorkflow(configFile);
-    
+
     expect(workflowDef.edges[0]!.sourceNodeId).toBe('start');
     expect(workflowDef.edges[0]!.targetNodeId).toBe('end');
     expect(workflowDef.edges[0]!.type).toBe('DEFAULT');
@@ -278,7 +278,7 @@ describe('ConfigTransformer', () => {
     } as any;
 
     const workflowDef = transformer.transformToWorkflow(configFile);
-    
+
     expect(workflowDef.nodes[0]!.outgoingEdgeIds).toHaveLength(1);
     expect(workflowDef.nodes[1]!.incomingEdgeIds).toHaveLength(1);
   });

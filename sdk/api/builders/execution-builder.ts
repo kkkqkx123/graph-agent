@@ -7,7 +7,7 @@
 import type { ThreadResult, ThreadOptions } from '@modular-agent/types/thread';
 import { ok, err } from '@modular-agent/common-utils/result-utils';
 import type { Result } from '@modular-agent/types/result';
-import { Observable, create } from '@modular-agent/common-utils/observable';
+import { Observable, create, type Observer } from '../utils/observable';
 import { ExecuteThreadCommand } from '../operations/commands/execution/execute-thread-command';
 import { isSuccess } from '@modular-agent/sdk/api/types/execution-result';
 
@@ -198,7 +198,7 @@ export class ExecutionBuilder {
    */
   executeAsync(): Observable<ExecutionEvent> {
     if (!this.workflowId) {
-      return create((observer) => {
+      return create((observer: Observer<ExecutionEvent>) => {
         observer.error(new Error('工作流ID未设置，请先调用withWorkflow()'));
         return () => { };
       });
@@ -207,7 +207,7 @@ export class ExecutionBuilder {
     const workflowId = this.workflowId; // workflowId在这里已经确定存在
     let threadId: string | undefined;
 
-    return create((observer) => {
+    return create((observer: Observer<ExecutionEvent>) => {
       // 创建AbortController用于取消执行
       this.abortController = new AbortController();
       const signal = this.abortController.signal;
@@ -322,7 +322,7 @@ export class ExecutionBuilder {
    * @returns Observable<ProgressEvent>
    */
   observeProgress(): Observable<ProgressEvent> {
-    return create((observer) => {
+    return create((observer: Observer<ProgressEvent>) => {
       const callback = (progress: any) => {
         observer.next({
           type: 'progress',
@@ -364,7 +364,7 @@ export class ExecutionBuilder {
    * @returns Observable<NodeExecutedEvent>
    */
   observeNodeExecuted(): Observable<NodeExecutedEvent> {
-    return create((observer) => {
+    return create((observer: Observer<NodeExecutedEvent>) => {
       const callback = (result: any) => {
         observer.next({
           type: 'nodeExecuted',
@@ -402,7 +402,7 @@ export class ExecutionBuilder {
    * @returns Observable<ErrorEvent>
    */
   observeError(): Observable<ErrorEvent> {
-    return create((observer) => {
+    return create((observer: Observer<ErrorEvent>) => {
       const callback = (error: any) => {
         observer.next({
           type: 'error',
@@ -438,14 +438,14 @@ export class ExecutionBuilder {
    * @returns Observable<ExecutionEvent>
    */
   observeAll(): Observable<ExecutionEvent> {
-    return create((observer) => {
+    return create((observer: Observer<ExecutionEvent>) => {
       const subscriptions: Array<{ unsubscribe: () => void; closed: boolean }> = [];
 
       // 订阅进度事件
       subscriptions.push(
         this.observeProgress().subscribe(
-          (event) => observer.next(event),
-          (err) => observer.error(err),
+          (event: ProgressEvent) => observer.next(event),
+          (err: any) => observer.error(err),
           () => { }
         )
       );
@@ -453,8 +453,8 @@ export class ExecutionBuilder {
       // 订阅节点执行事件
       subscriptions.push(
         this.observeNodeExecuted().subscribe(
-          (event) => observer.next(event),
-          (err) => observer.error(err),
+          (event: NodeExecutedEvent) => observer.next(event),
+          (err: any) => observer.error(err),
           () => { }
         )
       );
@@ -462,8 +462,8 @@ export class ExecutionBuilder {
       // 订阅错误事件
       subscriptions.push(
         this.observeError().subscribe(
-          (event) => observer.next(event),
-          (err) => observer.error(err),
+          (event: ErrorEvent) => observer.next(event),
+          (err: any) => observer.error(err),
           () => { }
         )
       );

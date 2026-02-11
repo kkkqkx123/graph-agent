@@ -16,7 +16,7 @@
  */
 
 import type { Node } from '@modular-agent/types/node';
-import type { Edge } from '@modular-agent/types/edge';
+import type { Edge } from '@modular-agent/types';
 import type { WorkflowDefinition } from '@modular-agent/types/workflow';
 import type { NodeTemplate } from '@modular-agent/types/node-template';
 import type { TriggerTemplate } from '@modular-agent/types/trigger-template';
@@ -111,11 +111,11 @@ export interface ParsedConfig<T extends ConfigType = ConfigType> {
   format: ConfigFormat;
   /** 配置文件内容 */
   config: T extends ConfigType.WORKFLOW ? WorkflowConfigFile :
-           T extends ConfigType.NODE_TEMPLATE ? NodeTemplateConfigFile :
-           T extends ConfigType.TRIGGER_TEMPLATE ? TriggerTemplateConfigFile :
-           T extends ConfigType.SCRIPT ? ScriptConfigFile :
-           T extends ConfigType.LLM_PROFILE ? LLMProfileConfigFile :
-           ConfigFile;
+  T extends ConfigType.NODE_TEMPLATE ? NodeTemplateConfigFile :
+  T extends ConfigType.TRIGGER_TEMPLATE ? TriggerTemplateConfigFile :
+  T extends ConfigType.SCRIPT ? ScriptConfigFile :
+  T extends ConfigType.LLM_PROFILE ? LLMProfileConfigFile :
+  ConfigFile;
   /** 原始内容 */
   rawContent: string;
 }

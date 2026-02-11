@@ -28,18 +28,18 @@ export {
   queryFailure,
   isQuerySuccess,
   isQueryFailure
-} from '@modular-agent/sdk/api/types/query';
+} from './types/query';
 
 // Subscription模式核心
 export {
   Subscription,
   BaseSubscription,
   SubscriptionMetadata
-} from '@modular-agent/sdk/api/types/subscription';
+} from './types/subscription';
 
 // 统一类型
-export { ExecutionResult, success, failure, isSuccess, isFailure, getData, getError } from '@modular-agent/sdk/api/types/execution-result';
-export { ExecutionOptions, DEFAULT_EXECUTION_OPTIONS, mergeExecutionOptions } from '@modular-agent/types/execution-options';
+export { ExecutionResult, success, failure, isSuccess, isFailure, getData, getError } from './types/execution-result';
+export { ExecutionOptions, DEFAULT_EXECUTION_OPTIONS, mergeExecutionOptions } from './types/execution-options';
 
 // 全局SDK实例
 export { sdk } from './core/sdk';
@@ -83,7 +83,7 @@ export {
   APIEventType,
   type APIEventData,
   type APIEventListener
-} from '@modular-agent/sdk/api/types/event-types';
+} from './types/event-types';
 
 // 事件系统实现
 export {
@@ -188,10 +188,10 @@ export type { OffEventParams } from './operations/subscriptions/events/off-event
 // ============================================================================
 // 验证API
 // ============================================================================
-export { WorkflowValidator as WorkflowValidatorAPI } from '@modular-agent/sdk/core/validation';
-export { CodeConfigValidator as CodeConfigValidatorAPI } from '@modular-agent/sdk/core/validation';
-export { ToolConfigValidator as ToolConfigValidatorAPI } from '@modular-agent/sdk/core/validation';
-export { validateHook as validateHookAPI, validateHooks as validateHooksAPI } from '@modular-agent/sdk/core/validation';
+export { WorkflowValidator as WorkflowValidatorAPI } from '../../core/validation';
+export { CodeConfigValidator as CodeConfigValidatorAPI } from '../../core/validation';
+export { ToolConfigValidator as ToolConfigValidatorAPI } from '../../core/validation';
+export { validateHook as validateHookAPI, validateHooks as validateHooksAPI } from '../../core/validation';
 export {
   validateTriggerCondition as validateTriggerConditionAPI,
   validateExecuteTriggeredSubgraphActionConfig as validateExecuteTriggeredSubgraphActionConfigAPI,
@@ -199,7 +199,7 @@ export {
   validateWorkflowTrigger as validateWorkflowTriggerAPI,
   validateTriggerReference as validateTriggerReferenceAPI,
   validateTriggers as validateTriggersAPI
-} from '@modular-agent/sdk/core/validation';
+} from '../../core/validation';
 
 // ============================================================================
 // 构建器

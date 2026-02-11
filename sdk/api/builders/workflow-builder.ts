@@ -5,16 +5,16 @@
 
 import type { WorkflowDefinition, WorkflowVariable, WorkflowConfig, WorkflowMetadata } from '@modular-agent/types/workflow';
 import type { Node, NodeConfig } from '@modular-agent/types/node';
-import type { Edge } from '@modular-agent/types/edge';
+import { NodeType } from '@modular-agent/types/node';
+import type { Edge } from '@modular-agent/types';
+import { EdgeType } from '@modular-agent/types';
 import type { Condition } from '@modular-agent/types/condition';
 import type { WorkflowTrigger } from '@modular-agent/types/trigger';
 import type { TriggerReference } from '@modular-agent/types/trigger-template';
-import { NodeType } from '@modular-agent/types/node';
-import { EdgeType } from '@modular-agent/types/edge';
 import { generateId } from '@modular-agent/common-utils/id-utils';
 import { now } from '@modular-agent/common-utils/timestamp-utils';
-import { nodeTemplateRegistry } from '@modular-agent/sdk/core/services/node-template-registry';
-import { triggerTemplateRegistry } from '@modular-agent/sdk/core/services/trigger-template-registry';
+import { nodeTemplateRegistry } from '../../core/services/node-template-registry';
+import { triggerTemplateRegistry } from '../../core/services/trigger-template-registry';
 import { ConfigParser, ConfigFormat } from '../config';
 
 /**

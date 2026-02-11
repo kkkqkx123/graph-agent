@@ -10,8 +10,8 @@
  * - 支持多种配置类型：WORKFLOW, NODE_TEMPLATE, TRIGGER_TEMPLATE, SCRIPT, LLM_PROFILE
  */
 
-import type { ParsedConfig, IConfigParser } from '@modular-agent/types';
-import { ConfigFormat, ConfigType } from '@modular-agent/types';
+import type { ParsedConfig, IConfigParser } from './types';
+import { ConfigFormat, ConfigType } from './types';
 import type { WorkflowDefinition } from '@modular-agent/types/workflow';
 import { parseToml } from './toml-parser';
 import { parseJson } from './json-parser';

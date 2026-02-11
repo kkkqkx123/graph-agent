@@ -5,7 +5,7 @@
 
 import type { WorkflowDefinition } from '@modular-agent/types/workflow';
 import type { ThreadResult } from '@modular-agent/types/thread';
-import { Observable, create } from '@modular-agent/common-utils/observable';
+import { Observable, create, type Observer } from '../utils/observable';
 import { ok, err } from '@modular-agent/common-utils/result-utils';
 import type { Result } from '@modular-agent/types/result';
 
@@ -252,7 +252,7 @@ export class WorkflowComposer {
   executeAsync(
     executor: (workflowId: string, input?: Record<string, any>, options?: any) => Promise<ThreadResult>
   ): Observable<CompositionEvent> {
-    return create((observer) => {
+    return create((observer: Observer<CompositionEvent>) => {
       const startTime = Date.now();
       const results: Result<ThreadResult, Error>[] = [];
       const errors: Error[] = [];

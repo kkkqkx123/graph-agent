@@ -31,7 +31,7 @@ export {
   ParsedLLMProfileConfig,
   IConfigParser,
   IConfigTransformer
-} from '@modular-agent/types';
+} from './types';
 
 // 解析器
 export { ConfigParser } from './config-parser';

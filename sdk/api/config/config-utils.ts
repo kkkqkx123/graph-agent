@@ -4,7 +4,7 @@
  */
 
 import * as path from 'path';
-import { ConfigFormat } from '@modular-agent/types';
+import { ConfigFormat } from './types';
 
 /**
  * 根据文件扩展名检测配置格式

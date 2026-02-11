@@ -7,7 +7,7 @@ import type { TriggerTemplate } from '@modular-agent/types/trigger-template';
 import type { TriggerCondition, TriggerAction } from '@modular-agent/types/trigger';
 import type { Metadata } from '@modular-agent/types/common';
 import { now } from '@modular-agent/common-utils/timestamp-utils';
-import { triggerTemplateRegistry } from '@modular-agent/sdk/core/services/trigger-template-registry';
+import { triggerTemplateRegistry } from '../../core/services/trigger-template-registry';
 
 /**
  * TriggerTemplateBuilder - 触发器模板构建器

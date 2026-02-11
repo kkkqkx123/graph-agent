@@ -3,7 +3,7 @@
  * 负责解析JSON格式的配置文件
  */
 
-import type { WorkflowConfigFile } from '@modular-agent/types';
+import type { WorkflowConfigFile } from './types';
 import { ConfigurationError } from '@modular-agent/types/errors';
 
 /**
@@ -15,7 +15,7 @@ import { ConfigurationError } from '@modular-agent/types/errors';
 export function parseJson(content: string): WorkflowConfigFile {
   try {
     const parsed = JSON.parse(content);
-    
+
     // 验证必需字段
     if (!parsed.id) {
       throw new ConfigurationError(
@@ -23,21 +23,21 @@ export function parseJson(content: string): WorkflowConfigFile {
         'id'
       );
     }
-    
+
     if (!parsed.name) {
       throw new ConfigurationError(
         'JSON配置文件必须包含 name 字段',
         'name'
       );
     }
-    
+
     if (!parsed.version) {
       throw new ConfigurationError(
         'JSON配置文件必须包含 version 字段',
         'version'
       );
     }
-    
+
     return parsed as WorkflowConfigFile;
   } catch (error) {
     if (error instanceof ConfigurationError) {

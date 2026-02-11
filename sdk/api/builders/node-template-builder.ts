@@ -7,7 +7,7 @@ import type { NodeTemplate } from '@modular-agent/types/node-template';
 import type { NodeType, NodeConfig } from '@modular-agent/types/node';
 import type { Metadata } from '@modular-agent/types/common';
 import { now } from '@modular-agent/common-utils/timestamp-utils';
-import { nodeTemplateRegistry } from '@modular-agent/sdk/core/services/node-template-registry';
+import { nodeTemplateRegistry } from '../../core/services/node-template-registry';
 
 /**
  * NodeTemplateBuilder - 节点模板构建器
