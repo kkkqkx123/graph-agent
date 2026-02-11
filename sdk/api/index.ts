@@ -78,17 +78,6 @@ export {
 export { APIFactory, apiFactory, type SDKAPIConfig, type AllAPIs } from './core/api-factory';
 
 
-// 统一错误处理
-export {
-  APIError,
-  APIErrorCode,
-  type APIErrorDetails,
-  type ErrorHandler,
-  type ErrorContext,
-  DefaultErrorHandler,
-  ErrorHandlerRegistry
-} from './types/api-error';
-
 // 事件系统类型
 export {
   APIEventType,
@@ -109,9 +98,9 @@ export {
 
 // Execution Commands
 export {
-  ExecuteWorkflowCommand
-} from './operations/commands/execution/execute-workflow-command';
-export type { ExecuteWorkflowParams } from './operations/commands/execution/execute-workflow-command';
+  ExecuteThreadCommand
+} from './operations/commands/execution/execute-thread-command';
+export type { ExecuteThreadParams } from './operations/commands/execution/execute-thread-command';
 
 export {
   PauseThreadCommand
@@ -244,15 +233,6 @@ export type {
 // Result类型 - 从核心层导入
 export { ok, err, tryCatch, tryCatchAsync, all, any } from '../utils/result-utils';
 export type { Result, Ok, Err } from '../types/result';
-
-// 错误处理工具
-export {
-  convertSDKErrorToAPIError,
-  handleUnknownError,
-  isRetryableError,
-  isClientError,
-  isServerError
-} from './utils/error-utils';
 
 // ============================================================================
 // Observable响应式编程

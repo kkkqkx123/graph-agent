@@ -8,6 +8,8 @@ import type { ThreadResult, ThreadOptions } from '../../types/thread';
 import { ok, err } from '../../utils/result-utils';
 import type { Result } from '../../types/result';
 import { Observable, Observer, create } from '../utils/observable';
+import { ExecuteThreadCommand } from '../operations/commands/execution/execute-thread-command';
+import { isSuccess, isFailure } from '../types/execution-result';
 
 /**
  * ExecutionBuilder - 流畅的执行构建器
@@ -114,12 +116,20 @@ export class ExecutionBuilder {
     }
 
     try {
-      // TODO: 使用Command模式执行工作流
-      // const command = new ExecuteWorkflowCommand({ workflowId: this.workflowId, options: this.options });
-      // const result = await commandExecutor.execute(command);
+      // 使用Command模式执行线程
+      const command = new ExecuteThreadCommand({
+        workflowId: this.workflowId,
+        options: this.options
+      });
       
-      // 临时返回错误，等待Command模式集成
-      return err(new Error('ExecutionBuilder需要使用Command模式，请使用CommandExecutor直接执行'));
+      const executionResult = await command.execute();
+      
+      // 处理ExecutionResult类型
+      if (isSuccess(executionResult)) {
+        return ok(executionResult.data);
+      } else {
+        return err(new Error(executionResult.error.message || '执行失败'));
+      }
     } catch (error) {
       // 触发错误回调
       this.onErrorCallbacks.forEach(callback => {
@@ -281,12 +291,20 @@ export class ExecutionBuilder {
       return err(new Error('Execution was cancelled'));
     }
 
-    // TODO: 使用Command模式执行工作流
-    // const command = new ExecuteWorkflowCommand({ workflowId: this.workflowId!, options: this.options });
-    // const result = await commandExecutor.execute(command);
+    // 使用Command模式执行线程
+    const command = new ExecuteThreadCommand({
+      workflowId: this.workflowId!,
+      options: this.options
+    });
     
-    // 临时返回错误，等待Command模式集成
-    return err(new Error('ExecutionBuilder需要使用Command模式，请使用CommandExecutor直接执行'));
+    const executionResult = await command.execute();
+    
+    // 处理ExecutionResult类型
+    if (isSuccess(executionResult)) {
+      return ok(executionResult.data);
+    } else {
+      return err(new Error(executionResult.error.message || '执行失败'));
+    }
   }
 
   /**

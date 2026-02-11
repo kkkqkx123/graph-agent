@@ -6,7 +6,7 @@
 import type { Command, CommandValidationResult } from '../types/command';
 import type { ExecutionResult } from '../types/execution-result';
 import { failure } from '../types/execution-result';
-import { handleUnknownError } from '../utils/error-utils';
+import { SDKError } from '../../types/errors';
 
 /**
  * Command执行器
@@ -35,30 +35,20 @@ export class CommandExecutor {
     try {
       return await command.execute();
     } catch (error) {
-      try {
-        // 使用错误转换工具
-        const apiError = handleUnknownError(error);
-        
-        return failure<T>({
-          message: apiError.message,
-          code: apiError.code,
-          details: apiError.details,
-          timestamp: apiError.timestamp,
-          requestId: apiError.requestId,
-          cause: apiError.cause ? {
-            name: apiError.cause.name,
-            message: apiError.cause.message,
-            stack: apiError.cause.stack
-          } : undefined
-        }, 0);
-      } catch (handlerError) {
-        // 错误处理器本身出错时的回退机制
-        return failure<T>({
-          message: error instanceof Error ? error.message : String(error),
-          code: 'INTERNAL_ERROR',
-          timestamp: Date.now()
-        }, 0);
-      }
+      // 直接使用SDKError，不做任何转换
+      const sdkError = error instanceof SDKError ? error : new Error(String(error));
+      
+      return failure<T>({
+        message: sdkError.message,
+        code: sdkError instanceof SDKError ? sdkError.code : 'UNKNOWN_ERROR',
+        details: sdkError instanceof SDKError ? sdkError.context : undefined,
+        timestamp: Date.now(),
+        cause: sdkError.cause ? {
+          name: (sdkError.cause as Error).name,
+          message: (sdkError.cause as Error).message,
+          stack: (sdkError.cause as Error).stack
+        } : undefined
+      }, 0);
     }
   }
 

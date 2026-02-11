@@ -4,7 +4,7 @@
  */
 
 import type { ExecutionResult } from './execution-result';
-import { handleUnknownError } from '../utils/error-utils';
+import { SDKError } from '../../types/errors';
 
 /**
  * 命令元数据
@@ -132,31 +132,21 @@ export abstract class BaseCommand<T> implements Command<T> {
    * @returns 执行结果
    */
   protected handleError(error: unknown, startTime: number): ExecutionResult<any> {
-    try {
-      // 使用错误转换工具将任意错误转换为APIError
-      const apiError = handleUnknownError(error);
-      
-      // 返回包含详细错误信息的失败结果
-      return this.failure({
-        message: apiError.message,
-        code: apiError.code,
-        details: apiError.details,
-        timestamp: apiError.timestamp,
-        requestId: apiError.requestId,
-        cause: apiError.cause ? {
-          name: apiError.cause.name,
-          message: apiError.cause.message,
-          stack: apiError.cause.stack
-        } : undefined
-      }, Date.now() - startTime);
-    } catch (handlerError) {
-      // 错误处理器本身出错时的回退机制
-      return this.failure({
-        message: error instanceof Error ? error.message : String(error),
-        code: 'INTERNAL_ERROR',
-        timestamp: Date.now()
-      }, Date.now() - startTime);
-    }
+    // 直接使用SDKError，不做任何转换
+    const sdkError = error instanceof SDKError ? error : new Error(String(error));
+    
+    // 返回包含详细错误信息的失败结果
+    return this.failure({
+      message: sdkError.message,
+      code: sdkError instanceof SDKError ? sdkError.code : 'UNKNOWN_ERROR',
+      details: sdkError instanceof SDKError ? sdkError.context : undefined,
+      timestamp: Date.now(),
+      cause: sdkError.cause ? {
+        name: (sdkError.cause as Error).name,
+        message: (sdkError.cause as Error).message,
+        stack: (sdkError.cause as Error).stack
+      } : undefined
+    }, Date.now() - startTime);
   }
 
   /**

@@ -7,15 +7,6 @@
 export { ok, err, tryCatch, tryCatchAsync, all, any } from '../../utils/result-utils';
 export type { Result, Ok, Err } from '../../types/result';
 
-// 错误处理工具
-export {
-  convertSDKErrorToAPIError,
-  handleUnknownError,
-  isRetryableError,
-  isClientError,
-  isServerError
-} from './error-utils';
-
 // Observable类型
 export {
   Observable,
