@@ -22,7 +22,6 @@ export interface ComponentMap {
   lifecycleCoordinator: ThreadLifecycleCoordinator;
   toolService: any;
   llmExecutor: any;
-  graphRegistry: any;
   humanRelayHandler: any;
   userInteractionHandler: any;
 }

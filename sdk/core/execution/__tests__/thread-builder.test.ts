@@ -7,7 +7,8 @@ import { ThreadContext } from '../context/thread-context';
 import { ExecutionContext } from '../context/execution-context';
 import { ValidationError } from '../../../types/errors';
 import { NodeType } from '../../../types/node';
-import type { ProcessedWorkflowDefinition } from '../../../types/workflow';
+import { ProcessedWorkflowDefinition } from '../../../types/workflow';
+import { GraphData } from '../../entities/graph-data';
 import type { ThreadOptions } from '../../../types/thread';
 
 // Mock 依赖
@@ -37,24 +38,38 @@ class MockWorkflowRegistry {
     return Promise.resolve(processed);
   }
 
+  async ensureProcessed(workflowId: string): Promise<any> {
+    const processed = this.processedWorkflows.get(workflowId);
+    if (processed) {
+      return Promise.resolve(processed);
+    }
+    
+    const workflow = this.workflows.get(workflowId);
+    if (!workflow) {
+      const { ValidationError } = require('../../../types/errors');
+      throw new ValidationError(
+        `Workflow with ID '${workflowId}' not found`,
+        'workflowId'
+      );
+    }
+    
+    const result = await this.preprocessAndStore(workflow);
+    if (!result) {
+      const { ValidationError } = require('../../../types/errors');
+      throw new ValidationError(
+        `Failed to preprocess workflow with ID '${workflowId}'`,
+        'workflowId'
+      );
+    }
+    return result;
+  }
+
   addWorkflow(workflow: any): void {
     this.workflows.set(workflow.id, workflow);
   }
 
   addProcessedWorkflow(workflow: any): void {
     this.processedWorkflows.set(workflow.id, workflow);
-  }
-}
-
-class MockGraphRegistry {
-  private graphs = new Map<string, any>();
-
-  get(workflowId: string): any {
-    return this.graphs.get(workflowId);
-  }
-
-  addGraph(workflowId: string, graph: any): void {
-    this.graphs.set(workflowId, graph);
   }
 }
 
@@ -87,7 +102,6 @@ class MockLLMExecutor {
 describe('ThreadBuilder', () => {
   let builder: ThreadBuilder;
   let workflowRegistry: MockWorkflowRegistry;
-  let graphRegistry: MockGraphRegistry;
   let threadRegistry: MockThreadRegistry;
   let eventManager: MockEventManager;
   let toolService: MockToolService;
@@ -96,7 +110,6 @@ describe('ThreadBuilder', () => {
 
   beforeEach(() => {
     workflowRegistry = new MockWorkflowRegistry();
-    graphRegistry = new MockGraphRegistry();
     threadRegistry = new MockThreadRegistry();
     eventManager = new MockEventManager();
     toolService = new MockToolService();
@@ -107,7 +120,6 @@ describe('ThreadBuilder', () => {
 
     // 注册 mock 服务到执行上下文
     executionContext.register('workflowRegistry', workflowRegistry);
-    executionContext.register('graphRegistry', graphRegistry);
     executionContext.register('threadRegistry', threadRegistry);
     executionContext.register('eventManager', eventManager);
     executionContext.register('toolService', toolService);
@@ -120,7 +132,8 @@ describe('ThreadBuilder', () => {
     it('应该从工作流ID成功构建ThreadContext', async () => {
       // 准备测试数据
       const workflowId = 'test-workflow';
-      const processedWorkflow: ProcessedWorkflowDefinition = {
+      // 工作流定义
+      const workflow = {
         id: workflowId,
         version: '1.0.0',
         name: 'Test Workflow',
@@ -149,17 +162,39 @@ describe('ThreadBuilder', () => {
         config: {},
         createdAt: Date.now(),
         updatedAt: Date.now(),
-        availableTools: { initial: new Set() },
-        graph: {} as any,
+        availableTools: { initial: new Set<string>() }
+      };
+
+      // 创建图数据
+      const graph = new GraphData();
+      graph.startNodeId = 'start';
+      graph.endNodeIds.add('end');
+      graph.addNode({
+        id: 'start',
+        type: NodeType.START,
+        name: 'Start Node',
+        workflowId: workflowId,
+        originalNode: workflow.nodes[0]
+      });
+      graph.addNode({
+        id: 'end',
+        type: NodeType.END,
+        name: 'End Node',
+        workflowId: workflowId,
+        originalNode: workflow.nodes[1]
+      });
+
+      // 预处理后的元数据
+      const processedData = {
         processedAt: Date.now(),
         hasSubgraphs: false,
         graphAnalysis: {
           cycleDetection: { hasCycle: false, cycleNodes: [], cycleEdges: [] },
           reachability: {
-            reachableFromStart: new Set(['start', 'end']),
-            reachableToEnd: new Set(['start', 'end']),
-            unreachableNodes: new Set(),
-            deadEndNodes: new Set()
+            reachableFromStart: new Set<string>(['start', 'end']),
+            reachableToEnd: new Set<string>(['start', 'end']),
+            unreachableNodes: new Set<string>(),
+            deadEndNodes: new Set<string>()
           },
           topologicalSort: { success: true, sortedNodes: ['start', 'end'] },
           forkJoinValidation: {
@@ -178,18 +213,13 @@ describe('ThreadBuilder', () => {
           validatedAt: Date.now()
         },
         subgraphMergeLogs: [],
-        subworkflowIds: new Set(),
-        topologicalOrder: ['start', 'end']
+        subworkflowIds: new Set<string>(),
+        topologicalOrder: ['start', 'end'],
+        graph: graph
       };
-
-      const graphData = {
-        getNode: (nodeId: string) => ({
-          originalNode: processedWorkflow.nodes.find(n => n.id === nodeId)
-        })
-      };
+      const processedWorkflow = new ProcessedWorkflowDefinition(workflow, processedData);
 
       workflowRegistry.addProcessedWorkflow(processedWorkflow);
-      graphRegistry.addGraph(workflowId, graphData);
 
       const options: ThreadOptions = {
         input: { testInput: 'value' }
@@ -211,7 +241,7 @@ describe('ThreadBuilder', () => {
 
       await expect(builder.build(workflowId)).rejects.toThrow(ValidationError);
       await expect(builder.build(workflowId)).rejects.toThrow(
-        `Workflow with ID '${workflowId}' not found in registry`
+        `Workflow with ID '${workflowId}' not found`
       );
     });
 
@@ -237,7 +267,7 @@ describe('ThreadBuilder', () => {
 
     it('应该在没有START节点时抛出ValidationError', async () => {
       const workflowId = 'test-workflow';
-      const processedWorkflow: ProcessedWorkflowDefinition = {
+      const workflow = {
         id: workflowId,
         version: '1.0.0',
         name: 'Test Workflow',
@@ -258,17 +288,18 @@ describe('ThreadBuilder', () => {
         config: {},
         createdAt: Date.now(),
         updatedAt: Date.now(),
-        availableTools: { initial: new Set() },
-        graph: {} as any,
+        availableTools: { initial: new Set<string>() }
+      };
+      const processedData = {
         processedAt: Date.now(),
         hasSubgraphs: false,
         graphAnalysis: {
           cycleDetection: { hasCycle: false, cycleNodes: [], cycleEdges: [] },
           reachability: {
-            reachableFromStart: new Set(['end']),
-            reachableToEnd: new Set(['end']),
-            unreachableNodes: new Set(),
-            deadEndNodes: new Set()
+            reachableFromStart: new Set<string>(['end']),
+            reachableToEnd: new Set<string>(['end']),
+            unreachableNodes: new Set<string>(),
+            deadEndNodes: new Set<string>()
           },
           topologicalSort: { success: true, sortedNodes: ['end'] },
           forkJoinValidation: {
@@ -287,9 +318,11 @@ describe('ThreadBuilder', () => {
           validatedAt: Date.now()
         },
         subgraphMergeLogs: [],
-        subworkflowIds: new Set(),
-        topologicalOrder: ['end']
+        subworkflowIds: new Set<string>(),
+        topologicalOrder: ['end'],
+        graph: new GraphData()
       };
+      const processedWorkflow = new ProcessedWorkflowDefinition(workflow, processedData);
 
       workflowRegistry.addProcessedWorkflow(processedWorkflow);
 
@@ -301,7 +334,8 @@ describe('ThreadBuilder', () => {
 
     it('应该在没有END节点时抛出ValidationError', async () => {
       const workflowId = 'test-workflow';
-      const processedWorkflow: ProcessedWorkflowDefinition = {
+      // 工作流定义
+      const workflow = {
         id: workflowId,
         version: '1.0.0',
         name: 'Test Workflow',
@@ -322,17 +356,31 @@ describe('ThreadBuilder', () => {
         config: {},
         createdAt: Date.now(),
         updatedAt: Date.now(),
-        availableTools: { initial: new Set() },
-        graph: {} as any,
+        availableTools: { initial: new Set<string>() }
+      };
+
+      // 创建图数据
+      const graph = new GraphData();
+      graph.startNodeId = 'start';
+      graph.addNode({
+        id: 'start',
+        type: NodeType.START,
+        name: 'Start Node',
+        workflowId: workflowId,
+        originalNode: workflow.nodes[0]
+      });
+
+      // 预处理后的元数据
+      const processedData = {
         processedAt: Date.now(),
         hasSubgraphs: false,
         graphAnalysis: {
           cycleDetection: { hasCycle: false, cycleNodes: [], cycleEdges: [] },
           reachability: {
-            reachableFromStart: new Set(['start']),
-            reachableToEnd: new Set(['start']),
-            unreachableNodes: new Set(),
-            deadEndNodes: new Set()
+            reachableFromStart: new Set<string>(['start']),
+            reachableToEnd: new Set<string>(['start']),
+            unreachableNodes: new Set<string>(),
+            deadEndNodes: new Set<string>()
           },
           topologicalSort: { success: true, sortedNodes: ['start'] },
           forkJoinValidation: {
@@ -351,9 +399,11 @@ describe('ThreadBuilder', () => {
           validatedAt: Date.now()
         },
         subgraphMergeLogs: [],
-        subworkflowIds: new Set(),
-        topologicalOrder: ['start']
+        subworkflowIds: new Set<string>(),
+        topologicalOrder: ['start'],
+        graph: graph
       };
+      const processedWorkflow = new ProcessedWorkflowDefinition(workflow, processedData);
 
       workflowRegistry.addProcessedWorkflow(processedWorkflow);
 
@@ -363,78 +413,6 @@ describe('ThreadBuilder', () => {
       );
     });
 
-    it('应该在GraphRegistry中找不到图时抛出ValidationError', async () => {
-      const workflowId = 'test-workflow';
-      const processedWorkflow: ProcessedWorkflowDefinition = {
-        id: workflowId,
-        version: '1.0.0',
-        name: 'Test Workflow',
-        description: 'Test workflow for unit testing',
-        nodes: [
-          {
-            id: 'start',
-            type: NodeType.START,
-            name: 'Start Node',
-            config: {},
-            outgoingEdgeIds: [],
-            incomingEdgeIds: []
-          },
-          {
-            id: 'end',
-            type: NodeType.END,
-            name: 'End Node',
-            config: {},
-            outgoingEdgeIds: [],
-            incomingEdgeIds: []
-          }
-        ],
-        edges: [],
-        variables: [],
-        triggers: [],
-        config: {},
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        availableTools: { initial: new Set() },
-        graph: {} as any,
-        processedAt: Date.now(),
-        hasSubgraphs: false,
-        graphAnalysis: {
-          cycleDetection: { hasCycle: false, cycleNodes: [], cycleEdges: [] },
-          reachability: {
-            reachableFromStart: new Set(['start', 'end']),
-            reachableToEnd: new Set(['start', 'end']),
-            unreachableNodes: new Set(),
-            deadEndNodes: new Set()
-          },
-          topologicalSort: { success: true, sortedNodes: ['start', 'end'] },
-          forkJoinValidation: {
-            isValid: true,
-            unpairedForks: [],
-            unpairedJoins: [],
-            pairs: new Map()
-          },
-          nodeStats: { total: 2, byType: new Map() },
-          edgeStats: { total: 0, byType: new Map() }
-        },
-        validationResult: {
-          isValid: true,
-          errors: [],
-          warnings: [],
-          validatedAt: Date.now()
-        },
-        subgraphMergeLogs: [],
-        subworkflowIds: new Set(),
-        topologicalOrder: ['start', 'end']
-      };
-
-      workflowRegistry.addProcessedWorkflow(processedWorkflow);
-      // 不添加图到 GraphRegistry
-
-      await expect(builder.build(workflowId)).rejects.toThrow(ValidationError);
-      await expect(builder.build(workflowId)).rejects.toThrow(
-        `Graph not found for workflow: ${workflowId}`
-      );
-    });
   });
 
   describe('buildFromTemplate', () => {

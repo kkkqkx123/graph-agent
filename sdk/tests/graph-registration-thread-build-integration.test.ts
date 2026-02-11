@@ -17,7 +17,8 @@ import { ExecutionContext } from '../core/execution/context/execution-context';
 import { NodeType } from '../types/node';
 import { EdgeType } from '../types/edge';
 import { ValidationError } from '../types/errors';
-import type { WorkflowDefinition, ProcessedWorkflowDefinition } from '../types/workflow';
+import type { WorkflowDefinition } from '../types/workflow';
+import { ProcessedWorkflowDefinition } from '../types/workflow';
 import type { ThreadOptions } from '../types/thread';
 
 describe('Graph注册到Thread构建集成测试', () => {

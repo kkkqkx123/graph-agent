@@ -37,7 +37,6 @@ export class SingletonRegistry {
     const { threadRegistry } = require('../../services/thread-registry');
     const { toolService } = require('../../services/tool-service');
     const { LLMExecutor } = require('../executors/llm-executor');
-    const { graphRegistry } = require('../../services/graph-registry');
 
     // 只有在未注册的情况下才注册默认单例服务
     if (!this.has('eventManager')) {
@@ -54,9 +53,6 @@ export class SingletonRegistry {
     }
     if (!this.has('llmExecutor')) {
       this.register('llmExecutor', LLMExecutor.getInstance());
-    }
-    if (!this.has('graphRegistry')) {
-      this.register('graphRegistry', graphRegistry);
     }
 
     this.initialized = true;

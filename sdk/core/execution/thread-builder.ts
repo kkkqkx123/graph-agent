@@ -7,7 +7,7 @@
  * 使用 ExecutionContext 获取 WorkflowRegistry
  */
 
-import type { ProcessedWorkflowDefinition } from '../../types/workflow';
+import { ProcessedWorkflowDefinition } from '../../types/workflow';
 import type { Thread, ThreadOptions, ThreadStatus } from '../../types/thread';
 import { ThreadType, ErrorHandlingStrategy } from '../../types/thread';
 import { ConversationManager } from './managers/conversation-manager';
@@ -86,15 +86,9 @@ export class ThreadBuilder {
       throw new ValidationError('Processed workflow must have an END node', 'workflow.nodes');
     }
 
-    // 步骤2：从 GraphRegistry 获取图实例
-    const graphRegistry = this.executionContext.getGraphRegistry();
-    const threadGraphData = graphRegistry.get(processedWorkflow.id);
-    if (!threadGraphData) {
-      throw new ValidationError(
-        `Graph not found for workflow: ${processedWorkflow.id}`,
-        'workflow.id'
-      );
-    }
+    // 步骤2：从 ProcessedWorkflowDefinition 获取图实例
+    // ProcessedWorkflowDefinition 现在直接包含完整的图结构
+    const threadGraphData = processedWorkflow.graph;
 
     // 步骤3：创建 Thread 实例
     const threadId = generateId();

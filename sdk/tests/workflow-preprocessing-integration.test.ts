@@ -9,7 +9,6 @@
  */
 
 import { WorkflowRegistry } from '../core/services/workflow-registry';
-import { graphRegistry } from '../core/services/graph-registry';
 import { nodeTemplateRegistry } from '../core/services/node-template-registry';
 import { triggerTemplateRegistry } from '../core/services/trigger-template-registry';
 import { NodeType } from '../types/node';
@@ -24,12 +23,19 @@ describe('Workflow到Graph注册集成测试', () => {
 
   beforeEach(() => {
     // 创建新的实例以避免测试间干扰
+    // 创建一个 mock 的 threadRegistry
+    const mockThreadRegistry = {
+      isWorkflowActive: jest.fn(() => false),
+      getThreadsByWorkflow: jest.fn(() => []),
+      getAllThreads: jest.fn(() => [])
+    };
+    
     registry = new WorkflowRegistry({
-      maxRecursionDepth: 3
+      maxRecursionDepth: 3,
+      threadRegistry: mockThreadRegistry
     });
 
     // 清理全局注册表
-    graphRegistry.clear();
     nodeTemplateRegistry.clear();
     triggerTemplateRegistry.clear();
   });
@@ -41,7 +47,6 @@ describe('Workflow到Graph注册集成测试', () => {
 
   afterEach(() => {
     // 清理全局注册表
-    graphRegistry.clear();
     nodeTemplateRegistry.clear();
     triggerTemplateRegistry.clear();
   });
@@ -120,7 +125,7 @@ describe('Workflow到Graph注册集成测试', () => {
   });
 
   describe('场景1：基础工作流注册到Graph', () => {
-    it('应该成功注册工作流并生成对应的Graph', () => {
+    it('应该成功注册工作流并生成对应的Graph', async () => {
       const workflow = createBaseWorkflow('workflow-basic', 'Basic Workflow');
 
       // 注册工作流
@@ -131,14 +136,14 @@ describe('Workflow到Graph注册集成测试', () => {
       const registered = registry.get('workflow-basic');
       expect(registered).toEqual(workflow);
 
-      // 验证预处理结果
-      const processed = registry.getProcessed('workflow-basic');
+      // 确保预处理完成并验证结果
+      const processed = await registry.ensureProcessed('workflow-basic');
       expect(processed).toBeDefined();
-      expect(processed?.graph).toBeDefined();
-      expect(processed?.validationResult.isValid).toBe(true);
+      expect(processed.graph).toBeDefined();
+      expect(processed.validationResult.isValid).toBe(true);
 
-      // 验证Graph已注册到全局注册表
-      const graph = graphRegistry.get('workflow-basic');
+      // 验证Graph结构
+      const graph = processed.graph;
       expect(graph).toBeDefined();
       expect(graph?.nodes.size).toBe(3);
       expect(graph?.edges.size).toBe(2);
@@ -147,12 +152,13 @@ describe('Workflow到Graph注册集成测试', () => {
       expect(graph?.endNodeIds.has('workflow-basic-end')).toBe(true);
     });
 
-    it('应该支持工作流更新并重新生成Graph', () => {
+    it('应该支持工作流更新并重新生成Graph', async () => {
       const workflow = createBaseWorkflow('workflow-update', 'Update Workflow');
       registry.register(workflow);
 
       // 获取初始Graph
-      const initialGraph = graphRegistry.get('workflow-update');
+      const initialProcessed = await registry.ensureProcessed('workflow-update');
+      const initialGraph = initialProcessed.graph;
       expect(initialGraph).toBeDefined();
 
       // 创建新版本工作流（遵循不可变原则）
@@ -173,23 +179,23 @@ describe('Workflow到Graph注册集成测试', () => {
       expect(registered?.version).toBe('2.0.0');
 
       // 验证Graph已更新
-      const updatedGraph = graphRegistry.get('workflow-update');
+      const updatedProcessed = await registry.ensureProcessed('workflow-update');
+      const updatedGraph = updatedProcessed.graph;
       expect(updatedGraph).toBeDefined();
       expect(updatedGraph).not.toBe(initialGraph); // 应该是新的Graph实例
     });
 
-    it('应该在删除工作流时清除Graph缓存', () => {
+    it('应该在删除工作流时清除缓存', async () => {
       const workflow = createBaseWorkflow('workflow-delete', 'Delete Workflow');
       registry.register(workflow);
 
-      // 验证Graph已注册
-      expect(graphRegistry.has('workflow-delete')).toBe(true);
+      // 确保预处理完成并验证结果存在
+      expect(await registry.ensureProcessed('workflow-delete')).toBeDefined();
 
       // 删除工作流
       registry.unregister('workflow-delete');
 
-      // 验证Graph已清除
-      expect(graphRegistry.has('workflow-delete')).toBe(false);
+      // 验证缓存已清除
       expect(registry.getProcessed('workflow-delete')).toBeUndefined();
     });
   });
@@ -233,7 +239,7 @@ describe('Workflow到Graph注册集成测试', () => {
       triggerTemplateRegistry.register(triggerTemplate);
     });
 
-    it('应该成功展开节点模板并构建正确的Graph', () => {
+    it('应该成功展开节点模板并构建正确的Graph', async () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-template-expand',
         name: 'Template Expand Workflow',
@@ -302,12 +308,12 @@ describe('Workflow到Graph注册集成测试', () => {
       // 注册工作流
       registry.register(workflow);
 
-      // 验证预处理结果
-      const processed = registry.getProcessed('workflow-template-expand');
+      // 确保预处理完成并验证结果
+      const processed = await registry.ensureProcessed('workflow-template-expand');
       expect(processed).toBeDefined();
 
       // 验证Graph结构正确
-      const graph = graphRegistry.get('workflow-template-expand');
+      const graph = processed.graph;
       expect(graph).toBeDefined();
       expect(graph?.nodes.size).toBe(3);
       expect(graph?.edges.size).toBe(2);
@@ -391,7 +397,7 @@ describe('Workflow到Graph注册集成测试', () => {
   });
 
   describe('场景3：子工作流集成测试', () => {
-    it('应该成功处理包含子工作流的工作流', () => {
+    it('应该成功处理包含子工作流的工作流', async () => {
       // 创建子工作流
       const subworkflow: WorkflowDefinition = {
         id: 'subworkflow-simple',
@@ -533,14 +539,14 @@ describe('Workflow到Graph注册集成测试', () => {
       // 再注册父工作流
       registry.register(parentWorkflow);
 
-      // 验证父工作流预处理结果
-      const processed = registry.getProcessed('parent-workflow');
+      // 确保预处理完成并验证结果
+      const processed = await registry.ensureProcessed('parent-workflow');
       expect(processed).toBeDefined();
-      expect(processed?.hasSubgraphs).toBe(true);
-      expect(processed?.subworkflowIds.has('subworkflow-simple')).toBe(true);
+      expect(processed.hasSubgraphs).toBe(true);
+      expect(processed.subworkflowIds.has('subworkflow-simple')).toBe(true);
 
       // 验证Graph结构
-      const parentGraph = graphRegistry.get('parent-workflow');
+      const parentGraph = processed.graph;
       expect(parentGraph).toBeDefined();
 
       // 验证工作流关系
@@ -550,7 +556,7 @@ describe('Workflow到Graph注册集成测试', () => {
       expect(hierarchy.depth).toBe(0);
     });
 
-    it('应该拒绝引用不存在的子工作流', () => {
+    it('应该拒绝引用不存在的子工作流', async () => {
       const workflow: WorkflowDefinition = {
         id: `workflow-invalid-subgraph-${Math.random().toString(36).substring(2, 11)}`, // 使用随机字符串确保唯一性
         name: 'Invalid Subgraph Workflow',
@@ -616,13 +622,16 @@ describe('Workflow到Graph注册集成测试', () => {
         updatedAt: Date.now()
       };
 
-      // 应该抛出验证错误，因为引用了不存在的子工作流
-      expect(() => registry.register(workflow)).toThrow('Subworkflow (non-existent-subworkflow) not found');
+      // 注册工作流（不会抛出错误，预处理是异步的）
+      registry.register(workflow);
+
+      // ensureProcessed 应该抛出错误
+      await expect(registry.ensureProcessed(workflow.id)).rejects.toThrow('Subworkflow (non-existent-subworkflow) not found');
     });
   });
 
   describe('场景4：批量操作集成测试', () => {
-    it('应该成功批量注册多个工作流', () => {
+    it('应该成功批量注册多个工作流', async () => {
       const workflows = [
         createBaseWorkflow('workflow-batch-1', 'Batch Workflow 1'),
         createBaseWorkflow('workflow-batch-2', 'Batch Workflow 2'),
@@ -636,13 +645,13 @@ describe('Workflow到Graph注册集成测试', () => {
       expect(registry.has('workflow-batch-2')).toBe(true);
       expect(registry.has('workflow-batch-3')).toBe(true);
 
-      // 验证所有工作流都已预处理并注册到GraphRegistry
-      expect(graphRegistry.get('workflow-batch-1')).toBeDefined();
-      expect(graphRegistry.get('workflow-batch-2')).toBeDefined();
-      expect(graphRegistry.get('workflow-batch-3')).toBeDefined();
+      // 验证所有工作流都已预处理
+      expect(await registry.ensureProcessed('workflow-batch-1')).toBeDefined();
+      expect(await registry.ensureProcessed('workflow-batch-2')).toBeDefined();
+      expect(await registry.ensureProcessed('workflow-batch-3')).toBeDefined();
     });
 
-    it('应该在批量注册失败时停止并清理', () => {
+    it('应该在批量注册失败时停止并清理', async () => {
       const workflows = [
         createBaseWorkflow('workflow-batch-valid', 'Valid Workflow'),
         {
@@ -665,14 +674,14 @@ describe('Workflow到Graph注册集成测试', () => {
       expect(registry.has('workflow-batch-invalid')).toBe(false);
       expect(registry.has('workflow-batch-not-registered')).toBe(false);
 
-      // 验证GraphRegistry中只有有效的工作流
-      expect(graphRegistry.has('workflow-batch-valid')).toBe(true);
-      expect(graphRegistry.has('workflow-batch-invalid')).toBe(false);
+      // 验证只有有效的工作流被预处理
+      expect(await registry.ensureProcessed('workflow-batch-valid')).toBeDefined();
+      expect(registry.getProcessed('workflow-batch-invalid')).toBeUndefined();
     });
   });
 
   describe('场景5：异常路径和错误处理', () => {
-    it('应该拒绝包含循环依赖的工作流', () => {
+    it('应该拒绝包含循环依赖的工作流', async () => {
       const workflow: WorkflowDefinition = {
         id: `workflow-cycle-${Math.random().toString(36).substring(2, 11)}`, // 使用随机字符串确保唯一性
         name: 'Cycle Workflow',
@@ -773,11 +782,14 @@ describe('Workflow到Graph注册集成测试', () => {
         updatedAt: Date.now()
       };
 
-      // 应该抛出验证错误，因为包含循环依赖
-      expect(() => registry.register(workflow)).toThrow('Graph build failed');
+      // 注册工作流（不会抛出错误，预处理是异步的）
+      registry.register(workflow);
+
+      // ensureProcessed 应该抛出错误
+      await expect(registry.ensureProcessed(workflow.id)).rejects.toThrow('Graph build failed');
     });
 
-    it('应该拒绝孤立节点的工作流', () => {
+    it('应该拒绝孤立节点的工作流', async () => {
       const workflow: WorkflowDefinition = {
         id: `workflow-isolated-${Math.random().toString(36).substring(2, 11)}`, // 使用随机字符串确保唯一性
         name: 'Isolated Node Workflow',
@@ -836,13 +848,16 @@ describe('Workflow到Graph注册集成测试', () => {
         updatedAt: Date.now()
       };
 
-      // 应该抛出验证错误，因为包含孤立节点
-      expect(() => registry.register(workflow)).toThrow('Graph build failed');
+      // 注册工作流（不会抛出错误，预处理是异步的）
+      registry.register(workflow);
+
+      // ensureProcessed 应该抛出错误
+      await expect(registry.ensureProcessed(workflow.id)).rejects.toThrow('Graph build failed');
     });
   });
 
   describe('场景6：FORK/JOIN节点ID去重处理', () => {
-    it('应该正确处理FORK节点中重复的pathId并生成全局唯一ID', () => {
+    it('应该正确处理FORK节点中重复的pathId并生成全局唯一ID', async () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-fork-dedup',
         name: 'Fork Deduplication Workflow',
@@ -975,7 +990,8 @@ describe('Workflow到Graph注册集成测试', () => {
       registry.register(workflow);
 
       // 获取构建的Graph
-      const graph = graphRegistry.get('workflow-fork-dedup');
+      const processed = await registry.ensureProcessed('workflow-fork-dedup');
+      const graph = processed.graph;
       expect(graph).toBeDefined();
 
       // 获取FORK节点
@@ -1013,7 +1029,7 @@ describe('Workflow到Graph注册集成测试', () => {
       expect(joinConfig.mainPathId).toBe(pathId1);
     });
 
-    it('应该正确处理多个FORK节点使用不同pathId的情况', () => {
+    it('应该正确处理多个FORK节点使用不同pathId的情况', async () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-multiple-fork',
         name: 'Multiple Fork Workflow',
@@ -1226,7 +1242,8 @@ describe('Workflow到Graph注册集成测试', () => {
       registry.register(workflow);
 
       // 获取构建的Graph
-      const graph = graphRegistry.get('workflow-multiple-fork');
+      const processed = await registry.ensureProcessed('workflow-multiple-fork');
+      const graph = processed.graph;
       expect(graph).toBeDefined();
 
       // 获取第一个FORK节点

@@ -190,27 +190,68 @@ export interface PreprocessValidationResult {
 
 /**
  * 处理后的工作流定义类型
- * 扩展WorkflowDefinition，添加预处理相关的元数据
+ * 包装WorkflowDefinition，添加预处理相关的元数据
+ * 包含完整的、合并后的图结构，无需依赖外部GraphRegistry
  */
-export interface ProcessedWorkflowDefinition extends Omit<WorkflowDefinition, 'triggers'> {
-  /** 图结构（使用 Graph 接口） */
-  graph: Graph;
+export class ProcessedWorkflowDefinition {
+  // 原始工作流定义
+  private readonly workflow: WorkflowDefinition;
+  
   /** 触发器（已展开，不包含引用） */
-  triggers?: WorkflowTrigger[];
+  readonly triggers?: WorkflowTrigger[];
   /** 图分析结果 */
-  graphAnalysis: GraphAnalysisResult;
+  readonly graphAnalysis: GraphAnalysisResult;
   /** 预处理验证结果 */
-  validationResult: PreprocessValidationResult;
+  readonly validationResult: PreprocessValidationResult;
   /** 子工作流合并日志 */
-  subgraphMergeLogs: SubgraphMergeLog[];
+  readonly subgraphMergeLogs: SubgraphMergeLog[];
   /** 预处理时间戳 */
-  processedAt: Timestamp;
+  readonly processedAt: Timestamp;
   /** 是否包含子工作流 */
-  hasSubgraphs: boolean;
+  readonly hasSubgraphs: boolean;
   /** 子工作流ID集合 */
-  subworkflowIds: Set<ID>;
+  readonly subworkflowIds: Set<ID>;
   /** 拓扑排序后的节点ID列表 */
-  topologicalOrder: ID[];
+  readonly topologicalOrder: ID[];
+  /** 完整的、合并后的图结构 */
+  readonly graph: Graph;
+
+  constructor(workflow: WorkflowDefinition, processedData: {
+    triggers?: WorkflowTrigger[];
+    graphAnalysis: GraphAnalysisResult;
+    validationResult: PreprocessValidationResult;
+    subgraphMergeLogs: SubgraphMergeLog[];
+    processedAt: Timestamp;
+    hasSubgraphs: boolean;
+    subworkflowIds: Set<ID>;
+    topologicalOrder: ID[];
+    graph: Graph;
+  }) {
+    this.workflow = workflow;
+    this.triggers = processedData.triggers;
+    this.graphAnalysis = processedData.graphAnalysis;
+    this.validationResult = processedData.validationResult;
+    this.subgraphMergeLogs = processedData.subgraphMergeLogs;
+    this.processedAt = processedData.processedAt;
+    this.hasSubgraphs = processedData.hasSubgraphs;
+    this.subworkflowIds = processedData.subworkflowIds;
+    this.topologicalOrder = processedData.topologicalOrder;
+    this.graph = processedData.graph;
+  }
+
+  // 代理访问原始workflow的所有字段
+  get id(): ID { return this.workflow.id; }
+  get name(): string { return this.workflow.name; }
+  get description(): string | undefined { return this.workflow.description; }
+  get nodes(): Node[] { return this.workflow.nodes; }
+  get edges(): Edge[] { return this.workflow.edges; }
+  get variables(): WorkflowVariable[] | undefined { return this.workflow.variables; }
+  get config(): WorkflowConfig | undefined { return this.workflow.config; }
+  get metadata(): WorkflowMetadata | undefined { return this.workflow.metadata; }
+  get version(): Version { return this.workflow.version; }
+  get createdAt(): Timestamp { return this.workflow.createdAt; }
+  get updatedAt(): Timestamp { return this.workflow.updatedAt; }
+  get availableTools(): { initial: Set<string> } | undefined { return this.workflow.availableTools; }
 }
 
 /**

@@ -140,19 +140,17 @@ export class CheckpointCoordinator {
     // 步骤2：验证 checkpoint 完整性和兼容性
     CheckpointCoordinator.validateCheckpoint(checkpoint);
 
-    // 步骤3：从 WorkflowRegistry 获取 WorkflowDefinition 和 Graph
-    const workflowDefinition = workflowRegistry.get(checkpoint.workflowId);
-    if (!workflowDefinition) {
-      throw new NotFoundError(`Workflow not found`, 'Workflow', checkpoint.workflowId);
+    // 步骤3：从 WorkflowRegistry 获取 ProcessedWorkflowDefinition
+    // ProcessedWorkflowDefinition 包含完整的预处理后的图结构
+    const processedWorkflow = await workflowRegistry.ensureProcessed(checkpoint.workflowId);
+    if (!processedWorkflow) {
+      throw new NotFoundError(`Processed workflow not found`, 'Workflow', checkpoint.workflowId);
     }
 
-    // 获取工作流图结构
+    // 从 ProcessedWorkflowDefinition 获取图结构
     // 设计目的：恢复后的 Thread 需要完整的图结构(graph中存储的是合并后的工作流，完成了命名冲突的处理)
     // 来继续执行工作流（例如：查找节点、遍历边、执行图算法等）
-    const graph = workflowRegistry.getGraph(checkpoint.workflowId);
-    if (!graph) {
-      throw new NotFoundError(`Graph not found`, 'Graph', checkpoint.workflowId);
-    }
+    const graph = processedWorkflow.graph;
 
     // 步骤4：恢复 Thread 状态
     // 将 nodeResults Record 转换回数组格式

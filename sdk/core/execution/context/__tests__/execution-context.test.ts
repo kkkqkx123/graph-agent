@@ -64,7 +64,6 @@ describe('ExecutionContext', () => {
       expect(executionContext.getLifecycleCoordinator()).toBeDefined();
       expect(executionContext.getToolService()).toBeDefined();
       expect(executionContext.getLlmExecutor()).toBeDefined();
-      expect(executionContext.getGraphRegistry()).toBeDefined();
     });
 
     it('should only initialize once', () => {
@@ -165,11 +164,6 @@ describe('ExecutionContext', () => {
     it('should get LlmExecutor correctly', () => {
       const llmExecutor = executionContext.getLlmExecutor();
       expect(llmExecutor).toBeDefined();
-    });
-
-    it('should get GraphRegistry correctly', () => {
-      const graphRegistry = executionContext.getGraphRegistry();
-      expect(graphRegistry).toBeDefined();
     });
   });
 

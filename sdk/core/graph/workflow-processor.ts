@@ -6,13 +6,13 @@
 
 import type {
   WorkflowDefinition,
-  ProcessedWorkflowDefinition,
   GraphBuildOptions,
   SubgraphMergeLog,
   PreprocessValidationResult,
   ID,
   Graph
 } from '../../types';
+import { ProcessedWorkflowDefinition } from '../../types/workflow';
 import type { Node } from '../../types/node';
 import type { WorkflowTrigger } from '../../types/trigger';
 import type { TriggerReference } from '../../types/trigger-template';
@@ -173,10 +173,9 @@ export async function processWorkflow(
 
   // 11. 创建处理后的工作流定义
   // 注意：buildResult.graph 是 GraphData 类型，实现了 Graph 接口
-  return {
-    ...expandedWorkflow,
+  // graph字段直接包含在ProcessedWorkflowDefinition中，无需依赖GraphRegistry
+  return new ProcessedWorkflowDefinition(expandedWorkflow, {
     triggers: expandedTriggers,
-    graph: buildResult.graph as Graph,
     graphAnalysis,
     validationResult: preprocessValidation,
     subgraphMergeLogs,
@@ -184,7 +183,8 @@ export async function processWorkflow(
     hasSubgraphs,
     subworkflowIds,
     topologicalOrder: graphAnalysis.topologicalSort.sortedNodes,
-  };
+    graph: buildResult.graph,
+  });
 }
 
 /**

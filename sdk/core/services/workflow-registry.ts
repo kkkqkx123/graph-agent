@@ -3,6 +3,8 @@
  * 负责工作流定义的注册、查询和管理
  * 预处理逻辑委托给 processWorkflow 函数
  * 引用管理委托给 WorkflowReferenceManager
+ * 
+ * 同时管理基础工作流和预处理后的工作流
  *
  * 本模块导出全局单例实例，不导出类定义
  */
@@ -10,17 +12,14 @@
 import type {
   WorkflowDefinition,
   WorkflowMetadata,
-  ProcessedWorkflowDefinition,
   WorkflowRelationship,
   WorkflowHierarchy
 } from '../../types/workflow';
+import { ProcessedWorkflowDefinition } from '../../types/workflow';
 import type { WorkflowReferenceInfo, WorkflowReferenceRelation, WorkflowReferenceType } from '../../types/workflow-reference';
-import type { ID } from '../../types/common';
 import { processWorkflow, type ProcessOptions } from '../graph/workflow-processor';
 import { WorkflowReferenceManager } from '../execution/managers/workflow-reference-manager';
-import { GraphData } from '../entities/graph-data';
 import { ValidationError } from '../../types/errors';
-import { graphRegistry } from './graph-registry';
 
 /**
  * 工作流摘要信息
@@ -164,7 +163,7 @@ class WorkflowRegistry {
     // 检查缓存
     let processed = this.getProcessed(workflowId);
     if (processed) return processed;
-    
+
     // 获取原始定义
     const workflow = this.get(workflowId);
     if (!workflow) {
@@ -173,10 +172,10 @@ class WorkflowRegistry {
         'workflowId'
       );
     }
-    
+
     // 预处理（会递归处理所有子工作流）
     processed = await this.preprocessAndStore(workflow);
-    
+
     return processed;
   }
 
@@ -205,7 +204,7 @@ class WorkflowRegistry {
 
     // 保存工作流定义
     this.workflows.set(workflow.id, workflow);
-    
+
     // 仅预处理无外部依赖的工作流
     // 有依赖的工作流延迟到Thread构建时预处理，以确保所有依赖都已注册
     if (!this.hasExternalDependencies(workflow)) {
@@ -227,7 +226,7 @@ class WorkflowRegistry {
             } : String(error)
           }
         );
-        
+
         // 记录错误到控制台（开发调试用）
         console.error(`[WorkflowRegistry] Preprocessing failed for workflow '${workflow.id}':`, wrappedError);
       });
@@ -392,9 +391,6 @@ class WorkflowRegistry {
 
     // 清理引用关系
     this.referenceManager.cleanupWorkflowReferences(workflowId);
-
-    // 从全局GraphRegistry中移除对应的图
-    graphRegistry.delete(workflowId);
   }
 
   /**
@@ -551,21 +547,7 @@ class WorkflowRegistry {
     // 缓存处理结果
     this.processedWorkflows.set(workflow.id, processed);
 
-    // 注册到全局 GraphRegistry（processed.graph 是 Graph 接口，需要转换为 GraphData）
-    graphRegistry.register(workflow.id, processed.graph as GraphData);
-
     return processed;
-  }
-
-  /**
-   * 获取工作流的图结构
-   * @param workflowId 工作流ID
-   * @returns 图结构（GraphData类型），如果不存在则返回undefined
-   */
-  getGraph(workflowId: string): GraphData | undefined {
-    const processed = this.getProcessed(workflowId);
-    // processed.graph 是 Graph 接口，需要转换为 GraphData
-    return processed?.graph as GraphData | undefined;
   }
 
   /**

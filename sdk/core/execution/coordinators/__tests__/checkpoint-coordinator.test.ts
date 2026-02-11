@@ -111,7 +111,24 @@ describe('CheckpointCoordinator', () => {
   let mockConversationManager: jest.Mocked<ConversationManager>;
   let mockThread: Thread;
   let mockWorkflowDefinition: WorkflowDefinition;
+  let mockProcessedWorkflow: any;
   let dependencies: CheckpointDependencies;
+
+  // 创建 mock ProcessedWorkflowDefinition（在 beforeEach 外部）
+  mockProcessedWorkflow = {
+    workflow: {} as WorkflowDefinition,
+    graph: {
+      getNode: jest.fn()
+    } as any,
+    triggers: [],
+    graphAnalysis: {},
+    validationResult: { isValid: true },
+    subgraphMergeLogs: [],
+    processedAt: Date.now(),
+    hasSubgraphs: false,
+    subworkflowIds: new Set(),
+    topologicalOrder: []
+  };
 
   beforeEach(() => {
     // 重置所有 mock
@@ -142,7 +159,7 @@ describe('CheckpointCoordinator', () => {
       clear: jest.fn(),
       has: jest.fn(),
       size: jest.fn(),
-      getGraph: jest.fn()
+      ensureProcessed: jest.fn()
     } as any;
 
     mockGlobalMessageStorage = {
@@ -228,6 +245,9 @@ describe('CheckpointCoordinator', () => {
       createdAt: Date.now(),
       updatedAt: Date.now()
     } as WorkflowDefinition;
+
+    // 更新 mockProcessedWorkflow 的 workflow 引用
+    mockProcessedWorkflow.workflow = mockWorkflowDefinition;
 
     // 创建依赖项对象
     dependencies = {
@@ -462,10 +482,7 @@ describe('CheckpointCoordinator', () => {
     it('应该成功从检查点恢复', async () => {
       // 设置 mock 返回值
       mockCheckpointStateManager.get.mockResolvedValue(mockCheckpoint);
-      mockWorkflowRegistry.get.mockReturnValue(mockWorkflowDefinition);
-      mockWorkflowRegistry.getGraph.mockReturnValue({
-        getNode: jest.fn()
-      } as any);
+      mockWorkflowRegistry.ensureProcessed.mockResolvedValue(mockProcessedWorkflow);
       mockGlobalMessageStorage.getMessages.mockReturnValue([
         { role: 'user', content: 'test message' } as LLMMessage
       ]);
@@ -488,7 +505,7 @@ describe('CheckpointCoordinator', () => {
 
       // 验证调用
       expect(mockCheckpointStateManager.get).toHaveBeenCalledWith('checkpoint-1');
-      expect(mockWorkflowRegistry.get).toHaveBeenCalledWith('workflow-1');
+      expect(mockWorkflowRegistry.ensureProcessed).toHaveBeenCalledWith('workflow-1');
       expect(mockGlobalMessageStorage.getMessages).toHaveBeenCalledWith('thread-1');
       expect(mockThreadRegistry.register).toHaveBeenCalledWith(mockThreadContext);
     });
@@ -510,7 +527,9 @@ describe('CheckpointCoordinator', () => {
     it('应该在工作流不存在时抛出 NotFoundError', async () => {
       // 设置 mock 返回值
       mockCheckpointStateManager.get.mockResolvedValue(mockCheckpoint);
-      mockWorkflowRegistry.get.mockReturnValue(undefined);
+      mockWorkflowRegistry.ensureProcessed.mockRejectedValue(
+        new NotFoundError('Workflow not found', 'Workflow', 'workflow-1')
+      );
 
       // 执行测试并验证错误
       await expect(
@@ -525,10 +544,7 @@ describe('CheckpointCoordinator', () => {
     it('应该在消息历史不存在时抛出 NotFoundError', async () => {
       // 设置 mock 返回值
       mockCheckpointStateManager.get.mockResolvedValue(mockCheckpoint);
-      mockWorkflowRegistry.get.mockReturnValue(mockWorkflowDefinition);
-      mockWorkflowRegistry.getGraph.mockReturnValue({
-        getNode: jest.fn()
-      } as any);
+      mockWorkflowRegistry.ensureProcessed.mockResolvedValue(mockProcessedWorkflow);
       mockGlobalMessageStorage.getMessages.mockReturnValue(undefined);
 
       // 执行测试并验证错误
@@ -544,10 +560,7 @@ describe('CheckpointCoordinator', () => {
     it('应该正确恢复对话状态', async () => {
       // 设置 mock 返回值
       mockCheckpointStateManager.get.mockResolvedValue(mockCheckpoint);
-      mockWorkflowRegistry.get.mockReturnValue(mockWorkflowDefinition);
-      mockWorkflowRegistry.getGraph.mockReturnValue({
-        getNode: jest.fn()
-      } as any);
+      mockWorkflowRegistry.ensureProcessed.mockResolvedValue(mockProcessedWorkflow);
       mockGlobalMessageStorage.getMessages.mockReturnValue([
         { role: 'user', content: 'test message' } as LLMMessage
       ]);
@@ -582,10 +595,7 @@ describe('CheckpointCoordinator', () => {
 
       // 设置 mock 返回值
       mockCheckpointStateManager.get.mockResolvedValue(mockCheckpoint);
-      mockWorkflowRegistry.get.mockReturnValue(mockWorkflowDefinition);
-      mockWorkflowRegistry.getGraph.mockReturnValue({
-        getNode: jest.fn()
-      } as any);
+      mockWorkflowRegistry.ensureProcessed.mockResolvedValue(mockProcessedWorkflow);
       mockGlobalMessageStorage.getMessages.mockReturnValue([]);
 
       // Mock ExecutionContext
@@ -608,10 +618,7 @@ describe('CheckpointCoordinator', () => {
     it('应该正确转换 nodeResults Record 到数组', async () => {
       // 设置 mock 返回值
       mockCheckpointStateManager.get.mockResolvedValue(mockCheckpoint);
-      mockWorkflowRegistry.get.mockReturnValue(mockWorkflowDefinition);
-      mockWorkflowRegistry.getGraph.mockReturnValue({
-        getNode: jest.fn()
-      } as any);
+      mockWorkflowRegistry.ensureProcessed.mockResolvedValue(mockProcessedWorkflow);
       mockGlobalMessageStorage.getMessages.mockReturnValue([]);
 
       // Mock ExecutionContext
@@ -665,10 +672,7 @@ describe('CheckpointCoordinator', () => {
 
       // 设置 mock 返回值
       mockCheckpointStateManager.get.mockResolvedValue(invalidCheckpoint);
-      mockWorkflowRegistry.get.mockReturnValue(mockWorkflowDefinition);
-      mockWorkflowRegistry.getGraph.mockReturnValue({
-        getNode: jest.fn()
-      } as any);
+      mockWorkflowRegistry.ensureProcessed.mockResolvedValue(mockProcessedWorkflow);
       mockGlobalMessageStorage.getMessages.mockReturnValue([]);
 
       // Mock ExecutionContext

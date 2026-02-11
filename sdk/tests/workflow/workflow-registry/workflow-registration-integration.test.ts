@@ -14,11 +14,11 @@ import { WorkflowRegistry } from '../../../core/services/workflow-registry';
 import { WorkflowValidator } from '../../../core/validation/workflow-validator';
 import { nodeTemplateRegistry } from '../../../core/services/node-template-registry';
 import { triggerTemplateRegistry } from '../../../core/services/trigger-template-registry';
-import { graphRegistry } from '../../../core/services/graph-registry';
 import { NodeType } from '../../../types/node';
 import { EdgeType } from '../../../types/edge';
 import { TriggerActionType } from '../../../types/trigger';
-import type { WorkflowDefinition, ProcessedWorkflowDefinition } from '../../../types/workflow';
+import type { WorkflowDefinition } from '../../../types/workflow';
+import { ProcessedWorkflowDefinition } from '../../../types/workflow';
 import type { NodeTemplate, TriggerTemplate } from '../../../types';
 import type { WorkflowTrigger } from '../../../types/trigger';
 import { ValidationError } from '../../../types/errors';
@@ -29,18 +29,23 @@ describe('Workflow加载与注册集成测试', () => {
 
   beforeEach(() => {
     // 创建新的实例以避免测试间干扰
+    // 创建一个 mock 的 threadRegistry
+    const mockThreadRegistry = {
+      isWorkflowActive: jest.fn(() => false),
+      getThreadsByWorkflow: jest.fn(() => []),
+      getAllThreads: jest.fn(() => [])
+    };
+    
     registry = new WorkflowRegistry({
-      maxRecursionDepth: 10
+      maxRecursionDepth: 10,
+      threadRegistry: mockThreadRegistry
     });
     validator = new WorkflowValidator();
-
-    // 清理全局注册表
-    graphRegistry.clear();
   });
 
   afterEach(() => {
-    // 清理全局注册表
-    graphRegistry.clear();
+    // 清理注册表
+    registry.clear();
   });
 
   /**
@@ -100,7 +105,7 @@ describe('Workflow加载与注册集成测试', () => {
   });
 
   describe('场景1：完整工作流生命周期集成测试', () => {
-    it('应该成功注册简单工作流并完成预处理', () => {
+    it('应该成功注册简单工作流并完成预处理', async () => {
       const workflow = createBaseWorkflow('workflow-simple', 'Simple Workflow');
 
       // 1. 验证工作流定义
@@ -118,20 +123,20 @@ describe('Workflow加载与注册集成测试', () => {
       const registered = registry.get('workflow-simple');
       expect(registered).toEqual(workflow);
 
-      // 4. 验证预处理结果
-      const processed = registry.getProcessed('workflow-simple');
+      // 4. 确保预处理完成并验证结果
+      const processed = await registry.ensureProcessed('workflow-simple');
       expect(processed).toBeDefined();
-      expect(processed?.graph).toBeDefined();
-      expect(processed?.validationResult.isValid).toBe(true);
+      expect(processed.graph).toBeDefined();
+      expect(processed.validationResult.isValid).toBe(true);
 
-      // 5. 验证图结构已注册到全局注册表
-      const graph = graphRegistry.get('workflow-simple');
+      // 5. 验证图结构
+      const graph = processed.graph;
       expect(graph).toBeDefined();
-      expect(graph?.nodes.size).toBe(2);
-      expect(graph?.edges.size).toBe(1);
+      expect(graph.nodes.size).toBe(2);
+      expect(graph.edges.size).toBe(1);
     });
 
-    it('应该成功注册复杂工作流并完成预处理', () => {
+    it('应该成功注册复杂工作流并完成预处理', async () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-complex',
         name: 'Complex Workflow',
@@ -215,15 +220,15 @@ describe('Workflow加载与注册集成测试', () => {
       // 注册工作流
       registry.register(workflow);
 
-      // 验证预处理结果
-      const processed = registry.getProcessed('workflow-complex');
+      // 确保预处理完成并验证结果
+      const processed = await registry.ensureProcessed('workflow-complex');
       expect(processed).toBeDefined();
-      expect(processed?.nodes).toHaveLength(4);
-      expect(processed?.edges).toHaveLength(3);
-      expect(processed?.topologicalOrder).toHaveLength(4);
+      expect(processed.graph.nodes.size).toBe(4);
+      expect(processed.graph.edges.size).toBe(3);
+      expect(processed.topologicalOrder).toHaveLength(4);
     });
 
-    it('应该支持创建工作流新版本', () => {
+    it('应该支持创建工作流新版本', async () => {
       const workflow = createBaseWorkflow('workflow-update', 'Update Workflow');
       registry.register(workflow);
 
@@ -244,10 +249,10 @@ describe('Workflow加载与注册集成测试', () => {
       expect(registered?.description).toBe('Updated description');
       expect(registered?.version).toBe('2.0.0');
 
-      // 验证预处理结果已更新
-      const processed = registry.getProcessed('workflow-update');
+      // 确保预处理完成并验证结果已更新
+      const processed = await registry.ensureProcessed('workflow-update');
       expect(processed).toBeDefined();
-      expect(processed?.validationResult.isValid).toBe(true);
+      expect(processed.validationResult.isValid).toBe(true);
     });
   });
 
@@ -295,7 +300,7 @@ describe('Workflow加载与注册集成测试', () => {
       triggerTemplateRegistry.clear();
     });
 
-    it('应该成功展开节点模板引用', () => {
+    it('应该成功展开节点模板引用', async () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-template-node',
         name: 'Template Node Workflow',
@@ -372,17 +377,17 @@ describe('Workflow加载与注册集成测试', () => {
       // 注册工作流
       registry.register(workflow);
 
-      // 验证预处理结果
-      const processed = registry.getProcessed('workflow-template-node');
+      // 确保预处理完成并验证结果
+      const processed = await registry.ensureProcessed('workflow-template-node');
       expect(processed).toBeDefined();
 
       // 验证节点已展开 - 通过processedWorkflowDefinition验证
-      const llmNode = processed?.nodes.find(n => n.id === 'node-llm');
+      const llmNode = Array.from(processed.graph.nodes.values()).find(n => n.id === 'node-llm');
       expect(llmNode).toBeDefined();
-      expect((llmNode?.config as any)?.prompt).toBe('Custom prompt');
+      expect((llmNode?.originalNode?.config as any)?.prompt).toBe('Custom prompt');
     });
 
-    it('应该成功展开触发器模板引用', () => {
+    it('应该成功展开触发器模板引用', async () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-template-trigger',
         name: 'Template Trigger Workflow',
@@ -440,19 +445,19 @@ describe('Workflow加载与注册集成测试', () => {
       // 注册工作流
       registry.register(workflow);
 
-      // 验证预处理结果
-      const processed = registry.getProcessed('workflow-template-trigger');
+      // 确保预处理完成并验证结果
+      const processed = await registry.ensureProcessed('workflow-template-trigger');
       expect(processed).toBeDefined();
 
       // 验证触发器已展开
-      expect(processed?.triggers).toHaveLength(1);
+      expect(processed.triggers).toHaveLength(1);
       const trigger = processed?.triggers?.[0] as WorkflowTrigger;
       expect(trigger?.action.parameters?.['message']).toBe('Webhook received');
     });
   });
 
   describe('场景3：子工作流集成测试', () => {
-    it('应该成功处理包含子工作流的工作流', () => {
+    it('应该成功处理包含子工作流的工作流', async () => {
       // 创建子工作流定义
       // 子工作流是一个独立的工作流定义，包含START/END
       const subworkflow: WorkflowDefinition = {
@@ -620,20 +625,30 @@ describe('Workflow加载与注册集成测试', () => {
       // 再注册主工作流
       registry.register(mainWorkflow);
 
-      // 验证主工作流预处理结果
-      const processed = registry.getProcessed('workflow-with-subgraph');
+      // 确保预处理完成并验证结果
+      const processed = await registry.ensureProcessed('workflow-with-subgraph');
       expect(processed).toBeDefined();
-      expect(processed?.hasSubgraphs).toBe(true);
+      expect(processed.hasSubgraphs).toBe(true);
 
-      // 验证SUBGRAPH节点存在
-      const subgraphNode = mainWorkflow.nodes.find(n => n.type === NodeType.SUBGRAPH);
-      expect(subgraphNode).toBeDefined();
-      expect(subgraphNode?.id).toBe('subgraph-node');
+      // 验证子工作流的节点已经被合并到主工作流中
+      // 预处理会展开子工作流，所以应该能看到子工作流的节点
+      const allNodes = Array.from(processed.graph.nodes.values());
+      const nodeIds = allNodes.map(n => n.id);
+      
+      // 应该包含主工作流的节点
+      expect(nodeIds).toContain('start');
+      expect(nodeIds).toContain('node1');
+      expect(nodeIds).toContain('end');
+      
+      // 应该包含子工作流的节点（展开后，节点ID会被重命名以避免冲突）
+      // 子工作流的节点ID会被添加前缀，格式为：node_sg_<hash>_<original-id>
+      const subgraphNodes = nodeIds.filter(id => id.startsWith('node_sg_'));
+      expect(subgraphNodes.length).toBe(3); // 应该有3个子工作流节点
     });
   });
 
   describe('场景4：异常路径集成测试', () => {
-    it('应该拒绝无效的节点模板引用', () => {
+    it('应该拒绝无效的节点模板引用', async () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-invalid-template',
         name: 'Invalid Template Workflow',
@@ -700,12 +715,15 @@ describe('Workflow加载与注册集成测试', () => {
         updatedAt: Date.now()
       };
 
-      // 应该抛出错误
-      expect(() => registry.register(workflow)).toThrow(ValidationError);
-      expect(() => registry.register(workflow)).toThrow('Workflow validation failed');
+      // 注册工作流（不会抛出错误，预处理是异步的）
+      registry.register(workflow);
+
+      // ensureProcessed 应该抛出错误
+      await expect(registry.ensureProcessed('workflow-invalid-template')).rejects.toThrow(ValidationError);
+      await expect(registry.ensureProcessed('workflow-invalid-template')).rejects.toThrow('Workflow validation failed');
     });
 
-    it('应该拒绝包含循环依赖的工作流', () => {
+    it('应该拒绝包含循环依赖的工作流', async () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-cycle',
         name: 'Cycle Workflow',
@@ -774,12 +792,15 @@ describe('Workflow加载与注册集成测试', () => {
         updatedAt: Date.now()
       };
 
-      // 应该抛出错误
-      expect(() => registry.register(workflow)).toThrow(ValidationError);
-      expect(() => registry.register(workflow)).toThrow('Workflow validation failed');
+      // 注册工作流（不会抛出错误，预处理是异步的）
+      registry.register(workflow);
+
+      // ensureProcessed 应该抛出错误
+      await expect(registry.ensureProcessed('workflow-cycle')).rejects.toThrow(ValidationError);
+      await expect(registry.ensureProcessed('workflow-cycle')).rejects.toThrow('Workflow validation failed');
     });
 
-    it('应该拒绝引用不存在的子工作流', () => {
+    it('应该拒绝引用不存在的子工作流', async () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-invalid-subgraph',
         name: 'Invalid Subgraph Workflow',
@@ -846,12 +867,15 @@ describe('Workflow加载与注册集成测试', () => {
         updatedAt: Date.now()
       };
 
-      // 应该抛出错误
-      expect(() => registry.register(workflow)).toThrow(ValidationError);
-      expect(() => registry.register(workflow)).toThrow('Workflow validation failed');
+      // 注册工作流（不会抛出错误，预处理是异步的）
+      registry.register(workflow);
+
+      // ensureProcessed 应该抛出错误
+      await expect(registry.ensureProcessed('workflow-invalid-subgraph')).rejects.toThrow(ValidationError);
+      await expect(registry.ensureProcessed('workflow-invalid-subgraph')).rejects.toThrow('Subgraph processing failed');
     });
 
-    it('应该拒绝超过最大递归深度的子工作流', () => {
+    it('应该拒绝超过最大递归深度的子工作流', async () => {
       // 创建深度为11的子工作流链
       const workflows: WorkflowDefinition[] = [];
       for (let i = 0; i < 11; i++) {
@@ -967,8 +991,11 @@ describe('Workflow加载与注册集成测试', () => {
       // 注册所有子工作流
       workflows.forEach(w => registry.register(w));
 
-      // 注册父工作流，应该因为递归深度限制而失败
-      expect(() => registry.register(parentWorkflow)).toThrow(ValidationError);
+      // 注册父工作流（不会抛出错误，预处理是异步的）
+      registry.register(parentWorkflow);
+
+      // ensureProcessed 应该抛出错误
+      await expect(registry.ensureProcessed('workflow-recursive-parent')).rejects.toThrow(ValidationError);
     });
   });
 
@@ -995,7 +1022,7 @@ describe('Workflow加载与注册集成测试', () => {
       expect(() => registry.register(invalidWorkflow)).toThrow(ValidationError);
     });
 
-    it('应该正确处理图验证错误', () => {
+    it('应该正确处理图验证错误', async () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-isolated',
         name: 'Isolated Node Workflow',
@@ -1038,32 +1065,35 @@ describe('Workflow加载与注册集成测试', () => {
         updatedAt: Date.now()
       };
 
-      // 注册应该因为孤立节点而失败
-      expect(() => registry.register(workflow)).toThrow(ValidationError);
-      expect(() => registry.register(workflow)).toThrow('Workflow validation failed');
+      // 注册工作流（不会抛出错误，预处理是异步的）
+      registry.register(workflow);
+
+      // ensureProcessed 应该抛出错误
+      await expect(registry.ensureProcessed('workflow-isolated')).rejects.toThrow(ValidationError);
+      await expect(registry.ensureProcessed('workflow-isolated')).rejects.toThrow('Workflow validation failed');
     });
   });
 
   describe('场景6：预处理与注册表集成测试', () => {
-    it('应该正确缓存预处理结果', () => {
+    it('应该正确缓存预处理结果', async () => {
       const workflow = createBaseWorkflow('workflow-cache', 'Cache Workflow');
       registry.register(workflow);
 
       // 第一次获取
-      const processed1 = registry.getProcessed('workflow-cache');
+      const processed1 = await registry.ensureProcessed('workflow-cache');
       expect(processed1).toBeDefined();
 
       // 第二次获取应该返回相同的结果（从缓存）
-      const processed2 = registry.getProcessed('workflow-cache');
+      const processed2 = await registry.ensureProcessed('workflow-cache');
       expect(processed2).toBe(processed1);
     });
 
-    it('应该在注册新版本时清除旧版本缓存', () => {
+    it('应该在注册新版本时清除旧版本缓存', async () => {
       const workflow = createBaseWorkflow('workflow-cache-update', 'Cache Update Workflow');
       registry.register(workflow);
 
       // 获取预处理结果
-      const processed1 = registry.getProcessed('workflow-cache-update');
+      const processed1 = await registry.ensureProcessed('workflow-cache-update');
       expect(processed1).toBeDefined();
 
       // 创建新版本工作流（遵循不可变原则）
@@ -1079,17 +1109,17 @@ describe('Workflow加载与注册集成测试', () => {
       registry.register(updatedWorkflow);
 
       // 获取新的预处理结果
-      const processed2 = registry.getProcessed('workflow-cache-update');
+      const processed2 = await registry.ensureProcessed('workflow-cache-update');
       expect(processed2).toBeDefined();
       expect(processed2).not.toBe(processed1);
     });
 
-    it('应该在删除时清除缓存', () => {
+    it('应该在删除时清除缓存', async () => {
       const workflow = createBaseWorkflow('workflow-cache-delete', 'Cache Delete Workflow');
       registry.register(workflow);
 
       // 获取预处理结果
-      const processed = registry.getProcessed('workflow-cache-delete');
+      const processed = await registry.ensureProcessed('workflow-cache-delete');
       expect(processed).toBeDefined();
 
       // 删除工作流
@@ -1102,7 +1132,7 @@ describe('Workflow加载与注册集成测试', () => {
   });
 
   describe('场景7：批量操作集成测试', () => {
-    it('应该成功批量注册多个工作流', () => {
+    it('应该成功批量注册多个工作流', async () => {
       const workflows = [
         createBaseWorkflow('workflow-batch-1', 'Batch Workflow 1'),
         createBaseWorkflow('workflow-batch-2', 'Batch Workflow 2'),
@@ -1117,9 +1147,9 @@ describe('Workflow加载与注册集成测试', () => {
       expect(registry.has('workflow-batch-3')).toBe(true);
 
       // 验证所有工作流都已预处理
-      expect(registry.getProcessed('workflow-batch-1')).toBeDefined();
-      expect(registry.getProcessed('workflow-batch-2')).toBeDefined();
-      expect(registry.getProcessed('workflow-batch-3')).toBeDefined();
+      expect(await registry.ensureProcessed('workflow-batch-1')).toBeDefined();
+      expect(await registry.ensureProcessed('workflow-batch-2')).toBeDefined();
+      expect(await registry.ensureProcessed('workflow-batch-3')).toBeDefined();
     });
 
     it('应该在批量注册失败时停止', () => {
