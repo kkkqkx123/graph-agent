@@ -4,7 +4,7 @@
  */
 
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types/trigger';
-import type { ExecuteTriggeredSubgraphActionConfig } from '@modular-agent/types/trigger';
+import type { ExecuteTriggeredSubgraphActionConfig, ConversationHistoryOptions } from '@modular-agent/types/trigger';
 import { NotFoundError, ValidationError } from '@modular-agent/types/errors';
 import { ExecutionContext } from '../../context/execution-context';
 import {
@@ -120,7 +120,32 @@ export async function executeTriggeredSubgraphHandler(
 
     // 根据mergeOptions配置选择性传递对话历史
     if (parameters.mergeOptions?.includeConversationHistory) {
-      input['conversationHistory'] = mainThreadContext.getConversationHistory();
+      const options = parameters.mergeOptions.includeConversationHistory;
+      let conversationHistory: any[] = [];
+      
+      if (options.lastN !== undefined) {
+        conversationHistory = mainThreadContext.getRecentMessages(options.lastN);
+      } else if (options.lastNByRole) {
+        conversationHistory = mainThreadContext.getRecentMessagesByRole(
+          options.lastNByRole.role,
+          options.lastNByRole.count
+        );
+      } else if (options.byRole) {
+        conversationHistory = mainThreadContext.getMessagesByRole(options.byRole);
+      } else if (options.range) {
+        conversationHistory = mainThreadContext.getMessagesByRange(
+          options.range.start,
+          options.range.end
+        );
+      } else if (options.rangeByRole) {
+        conversationHistory = mainThreadContext.getMessagesByRoleRange(
+          options.rangeByRole.role,
+          options.rangeByRole.start,
+          options.rangeByRole.end
+        );
+      }
+      
+      input['conversationHistory'] = conversationHistory;
     }
 
     // 创建 ThreadExecutor 实例（作为 SubgraphContextFactory 和 SubgraphExecutor）

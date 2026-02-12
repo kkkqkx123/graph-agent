@@ -14,6 +14,7 @@ import {
 import { EventType } from '@modular-agent/types/events';
 import { TriggerActionType } from '@modular-agent/types/trigger';
 import { ValidationError } from '@modular-agent/types/errors';
+import { LLMMessageRole } from '@modular-agent/types/llm';
 
 describe('validateTriggerCondition', () => {
   it('应该验证有效的触发条件', () => {
@@ -189,6 +190,191 @@ describe('validateExecuteTriggeredSubgraphActionConfig', () => {
       const firstError = errors[0] as ValidationError;
       expect(firstError.field).toBe('action.parameters.triggeredWorkflowId');
     }
+  });
+
+  describe('ConversationHistoryOptions验证', () => {
+    it('应该接受lastN配置', () => {
+      const validConfig = {
+        triggeredWorkflowId: 'workflow-123',
+        mergeOptions: {
+          includeConversationHistory: {
+            lastN: 5
+          }
+        }
+      };
+
+      const result = validateExecuteTriggeredSubgraphActionConfig(validConfig);
+      expect(result.isOk()).toBe(true);
+    });
+
+    it('应该接受lastNByRole配置', () => {
+      const validConfig = {
+        triggeredWorkflowId: 'workflow-123',
+        mergeOptions: {
+          includeConversationHistory: {
+            lastNByRole: {
+              role: 'assistant' as LLMMessageRole,
+              count: 3
+            }
+          }
+        }
+      };
+
+      const result = validateExecuteTriggeredSubgraphActionConfig(validConfig);
+      expect(result.isOk()).toBe(true);
+    });
+
+    it('应该接受byRole配置', () => {
+      const validConfig = {
+        triggeredWorkflowId: 'workflow-123',
+        mergeOptions: {
+          includeConversationHistory: {
+            byRole: 'user' as LLMMessageRole
+          }
+        }
+      };
+
+      const result = validateExecuteTriggeredSubgraphActionConfig(validConfig);
+      expect(result.isOk()).toBe(true);
+    });
+
+    it('应该接受range配置', () => {
+      const validConfig = {
+        triggeredWorkflowId: 'workflow-123',
+        mergeOptions: {
+          includeConversationHistory: {
+            range: {
+              start: 0,
+              end: 10
+            }
+          }
+        }
+      };
+
+      const result = validateExecuteTriggeredSubgraphActionConfig(validConfig);
+      expect(result.isOk()).toBe(true);
+    });
+
+    it('应该接受rangeByRole配置', () => {
+      const validConfig = {
+        triggeredWorkflowId: 'workflow-123',
+        mergeOptions: {
+          includeConversationHistory: {
+            rangeByRole: {
+              role: 'assistant' as LLMMessageRole,
+              start: 0,
+              end: 5
+            }
+          }
+        }
+      };
+
+      const result = validateExecuteTriggeredSubgraphActionConfig(validConfig);
+      expect(result.isOk()).toBe(true);
+    });
+
+    it('应该拒绝空的ConversationHistoryOptions', () => {
+      const invalidConfig = {
+        triggeredWorkflowId: 'workflow-123',
+        mergeOptions: {
+          includeConversationHistory: {}
+        }
+      };
+
+      const result = validateExecuteTriggeredSubgraphActionConfig(invalidConfig);
+      expect(result.isErr()).toBe(true);
+    });
+
+    it('应该拒绝lastN为负数', () => {
+      const invalidConfig = {
+        triggeredWorkflowId: 'workflow-123',
+        mergeOptions: {
+          includeConversationHistory: {
+            lastN: -1
+          }
+        }
+      };
+
+      const result = validateExecuteTriggeredSubgraphActionConfig(invalidConfig);
+      expect(result.isErr()).toBe(true);
+    });
+
+    it('应该拒绝lastN为零', () => {
+      const invalidConfig = {
+        triggeredWorkflowId: 'workflow-123',
+        mergeOptions: {
+          includeConversationHistory: {
+            lastN: 0
+          }
+        }
+      };
+
+      const result = validateExecuteTriggeredSubgraphActionConfig(invalidConfig);
+      expect(result.isErr()).toBe(true);
+    });
+
+    it('应该拒绝无效的角色', () => {
+      const invalidConfig = {
+        triggeredWorkflowId: 'workflow-123',
+        mergeOptions: {
+          includeConversationHistory: {
+            byRole: 'invalid_role' as any
+          }
+        }
+      };
+
+      const result = validateExecuteTriggeredSubgraphActionConfig(invalidConfig);
+      expect(result.isErr()).toBe(true);
+    });
+
+    it('应该拒绝range中start大于等于end', () => {
+      const invalidConfig = {
+        triggeredWorkflowId: 'workflow-123',
+        mergeOptions: {
+          includeConversationHistory: {
+            range: {
+              start: 10,
+              end: 5
+            }
+          }
+        }
+      };
+
+      const result = validateExecuteTriggeredSubgraphActionConfig(invalidConfig);
+      expect(result.isErr()).toBe(true);
+    });
+
+    it('应该拒绝range中start为负数', () => {
+      const invalidConfig = {
+        triggeredWorkflowId: 'workflow-123',
+        mergeOptions: {
+          includeConversationHistory: {
+            range: {
+              start: -1,
+              end: 10
+            }
+          }
+        }
+      };
+
+      const result = validateExecuteTriggeredSubgraphActionConfig(invalidConfig);
+      expect(result.isErr()).toBe(true);
+    });
+
+    it('应该接受完整的mergeOptions配置', () => {
+      const validConfig = {
+        triggeredWorkflowId: 'workflow-123',
+        mergeOptions: {
+          includeVariables: ['var1', 'var2'],
+          includeConversationHistory: {
+            lastN: 5
+          }
+        }
+      };
+
+      const result = validateExecuteTriggeredSubgraphActionConfig(validConfig);
+      expect(result.isOk()).toBe(true);
+    });
   });
 });
 

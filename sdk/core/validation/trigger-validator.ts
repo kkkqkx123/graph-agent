@@ -11,6 +11,7 @@ import { EventType } from '@modular-agent/types/events';
 import { ValidationError } from '@modular-agent/types/errors';
 import type { Result } from '@modular-agent/types/result';
 import { ok, err } from '@modular-agent/common-utils/result-utils';
+import { LLMMessageRole } from '@modular-agent/types/llm';
 
 /**
  * 触发条件schema
@@ -36,11 +37,62 @@ const triggerConditionSchema = z.object({
 );
 
 /**
+ * 对话历史回传配置schema
+ */
+const conversationHistoryOptionsSchema = z.object({
+  lastN: z.number().int().positive('lastN must be a positive integer').optional(),
+  lastNByRole: z.object({
+    role: z.enum(['system', 'user', 'assistant', 'tool']),
+    count: z.number().int().positive('count must be a positive integer')
+  }).optional(),
+  byRole: z.enum(['system', 'user', 'assistant', 'tool']).optional(),
+  range: z.object({
+    start: z.number().int().min(0, 'start must be a non-negative integer'),
+    end: z.number().int().positive('end must be a positive integer')
+  }).refine(
+    (data) => data.start < data.end,
+    {
+      message: 'start must be less than end',
+      path: ['start']
+    }
+  ).optional(),
+  rangeByRole: z.object({
+    role: z.enum(['system', 'user', 'assistant', 'tool']),
+    start: z.number().int().min(0, 'start must be a non-negative integer'),
+    end: z.number().int().positive('end must be a positive integer')
+  }).refine(
+    (data) => data.start < data.end,
+    {
+      message: 'start must be less than end',
+      path: ['start']
+    }
+  ).optional()
+}).refine(
+  (data) => {
+    // 至少需要指定一个选项
+    const hasOption = data.lastN !== undefined ||
+                      data.lastNByRole !== undefined ||
+                      data.byRole !== undefined ||
+                      data.range !== undefined ||
+                      data.rangeByRole !== undefined;
+    return hasOption;
+  },
+  {
+    message: 'At least one conversation history option must be specified',
+    path: []
+  }
+);
+
+/**
  * 触发子工作流动作配置schema
  */
 const executeTriggeredSubgraphActionConfigSchema = z.object({
   triggeredWorkflowId: z.string().min(1, 'Triggered workflow ID is required'),
-  waitForCompletion: z.boolean().optional()
+  waitForCompletion: z.boolean().optional(),
+  mergeOptions: z.object({
+    includeVariables: z.array(z.string()).optional(),
+    includeConversationHistory: conversationHistoryOptionsSchema.optional()
+  }).optional()
 });
 
 /**

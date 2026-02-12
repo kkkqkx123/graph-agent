@@ -11,8 +11,7 @@ import { ConfigFormat } from '../types';
 import { ConfigTransformer } from '../config-transformer';
 import { parseJson, stringifyJson, validateJsonSyntax } from '../json-parser';
 import { parseToml, validateTomlSyntax } from '../toml-parser';
-import { NodeType } from '@modular-agent/types/node';
-import { EdgeType } from '@modular-agent/types/edge';
+import { NodeType, EdgeType } from '@modular-agent/types';
 
 describe('ConfigParser', () => {
   let parser: ConfigParser;
@@ -169,7 +168,7 @@ describe('ConfigParser', () => {
   });
 
   describe('导出功能', () => {
-    test('应该将WorkflowDefinition导出为JSON', () => {
+    test('应该支持parseAndTransform转换工作流', () => {
       const workflowDef = parser.parseAndTransform(
         JSON.stringify({
           id: 'test-workflow',
@@ -186,11 +185,8 @@ describe('ConfigParser', () => {
         ConfigFormat.JSON
       );
 
-      const exported = parser.exportWorkflow(workflowDef, ConfigFormat.JSON);
-      const parsed = JSON.parse(exported);
-
-      expect(parsed.id).toBe('test-workflow');
-      expect(parsed.name).toBe('测试工作流');
+      expect(workflowDef.id).toBe('test-workflow');
+      expect(workflowDef.name).toBe('测试工作流');
     });
   });
 

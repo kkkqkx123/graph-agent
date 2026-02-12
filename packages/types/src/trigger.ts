@@ -11,6 +11,7 @@
 
 import type { ID, Timestamp, Metadata } from './common';
 import type { EventType } from './events';
+import type { LLMMessageRole } from './llm';
 
 /**
  * 触发器类型枚举
@@ -226,7 +227,34 @@ export interface ExecuteTriggeredSubgraphActionConfig {
   mergeOptions?: {
     /** 要传递的变量名称列表，undefined表示传递所有变量 */
     includeVariables?: string[];
-    /** 是否传递对话历史（提示词消息数组） */
-    includeConversationHistory?: boolean;
+    /** 对话历史回传配置 */
+    includeConversationHistory?: ConversationHistoryOptions;
+  };
+}
+
+/**
+ * 对话历史回传配置选项
+ * 用于控制从主工作流向触发子工作流传递哪些消息
+ */
+export interface ConversationHistoryOptions {
+  /** 回传最后N条消息 */
+  lastN?: number;
+  /** 回传最后N条指定角色的消息 */
+  lastNByRole?: {
+    role: LLMMessageRole;
+    count: number;
+  };
+  /** 回传指定角色的所有消息 */
+  byRole?: LLMMessageRole;
+  /** 回传指定范围的消息（基于完整消息列表） */
+  range?: {
+    start: number;
+    end: number;
+  };
+  /** 回传指定范围的指定角色消息 */
+  rangeByRole?: {
+    role: LLMMessageRole;
+    start: number;
+    end: number;
   };
 }

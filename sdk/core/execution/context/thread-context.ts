@@ -431,6 +431,55 @@ export class ThreadContext implements LifecycleCapable {
   }
 
   /**
+   * 获取最近N条消息
+   * @param n 消息数量
+   * @returns 消息数组
+   */
+  getRecentMessages(n: number): LLMMessage[] {
+    return this.conversationManager.getRecentMessages(n);
+  }
+
+  /**
+   * 获取指定范围的消息
+   * @param start 起始位置
+   * @param end 结束位置
+   * @returns 消息数组
+   */
+  getMessagesByRange(start: number, end: number): LLMMessage[] {
+    return this.conversationManager.getMessagesByRange(start, end);
+  }
+
+  /**
+   * 获取指定角色的所有消息
+   * @param role 消息角色
+   * @returns 消息数组
+   */
+  getMessagesByRole(role: LLMMessageRole): LLMMessage[] {
+    return this.conversationManager.getMessagesByRole(role);
+  }
+
+  /**
+   * 获取指定角色的最近N条消息
+   * @param role 消息角色
+   * @param n 消息数量
+   * @returns 消息数组
+   */
+  getRecentMessagesByRole(role: LLMMessageRole, n: number): LLMMessage[] {
+    return this.conversationManager.getRecentMessagesByRole(role, n);
+  }
+
+  /**
+   * 获取指定角色的索引范围消息
+   * @param role 消息角色
+   * @param start 起始位置（在类型数组中的位置）
+   * @param end 结束位置（在类型数组中的位置）
+   * @returns 消息数组
+   */
+  getMessagesByRoleRange(role: LLMMessageRole, start: number, end: number): LLMMessage[] {
+    return this.conversationManager.getMessagesByRoleRange(role, start, end);
+  }
+
+  /**
    * 进入子图
    * @param workflowId 子工作流ID
    * @param parentWorkflowId 父工作流ID
