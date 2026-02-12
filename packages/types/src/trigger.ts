@@ -223,13 +223,6 @@ export interface ExecuteTriggeredSubgraphActionConfig {
   triggeredWorkflowId: ID;
   /** 是否等待完成（默认true，同步执行） */
   waitForCompletion?: boolean;
-  /** 数据合并选项 */
-  mergeOptions?: {
-    /** 要传递的变量名称列表，undefined表示传递所有变量 */
-    includeVariables?: string[];
-    /** 对话历史回传配置 */
-    includeConversationHistory?: ConversationHistoryOptions;
-  };
 }
 
 /**

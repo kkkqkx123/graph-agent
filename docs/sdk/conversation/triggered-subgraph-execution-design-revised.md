@@ -46,11 +46,34 @@ export interface StartFromTriggerConfig {
 
 #### CONTINUE_FROM_TRIGGER 节点
 
-用于在子工作流执行完成后恢复到主工作流的执行位置。**无特殊配置**，类似 END 节点。
+用于在子工作流执行完成后将数据回调到主工作流。支持配置变量回调和对话历史回调。
 
 ```typescript
 export interface ContinueFromTriggerConfig {
-  // empty, similar to END node
+  /** 变量回调配置 */
+  variableCallback?: {
+    /** 要回传的变量名称列表 */
+    includeVariables?: string[];
+    /** 是否回传所有变量（默认false） */
+    includeAll?: boolean;
+  };
+  /** 对话历史回调配置 */
+  conversationHistoryCallback?: {
+    /** 回传最后N条消息 */
+    lastN?: number;
+    /** 回传最后N条指定角色的消息 */
+    lastNByRole?: {
+      role: LLMMessageRole;
+      count: number;
+    };
+    /** 回传指定角色的所有消息 */
+    byRole?: LLMMessageRole;
+    /** 回传指定范围的消息 */
+    range?: {
+      start: number;
+      end: number;
+    };
+  };
 }
 ```
 
@@ -58,10 +81,13 @@ export interface ContinueFromTriggerConfig {
 
 | 节点类型 | 职责 | 使用场景 |
 |---------|------|----------|
-| `START_FROM_TRIGGER` | 标识触发器启动的子工作流起点 | 子工作流定义的开始 |
-| `CONTINUE_FROM_TRIGGER` | 恢复主工作流执行位置 | 子工作流定义的结束 |
+| `START_FROM_TRIGGER` | 接收触发器传递的输入数据，初始化子工作流 | 子工作流定义的开始 |
+| `CONTINUE_FROM_TRIGGER` | 将子工作流的数据回调到主工作流 | 子工作流定义的结束 |
 
-**上下文处理**：通过 VARIABLE 节点和 CONTEXT_PROCESSOR 节点处理输入输出上下文，保持节点类型的简洁性。
+**数据传递机制**：
+- **输入数据**：通过触发器传递给 START_FROM_TRIGGER 节点
+- **回调数据**：通过 CONTINUE_FROM_TRIGGER 节点配置的回调机制回传到主工作流
+- **变量和对话历史**：由节点处理器负责传递和回调
 
 ## 图验证逻辑
 
@@ -193,14 +219,14 @@ export interface ExecuteTriggeredSubgraphAction {
   type: TriggerActionType.EXECUTE_TRIGGERED_SUBGRAPH;
   parameters: {
     /** 子工作流ID */
-    subgraphId: string;
-    /** 输入映射（可选） */
-    inputMapping?: Record<string, string>;
-    /** 配置选项（可选） */
-    config?: TriggeredSubgraphConfig;
+    triggeredWorkflowId: string;
+    /** 是否等待完成（默认true，同步执行） */
+    waitForCompletion?: boolean;
   };
 }
 ```
+
+**注意**：数据传递配置（变量、对话历史）已从触发器动作配置中移除，现在由节点配置处理。
 
 ### 触发器执行上下文（内部维护）
 
@@ -231,28 +257,43 @@ export async function executeTriggeredSubgraphHandler(
   triggerId: string,
   executionContext?: ExecutionContext
 ): Promise<TriggerExecutionResult> {
-  const { subgraphId, inputMapping, config } = action.parameters;
+  const { triggeredWorkflowId, waitForCompletion = true } = action.parameters;
   
   const mainThreadContext = executionContext?.threadContext;
   if (!mainThreadContext) {
     throw new Error('Main thread context required');
   }
   
-  // 创建子工作流输入
-  const input = createSubgraphInput(mainThreadContext, inputMapping);
+  // 准备输入数据（仅包含触发事件相关的数据）
+  // 数据传递（变量、对话历史）由节点处理器处理
+  const input = {
+    triggerId,
+    output: mainThreadContext.getOutput(),
+    input: mainThreadContext.getInput()
+  };
   
   // 启动子工作流执行
   await executeTriggeredSubgraph({
-    subgraphId,
+    subgraphId: triggeredWorkflowId,
     input,
     triggerId,
     mainThreadContext,
-    config
+    config: {
+      waitForCompletion,
+      timeout: 30000,
+      recordHistory: true
+    }
   });
   
   return createSuccessResult(triggerId, action, { executed: true }, Date.now());
 }
 ```
+
+**职责说明**：
+- 触发器只负责触发子工作流
+- 数据传递由节点处理器处理
+- START_FROM_TRIGGER 节点接收输入数据
+- CONTINUE_FROM_TRIGGER 节点回调数据到主线程
 
 ## 线程执行器扩展
 
@@ -384,17 +425,29 @@ const compressionTrigger: Trigger = {
   action: {
     type: TriggerActionType.EXECUTE_TRIGGERED_SUBGRAPH,
     parameters: {
-      subgraphId: 'context-compression-workflow',
-      inputMapping: {
-        messages: 'conversation.messages',
-        markMap: 'conversation.markMap',
-        tokensUsed: 'event.tokensUsed',
-        tokenLimit: 'event.tokenLimit'
-      }
+      triggeredWorkflowId: 'context-compression-workflow',
+      waitForCompletion: true
     }
   },
   status: TriggerStatus.ENABLED
 };
+```
+
+### CONTINUE_FROM_TRIGGER 节点配置示例
+
+```typescript
+{
+  id: 'continue-from-trigger',
+  type: NodeType.CONTINUE_FROM_TRIGGER,
+  config: {
+    variableCallback: {
+      includeVariables: ['compressedSummary', 'compressionStats']
+    },
+    conversationHistoryCallback: {
+      lastN: 10
+    }
+  }
+}
 ```
 
 ## 执行流程
@@ -433,9 +486,10 @@ const compressionTrigger: Trigger = {
 
 ### 设计简化
 
-1. **节点配置简化**：START_FROM_TRIGGER 和 CONTINUE_FROM_TRIGGER 节点无需特殊配置
-2. **上下文处理灵活**：通过 VARIABLE 和 CONTEXT_PROCESSOR 节点处理上下文
-3. **一致性**：与现有节点类型设计保持一致
+1. **职责分离**：触发器只负责触发，节点负责数据处理
+2. **配置清晰**：数据传递配置在节点配置中，易于理解和维护
+3. **一致性**：与现有节点处理器设计模式保持一致
+4. **类型安全**：编译时可以检查配置的正确性
 
 ### 性能优势
 
@@ -477,7 +531,8 @@ const compressionTrigger: Trigger = {
 本设计方案通过引入专用的节点类型 (`START_FROM_TRIGGER`, `CONTINUE_FROM_TRIGGER`) 和触发器动作类型 (`EXECUTE_TRIGGERED_SUBGRAPH`)，为触发器触发的孤立子工作流提供了完整的解决方案。该方案具有清晰的架构、简化的验证逻辑、正确的状态管理和良好的扩展性，能够有效支持上下文压缩等高级应用场景。
 
 **关键改进**：
-- 节点类型配置简化，无特殊字段
-- 上下文处理通过现有节点类型（VARIABLE, CONTEXT_PROCESSOR）完成
-- 触发器执行上下文内部维护，不暴露给用户
-- 保持与现有架构的一致性
+- 职责分离：触发器只负责触发，节点负责数据处理
+- 数据传递配置在节点配置中，提供灵活的回调机制
+- 支持变量和对话历史的精细控制
+- 与现有节点处理器设计模式保持一致
+- 提供完整的类型安全和编译时检查

@@ -1,10 +1,20 @@
 /**
  * 执行触发子工作流处理函数
  * 负责执行触发器触发的孤立子工作流
+ *
+ * 职责：
+ * - 触发子工作流执行
+ * - 传递触发事件相关的输入数据
+ * - 等待子工作流完成（如果配置了waitForCompletion）
+ *
+ * 注意：
+ * - 数据传递（变量、对话历史）由节点处理器处理
+ * - START_FROM_TRIGGER节点负责接收输入数据
+ * - CONTINUE_FROM_TRIGGER节点负责回调数据到主线程
  */
 
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types/trigger';
-import type { ExecuteTriggeredSubgraphActionConfig, ConversationHistoryOptions } from '@modular-agent/types/trigger';
+import type { ExecuteTriggeredSubgraphActionConfig } from '@modular-agent/types/trigger';
 import { NotFoundError, ValidationError } from '@modular-agent/types/errors';
 import { ExecutionContext } from '../../context/execution-context';
 import {
@@ -97,56 +107,13 @@ export async function executeTriggeredSubgraphHandler(
       throw new NotFoundError(`Triggered workflow not found: ${triggeredWorkflowId}`, 'Workflow', triggeredWorkflowId);
     }
 
-    // 从主线程上下文获取执行上下文
+    // 准备输入数据（仅包含触发事件相关的数据）
+    // 数据传递（变量、对话历史）由节点处理器处理
     const input: Record<string, any> = {
+      triggerId,
       output: mainThreadContext.getOutput(),
       input: mainThreadContext.getInput()
     };
-
-    // 根据mergeOptions配置选择性传递变量
-    if (parameters.mergeOptions?.includeVariables) {
-      const allVariables = mainThreadContext.getAllVariables();
-      input['variables'] = {};
-      for (const varName of parameters.mergeOptions.includeVariables) {
-        if (varName in allVariables) {
-          input['variables'][varName] = allVariables[varName];
-        }
-      }
-    } else {
-      // 未配置includeVariables时，传递所有变量（保持向后兼容）
-      // 未配置includeVariables时，传递所有变量（保持向后兼容）
-      input['variables'] = mainThreadContext.getAllVariables();
-    }
-
-    // 根据mergeOptions配置选择性传递对话历史
-    if (parameters.mergeOptions?.includeConversationHistory) {
-      const options = parameters.mergeOptions.includeConversationHistory;
-      let conversationHistory: any[] = [];
-      
-      if (options.lastN !== undefined) {
-        conversationHistory = mainThreadContext.getRecentMessages(options.lastN);
-      } else if (options.lastNByRole) {
-        conversationHistory = mainThreadContext.getRecentMessagesByRole(
-          options.lastNByRole.role,
-          options.lastNByRole.count
-        );
-      } else if (options.byRole) {
-        conversationHistory = mainThreadContext.getMessagesByRole(options.byRole);
-      } else if (options.range) {
-        conversationHistory = mainThreadContext.getMessagesByRange(
-          options.range.start,
-          options.range.end
-        );
-      } else if (options.rangeByRole) {
-        conversationHistory = mainThreadContext.getMessagesByRoleRange(
-          options.rangeByRole.role,
-          options.rangeByRole.start,
-          options.rangeByRole.end
-        );
-      }
-      
-      input['conversationHistory'] = conversationHistory;
-    }
 
     // 创建 ThreadExecutor 实例（作为 SubgraphContextFactory 和 SubgraphExecutor）
     const threadExecutor = new ThreadExecutor(context);

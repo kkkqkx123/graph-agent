@@ -11,9 +11,26 @@ import type { Result } from '@modular-agent/types/result';
 import { ok, err } from '@modular-agent/common-utils';
 
 /**
- * ContinueFromTrigger节点配置schema（必须为空对象）
+ * ContinueFromTrigger节点配置schema
  */
-const continueFromTriggerNodeConfigSchema = z.object({}).strict();
+const continueFromTriggerNodeConfigSchema = z.object({
+  variableCallback: z.object({
+    includeVariables: z.array(z.string()).optional(),
+    includeAll: z.boolean().optional()
+  }).optional(),
+  conversationHistoryCallback: z.object({
+    lastN: z.number().int().positive().optional(),
+    lastNByRole: z.object({
+      role: z.enum(['system', 'user', 'assistant', 'tool']),
+      count: z.number().int().positive()
+    }).optional(),
+    byRole: z.enum(['system', 'user', 'assistant', 'tool']).optional(),
+    range: z.object({
+      start: z.number().int().nonnegative(),
+      end: z.number().int().positive()
+    }).optional()
+  }).optional()
+}).strict();
 
 /**
  * 验证ContinueFromTrigger节点配置
@@ -27,7 +44,24 @@ export function validateContinueFromTriggerNode(node: Node): Result<Node, Valida
 
   const result = continueFromTriggerNodeConfigSchema.safeParse(node.config || {});
   if (!result.success) {
-    return err([new ValidationError('CONTINUE_FROM_TRIGGER node must have no configuration', `node.${node.id}.config`)]);
+    const errors = result.error.errors.map(err =>
+      new ValidationError(
+        `Invalid CONTINUE_FROM_TRIGGER node configuration: ${err.message}`,
+        `node.${node.id}.config`
+      )
+    );
+    return err(errors);
+  }
+
+  // 验证配置逻辑
+  const config = node.config as any;
+  
+  // 如果配置了variableCallback，不能同时设置includeAll和includeVariables
+  if (config.variableCallback?.includeAll && config.variableCallback?.includeVariables) {
+    return err([new ValidationError(
+      'variableCallback cannot have both includeAll and includeVariables',
+      `node.${node.id}.config.variableCallback`
+    )]);
   }
 
   return ok(node);

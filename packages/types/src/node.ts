@@ -5,7 +5,7 @@
 
 import type { ID, Metadata } from './common';
 import type { Condition } from './condition';
-import type { LLMMessage } from './llm';
+import type { LLMMessage, LLMMessageRole } from './llm';
 
 /**
  * 节点类型枚举
@@ -405,11 +405,33 @@ export interface StartFromTriggerNodeConfig {
 
 /**
  * 从触发器继续的节点配置
- * 用于在子工作流执行完成后恢复到主工作流的执行位置
- * 无特殊配置，类似 END 节点
+ * 用于在子工作流执行完成后将数据回调到主工作流
  */
 export interface ContinueFromTriggerNodeConfig {
-  // 无配置，仅作为子工作流结束标志
+  /** 变量回调配置 */
+  variableCallback?: {
+    /** 要回传的变量名称列表 */
+    includeVariables?: string[];
+    /** 是否回传所有变量（默认false） */
+    includeAll?: boolean;
+  };
+  /** 对话历史回调配置 */
+  conversationHistoryCallback?: {
+    /** 回传最后N条消息 */
+    lastN?: number;
+    /** 回传最后N条指定角色的消息 */
+    lastNByRole?: {
+      role: LLMMessageRole;
+      count: number;
+    };
+    /** 回传指定角色的所有消息 */
+    byRole?: LLMMessageRole;
+    /** 回传指定范围的消息 */
+    range?: {
+      start: number;
+      end: number;
+    };
+  };
 }
 
 /**
