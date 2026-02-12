@@ -16,5 +16,58 @@ export * from './evalutor';
 // LLM相关基础设施
 export * from './llm';
 
-// 日志系统
-export * from './logger';
+// 日志系统（选择性导出以避免命名冲突）
+export {
+  createLogger,
+  createPackageLogger,
+  createConsoleLogger,
+  createNoopLogger,
+  setGlobalLogger,
+  getGlobalLogger,
+  setGlobalLogLevel,
+  getGlobalLogLevel
+} from './logger/logger';
+
+export {
+  ConsoleStream,
+  createConsoleStream,
+  FileStream,
+  createFileStream,
+  AsyncStream,
+  createAsyncStream,
+  Multistream,
+  createMultistream
+} from './logger/streams';
+
+export {
+  destination,
+  transport
+} from './logger/transports';
+
+export {
+  shouldLog,
+  formatTimestamp,
+  mergeContext,
+  createLogEntry
+} from './logger/utils';
+
+export type {
+  Logger,
+  LogLevel,
+  LoggerContext,
+  LoggerOptions,
+  PackageLoggerOptions,
+  LogStream,
+  LogEntry,
+  StreamOptions,
+  MultistreamOptions,
+  StreamEntry
+} from './logger/types';
+
+export { LOG_LEVEL_PRIORITY } from './logger/types';
+
+export type {
+  Destination,
+  TransportOptions,
+  MultiTransportOptions
+} from './logger/transports';

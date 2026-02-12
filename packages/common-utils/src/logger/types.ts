@@ -1,6 +1,6 @@
 /**
  * 日志模块类型定义
- * 基于pino设计思想的轻量级日志系统
+ * 基于pino设计思想的流式日志系统
  */
 
 /**
@@ -31,12 +31,129 @@ export interface LoggerContext {
 }
 
 /**
- * 日志输出函数类型
- * @param level 日志级别
- * @param message 日志消息
- * @param context 日志上下文
+ * 日志条目
+ * 流式输出的标准数据格式
  */
-export type LogOutput = (level: LogLevel, message: string, context?: LoggerContext) => void;
+export interface LogEntry {
+  level: LogLevel;
+  message: string;
+  timestamp?: string;
+  context?: LoggerContext;
+  [key: string]: any;
+}
+
+/**
+ * LogStream接口
+ * 统一的日志输出抽象
+ */
+export interface LogStream {
+  /**
+   * 写入日志条目
+   * @param entry 日志条目
+   */
+  write(entry: LogEntry): void;
+
+  /**
+   * 刷新缓冲区（可选）
+   * @param callback 完成回调
+   */
+  flush?(callback?: () => void): void;
+
+  /**
+   * 结束stream（可选）
+   */
+  end?(): void;
+
+  /**
+   * 事件监听（可选）
+   * @param event 事件名称
+   * @param handler 事件处理器
+   */
+  on?(event: string, handler: (...args: any[]) => void): void;
+
+  /**
+   * 移除事件监听（可选）
+   * @param event 事件名称
+   * @param handler 事件处理器
+   */
+  off?(event: string, handler: (...args: any[]) => void): void;
+}
+
+/**
+ * Stream配置选项
+ */
+export interface StreamOptions {
+  /**
+   * 是否使用JSON格式输出
+   */
+  json?: boolean;
+
+  /**
+   * 是否包含时间戳
+   */
+  timestamp?: boolean;
+
+  /**
+   * 是否使用彩色输出（仅console）
+   */
+  pretty?: boolean;
+
+  /**
+   * 批量大小（仅async stream）
+   */
+  batchSize?: number;
+
+  /**
+   * 文件路径（仅file stream）
+   */
+  filePath?: string;
+
+  /**
+   * 是否追加到文件（仅file stream）
+   */
+  append?: boolean;
+}
+
+/**
+ * Multistream配置
+ */
+export interface MultistreamOptions {
+  /**
+   * 是否去重
+   */
+  dedupe?: boolean;
+
+  /**
+   * 自定义级别映射
+   */
+  levels?: Record<string, number>;
+}
+
+/**
+ * StreamEntry
+ * Multistream中的stream条目
+ */
+export interface StreamEntry {
+  /**
+   * Stream实例
+   */
+  stream: LogStream;
+
+  /**
+   * 日志级别
+   */
+  level?: LogLevel | number;
+
+  /**
+   * 级别数值
+   */
+  levelVal?: number;
+
+  /**
+   * Stream ID（用于移除）
+   */
+  id?: number;
+}
 
 /**
  * 日志器配置选项
@@ -53,29 +170,29 @@ export interface LoggerOptions {
   name?: string;
 
   /**
-   * 自定义输出函数，默认使用console
+   * 日志输出stream
    */
-  output?: LogOutput;
+  stream?: LogStream;
 
   /**
-   * 是否异步输出，默认为false
-   */
-  async?: boolean;
-
-  /**
-   * 批量大小，仅在async=true时有效，默认为10
-   */
-  batchSize?: number;
-
-  /**
-   * 是否使用JSON格式输出，默认为false
+   * 是否使用JSON格式输出（当使用默认stream时）
    */
   json?: boolean;
 
   /**
-   * 是否包含时间戳，默认为true
+   * 是否包含时间戳（当使用默认stream时）
    */
   timestamp?: boolean;
+
+  /**
+   * 是否使用彩色输出（当使用默认stream时）
+   */
+  pretty?: boolean;
+
+  /**
+   * 基础上下文
+   */
+  base?: LoggerContext;
 }
 
 /**
@@ -137,6 +254,12 @@ export interface Logger {
    * @returns 是否启用
    */
   isLevelEnabled(level: LogLevel): boolean;
+
+  /**
+   * 刷新日志缓冲区
+   * @param callback 完成回调
+   */
+  flush?(callback?: () => void): void;
 }
 
 /**

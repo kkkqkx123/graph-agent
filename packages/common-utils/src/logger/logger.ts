@@ -1,32 +1,41 @@
 /**
  * 日志器核心实现
- * 基于pino设计思想的轻量级日志系统
- * 支持child logger模式和性能优化
+ * 基于pino设计思想的流式日志系统
+ * 支持child logger模式和多种输出方式
  */
 
-import type { Logger, LogLevel, LoggerContext, LoggerOptions, PackageLoggerOptions } from './types';
-import { createConsoleOutput, createAsyncOutput, mergeContext, shouldLog } from './utils';
+import type { Logger, LogLevel, LoggerContext, LoggerOptions, LogStream, LogEntry } from './types';
+import { createConsoleStream } from './streams';
+import { destination } from './transports';
+import { shouldLog, mergeContext, createLogEntry } from './utils';
 
 /**
  * 基础日志器实现
- * 支持child logger模式和性能优化
+ * 支持child logger模式和stream输出
  */
 class BaseLogger implements Logger {
   protected level: LogLevel;
   protected context: LoggerContext;
-  protected output: (level: LogLevel, message: string, context?: LoggerContext) => void;
+  protected stream: LogStream;
   protected name?: string;
+  protected timestamp: boolean;
 
   constructor(options: LoggerOptions = {}, parentContext: LoggerContext = {}) {
     this.level = options.level || 'info';
     this.name = options.name;
-    this.context = { ...parentContext };
-    
-    // 根据配置创建输出函数
-    if (options.async) {
-      this.output = createAsyncOutput(options);
+    this.context = { ...parentContext, ...options.base };
+    this.timestamp = options.timestamp !== false; // 默认包含时间戳
+
+    // 创建或使用提供的stream
+    if (options.stream) {
+      this.stream = options.stream;
     } else {
-      this.output = createConsoleOutput(options);
+      // 创建默认的console stream
+      this.stream = createConsoleStream({
+        json: options.json ?? false,
+        timestamp: this.timestamp,
+        pretty: options.pretty ?? false
+      });
     }
   }
 
@@ -57,7 +66,8 @@ class BaseLogger implements Logger {
   debug(message: string, context?: Record<string, any>): void {
     if (this.isLevelEnabled('debug')) {
       const mergedContext = mergeContext(this.context, context);
-      this.output('debug', message, mergedContext);
+      const entry = createLogEntry('debug', message, mergedContext, this.timestamp);
+      this.stream.write(entry);
     }
   }
 
@@ -67,7 +77,8 @@ class BaseLogger implements Logger {
   info(message: string, context?: Record<string, any>): void {
     if (this.isLevelEnabled('info')) {
       const mergedContext = mergeContext(this.context, context);
-      this.output('info', message, mergedContext);
+      const entry = createLogEntry('info', message, mergedContext, this.timestamp);
+      this.stream.write(entry);
     }
   }
 
@@ -77,7 +88,8 @@ class BaseLogger implements Logger {
   warn(message: string, context?: Record<string, any>): void {
     if (this.isLevelEnabled('warn')) {
       const mergedContext = mergeContext(this.context, context);
-      this.output('warn', message, mergedContext);
+      const entry = createLogEntry('warn', message, mergedContext, this.timestamp);
+      this.stream.write(entry);
     }
   }
 
@@ -87,7 +99,8 @@ class BaseLogger implements Logger {
   error(message: string, context?: Record<string, any>): void {
     if (this.isLevelEnabled('error')) {
       const mergedContext = mergeContext(this.context, context);
-      this.output('error', message, mergedContext);
+      const entry = createLogEntry('error', message, mergedContext, this.timestamp);
+      this.stream.write(entry);
     }
   }
 
@@ -102,15 +115,27 @@ class BaseLogger implements Logger {
     const childOptions: LoggerOptions = {
       level: this.level,
       name: this.name ? `${this.name}.${name}` : name,
-      async: this.output === createAsyncOutput({}) // 简单判断是否异步
+      stream: this.stream, // 共享同一个stream
+      timestamp: this.timestamp
     };
-    
+
     const childContext = mergeContext(this.context, {
       module: name,
       ...additionalContext
     });
-    
+
     return new BaseLogger(childOptions, childContext);
+  }
+
+  /**
+   * 刷新日志缓冲区
+   */
+  flush(callback?: () => void): void {
+    if (this.stream.flush) {
+      this.stream.flush(callback);
+    } else if (callback) {
+      setImmediate(callback);
+    }
   }
 }
 
@@ -123,16 +148,16 @@ class NoopLogger implements Logger {
   info(): void {}
   warn(): void {}
   error(): void {}
-  
+
   child(): Logger {
     return this;
   }
-  
+
   setLevel(): void {}
   getLevel(): LogLevel {
     return 'off';
   }
-  
+
   isLevelEnabled(): boolean {
     return false;
   }
@@ -162,11 +187,11 @@ export function createPackageLogger(pkg: string, options: Omit<LoggerOptions, 'n
     ...options,
     name: pkg
   };
-  
+
   const packageContext: LoggerContext = {
     pkg
   };
-  
+
   return new BaseLogger(packageOptions, packageContext);
 }
 
