@@ -13,8 +13,15 @@ import type { LLMMessage } from '@modular-agent/types/llm';
 // Mock ConversationManager
 class MockConversationManager {
   private messages: LLMMessage[] = [];
-  private markMap: { originalIndices: number[]; batchBoundaries: number[]; boundaryToBatch: number[]; currentBatch: number } = {
+  private markMap: {
+    originalIndices: number[];
+    typeIndices: { system: number[]; user: number[]; assistant: number[]; tool: number[] };
+    batchBoundaries: number[];
+    boundaryToBatch: number[];
+    currentBatch: number
+  } = {
     originalIndices: [],
+    typeIndices: { system: [], user: [], assistant: [], tool: [] },
     batchBoundaries: [0],
     boundaryToBatch: [0],
     currentBatch: 0
@@ -24,6 +31,10 @@ class MockConversationManager {
   constructor(messages: LLMMessage[] = []) {
     this.messages = [...messages];
     this.markMap.originalIndices = messages.map((_, index) => index);
+    // 初始化类型索引
+    messages.forEach((msg, index) => {
+      this.markMap.typeIndices[msg.role as keyof typeof this.markMap.typeIndices].push(index);
+    });
   }
 
   getAllMessages(): LLMMessage[] {
@@ -66,17 +77,40 @@ class MockConversationManager {
     };
   }
 
+  getTypeIndexManager() {
+    return {
+      getIndicesByRole: (role: string) => {
+        return [...this.markMap.typeIndices[role as keyof typeof this.markMap.typeIndices]];
+      }
+    };
+  }
+
+  keepMessageIndices(indices: number[]) {
+    const indexSet = new Set(indices);
+    // 更新类型索引
+    for (const role of ['system', 'user', 'assistant', 'tool'] as const) {
+      this.markMap.typeIndices[role] = this.markMap.typeIndices[role].filter(idx => indexSet.has(idx));
+    }
+  }
+
   startNewBatchWithInitialTools(boundaryIndex: number) {
     if (boundaryIndex === 0) {
       // 清空所有消息，添加初始工具描述
       this.messages = [{ role: 'system', content: 'Initial tools description' }];
       this.markMap.originalIndices = [0];
+      this.markMap.typeIndices = { system: [0], user: [], assistant: [], tool: [] };
     } else {
       // 保留系统消息
       const systemIndices = this.messages
         .map((msg, index) => msg.role === 'system' ? index : -1)
         .filter(index => index !== -1);
       this.markMap.originalIndices = systemIndices;
+      this.markMap.typeIndices = {
+        system: systemIndices,
+        user: [],
+        assistant: [],
+        tool: []
+      };
     }
     this.hasBeenFiltered = true;
     this.markMap.batchBoundaries = [0];
@@ -270,6 +304,87 @@ describe('context-processor-handler', () => {
       await expect(contextProcessorHandler(mockThread, mockNode, mockContext))
         .rejects
         .toThrow(ValidationError);
+    });
+
+    it('应该正确处理按类型过滤的keepLast配置', async () => {
+      mockNode = {
+        id: 'context-processor-node-1',
+        name: 'Context Processor Node',
+        type: NodeType.CONTEXT_PROCESSOR,
+        config: {
+          operation: 'truncate',
+          truncate: {
+            role: 'user',
+            keepLast: 1
+          }
+        } as ContextProcessorNodeConfig,
+        incomingEdgeIds: [],
+        outgoingEdgeIds: []
+      };
+
+      const result = await contextProcessorHandler(mockThread, mockNode, mockContext);
+
+      expect(result.operation).toBe('truncate');
+      expect(result.messageCount).toBe(1);
+
+      const messages = mockContext.conversationManager.getMessages();
+      expect(messages).toHaveLength(1);
+      expect(messages[0].role).toBe('user');
+      expect(messages[0].content).toBe('User message 2');
+    });
+
+    it('应该正确处理按类型过滤的keepFirst配置', async () => {
+      mockNode = {
+        id: 'context-processor-node-1',
+        name: 'Context Processor Node',
+        type: NodeType.CONTEXT_PROCESSOR,
+        config: {
+          operation: 'truncate',
+          truncate: {
+            role: 'assistant',
+            keepFirst: 1
+          }
+        } as ContextProcessorNodeConfig,
+        incomingEdgeIds: [],
+        outgoingEdgeIds: []
+      };
+
+      const result = await contextProcessorHandler(mockThread, mockNode, mockContext);
+
+      expect(result.operation).toBe('truncate');
+      expect(result.messageCount).toBe(1);
+
+      const messages = mockContext.conversationManager.getMessages();
+      expect(messages).toHaveLength(1);
+      expect(messages[0].role).toBe('assistant');
+      expect(messages[0].content).toBe('Assistant message 1');
+    });
+
+    it('应该正确处理按类型过滤的range配置', async () => {
+      mockNode = {
+        id: 'context-processor-node-1',
+        name: 'Context Processor Node',
+        type: NodeType.CONTEXT_PROCESSOR,
+        config: {
+          operation: 'truncate',
+          truncate: {
+            role: 'user',
+            range: { start: 0, end: 1 }
+          }
+        } as ContextProcessorNodeConfig,
+        incomingEdgeIds: [],
+        outgoingEdgeIds: []
+      };
+
+      const result = await contextProcessorHandler(mockThread, mockNode, mockContext);
+
+      expect(result.operation).toBe('truncate');
+      expect(result.messageCount).toBe(1);
+
+      const messages = mockContext.conversationManager.getMessages();
+      expect(messages).toHaveLength(1);
+      expect(messages[0].role).toBe('user');
+      expect(messages[0].content).toBe('User message 1');
     });
   });
 

@@ -24,6 +24,12 @@ export class MessageIndexManager {
     // 初始化标记映射
     this.markMap = {
       originalIndices: [],
+      typeIndices: {
+        system: [],
+        user: [],
+        assistant: [],
+        tool: []
+      },
       batchBoundaries: [0],  // 第0个索引作为第0个batch的边界
       boundaryToBatch: [0],
       currentBatch: 0
@@ -48,6 +54,12 @@ export class MessageIndexManager {
     return {
       ...this.markMap,
       originalIndices: [...this.markMap.originalIndices],
+      typeIndices: {
+        system: [...this.markMap.typeIndices.system],
+        user: [...this.markMap.typeIndices.user],
+        assistant: [...this.markMap.typeIndices.assistant],
+        tool: [...this.markMap.typeIndices.tool]
+      },
       batchBoundaries: [...this.markMap.batchBoundaries],
       boundaryToBatch: [...this.markMap.boundaryToBatch]
     };
@@ -61,6 +73,12 @@ export class MessageIndexManager {
     this.markMap = {
       ...markMap,
       originalIndices: [...markMap.originalIndices],
+      typeIndices: {
+        system: [...markMap.typeIndices.system],
+        user: [...markMap.typeIndices.user],
+        assistant: [...markMap.typeIndices.assistant],
+        tool: [...markMap.typeIndices.tool]
+      },
       batchBoundaries: [...markMap.batchBoundaries],
       boundaryToBatch: [...markMap.boundaryToBatch]
     };
@@ -243,6 +261,12 @@ export class MessageIndexManager {
   reset(): void {
     this.markMap = {
       originalIndices: [],
+      typeIndices: {
+        system: [],
+        user: [],
+        assistant: [],
+        tool: []
+      },
       batchBoundaries: [0],
       boundaryToBatch: [0],
       currentBatch: 0

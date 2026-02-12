@@ -210,6 +210,89 @@ describe('ConversationManager', () => {
     });
   });
 
+  describe('type-based message methods', () => {
+    beforeEach(() => {
+      conversationManager.addMessages(...mockMessages);
+    });
+
+    it('should get messages by role', () => {
+      const systemMessages = conversationManager.getMessagesByRole('system');
+      expect(systemMessages).toEqual([mockMessages[0]]);
+      
+      const userMessages = conversationManager.getMessagesByRole('user');
+      expect(userMessages).toEqual([mockMessages[1]]);
+      
+      const assistantMessages = conversationManager.getMessagesByRole('assistant');
+      expect(assistantMessages).toEqual([mockMessages[2]]);
+    });
+
+    it('should get recent messages by role', () => {
+      // 添加更多用户消息
+      conversationManager.addMessage({ role: 'user', content: 'User message 2' });
+      conversationManager.addMessage({ role: 'user', content: 'User message 3' });
+      
+      const recentUserMessages = conversationManager.getRecentMessagesByRole('user', 2);
+      expect(recentUserMessages.length).toBe(2);
+      expect(recentUserMessages[0]?.content).toBe('User message 2');
+      expect(recentUserMessages[1]?.content).toBe('User message 3');
+    });
+
+    it('should get messages by role range', () => {
+      // 添加更多助手消息
+      conversationManager.addMessage({ role: 'assistant', content: 'Assistant message 2' });
+      conversationManager.addMessage({ role: 'assistant', content: 'Assistant message 3' });
+      
+      const assistantMessages = conversationManager.getMessagesByRoleRange('assistant', 0, 2);
+      expect(assistantMessages.length).toBe(2);
+      expect(assistantMessages[0]?.content).toBe('Hi there! How can I help you?');
+      expect(assistantMessages[1]?.content).toBe('Assistant message 2');
+    });
+
+    it('should get message count by role', () => {
+      expect(conversationManager.getMessageCountByRole('system')).toBe(1);
+      expect(conversationManager.getMessageCountByRole('user')).toBe(1);
+      expect(conversationManager.getMessageCountByRole('assistant')).toBe(1);
+      expect(conversationManager.getMessageCountByRole('tool')).toBe(0);
+    });
+
+    it('should handle empty role queries', () => {
+      const toolMessages = conversationManager.getMessagesByRole('tool');
+      expect(toolMessages).toEqual([]);
+      
+      const recentToolMessages = conversationManager.getRecentMessagesByRole('tool', 5);
+      expect(recentToolMessages).toEqual([]);
+      
+      expect(conversationManager.getMessageCountByRole('tool')).toBe(0);
+    });
+  });
+
+  describe('type index management', () => {
+    it('should get type index manager', () => {
+      const typeIndexManager = conversationManager.getTypeIndexManager();
+      expect(typeIndexManager).toBeDefined();
+    });
+
+    it('should remove message indices', () => {
+      conversationManager.addMessages(...mockMessages);
+      
+      conversationManager.removeMessageIndices([1]);
+      
+      expect(conversationManager.getMessageCountByRole('user')).toBe(0);
+      expect(conversationManager.getMessageCountByRole('system')).toBe(1);
+      expect(conversationManager.getMessageCountByRole('assistant')).toBe(1);
+    });
+
+    it('should keep message indices', () => {
+      conversationManager.addMessages(...mockMessages);
+      
+      conversationManager.keepMessageIndices([0, 2]);
+      
+      expect(conversationManager.getMessageCountByRole('system')).toBe(1);
+      expect(conversationManager.getMessageCountByRole('user')).toBe(0);
+      expect(conversationManager.getMessageCountByRole('assistant')).toBe(1);
+    });
+  });
+
   describe('index management', () => {
     it('should get mark map', () => {
       const markMap = conversationManager.getMarkMap();
@@ -240,6 +323,19 @@ describe('ConversationManager', () => {
       
       expect(cloned.getMessages()).toEqual(conversationManager.getMessages());
       expect(cloned).not.toBe(conversationManager);
+    });
+
+    it('should clone type index manager', () => {
+      conversationManager.addMessages(...mockMessages);
+      
+      const cloned = conversationManager.clone();
+      
+      // 修改原始管理器
+      conversationManager.addMessage({ role: 'user', content: 'New message' });
+      
+      // 克隆的管理器应该不受影响
+      expect(conversationManager.getMessageCountByRole('user')).toBe(2);
+      expect(cloned.getMessageCountByRole('user')).toBe(1);
     });
   });
 

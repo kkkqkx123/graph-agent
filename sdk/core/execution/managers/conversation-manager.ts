@@ -15,10 +15,11 @@
  * - 上下文压缩通过触发器+子工作流实现，不在此模块
  */
 
-import type { LLMMessage, LLMUsage, MessageMarkMap, TokenUsageHistory, TokenUsageStats } from '@modular-agent/types/llm';
+import type { LLMMessage, LLMUsage, MessageMarkMap, TokenUsageHistory, TokenUsageStats, LLMMessageRole } from '@modular-agent/types/llm';
 import { ValidationError } from '@modular-agent/types/errors';
 import { TokenUsageTracker } from '../token-usage-tracker';
 import { MessageIndexManager } from './message-index-manager';
+import { TypeIndexManager } from './type-index-manager';
 import type { EventManager } from '../../services/event-manager';
 import type { TokenLimitExceededEvent } from '@modular-agent/types/events';
 import { EventType } from '@modular-agent/types/events';
@@ -71,6 +72,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
   private messages: LLMMessage[] = [];
   private tokenUsageTracker: TokenUsageTracker;
   private indexManager: MessageIndexManager;
+  private typeIndexManager: TypeIndexManager;
   private eventManager?: EventManager;
   private workflowId?: string;
   private threadId?: string;
@@ -86,6 +88,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
       tokenLimit: options.tokenLimit
     });
     this.indexManager = new MessageIndexManager();
+    this.typeIndexManager = new TypeIndexManager();
     this.eventManager = options.eventManager;
     this.workflowId = options.workflowId;
     this.threadId = options.threadId;
@@ -106,9 +109,13 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
 
     // 将消息追加到数组末尾
     this.messages.push({ ...message });
+    const newIndex = this.messages.length - 1;
 
     // 同步更新索引
-    this.indexManager.addIndex(this.messages.length - 1);
+    this.indexManager.addIndex(newIndex);
+    
+    // 同步更新类型索引
+    this.typeIndexManager.addIndex(message.role, newIndex);
 
     return this.messages.length;
   }
@@ -175,6 +182,9 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
 
     // 重置索引管理器
     this.indexManager.reset();
+    
+    // 重置类型索引管理器
+    this.typeIndexManager.reset();
   }
 
   /**
@@ -265,6 +275,48 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
   }
 
   /**
+   * 获取指定类型的所有消息
+   * @param role 消息角色
+   * @returns 消息数组
+   */
+  getMessagesByRole(role: LLMMessageRole): LLMMessage[] {
+    const indices = this.typeIndexManager.getIndicesByRole(role);
+    return indices.map(index => ({ ...this.messages[index]! }));
+  }
+
+  /**
+   * 获取指定类型的最近N条消息
+   * @param role 消息角色
+   * @param n 消息数量
+   * @returns 消息数组
+   */
+  getRecentMessagesByRole(role: LLMMessageRole, n: number): LLMMessage[] {
+    const indices = this.typeIndexManager.getRecentIndicesByRole(role, n);
+    return indices.map(index => ({ ...this.messages[index]! }));
+  }
+
+  /**
+   * 获取指定类型的索引范围消息
+   * @param role 消息角色
+   * @param start 起始位置（在类型数组中的位置）
+   * @param end 结束位置（在类型数组中的位置）
+   * @returns 消息数组
+   */
+  getMessagesByRoleRange(role: LLMMessageRole, start: number, end: number): LLMMessage[] {
+    const indices = this.typeIndexManager.getRangeIndicesByRole(role, start, end);
+    return indices.map(index => ({ ...this.messages[index]! }));
+  }
+
+  /**
+   * 获取指定类型的消息数量
+   * @param role 消息角色
+   * @returns 消息数量
+   */
+  getMessageCountByRole(role: LLMMessageRole): number {
+    return this.typeIndexManager.getCountByRole(role);
+  }
+
+  /**
    * 触发Token限制事件
    * @param tokensUsed 当前使用的Token数量
    */
@@ -311,6 +363,14 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
   }
 
   /**
+   * 获取类型索引管理器实例（用于内部操作）
+   * @returns TypeIndexManager 实例
+   */
+  getTypeIndexManager(): TypeIndexManager {
+    return this.typeIndexManager;
+  }
+
+  /**
    * 获取Token使用追踪器实例（用于内部操作）
    * @returns TokenUsageTracker 实例
    */
@@ -348,6 +408,9 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
 
     // 复制索引管理器
     clonedManager.indexManager = this.indexManager.clone();
+    
+    // 复制类型索引管理器
+    clonedManager.typeIndexManager = this.typeIndexManager.clone();
 
     return clonedManager;
   }
@@ -383,6 +446,24 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    */
   cleanup(): void {
     this.clearMessages(false);
+  }
+
+  /**
+   * 移除指定的消息索引
+   * @param indices 要移除的索引数组
+   */
+  removeMessageIndices(indices: number[]): void {
+    // 从类型索引中移除
+    this.typeIndexManager.removeIndices(indices);
+  }
+
+  /**
+   * 保留指定的消息索引
+   * @param indices 要保留的索引数组
+   */
+  keepMessageIndices(indices: number[]): void {
+    // 从类型索引中保留
+    this.typeIndexManager.keepIndices(indices);
   }
 
   /**

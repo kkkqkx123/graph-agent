@@ -27,6 +27,8 @@ export interface ContextProcessorExecutionData {
     removeFirst?: number;
     removeLast?: number;
     range?: { start: number; end: number };
+    /** 按类型过滤（可选） */
+    role?: 'system' | 'user' | 'assistant' | 'tool';
   };
   /** 插入操作配置 */
   insert?: {
@@ -83,47 +85,92 @@ function handleTruncateOperation(
     throw new ValidationError('Truncate configuration is required', 'config');
   }
 
-  // 获取当前可见消息的索引
-  const currentIndices = conversationManager.getMarkMap().originalIndices;
-
-  // 计算新的索引数组（基于当前可见消息）
-  let newIndices = [...currentIndices];
-
-  // 保留前N条消息
-  if (config.keepFirst !== undefined) {
-    newIndices = newIndices.slice(0, config.keepFirst);
-  }
-
-  // 保留后N条消息
-  if (config.keepLast !== undefined) {
-    newIndices = newIndices.slice(-config.keepLast);
-  }
-
-  // 删除前N条消息
-  if (config.removeFirst !== undefined) {
-    newIndices = newIndices.slice(config.removeFirst);
-  }
-
-  // 删除后N条消息
-  if (config.removeLast !== undefined) {
-    newIndices = newIndices.slice(0, -config.removeLast || undefined);
-  }
-
-  // 保留索引范围
-  if (config.range) {
-    newIndices = newIndices.slice(config.range.start, config.range.end);
-  }
-
-  // 更新索引管理器
-  conversationManager.setOriginalIndices(newIndices);
-
-  // 开始新批次，记录边界
-  if (newIndices.length > 0) {
-    const boundaryIndex = Math.min(...newIndices);
-    conversationManager.getIndexManager().startNewBatch(boundaryIndex);
+  // 如果指定了角色，使用类型索引
+  if (config.role) {
+    const typeIndices = conversationManager.getTypeIndexManager().getIndicesByRole(config.role);
+    
+    // 基于类型索引进行截断操作
+    let filteredIndices = [...typeIndices];
+    
+    if (config.keepFirst !== undefined) {
+      filteredIndices = filteredIndices.slice(0, config.keepFirst);
+    }
+    
+    if (config.keepLast !== undefined) {
+      filteredIndices = filteredIndices.slice(-config.keepLast);
+    }
+    
+    if (config.removeFirst !== undefined) {
+      filteredIndices = filteredIndices.slice(config.removeFirst);
+    }
+    
+    if (config.removeLast !== undefined) {
+      filteredIndices = filteredIndices.slice(0, -config.removeLast || undefined);
+    }
+    
+    if (config.range) {
+      filteredIndices = filteredIndices.slice(config.range.start, config.range.end);
+    }
+    
+    // 更新索引管理器（只保留指定类型的消息）
+    conversationManager.setOriginalIndices(filteredIndices);
+    
+    // 同步更新类型索引
+    conversationManager.keepMessageIndices(filteredIndices);
+    
+    // 开始新批次
+    if (filteredIndices.length > 0) {
+      const boundaryIndex = Math.min(...filteredIndices);
+      conversationManager.getIndexManager().startNewBatch(boundaryIndex);
+    } else {
+      conversationManager.getIndexManager().reset();
+    }
   } else {
-    // 如果没有消息了，重置索引管理器
-    conversationManager.getIndexManager().reset();
+    // 原有逻辑：基于当前可见消息
+    const currentIndices = conversationManager.getMarkMap().originalIndices;
+
+    // 计算新的索引数组（基于当前可见消息）
+    let newIndices = [...currentIndices];
+
+    // 保留前N条消息
+    if (config.keepFirst !== undefined) {
+      newIndices = newIndices.slice(0, config.keepFirst);
+    }
+
+    // 保留后N条消息
+    if (config.keepLast !== undefined) {
+      newIndices = newIndices.slice(-config.keepLast);
+    }
+
+    // 删除前N条消息
+    if (config.removeFirst !== undefined) {
+      newIndices = newIndices.slice(config.removeFirst);
+    }
+
+    // 删除后N条消息
+    if (config.removeLast !== undefined) {
+      newIndices = newIndices.slice(0, -config.removeLast || undefined);
+    }
+
+    // 保留索引范围
+    if (config.range) {
+      newIndices = newIndices.slice(config.range.start, config.range.end);
+    }
+
+    // 更新索引管理器
+    conversationManager.setOriginalIndices(newIndices);
+    
+    // 同步更新类型索引
+    conversationManager.keepMessageIndices(newIndices);
+
+    // 开始新批次，记录边界
+    if (newIndices.length > 0) {
+      const boundaryIndex = Math.min(...newIndices);
+      conversationManager.getIndexManager().startNewBatch(boundaryIndex);
+    } else {
+      // 如果没有消息了，重置索引管理器
+      conversationManager.getIndexManager().reset();
+    }
   }
 }
 
@@ -278,6 +325,9 @@ function handleFilterOperation(
 
   // 更新索引管理器
   conversationManager.setOriginalIndices(filteredIndices);
+  
+  // 同步更新类型索引
+  conversationManager.keepMessageIndices(filteredIndices);
 
   // 开始新批次
   if (filteredIndices.length > 0) {

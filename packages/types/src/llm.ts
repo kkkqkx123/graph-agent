@@ -249,6 +249,13 @@ export interface LLMClientConfig {
 export interface MessageMarkMap {
   /** 消息原始索引列表 */
   originalIndices: number[];
+  /** 按类型分组的索引列表 */
+  typeIndices: {
+    system: number[];
+    user: number[];
+    assistant: number[];
+    tool: number[];
+  };
   /** 修改边界索引数组（记录被压缩/修改的消息的原始索引。第0个索引默认填上） */
   batchBoundaries: number[];
   /** 边界对应批次数组（记录每个边界是哪个batch的开始，允许重新使用旧的batch） */

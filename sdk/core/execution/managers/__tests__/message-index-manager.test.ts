@@ -16,6 +16,10 @@ describe('MessageIndexManager', () => {
     it('应该正确初始化标记映射', () => {
       const markMap = indexManager.getMarkMap();
       expect(markMap.originalIndices).toEqual([]);
+      expect(markMap.typeIndices.system).toEqual([]);
+      expect(markMap.typeIndices.user).toEqual([]);
+      expect(markMap.typeIndices.assistant).toEqual([]);
+      expect(markMap.typeIndices.tool).toEqual([]);
       expect(markMap.batchBoundaries).toEqual([0]);
       expect(markMap.boundaryToBatch).toEqual([0]);
       expect(markMap.currentBatch).toBe(0);
@@ -224,6 +228,10 @@ describe('MessageIndexManager', () => {
 
       const markMap = indexManager.getMarkMap();
       expect(markMap.originalIndices).toEqual([]);
+      expect(markMap.typeIndices.system).toEqual([]);
+      expect(markMap.typeIndices.user).toEqual([]);
+      expect(markMap.typeIndices.assistant).toEqual([]);
+      expect(markMap.typeIndices.tool).toEqual([]);
       expect(markMap.batchBoundaries).toEqual([0]);
       expect(markMap.boundaryToBatch).toEqual([0]);
       expect(markMap.currentBatch).toBe(0);
