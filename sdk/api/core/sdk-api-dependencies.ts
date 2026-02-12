@@ -10,9 +10,9 @@
 
 import { ExecutionContext } from '../../core/execution/context/execution-context';
 import { APIDependencies } from './api-dependencies';
-import { codeService } from '../../../services/code-service';
-import { nodeTemplateRegistry } from '@modular-agent/sdk/core/services/node-template-registry';
-import { triggerTemplateRegistry } from '@modular-agent/sdk/core/services/trigger-template-registry';
+import { codeService } from '../../core/services/code-service';
+import { nodeTemplateRegistry } from '../../core/services/node-template-registry';
+import { triggerTemplateRegistry } from '../../core/services/trigger-template-registry';
 
 /**
  * SDK API依赖实现类
@@ -69,13 +69,6 @@ export class SDKAPIDependencies implements APIDependencies {
    */
   getLlmExecutor(): any {
     return this.executionContext.getLlmExecutor();
-  }
-  
-  /**
-   * 获取图注册表
-   */
-  getGraphRegistry(): any {
-    return this.executionContext.getGraphRegistry();
   }
   
   /**

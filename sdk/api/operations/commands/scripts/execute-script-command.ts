@@ -3,9 +3,9 @@
  */
 
 import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '@modular-agent/sdk/api/types/command';
-import type { ScriptOptions } from '@modular-agent/sdk/api/types/code-types';
+import type { ScriptOptions } from '@modular-agent/types/api-types';
 import type { ScriptExecutionResult } from '@modular-agent/types/code';
-import type { APIDependencies } from '../../core/api-dependencies';
+import type { APIDependencies } from '../../../core/api-dependencies';
 
 /**
  * 执行脚本命令

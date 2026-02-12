@@ -4,14 +4,14 @@
  */
 
 import { GenericResourceAPI } from '../generic-resource-api';
-import { CheckpointStateManager } from '@modular-agent/sdk/core/execution/managers/checkpoint-state-manager';
+import { CheckpointStateManager } from '../../../core/execution/managers/checkpoint-state-manager';
 import type { Checkpoint, CheckpointMetadata } from '@modular-agent/types/checkpoint';
-import type { CheckpointFilter } from '@modular-agent/sdk/api/types/management-types';
-import { MemoryCheckpointStorage } from '../../core/storage/memory-checkpoint-storage';
-import { CheckpointCoordinator } from '../../core/execution/coordinators/checkpoint-coordinator';
-import { globalMessageStorage } from '../../core/services/global-message-storage';
+import type { CheckpointFilter } from '@modular-agent/types/api-types';
+import { MemoryCheckpointStorage } from '../../../core/storage/memory-checkpoint-storage';
+import { CheckpointCoordinator } from '../../../core/execution/coordinators/checkpoint-coordinator';
+import { globalMessageStorage } from '../../../core/services/global-message-storage';
 import { SingletonRegistry } from '../../../core/execution/context/singleton-registry';
-import { getErrorMessage } from '@modular-agent/sdk/api/types/execution-result';
+import { getErrorMessage } from '../../types/execution-result';
 
 /**
  * CheckpointResourceAPI - 检查点资源管理API

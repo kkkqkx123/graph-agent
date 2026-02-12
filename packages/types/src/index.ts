@@ -33,3 +33,6 @@ export * from './interaction';
 export * from './human-relay';
 export * from './result';
 export * from './http';
+
+// API类型
+export * from './api-types';

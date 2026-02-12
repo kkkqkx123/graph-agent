@@ -4,7 +4,7 @@
 
 import { BaseSubscription, SubscriptionMetadata } from '@modular-agent/sdk/api/types/subscription';
 import type { EventType, EventListener, BaseEvent } from '@modular-agent/types/events';
-import type { APIDependencies } from '../../core/api-dependencies';
+import type { APIDependencies } from '../../../core/api-dependencies';
 
 /**
  * 注册事件监听器参数

@@ -8,16 +8,15 @@
  * - 规范化依赖管理
  */
 
-import type { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
-import type { ThreadRegistry } from '../../../core/services/thread-registry';
-import type { EventManager } from '@modular-agent/sdk/core/services/event-manager';
-import type { CheckpointStateManager } from '@modular-agent/sdk/core/execution/managers/checkpoint-state-manager';
-import type { ToolService } from '@modular-agent/sdk/core/services/tool-service';
-import type { LLMExecutor } from '@modular-agent/sdk/core/execution/executors/llm-executor';
-import type { GraphRegistry } from '@modular-agent/sdk/core/services/graph-registry';
-import type { CodeService } from '../../../services/code-service';
-import type { NodeTemplateRegistry } from '@modular-agent/sdk/core/services/node-template-registry';
-import type { TriggerTemplateRegistry } from '@modular-agent/sdk/core/services/trigger-template-registry';
+import type { WorkflowRegistry } from '../../core/services/workflow-registry';
+import type { ThreadRegistry } from '../../core/services/thread-registry';
+import type { EventManager } from '../../core/services/event-manager';
+import type { CheckpointStateManager } from '../../core/execution/managers/checkpoint-state-manager';
+import type { ToolService } from '../../core/services/tool-service';
+import type { LLMExecutor } from '../../core/execution/executors/llm-executor';
+import type { CodeService } from '../../core/services/code-service';
+import type { NodeTemplateRegistry } from '../../core/services/node-template-registry';
+import type { TriggerTemplateRegistry } from '../../core/services/trigger-template-registry';
 
 /**
  * API层依赖接口
@@ -41,9 +40,6 @@ export interface APIDependencies {
   
   /** 获取LLM执行器 */
   getLlmExecutor(): LLMExecutor;
-  
-  /** 获取图注册表 */
-  getGraphRegistry(): GraphRegistry;
   
   /** 获取代码服务 */
   getCodeService(): CodeService;

@@ -4,7 +4,7 @@
 
 import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '@modular-agent/sdk/api/types/command';
 import type { LLMRequest, LLMResult } from '@modular-agent/types/llm';
-import { LLMWrapper } from '../../core/llm/wrapper';
+import { LLMWrapper } from '../../../../core/llm/wrapper';
 
 /**
  * LLM批量生成命令

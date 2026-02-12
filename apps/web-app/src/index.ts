@@ -1,7 +1,6 @@
 /**
  * Web application entry point for Modular Agent Framework
  */
-import { sleep } from '@modular-agent/common-utils';
 import { sdk } from '@modular-agent/sdk';
 
 async function main(): Promise<void> {
@@ -9,7 +8,7 @@ async function main(): Promise<void> {
 
   // Example usage of common utils
   console.log('Waiting for 1 second...');
-  await sleep(1000);
+  await new Promise(resolve => setTimeout(resolve, 1000));
   console.log('Waited successfully!');
 
   // Example usage of SDK

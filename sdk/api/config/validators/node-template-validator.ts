@@ -10,7 +10,7 @@ import { ConfigType } from '../types';
 import { ok, err } from '@modular-agent/common-utils/result-utils';
 import type { Result } from '@modular-agent/types/result';
 import { ValidationError } from '@modular-agent/types/errors';
-import { NodeValidator } from '@modular-agent/sdk/core/validation/node-validator';
+import { NodeValidator } from '../../../core/validation/node-validator';
 import { NodeType } from '@modular-agent/types/node';
 import {
   validateRequiredFields,

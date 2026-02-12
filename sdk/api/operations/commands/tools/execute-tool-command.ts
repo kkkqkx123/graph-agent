@@ -3,8 +3,9 @@
  */
 
 import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '@modular-agent/sdk/api/types/command';
-import type { ToolOptions, ToolExecutionResult } from '@modular-agent/sdk/api/types/tools-types';
-import type { APIDependencies } from '../../core/api-dependencies';
+import type { ToolOptions } from '@modular-agent/types/api-types';
+import type { ToolExecutionResult } from '@modular-agent/types/tool';
+import type { APIDependencies } from '../../../core/api-dependencies';
 
 /**
  * 执行工具命令
@@ -42,7 +43,7 @@ export class ExecuteToolCommand extends BaseCommand<ToolExecutionResult> {
       success: true,
       result: result.result,
       executionTime,
-      toolName: this.toolName
+      retryCount: 0
     };
 
     return executionResult;

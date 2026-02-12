@@ -391,10 +391,14 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
    * @param workflowId 工作流ID
    * @returns 图结构，如果不存在则返回null
    */
-  async getWorkflowGraph(workflowId: string): Promise<any | null> {
-    const graph = this.dependencies.getWorkflowRegistry().getGraph(workflowId);
-    return graph || null;
-  }
+ async getWorkflowGraph(workflowId: string): Promise<any | null> {
+   try {
+     const processed = await this.dependencies.getWorkflowRegistry().ensureProcessed(workflowId);
+     return processed.graph || null;
+   } catch {
+     return null;
+   }
+ }
 
   /**
    * 注册子图关系
