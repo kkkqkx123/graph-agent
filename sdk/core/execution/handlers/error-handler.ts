@@ -25,8 +25,8 @@ import type { EventManager } from '../../services/event-manager';
 import { EventType } from '@modular-agent/types/events';
 import type { ErrorEvent } from '@modular-agent/types/events';
 import { now } from '@modular-agent/common-utils';
-import { SDKError, ErrorCode, ErrorContext, ErrorHandlingResult } from '@modular-agent/types/errors';
-import { ExecutionError, ValidationError, ToolError, NotFoundError } from '@modular-agent/types/errors';
+import { SDKError, ErrorContext, ErrorHandlingResult } from '@modular-agent/types/errors';
+import { ExecutionError, ValidationError, ToolError, NotFoundError, TimeoutError } from '@modular-agent/types/errors';
 import { logger } from '../../logger';
 
 /**
@@ -117,7 +117,7 @@ function standardizeError(
 function logError(error: SDKError, context: ErrorContext): void {
   const logLevel = determineLogLevel(error);
   const logData = {
-    errorCode: error.code,
+    errorType: error.constructor.name,
     errorMessage: error.message,
     context: {
       ...context,
@@ -153,25 +153,11 @@ function determineLogLevel(error: SDKError): 'error' | 'warn' | 'info' {
   }
   
   // 根据错误类型确定日志级别
-  switch (error.code) {
-    case ErrorCode.VALIDATION_ERROR:
-    case ErrorCode.CONFIGURATION_ERROR:
-      return 'error';
-    
-    case ErrorCode.TOOL_ERROR:
-    case ErrorCode.CODE_EXECUTION_ERROR:
-    case ErrorCode.EXECUTION_ERROR:
-      return 'error';
-    
-    case ErrorCode.NOT_FOUND_ERROR:
-      return 'warn';
-    
-    case ErrorCode.TIMEOUT_ERROR:
-      return 'warn';
-    
-    default:
-      return 'error';
+  if (error instanceof NotFoundError || error instanceof TimeoutError) {
+    return 'warn';
   }
+  
+  return 'error';
 }
 
 /**

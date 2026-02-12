@@ -40,7 +40,7 @@ export class CommandExecutor {
       
       return failure<T>({
         message: sdkError.message,
-        code: sdkError instanceof SDKError ? sdkError.code : 'UNKNOWN_ERROR',
+        code: sdkError instanceof SDKError ? sdkError.constructor.name : 'UNKNOWN_ERROR',
         details: sdkError instanceof SDKError ? sdkError.context : undefined,
         timestamp: Date.now(),
         cause: sdkError.cause ? {

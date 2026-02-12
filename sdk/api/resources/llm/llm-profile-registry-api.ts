@@ -6,7 +6,7 @@
 
 import { ProfileManager } from '../../../core/llm/profile-manager';
 import type { LLMProfile, LLMProvider } from '@modular-agent/types/llm';
-import { ValidationError, NotFoundError, SDKError, ErrorCode } from '@modular-agent/types/errors';
+import { ValidationError, NotFoundError, SDKError } from '@modular-agent/types/errors';
 import { GenericResourceAPI } from '../generic-resource-api';
 import { getErrorMessage } from '@modular-agent/sdk/api/types/execution-result';
 import type { APIDependencies } from '../../core/api-dependencies';
@@ -341,9 +341,10 @@ export class LLMProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string
   async createFromTemplate(templateName: string, overrides: Partial<LLMProfile>): Promise<string> {
     const template = this.templates.get(templateName);
     if (!template) {
-      throw new SDKError(
-        ErrorCode.NOT_FOUND_ERROR,
+      throw new NotFoundError(
         `Template not found: ${templateName}`,
+        'template',
+        templateName,
         { templateName }
       );
     }

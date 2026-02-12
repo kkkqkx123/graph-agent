@@ -138,7 +138,7 @@ export abstract class BaseCommand<T> implements Command<T> {
     // 返回包含详细错误信息的失败结果
     return this.failure({
       message: sdkError.message,
-      code: sdkError instanceof SDKError ? sdkError.code : 'UNKNOWN_ERROR',
+      code: sdkError instanceof SDKError ? sdkError.constructor.name : 'UNKNOWN_ERROR',
       details: sdkError instanceof SDKError ? sdkError.context : undefined,
       timestamp: Date.now(),
       cause: sdkError.cause ? {

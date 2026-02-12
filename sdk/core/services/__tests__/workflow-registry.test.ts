@@ -934,15 +934,16 @@ describe('WorkflowRegistry', () => {
           incomingEdgeIds: []
         },
         {
-          id: 'node-subgraph',
-          type: NodeType.SUBGRAPH,
-          name: 'Subgraph',
-          config: {
-            subgraphId: 'sub-workflow'
-          },
-          outgoingEdgeIds: ['edge-2'],
-          incomingEdgeIds: ['edge-1']
-        },
+           id: 'node-subgraph',
+           type: NodeType.SUBGRAPH,
+           name: 'Subgraph',
+           config: {
+             subgraphId: 'sub-workflow',
+             async: false
+           },
+           outgoingEdgeIds: ['edge-2'],
+           incomingEdgeIds: ['edge-1']
+         } as any,
         {
           id: 'node-end',
           type: NodeType.END,

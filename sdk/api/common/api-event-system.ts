@@ -13,7 +13,7 @@ import {
   APIEventData,
   APIEventListener
 } from '../types/event-types';
-import { ExecutionError } from '@modular-agent/types/errors';
+import { SDKError } from '@modular-agent/types/errors';
 
 /**
  * 事件总线类
@@ -79,10 +79,8 @@ export class APIEventBus {
         await listener(event);
       } catch (error) {
         // 抛出错误，由调用方决定如何处理
-        throw new ExecutionError(
+        throw new SDKError(
           'Event listener execution failed',
-          undefined,
-          undefined,
           {
             eventType: event.type,
             operation: 'event_listener'

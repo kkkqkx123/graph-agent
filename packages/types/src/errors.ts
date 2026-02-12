@@ -44,39 +44,10 @@ export interface ErrorHandlingResult {
 }
 
 /**
- * 错误码枚举
- */
-export enum ErrorCode {
-  /** 验证错误 */
-  VALIDATION_ERROR = 'VALIDATION_ERROR',
-  /** 执行错误 */
-  EXECUTION_ERROR = 'EXECUTION_ERROR',
-  /** 配置错误 */
-  CONFIGURATION_ERROR = 'CONFIGURATION_ERROR',
-  /** 超时错误 */
-  TIMEOUT_ERROR = 'TIMEOUT_ERROR',
-  /** 资源未找到错误 */
-  NOT_FOUND_ERROR = 'NOT_FOUND_ERROR',
-  /** 网络错误 */
-  NETWORK_ERROR = 'NETWORK_ERROR',
-  /** LLM调用错误 */
-  LLM_ERROR = 'LLM_ERROR',
-  /** 工具调用错误 */
-  TOOL_ERROR = 'TOOL_ERROR',
-  /** 脚本执行错误 */
-  CODE_EXECUTION_ERROR = 'CODE_EXECUTION_ERROR',
-  /** 限流错误（HTTP专用） */
-  RATE_LIMIT_ERROR = 'RATE_LIMIT_ERROR',
-  /** 熔断器打开错误 */
-  CIRCUIT_BREAKER_OPEN_ERROR = 'CIRCUIT_BREAKER_OPEN_ERROR'
-}
-
-/**
  * SDK基础错误类
  */
 export class SDKError extends Error {
   constructor(
-    public readonly code: ErrorCode,
     message: string,
     public readonly context?: Record<string, any>,
     public override readonly cause?: Error
@@ -92,7 +63,6 @@ export class SDKError extends Error {
   toJSON(): Record<string, any> {
     return {
       name: this.name,
-      code: this.code,
       message: this.message,
       context: this.context,
       cause: this.cause ? {
@@ -115,7 +85,7 @@ export class ValidationError extends SDKError {
     public readonly value?: any,
     context?: Record<string, any>
   ) {
-    super(ErrorCode.VALIDATION_ERROR, message, context);
+    super(message, context);
     this.name = 'ValidationError';
   }
 }
@@ -132,7 +102,7 @@ export class ExecutionError extends SDKError {
     context?: Record<string, any>,
     cause?: Error
   ) {
-    super(ErrorCode.EXECUTION_ERROR, message, context, cause);
+    super(message, context, cause);
     this.name = 'ExecutionError';
   }
 }
@@ -146,7 +116,7 @@ export class ConfigurationError extends SDKError {
     public readonly configKey?: string,
     context?: Record<string, any>
   ) {
-    super(ErrorCode.CONFIGURATION_ERROR, message, context);
+    super(message, context);
     this.name = 'ConfigurationError';
   }
 }
@@ -160,7 +130,7 @@ export class TimeoutError extends SDKError {
     public readonly timeout: number,
     context?: Record<string, any>
   ) {
-    super(ErrorCode.TIMEOUT_ERROR, message, context);
+    super(message, context);
     this.name = 'TimeoutError';
   }
 }
@@ -175,7 +145,7 @@ export class NotFoundError extends SDKError {
     public readonly resourceId: string,
     context?: Record<string, any>
   ) {
-    super(ErrorCode.NOT_FOUND_ERROR, message, context);
+    super(message, context);
     this.name = 'NotFoundError';
   }
 }
@@ -190,7 +160,7 @@ export class NetworkError extends SDKError {
     context?: Record<string, any>,
     cause?: Error
   ) {
-    super(ErrorCode.NETWORK_ERROR, message, context, cause);
+    super(message, context, cause);
     this.name = 'NetworkError';
   }
 }
@@ -234,7 +204,7 @@ export class CircuitBreakerOpenError extends SDKError {
     public readonly state?: string,
     context?: Record<string, any>
   ) {
-    super(ErrorCode.CIRCUIT_BREAKER_OPEN_ERROR, message, context);
+    super(message, context);
     this.name = 'CircuitBreakerOpenError';
   }
 }
@@ -250,7 +220,7 @@ export class ToolError extends SDKError {
     context?: Record<string, any>,
     cause?: Error
   ) {
-    super(ErrorCode.TOOL_ERROR, message, context, cause);
+    super(message, context, cause);
     this.name = 'ToolError';
   }
 }
@@ -284,7 +254,7 @@ export class CodeExecutionError extends SDKError {
     context?: Record<string, any>,
     cause?: Error
   ) {
-    super(ErrorCode.CODE_EXECUTION_ERROR, message, context, cause);
+    super(message, context, cause);
     this.name = 'CodeExecutionError';
   }
 }
