@@ -19,7 +19,7 @@ import { ProcessedWorkflowDefinition } from '@modular-agent/types/workflow';
 import type { WorkflowReferenceInfo, WorkflowReferenceRelation, WorkflowReferenceType } from '@modular-agent/types/workflow-reference';
 import { processWorkflow, type ProcessOptions } from '../graph/workflow-processor';
 import { WorkflowReferenceManager } from '../execution/managers/workflow-reference-manager';
-import { ValidationError } from '@modular-agent/types/errors';
+import { ValidationError, ExecutionError } from '@modular-agent/types/errors';
 
 /**
  * 工作流摘要信息
@@ -211,24 +211,16 @@ class WorkflowRegistry {
       // 注意：这里不 await，因为 register 是同步方法
       // 预处理会在后台进行，但通常很快完成
       this.preprocessAndStore(workflow).catch(error => {
-        // 使用 SDK 错误系统包装错误
-        const wrappedError = new ValidationError(
-          `Failed to preprocess workflow '${workflow.id}': ${error instanceof Error ? error.message : String(error)}`,
-          'workflow',
-          workflow.id,
+        // 抛出验证错误
+        throw new ValidationError(
+          `Workflow preprocessing failed: ${error instanceof Error ? error.message : String(error)}`,
+          'workflow.definition',
+          workflow,
           {
             workflowId: workflow.id,
-            workflowName: workflow.name,
-            originalError: error instanceof Error ? {
-              name: error.name,
-              message: error.message,
-              stack: error.stack
-            } : String(error)
+            operation: 'workflow_preprocessing'
           }
         );
-
-        // 记录错误到控制台（开发调试用）
-        console.error(`[WorkflowRegistry] Preprocessing failed for workflow '${workflow.id}':`, wrappedError);
       });
     }
   }
@@ -382,7 +374,17 @@ class WorkflowRegistry {
       }
 
       if (options?.force && checkResult.details.includes('active references')) {
-        console.warn(checkResult.details);
+        // 抛出执行错误，标记为警告级别
+        throw new ExecutionError(
+          'Deleting workflow with active references',
+          undefined,
+          workflowId,
+          {
+            workflowId,
+            operation: 'workflow_delete',
+            severity: 'warning'
+          }
+        );
       }
     }
 

@@ -27,7 +27,7 @@ import { now } from '@modular-agent/common-utils';
 import { ToolCallExecutor } from '../executors/tool-call-executor';
 import { TokenUsageTracker } from '../token-usage-tracker';
 import { ExecutionError } from '@modular-agent/types/errors';
-import { generateId } from '@modular-agent/common-utils/id-utils';
+import { generateId } from '@modular-agent/common-utils';
 import { CheckpointCoordinator } from './checkpoint-coordinator';
 import type { ExecutionContext } from '../context/execution-context';
 import { globalMessageStorage } from '../../services/global-message-storage';
@@ -494,7 +494,7 @@ export class LLMExecutionCoordinator {
   ): Promise<any> {
     return new Promise((resolve, reject) => {
       let timeoutId: NodeJS.Timeout | null = null;
-      
+
       const handler = (event: any) => {
         if (event.interactionId === interactionId) {
           if (timeoutId) {

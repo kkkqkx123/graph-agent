@@ -11,8 +11,8 @@ import { EdgeType } from '@modular-agent/types';
 import type { Condition } from '@modular-agent/types/condition';
 import type { WorkflowTrigger } from '@modular-agent/types/trigger';
 import type { TriggerReference } from '@modular-agent/types/trigger-template';
-import { generateId } from '@modular-agent/common-utils/id-utils';
-import { now } from '@modular-agent/common-utils/timestamp-utils';
+import { generateId } from '@modular-agent/common-utils';
+import { now } from '@modular-agent/common-utils';
 import { nodeTemplateRegistry } from '../../core/services/node-template-registry';
 import { triggerTemplateRegistry } from '../../core/services/trigger-template-registry';
 import { ConfigParser, ConfigFormat } from '../config';
@@ -272,7 +272,7 @@ export class WorkflowBuilder {
         ? { expression: condition }
         : condition
       : undefined;
-    
+
     const edge: Edge = {
       id: generateId(),
       sourceNodeId: from,
@@ -465,11 +465,11 @@ export class WorkflowBuilder {
   ): WorkflowBuilder {
     const parser = new ConfigParser();
     const workflowDef = parser.parseAndTransform(configFile, format, parameters);
-    
+
     const builder = new WorkflowBuilder(workflowDef.id);
     // 填充builder的内部状态
     Object.assign(builder.workflow, workflowDef);
-    
+
     // 重建节点和边的映射
     for (const node of workflowDef.nodes) {
       builder.nodes.set(node.id, node);
@@ -477,7 +477,7 @@ export class WorkflowBuilder {
     builder.edges = workflowDef.edges;
     builder.variables = workflowDef.variables || [];
     builder.triggers = workflowDef.triggers || [];
-    
+
     return builder;
   }
 
@@ -493,15 +493,15 @@ export class WorkflowBuilder {
   ): Promise<WorkflowBuilder> {
     const parser = new ConfigParser();
     const { loadConfigContent } = await import('../config/config-utils');
-    
+
     // 应用层负责文件读取
     const { content, format } = await loadConfigContent(filePath);
     const workflowDef = parser.parseAndTransform(content, format, parameters);
-    
+
     const builder = new WorkflowBuilder(workflowDef.id);
     // 填充builder的内部状态
     Object.assign(builder.workflow, workflowDef);
-    
+
     // 重建节点和边的映射
     for (const node of workflowDef.nodes) {
       builder.nodes.set(node.id, node);
@@ -509,7 +509,7 @@ export class WorkflowBuilder {
     builder.edges = workflowDef.edges;
     builder.variables = workflowDef.variables || [];
     builder.triggers = workflowDef.triggers || [];
-    
+
     return builder;
   }
 }

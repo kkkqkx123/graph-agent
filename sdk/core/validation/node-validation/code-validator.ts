@@ -8,7 +8,7 @@ import type { Node } from '@modular-agent/types/node';
 import { NodeType } from '@modular-agent/types/node';
 import { ValidationError } from '@modular-agent/types/errors';
 import type { Result } from '@modular-agent/types/result';
-import { ok, err } from '@modular-agent/common-utils/result-utils';
+import { ok, err } from '@modular-agent/common-utils';
 
 /**
  * Code节点配置schema

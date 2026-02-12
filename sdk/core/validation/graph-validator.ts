@@ -39,7 +39,7 @@ import type {
 } from '@modular-agent/types';
 import { ValidationError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types/result';
-import { ok, err } from '@modular-agent/common-utils/result-utils';
+import { ok, err } from '@modular-agent/common-utils';
 import { GraphData } from '../entities/graph-data';
 import { SUBGRAPH_METADATA_KEYS } from '@modular-agent/types/subgraph';
 import { analyzeGraph } from '../graph/utils/graph-analyzer';

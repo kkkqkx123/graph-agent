@@ -6,7 +6,7 @@
 import type { WorkflowDefinition } from '@modular-agent/types/workflow';
 import type { ThreadResult } from '@modular-agent/types/thread';
 import { Observable, create, type Observer } from '../utils/observable';
-import { ok, err } from '@modular-agent/common-utils/result-utils';
+import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types/result';
 
 /**
@@ -287,7 +287,7 @@ export class WorkflowComposer {
           observer.error(error);
         });
 
-      return () => {};
+      return () => { };
     });
   }
 

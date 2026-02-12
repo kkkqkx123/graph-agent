@@ -10,6 +10,7 @@
 
 import type { EventManager } from '../../../services/event-manager';
 import type { Event, EventType } from '@modular-agent/types/events';
+import { ExecutionError } from '@modular-agent/types/errors';
 
 /**
  * 安全触发事件
@@ -29,8 +30,18 @@ export async function safeEmit(
   try {
     await eventManager.emit(event);
   } catch (error) {
-    // 静默处理事件触发错误，避免影响主流程
-    console.error(`Failed to emit event ${event.type}:`, error);
+    // 抛出执行错误，标记为信息级别
+    throw new ExecutionError(
+      `Failed to emit event ${event.type}`,
+      undefined,
+      undefined,
+      {
+        eventType: event.type,
+        operation: 'event_emit',
+        severity: 'info'
+      },
+      error instanceof Error ? error : new Error(String(error))
+    );
   }
 }
 
@@ -160,7 +171,6 @@ export async function emitWithRetry(
       return;
     } catch (error) {
       lastError = error as Error;
-      console.error(`Event emit attempt ${attempt + 1} failed:`, error);
 
       if (attempt < maxRetries) {
         await new Promise(resolve => setTimeout(resolve, retryDelay));
@@ -168,8 +178,18 @@ export async function emitWithRetry(
     }
   }
 
-  // 所有重试都失败，记录错误但不抛出异常
-  console.error(`All ${maxRetries + 1} event emit attempts failed:`, lastError);
+  // 所有重试都失败，抛出错误
+  throw new ExecutionError(
+    `All ${maxRetries + 1} event emit attempts failed`,
+    undefined,
+    undefined,
+    {
+      eventType: event.type,
+      operation: 'event_emit_retry',
+      maxRetries
+    },
+    lastError
+  );
 }
 
 /**

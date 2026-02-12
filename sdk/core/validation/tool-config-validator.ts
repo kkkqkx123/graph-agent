@@ -4,19 +4,19 @@
  */
 
 import { z } from 'zod';
-import type { 
-  Tool, 
-  ToolParameters, 
-  ToolProperty, 
-  StatelessToolConfig, 
+import type {
+  Tool,
+  ToolParameters,
+  ToolProperty,
+  StatelessToolConfig,
   StatefulToolConfig,
   RestToolConfig,
-  McpToolConfig 
+  McpToolConfig
 } from '@modular-agent/types/tool';
 import { ToolType } from '@modular-agent/types/tool';
 import { ValidationError } from '@modular-agent/types/errors';
 import type { Result } from '@modular-agent/types/result';
-import { ok, err } from '@modular-agent/common-utils/result-utils';
+import { ok, err } from '@modular-agent/common-utils';
 
 /**
  * 工具参数属性schema
@@ -256,7 +256,7 @@ export class ToolConfigValidator {
         }
       }
     }
-    
+
     if (errors.length === 0) {
       return ok(parameters);
     }
@@ -410,7 +410,7 @@ export class ToolConfigValidator {
         }
         break;
     }
-    
+
     if (errors.length === 0) {
       return ok(tool);
     }

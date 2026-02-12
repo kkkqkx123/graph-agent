@@ -16,7 +16,7 @@ import { NodeType } from '@modular-agent/types/node';
 import { generateId, now as getCurrentTimestamp } from '@modular-agent/common-utils';
 import { VariableCoordinator } from './coordinators/variable-coordinator';
 import { VariableStateManager } from './managers/variable-state-manager';
-import { ValidationError } from '@modular-agent/types/errors';
+import { ValidationError, ExecutionError } from '@modular-agent/types/errors';
 import { type WorkflowRegistry } from '../services/workflow-registry';
 import { ExecutionContext } from './context/execution-context';
 import { TriggerStatus } from '@modular-agent/types/trigger';
@@ -183,8 +183,19 @@ export class ThreadBuilder {
         // 注册状态到 TriggerStateManager
         triggerStateManager.register(state);
       } catch (error) {
-        // 静默处理错误，避免影响其他触发器的注册
-        console.error(`Failed to register trigger state ${workflowTrigger.id}:`, error);
+        // 抛出执行错误，标记为警告级别
+        throw new ExecutionError(
+          `Failed to register trigger state ${workflowTrigger.id}`,
+          undefined,
+          workflow.id,
+          {
+            triggerId: workflowTrigger.id,
+            threadId: threadContext.getThreadId(),
+            operation: 'trigger_registration',
+            severity: 'warning'
+          },
+          error instanceof Error ? error : new Error(String(error))
+        );
       }
     }
   }

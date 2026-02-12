@@ -5,7 +5,7 @@
 
 import { ValidationError } from '@modular-agent/types/errors';
 import type { Result } from '@modular-agent/types/result';
-import { ok, err } from '@modular-agent/common-utils/result-utils';
+import { ok, err } from '@modular-agent/common-utils';
 
 /**
  * 验证必需字段
@@ -20,7 +20,7 @@ export function validateRequiredFields<T>(
   fieldName: string
 ): Result<T, ValidationError[]> {
   const errors: ValidationError[] = [];
-  
+
   for (const field of fields) {
     const value = data[field];
     if (value === null || value === undefined || value === '') {
@@ -31,7 +31,7 @@ export function validateRequiredFields<T>(
       ));
     }
   }
-  
+
   if (errors.length === 0) {
     return ok(data);
   } else {
@@ -54,7 +54,7 @@ export function validateStringLength(
   max: number
 ): Result<string, ValidationError[]> {
   const errors: ValidationError[] = [];
-  
+
   if (typeof value !== 'string') {
     errors.push(new ValidationError(
       `${fieldName}必须是字符串`,
@@ -63,7 +63,7 @@ export function validateStringLength(
     ));
     return err(errors);
   }
-  
+
   if (value.length < min) {
     errors.push(new ValidationError(
       `${fieldName}长度不能少于${min}`,
@@ -78,7 +78,7 @@ export function validateStringLength(
       value
     ));
   }
-  
+
   if (errors.length === 0) {
     return ok(value);
   } else {
@@ -94,7 +94,7 @@ export function validateStringLength(
  */
 export function validatePositiveNumber(value: number, fieldName: string): Result<number, ValidationError[]> {
   const errors: ValidationError[] = [];
-  
+
   if (typeof value !== 'number' || isNaN(value)) {
     errors.push(new ValidationError(
       `${fieldName}必须是数字`,
@@ -103,7 +103,7 @@ export function validatePositiveNumber(value: number, fieldName: string): Result
     ));
     return err(errors);
   }
-  
+
   if (value < 0) {
     errors.push(new ValidationError(
       `${fieldName}不能为负数`,
@@ -111,7 +111,7 @@ export function validatePositiveNumber(value: number, fieldName: string): Result
       value
     ));
   }
-  
+
   if (errors.length === 0) {
     return ok(value);
   } else {
@@ -127,7 +127,7 @@ export function validatePositiveNumber(value: number, fieldName: string): Result
  */
 export function validateObject(value: any, fieldName: string): Result<any, ValidationError[]> {
   const errors: ValidationError[] = [];
-  
+
   if (value === null || value === undefined) {
     errors.push(new ValidationError(
       `${fieldName}不能为空`,
@@ -141,7 +141,7 @@ export function validateObject(value: any, fieldName: string): Result<any, Valid
       value
     ));
   }
-  
+
   if (errors.length === 0) {
     return ok(value);
   } else {
@@ -162,7 +162,7 @@ export function validateArray(
   minLength: number = 1
 ): Result<any[], ValidationError[]> {
   const errors: ValidationError[] = [];
-  
+
   if (!Array.isArray(value)) {
     errors.push(new ValidationError(
       `${fieldName}必须是数组`,
@@ -176,7 +176,7 @@ export function validateArray(
       value
     ));
   }
-  
+
   if (errors.length === 0) {
     return ok(value);
   } else {
@@ -192,7 +192,7 @@ export function validateArray(
  */
 export function validateBoolean(value: any, fieldName: string): Result<boolean, ValidationError[]> {
   const errors: ValidationError[] = [];
-  
+
   if (typeof value !== 'boolean') {
     errors.push(new ValidationError(
       `${fieldName}必须是布尔值`,
@@ -200,7 +200,7 @@ export function validateBoolean(value: any, fieldName: string): Result<boolean, 
       value
     ));
   }
-  
+
   if (errors.length === 0) {
     return ok(value);
   } else {
@@ -223,7 +223,7 @@ export function validatePattern(
   message?: string
 ): Result<string, ValidationError[]> {
   const errors: ValidationError[] = [];
-  
+
   if (typeof value !== 'string') {
     errors.push(new ValidationError(
       `${fieldName}必须是字符串`,
@@ -232,7 +232,7 @@ export function validatePattern(
     ));
     return err(errors);
   }
-  
+
   if (!regex.test(value)) {
     errors.push(new ValidationError(
       message || `${fieldName}格式不正确`,
@@ -240,7 +240,7 @@ export function validatePattern(
       value
     ));
   }
-  
+
   if (errors.length === 0) {
     return ok(value);
   } else {
@@ -261,7 +261,7 @@ export function validateEnum<T>(
   enumValues: T[]
 ): Result<T, ValidationError[]> {
   const errors: ValidationError[] = [];
-  
+
   if (!enumValues.includes(value)) {
     errors.push(new ValidationError(
       `${fieldName}必须是以下值之一: ${enumValues.join(', ')}`,
@@ -269,7 +269,7 @@ export function validateEnum<T>(
       value
     ));
   }
-  
+
   if (errors.length === 0) {
     return ok(value);
   } else {

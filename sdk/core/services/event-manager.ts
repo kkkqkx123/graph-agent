@@ -9,7 +9,7 @@
  */
 
 import type { BaseEvent, EventType, EventListener } from '@modular-agent/types/events';
-import { ValidationError } from '@modular-agent/types/errors';
+import { ValidationError, ExecutionError } from '@modular-agent/types/errors';
 import { now, generateId } from '@modular-agent/common-utils';
 
 /**
@@ -229,8 +229,17 @@ class EventManager {
           await wrapper.listener(event);
         }
       } catch (error) {
-        // 记录错误，不影响其他监听器
-        console.error(`Error in event listener for ${event.type}:`, error);
+        // 抛出错误，由调用方决定如何处理
+        throw new ExecutionError(
+          'Event listener execution failed',
+          undefined,
+          undefined,
+          {
+            eventType: event.type,
+            operation: 'event_listener'
+          },
+          error instanceof Error ? error : new Error(String(error))
+        );
       }
     }
   }

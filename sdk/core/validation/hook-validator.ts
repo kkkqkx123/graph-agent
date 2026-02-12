@@ -7,7 +7,7 @@ import { z } from 'zod';
 import type { NodeHook } from '@modular-agent/types/node';
 import { HookType } from '@modular-agent/types/node';
 import { ValidationError } from '@modular-agent/types/errors';
-import { ok, err } from '@modular-agent/common-utils/result-utils';
+import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types/result';
 
 /**
@@ -69,7 +69,7 @@ export function validateHooks(hooks: NodeHook[], nodeId: string): Result<NodeHoo
       errors.push(...result.error);
     }
   }
-  
+
   if (errors.length === 0) {
     return ok(hooks);
   }

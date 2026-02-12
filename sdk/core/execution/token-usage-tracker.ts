@@ -16,7 +16,7 @@
  */
 
 import type { LLMMessage, LLMUsage, TokenUsageHistory, TokenUsageStatistics, TokenUsageStats } from '@modular-agent/types/llm';
-import { generateId } from '@modular-agent/common-utils/id-utils';
+import { generateId } from '@modular-agent/common-utils';
 import { estimateTokens as estimateTokensUtil, getTokenUsage as getTokenUsageUtil, isTokenLimitExceeded as isTokenLimitExceededUtil } from './utils/token-utils';
 
 /**
@@ -107,7 +107,7 @@ export class TokenUsageTracker {
       this.currentRequestUsage.totalTokens = usage.totalTokens;
       this.currentRequestUsage.rawUsage = usage;
     }
-    
+
     // 注意：不再在流式传输期间更新 cumulativeUsage
     // 避免覆盖之前的累积统计
     // 累积操作将在 finalizeCurrentRequest() 中统一处理

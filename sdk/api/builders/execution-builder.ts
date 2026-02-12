@@ -5,11 +5,12 @@
  */
 
 import type { ThreadResult, ThreadOptions } from '@modular-agent/types/thread';
-import { ok, err } from '@modular-agent/common-utils/result-utils';
+import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types/result';
 import { Observable, create, type Observer } from '../utils/observable';
 import { ExecuteThreadCommand } from '../operations/commands/execution/execute-thread-command';
 import { isSuccess } from '@modular-agent/sdk/api/types/execution-result';
+import { ExecutionError } from '@modular-agent/types/errors';
 
 /**
  * ExecutionBuilder - 流畅的执行构建器
@@ -136,7 +137,16 @@ export class ExecutionBuilder {
         try {
           callback(error);
         } catch (callbackError) {
-          console.error('错误回调执行失败:', callbackError);
+          // 抛出错误，由调用方决定如何处理
+          throw new ExecutionError(
+            'Error callback execution failed',
+            undefined,
+            this.workflowId,
+            {
+              operation: 'error_callback'
+            },
+            callbackError instanceof Error ? callbackError : new Error(String(callbackError))
+          );
         }
       });
 

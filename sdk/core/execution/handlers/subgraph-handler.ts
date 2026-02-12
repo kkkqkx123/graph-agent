@@ -19,7 +19,7 @@
 import { ThreadContext } from '../context/thread-context';
 import type { SubgraphNodeConfig } from '@modular-agent/types/node';
 import { NodeType } from '@modular-agent/types/node';
-import { resolvePath } from '@modular-agent/common-utils/evalutor/path-resolver';
+import { resolvePath } from '@modular-agent/common-utils/path-resolver';
 import { now } from '@modular-agent/common-utils';
 
 /**

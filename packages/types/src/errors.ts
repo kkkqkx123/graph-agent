@@ -4,6 +4,46 @@
  */
 
 /**
+ * 错误上下文
+ */
+export interface ErrorContext {
+  /** 线程ID */
+  threadId?: string;
+  /** 工作流ID */
+  workflowId?: string;
+  /** 节点ID */
+  nodeId?: string;
+  /** 操作名称 */
+  operation?: string;
+  /** 工具名称 */
+  toolName?: string;
+  /** 工具类型 */
+  toolType?: string;
+  /** 字段名称 */
+  field?: string;
+  /** 字段值 */
+  value?: any;
+  /** 资源类型 */
+  resourceType?: string;
+  /** 资源ID */
+  resourceId?: string;
+  /** 严重程度 */
+  severity?: 'error' | 'warning' | 'info';
+  /** 额外上下文信息 */
+  [key: string]: any;
+}
+
+/**
+ * 错误处理结果
+ */
+export interface ErrorHandlingResult {
+  /** 是否应该停止执行 */
+  shouldStop: boolean;
+  /** 标准化的错误对象 */
+  error: SDKError;
+}
+
+/**
  * 错误码枚举
  */
 export enum ErrorCode {

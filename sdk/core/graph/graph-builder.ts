@@ -16,7 +16,7 @@ import type {
 } from '@modular-agent/types';
 import { GraphData } from '../entities/graph-data';
 import { GraphValidator } from '../validation/graph-validator';
-import { generateSubgraphNamespace, generateNamespacedNodeId, generateNamespacedEdgeId } from '@modular-agent/common-utils/id-utils';
+import { generateSubgraphNamespace, generateNamespacedNodeId, generateNamespacedEdgeId } from '@modular-agent/common-utils';
 import { generateId } from '@modular-agent/common-utils';
 import { SUBGRAPH_METADATA_KEYS } from '@modular-agent/types/subgraph';
 
@@ -217,10 +217,10 @@ export class GraphBuilder {
       }
 
       const subworkflowId = subgraphConfig.subgraphId;
-      
+
       // 确保子工作流已完整预处理（包括引用展开和嵌套子工作流处理）
       let processedSubworkflow = workflowRegistry.getProcessed(subworkflowId);
-      
+
       if (!processedSubworkflow) {
         // 如果子工作流未预处理，先预处理它
         const subworkflow = workflowRegistry.get(subworkflowId);
@@ -228,10 +228,10 @@ export class GraphBuilder {
           errors.push(`Subworkflow (${subworkflowId}) not found for SUBGRAPH node (${subgraphNode.id})`);
           continue;
         }
-        
+
         // 预处理子工作流（会递归处理其所有引用和嵌套子工作流）
         await workflowRegistry.preprocessAndStore(subworkflow);
-        
+
         // 重新获取预处理后的子工作流
         processedSubworkflow = workflowRegistry.getProcessed(subworkflowId);
         if (!processedSubworkflow) {

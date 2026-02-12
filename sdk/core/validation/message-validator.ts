@@ -7,7 +7,7 @@
 import { z } from 'zod';
 import type { LLMMessage, LLMMessageRole, LLMToolCall } from '@modular-agent/types/llm';
 import { ValidationError } from '@modular-agent/types/errors';
-import { ok, err } from '@modular-agent/common-utils/result-utils';
+import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types/result';
 
 /**

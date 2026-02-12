@@ -13,7 +13,7 @@ import { ConfigTransformer } from '../config-transformer';
 import type { WorkflowDefinition } from '@modular-agent/types/workflow';
 import { stringifyJson } from '../json-parser';
 import { ConfigurationError } from '@modular-agent/types/errors';
-import { ok } from '@modular-agent/common-utils/result-utils';
+import { ok } from '@modular-agent/common-utils';
 
 /**
  * 验证Workflow配置
@@ -22,7 +22,7 @@ import { ok } from '@modular-agent/common-utils/result-utils';
  */
 export function validateWorkflow(config: ParsedConfig<ConfigType.WORKFLOW>): Result<ParsedConfig<ConfigType.WORKFLOW>, ValidationError[]> {
   const result = validateWorkflowConfig(config.config);
-  
+
   // 使用 andThen 进行类型转换
   return result.andThen(() => ok(config)) as Result<ParsedConfig<ConfigType.WORKFLOW>, ValidationError[]>;
 }

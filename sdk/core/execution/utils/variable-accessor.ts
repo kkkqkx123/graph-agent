@@ -28,7 +28,7 @@
 
 import type { ThreadContext } from '../context/thread-context';
 import type { VariableScope } from '@modular-agent/types/common';
-import { resolvePath } from '@modular-agent/common-utils/evalutor/path-resolver';
+import { resolvePath } from '@modular-agent/common-utils/path-resolver';
 
 /**
  * 变量命名空间

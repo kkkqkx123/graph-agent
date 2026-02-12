@@ -10,7 +10,7 @@ import { TriggerActionType } from '@modular-agent/types/trigger';
 import { EventType } from '@modular-agent/types/events';
 import { ValidationError } from '@modular-agent/types/errors';
 import type { Result } from '@modular-agent/types/result';
-import { ok, err } from '@modular-agent/common-utils/result-utils';
+import { ok, err } from '@modular-agent/common-utils';
 import { LLMMessageRole } from '@modular-agent/types/llm';
 
 /**
@@ -71,10 +71,10 @@ const conversationHistoryOptionsSchema = z.object({
   (data) => {
     // 至少需要指定一个选项
     const hasOption = data.lastN !== undefined ||
-                      data.lastNByRole !== undefined ||
-                      data.byRole !== undefined ||
-                      data.range !== undefined ||
-                      data.rangeByRole !== undefined;
+      data.lastNByRole !== undefined ||
+      data.byRole !== undefined ||
+      data.range !== undefined ||
+      data.rangeByRole !== undefined;
     return hasOption;
   },
   {
@@ -217,7 +217,7 @@ export function validateTriggerAction(action: TriggerAction, path: string = 'act
       return err(paramResult.error);
     }
   }
-  
+
   return ok(action);
 }
 
@@ -297,12 +297,12 @@ export function validateTriggers(
       // WorkflowTrigger
       result = validateWorkflowTrigger(trigger, itemPath);
     }
-    
+
     if (result.isErr()) {
       errors.push(...result.error);
     }
   }
-  
+
   if (errors.length === 0) {
     return ok(triggers);
   }

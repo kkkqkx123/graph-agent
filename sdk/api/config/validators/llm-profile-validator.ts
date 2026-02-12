@@ -6,7 +6,7 @@
 import type { LLMProfile } from '@modular-agent/types/llm';
 import type { ConfigFile } from '../types';
 import { ConfigType } from '../types';
-import { ok, err } from '@modular-agent/common-utils/result-utils';
+import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types/result';
 import { ValidationError } from '@modular-agent/types/errors';
 import { LLMProvider } from '@modular-agent/types/llm';

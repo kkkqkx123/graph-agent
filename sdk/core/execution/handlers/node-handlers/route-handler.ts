@@ -7,7 +7,7 @@ import { ExecutionError } from '@modular-agent/types/errors';
 import type { Node, RouteNodeConfig } from '@modular-agent/types/node';
 import type { Thread } from '@modular-agent/types/thread';
 import type { Condition, EvaluationContext } from '@modular-agent/types/condition';
-import { conditionEvaluator } from '@modular-agent/common-utils/evalutor/condition-evaluator';
+import { conditionEvaluator } from '@modular-agent/common-utils/condition-evaluator';
 
 /**
  * 检查节点是否可以执行

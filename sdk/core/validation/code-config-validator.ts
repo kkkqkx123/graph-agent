@@ -7,7 +7,7 @@ import { z } from 'zod';
 import type { Script, ScriptExecutionOptions, SandboxConfig } from '@modular-agent/types/code';
 import { ScriptType } from '@modular-agent/types/code';
 import { ValidationError } from '@modular-agent/types/errors';
-import { ok, err } from '@modular-agent/common-utils/result-utils';
+import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types/result';
 
 /**
@@ -149,7 +149,7 @@ export class CodeConfigValidator {
     if (filePath) {
       const extension = filePath.toLowerCase().split('.').pop();
       const expectedExtensions = this.getExpectedExtensions(scriptType);
-      
+
       if (extension && !expectedExtensions.includes(extension)) {
         return err([
           new ValidationError(
@@ -174,7 +174,7 @@ export class CodeConfigValidator {
         )]);
       }
     }
-    
+
     return ok(undefined);
   }
 
@@ -281,7 +281,7 @@ export class CodeConfigValidator {
         }
         break;
     }
-    
+
     if (errors.length === 0) {
       return ok(undefined);
     }

@@ -13,6 +13,7 @@ import {
   APIEventData,
   APIEventListener
 } from '../types/event-types';
+import { ExecutionError } from '@modular-agent/types/errors';
 
 /**
  * 事件总线类
@@ -77,7 +78,17 @@ export class APIEventBus {
       try {
         await listener(event);
       } catch (error) {
-        console.error(`[EventBus] Error in listener for ${event.type}:`, error);
+        // 抛出错误，由调用方决定如何处理
+        throw new ExecutionError(
+          'Event listener execution failed',
+          undefined,
+          undefined,
+          {
+            eventType: event.type,
+            operation: 'event_listener'
+          },
+          error instanceof Error ? error : new Error(String(error))
+        );
       }
     }
   }

@@ -6,7 +6,7 @@
 import type { TriggerTemplate } from '@modular-agent/types/trigger-template';
 import type { TriggerCondition, TriggerAction } from '@modular-agent/types/trigger';
 import type { Metadata } from '@modular-agent/types/common';
-import { now } from '@modular-agent/common-utils/timestamp-utils';
+import { now } from '@modular-agent/common-utils';
 import { triggerTemplateRegistry } from '../../core/services/trigger-template-registry';
 
 /**

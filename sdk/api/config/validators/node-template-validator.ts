@@ -7,7 +7,7 @@
 import type { NodeTemplate } from '@modular-agent/types/node-template';
 import type { ConfigFile } from '../types';
 import { ConfigType } from '../types';
-import { ok, err } from '@modular-agent/common-utils/result-utils';
+import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types/result';
 import { ValidationError } from '@modular-agent/types/errors';
 import { NodeValidator } from '../../../core/validation/node-validator';
@@ -94,7 +94,7 @@ export function validateNodeTemplateConfig(config: ConfigFile): Result<NodeTempl
       outgoingEdgeIds: [],
       incomingEdgeIds: []
     };
-    
+
     const configResult = nodeValidator.validateNode(tempNode);
     if (configResult.isErr()) {
       errors.push(...configResult.error);

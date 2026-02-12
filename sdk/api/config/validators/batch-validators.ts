@@ -13,7 +13,7 @@ import type { NodeTemplate } from '@modular-agent/types/node-template';
 import type { TriggerTemplate } from '@modular-agent/types/trigger-template';
 import type { Script } from '@modular-agent/types/code';
 import type { ConfigFile } from '../types';
-import { ok, err } from '@modular-agent/common-utils/result-utils';
+import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types/result';
 import { ValidationError } from '@modular-agent/types/errors';
 import { validateWorkflowConfig } from './workflow-validator';
@@ -29,16 +29,16 @@ import { validateScriptConfig } from './script-validator';
 export function validateBatchWorkflows(
   configs: ConfigFile[]
 ): Result<WorkflowDefinition[], ValidationError[][]> {
-  const results: Result<WorkflowDefinition, ValidationError[]>[] = configs.map(config => 
+  const results: Result<WorkflowDefinition, ValidationError[]>[] = configs.map(config =>
     validateWorkflowConfig(config)
   );
-  
+
   // 检查是否有验证失败的情况
   const errors = results.filter(r => r.isErr()).map(r => r.error);
   if (errors.length > 0) {
     return err(errors);
   }
-  
+
   // 所有验证都成功，返回成功结果
   const workflows = results.filter(r => r.isOk()).map(r => r.value);
   return ok(workflows);
@@ -52,42 +52,42 @@ export function validateBatchWorkflows(
 export function validateBatchNodeTemplates(
   configs: ConfigFile[]
 ): Result<NodeTemplate[], ValidationError[][]> {
-  const results: Result<NodeTemplate, ValidationError[]>[] = configs.map(config => 
+  const results: Result<NodeTemplate, ValidationError[]>[] = configs.map(config =>
     validateNodeTemplateConfig(config)
   );
-  
+
   // 检查是否有验证失败的情况
   const errors = results.filter(r => r.isErr()).map(r => r.error);
   if (errors.length > 0) {
     return err(errors);
   }
-  
+
   // 所有验证都成功，返回成功结果
   const templates = results.filter(r => r.isOk()).map(r => r.value);
   return ok(templates);
+}
+
+/**
+* 批量验证触发器模板配置
+* @param configs 配置对象数组
+* @returns 验证结果数组
+*/
+export function validateBatchTriggerTemplates(
+  configs: ConfigFile[]
+): Result<TriggerTemplate[], ValidationError[][]> {
+  const results: Result<TriggerTemplate, ValidationError[]>[] = configs.map(config =>
+    validateTriggerTemplateConfig(config)
+  );
+
+  // 检查是否有验证失败的情况
+  const errors = results.filter(r => r.isErr()).map(r => r.error);
+  if (errors.length > 0) {
+    return err(errors);
   }
 
-  /**
-  * 批量验证触发器模板配置
-  * @param configs 配置对象数组
-  * @returns 验证结果数组
-  */
-  export function validateBatchTriggerTemplates(
-   configs: ConfigFile[]
-  ): Result<TriggerTemplate[], ValidationError[][]> {
-   const results: Result<TriggerTemplate, ValidationError[]>[] = configs.map(config => 
-     validateTriggerTemplateConfig(config)
-   );
-   
-   // 检查是否有验证失败的情况
-   const errors = results.filter(r => r.isErr()).map(r => r.error);
-   if (errors.length > 0) {
-     return err(errors);
-   }
-   
-   // 所有验证都成功，返回成功结果
-   const templates = results.filter(r => r.isOk()).map(r => r.value);
-   return ok(templates);
+  // 所有验证都成功，返回成功结果
+  const templates = results.filter(r => r.isOk()).map(r => r.value);
+  return ok(templates);
 }
 
 /**
@@ -98,16 +98,16 @@ export function validateBatchNodeTemplates(
 export function validateBatchScripts(
   configs: ConfigFile[]
 ): Result<Script[], ValidationError[][]> {
-  const results: Result<Script, ValidationError[]>[] = configs.map(config => 
+  const results: Result<Script, ValidationError[]>[] = configs.map(config =>
     validateScriptConfig(config)
   );
-  
+
   // 检查是否有验证失败的情况
   const errors = results.filter(r => r.isErr()).map(r => r.error);
   if (errors.length > 0) {
     return err(errors);
   }
-  
+
   // 所有验证都成功，返回成功结果
   const scripts = results.filter(r => r.isOk()).map(r => r.value);
   return ok(scripts);

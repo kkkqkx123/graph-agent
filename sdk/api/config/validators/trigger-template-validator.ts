@@ -6,7 +6,7 @@
 
 import type { TriggerTemplate } from '@modular-agent/types/trigger-template';
 import type { ConfigFile } from '../types';
-import { ok, err } from '@modular-agent/common-utils/result-utils';
+import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types/result';
 import { ValidationError } from '@modular-agent/types/errors';
 import { validateWorkflowTrigger } from '../../../core/validation/trigger-validator';

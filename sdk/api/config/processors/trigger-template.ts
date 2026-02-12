@@ -9,7 +9,7 @@ import { ConfigType } from '../types';
 import type { Result } from '@modular-agent/types/result';
 import { ValidationError } from '@modular-agent/types/errors';
 import { validateTriggerTemplateConfig } from '../validators/trigger-template-validator';
-import { ok } from '@modular-agent/common-utils/result-utils';
+import { ok } from '@modular-agent/common-utils';
 
 /**
  * 验证TriggerTemplate配置
@@ -18,7 +18,7 @@ import { ok } from '@modular-agent/common-utils/result-utils';
  */
 export function validateTriggerTemplate(config: ParsedConfig<ConfigType.TRIGGER_TEMPLATE>): Result<ParsedConfig<ConfigType.TRIGGER_TEMPLATE>, ValidationError[]> {
   const result = validateTriggerTemplateConfig(config.config);
-  
+
   // 使用 andThen 进行类型转换
   return result.andThen(() => ok(config)) as Result<ParsedConfig<ConfigType.TRIGGER_TEMPLATE>, ValidationError[]>;
 }

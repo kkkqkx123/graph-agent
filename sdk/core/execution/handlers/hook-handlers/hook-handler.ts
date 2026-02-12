@@ -11,7 +11,7 @@ import type { NodeExecutionResult } from '@modular-agent/types/thread';
 import type { NodeCustomEvent } from '@modular-agent/types/events';
 import type { CheckpointDependencies } from '../checkpoint-handlers/checkpoint-utils';
 import { createCheckpoint } from '../checkpoint-handlers/checkpoint-utils';
-import { CheckpointTriggerType } from '@modular-agent/types/checkpoint';
+import { ValidationError, ExecutionError } from '@modular-agent/types/errors';
 
 /**
  * Hook执行上下文接口
@@ -51,7 +51,7 @@ export async function executeHook(
     .sort((a: NodeHook, b: NodeHook) => (b.weight || 0) - (a.weight || 0));
 
   // 异步执行所有Hook，不阻塞节点执行
-  const promises = hooks.map((hook: NodeHook) => executeSingleHook(context, hook, emitEvent));
+  const promises = hooks.map((hook: NodeHook) => executeSingleHook(context, hook, hookType, emitEvent));
   await Promise.allSettled(promises);
 }
 
@@ -64,10 +64,11 @@ export async function executeHook(
 async function executeSingleHook(
   context: HookExecutionContext,
   hook: NodeHook,
+  hookType: HookType,
   emitEvent: (event: NodeCustomEvent) => Promise<void>
 ): Promise<void> {
   try {
-    const { conditionEvaluator } = await import('@modular-agent/common-utils/evalutor/condition-evaluator');
+    const { conditionEvaluator } = await import('@modular-agent/common-utils/condition-evaluator');
     const {
       buildHookEvaluationContext,
       convertToEvaluationContext,
@@ -87,11 +88,18 @@ async function executeSingleHook(
           convertToEvaluationContext(evalContext)
         );
       } catch (error) {
-        console.warn(
-          `Hook condition evaluation failed for event "${hook.eventName}" on node "${context.node.id}":`,
-          error
+        // 抛出验证错误，标记为警告级别
+        throw new ValidationError(
+          `Hook condition evaluation failed: ${error instanceof Error ? error.message : String(error)}`,
+          'hook.condition',
+          hook.condition,
+          {
+            eventName: hook.eventName,
+            nodeId: context.node.id,
+            operation: 'hook_condition_evaluation',
+            severity: 'warning'
+          }
         );
-        return;
       }
 
       if (!result) {
@@ -111,11 +119,19 @@ async function executeSingleHook(
           context.checkpointDependencies
         );
       } catch (error) {
-        console.error(
-          `Failed to create checkpoint for hook "${hook.eventName}" on node "${context.node.id}":`,
-          error
+        // 抛出执行错误，标记为信息级别（不影响主流程）
+        throw new ExecutionError(
+          'Failed to create checkpoint for hook',
+          context.node.id,
+          context.thread.workflowId,
+          {
+            eventName: hook.eventName,
+            nodeId: context.node.id,
+            operation: 'checkpoint_creation',
+            severity: 'info'
+          },
+          error instanceof Error ? error : new Error(String(error))
         );
-        // 检查点创建失败不应影响Hook执行
       }
     }
 
@@ -128,24 +144,36 @@ async function executeSingleHook(
       try {
         await customHandler(context, hook, eventData);
       } catch (error) {
-        console.error(
-          `Custom handler execution failed for event "${hook.eventName}" on node "${context.node.id}":`,
-          error
+        // 抛出执行错误
+        throw new ExecutionError(
+          'Custom handler execution failed',
+          context.node.id,
+          context.thread.workflowId,
+          {
+            eventName: hook.eventName,
+            nodeId: context.node.id,
+            operation: 'custom_handler_execution'
+          },
+          error instanceof Error ? error : new Error(String(error))
         );
       }
     }
 
     // 触发自定义事件
     await emitHookEvent(context, hook.eventName, eventData, emitEvent);
-
-    console.log(
-      `Hook triggered for event "${hook.eventName}" on node "${context.node.id}"`
-    );
   } catch (error) {
-    // Hook执行失败不应影响节点正常执行，记录错误日志
-    console.error(
-      `Hook execution failed for event "${hook.eventName}" on node "${context.node.id}":`,
-      error
+    // 抛出执行错误
+    throw new ExecutionError(
+      'Hook execution failed',
+      context.node.id,
+      context.thread.workflowId,
+      {
+        eventName: hook.eventName,
+        nodeId: context.node.id,
+        hookType,
+        operation: 'hook_execution'
+      },
+      error instanceof Error ? error : new Error(String(error))
     );
   }
 }

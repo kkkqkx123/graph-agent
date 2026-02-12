@@ -13,6 +13,8 @@ import { APIDependencies } from './api-dependencies';
 import { SDKAPIDependencies } from './sdk-api-dependencies';
 import { getData } from '@modular-agent/sdk/api/types/execution-result';
 import type { SDKOptions, SDKDependencies } from '@modular-agent/types';
+import { ExecutionError } from '@modular-agent/types/errors';
+import { logger } from '../index';
 
 /**
  * SDK主类 - 统一API入口（内部类，不导出）
@@ -187,58 +189,58 @@ class SDK {
     try {
       await this.workflows.clear();
     } catch (error) {
-      console.error('清理workflows资源失败:', error);
+      logger.error('Failed to cleanup workflows resource', { error: error instanceof Error ? error.message : String(error) });
     }
 
     try {
       await this.threads.clear();
     } catch (error) {
-      console.error('清理threads资源失败:', error);
+      logger.error('Failed to cleanup threads resource', { error: error instanceof Error ? error.message : String(error) });
     }
 
     try {
       await this.tools.clear();
     } catch (error) {
-      console.error('清理tools资源失败:', error);
+      logger.error('Failed to cleanup tools resource', { error: error instanceof Error ? error.message : String(error) });
     }
 
     try {
       await this.scripts.clear();
     } catch (error) {
-      console.error('清理scripts资源失败:', error);
+      logger.error('Failed to cleanup scripts resource', { error: error instanceof Error ? error.message : String(error) });
     }
 
     try {
       await this.nodeTemplates.clear();
     } catch (error) {
-      console.error('清理nodeTemplates资源失败:', error);
+      logger.error('Failed to cleanup nodeTemplates resource', { error: error instanceof Error ? error.message : String(error) });
     }
 
     try {
       await this.triggerTemplates.clear();
     } catch (error) {
-      console.error('清理triggerTemplates资源失败:', error);
+      logger.error('Failed to cleanup triggerTemplates resource', { error: error instanceof Error ? error.message : String(error) });
     }
 
     try {
       await this.profiles.clear();
     } catch (error) {
-      console.error('清理profiles资源失败:', error);
+      logger.error('Failed to cleanup profiles resource', { error: error instanceof Error ? error.message : String(error) });
     }
 
     try {
       await this.userInteractions.clear();
     } catch (error) {
-      console.error('清理userInteractions资源失败:', error);
+      logger.error('Failed to cleanup userInteractions resource', { error: error instanceof Error ? error.message : String(error) });
     }
 
     try {
       await this.humanRelay.clear();
     } catch (error) {
-      console.error('清理humanRelay资源失败:', error);
+      logger.error('Failed to cleanup humanRelay resource', { error: error instanceof Error ? error.message : String(error) });
     }
 
-    console.log('SDK实例已销毁');
+    logger.info('SDK instance destroyed');
   }
 }
 
