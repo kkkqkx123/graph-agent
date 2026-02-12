@@ -6,12 +6,11 @@
 
 import type { Tool } from '@modular-agent/types/tool';
 import type { McpToolConfig } from '@modular-agent/types/tool';
-import type { ThreadContext } from '@modular-agent/types/common';
 import { NetworkError, ToolError, ConfigurationError } from '@modular-agent/types/errors';
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import { Readable, Writable } from 'stream';
 import { EventEmitter } from 'events';
-import type { IToolExecutor } from '@modular-agent/types/tool';
+import { BaseToolExecutor } from './base-executor';
 
 /**
  * MCP工具定义接口
@@ -406,22 +405,20 @@ class StdioTransport {
 /**
  * MCP工具执行器
  */
-export class McpExecutor implements IToolExecutor {
+export class McpExecutor extends BaseToolExecutor {
   private transports: Map<string, StdioTransport> = new Map();
 
   /**
-   * 执行MCP工具
+   * 执行MCP工具的具体实现
    * @param tool 工具定义
    * @param parameters 工具参数
-   * @param options 执行选项
    * @param threadContext 线程上下文（可选，MCP工具不使用）
    * @returns 执行结果
    */
-  async execute(
+  protected async doExecute(
     tool: Tool,
     parameters: Record<string, any>,
-    options?: any,
-    threadContext?: ThreadContext
+    threadContext?: any
   ): Promise<any> {
     // 从config中获取MCP配置
     const config = tool.config as McpToolConfig;

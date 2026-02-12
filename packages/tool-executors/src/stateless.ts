@@ -5,27 +5,24 @@
 
 import type { Tool } from '@modular-agent/types/tool';
 import type { StatelessToolConfig } from '@modular-agent/types/tool';
-import type { ThreadContext } from '@modular-agent/types/common';
 import { ToolError } from '@modular-agent/types/errors';
-import type { IToolExecutor } from '@modular-agent/types/tool';
+import { BaseToolExecutor } from './base-executor';
 
 /**
  * 无状态工具执行器
  */
-export class StatelessExecutor implements IToolExecutor {
+export class StatelessExecutor extends BaseToolExecutor {
   /**
-   * 执行无状态工具
+   * 执行无状态工具的具体实现
    * @param tool 工具定义
    * @param parameters 工具参数
-   * @param options 执行选项
-   * @param threadContext 线程上下文（可选）
+   * @param threadContext 线程上下文（可选，无状态工具不使用）
    * @returns 执行结果
    */
-  async execute(
+  protected async doExecute(
     tool: Tool,
     parameters: Record<string, any>,
-    options?: any,
-    threadContext?: ThreadContext
+    threadContext?: any
   ): Promise<any> {
     // 获取执行函数
     const config = tool.config as StatelessToolConfig;

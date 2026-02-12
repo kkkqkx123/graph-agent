@@ -5,7 +5,6 @@
 
 import type { Tool } from '@modular-agent/types/tool';
 import type { RestToolConfig } from '@modular-agent/types/tool';
-import type { ThreadContext } from '@modular-agent/types/common';
 import { NetworkError, ToolError, ValidationError, TimeoutError, CircuitBreakerOpenError } from '@modular-agent/types/errors';
 import {
   BadRequestError,
@@ -19,25 +18,23 @@ import {
   ServiceUnavailableError
 } from '@modular-agent/common-utils/http/errors';
 import { HttpTransport } from '@modular-agent/common-utils/http/transport';
-import type { IToolExecutor } from '@modular-agent/types/tool';
+import { BaseToolExecutor } from './base-executor';
 
 /**
  * REST工具执行器
  */
-export class RestExecutor implements IToolExecutor {
+export class RestExecutor extends BaseToolExecutor {
   /**
-   * 执行REST工具
+   * 执行REST工具的具体实现
    * @param tool 工具定义
    * @param parameters 工具参数
-   * @param options 执行选项
    * @param threadContext 线程上下文（可选，REST工具不使用）
    * @returns 执行结果
    */
-  async execute(
+  protected async doExecute(
     tool: Tool,
     parameters: Record<string, any>,
-    options?: any,
-    threadContext?: ThreadContext
+    threadContext?: any
   ): Promise<any> {
     // 从config中获取REST配置
     const config = tool.config as RestToolConfig;

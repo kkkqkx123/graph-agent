@@ -15,9 +15,8 @@ import type { ThreadContext } from '../execution/context/thread-context';
 import { ToolType } from '@modular-agent/types';
 import { NotFoundError, ToolError } from '@modular-agent/types';
 import { ToolRegistry } from '../tools/tool-registry';
-import type { IToolExecutor } from '../tools/interfaces/tool-executor';
-import type { ToolExecutionOptions, ToolExecutionResult } from '@modular-agent/types';
-import { ToolExecutorHelper } from '../tools/utils/tool-executor-helper';
+import type { IToolExecutor } from '@modular-agent/types/tool';
+import type { ToolExecutionOptions, ToolExecutionResult } from '@modular-agent/types/tool';
 import { StatelessExecutor } from '@modular-agent/tool-executors';
 import { StatefulExecutor } from '@modular-agent/tool-executors';
 import { RestExecutor } from '@modular-agent/tool-executors';
@@ -161,15 +160,9 @@ class ToolService {
       );
     }
 
-    // 使用ToolExecutorHelper执行（带验证、重试、超时）
+    // 直接调用执行器（执行器已内置验证、重试、超时功能）
     try {
-      return await ToolExecutorHelper.executeWithRetry(
-        executor,
-        tool,
-        parameters,
-        options,
-        threadContext
-      );
+      return await executor.execute(tool, parameters, options, threadContext);
     } catch (error) {
       if (error instanceof Error) {
         throw new ToolError(

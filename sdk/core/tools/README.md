@@ -1,54 +1,20 @@
 # 工具模块 (Tools Module)
 
-工具模块提供了统一的工具执行框架，支持多种工具类型（BUILTIN、NATIVE、REST、MCP）。
+工具模块提供工具注册和管理功能。SDK只负责工具的注册和管理，具体的工具执行器实现请使用 [`@modular-agent/tool-executors`](../../../../packages/tool-executors) 包。
 
 ## 模块结构
 
 ```
 tools/
-├── tool-service.ts       # 工具服务（统一入口）
 ├── tool-registry.ts      # 工具注册表
-├── executor-base.ts      # 执行器基类
 ├── index.ts              # 模块导出
-├── executors/            # 各类工具执行器
-│   ├── builtin.ts        # 内置工具执行器
-│   ├── native.ts         # 本地工具执行器
-│   ├── rest.ts           # REST API工具执行器
-│   └── mcp.ts            # MCP协议工具执行器
 └── __tests__/            # 单元测试
-    ├── tool-registry.test.ts
-    ├── tool-service.test.ts
-    └── builtin-executor.test.ts
+    └── tool-registry.test.ts
 ```
 
 ## 核心组件
 
-### 1. ToolService（工具服务）
-
-工具服务是工具执行的统一入口，提供以下功能：
-
-- 工具注册和注销
-- 工具查询和搜索
-- 工具执行（支持重试、超时）
-- 批量执行
-
-```typescript
-import { ToolService } from './tools';
-
-const toolService = new ToolService();
-
-// 注册工具
-toolService.registerTool(toolDefinition);
-
-// 执行工具
-const result = await toolService.execute('tool-name', parameters, {
-  timeout: 5000,
-  retries: 3,
-  retryDelay: 1000
-});
-```
-
-### 2. ToolRegistry（工具注册表）
+### ToolRegistry（工具注册表）
 
 工具注册表负责工具定义的管理：
 
@@ -68,65 +34,82 @@ registry.register(toolDefinition);
 const tool = registry.get('tool-name');
 
 // 按类型查询
-const builtinTools = registry.listByType('BUILTIN');
+const restTools = registry.listByType('REST');
 
 // 搜索工具
 const results = registry.search('calculator');
 ```
 
-### 3. BaseToolExecutor（执行器基类）
+## 工具执行器
 
-执行器基类定义了工具执行的通用接口：
+SDK不包含具体的工具执行器实现。请使用 [`@modular-agent/tool-executors`](../../../../packages/tool-executors) 包中的执行器：
 
-- 参数验证
-- 超时控制
-- 重试机制（支持指数退避）
-- 错误处理
+### 可用的执行器
+
+1. **StatelessExecutor** - 无状态工具执行器
+2. **StatefulExecutor** - 有状态工具执行器
+3. **RestExecutor** - REST API工具执行器
+4. **McpExecutor** - MCP协议工具执行器
+
+### 使用示例
 
 ```typescript
-import { BaseToolExecutor } from './tools/executor-base';
+import { ToolRegistry } from '@modular-agent/sdk/core/tools';
+import { StatelessExecutor, StatefulExecutor, RestExecutor, McpExecutor } from '@modular-agent/tool-executors';
+import { Tool, ToolType } from '@modular-agent/types/tool';
 
-class MyExecutor extends BaseToolExecutor {
-  protected async doExecute(tool: Tool, parameters: Record<string, any>): Promise<any> {
-    // 实现具体的执行逻辑
-    return result;
+// 创建工具注册表
+const registry = new ToolRegistry();
+
+// 注册无状态工具
+const statelessTool: Tool = {
+  id: 'my-stateless-tool',
+  name: 'my-stateless-tool',
+  type: ToolType.STATELESS,
+  description: 'My stateless tool',
+  parameters: {
+    properties: {
+      input: { type: 'string' }
+    },
+    required: ['input']
+  },
+  config: {
+    execute: async (params) => {
+      return { result: `processed: ${params.input}` };
+    }
   }
-}
+};
+
+registry.register(statelessTool);
+
+// 使用执行器执行工具
+const executor = new StatelessExecutor();
+const result = await executor.execute(
+  statelessTool,
+  { input: 'test' },
+  { timeout: 5000, retries: 2 }
+);
+
+console.log(result);
+// {
+//   success: true,
+//   result: { result: 'processed: test' },
+//   executionTime: 10,
+//   retryCount: 0
+// }
 ```
 
 ## 工具类型
 
-### 1. BUILTIN（内置工具）
+### 1. STATELESS（无状态工具）
 
-SDK提供的内置工具，无需额外配置：
-
-- **calculator**: 数学计算
-- **datetime**: 日期时间操作
-- **string**: 字符串处理
-- **array**: 数组操作
-- **object**: 对象操作
-- **hash_convert**: 哈希转换（base64、md5等）
-- **time_tool**: 时间工具
+应用层提供的无状态函数工具：
 
 ```typescript
-// 使用计算器工具
-const result = await toolService.execute('calculator', {
-  expression: '2 + 3 * 4',
-  precision: 2
-});
-// 返回: { expression: '2 + 3 * 4', result: 14, precision: 2 }
-```
-
-### 2. NATIVE（本地工具）
-
-应用层提供的本地工具，通过函数引用执行：
-
-```typescript
-// 注册本地工具
-toolService.registerTool({
+const tool: Tool = {
   id: 'my-tool',
   name: 'my-tool',
-  type: ToolType.NATIVE,
+  type: ToolType.STATELESS,
   description: 'My custom tool',
   parameters: {
     properties: {
@@ -134,18 +117,42 @@ toolService.registerTool({
     },
     required: ['input']
   },
-  metadata: {
-    customFields: {
-      executor: async (params) => {
-        // 工具实现
-        return { result: `processed: ${params.input}` };
+  config: {
+    execute: async (params) => {
+      return { result: `processed: ${params.input}` };
+    }
+  }
+};
+```
+
+### 2. STATEFUL（有状态工具）
+
+应用层提供的有状态工具，通过ThreadContext实现线程隔离：
+
+```typescript
+const tool: Tool = {
+  id: 'my-stateful-tool',
+  name: 'my-stateful-tool',
+  type: ToolType.STATEFUL,
+  description: 'My stateful tool',
+  parameters: {
+    properties: {
+      action: { type: 'string' }
+    },
+    required: ['action']
+  },
+  config: {
+    factory: {
+      create: () => {
+        return {
+          execute: async (params) => {
+            return { result: `action: ${params.action}` };
+          }
+        };
       }
     }
   }
-});
-
-// 执行工具
-const result = await toolService.execute('my-tool', { input: 'test' });
+};
 ```
 
 ### 3. REST（REST API工具）
@@ -153,8 +160,7 @@ const result = await toolService.execute('my-tool', { input: 'test' });
 通过HTTP调用REST API：
 
 ```typescript
-// 注册REST工具
-toolService.registerTool({
+const tool: Tool = {
   id: 'fetch-api',
   name: 'fetch-api',
   type: ToolType.REST,
@@ -166,21 +172,13 @@ toolService.registerTool({
     },
     required: ['url']
   },
-  metadata: {
-    customFields: {
-      baseUrl: 'https://api.example.com',
-      headers: {
-        'Authorization': 'Bearer token'
-      }
+  config: {
+    baseUrl: 'https://api.example.com',
+    headers: {
+      'Authorization': 'Bearer token'
     }
   }
-});
-
-// 执行工具
-const result = await toolService.execute('fetch-api', {
-  url: '/users',
-  method: 'GET'
-});
+};
 ```
 
 ### 4. MCP（MCP协议工具）
@@ -188,8 +186,7 @@ const result = await toolService.execute('fetch-api', {
 通过MCP协议调用工具：
 
 ```typescript
-// 注册MCP工具
-toolService.registerTool({
+const tool: Tool = {
   id: 'mcp-tool',
   name: 'mcp-tool',
   type: ToolType.MCP,
@@ -200,17 +197,11 @@ toolService.registerTool({
     },
     required: ['query']
   },
-  metadata: {
-    customFields: {
-      serverName: 'my-mcp-server',
-      toolName: 'query-tool',
-      serverUrl: 'http://localhost:8080/mcp'
-    }
+  config: {
+    serverName: 'my-mcp-server',
+    serverUrl: 'npx -y @modelcontextprotocol/server-filesystem'
   }
-});
-
-// 执行工具
-const result = await toolService.execute('mcp-tool', { query: 'SELECT * FROM users' });
+};
 ```
 
 ## 执行选项
@@ -280,81 +271,13 @@ interface ToolExecutionResult {
 - `NetworkError`: 网络错误
 - `RateLimitError`: 速率限制错误
 
-## 使用示例
-
-### 完整示例
-
-```typescript
-import { ToolService } from './tools';
-import { Tool, ToolType } from './types/tool';
-
-// 创建工具服务
-const toolService = new ToolService();
-
-// 注册内置工具（自动注册）
-// calculator, datetime, string, array, object, hash_convert, time_tool
-
-// 注册自定义工具
-const customTool: Tool = {
-  id: 'my-custom-tool',
-  name: 'my-custom-tool',
-  type: ToolType.NATIVE,
-  description: 'My custom tool',
-  parameters: {
-    properties: {
-      input: { type: 'string', description: 'Input text' }
-    },
-    required: ['input']
-  },
-  metadata: {
-    category: 'custom',
-    tags: ['demo'],
-    customFields: {
-      executor: async (params) => {
-        return {
-          original: params.input,
-          processed: params.input.toUpperCase()
-        };
-      }
-    }
-  }
-};
-
-toolService.registerTool(customTool);
-
-// 执行工具
-const result = await toolService.execute('my-custom-tool', {
-  input: 'hello world'
-}, {
-  timeout: 5000,
-  retries: 2,
-  retryDelay: 1000
-});
-
-if (result.success) {
-  console.log('Result:', result.result);
-} else {
-  console.error('Error:', result.error);
-}
-
-// 批量执行
-const batchResults = await toolService.executeBatch([
-  { toolName: 'calculator', parameters: { expression: '2 + 3' } },
-  { toolName: 'my-custom-tool', parameters: { input: 'test' } }
-]);
-
-console.log('Batch results:', batchResults);
-```
-
 ## 测试
 
 运行单元测试：
 
 ```bash
 cd sdk
-npm test core/tools/__tests__/tool-registry.test.ts
-npm test core/tools/__tests__/tool-service.test.ts
-npm test core/tools/__tests__/builtin-executor.test.ts
+pnpm test core/tools/__tests__/tool-registry.test.ts
 ```
 
 ## 注意事项
@@ -365,12 +288,17 @@ npm test core/tools/__tests__/builtin-executor.test.ts
 4. **重试策略**: 合理设置重试次数和延迟，避免过度重试
 5. **错误处理**: 妥善处理各种错误情况，提供清晰的错误信息
 6. **工具安全**: 注意工具的安全性，避免执行危险操作
-7. **本地工具**: 本地工具的实现由应用层负责，SDK只提供执行框架
+7. **执行器选择**: 根据工具类型选择合适的执行器
 
 ## 设计原则
 
 1. **接口统一**: 所有工具类型使用相同的接口
-2. **职责分离**: SDK只负责执行框架，工具实现由应用层负责
+2. **职责分离**: SDK只负责注册和管理，工具实现由tool-executors包负责
 3. **参数验证**: 严格的参数验证确保工具调用的安全性
 4. **错误友好**: 提供清晰的错误信息
 5. **可扩展**: 易于添加新的工具类型
+
+## 相关文档
+
+- [`@modular-agent/tool-executors`](../../../../packages/tool-executors) - 工具执行器包
+- [`@modular-agent/types/tool`](../../../../packages/types/src/tool.ts) - 工具类型定义

@@ -1,62 +1,32 @@
 /**
  * 工具执行器基类
- * 定义执行器的通用接口和实现
+ * 提供通用的执行逻辑：参数验证、重试机制、超时控制、标准化结果格式
  */
 
 import { z } from 'zod';
-import type { Tool } from '@modular-agent/types/tool';
-import type { ThreadContext } from '../execution/context/thread-context';
+import type { Tool, ToolExecutionOptions, ToolExecutionResult } from '@modular-agent/types/tool';
 import { TimeoutError, ValidationError, NetworkError, HttpError } from '@modular-agent/types/errors';
 import { RateLimitError } from '@modular-agent/common-utils/http/errors';
 import { now, diffTimestamp } from '@modular-agent/common-utils';
 
 /**
- * 工具执行选项
- */
-export interface ToolExecutionOptions {
-  /** 超时时间（毫秒） */
-  timeout?: number;
-  /** 最大重试次数 */
-  retries?: number;
-  /** 重试延迟（毫秒） */
-  retryDelay?: number;
-  /** 是否启用指数退避 */
-  exponentialBackoff?: boolean;
-}
-
-/**
- * 工具执行结果
- */
-export interface ToolExecutionResult {
-  /** 是否成功 */
-  success: boolean;
-  /** 执行结果 */
-  result?: any;
-  /** 错误信息 */
-  error?: string;
-  /** 执行时间（毫秒） */
-  executionTime: number;
-  /** 重试次数 */
-  retryCount: number;
-}
-
-/**
  * 工具执行器基类
+ * 所有具体执行器都应该继承此类
  */
 export abstract class BaseToolExecutor {
   /**
-   * 执行工具
+   * 执行工具（带验证、重试、超时）
    * @param tool 工具定义
    * @param parameters 工具参数
    * @param options 执行选项
-   * @param threadContext 线程上下文（可选，用于有状态工具）
-   * @returns 执行结果
+   * @param threadContext 线程上下文（可选）
+   * @returns 标准化的执行结果
    */
   async execute(
     tool: Tool,
     parameters: Record<string, any>,
     options: ToolExecutionOptions = {},
-    threadContext?: ThreadContext
+    threadContext?: any
   ): Promise<ToolExecutionResult> {
     const startTime = now();
     const {
@@ -132,7 +102,7 @@ export abstract class BaseToolExecutor {
   protected abstract doExecute(
     tool: Tool,
     parameters: Record<string, any>,
-    threadContext?: ThreadContext
+    threadContext?: any
   ): Promise<any>;
 
   /**
@@ -318,5 +288,4 @@ export abstract class BaseToolExecutor {
   protected async sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
-
 }

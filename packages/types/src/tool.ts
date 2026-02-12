@@ -208,6 +208,7 @@ export interface ToolExecutionResult {
 
 /**
  * 工具执行器接口
+ * 所有工具执行器都必须实现此接口
  */
 export interface IToolExecutor {
   /**
@@ -216,12 +217,12 @@ export interface IToolExecutor {
    * @param parameters 工具参数
    * @param options 执行选项
    * @param threadContext 线程上下文（可选）
-   * @returns 执行结果
+   * @returns 标准化的执行结果
    */
   execute(
     tool: Tool,
     parameters: Record<string, any>,
     options?: ToolExecutionOptions,
     threadContext?: any
-  ): Promise<any>;
+  ): Promise<ToolExecutionResult>;
 }

@@ -5,27 +5,24 @@
 
 import type { Tool } from '@modular-agent/types/tool';
 import type { StatefulToolConfig } from '@modular-agent/types/tool';
-import type { ThreadContext } from '@modular-agent/types/common';
 import { ToolError } from '@modular-agent/types/errors';
-import type { IToolExecutor } from '@modular-agent/types/tool';
+import { BaseToolExecutor } from './base-executor';
 
 /**
  * 有状态工具执行器
  */
-export class StatefulExecutor implements IToolExecutor {
+export class StatefulExecutor extends BaseToolExecutor {
   /**
-   * 执行有状态工具
+   * 执行有状态工具的具体实现
    * @param tool 工具定义
    * @param parameters 工具参数
-   * @param options 执行选项
    * @param threadContext 线程上下文（必需）
    * @returns 执行结果
    */
-  async execute(
+  protected async doExecute(
     tool: Tool,
     parameters: Record<string, any>,
-    options?: any,
-    threadContext?: ThreadContext
+    threadContext?: any
   ): Promise<any> {
     if (!threadContext) {
       throw new ToolError(
