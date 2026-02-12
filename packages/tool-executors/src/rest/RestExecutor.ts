@@ -8,8 +8,7 @@ import type { RestToolConfig } from '@modular-agent/types/tool';
 import { NetworkError, ToolError, ValidationError, TimeoutError, CircuitBreakerOpenError } from '@modular-agent/types/errors';
 import { BaseExecutor } from '../core/base/BaseExecutor';
 import { ExecutorType } from '../core/types';
-import { HttpClient } from '@modular-agent/common-utils/http';
-import { InterceptorManager, HttpCache } from '@modular-agent/common-utils/http';
+import { HttpClient, InterceptorManager, HttpCache } from '@modular-agent/common-utils';
 import type { RestExecutorConfig } from './types';
 
 /**

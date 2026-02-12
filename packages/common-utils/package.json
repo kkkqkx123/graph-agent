@@ -8,14 +8,6 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./http": {
-      "types": "./dist/http/index.d.ts",
-      "import": "./dist/http/index.js"
-    },
-    "./evalutor": {
-      "types": "./dist/evalutor/index.d.ts",
-      "import": "./dist/evalutor/index.js"
     }
   },
   "scripts": {

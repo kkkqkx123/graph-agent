@@ -4,13 +4,13 @@
 
 // 从 @modular-agent/types/http 导入基础类型
 import type { HTTPMethod, HttpResponse } from '@modular-agent/types/http';
-// 从 @modular-agent/common-utils/http 导入拦截器和缓存类型
+// 从 @modular-agent/common-utils 导入拦截器和缓存类型
 import type {
   RequestInterceptor,
   ResponseInterceptor,
   ErrorInterceptor,
   CacheConfig
-} from '@modular-agent/common-utils/http';
+} from '@modular-agent/common-utils';
 
 // 重新导出 HTTPMethod 以保持向后兼容
 export type { HTTPMethod };

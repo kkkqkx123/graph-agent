@@ -4,8 +4,7 @@
  */
 
 import { TimeoutError, HttpError, NetworkError } from '@modular-agent/types/errors';
-import { RateLimitError } from '@modular-agent/common-utils/http/errors';
-import { executeWithRetry, type RetryConfig } from '@modular-agent/common-utils/http';
+import { RateLimitError, executeWithRetry, type RetryConfig } from '@modular-agent/common-utils';
 
 /**
  * 重试策略配置

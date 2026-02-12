@@ -2,6 +2,19 @@
  * HTTP模块导出
  */
 
+// 导出HTTP错误类型
+export {
+  BadRequestError,
+  UnauthorizedError,
+  ForbiddenError,
+  NotFoundHttpError,
+  ConflictError,
+  UnprocessableEntityError,
+  RateLimitError,
+  InternalServerError,
+  ServiceUnavailableError
+} from './errors';
+
 // 导出HTTP客户端
 export { HttpClient } from './http-client';
 
