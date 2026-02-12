@@ -61,16 +61,6 @@ export function encodeObject(obj: any): number {
 }
 
 /**
- * 字符估算降级方案（平均2.5字符/token）
- *
- * @param text 文本
- * @returns 估算的token数量
- */
-export function estimateTokensFallback(text: string): number {
-  return Math.ceil(text.length / 2.5);
-}
-
-/**
  * 重置编码器（仅用于测试）
  */
 export function resetEncoder(): void {

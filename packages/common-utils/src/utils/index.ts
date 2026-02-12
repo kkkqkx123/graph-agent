@@ -8,5 +8,4 @@ export { generateId, isValidId, validateId } from "./id-utils";
 export { now, timestampFromDate, timestampToDate, timestampToISOString, nowWithTimezone, diffTimestamp, formatDuration } from "./timestamp-utils";
 export { initialVersion } from "./version-utils";
 export { emptyMetadata, getMetadata, setMetadata, deleteMetadata, hasMetadata, mergeMetadata } from "./metadata-utils";
-export { encodeText, encodeObject, estimateTokensFallback, resetEncoder } from "./token-encoder";
 export { ok, err, tryCatch, tryCatchAsync, all, any } from "./result-utils";
