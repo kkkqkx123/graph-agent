@@ -9,7 +9,7 @@ import { ConfigType } from '../types';
 import type { Result } from '@modular-agent/types/result';
 import { ValidationError } from '@modular-agent/types/errors';
 import { validateLLMProfileConfig } from '../validators/llm-profile-validator';
-import { ok } from '@modular-agent/common-utils/result-utils';
+import { ok } from '@modular-agent/common-utils';
 
 /**
  * 验证LLM Profile配置
@@ -18,7 +18,7 @@ import { ok } from '@modular-agent/common-utils/result-utils';
  */
 export function validateLLMProfile(config: ParsedConfig<ConfigType.LLM_PROFILE>): Result<ParsedConfig<ConfigType.LLM_PROFILE>, ValidationError[]> {
   const result = validateLLMProfileConfig(config.config);
-  
+
   // 使用 andThen 进行类型转换
   return result.andThen(() => ok(config)) as Result<ParsedConfig<ConfigType.LLM_PROFILE>, ValidationError[]>;
 }
