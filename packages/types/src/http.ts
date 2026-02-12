@@ -6,7 +6,7 @@
 /**
  * HTTP方法类型
  */
-export type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+export type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
 
 /**
  * HTTP 日志接口
@@ -46,6 +46,8 @@ export interface HttpResponse<T = any> {
   data: T;
   /** HTTP状态码 */
   status: number;
+  /** 状态文本 */
+  statusText: string;
   /** 响应头 */
   headers: Record<string, string>;
   /** 请求ID */

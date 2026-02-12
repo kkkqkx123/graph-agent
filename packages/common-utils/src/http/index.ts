@@ -27,6 +27,27 @@ export type { CircuitBreakerConfig } from './circuit-breaker';
 export { RateLimiter } from './rate-limiter';
 export type { RateLimiterConfig } from './rate-limiter';
 
+// 导出拦截器
+export {
+  RequestInterceptor,
+  ResponseInterceptor,
+  ErrorInterceptor,
+  InterceptorManager,
+  createAuthInterceptor,
+  createLoggingInterceptor,
+  createRetryInterceptor
+} from './interceptors';
+
+// 导出缓存
+export {
+  HttpCache,
+  CacheConfig,
+  CacheKeyGenerator,
+  defaultCacheKeyGenerator,
+  createDefaultCache,
+  createDisabledCache
+} from './cache';
+
 // 导出类型
 export type {
   HTTPMethod,

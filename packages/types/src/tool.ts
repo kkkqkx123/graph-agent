@@ -98,6 +98,10 @@ export type ToolConfig =
 export interface StatelessToolConfig {
   /** 执行函数 */
   execute: (parameters: Record<string, any>) => Promise<any>;
+  /** 版本 */
+  version?: string;
+  /** 描述 */
+  description?: string;
 }
 
 /**
