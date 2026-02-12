@@ -9,49 +9,29 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./http/errors": {
-      "types": "./dist/http/errors.d.ts",
-      "import": "./dist/http/errors.js"
-    },
-    "./http/transport": {
-      "types": "./dist/http/transport.d.ts",
-      "import": "./dist/http/transport.js"
-    },
     "./http": {
       "types": "./dist/http/index.d.ts",
       "import": "./dist/http/index.js"
     },
-    "./id-utils": {
-      "types": "./dist/utils/id-utils.d.ts",
-      "import": "./dist/utils/id-utils.js"
+    "./evalutor": {
+      "types": "./dist/evalutor/index.d.ts",
+      "import": "./dist/evalutor/index.js"
     },
-    "./timestamp-utils": {
-      "types": "./dist/utils/timestamp-utils.d.ts",
-      "import": "./dist/utils/timestamp-utils.js"
+    "./llm": {
+      "types": "./dist/llm/index.d.ts",
+      "import": "./dist/llm/index.js"
     },
-    "./result-utils": {
-      "types": "./dist/utils/result-utils.d.ts",
-      "import": "./dist/utils/result-utils.js"
+    "./llm-clients": {
+      "types": "./dist/llm-clients/index.d.ts",
+      "import": "./dist/llm-clients/index.js"
     },
-    "./token-encoder": {
-      "types": "./dist/utils/token-encoder.d.ts",
-      "import": "./dist/utils/token-encoder.js"
+    "./logger": {
+      "types": "./dist/logger/index.d.ts",
+      "import": "./dist/logger/index.js"
     },
-    "./evalutor/path-resolver": {
-      "types": "./dist/evalutor/path-resolver.d.ts",
-      "import": "./dist/evalutor/path-resolver.js"
-    },
-    "./evalutor/condition-evaluator": {
-      "types": "./dist/evalutor/condition-evaluator.d.ts",
-      "import": "./dist/evalutor/condition-evaluator.js"
-    },
-    "./llm/wrapper": {
-      "types": "./dist/llm-clients/base-client.d.ts",
-      "import": "./dist/llm-clients/base-client.js"
-    },
-    "./observable": {
-      "types": "./dist/llm-clients/message-stream.d.ts",
-      "import": "./dist/llm-clients/message-stream.js"
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "import": "./dist/utils/index.js"
     }
   },
   "scripts": {
