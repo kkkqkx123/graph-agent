@@ -2,7 +2,6 @@
  * LLM 工具定义转换工具单元测试
  */
 
-import { describe, it, expect } from '@jest/globals';
 import type { ToolSchema, ToolParameters } from '@modular-agent/types/tool';
 import {
   convertToolsToOpenAIFormat,
@@ -58,9 +57,9 @@ describe('tool-converter', () => {
   describe('convertToolsToOpenAIFormat', () => {
     it('应该正确转换为OpenAI格式', () => {
       const result = convertToolsToOpenAIFormat(mockToolSchemas);
-      
+
       expect(result).toHaveLength(2);
-      
+
       expect(result[0]).toEqual({
         type: 'function',
         function: {
@@ -98,7 +97,7 @@ describe('tool-converter', () => {
           parameters: mockEmptyParameters
         }
       ];
-      
+
       const result = convertToolsToOpenAIFormat(tools);
       expect(result[0]).toEqual({
         type: 'function',
@@ -114,9 +113,9 @@ describe('tool-converter', () => {
   describe('convertToolsToAnthropicFormat', () => {
     it('应该正确转换为Anthropic格式', () => {
       const result = convertToolsToAnthropicFormat(mockToolSchemas);
-      
+
       expect(result).toHaveLength(2);
-      
+
       expect(result[0]).toEqual({
         name: 'search',
         description: 'Search the web for information',
@@ -148,7 +147,7 @@ describe('tool-converter', () => {
           parameters: mockEmptyParameters
         }
       ];
-      
+
       const result = convertToolsToAnthropicFormat(tools);
       expect(result[0]).toEqual({
         name: 'no_params',
@@ -161,9 +160,9 @@ describe('tool-converter', () => {
   describe('convertToolsToGeminiFormat', () => {
     it('应该正确转换为Gemini格式', () => {
       const result = convertToolsToGeminiFormat(mockToolSchemas);
-      
+
       expect(result).toHaveLength(2);
-      
+
       expect(result[0]).toEqual({
         functionDeclarations: [{
           name: 'search',
@@ -199,7 +198,7 @@ describe('tool-converter', () => {
           parameters: mockEmptyParameters
         }
       ];
-      
+
       const result = convertToolsToGeminiFormat(tools);
       expect(result[0]).toEqual({
         functionDeclarations: [{

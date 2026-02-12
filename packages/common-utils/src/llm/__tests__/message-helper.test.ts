@@ -2,7 +2,6 @@
  * LLM 消息辅助工具单元测试
  */
 
-import { describe, it, expect } from '@jest/globals';
 import type { LLMMessage } from '@modular-agent/types/llm';
 import {
   extractSystemMessage,
@@ -27,8 +26,8 @@ describe('message-helper', () => {
   const mockMessagesWithTool: LLMMessage[] = [
     { role: 'system', content: 'System message' },
     { role: 'user', content: 'User message' },
-    { 
-      role: 'assistant', 
+    {
+      role: 'assistant',
       content: '',
       toolCalls: [
         {
@@ -41,8 +40,8 @@ describe('message-helper', () => {
         }
       ]
     },
-    { 
-      role: 'tool', 
+    {
+      role: 'tool',
       content: 'Search result',
       toolCallId: 'call_123'
     }

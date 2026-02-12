@@ -1,7 +1,8 @@
 /**
- * Gemini Native客户端实现
+ * Gemini OpenAI兼容客户端实现
  *
- * 实现Gemini Native API调用，使用Gemini原生端点
+ * 实现Gemini OpenAI兼容API调用，使用Gemini的OpenAI兼容端点
+ * 支持thinking_budget、cached_content等特殊参数
  * 支持流式和非流式调用
  */
 
@@ -14,13 +15,12 @@ import type {
   LLMToolCall
 } from '@modular-agent/types/llm';
 import { generateId } from '../../utils';
-import { convertToolsToGeminiFormat } from '../../llm/tool-converter';
-import { extractAndFilterSystemMessages } from '../../llm/message-helper';
+import { convertToolsToOpenAIFormat } from '../tool-converter';
 
 /**
- * Gemini Native客户端
+ * Gemini OpenAI兼容客户端
  */
-export class GeminiNativeClient extends BaseLLMClient {
+export class GeminiOpenAIClient extends BaseLLMClient {
   constructor(profile: LLMProfile) {
     super(profile);
   }
@@ -30,11 +30,10 @@ export class GeminiNativeClient extends BaseLLMClient {
    */
   protected async doGenerate(request: LLMRequest): Promise<LLMResult> {
     return this.doHttpPost(
-      `/models/${this.profile.model}:generateContent`,
+      '/chat/completions',
       this.buildRequestBody(request),
       {
         headers: this.buildHeaders(),
-        query: { key: this.profile.apiKey },
       }
     );
   }
@@ -44,18 +43,16 @@ export class GeminiNativeClient extends BaseLLMClient {
    */
   protected async *doGenerateStream(request: LLMRequest): AsyncIterable<LLMResult> {
     yield* this.doHttpStream(
-      `/models/${this.profile.model}:streamGenerateContent`,
-      this.buildRequestBody(request),
+      '/chat/completions',
+      this.buildRequestBody(request, true),
       {
         headers: this.buildHeaders(),
-        query: { key: this.profile.apiKey },
       }
     );
   }
 
   /**
    * 构建请求头
-   * 注意：Gemini Native API 使用 query 参数传递 API key，不在 headers 中
    */
   private buildHeaders(): Record<string, string> {
     return {
@@ -66,34 +63,23 @@ export class GeminiNativeClient extends BaseLLMClient {
 
   /**
    * 构建请求体
+   * Gemini OpenAI兼容API使用OpenAI格式，但支持Gemini特有参数
    */
-  private buildRequestBody(request: LLMRequest): any {
+  private buildRequestBody(request: LLMRequest, stream: boolean = false): any {
     const body: any = {
-      contents: this.convertMessages(request.messages),
-      generationConfig: {
-        temperature: request.parameters?.['temperature'] || 0.7,
-        maxOutputTokens: request.parameters?.['max_tokens'] || 4096,
-        topP: request.parameters?.['top_p'] || 1.0,
-        topK: request.parameters?.['top_k'] || 40
-      }
+      model: this.profile.model,
+      messages: this.convertMessages(request.messages),
+      stream
     };
 
-    // 处理系统指令
-    const { systemMessage, filteredMessages } = extractAndFilterSystemMessages(request.messages);
-    if (systemMessage) {
-      body.systemInstruction = {
-        parts: [{
-          text: typeof systemMessage.content === 'string'
-            ? systemMessage.content
-            : JSON.stringify(systemMessage.content)
-        }]
-      };
+    // 合并参数
+    if (request.parameters) {
+      Object.assign(body, request.parameters);
     }
-    body.contents = this.convertMessages(filteredMessages);
 
     // 添加工具
     if (request.tools && request.tools.length > 0) {
-      body.tools = convertToolsToGeminiFormat(request.tools);
+      body.tools = convertToolsToOpenAIFormat(request.tools);
     }
 
     return body;
@@ -104,26 +90,26 @@ export class GeminiNativeClient extends BaseLLMClient {
    */
   private convertMessages(messages: LLMMessage[]): any[] {
     return messages
-      .filter(msg => msg.role !== 'system') // Gemini使用systemInstruction处理系统消息
+      .filter(msg => msg.role !== 'system') // Gemini OpenAI兼容API使用systemInstruction处理系统消息
       .map(msg => {
         const converted: any = {
           role: msg.role === 'assistant' ? 'model' : 'user',
-          parts: []
+          content: []
         };
 
         // 处理内容
         if (typeof msg.content === 'string') {
-          converted.parts.push({
+          converted.content.push({
             text: msg.content
           });
         } else if (Array.isArray(msg.content)) {
-          converted.parts = msg.content;
+          converted.content = msg.content;
         }
 
         // 处理工具调用结果
         if (msg.role === 'tool' && msg.toolCallId) {
           converted.role = 'user';
-          converted.parts = [{
+          converted.content = [{
             functionResponse: {
               name: msg.toolCallId,
               response: {
@@ -137,7 +123,7 @@ export class GeminiNativeClient extends BaseLLMClient {
 
         // 处理工具调用
         if (msg.toolCalls && msg.toolCalls.length > 0) {
-          converted.parts = msg.toolCalls.map(call => ({
+          converted.content = msg.toolCalls.map(call => ({
             functionCall: {
               name: call.function.name,
               args: JSON.parse(call.function.arguments)
@@ -183,27 +169,6 @@ export class GeminiNativeClient extends BaseLLMClient {
         safetyRatings: candidate.safetyRatings
       }
     };
-  }
-
-  /**
-   * 解析流式响应行（重写）
-   *
-   * Gemini Native API 直接返回 JSON，没有 data: 前缀
-   */
-  protected override parseStreamLine(line: string): LLMResult | null {
-    // 跳过空行
-    if (!line) {
-      return null;
-    }
-
-    // Gemini Native API 直接返回 JSON，没有 data: 前缀
-    try {
-      const data = JSON.parse(line);
-      return this.parseStreamChunk(data);
-    } catch (e) {
-      // 跳过无效JSON
-      return null;
-    }
   }
 
   /**

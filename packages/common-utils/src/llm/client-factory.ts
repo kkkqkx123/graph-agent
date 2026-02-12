@@ -77,7 +77,7 @@ export class ClientFactory {
         throw new ConfigurationError(
           `不支持的LLM提供商: ${profile.provider}`,
           'provider',
-          { 
+          {
             provider: profile.provider,
             model: profile.model,
             supportedProviders: Object.values(LLMProvider)

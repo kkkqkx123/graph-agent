@@ -13,11 +13,8 @@ export * from './utils';
 // 表达式求值器
 export * from './evalutor';
 
-// LLM相关工具
+// LLM相关基础设施
 export * from './llm';
-
-// LLM客户端基础设施
-export * from './llm-clients';
 
 // 日志系统
 export * from './logger';

@@ -13,8 +13,8 @@ import type {
   LLMMessage,
   LLMToolCall
 } from '@modular-agent/types/llm';
-import { convertToolsToAnthropicFormat } from '../../llm/tool-converter';
-import { extractAndFilterSystemMessages } from '../../llm/message-helper';
+import { convertToolsToAnthropicFormat } from '../tool-converter';
+import { extractAndFilterSystemMessages } from '../message-helper';
 
 /**
  * Anthropic客户端

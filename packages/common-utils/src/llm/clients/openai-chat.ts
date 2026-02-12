@@ -1,8 +1,7 @@
 /**
- * OpenAI Response客户端实现
+ * OpenAI Chat客户端实现
  *
- * 实现OpenAI Response API调用，使用/responses端点
- * 支持reasoning_effort、previous_response_id等特殊参数
+ * 实现OpenAI Chat API调用，使用/chat/completions端点
  * 支持流式和非流式调用
  */
 
@@ -14,12 +13,12 @@ import type {
   LLMMessage,
   LLMToolCall
 } from '@modular-agent/types/llm';
-import { convertToolsToOpenAIFormat } from '../../llm/tool-converter';
+import { convertToolsToOpenAIFormat } from '../tool-converter';
 
 /**
- * OpenAI Response客户端
+ * OpenAI Chat客户端
  */
-export class OpenAIResponseClient extends BaseLLMClient {
+export class OpenAIChatClient extends BaseLLMClient {
   constructor(profile: LLMProfile) {
     super(profile);
   }
@@ -29,7 +28,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
    */
   protected async doGenerate(request: LLMRequest): Promise<LLMResult> {
     return this.doHttpPost(
-      '/responses',
+      '/chat/completions',
       this.buildRequestBody(request),
       {
         headers: this.buildHeaders(),
@@ -42,7 +41,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
    */
   protected async *doGenerateStream(request: LLMRequest): AsyncIterable<LLMResult> {
     yield* this.doHttpStream(
-      '/responses',
+      '/chat/completions',
       this.buildRequestBody(request, true),
       {
         headers: this.buildHeaders(),
@@ -62,16 +61,15 @@ export class OpenAIResponseClient extends BaseLLMClient {
 
   /**
    * 构建请求体
-   * Response API使用不同的请求格式
    */
   private buildRequestBody(request: LLMRequest, stream: boolean = false): any {
     const body: any = {
       model: this.profile.model,
-      input: this.convertMessages(request.messages),
+      messages: this.convertMessages(request.messages),
       stream
     };
 
-    // 合并参数（特殊参数和通用参数都直接合并）
+    // 合并参数
     if (request.parameters) {
       Object.assign(body, request.parameters);
     }
@@ -86,7 +84,6 @@ export class OpenAIResponseClient extends BaseLLMClient {
 
   /**
    * 转换消息格式
-   * Response API使用input字段而不是messages
    */
   private convertMessages(messages: LLMMessage[]): any[] {
     return messages.map(msg => {
@@ -118,65 +115,75 @@ export class OpenAIResponseClient extends BaseLLMClient {
 
   /**
    * 解析响应
-   * Response API的响应格式与Chat API不同
    */
   protected parseResponse(data: any): LLMResult {
-    const output = data.output || [];
-    const lastOutput = output[output.length - 1] || {};
+    const choice = data.choices[0];
+    const message = choice.message;
 
     return {
       id: data.id,
       model: data.model,
-      content: lastOutput.content?.[0]?.text || '',
-      message: {
-        role: 'assistant',
-        content: lastOutput.content?.[0]?.text || '',
-        toolCalls: lastOutput.tool_calls ? this.parseToolCalls(lastOutput.tool_calls) : undefined
-      },
-      toolCalls: lastOutput.tool_calls ? this.parseToolCalls(lastOutput.tool_calls) : undefined,
+      content: message.content || '',
+      message: this.parseMessage(message),
+      toolCalls: message.tool_calls ? this.parseToolCalls(message.tool_calls) : undefined,
       usage: data.usage ? {
-        promptTokens: data.usage.input_tokens || 0,
-        completionTokens: data.usage.output_tokens || 0,
-        totalTokens: (data.usage.input_tokens || 0) + (data.usage.output_tokens || 0)
+        promptTokens: data.usage.prompt_tokens,
+        completionTokens: data.usage.completion_tokens,
+        totalTokens: data.usage.total_tokens
       } : undefined,
-      finishReason: data.status || 'completed',
+      finishReason: choice.finish_reason,
       duration: 0,
       metadata: {
-        status: data.status,
-        created: data.created_at,
-        previousResponseId: data.previous_response_id
+        created: data.created,
+        systemFingerprint: data.system_fingerprint
       }
     };
   }
 
   /**
    * 解析流式响应块
+   *
+   * OpenAI API 在流式响应中，usage 信息通常只出现在最后一个 chunk 中
+   * 其他 chunk 包含内容增量，最后一个 chunk 包含完整的 usage 统计
    */
   protected parseStreamChunk(data: any): LLMResult | null {
-    const output = data.output || [];
-    const lastOutput = output[output.length - 1] || {};
+    const choice = data.choices[0];
+    if (!choice) return null;
+
+    const delta = choice.delta;
 
     return {
       id: data.id,
       model: data.model,
-      content: lastOutput.content?.[0]?.text || '',
+      content: delta.content || '',
       message: {
-        role: 'assistant',
-        content: lastOutput.content?.[0]?.text || '',
-        toolCalls: lastOutput.tool_calls ? this.parseToolCalls(lastOutput.tool_calls) : undefined
+        role: delta.role || 'assistant',
+        content: delta.content || '',
+        toolCalls: delta.tool_calls ? this.parseToolCalls(delta.tool_calls) : undefined
       },
-      toolCalls: lastOutput.tool_calls ? this.parseToolCalls(lastOutput.tool_calls) : undefined,
+      toolCalls: delta.tool_calls ? this.parseToolCalls(delta.tool_calls) : undefined,
+      // OpenAI API: usage 信息通常只在最后一个 chunk 中提供
       usage: data.usage ? {
-        promptTokens: data.usage.input_tokens || 0,
-        completionTokens: data.usage.output_tokens || 0,
-        totalTokens: (data.usage.input_tokens || 0) + (data.usage.output_tokens || 0)
+        promptTokens: data.usage.prompt_tokens,
+        completionTokens: data.usage.completion_tokens,
+        totalTokens: data.usage.total_tokens
       } : undefined,
-      finishReason: data.status || '',
+      finishReason: choice.finish_reason || '',
       duration: 0,
       metadata: {
-        status: data.status,
-        created: data.created_at
+        created: data.created
       }
+    };
+  }
+
+  /**
+   * 解析消息
+   */
+  private parseMessage(message: any): LLMMessage {
+    return {
+      role: message.role,
+      content: message.content || '',
+      toolCalls: message.tool_calls ? this.parseToolCalls(message.tool_calls) : undefined
     };
   }
 
