@@ -8,15 +8,15 @@
  * - 异常路径和错误处理
  */
 
-import { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
-import { nodeTemplateRegistry } from '@modular-agent/sdk/core/services/node-template-registry';
-import { triggerTemplateRegistry } from '@modular-agent/sdk/core/services/trigger-template-registry';
-import { NodeType } from '@modular-agent/types/node';
-import { EdgeType } from '@modular-agent/types/edge';
-import { EventType } from '@modular-agent/types/events';
-import { TriggerActionType } from '@modular-agent/types/trigger';
-import type { WorkflowDefinition } from '@modular-agent/types/workflow';
-import { ValidationError } from '@modular-agent/types/errors';
+import { WorkflowRegistry } from '../core/services/workflow-registry';
+import { nodeTemplateRegistry } from '../core/services/node-template-registry';
+import { triggerTemplateRegistry } from '../core/services/trigger-template-registry';
+import { NodeType } from '@modular-agent/types';
+import { EdgeType } from '@modular-agent/types';
+import { EventType } from '@modular-agent/types';
+import { TriggerActionType } from '@modular-agent/types';
+import type { WorkflowDefinition } from '@modular-agent/types';
+import { ValidationError } from '@modular-agent/types';
 
 describe('Workflow到Graph注册集成测试', () => {
   let registry: WorkflowRegistry;

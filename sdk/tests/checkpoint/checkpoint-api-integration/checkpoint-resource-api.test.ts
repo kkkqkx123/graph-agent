@@ -8,14 +8,12 @@
  * - 错误处理
  */
 
-import { CheckpointResourceAPI } from '@modular-agent/sdk/api/resources/checkpoints/checkpoint-resource-api';
+import { CheckpointResourceAPI } from '../../../api/resources/checkpoints/checkpoint-resource-api';
 import { ThreadRegistry } from '../../../core/services/thread-registry';
-import { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
-import { SingletonRegistry } from '@modular-agent/sdk/core/execution/context/singleton-registry';
-import type { WorkflowDefinition } from '@modular-agent/types/workflow';
-import { NodeType } from '@modular-agent/types/node';
-import { EdgeType } from '@modular-agent/types/edge';
-import { ThreadStatus } from '@modular-agent/types/thread';
+import { WorkflowRegistry } from '../../../core/services/workflow-registry';
+import { SingletonRegistry } from '../../../core/execution/context/singleton-registry';
+import type { WorkflowDefinition } from '@modular-agent/types';
+import { NodeType, EdgeType, ThreadStatus } from '@modular-agent/types';
 
 describe('检查点资源API集成测试', () => {
   let api: CheckpointResourceAPI;
@@ -101,7 +99,7 @@ describe('检查点资源API集成测试', () => {
   ) => {
     const { ThreadContext } = await import('../../../core/execution/context/thread-context');
     const { ConversationManager } = await import('../../../core/execution/managers/conversation-manager');
-    const { generateId } = await import('../../../utils');
+    const { generateId } = await import('@modular-agent/common-utils');
     const { GraphBuilder } = await import('../../../core/graph/graph-builder');
 
     const conversationManager = new ConversationManager();
@@ -418,8 +416,8 @@ describe('检查点资源API集成测试', () => {
 
       const checkpoints = await api.getThreadCheckpoints(threadContext.getThreadId());
       expect(checkpoints).toHaveLength(2);
-      expect(checkpoints.every(cp => cp.threadId === threadContext.getThreadId())).toBe(true);
-      expect(checkpoints.every(cp => cp.metadata?.tags?.includes('thread-test'))).toBe(true);
+      expect(checkpoints.every((cp: any) => cp.threadId === threadContext.getThreadId())).toBe(true);
+      expect(checkpoints.every((cp: any) => cp.metadata?.tags?.includes('thread-test'))).toBe(true);
     });
 
     it('应该正确获取最新检查点', async () => {

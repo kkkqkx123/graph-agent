@@ -8,14 +8,12 @@
  * - 与其他服务的集成
  */
 
-import { CheckpointResourceAPI } from '@modular-agent/sdk/api/resources/checkpoints/checkpoint-resource-api';
+import { CheckpointResourceAPI } from '../../../api/resources/checkpoints/checkpoint-resource-api';
 import { ThreadRegistry } from '../../../core/services/thread-registry';
-import { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
-import { SingletonRegistry } from '@modular-agent/sdk/core/execution/context/singleton-registry';
-import type { WorkflowDefinition } from '@modular-agent/types/workflow';
-import { NodeType } from '@modular-agent/types/node';
-import { EdgeType } from '@modular-agent/types/edge';
-import { ThreadStatus } from '@modular-agent/types/thread';
+import { WorkflowRegistry } from '../../../core/services/workflow-registry';
+import { SingletonRegistry } from '../../../core/execution/context/singleton-registry';
+import type { WorkflowDefinition } from '@modular-agent/types';
+import { NodeType, EdgeType, ThreadStatus } from '@modular-agent/types';
 
 // 模拟外部系统
 class MockMonitoringService {
@@ -164,7 +162,7 @@ describe('检查点外部系统集成测试', () => {
   ) => {
     const { ThreadContext } = await import('../../../core/execution/context/thread-context');
     const { ConversationManager } = await import('../../../core/execution/managers/conversation-manager');
-    const { generateId } = await import('../../../utils');
+    const { generateId } = await import('@modular-agent/common-utils');
     const { GraphBuilder } = await import('../../../core/graph/graph-builder');
 
     const conversationManager = new ConversationManager();
@@ -215,24 +213,24 @@ describe('检查点外部系统集成测试', () => {
       const threadContext = await createTestThreadContext(threadRegistry, workflowRegistry, workflow);
 
       // 模拟监控集成
-      const originalCreate = api.createThreadCheckpoint;
-      api.createThreadCheckpoint = async (...args) => {
-        const result = await originalCreate.apply(api, args);
+      const originalCreate = api.createThreadCheckpoint.bind(api);
+      api.createThreadCheckpoint = async (threadId: string, metadata?: any) => {
+        const result = await originalCreate(threadId, metadata);
         monitoringService.recordEvent({
-          type: 'CHECKPOINT_CREATED',
-          checkpointId: result,
-          threadId: args[0],
-          timestamp: Date.now()
+         type: 'CHECKPOINT_CREATED',
+         checkpointId: result,
+         threadId: threadId,
+         timestamp: Date.now()
         });
         return result;
       };
 
-      const originalDelete = api.delete;
-      api.delete = async (...args) => {
-        const result = await originalDelete.apply(api, args);
+      const originalDelete = api.delete.bind(api);
+      api.delete = async (id: string) => {
+        const result = await originalDelete(id);
         monitoringService.recordEvent({
           type: 'CHECKPOINT_DELETED',
-          checkpointId: args[0],
+          checkpointId: id,
           timestamp: Date.now()
         });
         return result;
@@ -269,42 +267,42 @@ describe('检查点外部系统集成测试', () => {
       const threadContext = await createTestThreadContext(threadRegistry, workflowRegistry, workflow);
 
       // 模拟日志集成
-      const originalCreate = api.createThreadCheckpoint;
-      api.createThreadCheckpoint = async (...args) => {
+      const originalCreate = api.createThreadCheckpoint.bind(api);
+      api.createThreadCheckpoint = async (threadId: string, metadata?: any) => {
         try {
-          const result = await originalCreate.apply(api, args);
+          const result = await originalCreate(threadId, metadata);
           loggingService.log('INFO', 'Checkpoint created successfully', {
             checkpointId: result,
-            threadId: args[0],
-            metadata: args[1]
+            threadId: threadId,
+            metadata: metadata
           });
           return result;
         } catch (error) {
           loggingService.log('ERROR', 'Failed to create checkpoint', {
-            threadId: args[0],
+            threadId: threadId,
             error: error instanceof Error ? error.message : String(error)
           });
           throw error;
         }
       };
 
-      const originalGet = api.get;
-      api.get = async (...args) => {
+      const originalGet = api.get.bind(api);
+      api.get = async (id: string) => {
         try {
-          const result = await originalGet.apply(api, args);
+          const result = await originalGet(id);
           if (result) {
             loggingService.log('INFO', 'Checkpoint retrieved successfully', {
-              checkpointId: args[0]
+              checkpointId: id
             });
           } else {
             loggingService.log('WARN', 'Checkpoint not found', {
-              checkpointId: args[0]
+              checkpointId: id
             });
           }
           return result;
         } catch (error) {
           loggingService.log('ERROR', 'Failed to retrieve checkpoint', {
-            checkpointId: args[0],
+            checkpointId: id,
             error: error instanceof Error ? error.message : String(error)
           });
           throw error;
@@ -348,10 +346,10 @@ describe('检查点外部系统集成测试', () => {
       const threadContext = await createTestThreadContext(threadRegistry, workflowRegistry, workflow);
 
       // 模拟告警集成
-      const originalCreate = api.createThreadCheckpoint;
-      api.createThreadCheckpoint = async (...args) => {
+      const originalCreate = api.createThreadCheckpoint.bind(api);
+      api.createThreadCheckpoint = async (threadId: string, metadata?: any) => {
         try {
-          const result = await originalCreate.apply(api, args);
+          const result = await originalCreate(threadId, metadata);
 
           // 检查检查点大小是否过大（模拟性能告警）
           const checkpoint = await api.get(result);
@@ -371,7 +369,7 @@ describe('检查点外部系统集成测试', () => {
             type: 'CHECKPOINT_CREATION_FAILED',
             severity: 'ERROR',
             message: 'Failed to create checkpoint',
-            threadId: args[0],
+            threadId: threadId,
             error: error instanceof Error ? error.message : String(error)
           });
           throw error;
@@ -423,10 +421,10 @@ describe('检查点外部系统集成测试', () => {
         storageSize: []
       };
 
-      const originalCreate = api.createThreadCheckpoint;
-      api.createThreadCheckpoint = async (...args) => {
+      const originalCreate = api.createThreadCheckpoint.bind(api);
+      api.createThreadCheckpoint = async (threadId: string, metadata?: any) => {
         const startTime = Date.now();
-        const result = await originalCreate.apply(api, args);
+        const result = await originalCreate(threadId, metadata);
         const duration = Date.now() - startTime;
         metrics.createDuration.push(duration);
 
@@ -440,10 +438,10 @@ describe('检查点外部系统集成测试', () => {
         return result;
       };
 
-      const originalRestore = api.restoreFromCheckpoint;
-      api.restoreFromCheckpoint = async (...args) => {
+      const originalRestore = api.restoreFromCheckpoint.bind(api);
+      api.restoreFromCheckpoint = async (checkpointId: string) => {
         const startTime = Date.now();
-        const result = await originalRestore.apply(api, args);
+        const result = await originalRestore(checkpointId);
         const duration = Date.now() - startTime;
         metrics.restoreDuration.push(duration);
         return result;
@@ -488,28 +486,28 @@ describe('检查点外部系统集成测试', () => {
       // 模拟审计日志
       const auditLogs: any[] = [];
 
-      const originalCreate = api.createThreadCheckpoint;
-      api.createThreadCheckpoint = async (...args) => {
-        const result = await originalCreate.apply(api, args);
+      const originalCreate = api.createThreadCheckpoint.bind(api);
+      api.createThreadCheckpoint = async (threadId: string, metadata?: any) => {
+        const result = await originalCreate(threadId, metadata);
         auditLogs.push({
           eventType: 'CHECKPOINT_CREATED',
           timestamp: Date.now(),
           userId: 'test-user',
-          threadId: args[0],
+          threadId: threadId,
           checkpointId: result,
           sensitiveDataDetected: false // 简化实现
         });
         return result;
       };
 
-      const originalDelete = api.delete;
-      api.delete = async (...args) => {
-        const result = await originalDelete.apply(api, args);
+      const originalDelete = api.delete.bind(api);
+      api.delete = async (id: string) => {
+        const result = await originalDelete(id);
         auditLogs.push({
           eventType: 'CHECKPOINT_DELETED',
           timestamp: Date.now(),
           userId: 'test-user',
-          checkpointId: args[0]
+          checkpointId: id
         });
         return result;
       };

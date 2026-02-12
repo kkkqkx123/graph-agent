@@ -10,11 +10,11 @@
  * - 暂停、恢复、取消等生命周期操作
  */
 
-import { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
-import { ExecutionContext } from '../../core/execution/context/execution-context';
-import { NodeType } from '@modular-agent/types/node';
-import { EdgeType } from '@modular-agent/types/edge';
-import type { WorkflowDefinition } from '@modular-agent/types/workflow';
+import { WorkflowRegistry } from '../core/services/workflow-registry';
+import { ExecutionContext } from '../core/execution/context/execution-context';
+import { NodeType } from '@modular-agent/types';
+import { EdgeType } from '@modular-agent/types';
+import type { WorkflowDefinition } from '@modular-agent/types';
 
 describe.skip('工作流执行引擎完整执行和生命周期管理集成测试', () => {
   let workflowRegistry: WorkflowRegistry;
@@ -23,12 +23,12 @@ describe.skip('工作流执行引擎完整执行和生命周期管理集成测�
   beforeAll(async () => {
     // 注册测试脚本到code-service（只执行一次）
     const { codeService } = await import('../core/services/code-service');
-    const { ScriptType } = await import('../types/code');
-    const { generateId } = await import('../utils/id-utils');
+    const { ScriptType } = await import('@modular-agent/types');
+    const { generateId } = await import('@modular-agent/common-utils');
 
     // 创建简单的JavaScript执行器
-    const javascriptExecutor: import('../types/code').ScriptExecutor = {
-      async execute(script, options) {
+    const javascriptExecutor: any = {
+      async execute(script: any, options: any) {
         try {
           // 简单的JavaScript执行器，使用eval执行脚本内容
           const result = eval(script.content || '');
@@ -50,7 +50,7 @@ describe.skip('工作流执行引擎完整执行和生命周期管理集成测�
           };
         }
       },
-      validate(script) {
+      validate(script: any) {
         try {
           // 简单的验证：检查脚本内容是否有效
           if (!script.content) {

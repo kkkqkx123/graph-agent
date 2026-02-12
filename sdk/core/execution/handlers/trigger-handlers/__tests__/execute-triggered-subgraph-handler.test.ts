@@ -5,10 +5,8 @@
 import { executeTriggeredSubgraphHandler } from '../execute-triggered-subgraph-handler';
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types/trigger';
 import { TriggerActionType } from '@modular-agent/types/trigger';
-import { ValidationError, NotFoundError } from '@modular-agent/types/errors';
 import { ExecutionContext } from '../../../context/execution-context';
 import { executeSingleTriggeredSubgraph } from '../../triggered-subgraph-handler';
-import { ThreadExecutor } from '../../../thread-executor';
 
 // Mock dependencies
 jest.mock('../../../context/execution-context');
@@ -623,5 +621,4 @@ describe('execute-triggered-subgraph-handler', () => {
     });
   });
 
-  });
 });

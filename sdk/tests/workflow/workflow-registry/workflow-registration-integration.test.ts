@@ -10,17 +10,17 @@
  * - 异常路径处理
  */
 
-import { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
-import { WorkflowValidator } from '@modular-agent/sdk/core/validation/workflow-validator';
-import { nodeTemplateRegistry } from '@modular-agent/sdk/core/services/node-template-registry';
-import { triggerTemplateRegistry } from '@modular-agent/sdk/core/services/trigger-template-registry';
-import { NodeType } from '@modular-agent/types/node';
-import { EdgeType } from '@modular-agent/types/edge';
-import { TriggerActionType } from '@modular-agent/types/trigger';
-import type { WorkflowDefinition } from '@modular-agent/types/workflow';
+import { WorkflowRegistry } from '../../../core/services/workflow-registry';
+import { WorkflowValidator } from '../../../core/validation/workflow-validator';
+import { nodeTemplateRegistry } from '../../../core/services/node-template-registry';
+import { triggerTemplateRegistry } from '../../../core/services/trigger-template-registry';
+import { NodeType } from '@modular-agent/types';
+import { EdgeType } from '@modular-agent/types';
+import { TriggerActionType } from '@modular-agent/types';
+import type { WorkflowDefinition } from '@modular-agent/types';
 import type { NodeTemplate, TriggerTemplate } from '@modular-agent/types';
-import type { WorkflowTrigger } from '@modular-agent/types/trigger';
-import { ValidationError } from '@modular-agent/types/errors';
+import type { WorkflowTrigger } from '@modular-agent/types';
+import { ValidationError } from '@modular-agent/types';
 
 describe('Workflow加载与注册集成测试', () => {
   let registry: WorkflowRegistry;
@@ -381,7 +381,7 @@ describe('Workflow加载与注册集成测试', () => {
       expect(processed).toBeDefined();
 
       // 验证节点已展开 - 通过processedWorkflowDefinition验证
-      const llmNode = Array.from(processed.graph.nodes.values()).find(n => n.id === 'node-llm');
+      const llmNode = Array.from(processed.graph.nodes.values()).find((n: any) => n.id === 'node-llm');
       expect(llmNode).toBeDefined();
       expect((llmNode?.originalNode?.config as any)?.prompt).toBe('Custom prompt');
     });
@@ -630,7 +630,7 @@ describe('Workflow加载与注册集成测试', () => {
       // 验证子工作流的节点已经被合并到主工作流中
       // 预处理会展开子工作流，所以应该能看到子工作流的节点
       const allNodes = Array.from(processed.graph.nodes.values());
-      const nodeIds = allNodes.map(n => n.id);
+      const nodeIds = allNodes.map((n: any) => n.id);
 
       // 应该包含主工作流的节点
       expect(nodeIds).toContain('start');

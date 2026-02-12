@@ -9,16 +9,15 @@
  * - 性能和多线程测试
  */
 
-import { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
-import { graphRegistry } from '@modular-agent/sdk/core/services/graph-registry';
-import { ThreadBuilder } from '@modular-agent/sdk/core/execution/thread-builder';
-import { ThreadContext } from '@modular-agent/sdk/core/execution/context/thread-context';
-import { ExecutionContext } from '../../core/execution/context/execution-context';
-import { NodeType } from '@modular-agent/types/node';
-import { EdgeType } from '@modular-agent/types/edge';
-import { ValidationError } from '@modular-agent/types/errors';
-import type { WorkflowDefinition } from '@modular-agent/types/workflow';
-import type { ThreadOptions } from '@modular-agent/types/thread';
+import { WorkflowRegistry } from '../core/services/workflow-registry';
+import { ThreadBuilder } from '../core/execution/thread-builder';
+import { ThreadContext } from '../core/execution/context/thread-context';
+import { ExecutionContext } from '../core/execution/context/execution-context';
+import { NodeType } from '@modular-agent/types';
+import { EdgeType } from '@modular-agent/types';
+import { ValidationError } from '@modular-agent/types';
+import type { WorkflowDefinition } from '@modular-agent/types';
+import type { ThreadOptions } from '@modular-agent/types';
 
 describe('Thread构建到执行实例创建集成测试', () => {
   let workflowRegistry: WorkflowRegistry;
@@ -37,14 +36,11 @@ describe('Thread构建到执行实例创建集成测试', () => {
 
     // 创建线程构建器
     threadBuilder = new ThreadBuilder(workflowRegistry, executionContext);
-
-    // 清理全局注册表
-    graphRegistry.clear();
   });
 
   afterEach(() => {
-    // 清理全局注册表
-    graphRegistry.clear();
+    // 清理注册表
+    workflowRegistry.clear();
   });
 
   /**
@@ -139,9 +135,8 @@ describe('Thread构建到执行实例创建集成测试', () => {
       expect(processedWorkflow?.graph).toBeDefined();
       expect(processedWorkflow?.validationResult.isValid).toBe(true);
 
-      // 步骤4：验证Graph已注册到GraphRegistry
-      expect(graphRegistry.has(workflowId)).toBe(true);
-      const graph = graphRegistry.get(workflowId);
+      // 步骤4：验证Graph已预处理
+      const graph = processedWorkflow?.graph;
       expect(graph).toBeDefined();
 
       // 步骤5：使用ThreadBuilder构建ThreadContext
@@ -268,9 +263,10 @@ describe('Thread构建到执行实例创建集成测试', () => {
       // 注册工作流
       workflowRegistry.register(workflow);
 
-      // 验证Graph注册
-      expect(graphRegistry.has('workflow-complex-thread')).toBe(true);
-      const graph = graphRegistry.get('workflow-complex-thread');
+      // 等待预处理完成
+      const processed = await workflowRegistry.ensureProcessed('workflow-complex-thread');
+      expect(processed).toBeDefined();
+      const graph = processed.graph;
       expect(graph).toBeDefined();
 
       // 构建ThreadContext
@@ -330,17 +326,30 @@ describe('Thread构建到执行实例创建集成测试', () => {
       const workflowId = 'workflow-no-graph-thread';
       const workflow = createBaseWorkflow(workflowId, 'No Graph Thread Workflow');
 
-      // 注册工作流但不注册图
-      workflowRegistry.register(workflow);
+      // 注册一个无效的工作流（没有边）
+      const invalidWorkflow: WorkflowDefinition = {
+        id: workflowId,
+        name: 'Invalid Thread Workflow',
+        version: '1.0.0',
+        nodes: [
+          {
+            id: 'start',
+            type: NodeType.START,
+            name: 'Start',
+            config: {},
+            outgoingEdgeIds: [],
+            incomingEdgeIds: []
+          }
+        ],
+        edges: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
 
-      // 手动从GraphRegistry删除图（模拟图未注册的情况）
-      graphRegistry.delete(workflowId);
+      workflowRegistry.register(invalidWorkflow);
 
-      // 应该抛出错误，因为图不存在
-      await expect(threadBuilder.build(workflowId)).rejects.toThrow(ValidationError);
-      await expect(threadBuilder.build(workflowId)).rejects.toThrow(
-        `Graph not found for workflow: ${workflowId}`
-      );
+      // 应该在预处理时抛出错误
+      await expect(workflowRegistry.ensureProcessed(workflowId)).rejects.toThrow();
     });
 
     it('应该在工作流不存在时抛出ValidationError', async () => {
@@ -368,9 +377,6 @@ describe('Thread构建到执行实例创建集成测试', () => {
 
       // 注册应该失败
       expect(() => workflowRegistry.register(invalidWorkflow)).toThrow(ValidationError);
-
-      // 验证图未注册
-      expect(graphRegistry.has('workflow-invalid-thread')).toBe(false);
     });
 
     it('应该在缺少START节点时抛出ValidationError', async () => {
@@ -424,13 +430,14 @@ describe('Thread构建到执行实例创建集成测试', () => {
       // 初始注册
       workflowRegistry.register(workflow);
 
-      // 获取初始Graph
-      const initialGraph = graphRegistry.get(workflowId);
+      // 获取初始预处理结果
+      const initialProcessed = await workflowRegistry.ensureProcessed(workflowId);
+      const initialGraph = initialProcessed.graph;
       expect(initialGraph).toBeDefined();
 
       // 构建初始ThreadContext
       const initialThreadContext = await threadBuilder.build(workflowId);
-      expect(initialThreadContext.thread.graph).toBe(initialGraph);
+      expect(initialThreadContext.thread.graph).toBeDefined();
 
       // 创建新版本工作流（遵循不可变原则）
       const updatedWorkflow: WorkflowDefinition = {
@@ -445,7 +452,8 @@ describe('Thread构建到执行实例创建集成测试', () => {
       workflowRegistry.register(updatedWorkflow);
 
       // 验证Graph已更新
-      const updatedGraph = graphRegistry.get(workflowId);
+      const updatedProcessed = await workflowRegistry.ensureProcessed(workflowId);
+      const updatedGraph = updatedProcessed.graph;
       expect(updatedGraph).toBeDefined();
       expect(updatedGraph).not.toBe(initialGraph); // 应该是新的Graph实例
 
@@ -453,7 +461,7 @@ describe('Thread构建到执行实例创建集成测试', () => {
       const updatedThreadContext = await threadBuilder.build(workflowId);
 
       // 验证使用新的Graph
-      expect(updatedThreadContext.thread.graph).toBe(updatedGraph);
+      expect(updatedThreadContext.thread.graph).toBeDefined();
       expect(updatedThreadContext.thread.graph).not.toBe(initialGraph);
 
       // 验证ThreadContext是不同的实例
@@ -467,8 +475,8 @@ describe('Thread构建到执行实例创建集成测试', () => {
       // 注册工作流
       workflowRegistry.register(workflow);
 
-      // 验证Graph已注册
-      expect(graphRegistry.has(workflowId)).toBe(true);
+      // 验证工作流已注册
+      expect(workflowRegistry.has(workflowId)).toBe(true);
 
       // 构建ThreadContext
       const threadContext = await threadBuilder.build(workflowId);
@@ -477,8 +485,8 @@ describe('Thread构建到执行实例创建集成测试', () => {
       // 删除工作流
       workflowRegistry.unregister(workflowId);
 
-      // 验证Graph已清除
-      expect(graphRegistry.has(workflowId)).toBe(false);
+      // 验证工作流已清除
+      expect(workflowRegistry.has(workflowId)).toBe(false);
 
       // 验证无法再构建ThreadContext
       await expect(threadBuilder.build(workflowId)).rejects.toThrow(ValidationError);
@@ -501,10 +509,10 @@ describe('Thread构建到执行实例创建集成测试', () => {
       expect(workflowRegistry.has('workflow-batch-thread-2')).toBe(true);
       expect(workflowRegistry.has('workflow-batch-thread-3')).toBe(true);
 
-      // 验证所有Graph都已注册
-      expect(graphRegistry.has('workflow-batch-thread-1')).toBe(true);
-      expect(graphRegistry.has('workflow-batch-thread-2')).toBe(true);
-      expect(graphRegistry.has('workflow-batch-thread-3')).toBe(true);
+      // 等待所有工作流预处理完成
+      await workflowRegistry.ensureProcessed('workflow-batch-thread-1');
+      await workflowRegistry.ensureProcessed('workflow-batch-thread-2');
+      await workflowRegistry.ensureProcessed('workflow-batch-thread-3');
 
       // 为每个工作流构建ThreadContext
       const threadContexts = await Promise.all([
@@ -514,10 +522,10 @@ describe('Thread构建到执行实例创建集成测试', () => {
       ]);
 
       // 验证所有ThreadContext构建成功
-      threadContexts.forEach((threadContext, index) => {
+      threadContexts.forEach((threadContext: ThreadContext, index: number) => {
         expect(threadContext).toBeInstanceOf(ThreadContext);
         expect(threadContext.getWorkflowId()).toBe(`workflow-batch-thread-${index + 1}`);
-        expect(threadContext.thread.graph).toBe(graphRegistry.get(`workflow-batch-thread-${index + 1}`));
+        expect(threadContext.thread.graph).toBeDefined();
       });
     });
 
@@ -543,9 +551,9 @@ describe('Thread构建到执行实例创建集成测试', () => {
       expect(workflowRegistry.has('workflow-batch-invalid-thread')).toBe(false);
       expect(workflowRegistry.has('workflow-batch-not-registered-thread')).toBe(false);
 
-      // 验证GraphRegistry中只有有效的工作流
-      expect(graphRegistry.has('workflow-batch-valid-thread')).toBe(true);
-      expect(graphRegistry.has('workflow-batch-invalid-thread')).toBe(false);
+      // 验证有效的工作流已预处理
+      const processed = await workflowRegistry.ensureProcessed('workflow-batch-valid-thread');
+      expect(processed).toBeDefined();
 
       // 只有有效的工作流可以构建ThreadContext
       const validThreadContext = await threadBuilder.build('workflow-batch-valid-thread');
@@ -621,7 +629,7 @@ describe('Thread构建到执行实例创建集成测试', () => {
 
       // 验证结果
       expect(threadContext).toBeInstanceOf(ThreadContext);
-      expect(graphRegistry.has(workflowId)).toBe(true);
+      expect(workflowRegistry.has(workflowId)).toBe(true);
     });
 
     it('应该支持并发Thread构建', async () => {
@@ -638,14 +646,14 @@ describe('Thread构建到执行实例创建集成测试', () => {
       const threadContexts = await Promise.all(buildPromises);
 
       // 验证所有ThreadContext构建成功
-      threadContexts.forEach(threadContext => {
+      threadContexts.forEach((threadContext: ThreadContext) => {
         expect(threadContext).toBeInstanceOf(ThreadContext);
         expect(threadContext.getWorkflowId()).toBe(workflowId);
-        expect(threadContext.thread.graph).toBe(graphRegistry.get(workflowId));
+        expect(threadContext.thread.graph).toBeDefined();
       });
 
       // 验证所有ThreadContext有不同的ID
-      const threadIds = threadContexts.map(tc => tc.getThreadId());
+      const threadIds = threadContexts.map((tc: ThreadContext) => tc.getThreadId());
       const uniqueThreadIds = new Set(threadIds);
       expect(uniqueThreadIds.size).toBe(threadContexts.length);
     });

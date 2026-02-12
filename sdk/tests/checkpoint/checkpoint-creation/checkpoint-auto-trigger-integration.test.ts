@@ -7,16 +7,15 @@
  * - 不同触发类型的检查点创建
  */
 
-import { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
-import { ThreadBuilder } from '@modular-agent/sdk/core/execution/thread-builder';
-import { CheckpointCoordinator } from '../../core/execution/coordinators/checkpoint-coordinator';
-import { CheckpointStateManager } from '@modular-agent/sdk/core/execution/managers/checkpoint-state-manager';
-import { MemoryCheckpointStorage } from '../../core/storage/memory-checkpoint-storage';
-import { GlobalMessageStorage } from '../../core/services/global-message-storage';
+import { WorkflowRegistry } from '../../../core/services/workflow-registry';
+import { ThreadBuilder } from '../../../core/execution/thread-builder';
+import { CheckpointCoordinator } from '../../../core/execution/coordinators/checkpoint-coordinator';
+import { CheckpointStateManager } from '../../../core/execution/managers/checkpoint-state-manager';
+import { MemoryCheckpointStorage } from '../../../core/storage/memory-checkpoint-storage';
+import { GlobalMessageStorage } from '../../../core/services/global-message-storage';
 import { ThreadRegistry } from '../../../core/services/thread-registry';
-import { NodeType, HookType } from '@modular-agent/types/node';
-import { EdgeType } from '@modular-agent/types/edge';
-import { CheckpointTriggerType } from '@modular-agent/types/checkpoint';
+import { NodeType, HookType } from '@modular-agent/types';
+import { EdgeType, CheckpointTriggerType } from '@modular-agent/types';
 import type { WorkflowDefinition } from '@modular-agent/types/workflow';
 import type { Node } from '@modular-agent/types/node';
 
@@ -30,11 +29,11 @@ describe('检查点自动触发机制集成测试', () => {
   beforeAll(async () => {
     // 注册测试脚本
     const { codeService } = await import('../../../core/services/code-service');
-    const { ScriptType } = await import('../../../types/code');
-    const { generateId } = await import('../../../utils/id-utils');
+    const { ScriptType } = await import('@modular-agent/types/code');
+    const { generateId } = await import('@modular-agent/common-utils');
 
-    const javascriptExecutor: import('../../../types/code').ScriptExecutor = {
-      async execute(script, options) {
+    const javascriptExecutor: any = {
+      async execute(script: any, options: any) {
         try {
           const result = eval(script.content || '');
           return {
@@ -55,7 +54,7 @@ describe('检查点自动触发机制集成测试', () => {
           };
         }
       },
-      validate(script) {
+      validate(script: any) {
         try {
           if (!script.content) {
             return { valid: false, errors: ['Script content is empty'] };

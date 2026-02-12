@@ -8,14 +8,13 @@
  * - 触发子工作流的错误路径处理
  */
 
-import { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
-import { WorkflowValidator } from '@modular-agent/sdk/core/validation/workflow-validator';
-import { graphRegistry } from '@modular-agent/sdk/core/services/graph-registry';
-import { NodeType } from '@modular-agent/types/node';
-import { EdgeType } from '@modular-agent/types/edge';
-import { TriggerActionType } from '@modular-agent/types/trigger';
-import type { WorkflowDefinition } from '@modular-agent/types/workflow';
-import { ValidationError } from '@modular-agent/types/errors';
+import { WorkflowRegistry } from '../../../core/services/workflow-registry';
+import { WorkflowValidator } from '../../../core/validation/workflow-validator';
+import { NodeType } from '@modular-agent/types';
+import { EdgeType } from '@modular-agent/types';
+import { TriggerActionType } from '@modular-agent/types';
+import type { WorkflowDefinition } from '@modular-agent/types';
+import { ValidationError } from '@modular-agent/types';
 import { EventType } from '@modular-agent/types';
 
 describe('触发子工作流集成测试', () => {
@@ -27,11 +26,10 @@ describe('触发子工作流集成测试', () => {
       maxRecursionDepth: 10
     });
     validator = new WorkflowValidator();
-    graphRegistry.clear();
   });
 
   afterEach(() => {
-    graphRegistry.clear();
+    registry.clear();
   });
 
   describe('场景1：触发子工作流的独立注册', () => {
@@ -119,19 +117,18 @@ describe('触发子工作流集成测试', () => {
       expect(registry.has('triggered-workflow-1')).toBe(true);
       const registered = registry.get('triggered-workflow-1');
       expect(registered).toBeDefined();
-      expect(registered?.nodes.some(n => n.type === NodeType.START_FROM_TRIGGER)).toBe(true);
-      expect(registered?.nodes.some(n => n.type === NodeType.CONTINUE_FROM_TRIGGER)).toBe(true);
+      expect(registered?.nodes.some((n: any) => n.type === NodeType.START_FROM_TRIGGER)).toBe(true);
+      expect(registered?.nodes.some((n: any) => n.type === NodeType.CONTINUE_FROM_TRIGGER)).toBe(true);
 
       // 验证预处理结果
       const processed = registry.getProcessed('triggered-workflow-1');
       expect(processed).toBeDefined();
       expect(processed?.validationResult.isValid).toBe(true);
 
-      // 验证图已注册
-      const graph = graphRegistry.get('triggered-workflow-1');
-      expect(graph).toBeDefined();
-      expect(graph?.nodes.size).toBe(3);
-      expect(graph?.edges.size).toBe(2);
+      // 验证图已预处理
+      expect(processed?.graph).toBeDefined();
+      expect(processed?.graph.nodes.size).toBe(3);
+      expect(processed?.graph.edges.size).toBe(2);
     });
 
     it('应该验证触发子工作流的内部连通性', () => {
