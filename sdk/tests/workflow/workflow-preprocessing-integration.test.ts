@@ -16,6 +16,7 @@ import { NodeType } from '@modular-agent/types';
 import { EdgeType } from '@modular-agent/types';
 import { TriggerActionType } from '@modular-agent/types';
 import { ValidationError } from '@modular-agent/types';
+import { WorkflowType } from '@modular-agent/types';
 
 describe('Workflow Preprocessing Integration', () => {
   let workflowRegistry: WorkflowRegistry;
@@ -38,6 +39,7 @@ describe('Workflow Preprocessing Integration', () => {
         id: 'simple-workflow',
         name: 'Simple Workflow',
         version: '1.0.0',
+        type: WorkflowType.STANDALONE,
         description: 'A simple workflow',
         nodes: [
           {
@@ -89,6 +91,7 @@ describe('Workflow Preprocessing Integration', () => {
         id: 'sub-workflow',
         name: 'Sub Workflow',
         version: '1.0.0',
+        type: WorkflowType.STANDALONE,
         description: 'Sub workflow',
         nodes: [
           {
@@ -127,6 +130,7 @@ describe('Workflow Preprocessing Integration', () => {
         id: 'main-workflow',
         name: 'Main Workflow',
         version: '1.0.0',
+        type: WorkflowType.DEPENDENT,
         description: 'Main workflow',
         nodes: [
           {
@@ -194,6 +198,7 @@ describe('Workflow Preprocessing Integration', () => {
         id: 'triggered-workflow',
         name: 'Triggered Workflow',
         version: '1.0.0',
+        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
         description: 'Triggered workflow',
         nodes: [
           {
@@ -232,6 +237,7 @@ describe('Workflow Preprocessing Integration', () => {
         id: 'main-workflow',
         name: 'Main Workflow',
         version: '1.0.0',
+        type: WorkflowType.DEPENDENT,
         description: 'Main workflow',
         nodes: [
           {
@@ -297,6 +303,7 @@ describe('Workflow Preprocessing Integration', () => {
         id: 'main-workflow',
         name: 'Main Workflow',
         version: '1.0.0',
+        type: WorkflowType.DEPENDENT,
         description: 'Main workflow',
         nodes: [
           {
@@ -360,6 +367,7 @@ describe('Workflow Preprocessing Integration', () => {
         id: 'main-workflow',
         name: 'Main Workflow',
         version: '1.0.0',
+        type: WorkflowType.DEPENDENT,
         description: 'Main workflow',
         nodes: [
           {

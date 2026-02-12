@@ -158,10 +158,6 @@ export class GraphValidator {
       errorList.push(...compatibilityErrors);
     }
 
-    // 检查节点边列表与边源/目标节点的一致性（必须检查）
-    const consistencyErrors = this.validateNodeEdgeConsistency(graph);
-    errorList.push(...consistencyErrors);
-
     if (errorList.length === 0) {
       return ok(graph);
     }
@@ -730,23 +726,4 @@ export class GraphValidator {
     return errors;
   }
 
-  /**
-   * 验证节点边列表与边源/目标节点的一致性
-   *
-   * 注意：此方法不再验证边引用的节点是否存在
-   * 原因：边引用节点的完整性验证已在 WorkflowValidator 中完成
-   *
-   * GraphData 构建时已经确保：
-   * 1. 边引用的源节点和目标节点都存在
-   * 2. adjacencyList 和 reverseAdjacencyList 维护了正确的拓扑结构
-   * 3. originalNode 保持不可变，是原始工作流定义的引用
-   *
-   * @param graph 图数据
-   * @returns 验证错误列表
-   */
-  private static validateNodeEdgeConsistency(graph: GraphData): ValidationError[] {
-    // 此方法保留为空，因为所有一致性验证已在 WorkflowValidator 中完成
-    // GraphData 构建过程确保了数据的完整性
-    return [];
-  }
 }

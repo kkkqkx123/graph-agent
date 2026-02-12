@@ -14,6 +14,7 @@ import { WorkflowRegistry } from '../core/services/workflow-registry';
 import { ExecutionContext } from '../core/execution/context/execution-context';
 import { NodeType } from '@modular-agent/types';
 import { EdgeType } from '@modular-agent/types';
+import { WorkflowType } from '@modular-agent/types';
 import type { WorkflowDefinition } from '@modular-agent/types';
 
 describe.skip('工作流执行引擎完整执行和生命周期管理集成测试', () => {
@@ -150,6 +151,7 @@ describe.skip('工作流执行引擎完整执行和生命周期管理集成测�
     id,
     name,
     version: '1.0.0',
+    type: WorkflowType.STANDALONE,
     description: 'Simple linear workflow for execution testing',
     nodes: [
       {
@@ -241,6 +243,7 @@ describe.skip('工作流执行引擎完整执行和生命周期管理集成测�
     id,
     name,
     version: '1.0.0',
+    type: WorkflowType.STANDALONE,
     description: 'Branching workflow for execution testing',
     nodes: [
       {

@@ -245,6 +245,7 @@ describe('Workflow到Graph注册集成测试', () => {
         id: 'workflow-template-expand',
         name: 'Template Expand Workflow',
         version: '1.0.0',
+        type: WorkflowType.STANDALONE,
         description: 'Workflow with template expansion',
         nodes: [
           {
@@ -331,6 +332,7 @@ describe('Workflow到Graph注册集成测试', () => {
         id: 'workflow-invalid-template-ref', // 使用唯一的ID
         name: 'Invalid Template Workflow',
         version: '1.0.0',
+        type: WorkflowType.STANDALONE,
         nodes: [
           {
             id: 'node-start',
@@ -404,6 +406,7 @@ describe('Workflow到Graph注册集成测试', () => {
         id: 'subworkflow-simple',
         name: 'Simple Subworkflow',
         version: '1.0.0',
+        type: WorkflowType.STANDALONE,
         description: 'Simple subworkflow for testing',
         nodes: [
           {
@@ -471,6 +474,7 @@ describe('Workflow到Graph注册集成测试', () => {
         id: 'parent-workflow',
         name: 'Parent Workflow',
         version: '1.0.0',
+        type: WorkflowType.DEPENDENT,
         description: 'Parent workflow with subgraph',
         nodes: [
           {
@@ -560,6 +564,7 @@ describe('Workflow到Graph注册集成测试', () => {
         id: `workflow-invalid-subgraph-${Math.random().toString(36).substring(2, 11)}`, // 使用随机字符串确保唯一性
         name: 'Invalid Subgraph Workflow',
         version: '1.0.0',
+        type: WorkflowType.DEPENDENT,
         nodes: [
           {
             id: 'node-start',
@@ -683,6 +688,7 @@ describe('Workflow到Graph注册集成测试', () => {
         id: `workflow-cycle-${Math.random().toString(36).substring(2, 11)}`, // 使用随机字符串确保唯一性
         name: 'Cycle Workflow',
         version: '1.0.0',
+        type: WorkflowType.STANDALONE,
         nodes: [
           {
             id: 'node-start',
@@ -791,6 +797,7 @@ describe('Workflow到Graph注册集成测试', () => {
         id: `workflow-isolated-${Math.random().toString(36).substring(2, 11)}`, // 使用随机字符串确保唯一性
         name: 'Isolated Node Workflow',
         version: '1.0.0',
+        type: WorkflowType.STANDALONE,
         nodes: [
           {
             id: 'node-start',
@@ -859,6 +866,7 @@ describe('Workflow到Graph注册集成测试', () => {
         id: 'workflow-fork-dedup',
         name: 'Fork Deduplication Workflow',
         version: '1.0.0',
+        type: WorkflowType.STANDALONE,
         description: 'Test fork path ID deduplication',
         nodes: [
           {
@@ -1031,6 +1039,7 @@ describe('Workflow到Graph注册集成测试', () => {
         id: 'workflow-multiple-fork',
         name: 'Multiple Fork Workflow',
         version: '1.0.0',
+        type: WorkflowType.STANDALONE,
         description: 'Test multiple fork nodes with different path IDs',
         nodes: [
           {

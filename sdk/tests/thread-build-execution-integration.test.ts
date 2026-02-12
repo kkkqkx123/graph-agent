@@ -16,6 +16,7 @@ import { ExecutionContext } from '../core/execution/context/execution-context';
 import { NodeType } from '@modular-agent/types';
 import { EdgeType } from '@modular-agent/types';
 import { ValidationError } from '@modular-agent/types';
+import { WorkflowType } from '@modular-agent/types';
 import type { WorkflowDefinition } from '@modular-agent/types';
 import type { ThreadOptions } from '@modular-agent/types';
 
@@ -50,6 +51,7 @@ describe('Thread构建到执行实例创建集成测试', () => {
     id,
     name,
     version: '1.0.0',
+    type: WorkflowType.STANDALONE,
     description: 'Test workflow',
     nodes: [
       {
@@ -177,6 +179,7 @@ describe('Thread构建到执行实例创建集成测试', () => {
         id: 'workflow-complex-thread',
         name: 'Complex Thread Workflow',
         version: '1.0.0',
+        type: WorkflowType.STANDALONE,
         description: 'Complex workflow with multiple nodes for thread testing',
         nodes: [
           {
@@ -331,6 +334,7 @@ describe('Thread构建到执行实例创建集成测试', () => {
         id: workflowId,
         name: 'Invalid Thread Workflow',
         version: '1.0.0',
+        type: WorkflowType.STANDALONE,
         nodes: [
           {
             id: 'start',
@@ -366,6 +370,7 @@ describe('Thread构建到执行实例创建集成测试', () => {
         id: 'workflow-invalid-thread',
         name: 'Invalid Thread Workflow',
         version: '1.0.0',
+        type: WorkflowType.STANDALONE,
         nodes: [], // 无效 - 没有节点
         edges: [],
         config: {},
@@ -384,6 +389,7 @@ describe('Thread构建到执行实例创建集成测试', () => {
         id: 'workflow-no-start',
         name: 'Workflow Without Start',
         version: '1.0.0',
+        type: WorkflowType.STANDALONE,
         nodes: [
           {
             id: 'node-process',
