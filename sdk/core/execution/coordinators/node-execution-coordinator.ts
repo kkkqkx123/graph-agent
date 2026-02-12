@@ -243,11 +243,10 @@ export class NodeExecutionCoordinator {
    */
   private async handleSubgraphBoundary(threadContext: ThreadContext, graphNode: any): Promise<void> {
     const boundaryType = graphNode.internalMetadata[SUBGRAPH_METADATA_KEYS.BOUNDARY_TYPE] as SubgraphBoundaryType;
-    const originalNodeId = graphNode.internalMetadata[SUBGRAPH_METADATA_KEYS.ORIGINAL_NODE_ID];
 
     if (boundaryType === 'entry') {
       // 进入子图
-      const input = getSubgraphInput(threadContext, originalNodeId);
+      const input = getSubgraphInput(threadContext);
       enterSubgraph(
         threadContext,
         graphNode.workflowId,
@@ -270,7 +269,7 @@ export class NodeExecutionCoordinator {
       // 退出子图
       const subgraphContext = threadContext.getCurrentSubgraphContext();
       if (subgraphContext) {
-        const output = getSubgraphOutput(threadContext, originalNodeId);
+        const output = getSubgraphOutput(threadContext);
 
         // 触发子图完成事件
         const subgraphCompletedEvent: SubgraphCompletedEvent = {

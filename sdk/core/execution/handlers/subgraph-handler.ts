@@ -1,12 +1,10 @@
 /**
  * 子图处理函数
- * 负责处理子图的进入、退出、输入输出映射等逻辑
+ * 负责处理子图的进入、退出等逻辑
  *
  * 职责：
  * - 处理子图进入逻辑
  * - 处理子图退出逻辑
- * - 获取子图输入（使用现有的 resolvePath 函数）
- * - 获取子图输出
  * - 创建子图上下文元数据
  *
  * 设计原则：
@@ -17,9 +15,6 @@
  */
 
 import { ThreadContext } from '../context/thread-context';
-import type { SubgraphNodeConfig } from '@modular-agent/types/node';
-import { NodeType } from '@modular-agent/types/node';
-import { resolvePath } from '@modular-agent/common-utils';
 import { now } from '@modular-agent/common-utils';
 
 /**
@@ -49,53 +44,19 @@ export function exitSubgraph(threadContext: ThreadContext): void {
 /**
  * 获取子图输入
  * @param threadContext 线程上下文
- * @param originalSubgraphNodeId 原始子图节点ID
- * @returns 子图输入数据
+ * @returns 子图输入数据（使用变量系统）
  */
-export function getSubgraphInput(threadContext: ThreadContext, originalSubgraphNodeId: string): any {
-  const navigator = threadContext.getNavigator();
-  const graphNode = navigator.getGraph().getNode(originalSubgraphNodeId);
-  const node = graphNode?.originalNode;
-
-  if (node?.type === 'SUBGRAPH' as NodeType) {
-    const config = node.config as SubgraphNodeConfig;
-    return resolveSubgraphInput(threadContext, config);
-  }
-
-  return {};
-}
-
-/**
- * 解析子图输入映射
- * @param threadContext 线程上下文
- * @param config 子图节点配置
- * @returns 子图输入数据
- */
-export function resolveSubgraphInput(threadContext: ThreadContext, config: SubgraphNodeConfig): Record<string, any> {
-  const input: Record<string, any> = {};
-
-  // 构建上下文对象用于路径解析
-  const context = {
-    variables: threadContext.getAllVariables(),
-    input: threadContext.getInput(),
-    output: threadContext.getOutput()
-  };
-
-  // 使用现有的 resolvePath 函数进行输入映射
-  for (const [childVar, parentPath] of Object.entries(config.inputMapping)) {
-    input[childVar] = resolvePath(parentPath, context);
-  }
-
-  return input;
+export function getSubgraphInput(threadContext: ThreadContext): any {
+  // 使用变量系统获取输入数据
+  return threadContext.getAllVariables();
 }
 
 /**
  * 获取子图输出
  * @param threadContext 线程上下文
- * @param originalSubgraphNodeId 原始子图节点ID
  * @returns 子图输出数据
  */
-export function getSubgraphOutput(threadContext: ThreadContext, originalSubgraphNodeId: string): any {
+export function getSubgraphOutput(threadContext: ThreadContext): any {
   const subgraphContext = threadContext.getCurrentSubgraphContext();
   if (!subgraphContext) return {};
 

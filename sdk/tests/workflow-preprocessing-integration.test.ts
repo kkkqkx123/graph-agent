@@ -486,8 +486,6 @@ describe('Workflow到Graph注册集成测试', () => {
             name: 'Subgraph Node',
             config: {
               subgraphId: 'subworkflow-simple',
-              inputMapping: {},
-              outputMapping: {},
               async: false
             },
             outgoingEdgeIds: ['parent-edge-2'],
@@ -576,8 +574,6 @@ describe('Workflow到Graph注册集成测试', () => {
             name: 'Subgraph Node',
             config: {
               subgraphId: 'non-existent-subworkflow',
-              inputMapping: {},
-              outputMapping: {},
               async: false  // 添加必需的async字段
             },
             outgoingEdgeIds: ['edge-2'],

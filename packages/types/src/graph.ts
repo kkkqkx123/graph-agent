@@ -265,10 +265,6 @@ export interface SubgraphMergeOptions {
   edgeIdPrefix?: string;
   /** 是否保留原始ID映射 */
   preserveIdMapping?: boolean;
-  /** 输入变量映射 */
-  inputMapping?: Map<string, string>;
-  /** 输出变量映射 */
-  outputMapping?: Map<string, string>;
 }
 
 /**

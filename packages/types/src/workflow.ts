@@ -95,11 +95,6 @@ export interface WorkflowMetadata {
  * - 执行时转换为 ThreadVariable，存储在 Thread.variableScopes.thread 中
  * - 通过 VARIABLE 节点修改，通过表达式访问（{{variableName}}）
  *
- * 与 inputMapping/outputMapping 的关系：
- * - WorkflowVariable: 定义工作流内部的变量存储
- * - inputMapping/outputMapping: 定义跨工作流的数据传递规则
- * - 两者互补，不重复
- *
  * 示例：
  * ```typescript
  * workflow.variables = [
@@ -150,26 +145,6 @@ export interface SubgraphMergeLog {
   nodeIdMapping: Map<ID, ID>;
   /** 合并的边ID映射（原始ID -> 新ID） */
   edgeIdMapping: Map<ID, ID>;
-  /**
-   * 输入映射关系
-   *
-   * 说明：记录子工作流合并时的输入变量映射
-   * - 键：变量名
-   * - 值：对应的节点ID
-   *
-   * 用途：运行时审计和调试，追踪子工作流的数据来源
-   */
-  inputMapping: Map<string, ID>;
-  /**
-   * 输出映射关系
-   *
-   * 说明：记录子工作流合并时的输出变量映射
-   * - 键：变量名
-   * - 值：对应的节点ID
-   *
-   * 用途：运行时审计和调试，追踪子工作流的数据去向
-   */
-  outputMapping: Map<string, ID>;
   /** 合并时间戳 */
   mergedAt: Timestamp;
 }

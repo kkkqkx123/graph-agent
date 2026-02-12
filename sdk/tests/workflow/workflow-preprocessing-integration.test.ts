@@ -143,8 +143,6 @@ describe('Workflow Preprocessing Integration', () => {
             name: 'Subgraph',
             config: {
               subgraphId: 'sub-workflow',
-              inputMapping: {},
-              outputMapping: {}
             },
             outgoingEdgeIds: ['edge-2'],
             incomingEdgeIds: ['edge-1']
@@ -378,8 +376,6 @@ describe('Workflow Preprocessing Integration', () => {
             name: 'Subgraph',
             config: {
               subgraphId: 'non-existent-sub-workflow',
-              inputMapping: {},
-              outputMapping: {}
             },
             outgoingEdgeIds: ['edge-2'],
             incomingEdgeIds: ['edge-1']

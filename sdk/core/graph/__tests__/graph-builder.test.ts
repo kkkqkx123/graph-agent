@@ -307,12 +307,6 @@ function createSubgraphWorkflow(): WorkflowDefinition {
         description: 'Subgraph node',
         config: {
           subgraphId: 'subwf1',
-          inputMapping: {
-            'input1': 'subInput1',
-          },
-          outputMapping: {
-            'output1': 'subOutput1',
-          },
           async: false,
         } as any,
         outgoingEdgeIds: ['e2'],
@@ -705,8 +699,6 @@ describe('GraphBuilder', () => {
             name: 'Subgraph',
             config: {
               subgraphId: '',
-              inputMapping: {},
-              outputMapping: {},
               async: false,
             } as any,
             outgoingEdgeIds: ['e2'],

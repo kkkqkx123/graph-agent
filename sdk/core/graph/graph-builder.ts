@@ -258,8 +258,6 @@ export class GraphBuilder {
         nodeIdPrefix: namespace,
         edgeIdPrefix: namespace,
         preserveIdMapping: true,
-        inputMapping: new Map(Object.entries(subgraphConfig.inputMapping || {})),
-        outputMapping: new Map(Object.entries(subgraphConfig.outputMapping || {})),
         subworkflowId: subworkflowId,
         parentWorkflowId: subgraphNode.workflowId,
         depth: currentDepth + 1,

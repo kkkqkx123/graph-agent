@@ -25,8 +25,6 @@ describe('NodeValidator - Subgraph Node Validation', () => {
         type: NodeType.SUBGRAPH,
         config: {
           subgraphId: 'subgraph-1',
-          inputMapping: { input: 'workflowInput' },
-          outputMapping: { output: 'workflowOutput' },
           async: false
         },
         incomingEdgeIds: [],
@@ -37,58 +35,6 @@ describe('NodeValidator - Subgraph Node Validation', () => {
       expect(result.unwrap()).toEqual(node);
     });
 
-    it('应该验证有效的SUBGRAPH节点（无inputMapping）', () => {
-      const node: Node = {
-        id: 'node-1',
-        name: 'Subgraph',
-        type: NodeType.SUBGRAPH,
-        config: {
-          subgraphId: 'subgraph-1',
-          outputMapping: { output: 'workflowOutput' },
-          async: false
-        },
-        incomingEdgeIds: [],
-        outgoingEdgeIds: []
-      };
-      const result = validator.validateNode(node);
-      expect(result.isOk()).toBe(true);
-      expect(result.unwrap()).toEqual(node);
-    });
-
-    it('应该验证有效的SUBGRAPH节点（无outputMapping）', () => {
-      const node: Node = {
-        id: 'node-1',
-        name: 'Subgraph',
-        type: NodeType.SUBGRAPH,
-        config: {
-          subgraphId: 'subgraph-1',
-          inputMapping: { input: 'workflowInput' },
-          async: false
-        },
-        incomingEdgeIds: [],
-        outgoingEdgeIds: []
-      };
-      const result = validator.validateNode(node);
-      expect(result.isOk()).toBe(true);
-      expect(result.unwrap()).toEqual(node);
-    });
-
-    it('应该验证有效的SUBGRAPH节点（无inputMapping和outputMapping）', () => {
-      const node: Node = {
-        id: 'node-1',
-        name: 'Subgraph',
-        type: NodeType.SUBGRAPH,
-        config: {
-          subgraphId: 'subgraph-1',
-          async: false
-        },
-        incomingEdgeIds: [],
-        outgoingEdgeIds: []
-      };
-      const result = validator.validateNode(node);
-      expect(result.isOk()).toBe(true);
-      expect(result.unwrap()).toEqual(node);
-    });
 
     it('应该拒绝缺少subgraphId的SUBGRAPH节点', () => {
       const node: Node = {
@@ -96,8 +42,6 @@ describe('NodeValidator - Subgraph Node Validation', () => {
         name: 'Subgraph',
         type: NodeType.SUBGRAPH,
         config: {
-          inputMapping: {},
-          outputMapping: {},
           async: false
         } as any,
         incomingEdgeIds: [],
@@ -110,89 +54,6 @@ describe('NodeValidator - Subgraph Node Validation', () => {
       }
     });
 
-    it('应该拒绝空键的inputMapping的SUBGRAPH节点', () => {
-      const node: Node = {
-        id: 'node-1',
-        name: 'Subgraph',
-        type: NodeType.SUBGRAPH,
-        config: {
-          subgraphId: 'subgraph-1',
-          inputMapping: { '': 'workflowInput' }, // 空键
-          outputMapping: {},
-          async: false
-        } as any,
-        incomingEdgeIds: [],
-        outgoingEdgeIds: []
-      };
-      const result = validator.validateNode(node);
-      expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.some(e => e.field?.includes('inputMapping'))).toBe(true);
-      }
-    });
-
-    it('应该拒绝空值的inputMapping的SUBGRAPH节点', () => {
-      const node: Node = {
-        id: 'node-1',
-        name: 'Subgraph',
-        type: NodeType.SUBGRAPH,
-        config: {
-          subgraphId: 'subgraph-1',
-          inputMapping: { 'input': '' }, // 空值
-          outputMapping: {},
-          async: false
-        } as any,
-        incomingEdgeIds: [],
-        outgoingEdgeIds: []
-      };
-      const result = validator.validateNode(node);
-      expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.some(e => e.field?.includes('inputMapping'))).toBe(true);
-      }
-    });
-
-    it('应该拒绝空键的outputMapping的SUBGRAPH节点', () => {
-      const node: Node = {
-        id: 'node-1',
-        name: 'Subgraph',
-        type: NodeType.SUBGRAPH,
-        config: {
-          subgraphId: 'subgraph-1',
-          inputMapping: {},
-          outputMapping: { '': 'workflowOutput' }, // 空键
-          async: false
-        } as any,
-        incomingEdgeIds: [],
-        outgoingEdgeIds: []
-      };
-      const result = validator.validateNode(node);
-      expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.some(e => e.field?.includes('outputMapping'))).toBe(true);
-      }
-    });
-
-    it('应该拒绝空值的outputMapping的SUBGRAPH节点', () => {
-      const node: Node = {
-        id: 'node-1',
-        name: 'Subgraph',
-        type: NodeType.SUBGRAPH,
-        config: {
-          subgraphId: 'subgraph-1',
-          inputMapping: {},
-          outputMapping: { 'output': '' }, // 空值
-          async: false
-        } as any,
-        incomingEdgeIds: [],
-        outgoingEdgeIds: []
-      };
-      const result = validator.validateNode(node);
-      expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error.some(e => e.field?.includes('outputMapping'))).toBe(true);
-      }
-    });
   });
 
   describe('START_FROM_TRIGGER节点验证', () => {
@@ -231,8 +92,6 @@ describe('NodeValidator - Subgraph Node Validation', () => {
         type: NodeType.START_FROM_TRIGGER,
         config: {
           subgraphId: 'parent-workflow', // 不应该有此配置
-          inputMapping: { input: 'workflowInput' }, // 不应该有此配置
-          outputMapping: { output: 'workflowOutput' }, // 不应该有此配置
           async: false // 不应该有此配置
         } as any,
         incomingEdgeIds: [],

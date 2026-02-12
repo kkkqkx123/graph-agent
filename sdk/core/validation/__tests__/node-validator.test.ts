@@ -937,8 +937,6 @@ describe('NodeValidator', () => {
         type: NodeType.SUBGRAPH,
         config: {
           subgraphId: 'subgraph-1',
-          inputMapping: { input: 'workflowInput' },
-          outputMapping: { output: 'workflowOutput' },
           async: false
         },
         incomingEdgeIds: [],
@@ -955,8 +953,6 @@ describe('NodeValidator', () => {
         name: 'Subgraph',
         type: NodeType.SUBGRAPH,
         config: {
-          inputMapping: {},
-          outputMapping: {},
           async: false
         } as any,
         incomingEdgeIds: [],
@@ -968,38 +964,6 @@ describe('NodeValidator', () => {
         expect(result.error.some(e => e.field?.includes('subgraphId'))).toBe(true);
       }
     });
-
-    it('should validate SUBGRAPH node without inputMapping', () => {
-      const node: Node = {
-        id: 'node-1',
-        name: 'Subgraph',
-        type: NodeType.SUBGRAPH,
-        config: {
-          subgraphId: 'subgraph-1',
-          outputMapping: {},
-          async: false
-        } as any,
-        incomingEdgeIds: [],
-        outgoingEdgeIds: []
-      };
-      const result = validator.validateNode(node);
-      expect(result.isOk()).toBe(true);
-      expect(result.unwrap()).toEqual(node);
-    });
-
-    it('should validate SUBGRAPH node without outputMapping', () => {
-      const node: Node = {
-        id: 'node-1',
-        name: 'Subgraph',
-        type: NodeType.SUBGRAPH,
-        config: {
-          subgraphId: 'subgraph-1',
-          inputMapping: {},
-          async: false
-        } as any,
-        incomingEdgeIds: [],
-        outgoingEdgeIds: []
-      };
       const result = validator.validateNode(node);
       expect(result.isOk()).toBe(true);
       expect(result.unwrap()).toEqual(node);

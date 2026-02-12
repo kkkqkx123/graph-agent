@@ -119,8 +119,6 @@ export async function processWorkflow(
               subgraphNodeId: subgraphNode.id,
               nodeIdMapping: subgraphResult.nodeIdMapping,
               edgeIdMapping: subgraphResult.edgeIdMapping,
-              inputMapping: new Map(Object.entries((subgraphNode.config as any)?.inputMapping || {})),
-              outputMapping: new Map(Object.entries((subgraphNode.config as any)?.outputMapping || {})),
               mergedAt: now(),
             };
             subgraphMergeLogs.push(mergeLog);

@@ -390,50 +390,6 @@ export interface LoopEndNodeConfig {
 export interface SubgraphNodeConfig {
   /** 子工作流ID */
   subgraphId: ID;
-  /**
-   * 输入参数映射（父工作流变量到子工作流输入的映射）
-   *
-   * 说明：定义父工作流的变量如何传递给子工作流
-   * - 键：子工作流的输入变量名
-   * - 值：父工作流的变量路径（支持嵌套路径，如 'parent.user.name'）
-   * - 如果为空对象，则传递所有父工作流变量
-   *
-   * 示例：
-   * ```typescript
-   * inputMapping: {
-   *   'childInput': 'parentVar1',      // 父工作流的 parentVar1 → 子工作流的 childInput
-   *   'childConfig': 'parent.user.config'  // 支持嵌套路径
-   * }
-   * ```
-   *
-   * 注意：此映射规则与 variables 机制配合使用
-   * - variables: 存储工作流内部的变量数据
-   * - inputMapping: 定义跨工作流的数据传递规则
-   * 两者互补，不重复
-   */
-  inputMapping: Record<string, string>;
-  /**
-   * 输出参数映射（子工作流输出到父工作流变量的映射）
-   *
-   * 说明：定义子工作流的输出如何映射回父工作流的变量
-   * - 键：父工作流的变量名（将更新此变量）
-   * - 值：子工作流输出的路径（支持嵌套路径）
-   * - 如果为空对象，则直接返回子工作流输出，不更新父工作流变量
-   *
-   * 示例：
-   * ```typescript
-   * outputMapping: {
-   *   'parentResult': 'childOutput',   // 子工作流的 childOutput → 父工作流的 parentResult
-   *   'parentStatus': 'result.status'  // 支持嵌套路径
-   * }
-   * ```
-   *
-   * 注意：此映射规则与 variables 机制配合使用
-   * - variables: 存储工作流内部的变量数据
-   * - outputMapping: 定义跨工作流的数据传递规则
-   * 两者互补，不重复
-   */
-  outputMapping: Record<string, string>;
   /** 是否异步执行 */
   async: boolean;
 }
@@ -475,34 +431,6 @@ export type NodeConfig =
   | SubgraphNodeConfig
   | StartFromTriggerNodeConfig
   | ContinueFromTriggerNodeConfig;
-
-/**
- * 节点输入定义类型
- */
-export interface NodeInput {
-  /** 输入参数名称 */
-  name: string;
-  /** 输入类型 */
-  type: string;
-  /** 是否必需 */
-  required: boolean;
-  /** 默认值 */
-  defaultValue?: any;
-  /** 输入描述 */
-  description?: string;
-}
-
-/**
- * 节点输出定义类型
- */
-export interface NodeOutput {
-  /** 输出参数名称 */
-  name: string;
-  /** 输出类型 */
-  type: string;
-  /** 输出描述 */
-  description?: string;
-}
 
 /**
  * 节点动态属性类型

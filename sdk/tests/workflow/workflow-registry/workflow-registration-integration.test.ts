@@ -564,8 +564,6 @@ describe('Workflow加载与注册集成测试', () => {
             config: {
               // SUBGRAPH节点标记子工作流的边界，并引用注册的子工作流
               subgraphId: 'processing-unit',
-              inputMapping: {},
-              outputMapping: {},
               async: false
             },
             outgoingEdgeIds: ['edge-3'],
@@ -819,8 +817,6 @@ describe('Workflow加载与注册集成测试', () => {
             name: 'Subgraph Node',
             config: {
               subgraphId: 'non-existent-subworkflow',
-              inputMapping: {},
-              outputMapping: {}
             },
             outgoingEdgeIds: ['edge-2'],
             incomingEdgeIds: ['edge-1']
@@ -948,8 +944,6 @@ describe('Workflow加载与注册集成测试', () => {
             name: 'Subgraph Node',
             config: {
               subgraphId: 'subworkflow-0',
-              inputMapping: {},
-              outputMapping: {}
             },
             outgoingEdgeIds: ['parent-edge-2'],
             incomingEdgeIds: ['parent-edge-1']

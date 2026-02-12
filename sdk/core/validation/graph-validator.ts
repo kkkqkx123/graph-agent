@@ -509,43 +509,6 @@ export class GraphValidator {
       if (node.type === 'SUBGRAPH' as NodeType) {
         const subgraphConfig = node.originalNode?.config as any;
 
-        // 检查输入映射
-        if (subgraphConfig.inputMapping) {
-          for (const [parentVar, subgraphInput] of Object.entries(subgraphConfig.inputMapping)) {
-            if (!parentVar || !subgraphInput) {
-              errors.push(
-                new ValidationError(
-                  `SUBGRAPH节点(${node.id})的输入映射无效: ${parentVar} -> ${subgraphInput}`,
-                  undefined,
-                  undefined,
-                  {
-                    code: 'INVALID_INPUT_MAPPING',
-                    nodeId: node.id,
-                  }
-                )
-              );
-            }
-          }
-        }
-
-        // 检查输出映射
-        if (subgraphConfig.outputMapping) {
-          for (const [subgraphOutput, parentVar] of Object.entries(subgraphConfig.outputMapping)) {
-            if (!subgraphOutput || !parentVar) {
-              errors.push(
-                new ValidationError(
-                  `SUBGRAPH节点(${node.id})的输出映射无效: ${subgraphOutput} -> ${parentVar}`,
-                  undefined,
-                  undefined,
-                  {
-                    code: 'INVALID_OUTPUT_MAPPING',
-                    nodeId: node.id,
-                  }
-                )
-              );
-            }
-          }
-        }
       }
     }
 
