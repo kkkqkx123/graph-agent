@@ -6,20 +6,19 @@
  * - 标准化错误对象
  * - 记录错误日志
  * - 触发错误事件
- * - 应用错误处理策略
  *
  * 设计原则：
  * - 统一入口：所有错误通过 ErrorService 统一处理
  * - 日志集成：ErrorService 负责所有错误相关的日志记录
  * - 事件驱动：通过 EventManager 触发错误事件
+ * - 异步非阻塞：错误事件触发后立即返回，不等待处理完成
  *
  * 本模块导出全局单例实例，不导出类定义
  */
 
 import type { EventManager } from './event-manager';
-import { SDKError, ErrorContext, ErrorHandlingResult } from '@modular-agent/types/errors';
+import { SDKError, ErrorContext } from '@modular-agent/types/errors';
 import { ExecutionError, ValidationError, ToolError, NotFoundError, TimeoutError } from '@modular-agent/types/errors';
-import { ErrorHandlingStrategy } from '@modular-agent/types/thread';
 import { EventType } from '@modular-agent/types/events';
 import type { ErrorEvent } from '@modular-agent/types/events';
 import { now } from '@modular-agent/common-utils';
@@ -33,29 +32,23 @@ class ErrorService {
 
   /**
    * 统一错误处理函数
-   * 处理所有类型的错误，包括日志记录、事件触发和策略应用
+   * 处理所有类型的错误，包括日志记录和事件触发
    *
    * @param error 错误对象（可以是Error或SDKError）
    * @param context 错误上下文
-   * @param strategy 错误处理策略（可选，默认STOP_ON_ERROR）
-   * @returns 错误处理结果
    */
   async handleError(
     error: Error | SDKError,
-    context: ErrorContext,
-    strategy: ErrorHandlingStrategy = ErrorHandlingStrategy.STOP_ON_ERROR
-  ): Promise<ErrorHandlingResult> {
+    context: ErrorContext
+  ): Promise<void> {
     // 步骤1：标准化错误对象
     const standardizedError = this.standardizeError(error, context);
 
     // 步骤2：记录日志
     this.logError(standardizedError, context);
 
-    // 步骤3：触发错误事件
-    await this.emitErrorEvent(standardizedError, context);
-
-    // 步骤4：应用错误处理策略
-    return this.applyHandlingStrategy(standardizedError, strategy);
+    // 步骤3：触发错误事件（异步，不等待）
+    this.emitErrorEvent(standardizedError, context);
   }
 
   /**
@@ -161,40 +154,25 @@ class ErrorService {
   }
 
   /**
-   * 触发错误事件
+   * 触发错误事件（异步，不等待）
    */
-  private async emitErrorEvent(
+  private emitErrorEvent(
     error: SDKError,
     context: ErrorContext
-  ): Promise<void> {
+  ): void {
     const errorEvent: ErrorEvent = {
       type: EventType.ERROR,
       threadId: context.threadId || '',
       workflowId: context.workflowId || '',
+      nodeId: context.nodeId,
       error,
       timestamp: now()
     };
 
-    await this.eventManager.emit(errorEvent);
-  }
-
-  /**
-   * 应用错误处理策略
-   */
-  private applyHandlingStrategy(
-    error: SDKError,
-    strategy: ErrorHandlingStrategy
-  ): ErrorHandlingResult {
-    switch (strategy) {
-      case ErrorHandlingStrategy.STOP_ON_ERROR:
-        return { shouldStop: true, error };
-
-      case ErrorHandlingStrategy.CONTINUE_ON_ERROR:
-        return { shouldStop: false, error };
-
-      default:
-        return { shouldStop: true, error };
-    }
+    // 异步触发事件，不等待处理完成
+    this.eventManager.emit(errorEvent).catch(err => {
+      logger.error('Failed to emit error event', { error: err });
+    });
   }
 }
 

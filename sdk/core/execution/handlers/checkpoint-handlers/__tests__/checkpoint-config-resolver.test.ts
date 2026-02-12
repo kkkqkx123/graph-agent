@@ -28,11 +28,7 @@ describe('CheckpointConfigResolver', () => {
     globalConfig = {
       enabled: true,
       checkpointBeforeNode: false,
-      checkpointAfterNode: false,
-      defaultMetadata: {
-        description: 'Global checkpoint',
-        creator: 'system'
-      }
+      checkpointAfterNode: false
     };
 
     // 节点配置
@@ -255,12 +251,11 @@ describe('CheckpointConfigResolver', () => {
       );
 
       expect(result.shouldCreate).toBe(true);
-      expect(result.description).toBe('Global checkpoint');
+      expect(result.description).toBe('Global checkpoint before node');
       expect(result.source).toBe(CheckpointConfigSource.GLOBAL);
     });
 
     it('应该默认不创建检查点', () => {
-      // 重置全局配置，移除 defaultMetadata
       const cleanGlobalConfig: CheckpointConfig = {
         enabled: true,
         checkpointBeforeNode: false,
@@ -442,11 +437,7 @@ describe('CheckpointConfigResolver', () => {
             checkpointConfig: {
               enabled: true,
               checkpointBeforeNode: false,
-              checkpointAfterNode: true,
-              defaultMetadata: {
-                description: 'Triggered workflow checkpoint',
-                creator: 'triggered'
-              }
+              checkpointAfterNode: true
             }
           }
         );
@@ -660,7 +651,6 @@ describe('CheckpointConfigResolver', () => {
     });
 
     it('应该返回undefined当没有描述时', () => {
-      // 重置全局配置，移除 defaultMetadata
       const cleanGlobalConfig: CheckpointConfig = {
         enabled: true,
         checkpointBeforeNode: false,

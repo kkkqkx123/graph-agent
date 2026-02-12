@@ -5,7 +5,6 @@
 
 import { handleNodeFailure, handleExecutionError } from '../error-handler';
 import { ValidationError, ExecutionError, ToolError, NotFoundError } from '@modular-agent/types/errors';
-import { ErrorHandlingStrategy } from '@modular-agent/types/thread';
 import { EventManager } from '../../../services/event-manager';
 import type { Node } from '@modular-agent/types/node';
 import type { NodeExecutionResult } from '@modular-agent/types/thread';
@@ -48,16 +47,12 @@ describe('ErrorHandler', () => {
       getThreadId: jest.fn().mockReturnValue('thread-123'),
       getWorkflowId: jest.fn().mockReturnValue('workflow-456'),
       addError: jest.fn(),
+      setStatus: jest.fn(),
+      setShouldStop: jest.fn(),
       thread: {
         id: 'thread-123',
-        workflowId: 'workflow-456',
-        errorHandling: {
-          strategy: ErrorHandlingStrategy.STOP_ON_ERROR
-        }
-      },
-      getNavigator: jest.fn(),
-      setCurrentNodeId: jest.fn(),
-      getNodeResults: jest.fn().mockReturnValue([])
+        workflowId: 'workflow-456'
+      }
     };
 
     // 创建 mock Node
@@ -81,29 +76,9 @@ describe('ErrorHandler', () => {
 
       expect(mockThreadContext.addError).toHaveBeenCalled();
       expect(mockEventManager.emit).toHaveBeenCalled();
-    });
-
-    it('应该在STOP_ON_ERROR策略下停止执行', async () => {
-      mockThreadContext.thread.errorHandling = {
-        strategy: ErrorHandlingStrategy.STOP_ON_ERROR
-      };
-
-      await handleNodeFailure(mockThreadContext, mockNode, mockNodeResult);
-
-      expect(mockThreadContext.setCurrentNodeId).not.toHaveBeenCalled();
-    });
-
-    it('应该在CONTINUE_ON_ERROR策略下继续执行', async () => {
-      mockThreadContext.thread.errorHandling = {
-        strategy: ErrorHandlingStrategy.CONTINUE_ON_ERROR
-      };
-      mockThreadContext.getNavigator = jest.fn().mockReturnValue({
-        selectNextNodeWithContext: jest.fn().mockReturnValue('next-node-123')
-      });
-
-      await handleNodeFailure(mockThreadContext, mockNode, mockNodeResult);
-
-      expect(mockThreadContext.setCurrentNodeId).toHaveBeenCalledWith('next-node-123');
+      expect(mockThreadContext.setStatus).toHaveBeenCalledWith('FAILED');
+      expect(mockThreadContext.setShouldStop).toHaveBeenCalledWith(true);
+      expect(mockThreadContext.thread.endTime).toBeDefined();
     });
 
     it('应该处理未定义的错误', async () => {
@@ -124,6 +99,8 @@ describe('ErrorHandler', () => {
 
       expect(mockThreadContext.addError).toHaveBeenCalled();
       expect(mockEventManager.emit).toHaveBeenCalled();
+      expect(mockThreadContext.setStatus).toHaveBeenCalledWith('FAILED');
+      expect(mockThreadContext.setShouldStop).toHaveBeenCalledWith(true);
     });
 
     it('应该处理非Error类型的错误', async () => {

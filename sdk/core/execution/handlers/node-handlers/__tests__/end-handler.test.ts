@@ -6,7 +6,7 @@ import { endHandler } from '../end-handler';
 import type { Node, EndNodeConfig } from '@modular-agent/types/node';
 import { NodeType } from '@modular-agent/types/node';
 import type { Thread } from '@modular-agent/types/thread';
-import { ThreadStatus, ErrorHandlingStrategy } from '@modular-agent/types/thread';
+import { ThreadStatus } from '@modular-agent/types/thread';
 
 // Mock utils functions
 jest.mock('../../../../../utils', () => ({
@@ -253,19 +253,6 @@ describe('end-handler', () => {
       const result = await endHandler(mockThread, mockNode);
 
       expect(result.output).toEqual({});
-    });
-
-    it('应该处理带有errorHandling的Thread', async () => {
-      mockThread.errorHandling = {
-        strategy: ErrorHandlingStrategy.STOP_ON_ERROR
-      };
-
-      const result = await endHandler(mockThread, mockNode);
-
-      expect(result.message).toBe('Workflow completed');
-      expect(mockThread.errorHandling).toEqual({
-        strategy: ErrorHandlingStrategy.STOP_ON_ERROR
-      });
     });
 
     it('应该正确计算executionTime', async () => {

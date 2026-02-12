@@ -5,29 +5,22 @@
  * 职责：
  * - 处理节点执行失败
  * - 处理全局执行错误
- * - 协调错误处理流程
+ * - 记录错误和触发错误事件
  *
  * 设计原则：
  * - 错误优先：所有运行时异常必须抛出错误，不允许静默处理
  * - 统一入口：所有错误通过 ErrorService 统一处理
+ * - 事件驱动：错误通过事件机制异步处理，不阻塞执行
  * - 简化接口：工作流内部调用无需传递 eventManager
  */
 
 import { ThreadContext } from '../context/thread-context';
 import type { Node } from '@modular-agent/types/node';
 import type { NodeExecutionResult } from '@modular-agent/types/thread';
-import { ErrorHandlingStrategy } from '@modular-agent/types/thread';
-import { SingletonRegistry } from '../context/singleton-registry';
-import type { EventManager } from '../../services/event-manager';
+import { ThreadStatus } from '@modular-agent/types/thread';
 import { ErrorContext } from '@modular-agent/types/errors';
 import { errorService } from '../../services/error-service';
-
-/**
- * 获取全局 EventManager
- */
-function getGlobalEventManager(): EventManager {
-  return SingletonRegistry.get<EventManager>('eventManager');
-}
+import { now } from '@modular-agent/common-utils';
 
 /**
  * 处理节点执行失败
@@ -49,36 +42,16 @@ export async function handleNodeFailure(
     operation: 'node_execution'
   };
 
-  // 使用 ErrorService 处理错误
-  const result = await errorService.handleError(
-    error,
-    context,
-    threadContext.thread.errorHandling?.strategy
-  );
-
   // 记录错误到线程上下文
-  threadContext.addError(result.error);
+  threadContext.addError(error);
 
-  // 如果需要停止执行，状态由外部管理
-  if (result.shouldStop) {
-    return;
-  }
+  // 使用 ErrorService 处理错误（记录日志和触发事件）
+  await errorService.handleError(error, context);
 
-  // 如果继续执行，路由到下一个节点
-  if (threadContext.thread.errorHandling?.strategy === ErrorHandlingStrategy.CONTINUE_ON_ERROR) {
-    const navigator = threadContext.getNavigator();
-    const currentNodeId = node.id;
-    const lastResult = threadContext.getNodeResults()[threadContext.getNodeResults().length - 1];
-    const nextNodeId = navigator.selectNextNodeWithContext(
-      currentNodeId,
-      threadContext.thread,
-      node.type,
-      lastResult
-    );
-    if (nextNodeId) {
-      threadContext.setCurrentNodeId(nextNodeId);
-    }
-  }
+  // 设置线程状态为 FAILED 和停止标志
+  threadContext.setStatus(ThreadStatus.FAILED);
+  threadContext.thread.endTime = now();
+  threadContext.setShouldStop(true);
 }
 
 /**
@@ -96,11 +69,14 @@ export async function handleExecutionError(
     operation: 'execution'
   };
 
-  // 使用 ErrorService 处理错误
-  const result = await errorService.handleError(error, context);
-
   // 记录错误到线程上下文
-  threadContext.addError(result.error);
+  threadContext.addError(error);
 
-  // 状态由外部管理
+  // 使用 ErrorService 处理错误（记录日志和触发事件）
+  await errorService.handleError(error, context);
+
+  // 设置线程状态为 FAILED 和停止标志
+  threadContext.setStatus(ThreadStatus.FAILED);
+  threadContext.thread.endTime = now();
+  threadContext.setShouldStop(true);
 }

@@ -6,7 +6,7 @@ import { startHandler } from '../start-handler';
 import type { Node, StartNodeConfig } from '@modular-agent/types/node';
 import { NodeType } from '@modular-agent/types/node';
 import type { Thread } from '@modular-agent/types/thread';
-import { ThreadStatus, ErrorHandlingStrategy } from '@modular-agent/types/thread';
+import { ThreadStatus } from '@modular-agent/types/thread';
 
 describe('start-handler', () => {
   let mockThread: Thread;
@@ -207,20 +207,6 @@ describe('start-handler', () => {
   });
 
   describe('边界情况测试', () => {
-    it('应该处理带有errorHandling的Thread', async () => {
-      mockThread.errorHandling = {
-        strategy: ErrorHandlingStrategy.STOP_ON_ERROR
-      };
-      
-      const result = await startHandler(mockThread, mockNode);
-      
-      expect(result.message).toBe('Workflow started');
-      // start-handler不应该修改errorHandling，应该保留原有的errorHandling
-      expect(mockThread.errorHandling).toEqual({
-        strategy: ErrorHandlingStrategy.STOP_ON_ERROR
-      });
-    });
-
     it('应该处理带有contextData的Thread', async () => {
       mockThread.contextData = { conversationId: 'conv-123' };
       

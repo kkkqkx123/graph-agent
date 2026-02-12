@@ -6,7 +6,7 @@ import { startFromTriggerHandler } from '../start-from-trigger-handler';
 import type { Node, StartFromTriggerNodeConfig } from '@modular-agent/types/node';
 import { NodeType } from '@modular-agent/types/node';
 import type { Thread } from '@modular-agent/types/thread';
-import { ThreadStatus, ErrorHandlingStrategy } from '@modular-agent/types/thread';
+import { ThreadStatus } from '@modular-agent/types/thread';
 
 describe('start-from-trigger-handler', () => {
   let mockThread: Thread;
@@ -325,19 +325,6 @@ describe('start-from-trigger-handler', () => {
 
       expect(result.message).toBe('Triggered subgraph started');
       expect(mockThread.input).toEqual({});
-    });
-
-    it('应该处理带有errorHandling的Thread', async () => {
-      mockThread.errorHandling = {
-        strategy: ErrorHandlingStrategy.STOP_ON_ERROR
-      };
-
-      const result = await startFromTriggerHandler(mockThread, mockNode, mockContext);
-
-      expect(result.message).toBe('Triggered subgraph started');
-      expect(mockThread.errorHandling).toEqual({
-        strategy: 'STOP_ON_ERROR'
-      });
     });
 
     it('应该处理带有contextData的Thread', async () => {

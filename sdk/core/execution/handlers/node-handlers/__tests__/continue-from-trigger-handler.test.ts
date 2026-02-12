@@ -6,7 +6,7 @@ import { continueFromTriggerHandler } from '../continue-from-trigger-handler';
 import type { Node, ContinueFromTriggerNodeConfig } from '@modular-agent/types/node';
 import { NodeType } from '@modular-agent/types/node';
 import type { Thread } from '@modular-agent/types/thread';
-import { ThreadStatus, ErrorHandlingStrategy } from '@modular-agent/types/thread';
+import { ThreadStatus } from '@modular-agent/types/thread';
 
 describe('continue-from-trigger-handler', () => {
   let mockThread: Thread;
@@ -380,19 +380,6 @@ describe('continue-from-trigger-handler', () => {
       await expect(continueFromTriggerHandler(mockThread, mockNode))
         .rejects
         .toThrow('Main thread context is required for CONTINUE_FROM_TRIGGER node');
-    });
-
-    it('应该处理带有errorHandling的Thread', async () => {
-      mockThread.errorHandling = {
-        strategy: ErrorHandlingStrategy.STOP_ON_ERROR
-      };
-
-      const result = await continueFromTriggerHandler(mockThread, mockNode, mockContext);
-
-      expect(result.message).toBe('Triggered subgraph completed and data callback executed');
-      expect(mockThread.errorHandling).toEqual({
-        strategy: ErrorHandlingStrategy.STOP_ON_ERROR
-      });
     });
 
     it('应该处理带有contextData的Thread', async () => {

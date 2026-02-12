@@ -40,7 +40,6 @@ import { validateNodeByType } from './node-validation';
 import { validateHooks } from './hook-validator';
 import { validateTriggers } from './trigger-validator';
 import { SelfReferenceValidationStrategy } from './strategies/self-reference-validation-strategy';
-import { ErrorHandlingStrategy } from '@modular-agent/types/thread';
 import { TriggerActionType } from '@modular-agent/types/trigger';
 
 /**
@@ -66,16 +65,6 @@ const retryPolicySchema = z.object({
 });
 
 /**
- * 错误处理策略schema
- */
-const errorHandlingSchema = z.object({
-  strategy: z.custom<ErrorHandlingStrategy>(
-    (val): val is ErrorHandlingStrategy =>
-      Object.values(ErrorHandlingStrategy).includes(val as ErrorHandlingStrategy)
-  )
-});
-
-/**
  * 工具审批配置schema
  */
 const toolApprovalConfigSchema = z.object({
@@ -90,7 +79,6 @@ const workflowConfigSchema = z.object({
   maxSteps: z.number().min(0, 'Max steps must be non-negative').optional(),
   enableCheckpoints: z.boolean().optional(),
   retryPolicy: retryPolicySchema.optional(),
-  errorHandling: errorHandlingSchema.optional(),
   toolApproval: toolApprovalConfigSchema.optional()
 });
 

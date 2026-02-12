@@ -166,7 +166,7 @@ function resolveCheckpointConfigInternal(
       if (globalConfig.checkpointBeforeNode !== undefined) {
         return {
           shouldCreate: globalConfig.checkpointBeforeNode,
-          description: globalConfig.defaultMetadata?.description || 'Global checkpoint before node',
+          description: 'Global checkpoint before node',
           source: CheckpointConfigSource.GLOBAL
         };
       }
@@ -174,7 +174,7 @@ function resolveCheckpointConfigInternal(
       if (globalConfig.checkpointAfterNode !== undefined) {
         return {
           shouldCreate: globalConfig.checkpointAfterNode,
-          description: globalConfig.defaultMetadata?.description || 'Global checkpoint after node',
+          description: 'Global checkpoint after node',
           source: CheckpointConfigSource.GLOBAL
         };
       }

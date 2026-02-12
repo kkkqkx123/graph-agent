@@ -124,7 +124,7 @@ export class ThreadExecutor implements SubgraphContextFactory {
           this.routeToNextNode(threadContext, currentNode, nodeResult);
         } else if (nodeResult.status === 'FAILED') {
           await handleNodeFailure(threadContext, currentNode, nodeResult);
-          break;
+          // handleNodeFailure 会设置 shouldStop=true，循环会在下一次迭代时退出
         } else if (nodeResult.status === 'SKIPPED') {
           this.routeToNextNode(threadContext, currentNode, nodeResult);
         }

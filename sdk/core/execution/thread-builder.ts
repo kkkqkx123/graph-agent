@@ -9,7 +9,7 @@
 
 import { ProcessedWorkflowDefinition } from '@modular-agent/types/workflow';
 import type { Thread, ThreadOptions, ThreadStatus } from '@modular-agent/types/thread';
-import { ThreadType, ErrorHandlingStrategy } from '@modular-agent/types/thread';
+import { ThreadType } from '@modular-agent/types/thread';
 import { ConversationManager } from './managers/conversation-manager';
 import { ThreadContext } from './context/thread-context';
 import { NodeType } from '@modular-agent/types/node';
@@ -112,8 +112,7 @@ export class ThreadBuilder {
       output: {},
       nodeResults: [],
       startTime: now,
-      errors: [],
-      errorHandling: processedWorkflow.config?.errorHandling || { strategy: ErrorHandlingStrategy.STOP_ON_ERROR }
+      errors: []
     };
 
     // 步骤4：从 WorkflowDefinition 初始化变量
@@ -251,8 +250,7 @@ export class ThreadBuilder {
         parentThreadId: sourceThread.id,
         childThreadIds: [],
         triggeredSubworkflowId: ''
-      },
-      errorHandling: sourceThread.errorHandling
+      }
     };
 
     // 复制 ConversationManager 实例
@@ -323,8 +321,7 @@ export class ThreadBuilder {
       forkJoinContext: {
         forkId: forkConfig.forkId,
         forkPathId: forkConfig.forkPathId
-      },
-      errorHandling: parentThread.errorHandling
+      }
     };
 
     // 复制 ConversationManager 实例

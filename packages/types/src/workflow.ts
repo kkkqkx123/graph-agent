@@ -10,8 +10,6 @@ import type { ID, Timestamp, Version, Metadata, VariableScope } from './common';
 import type { GraphAnalysisResult, Graph } from './graph';
 import type { WorkflowTrigger } from './trigger';
 import type { TriggerReference } from './trigger-template';
-import type { CheckpointMetadata } from './checkpoint';
-import type { ErrorHandlingConfig } from './thread';
 
 /**
  * 工作流类型枚举
@@ -57,8 +55,6 @@ export interface CheckpointConfig {
   checkpointBeforeNode?: boolean;
   /** 是否在节点执行后创建检查点（全局默认行为） */
   checkpointAfterNode?: boolean;
-  /** 默认检查点元数据 */
-  defaultMetadata?: CheckpointMetadata;
 }
 
 /**
@@ -95,8 +91,6 @@ export interface WorkflowConfig {
     retryDelay?: number;
     backoffMultiplier?: number;
   };
-  /** 错误处理策略 */
-  errorHandling?: ErrorHandlingConfig;
   /** 工具审批配置 */
   toolApproval?: ToolApprovalConfig;
 }

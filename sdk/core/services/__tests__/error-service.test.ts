@@ -5,7 +5,6 @@
 
 import { ErrorService } from '../error-service';
 import { ValidationError, ExecutionError, ToolError, NotFoundError } from '@modular-agent/types/errors';
-import { ErrorHandlingStrategy } from '@modular-agent/types/thread';
 import { EventManager } from '../event-manager';
 import type { ErrorEvent } from '@modular-agent/types/events';
 
@@ -47,12 +46,17 @@ describe('ErrorService', () => {
         operation: 'test_operation'
       };
 
-      const result = await errorService.handleError(error, context);
+      await errorService.handleError(error, context);
 
-      expect(result.error).toBeInstanceOf(ExecutionError);
-      expect(result.error.message).toBe('Test error');
-      expect(result.shouldStop).toBe(true);
-      expect(mockEventManager.emit).toHaveBeenCalled();
+      expect(mockEventManager.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'ERROR',
+          threadId: 'thread-123',
+          workflowId: 'workflow-456',
+          nodeId: 'node-789',
+          error: expect.any(ExecutionError)
+        })
+      );
     });
 
     it('应该根据operation类型包装为合适的SDKError', async () => {
@@ -63,10 +67,13 @@ describe('ErrorService', () => {
         toolType: 'native'
       };
 
-      const result = await errorService.handleError(error, context);
+      await errorService.handleError(error, context);
 
-      expect(result.error).toBeInstanceOf(ToolError);
-      expect((result.error as ToolError).toolName).toBe('test-tool');
+      expect(mockEventManager.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.any(ToolError)
+        })
+      );
     });
 
     it('应该根据operation类型包装为ValidationError', async () => {
@@ -77,10 +84,13 @@ describe('ErrorService', () => {
         value: 'test-value'
       };
 
-      const result = await errorService.handleError(error, context);
+      await errorService.handleError(error, context);
 
-      expect(result.error).toBeInstanceOf(ValidationError);
-      expect((result.error as ValidationError).field).toBe('test-field');
+      expect(mockEventManager.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.any(ValidationError)
+        })
+      );
     });
 
     it('应该根据operation类型包装为NotFoundError', async () => {
@@ -91,10 +101,13 @@ describe('ErrorService', () => {
         resourceId: 'workflow-123'
       };
 
-      const result = await errorService.handleError(error, context);
+      await errorService.handleError(error, context);
 
-      expect(result.error).toBeInstanceOf(NotFoundError);
-      expect((result.error as NotFoundError).resourceType).toBe('workflow');
+      expect(mockEventManager.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.any(NotFoundError)
+        })
+      );
     });
 
     it('应该直接返回SDKError', async () => {
@@ -103,40 +116,13 @@ describe('ErrorService', () => {
         threadId: 'thread-123'
       };
 
-      const result = await errorService.handleError(error, context);
+      await errorService.handleError(error, context);
 
-      expect(result.error).toBe(error);
-      expect(result.shouldStop).toBe(true);
-    });
-
-    it('应该根据CONTINUE_ON_ERROR策略返回shouldStop为false', async () => {
-      const error = new Error('Test error');
-      const context = {
-        threadId: 'thread-123'
-      };
-
-      const result = await errorService.handleError(
-        error,
-        context,
-        ErrorHandlingStrategy.CONTINUE_ON_ERROR
+      expect(mockEventManager.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: error
+        })
       );
-
-      expect(result.shouldStop).toBe(false);
-    });
-
-    it('应该根据STOP_ON_ERROR策略返回shouldStop为true', async () => {
-      const error = new Error('Test error');
-      const context = {
-        threadId: 'thread-123'
-      };
-
-      const result = await errorService.handleError(
-        error,
-        context,
-        ErrorHandlingStrategy.STOP_ON_ERROR
-      );
-
-      expect(result.shouldStop).toBe(true);
     });
 
     it('应该触发错误事件', async () => {
@@ -180,11 +166,13 @@ describe('ErrorService', () => {
         toolType: 'native'
       };
 
-      const result = await errorService.handleError(error, context);
+      await errorService.handleError(error, context);
 
-      expect(result.error).toBeInstanceOf(ToolError);
-      expect((result.error as ToolError).toolName).toBe('my-tool');
-      expect((result.error as ToolError).toolType).toBe('native');
+      expect(mockEventManager.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.any(ToolError)
+        })
+      );
     });
 
     it('应该根据operation包含validation包装为ValidationError', async () => {
@@ -195,11 +183,13 @@ describe('ErrorService', () => {
         value: 'invalid-email'
       };
 
-      const result = await errorService.handleError(error, context);
+      await errorService.handleError(error, context);
 
-      expect(result.error).toBeInstanceOf(ValidationError);
-      expect((result.error as ValidationError).field).toBe('email');
-      expect((result.error as ValidationError).value).toBe('invalid-email');
+      expect(mockEventManager.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.any(ValidationError)
+        })
+      );
     });
 
     it('应该根据operation包含find或get包装为NotFoundError', async () => {
@@ -210,11 +200,13 @@ describe('ErrorService', () => {
         resourceId: 'user-123'
       };
 
-      const result = await errorService.handleError(error, context);
+      await errorService.handleError(error, context);
 
-      expect(result.error).toBeInstanceOf(NotFoundError);
-      expect((result.error as NotFoundError).resourceType).toBe('user');
-      expect((result.error as NotFoundError).resourceId).toBe('user-123');
+      expect(mockEventManager.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.any(NotFoundError)
+        })
+      );
     });
 
     it('应该默认包装为ExecutionError', async () => {
@@ -225,40 +217,13 @@ describe('ErrorService', () => {
         workflowId: 'workflow-123'
       };
 
-      const result = await errorService.handleError(error, context);
+      await errorService.handleError(error, context);
 
-      expect(result.error).toBeInstanceOf(ExecutionError);
-      expect((result.error as ExecutionError).nodeId).toBe('node-123');
-      expect((result.error as ExecutionError).workflowId).toBe('workflow-123');
-    });
-  });
-
-  describe('错误处理策略', () => {
-    it('应该应用STOP_ON_ERROR策略', async () => {
-      const error = new Error('Test error');
-      const context = { threadId: 'thread-123' };
-
-      const result = await errorService.handleError(error, context, ErrorHandlingStrategy.STOP_ON_ERROR);
-
-      expect(result.shouldStop).toBe(true);
-    });
-
-    it('应该应用CONTINUE_ON_ERROR策略', async () => {
-      const error = new Error('Test error');
-      const context = { threadId: 'thread-123' };
-
-      const result = await errorService.handleError(error, context, ErrorHandlingStrategy.CONTINUE_ON_ERROR);
-
-      expect(result.shouldStop).toBe(false);
-    });
-
-    it('应该默认使用STOP_ON_ERROR策略', async () => {
-      const error = new Error('Test error');
-      const context = { threadId: 'thread-123' };
-
-      const result = await errorService.handleError(error, context);
-
-      expect(result.shouldStop).toBe(true);
+      expect(mockEventManager.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.any(ExecutionError)
+        })
+      );
     });
   });
 });

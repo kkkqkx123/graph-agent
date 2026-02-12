@@ -97,8 +97,7 @@ export class CheckpointCoordinator {
       conversationState, // 使用新的索引状态
       triggerStates: triggerStateSnapshot.size > 0 ? triggerStateSnapshot : undefined, // 保存触发器状态
       forkJoinContext: thread.forkJoinContext, // 保存FORK/JOIN上下文
-      triggeredSubworkflowContext: thread.triggeredSubworkflowContext, // 保存Triggered子工作流上下文
-      errorHandling: thread.errorHandling // 保存错误处理配置
+      triggeredSubworkflowContext: thread.triggeredSubworkflowContext // 保存Triggered子工作流上下文
     };
 
     // 步骤3：生成唯一 checkpointId 和 timestamp
@@ -167,7 +166,6 @@ export class CheckpointCoordinator {
       nodeResults: nodeResultsArray,
       startTime: checkpoint.timestamp,
       errors: checkpoint.threadState.errors,
-      errorHandling: checkpoint.threadState.errorHandling, // 从 threadState 恢复错误处理配置
       forkJoinContext: checkpoint.threadState.forkJoinContext,
       triggeredSubworkflowContext: checkpoint.threadState.triggeredSubworkflowContext,
       variableScopes: checkpoint.threadState.variableScopes,
