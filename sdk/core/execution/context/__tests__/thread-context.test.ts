@@ -60,7 +60,7 @@ describe('ThreadContext', () => {
       variableScopes: {
         global: {},
         thread: {},
-        subgraph: [],
+        local: [],
         loop: []
       },
       input: { test: 'input' },

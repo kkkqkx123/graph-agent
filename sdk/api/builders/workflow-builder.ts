@@ -299,7 +299,7 @@ export class WorkflowBuilder {
       description?: string;
       required?: boolean;
       readonly?: boolean;
-      scope?: 'global' | 'thread' | 'subgraph' | 'loop';
+      scope?: 'global' | 'thread' | 'local' | 'loop';
     }
   ): this {
     const variable: WorkflowVariable = {

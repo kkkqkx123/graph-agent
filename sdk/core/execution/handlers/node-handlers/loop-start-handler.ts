@@ -328,7 +328,7 @@ export async function loopStartHandler(thread: Thread, node: Node, context?: any
       thread.variableScopes = {
         global: {},
         thread: {},
-        subgraph: [],
+        local: [],
         loop: []
       };
     }

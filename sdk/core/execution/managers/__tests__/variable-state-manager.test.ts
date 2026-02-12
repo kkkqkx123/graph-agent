@@ -16,7 +16,7 @@ describe('VariableStateManager', () => {
       expect(manager.getVariableScopes()).toEqual({
         global: {},
         thread: {},
-        subgraph: [],
+        local: [],
         loop: []
       });
     });
@@ -36,10 +36,10 @@ describe('VariableStateManager', () => {
           scope: 'thread'
         },
         {
-          name: 'subgraphVar',
+          name: 'localVar',
           type: 'boolean',
           defaultValue: true,
-          scope: 'subgraph'
+          scope: 'local'
         },
         {
           name: 'loopVar',
@@ -67,7 +67,7 @@ describe('VariableStateManager', () => {
       const scopes = manager.getVariableScopes();
       expect(scopes.global).toEqual({ globalVar: 'globalValue' });
       expect(scopes.thread).toEqual({});
-      expect(scopes.subgraph).toEqual([]);
+      expect(scopes.local).toEqual([]);
       expect(scopes.loop).toEqual([]);
     });
 
@@ -127,7 +127,7 @@ describe('VariableStateManager', () => {
       expect(manager.getVariableScopes()).toEqual({
         global: {},
         thread: {},
-        subgraph: [],
+        local: [],
         loop: []
       });
     });
@@ -179,20 +179,20 @@ describe('VariableStateManager', () => {
       expect(manager.getVariableValue('testVar', 'thread')).toBe('threadValue');
     });
 
-    it('should set and get subgraph variable value', () => {
-      manager.enterSubgraphScope();
-      manager.setVariableValue('testVar', 'subgraphValue', 'subgraph');
-      expect(manager.getVariableValue('testVar', 'subgraph')).toBe('subgraphValue');
+    it('should set and get local variable value', () => {
+      manager.enterLocalScope();
+      manager.setVariableValue('testVar', 'localValue', 'local');
+      expect(manager.getVariableValue('testVar', 'local')).toBe('localValue');
     });
 
-    it('should throw error when setting subgraph variable outside subgraph context', () => {
+    it('should throw error when setting local variable outside local context', () => {
       expect(() => {
-        manager.setVariableValue('testVar', 'value', 'subgraph');
-      }).toThrow('Cannot set subgraph variable outside of subgraph context');
+        manager.setVariableValue('testVar', 'value', 'local');
+      }).toThrow('Cannot set local variable outside of local scope context');
     });
 
-    it('should return undefined when getting subgraph variable outside subgraph context', () => {
-      expect(manager.getVariableValue('testVar', 'subgraph')).toBeUndefined();
+    it('should return undefined when getting local variable outside local context', () => {
+      expect(manager.getVariableValue('testVar', 'local')).toBeUndefined();
     });
 
     it('should set and get loop variable value', () => {
@@ -212,49 +212,49 @@ describe('VariableStateManager', () => {
     });
   });
 
-  describe('subgraph scope management', () => {
+  describe('local scope management', () => {
     beforeEach(() => {
       const workflowVariables: WorkflowVariable[] = [
-        { name: 'subgraphVar', type: 'string', defaultValue: 'subgraphDefault', scope: 'subgraph' },
+        { name: 'localVar', type: 'string', defaultValue: 'localDefault', scope: 'local' },
         { name: 'threadVar', type: 'string', defaultValue: 'threadDefault', scope: 'thread' }
       ];
       manager.initializeFromWorkflow(workflowVariables);
     });
 
-    it('should enter and exit subgraph scope', () => {
-      manager.enterSubgraphScope();
-      expect(manager.getVariableScopes().subgraph).toHaveLength(1);
+    it('should enter and exit local scope', () => {
+      manager.enterLocalScope();
+      expect(manager.getVariableScopes().local).toHaveLength(1);
       
-      manager.exitSubgraphScope();
-      expect(manager.getVariableScopes().subgraph).toHaveLength(0);
+      manager.exitLocalScope();
+      expect(manager.getVariableScopes().local).toHaveLength(0);
     });
 
-    it('should initialize subgraph scope with default values', () => {
-      manager.enterSubgraphScope();
-      const subgraphScope = manager.getVariablesByScope('subgraph');
-      expect(subgraphScope).toEqual({ subgraphVar: 'subgraphDefault' });
+    it('should initialize local scope with default values', () => {
+      manager.enterLocalScope();
+      const localScope = manager.getVariablesByScope('local');
+      expect(localScope).toEqual({ localVar: 'localDefault' });
     });
 
-    it('should throw error when exiting non-existent subgraph scope', () => {
+    it('should throw error when exiting non-existent local scope', () => {
       expect(() => {
-        manager.exitSubgraphScope();
-      }).toThrow('No subgraph scope to exit');
+        manager.exitLocalScope();
+      }).toThrow('No local scope to exit');
     });
 
-    it('should handle nested subgraph scopes', () => {
-      manager.enterSubgraphScope();
-      manager.setVariableValue('subgraphVar', 'outerValue', 'subgraph');
+    it('should handle nested local scopes', () => {
+      manager.enterLocalScope();
+      manager.setVariableValue('localVar', 'outerValue', 'local');
       
-      manager.enterSubgraphScope();
-      manager.setVariableValue('subgraphVar', 'innerValue', 'subgraph');
+      manager.enterLocalScope();
+      manager.setVariableValue('localVar', 'innerValue', 'local');
       
-      expect(manager.getVariableValue('subgraphVar', 'subgraph')).toBe('innerValue');
+      expect(manager.getVariableValue('localVar', 'local')).toBe('innerValue');
       
-      manager.exitSubgraphScope();
-      expect(manager.getVariableValue('subgraphVar', 'subgraph')).toBe('outerValue');
+      manager.exitLocalScope();
+      expect(manager.getVariableValue('localVar', 'local')).toBe('outerValue');
       
-      manager.exitSubgraphScope();
-      expect(manager.getVariableValue('subgraphVar', 'subgraph')).toBeUndefined();
+      manager.exitLocalScope();
+      expect(manager.getVariableValue('localVar', 'local')).toBeUndefined();
     });
   });
 
@@ -309,7 +309,7 @@ describe('VariableStateManager', () => {
       const workflowVariables: WorkflowVariable[] = [
         { name: 'sharedVar', type: 'string', defaultValue: 'globalDefault', scope: 'global' },
         { name: 'threadVar', type: 'string', defaultValue: 'threadDefault', scope: 'thread' },
-        { name: 'subgraphVar', type: 'string', defaultValue: 'subgraphDefault', scope: 'subgraph' },
+        { name: 'localVar', type: 'string', defaultValue: 'localDefault', scope: 'local' },
         { name: 'loopVar', type: 'string', defaultValue: 'loopDefault', scope: 'loop' }
       ];
       manager.initializeFromWorkflow(workflowVariables);
@@ -319,9 +319,9 @@ describe('VariableStateManager', () => {
       manager.setVariableValue('threadVar', 'threadValue', 'thread');
       manager.setVariableValue('sharedVar', 'threadValue', 'thread');
       
-      manager.enterSubgraphScope();
-      manager.setVariableValue('subgraphVar', 'subgraphValue', 'subgraph');
-      manager.setVariableValue('sharedVar', 'subgraphValue', 'subgraph');
+      manager.enterLocalScope();
+      manager.setVariableValue('localVar', 'localValue', 'local');
+      manager.setVariableValue('sharedVar', 'localValue', 'local');
       
       manager.enterLoopScope();
       manager.setVariableValue('loopVar', 'loopValue', 'loop');
@@ -332,7 +332,7 @@ describe('VariableStateManager', () => {
       // Loop scope has highest priority
       expect(allVariables['sharedVar']).toBe('loopValue');
       expect(allVariables['threadVar']).toBe('threadValue');
-      expect(allVariables['subgraphVar']).toBe('subgraphValue');
+      expect(allVariables['localVar']).toBe('localValue');
       expect(allVariables['loopVar']).toBe('loopValue');
     });
   });
@@ -355,14 +355,14 @@ describe('VariableStateManager', () => {
       expect(manager.getVariablesByScope('thread')).toEqual({ testVar: 'threadValue' });
     });
 
-    it('should return empty object for subgraph scope when no subgraph context', () => {
-      expect(manager.getVariablesByScope('subgraph')).toEqual({});
+    it('should return empty object for local scope when no local context', () => {
+      expect(manager.getVariablesByScope('local')).toEqual({});
     });
 
-    it('should return current subgraph scope variables', () => {
-      manager.enterSubgraphScope();
-      manager.setVariableValue('subgraphVar', 'subgraphValue', 'subgraph');
-      expect(manager.getVariablesByScope('subgraph')).toEqual({ subgraphVar: 'subgraphValue' });
+    it('should return current local scope variables', () => {
+      manager.enterLocalScope();
+      manager.setVariableValue('localVar', 'localValue', 'local');
+      expect(manager.getVariablesByScope('local')).toEqual({ localVar: 'localValue' });
     });
 
     it('should return empty object for loop scope when no loop context', () => {
@@ -384,8 +384,8 @@ describe('VariableStateManager', () => {
       manager.initializeFromWorkflow(workflowVariables);
       manager.setVariableValue('testVar', 'modified', 'thread');
       
-      manager.enterSubgraphScope();
-      manager.setVariableValue('subgraphVar', 'subgraphValue', 'subgraph');
+      manager.enterLocalScope();
+      manager.setVariableValue('localVar', 'localValue', 'local');
       
       manager.enterLoopScope();
       manager.setVariableValue('loopVar', 'loopValue', 'loop');
@@ -398,12 +398,12 @@ describe('VariableStateManager', () => {
 
       // Verify restored state
       expect(newManager.getVariableValue('testVar', 'thread')).toBe('modified');
-      expect(newManager.getVariableValue('subgraphVar', 'subgraph')).toBe('subgraphValue');
+      expect(newManager.getVariableValue('localVar', 'local')).toBe('localValue');
       expect(newManager.getVariableValue('loopVar', 'loop')).toBe('loopValue');
       
       // Verify scopes structure
       const restoredScopes = newManager.getVariableScopes();
-      expect(restoredScopes.subgraph).toHaveLength(1);
+      expect(restoredScopes.local).toHaveLength(1);
       expect(restoredScopes.loop).toHaveLength(1);
     });
   });
@@ -430,7 +430,7 @@ describe('VariableStateManager', () => {
       expect(manager.getVariableValue('threadVar', 'thread')).toBe('modifiedThread');
       
       // Subgraph and loop scopes should be empty
-      expect(manager.getVariableScopes().subgraph).toEqual([]);
+      expect(manager.getVariableScopes().local).toEqual([]);
       expect(manager.getVariableScopes().loop).toEqual([]);
     });
   });
@@ -442,7 +442,7 @@ describe('VariableStateManager', () => {
       ];
       manager.initializeFromWorkflow(workflowVariables);
       manager.setVariableValue('testVar', 'value', 'thread');
-      manager.enterSubgraphScope();
+      manager.enterLocalScope();
       manager.enterLoopScope();
 
       manager.cleanup();
@@ -451,7 +451,7 @@ describe('VariableStateManager', () => {
       expect(manager.getVariableScopes()).toEqual({
         global: {},
         thread: {},
-        subgraph: [],
+        local: [],
         loop: []
       });
     });

@@ -462,7 +462,7 @@ describe('variable-handler', () => {
 
       await variableHandler(mockThread, mockNode);
 
-      expect(mockThread.variableScopes.subgraph[0]?.['subgraphVar']).toBe(300);
+      expect(mockThread.variableScopes.local[0]?.['localVar']).toBe(300);
     });
 
     it('应该正确更新loop作用域的变量', async () => {

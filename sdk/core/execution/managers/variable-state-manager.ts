@@ -29,8 +29,8 @@ export interface VariableScopes {
   global: Record<string, any>;
   /** 线程作用域 */
   thread: Record<string, any>;
-  /** 子图作用域栈 */
-  subgraph: Record<string, any>[];
+  /** 本地作用域栈 */
+  local: Record<string, any>[];
   /** 循环作用域栈 */
   loop: Record<string, any>[];
 }
@@ -58,7 +58,7 @@ export class VariableStateManager implements LifecycleCapable<{
   private variableScopes: VariableScopes = {
     global: {},
     thread: {},
-    subgraph: [],
+    local: [],
     loop: []
   };
 
@@ -72,7 +72,7 @@ export class VariableStateManager implements LifecycleCapable<{
       this.variableScopes = {
         global: {},
         thread: {},
-        subgraph: [],
+        local: [],
         loop: []
       };
       return;
@@ -95,13 +95,13 @@ export class VariableStateManager implements LifecycleCapable<{
     this.variableScopes = {
       global: {},
       thread: {},
-      subgraph: [],
+      local: [],
       loop: []
     };
 
     // 按作用域分配变量值
     // 只有 global 作用域的变量在初始化时直接赋值
-    // thread、subgraph、loop 作用域的变量按需初始化
+    // thread、local、loop 作用域的变量按需初始化
     for (const variable of this.variables) {
       switch (variable.scope) {
         case 'global':
@@ -109,9 +109,9 @@ export class VariableStateManager implements LifecycleCapable<{
           this.variableScopes.global[variable.name] = variable.value;
           break;
         case 'thread':
-        case 'subgraph':
+        case 'local':
         case 'loop':
-          // thread、subgraph、loop 作用域的变量按需初始化
+          // thread、local、loop 作用域的变量按需初始化
           // 这里只做声明，不初始化值
           break;
       }
@@ -128,7 +128,7 @@ export class VariableStateManager implements LifecycleCapable<{
       this.variableScopes = {
         global: {},
         thread: {},
-        subgraph: [],
+        local: [],
         loop: []
       };
       return;
@@ -141,13 +141,13 @@ export class VariableStateManager implements LifecycleCapable<{
     this.variableScopes = {
       global: {},
       thread: {},
-      subgraph: [],
+      local: [],
       loop: []
     };
 
     // 按作用域分配变量值
     // 只有 global 作用域的变量在初始化时直接赋值
-    // thread、subgraph、loop 作用域的变量按需初始化
+    // thread、local、loop 作用域的变量按需初始化
     for (const variable of this.variables) {
       switch (variable.scope) {
         case 'global':
@@ -155,9 +155,9 @@ export class VariableStateManager implements LifecycleCapable<{
           this.variableScopes.global[variable.name] = variable.value;
           break;
         case 'thread':
-        case 'subgraph':
+        case 'local':
         case 'loop':
-          // thread、subgraph、loop 作用域的变量按需初始化
+          // thread、local、loop 作用域的变量按需初始化
           // 这里只做声明，不初始化值
           break;
       }
@@ -195,13 +195,13 @@ export class VariableStateManager implements LifecycleCapable<{
       case 'thread':
         this.variableScopes.thread[name] = value;
         break;
-      case 'subgraph':
-        if (this.variableScopes.subgraph.length === 0) {
-          throw new ValidationError('Cannot set subgraph variable outside of subgraph context', 'scope');
+      case 'local':
+        if (this.variableScopes.local.length === 0) {
+          throw new ValidationError('Cannot set local variable outside of local scope context', 'scope');
         }
-        const subgraphScope = this.variableScopes.subgraph[this.variableScopes.subgraph.length - 1];
-        if (subgraphScope) {
-          subgraphScope[name] = value;
+        const localScope = this.variableScopes.local[this.variableScopes.local.length - 1];
+        if (localScope) {
+          localScope[name] = value;
         }
         break;
       case 'loop':
@@ -234,12 +234,12 @@ export class VariableStateManager implements LifecycleCapable<{
         return this.variableScopes.global[name];
       case 'thread':
         return this.variableScopes.thread[name];
-      case 'subgraph':
-        if (this.variableScopes.subgraph.length === 0) {
+      case 'local':
+        if (this.variableScopes.local.length === 0) {
           return undefined;
         }
-        const subgraphScope = this.variableScopes.subgraph[this.variableScopes.subgraph.length - 1];
-        return subgraphScope ? subgraphScope[name] : undefined;
+        const localScope = this.variableScopes.local[this.variableScopes.local.length - 1];
+        return localScope ? localScope[name] : undefined;
       case 'loop':
         if (this.variableScopes.loop.length === 0) {
           return undefined;
@@ -250,29 +250,29 @@ export class VariableStateManager implements LifecycleCapable<{
   }
 
   /**
-   * 进入子图作用域（原子操作）
+   * 进入本地作用域（原子操作）
    */
-  enterSubgraphScope(): void {
+  enterLocalScope(): void {
     const newScope: Record<string, any> = {};
     
-    // 初始化该作用域的所有subgraph变量
+    // 初始化该作用域的所有local变量
     for (const variable of this.variables) {
-      if (variable.scope === 'subgraph') {
+      if (variable.scope === 'local') {
         newScope[variable.name] = variable.value;
       }
     }
     
-    this.variableScopes.subgraph.push(newScope);
+    this.variableScopes.local.push(newScope);
   }
 
   /**
-   * 退出子图作用域（原子操作）
+   * 退出本地作用域（原子操作）
    */
-  exitSubgraphScope(): void {
-    if (this.variableScopes.subgraph.length === 0) {
-      throw new ValidationError('No subgraph scope to exit', 'scope');
+  exitLocalScope(): void {
+    if (this.variableScopes.local.length === 0) {
+      throw new ValidationError('No local scope to exit', 'scope');
     }
-    this.variableScopes.subgraph.pop();
+    this.variableScopes.local.pop();
   }
 
   /**
@@ -317,9 +317,9 @@ export class VariableStateManager implements LifecycleCapable<{
     // 2. 线程作用域
     Object.assign(allVariables, this.variableScopes.thread);
 
-    // 3. 子图作用域（从外到内，内层覆盖外层）
-    for (const subgraphScope of this.variableScopes.subgraph) {
-      Object.assign(allVariables, subgraphScope);
+    // 3. 本地作用域（从外到内，内层覆盖外层）
+    for (const localScope of this.variableScopes.local) {
+      Object.assign(allVariables, localScope);
     }
 
     // 4. 循环作用域（从外到内，内层覆盖外层，最高优先级）
@@ -341,11 +341,11 @@ export class VariableStateManager implements LifecycleCapable<{
         return { ...this.variableScopes.global };
       case 'thread':
         return { ...this.variableScopes.thread };
-      case 'subgraph':
-        if (this.variableScopes.subgraph.length === 0) {
+      case 'local':
+        if (this.variableScopes.local.length === 0) {
           return {};
         }
-        return { ...this.variableScopes.subgraph[this.variableScopes.subgraph.length - 1] };
+        return { ...this.variableScopes.local[this.variableScopes.local.length - 1] };
       case 'loop':
         if (this.variableScopes.loop.length === 0) {
           return {};
@@ -368,7 +368,7 @@ export class VariableStateManager implements LifecycleCapable<{
       variableScopes: {
         global: { ...this.variableScopes.global },
         thread: { ...this.variableScopes.thread },
-        subgraph: this.variableScopes.subgraph.map(scope => ({ ...scope })),
+        local: this.variableScopes.local.map(scope => ({ ...scope })),
         loop: this.variableScopes.loop.map(scope => ({ ...scope }))
       }
     };
@@ -389,7 +389,7 @@ export class VariableStateManager implements LifecycleCapable<{
     this.variableScopes = {
       global: { ...snapshot.variableScopes.global },
       thread: { ...snapshot.variableScopes.thread },
-      subgraph: snapshot.variableScopes.subgraph.map(scope => ({ ...scope })),
+      local: snapshot.variableScopes.local.map(scope => ({ ...scope })),
       loop: snapshot.variableScopes.loop.map(scope => ({ ...scope }))
     };
   }
@@ -405,7 +405,7 @@ export class VariableStateManager implements LifecycleCapable<{
     this.variableScopes = {
       global: sourceStateManager.variableScopes.global,
       thread: { ...sourceStateManager.variableScopes.thread },
-      subgraph: [],
+      local: [],
       loop: []
     };
   }
@@ -419,7 +419,7 @@ export class VariableStateManager implements LifecycleCapable<{
     this.variableScopes = {
       global: {},
       thread: {},
-      subgraph: [],
+      local: [],
       loop: []
     };
   }
@@ -432,7 +432,7 @@ export class VariableStateManager implements LifecycleCapable<{
     return {
       global: { ...this.variableScopes.global },
       thread: { ...this.variableScopes.thread },
-      subgraph: this.variableScopes.subgraph.map(scope => ({ ...scope })),
+      local: this.variableScopes.local.map(scope => ({ ...scope })),
       loop: this.variableScopes.loop.map(scope => ({ ...scope }))
     };
   }

@@ -289,7 +289,7 @@ describe('检查点恢复生命周期集成测试', () => {
       expect(restoredThread.variableScopes).toBeDefined();
       expect(restoredThread.variableScopes.global).toBeDefined();
       expect(restoredThread.variableScopes.thread).toBeDefined();
-      expect(Array.isArray(restoredThread.variableScopes.subgraph)).toBe(true);
+      expect(Array.isArray(restoredThread.variableScopes.local)).toBe(true);
       expect(Array.isArray(restoredThread.variableScopes.loop)).toBe(true);
       
       // 执行结果

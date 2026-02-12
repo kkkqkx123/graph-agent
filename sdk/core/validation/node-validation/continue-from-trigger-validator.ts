@@ -44,7 +44,7 @@ export function validateContinueFromTriggerNode(node: Node): Result<Node, Valida
 
   const result = continueFromTriggerNodeConfigSchema.safeParse(node.config || {});
   if (!result.success) {
-    const errors = result.error.errors.map(err =>
+    const errors = result.error.issues.map((err: any) =>
       new ValidationError(
         `Invalid CONTINUE_FROM_TRIGGER node configuration: ${err.message}`,
         `node.${node.id}.config`

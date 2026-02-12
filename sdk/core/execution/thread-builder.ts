@@ -105,7 +105,7 @@ export class ThreadBuilder {
       variableScopes: {
         global: {},
         thread: {},
-        subgraph: [],
+        local: [],
         loop: []
       },
       input: options.input || {},
@@ -233,11 +233,11 @@ export class ThreadBuilder {
       status: 'CREATED' as ThreadStatus,
       currentNodeId: sourceThread.currentNodeId,
       variables: sourceThread.variables.map((v: any) => ({ ...v })),
-      // 四级作用域：global 通过引用共享，thread 深拷贝，subgraph 和 loop 清空
+      // 四级作用域：global 通过引用共享，thread 深拷贝，local 和 loop 清空
       variableScopes: {
         global: sourceThread.variableScopes.global,
         thread: { ...sourceThread.variableScopes.thread },
-        subgraph: [],
+        local: [],
         loop: []
       },
       input: { ...sourceThread.input },
@@ -306,11 +306,11 @@ export class ThreadBuilder {
       status: 'CREATED' as ThreadStatus,
       currentNodeId: forkConfig.startNodeId || parentThread.currentNodeId,
       variables: threadVariables,
-      // 四级作用域：global 通过引用共享，thread 深拷贝，subgraph 和 loop 清空
+      // 四级作用域：global 通过引用共享，thread 深拷贝，local 和 loop 清空
       variableScopes: {
         global: parentThread.variableScopes.global,
         thread: { ...parentThread.variableScopes.thread },
-        subgraph: [],
+        local: [],
         loop: []
       },
       input: { ...parentThread.input },

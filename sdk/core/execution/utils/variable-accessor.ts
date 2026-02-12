@@ -42,8 +42,8 @@ export enum VariableNamespace {
   GLOBAL = 'global',
   /** 线程作用域 */
   THREAD = 'thread',
-  /** 子图作用域 */
-  SUBGRAPH = 'subgraph',
+  /** 本地作用域 */
+  LOCAL = 'local',
   /** 循环作用域 */
   LOOP = 'loop'
 }
@@ -105,8 +105,8 @@ export class VariableAccessor {
       case VariableNamespace.THREAD:
         return this.getFromScope(remainingPath || path, 'thread');
 
-      case VariableNamespace.SUBGRAPH:
-        return this.getFromScope(remainingPath || path, 'subgraph');
+      case VariableNamespace.LOCAL:
+        return this.getFromScope(remainingPath || path, 'local');
 
       case VariableNamespace.LOOP:
         return this.getFromScope(remainingPath || path, 'loop');
@@ -171,9 +171,9 @@ export class VariableAccessor {
       case 'thread':
         scopeData = scopes.thread;
         break;
-      case 'subgraph':
-        if (scopes.subgraph.length > 0) {
-          scopeData = scopes.subgraph[scopes.subgraph.length - 1];
+      case 'local':
+        if (scopes.local.length > 0) {
+          scopeData = scopes.local[scopes.local.length - 1];
         }
         break;
       case 'loop':

@@ -191,8 +191,8 @@ export interface Thread {
     global: Record<string, any>;
     /** 线程作用域 - 单线程内部 */
     thread: Record<string, any>;
-    /** 子图作用域栈 - 支持嵌套子图 */
-    subgraph: Record<string, any>[];
+    /** 本地作用域栈 - 支持嵌套 */
+    local: Record<string, any>[];
     /** 循环作用域栈 - 支持嵌套循环 */
     loop: Record<string, any>[];
   };

@@ -59,8 +59,8 @@ export class VariableCoordinator {
 
   /**
    * 获取变量值（按作用域优先级查找）
-   * 优先级：loop > subgraph > thread > global
-   * 支持按需初始化：thread、subgraph、loop作用域的变量在首次访问时初始化
+   * 优先级：loop > local > thread > global
+   * 支持按需初始化：thread、local、loop作用域的变量在首次访问时初始化
    * @param threadContext ThreadContext 实例
    * @param name 变量名称
    * @returns 变量值
@@ -83,15 +83,15 @@ export class VariableCoordinator {
       }
     }
 
-    // 2. 子图作用域
-    if (scopes.subgraph.length > 0) {
-      const currentSubgraphScope = scopes.subgraph[scopes.subgraph.length - 1];
-      if (currentSubgraphScope && name in currentSubgraphScope) {
-        return currentSubgraphScope[name];
+    // 2. 本地作用域
+    if (scopes.local.length > 0) {
+      const currentLocalScope = scopes.local[scopes.local.length - 1];
+      if (currentLocalScope && name in currentLocalScope) {
+        return currentLocalScope[name];
       }
       // 如果变量未初始化，尝试按需初始化
-      if (currentSubgraphScope && !(name in currentSubgraphScope)) {
-        const initialized = this.initializeVariableOnDemand(name, 'subgraph', currentSubgraphScope);
+      if (currentLocalScope && !(name in currentLocalScope)) {
+        const initialized = this.initializeVariableOnDemand(name, 'local', currentLocalScope);
         if (initialized !== undefined) {
           return initialized;
         }
@@ -226,20 +226,20 @@ export class VariableCoordinator {
   }
 
   /**
-   * 进入子图作用域
+   * 进入本地作用域
    * 自动初始化该作用域的变量
    * @param threadContext ThreadContext 实例
    */
-  enterSubgraphScope(threadContext: ThreadContext): void {
-    this.stateManager.enterSubgraphScope();
+  enterLocalScope(threadContext: ThreadContext): void {
+    this.stateManager.enterLocalScope();
   }
 
   /**
-   * 退出子图作用域
+   * 退出本地作用域
    * @param threadContext ThreadContext 实例
    */
-  exitSubgraphScope(threadContext: ThreadContext): void {
-    this.stateManager.exitSubgraphScope();
+  exitLocalScope(threadContext: ThreadContext): void {
+    this.stateManager.exitLocalScope();
   }
 
   /**

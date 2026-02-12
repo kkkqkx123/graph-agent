@@ -25,8 +25,8 @@ export interface ThreadStateSnapshot {
     global: Record<string, any>;
     /** 线程作用域变量值 */
     thread: Record<string, any>;
-    /** 子图作用域变量值栈 */
-    subgraph: Record<string, any>[];
+    /** 本地作用域变量值栈 */
+    local: Record<string, any>[];
     /** 循环作用域变量值栈 */
     loop: Record<string, any>[];
   };

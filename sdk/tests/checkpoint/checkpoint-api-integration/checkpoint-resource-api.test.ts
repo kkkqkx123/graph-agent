@@ -118,7 +118,7 @@ describe('检查点资源API集成测试', () => {
       variableScopes: {
         global: {},
         thread: {},
-        subgraph: [],
+        local: [],
         loop: []
       },
       variableValues: {},

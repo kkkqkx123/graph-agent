@@ -197,9 +197,9 @@ export async function variableHandler(thread: Thread, node: Node, context?: any)
     case 'thread':
       thread.variableScopes.thread[config.variableName] = typedResult;
       break;
-    case 'subgraph':
-      if (thread.variableScopes.subgraph.length > 0) {
-        thread.variableScopes.subgraph[thread.variableScopes.subgraph.length - 1]![config.variableName] = typedResult;
+    case 'local':
+      if (thread.variableScopes.local.length > 0) {
+        thread.variableScopes.local[thread.variableScopes.local.length - 1]![config.variableName] = typedResult;
       }
       break;
     case 'loop':

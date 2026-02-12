@@ -170,7 +170,7 @@ describe('Thread构建到执行实例创建集成测试', () => {
       // 步骤9：验证变量作用域初始化
       expect(thread.variableScopes.global).toBeDefined();
       expect(thread.variableScopes.thread).toBeDefined();
-      expect(thread.variableScopes.subgraph).toEqual([]);
+      expect(thread.variableScopes.local).toEqual([]);
       expect(thread.variableScopes.loop).toEqual([]);
 
       // 步骤10：验证输入数据正确传递
@@ -303,7 +303,7 @@ describe('Thread构建到执行实例创建集成测试', () => {
       // 验证变量作用域结构已正确初始化
       expect(threadContext.thread.variableScopes.global).toBeDefined();
       expect(threadContext.thread.variableScopes.thread).toBeDefined();
-      expect(threadContext.thread.variableScopes.subgraph).toEqual([]);
+      expect(threadContext.thread.variableScopes.local).toEqual([]);
       expect(threadContext.thread.variableScopes.loop).toEqual([]);
     });
   });
@@ -672,7 +672,7 @@ describe('Thread构建到执行实例创建集成测试', () => {
       // 验证变量作用域正确复制
       expect(copiedThreadContext.thread.variableScopes.global).toBe(originalThreadContext.thread.variableScopes.global); // 全局作用域共享
       expect(copiedThreadContext.thread.variableScopes.thread).not.toBe(originalThreadContext.thread.variableScopes.thread); // 线程作用域深拷贝
-      expect(copiedThreadContext.thread.variableScopes.subgraph).toEqual([]); // 子图作用域清空
+      expect(copiedThreadContext.thread.variableScopes.local).toEqual([]); // 本地作用域清空
       expect(copiedThreadContext.thread.variableScopes.loop).toEqual([]); // 循环作用域清空
 
       // 验证元数据正确设置（副本线程应该是子线程）

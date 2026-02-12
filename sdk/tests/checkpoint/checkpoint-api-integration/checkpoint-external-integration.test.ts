@@ -181,7 +181,7 @@ describe('检查点外部系统集成测试', () => {
       variableScopes: {
         global: {},
         thread: {},
-        subgraph: [],
+        local: [],
         loop: []
       },
       variableValues: {},

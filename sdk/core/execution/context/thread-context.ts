@@ -486,8 +486,8 @@ export class ThreadContext implements LifecycleCapable {
    * @param input 输入数据
    */
   enterSubgraph(workflowId: ID, parentWorkflowId: ID, input: any): void {
-    // 先创建新的子图作用域
-    this.variableCoordinator.enterSubgraphScope(this);
+    // 先创建新的本地作用域
+    this.variableCoordinator.enterLocalScope(this);
     // 再调用原有的执行状态管理
     this.executionState.enterSubgraph(workflowId, parentWorkflowId, input);
   }
@@ -498,8 +498,8 @@ export class ThreadContext implements LifecycleCapable {
   exitSubgraph(): void {
     // 先调用原有的执行状态管理
     this.executionState.exitSubgraph();
-    // 再退出子图作用域
-    this.variableCoordinator.exitSubgraphScope(this);
+    // 再退出本地作用域
+    this.variableCoordinator.exitLocalScope(this);
   }
 
   /**

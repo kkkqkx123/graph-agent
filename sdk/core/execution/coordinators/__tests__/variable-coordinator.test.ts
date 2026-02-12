@@ -8,7 +8,7 @@ import { ThreadContext } from '../../context/thread-context';
 import { EventManager } from '../../../services/event-manager';
 import { EventType } from '@modular-agent/types/events';
 import { ValidationError } from '@modular-agent/types/errors';
-import { VariableAccessor } from '@modular-agent/common-utils';
+import { VariableAccessor } from '../../utils/variable-accessor';
 import type { VariableScope } from '@modular-agent/types/common';
 
 // Mock 依赖
@@ -33,15 +33,15 @@ describe('VariableCoordinator', () => {
       getVariableScopes: jest.fn().mockReturnValue({
         global: {},
         thread: {},
-        subgraph: [],
+        local: [],
         loop: []
       }),
       getVariableDefinition: jest.fn(),
       setVariableValue: jest.fn(),
       getAllVariables: jest.fn().mockReturnValue({}),
       getVariablesByScope: jest.fn().mockReturnValue({}),
-      enterSubgraphScope: jest.fn(),
-      exitSubgraphScope: jest.fn(),
+      enterLocalScope: jest.fn(),
+      exitLocalScope: jest.fn(),
       enterLoopScope: jest.fn(),
       exitLoopScope: jest.fn(),
       clear: jest.fn(),
@@ -98,7 +98,7 @@ describe('VariableCoordinator', () => {
       mockStateManager.getVariableScopes.mockReturnValue({
         global: { globalVar: 'global-value' },
         thread: { threadVar: 'thread-value' },
-        subgraph: [{ subgraphVar: 'subgraph-value' }],
+        local: [{ localVar: 'local-value' }],
         loop: [{ loopVar: 'loop-value' }]
       });
 
@@ -106,9 +106,9 @@ describe('VariableCoordinator', () => {
       const loopResult = coordinator.getVariable(mockThreadContext, 'loopVar');
       expect(loopResult).toBe('loop-value');
 
-      // 测试子图作用域
-      const subgraphResult = coordinator.getVariable(mockThreadContext, 'subgraphVar');
-      expect(subgraphResult).toBe('subgraph-value');
+      // 测试本地作用域
+      const localResult = coordinator.getVariable(mockThreadContext, 'localVar');
+      expect(localResult).toBe('local-value');
 
       // 测试线程作用域
       const threadResult = coordinator.getVariable(mockThreadContext, 'threadVar');
@@ -133,7 +133,7 @@ describe('VariableCoordinator', () => {
       mockStateManager.getVariableScopes.mockReturnValue({
         global: {},
         thread: {}, // 变量不存在
-        subgraph: [],
+        local: [],
         loop: []
       });
 
@@ -156,7 +156,7 @@ describe('VariableCoordinator', () => {
       mockStateManager.getVariableScopes.mockReturnValue({
         global: {},
         thread: {},
-        subgraph: [],
+        local: [],
         loop: []
       });
 
@@ -175,9 +175,9 @@ describe('VariableCoordinator', () => {
       mockStateManager.getVariableScopes.mockReturnValue({
         global: { var: 'global' },
         thread: { var: 'thread' },
-        subgraph: [
-          { var: 'subgraph1' },
-          { var: 'subgraph2' } // 最内层子图
+        local: [
+          { var: 'local1' },
+          { var: 'local2' } // 最内层本地作用域
         ],
         loop: [
           { var: 'loop1' },
@@ -389,20 +389,20 @@ describe('VariableCoordinator', () => {
   });
 
   describe('作用域管理', () => {
-    it('应该进入子图作用域', () => {
+    it('应该进入本地作用域', () => {
       // 执行测试
-      coordinator.enterSubgraphScope(mockThreadContext);
+      coordinator.enterLocalScope(mockThreadContext);
 
       // 验证状态管理器调用
-      expect(mockStateManager.enterSubgraphScope).toHaveBeenCalled();
+      expect(mockStateManager.enterLocalScope).toHaveBeenCalled();
     });
 
-    it('应该退出子图作用域', () => {
+    it('应该退出本地作用域', () => {
       // 执行测试
-      coordinator.exitSubgraphScope(mockThreadContext);
+      coordinator.exitLocalScope(mockThreadContext);
 
       // 验证状态管理器调用
-      expect(mockStateManager.exitSubgraphScope).toHaveBeenCalled();
+      expect(mockStateManager.exitLocalScope).toHaveBeenCalled();
     });
 
     it('应该进入循环作用域', () => {

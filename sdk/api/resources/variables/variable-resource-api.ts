@@ -201,15 +201,15 @@ export class VariableResourceAPI extends GenericResourceAPI<any, string, Variabl
   async getVariableScopes(threadId: string): Promise<{
     thread: Record<string, any>;
     global: Record<string, any>;
-    subgraph: Record<string, any>;
+    local: Record<string, any>;
     loop: Record<string, any>;
   }> {
     const thread = await this.getThread(threadId);
     return {
       thread: { ...thread.variableScopes.thread },
       global: { ...thread.variableScopes.global },
-      subgraph: thread.variableScopes.subgraph.length > 0
-        ? { ...thread.variableScopes.subgraph[thread.variableScopes.subgraph.length - 1] }
+      local: thread.variableScopes.local.length > 0
+        ? { ...thread.variableScopes.local[thread.variableScopes.local.length - 1] }
         : {},
       loop: thread.variableScopes.loop.length > 0
         ? { ...thread.variableScopes.loop[thread.variableScopes.loop.length - 1] }

@@ -28,8 +28,8 @@ const createMockThreadContext = (
       if (defaultScopes.loop.length > 0 && defaultScopes.loop[defaultScopes.loop.length - 1][name] !== undefined) {
         return defaultScopes.loop[defaultScopes.loop.length - 1][name];
       }
-      if (defaultScopes.subgraph.length > 0 && defaultScopes.subgraph[defaultScopes.subgraph.length - 1][name] !== undefined) {
-        return defaultScopes.subgraph[defaultScopes.subgraph.length - 1][name];
+      if (defaultScopes.local.length > 0 && defaultScopes.local[defaultScopes.local.length - 1][name] !== undefined) {
+        return defaultScopes.local[defaultScopes.local.length - 1][name];
       }
       if (defaultScopes.thread[name] !== undefined) {
         return defaultScopes.thread[name];
@@ -105,7 +105,7 @@ describe('VariableAccessor', () => {
         {
           global: { item: 'global' },
           thread: { item: 'thread' },
-          subgraph: [{ item: 'subgraph' }],
+          local: [{ item: 'local' }],
           loop: [{ item: 'loop' }]
         }
       );
@@ -544,7 +544,7 @@ describe('VariableAccessor', () => {
       expect(VariableNamespace.OUTPUT).toBe('output');
       expect(VariableNamespace.GLOBAL).toBe('global');
       expect(VariableNamespace.THREAD).toBe('thread');
-      expect(VariableNamespace.SUBGRAPH).toBe('subgraph');
+      expect(VariableNamespace.LOCAL).toBe('local');
       expect(VariableNamespace.LOOP).toBe('loop');
     });
   });
@@ -557,7 +557,7 @@ describe('VariableAccessor', () => {
         {
           global: { config: 'global_config' },
           thread: { config: 'thread_config' },
-          subgraph: [{ config: 'subgraph_config' }],
+          local: [{ config: 'local_config' }],
           loop: [{ config: 'loop_config' }]
         }
       );
@@ -590,7 +590,7 @@ describe('VariableAccessor', () => {
         {
           global: {},
           thread: {},
-          subgraph: [{ layer1: {} }, { layer1: { layer2: { value: 'nested' } } }],
+          local: [{ layer1: {} }, { layer1: { layer2: { value: 'nested' } } }],
           loop: []
         }
       );

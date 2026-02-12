@@ -3,7 +3,7 @@
  * 定义工作流节点的类型和结构
  */
 
-import type { ID, Metadata } from './common';
+import type { ID, Metadata, VariableScope } from './common';
 import type { Condition } from './condition';
 import type { LLMMessage, LLMMessageRole } from './llm';
 
@@ -120,7 +120,7 @@ export interface VariableNodeConfig {
   /** 操作的表达式【直接用表达式覆盖相应变量】 */
   expression: string;
   /** 变量作用域 */
-  scope?: 'global' | 'thread' | 'subgraph' | 'loop';
+  scope?: VariableScope;
   /** 是否只读 */
   readonly?: boolean;
 }
@@ -226,7 +226,7 @@ export interface UserInteractionNodeConfig {
     /** 变量更新表达式（可能包含 {{input}} 占位符） */
     expression: string;
     /** 变量作用域 */
-    scope: 'global' | 'thread' | 'subgraph' | 'loop';
+    scope: VariableScope;
   }>;
   /** 消息配置（当 operationType = ADD_MESSAGE） */
   message?: {
