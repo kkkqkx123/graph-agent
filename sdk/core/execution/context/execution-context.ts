@@ -78,6 +78,7 @@ export class ExecutionContext {
     const threadRegistry = SingletonRegistry.get<ThreadRegistry>('threadRegistry');
     const toolService = SingletonRegistry.get<any>('toolService');
     const llmExecutor = SingletonRegistry.get<any>('llmExecutor');
+    const errorService = SingletonRegistry.get<any>('errorService');
 
     // 设置 ThreadRegistry 和 WorkflowRegistry 之间的依赖关系
     threadRegistry.setWorkflowRegistry(workflowRegistry);
@@ -88,6 +89,7 @@ export class ExecutionContext {
     this.componentRegistry.register('threadRegistry', threadRegistry);
     this.componentRegistry.register('toolService', toolService);
     this.componentRegistry.register('llmExecutor', llmExecutor);
+    this.componentRegistry.register('errorService', errorService);
 
     // 2. CheckpointStateManager 依赖 CheckpointStorage
     const checkpointStorage = new MemoryCheckpointStorage();
@@ -184,6 +186,15 @@ export class ExecutionContext {
   getLlmExecutor(): any {
     this.ensureInitialized();
     return this.componentRegistry.getAny('llmExecutor');
+  }
+
+  /**
+   * 获取 ErrorService
+   * @returns ErrorService 实例
+   */
+  getErrorService(): any {
+    this.ensureInitialized();
+    return this.componentRegistry.getAny('errorService');
   }
 
   /**

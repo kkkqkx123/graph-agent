@@ -123,7 +123,7 @@ export class ThreadExecutor implements SubgraphContextFactory {
           }
           this.routeToNextNode(threadContext, currentNode, nodeResult);
         } else if (nodeResult.status === 'FAILED') {
-          await handleNodeFailure(threadContext, currentNode, nodeResult, this.eventManager);
+          await handleNodeFailure(threadContext, currentNode, nodeResult);
           break;
         } else if (nodeResult.status === 'SKIPPED') {
           this.routeToNextNode(threadContext, currentNode, nodeResult);
@@ -132,7 +132,7 @@ export class ThreadExecutor implements SubgraphContextFactory {
 
       return this.createThreadResult(threadContext);
     } catch (error) {
-      await handleExecutionError(threadContext, error, this.eventManager);
+      await handleExecutionError(threadContext, error);
       return this.createThreadResult(threadContext);
     }
   }
