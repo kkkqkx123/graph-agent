@@ -5,7 +5,7 @@
 
 import type { NodeHook } from '@modular-agent/types/node';
 import type { HookEvaluationContext } from './context-builder';
-import { resolvePath } from '@modular-agent/common-utils/path-resolver';
+import { resolvePath } from '@modular-agent/common-utils';
 
 /**
  * 生成事件载荷

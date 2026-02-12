@@ -7,7 +7,7 @@ import type { Node, VariableNodeConfig } from '@modular-agent/types/node';
 import type { Thread } from '@modular-agent/types/thread';
 import { ValidationError } from '@modular-agent/types/errors';
 import { now } from '@modular-agent/common-utils';
-import { resolvePath } from '@modular-agent/common-utils/path-resolver';
+import { resolvePath } from '@modular-agent/common-utils';
 
 /**
  * 检查节点是否可以执行

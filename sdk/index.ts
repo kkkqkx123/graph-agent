@@ -13,8 +13,8 @@ import { createPackageLogger } from '@modular-agent/common-utils';
  * 用于记录SDK级别的日志信息
  */
 export const logger = createPackageLogger('sdk', {
-  level: process.env.SDK_LOG_LEVEL || 'info',
-  json: process.env.NODE_ENV === 'production'
+  level: (process.env['SDK_LOG_LEVEL'] as any) || 'info',
+  json: process.env['NODE_ENV'] === 'production'
 });
 
 // Export the main SDK instance

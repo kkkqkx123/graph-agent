@@ -68,7 +68,7 @@ async function executeSingleHook(
   emitEvent: (event: NodeCustomEvent) => Promise<void>
 ): Promise<void> {
   try {
-    const { conditionEvaluator } = await import('@modular-agent/common-utils/condition-evaluator');
+    const { conditionEvaluator } = await import('@modular-agent/common-utils');
     const {
       buildHookEvaluationContext,
       convertToEvaluationContext,

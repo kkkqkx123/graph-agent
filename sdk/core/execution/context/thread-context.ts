@@ -20,7 +20,7 @@ import type { Thread, VariableScope } from '@modular-agent/types';
 import type { ID } from '@modular-agent/types/common';
 import type { TriggerRuntimeState } from '@modular-agent/types/trigger';
 import type { StatefulToolFactory } from '@modular-agent/types/tool';
-import type { LLMMessage } from '@modular-agent/types/llm';
+import type { LLMMessage, LLMMessageRole } from '@modular-agent/types/llm';
 import type { WorkflowDefinition } from '@modular-agent/types/workflow';
 import { ConversationManager } from '../managers/conversation-manager';
 import { VariableCoordinator } from '../coordinators/variable-coordinator';

@@ -7,7 +7,7 @@ import type { Node, LoopEndNodeConfig } from '@modular-agent/types/node';
 import type { Thread } from '@modular-agent/types/thread';
 import type { Condition, EvaluationContext } from '@modular-agent/types/condition';
 import { ExecutionError, NotFoundError } from '@modular-agent/types/errors';
-import { conditionEvaluator } from '@modular-agent/common-utils/condition-evaluator';
+import { conditionEvaluator } from '@modular-agent/common-utils';
 import { now } from '@modular-agent/common-utils';
 
 /**
