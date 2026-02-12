@@ -14,7 +14,7 @@ import { CheckpointStateManager } from '../../../core/execution/managers/checkpo
 import { MemoryCheckpointStorage } from '../../../core/storage/memory-checkpoint-storage';
 import { GlobalMessageStorage } from '../../../core/services/global-message-storage';
 import { ThreadRegistry } from '../../../core/services/thread-registry';
-import { NodeType, HookType } from '@modular-agent/types';
+import { NodeType, HookType, WorkflowType } from '@modular-agent/types';
 import { EdgeType, CheckpointTriggerType } from '@modular-agent/types';
 import type { WorkflowDefinition } from '@modular-agent/types/workflow';
 import type { Node } from '@modular-agent/types/node';
@@ -147,12 +147,13 @@ describe('检查点自动触发机制集成测试', () => {
 
     // 设置节点级别的检查点配置
     if (nodeCheckpointAfterExecute !== undefined && nodes[1]) {
-      nodes[1].checkpointAfterExecute = nodeCheckpointAfterExecute;
+      (nodes[1] as any).checkpointAfterExecute = nodeCheckpointAfterExecute;
     }
 
     return {
       id,
       name,
+      type: WorkflowType.STANDALONE,
       version: '1.0.0',
       description: 'Workflow with checkpoint configuration',
       nodes,

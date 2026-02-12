@@ -5,6 +5,7 @@
 import { WorkflowRegistry } from '../workflow-registry';
 import { NodeType } from '@modular-agent/types/node';
 import { EdgeType } from '@modular-agent/types/edge';
+import { WorkflowType } from '@modular-agent/types/workflow';
 import { ValidationError, NotFoundError } from '@modular-agent/types/errors';
 import { TriggerActionType } from '@modular-agent/types/trigger';
 
@@ -19,10 +20,11 @@ describe('WorkflowRegistry', () => {
     });
   });
 
-  const createValidWorkflow = (id: string, name: string) => ({
+  const createValidWorkflow = (id: string, name: string, type: WorkflowType = WorkflowType.STANDALONE) => ({
     id,
     name,
     version: '1.0.0',
+    type: type,
     description: 'Test workflow',
     nodes: [
       {
@@ -876,5 +878,209 @@ describe('WorkflowRegistry', () => {
       expect(registry.has('workflow-3')).toBe(true);
     });
 
+  });
+
+  describe('工作流类型相关测试', () => {
+    it('应该成功注册TRIGGERED_SUBWORKFLOW类型的工作流', () => {
+      const workflow = createValidWorkflow('triggered-workflow', 'Triggered Workflow', WorkflowType.TRIGGERED_SUBWORKFLOW);
+      workflow.nodes = [
+        {
+          id: 'node-start',
+          type: NodeType.START_FROM_TRIGGER,
+          name: 'Start From Trigger',
+          config: {},
+          outgoingEdgeIds: ['edge-1'],
+          incomingEdgeIds: []
+        },
+        {
+          id: 'node-continue',
+          type: NodeType.CONTINUE_FROM_TRIGGER,
+          name: 'Continue From Trigger',
+          config: {},
+          outgoingEdgeIds: [],
+          incomingEdgeIds: ['edge-1']
+        }
+      ];
+      workflow.edges = [
+        {
+          id: 'edge-1',
+          sourceNodeId: 'node-start',
+          targetNodeId: 'node-continue',
+          type: EdgeType.DEFAULT,
+          condition: undefined
+        }
+      ];
+
+      expect(() => registry.register(workflow)).not.toThrow();
+      expect(registry.has('triggered-workflow')).toBe(true);
+    });
+
+    it('应该成功注册STANDALONE类型的工作流', () => {
+      const workflow = createValidWorkflow('standalone-workflow', 'Standalone Workflow', WorkflowType.STANDALONE);
+
+      expect(() => registry.register(workflow)).not.toThrow();
+      expect(registry.has('standalone-workflow')).toBe(true);
+    });
+
+    it('应该成功注册DEPENDENT类型的工作流', () => {
+      const workflow = createValidWorkflow('dependent-workflow', 'Dependent Workflow', WorkflowType.DEPENDENT);
+      workflow.nodes = [
+        {
+          id: 'node-start',
+          type: NodeType.START,
+          name: 'Start',
+          config: {},
+          outgoingEdgeIds: ['edge-1'],
+          incomingEdgeIds: []
+        },
+        {
+          id: 'node-subgraph',
+          type: NodeType.SUBGRAPH,
+          name: 'Subgraph',
+          config: {
+            subgraphId: 'sub-workflow'
+          },
+          outgoingEdgeIds: ['edge-2'],
+          incomingEdgeIds: ['edge-1']
+        },
+        {
+          id: 'node-end',
+          type: NodeType.END,
+          name: 'End',
+          config: {},
+          outgoingEdgeIds: [],
+          incomingEdgeIds: ['edge-2']
+        }
+      ];
+      workflow.edges = [
+        {
+          id: 'edge-1',
+          sourceNodeId: 'node-start',
+          targetNodeId: 'node-subgraph',
+          type: EdgeType.DEFAULT,
+          condition: undefined
+        },
+        {
+          id: 'edge-2',
+          sourceNodeId: 'node-subgraph',
+          targetNodeId: 'node-end',
+          type: EdgeType.DEFAULT,
+          condition: undefined
+        }
+      ];
+
+      expect(() => registry.register(workflow)).not.toThrow();
+      expect(registry.has('dependent-workflow')).toBe(true);
+    });
+
+    it('应该拒绝类型不匹配的工作流', () => {
+      const workflow = createValidWorkflow('invalid-workflow', 'Invalid Workflow', WorkflowType.STANDALONE);
+      workflow.nodes = [
+        {
+          id: 'node-start',
+          type: NodeType.START_FROM_TRIGGER,
+          name: 'Start From Trigger',
+          config: {},
+          outgoingEdgeIds: [],
+          incomingEdgeIds: []
+        }
+      ];
+
+      expect(() => {
+        registry.register(workflow);
+      }).toThrow(ValidationError);
+    });
+
+    it('应该拒绝缺少type字段的工作流', () => {
+      const workflow = createValidWorkflow('no-type-workflow', 'No Type Workflow', WorkflowType.STANDALONE);
+      delete (workflow as any).type;
+
+      expect(() => {
+        registry.register(workflow);
+      }).toThrow(ValidationError);
+    });
+  });
+
+  describe('triggeredSubworkflowConfig相关测试', () => {
+    it('应该接受triggeredSubworkflowConfig配置', () => {
+      const workflow = createValidWorkflow('triggered-workflow', 'Triggered Workflow', WorkflowType.TRIGGERED_SUBWORKFLOW);
+      workflow.nodes = [
+        {
+          id: 'node-start',
+          type: NodeType.START_FROM_TRIGGER,
+          name: 'Start From Trigger',
+          config: {},
+          outgoingEdgeIds: ['edge-1'],
+          incomingEdgeIds: []
+        },
+        {
+          id: 'node-continue',
+          type: NodeType.CONTINUE_FROM_TRIGGER,
+          name: 'Continue From Trigger',
+          config: {},
+          outgoingEdgeIds: [],
+          incomingEdgeIds: ['edge-1']
+        }
+      ];
+      workflow.edges = [
+        {
+          id: 'edge-1',
+          sourceNodeId: 'node-start',
+          targetNodeId: 'node-continue',
+          type: EdgeType.DEFAULT,
+          condition: undefined
+        }
+      ];
+      (workflow as any).triggeredSubworkflowConfig = {
+        enableCheckpoints: false,
+        timeout: 30000,
+        maxRetries: 2
+      };
+
+      expect(() => registry.register(workflow)).not.toThrow();
+      expect(registry.has('triggered-workflow')).toBe(true);
+    });
+
+    it('应该接受enableCheckpoints为true的配置', () => {
+      const workflow = createValidWorkflow('triggered-workflow', 'Triggered Workflow', WorkflowType.TRIGGERED_SUBWORKFLOW);
+      workflow.nodes = [
+        {
+          id: 'node-start',
+          type: NodeType.START_FROM_TRIGGER,
+          name: 'Start From Trigger',
+          config: {},
+          outgoingEdgeIds: ['edge-1'],
+          incomingEdgeIds: []
+        },
+        {
+          id: 'node-continue',
+          type: NodeType.CONTINUE_FROM_TRIGGER,
+          name: 'Continue From Trigger',
+          config: {},
+          outgoingEdgeIds: [],
+          incomingEdgeIds: ['edge-1']
+        }
+      ];
+      workflow.edges = [
+        {
+          id: 'edge-1',
+          sourceNodeId: 'node-start',
+          targetNodeId: 'node-continue',
+          type: EdgeType.DEFAULT,
+          condition: undefined
+        }
+      ];
+      (workflow as any).triggeredSubworkflowConfig = {
+        enableCheckpoints: true,
+        checkpointConfig: {
+          enabled: true,
+          checkpointBeforeNode: true,
+          checkpointAfterNode: true
+        }
+      };
+
+      expect(() => registry.register(workflow)).not.toThrow();
+      expect(registry.has('triggered-workflow')).toBe(true);
+    });
   });
 });

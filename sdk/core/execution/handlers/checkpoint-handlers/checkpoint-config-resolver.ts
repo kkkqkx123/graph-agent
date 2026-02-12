@@ -3,12 +3,14 @@
  * 处理检查点配置的优先级规则
  */
 
-import type { CheckpointConfig } from '@modular-agent/types/workflow';
+import type { CheckpointConfig, ProcessedWorkflowDefinition } from '@modular-agent/types/workflow';
+import { WorkflowType } from '@modular-agent/types/workflow';
 import type { Node, NodeHook } from '@modular-agent/types/node';
 import type { Trigger } from '@modular-agent/types/trigger';
 import type { Tool } from '@modular-agent/types/tool';
 import {
-  CheckpointTriggerType
+  CheckpointTriggerType,
+  CheckpointConfigSource
 } from '@modular-agent/types/checkpoint';
 import type {
   CheckpointConfigContext,
@@ -38,6 +40,55 @@ export function resolveCheckpointConfig(
   hookConfig: NodeHook | undefined,
   triggerConfig: Trigger | undefined,
   toolConfig: Tool | undefined,
+  context: CheckpointConfigContext,
+  workflow?: ProcessedWorkflowDefinition
+): CheckpointConfigResult {
+  // 特殊处理：如果是triggered子工作流，默认不创建检查点
+  if (workflow && workflow.type === WorkflowType.TRIGGERED_SUBWORKFLOW) {
+    // 检查是否明确启用了检查点
+    const triggeredConfig = workflow.triggeredSubworkflowConfig;
+    
+    if (triggeredConfig?.enableCheckpoints === true) {
+      // 明确启用检查点，使用triggered子工作流的检查点配置
+      const triggeredCheckpointConfig = triggeredConfig.checkpointConfig;
+      return resolveCheckpointConfigInternal(
+        triggeredCheckpointConfig,
+        nodeConfig,
+        hookConfig,
+        triggerConfig,
+        toolConfig,
+        context
+      );
+    }
+    
+    // 默认不创建检查点
+    return {
+      shouldCreate: false,
+      source: CheckpointConfigSource.TRIGGERED_SUBWORKFLOW
+    };
+  }
+  
+  // 普通工作流，使用标准解析逻辑
+  return resolveCheckpointConfigInternal(
+    globalConfig,
+    nodeConfig,
+    hookConfig,
+    triggerConfig,
+    toolConfig,
+    context
+  );
+}
+
+/**
+ * 内部检查点配置解析函数
+ * 不包含triggered子工作流的特殊处理
+ */
+function resolveCheckpointConfigInternal(
+  globalConfig: CheckpointConfig | undefined,
+  nodeConfig: Node | undefined,
+  hookConfig: NodeHook | undefined,
+  triggerConfig: Trigger | undefined,
+  toolConfig: Tool | undefined,
   context: CheckpointConfigContext
 ): CheckpointConfigResult {
   // 检查全局是否启用检查点
@@ -47,7 +98,7 @@ export function resolveCheckpointConfig(
   if (!globallyEnabled) {
     return {
       shouldCreate: false,
-      source: 'disabled'
+      source: CheckpointConfigSource.DISABLED
     };
   }
 
@@ -56,7 +107,7 @@ export function resolveCheckpointConfig(
     return {
       shouldCreate: hookConfig.createCheckpoint,
       description: hookConfig.checkpointDescription,
-      source: 'hook'
+      source: CheckpointConfigSource.HOOK
     };
   }
 
@@ -65,7 +116,7 @@ export function resolveCheckpointConfig(
     return {
       shouldCreate: triggerConfig.createCheckpoint,
       description: triggerConfig.checkpointDescription,
-      source: 'trigger'
+      source: CheckpointConfigSource.TRIGGER
     };
   }
 
@@ -84,7 +135,7 @@ export function resolveCheckpointConfig(
     return {
       shouldCreate,
       description: toolConfig.checkpointDescriptionTemplate,
-      source: 'tool'
+      source: CheckpointConfigSource.TOOL
     };
   }
 
@@ -95,7 +146,7 @@ export function resolveCheckpointConfig(
         return {
           shouldCreate: nodeConfig.checkpointBeforeExecute,
           description: `Before node: ${nodeConfig.name}`,
-          source: 'node'
+          source: CheckpointConfigSource.NODE
         };
       }
     } else if (context.triggerType === CheckpointTriggerType.NODE_AFTER_EXECUTE) {
@@ -103,7 +154,7 @@ export function resolveCheckpointConfig(
         return {
           shouldCreate: nodeConfig.checkpointAfterExecute,
           description: `After node: ${nodeConfig.name}`,
-          source: 'node'
+          source: CheckpointConfigSource.NODE
         };
       }
     }
@@ -116,7 +167,7 @@ export function resolveCheckpointConfig(
         return {
           shouldCreate: globalConfig.checkpointBeforeNode,
           description: globalConfig.defaultMetadata?.description || 'Global checkpoint before node',
-          source: 'global'
+          source: CheckpointConfigSource.GLOBAL
         };
       }
     } else if (context.triggerType === CheckpointTriggerType.NODE_AFTER_EXECUTE) {
@@ -124,7 +175,7 @@ export function resolveCheckpointConfig(
         return {
           shouldCreate: globalConfig.checkpointAfterNode,
           description: globalConfig.defaultMetadata?.description || 'Global checkpoint after node',
-          source: 'global'
+          source: CheckpointConfigSource.GLOBAL
         };
       }
     }
@@ -133,7 +184,7 @@ export function resolveCheckpointConfig(
   // 默认不创建检查点
   return {
     shouldCreate: false,
-    source: 'disabled'
+    source: CheckpointConfigSource.DISABLED
   };
 }
 

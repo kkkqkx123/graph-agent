@@ -4,29 +4,35 @@
  * 职责范围：
  * - 验证工作流定义的数据完整性和基本约束
  * - 验证节点和边的基本字段、ID唯一性、引用完整性
- * - 验证节点配置、Hooks、工作流配置等
+ * - 验证节点配置的schema（不验证业务逻辑）
+ * - 验证Hooks、工作流配置、触发器等
  * - 检测自引用问题
+ * - 验证工作流类型与节点类型的匹配
+ * - 验证START/END节点的数量和存在性
+ * - 验证触发子工作流的节点组合
  *
  * 与 GraphValidator 的区别：
- * - WorkflowValidator 在工作流定义阶段验证，输入是 WorkflowDefinition
- * - GraphValidator 在图构建阶段验证，输入是 GraphData
- * - WorkflowValidator 专注于数据完整性验证（静态验证）
- * - GraphValidator 专注于图拓扑结构验证（动态验证）
+ * - WorkflowValidator 在工作流注册阶段验证，输入是 WorkflowDefinition
+ * - GraphValidator 在图预处理阶段验证，输入是 GraphData
+ * - WorkflowValidator 验证所有可以在定义阶段就确定的规则（注册前验证）
+ * - GraphValidator 验证需要图结构才能确定的规则（预处理阶段验证）
  *
  * 验证时机：
- * - 在 GraphBuilder 构建图之前调用
- * - 在工作流注册、保存等场景中使用
+ * - 在工作流注册到 WorkflowRegistry 之前调用
+ * - 这是工作流注册前的最后一道防线，不应该放行存在明显缺陷的工作流
  *
  * 不包含：
  * - 图拓扑结构验证（环检测、可达性分析等）
- * - FORK/JOIN配对验证
- * - START/END节点数量验证（由GraphValidator处理）
+ * - FORK/JOIN配对验证和业务逻辑
+ * - START/END节点的入出度约束验证
+ * - 节点可达性验证
  */
 
 import { z } from 'zod';
 import type { WorkflowDefinition } from '@modular-agent/types/workflow';
 import type { Node } from '@modular-agent/types/node';
 import { NodeType } from '@modular-agent/types/node';
+import { WorkflowType } from '@modular-agent/types/workflow';
 import { ValidationError } from '@modular-agent/types/errors';
 import type { Result } from '@modular-agent/types/result';
 import { ok, err } from '@modular-agent/common-utils';
@@ -35,6 +41,7 @@ import { validateHooks } from './hook-validator';
 import { validateTriggers } from './trigger-validator';
 import { SelfReferenceValidationStrategy } from './strategies/self-reference-validation-strategy';
 import { ErrorHandlingStrategy } from '@modular-agent/types/thread';
+import { TriggerActionType } from '@modular-agent/types/trigger';
 
 /**
  * 工作流变量schema
@@ -124,6 +131,9 @@ export class WorkflowValidator {
     // 验证基本信息
     errors.push(...this.validateBasicInfo(workflow));
 
+    // 验证工作流类型
+    errors.push(...this.validateWorkflowType(workflow));
+
     // 验证节点
     errors.push(...this.validateNodes(workflow));
 
@@ -163,6 +173,98 @@ export class WorkflowValidator {
     }
     const validationErrors = this.convertZodError(result.error, 'workflow');
     return validationErrors;
+  }
+
+  /**
+   * 验证工作流类型与节点类型的匹配
+   *
+   * 验证规则：
+   * - TRIGGERED_SUBWORKFLOW: 必须包含START_FROM_TRIGGER和CONTINUE_FROM_TRIGGER，不应包含SUBGRAPH
+   * - STANDALONE: 不应包含SUBGRAPH节点或EXECUTE_TRIGGERED_SUBGRAPH触发器
+   * - DEPENDENT: 必须包含SUBGRAPH节点或EXECUTE_TRIGGERED_SUBGRAPH触发器
+   *
+   * 注意：节点数量和存在性的详细验证在 GraphValidator 中完成
+   * 此方法仅验证工作流类型与节点类型的匹配关系
+   *
+   * @param workflow 工作流定义
+   * @returns 验证结果
+   */
+  private validateWorkflowType(workflow: WorkflowDefinition): ValidationError[] {
+    const errors: ValidationError[] = [];
+    const { type, nodes, triggers } = workflow;
+
+    // 检查是否包含特殊节点
+    const hasStartFromTrigger = nodes.some(node => node.type === NodeType.START_FROM_TRIGGER);
+    const hasContinueFromTrigger = nodes.some(node => node.type === NodeType.CONTINUE_FROM_TRIGGER);
+    const hasSubgraphNode = nodes.some(node => node.type === NodeType.SUBGRAPH);
+    
+    // 检查是否包含EXECUTE_TRIGGERED_SUBGRAPH触发器
+    const hasExecuteTriggeredSubgraphTrigger = triggers?.some(trigger => {
+      if ('action' in trigger) {
+        return trigger.action.type === TriggerActionType.EXECUTE_TRIGGERED_SUBGRAPH;
+      }
+      return false;
+    }) || false;
+
+    // 根据声明的类型验证工作流结构
+    switch (type) {
+      case WorkflowType.TRIGGERED_SUBWORKFLOW:
+        // 触发子工作流必须包含START_FROM_TRIGGER和CONTINUE_FROM_TRIGGER
+        if (!hasStartFromTrigger) {
+          errors.push(new ValidationError(
+            'Triggered subworkflow must contain START_FROM_TRIGGER node',
+            'workflow.type'
+          ));
+        }
+        if (!hasContinueFromTrigger) {
+          errors.push(new ValidationError(
+            'Triggered subworkflow must contain CONTINUE_FROM_TRIGGER node',
+            'workflow.type'
+          ));
+        }
+        // 触发子工作流不应包含SUBGRAPH节点
+        if (hasSubgraphNode) {
+          errors.push(new ValidationError(
+            'Triggered subworkflow should not contain SUBGRAPH node',
+            'workflow.type'
+          ));
+        }
+        break;
+
+      case WorkflowType.STANDALONE:
+        // 独立工作流不应包含SUBGRAPH节点或EXECUTE_TRIGGERED_SUBGRAPH触发器
+        if (hasSubgraphNode) {
+          errors.push(new ValidationError(
+            'Standalone workflow should not contain SUBGRAPH node. Use DEPENDENT type instead.',
+            'workflow.type'
+          ));
+        }
+        if (hasExecuteTriggeredSubgraphTrigger) {
+          errors.push(new ValidationError(
+            'Standalone workflow should not contain EXECUTE_TRIGGERED_SUBGRAPH trigger. Use DEPENDENT type instead.',
+            'workflow.type'
+          ));
+        }
+        break;
+
+      case WorkflowType.DEPENDENT:
+        // 依赖工作流必须包含SUBGRAPH节点或EXECUTE_TRIGGERED_SUBGRAPH触发器
+        if (!hasSubgraphNode && !hasExecuteTriggeredSubgraphTrigger) {
+          errors.push(new ValidationError(
+            'Dependent workflow must contain either SUBGRAPH node or EXECUTE_TRIGGERED_SUBGRAPH trigger',
+            'workflow.type'
+          ));
+        }
+        break;
+
+      default:
+        errors.push(new ValidationError(
+          `Invalid workflow type: ${type}`,
+          'workflow.type'
+        ));
+    }
+
+    return errors;
   }
 
   /**

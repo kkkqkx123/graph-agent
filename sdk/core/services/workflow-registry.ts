@@ -15,7 +15,7 @@ import type {
   WorkflowRelationship,
   WorkflowHierarchy
 } from '@modular-agent/types/workflow';
-import { ProcessedWorkflowDefinition } from '@modular-agent/types/workflow';
+import { ProcessedWorkflowDefinition, WorkflowType } from '@modular-agent/types/workflow';
 import type { WorkflowReferenceInfo, WorkflowReferenceRelation, WorkflowReferenceType } from '@modular-agent/types/workflow-reference';
 import { processWorkflow, type ProcessOptions } from '../graph/workflow-processor';
 import { WorkflowReferenceManager } from '../execution/managers/workflow-reference-manager';
@@ -144,16 +144,6 @@ class WorkflowRegistry {
   }
 
   /**
-   * 检查工作流是否有外部依赖（SUBGRAPH节点）
-   * @param workflow 工作流定义
-   * @returns 是否有外部依赖
-   */
-  hasExternalDependencies(workflow: WorkflowDefinition): boolean {
-    // 检查是否包含SUBGRAPH节点
-    return workflow.nodes.some(node => node.type === 'SUBGRAPH');
-  }
-
-  /**
    * 确保工作流已预处理（统一预处理入口）
    * @param workflowId 工作流ID
    * @returns 处理后的工作流定义
@@ -206,8 +196,9 @@ class WorkflowRegistry {
     this.workflows.set(workflow.id, workflow);
 
     // 仅预处理无外部依赖的工作流
-    // 有依赖的工作流延迟到Thread构建时预处理，以确保所有依赖都已注册
-    if (!this.hasExternalDependencies(workflow)) {
+    // STANDALONE和TRIGGERED_SUBWORKFLOW类型：立即预处理
+    // DEPENDENT类型：延迟到Thread构建时预处理，以确保所有依赖都已注册
+    if (workflow.type === WorkflowType.STANDALONE || workflow.type === WorkflowType.TRIGGERED_SUBWORKFLOW) {
       // 注意：这里不 await，因为 register 是同步方法
       // 预处理会在后台进行，但通常很快完成
       this.preprocessAndStore(workflow).catch(error => {

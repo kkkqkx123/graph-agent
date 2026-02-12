@@ -3,18 +3,18 @@
  *
  * 职责范围：
  * - 验证图的拓扑结构和逻辑正确性
- * - 验证START/END节点的存在性、唯一性和入出度约束
+ * - 验证START/END节点的入出度约束（数量和存在性已在WorkflowValidator中验证）
  * - 检测循环依赖（环检测）
  * - 分析节点可达性（从START到END的路径）
- * - 验证FORK/JOIN节点的配对关系
- * - 支持触发子工作流的特殊验证
- * - 支持子工作流存在性和接口兼容性验证
+ * - 验证FORK/JOIN节点的配对关系和业务逻辑
+ * - 验证触发子工作流的特殊约束（节点组合已在WorkflowValidator中验证）
+ * - 验证子工作流存在性和接口兼容性
  *
  * 与 WorkflowValidator 的区别：
- * - GraphValidator 在图构建阶段验证，输入是 GraphData
- * - WorkflowValidator 在工作流定义阶段验证，输入是 WorkflowDefinition
- * - GraphValidator 专注于图拓扑结构验证（动态验证）
- * - WorkflowValidator 专注于数据完整性验证（静态验证）
+ * - GraphValidator 在图预处理阶段验证，输入是 GraphData
+ * - WorkflowValidator 在工作流注册阶段验证，输入是 WorkflowDefinition
+ * - GraphValidator 验证需要图结构才能确定的规则（预处理阶段验证）
+ * - WorkflowValidator 验证所有可以在定义阶段就确定的规则（注册前验证）
  *
  * 验证时机：
  * - 在 GraphBuilder 构建图之后调用
@@ -24,11 +24,17 @@
  * 前置条件：
  * - 输入的图数据已经通过 WorkflowValidator 的基本验证
  * - 节点和边的基本数据完整性已得到保证
+ * - 边引用的节点存在性已验证
+ * - START/END节点的数量和存在性已验证
+ * - 触发子工作流的节点组合已验证
  *
  * 不包含：
  * - 基本数据完整性验证（由WorkflowValidator处理）
- * - 节点配置验证（由WorkflowValidator处理）
+ * - 节点配置的schema验证（由WorkflowValidator处理）
  * - ID唯一性验证（由WorkflowValidator处理）
+ * - 边引用节点存在性验证（由WorkflowValidator处理）
+ * - START/END节点数量和存在性验证（由WorkflowValidator处理）
+ * - 触发子工作流节点组合验证（由WorkflowValidator处理）
  */
 
 import type {
@@ -163,7 +169,13 @@ export class GraphValidator {
   }
 
   /**
-   * 验证START和END节点
+   * 验证START和END节点的入出度约束
+   *
+   * 注意：START/END节点的数量和存在性已在 WorkflowValidator 中验证
+   * 此方法仅验证拓扑约束：
+   * - START节点不能有入边
+   * - END节点不能有出边
+   * - START节点唯一性（排除子工作流边界节点）
    */
   private static validateStartEndNodes(graph: GraphData): ValidationError[] {
     const errors: ValidationError[] = [];
@@ -267,7 +279,18 @@ export class GraphValidator {
   }
 
   /**
-   * FORK/JOIN配对验证
+   * FORK/JOIN配对验证和业务逻辑验证
+   *
+   * 验证内容包括：
+   * - FORK节点的forkPaths配置有效性
+   * - JOIN节点的forkPathIds和mainPathId配置有效性
+   * - FORK和JOIN节点的配对关系
+   * - forkPathIds的全局唯一性
+   * - FORK到JOIN的可达性
+   *
+   * 注意：节点配置的schema验证已在 WorkflowValidator 中完成
+   * 此方法专注于验证 FORK/JOIN 的业务逻辑和配对关系
+   *
    * @param graph 图数据
    * @returns 验证错误列表
    */
@@ -530,8 +553,15 @@ export class GraphValidator {
   }
 
   /**
-   * 验证触发子工作流的节点
-   * 触发子工作流必须以 START_FROM_TRIGGER 节点开始，以 CONTINUE_FROM_TRIGGER 节点结束
+   * 验证触发子工作流的拓扑约束
+   *
+   * 注意：节点组合（数量和存在性）已在 WorkflowValidator 中验证
+   * 此方法仅验证拓扑约束：
+   * - START_FROM_TRIGGER 节点不能有入边
+   * - CONTINUE_FROM_TRIGGER 节点不能有出边
+   * - 不能包含普通 START 节点
+   * - 不能包含普通 END 节点
+   *
    * @param graph 图数据
    * @returns 验证错误列表
    */
@@ -702,48 +732,21 @@ export class GraphValidator {
 
   /**
    * 验证节点边列表与边源/目标节点的一致性
-   * 检查以下一致性：
-   * 1. 边引用的源节点和目标节点是否存在
-   * 2. 节点边列表引用的边是否存在
-   * 3. 边与节点边列表的双向引用是否一致
+   *
+   * 注意：此方法不再验证边引用的节点是否存在
+   * 原因：边引用节点的完整性验证已在 WorkflowValidator 中完成
+   *
+   * GraphData 构建时已经确保：
+   * 1. 边引用的源节点和目标节点都存在
+   * 2. adjacencyList 和 reverseAdjacencyList 维护了正确的拓扑结构
+   * 3. originalNode 保持不可变，是原始工作流定义的引用
+   *
    * @param graph 图数据
    * @returns 验证错误列表
    */
   private static validateNodeEdgeConsistency(graph: GraphData): ValidationError[] {
-    const errors: ValidationError[] = [];
-
-    // 检查边引用存在的节点
-    for (const edge of graph.edges.values()) {
-      if (!graph.hasNode(edge.sourceNodeId)) {
-        errors.push(new ValidationError(
-          `边(${edge.id})引用了不存在的源节点(${edge.sourceNodeId})`,
-          undefined, undefined, {
-          code: 'EDGE_REFERENCES_MISSING_SOURCE_NODE',
-          edgeId: edge.id,
-          nodeId: edge.sourceNodeId
-        }
-        ));
-      }
-
-      if (!graph.hasNode(edge.targetNodeId)) {
-        errors.push(new ValidationError(
-          `边(${edge.id})引用了不存在的目标节点(${edge.targetNodeId})`,
-          undefined, undefined, {
-          code: 'EDGE_REFERENCES_MISSING_TARGET_NODE',
-          edgeId: edge.id,
-          nodeId: edge.targetNodeId
-        }
-        ));
-      }
-    }
-
-    // 注意：不再验证 originalNode.outgoingEdgeIds 和 originalNode.incomingEdgeIds
-    // 原因：
-    // 1. GraphData 已经通过 adjacencyList 和 reverseAdjacencyList 维护了正确的拓扑结构
-    // 2. originalNode 应该保持不可变，它是原始工作流定义的引用
-    // 3. 边与节点的连接关系已经通过 edge.sourceNodeId 和 edge.targetNodeId 维护
-    // 4. 在子工作流合并等场景中，边ID会被重命名，但原始节点的边引用列表不应被修改
-
-    return errors;
+    // 此方法保留为空，因为所有一致性验证已在 WorkflowValidator 中完成
+    // GraphData 构建过程确保了数据的完整性
+    return [];
   }
 }

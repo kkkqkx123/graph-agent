@@ -14,6 +14,7 @@ import { ThreadRegistry } from '../../../../services/thread-registry';
 import { WorkflowRegistry } from '../../../../services/workflow-registry';
 import { globalMessageStorage } from '../../../../services/global-message-storage';
 import type { ThreadContext } from '../../../context/thread-context';
+import { WorkflowType } from '@modular-agent/types';
 
 describe('CheckpointUtils', () => {
   let mockThreadRegistry: jest.Mocked<ThreadRegistry>;
@@ -100,6 +101,7 @@ describe('CheckpointUtils', () => {
 
     mockThreadRegistry.get.mockReturnValue(mockThreadContext);
     mockWorkflowRegistry.get.mockReturnValue({
+      type: WorkflowType.STANDALONE,
       id: 'workflow-1',
       name: 'Test Workflow',
       version: '1.0.0',

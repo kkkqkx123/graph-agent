@@ -6,6 +6,7 @@
 import { WorkflowValidator } from '../workflow-validator';
 import { NodeType } from '@modular-agent/types/node';
 import { EdgeType } from '@modular-agent/types/edge';
+import { WorkflowType } from '@modular-agent/types/workflow';
 import type { WorkflowDefinition } from '@modular-agent/types/workflow';
 import type { Result } from '@modular-agent/types/result';
 import { ValidationError } from '@modular-agent/types/errors';
@@ -17,10 +18,11 @@ describe('WorkflowValidator', () => {
     validator = new WorkflowValidator();
   });
 
-  const createValidWorkflow = (): WorkflowDefinition => ({
+  const createValidWorkflow = (type: WorkflowType = WorkflowType.STANDALONE): WorkflowDefinition => ({
     id: 'workflow-1',
     name: 'Test Workflow',
     version: '1.0.0',
+    type: type,
     createdAt: Date.now(),
     updatedAt: Date.now(),
     nodes: [
@@ -819,6 +821,617 @@ describe('WorkflowValidator', () => {
       const result = validator.validate(workflow);
       expect(result.isOk()).toBe(true);
       expect(result.unwrap()).toEqual(workflow);
+    });
+  });
+
+  describe('validateWorkflowType - 工作流类型验证', () => {
+    it('应该验证TRIGGERED_SUBWORKFLOW类型 - 包含START_FROM_TRIGGER和CONTINUE_FROM_TRIGGER节点', () => {
+      const workflow: WorkflowDefinition = {
+        id: 'triggered-workflow',
+        name: 'Triggered Workflow',
+        version: '1.0.0',
+        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        nodes: [
+          {
+            id: 'node-start',
+            name: 'Start From Trigger',
+            type: NodeType.START_FROM_TRIGGER,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: ['edge-1']
+          },
+          {
+            id: 'node-continue',
+            name: 'Continue From Trigger',
+            type: NodeType.CONTINUE_FROM_TRIGGER,
+            config: {},
+            incomingEdgeIds: ['edge-1'],
+            outgoingEdgeIds: []
+          }
+        ],
+        edges: [
+          {
+            id: 'edge-1',
+            sourceNodeId: 'node-start',
+            targetNodeId: 'node-continue',
+            type: EdgeType.DEFAULT,
+            condition: undefined
+          }
+        ]
+      };
+
+      const result = validator.validate(workflow);
+      expect(result.isOk()).toBe(true);
+    });
+
+    it('应该拒绝TRIGGERED_SUBWORKFLOW类型 - 缺少START_FROM_TRIGGER节点', () => {
+      const workflow: WorkflowDefinition = {
+        id: 'triggered-workflow',
+        name: 'Triggered Workflow',
+        version: '1.0.0',
+        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        nodes: [
+          {
+            id: 'node-continue',
+            name: 'Continue From Trigger',
+            type: NodeType.CONTINUE_FROM_TRIGGER,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          }
+        ],
+        edges: []
+      };
+
+      const result = validator.validate(workflow);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.message.includes('START_FROM_TRIGGER'))).toBe(true);
+      }
+    });
+
+    it('应该拒绝TRIGGERED_SUBWORKFLOW类型 - 缺少CONTINUE_FROM_TRIGGER节点', () => {
+      const workflow: WorkflowDefinition = {
+        id: 'triggered-workflow',
+        name: 'Triggered Workflow',
+        version: '1.0.0',
+        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        nodes: [
+          {
+            id: 'node-start',
+            name: 'Start From Trigger',
+            type: NodeType.START_FROM_TRIGGER,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          }
+        ],
+        edges: []
+      };
+
+      const result = validator.validate(workflow);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.message.includes('CONTINUE_FROM_TRIGGER'))).toBe(true);
+      }
+    });
+
+    it('应该拒绝TRIGGERED_SUBWORKFLOW类型 - 包含START节点', () => {
+      const workflow: WorkflowDefinition = {
+        id: 'triggered-workflow',
+        name: 'Triggered Workflow',
+        version: '1.0.0',
+        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        nodes: [
+          {
+            id: 'node-start',
+            name: 'Start From Trigger',
+            type: NodeType.START_FROM_TRIGGER,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          },
+          {
+            id: 'node-continue',
+            name: 'Continue From Trigger',
+            type: NodeType.CONTINUE_FROM_TRIGGER,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          },
+          {
+            id: 'node-start-regular',
+            name: 'Start',
+            type: NodeType.START,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          }
+        ],
+        edges: []
+      };
+
+      const result = validator.validate(workflow);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.message.includes('cannot contain START node'))).toBe(true);
+      }
+    });
+
+    it('应该拒绝TRIGGERED_SUBWORKFLOW类型 - 包含END节点', () => {
+      const workflow: WorkflowDefinition = {
+        id: 'triggered-workflow',
+        name: 'Triggered Workflow',
+        version: '1.0.0',
+        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        nodes: [
+          {
+            id: 'node-start',
+            name: 'Start From Trigger',
+            type: NodeType.START_FROM_TRIGGER,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          },
+          {
+            id: 'node-continue',
+            name: 'Continue From Trigger',
+            type: NodeType.CONTINUE_FROM_TRIGGER,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          },
+          {
+            id: 'node-end',
+            name: 'End',
+            type: NodeType.END,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          }
+        ],
+        edges: []
+      };
+
+      const result = validator.validate(workflow);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.message.includes('cannot contain END node'))).toBe(true);
+      }
+    });
+
+    it('应该验证STANDALONE类型 - 包含START和END节点', () => {
+      const workflow: WorkflowDefinition = {
+        id: 'standalone-workflow',
+        name: 'Standalone Workflow',
+        version: '1.0.0',
+        type: WorkflowType.STANDALONE,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        nodes: [
+          {
+            id: 'node-start',
+            name: 'Start',
+            type: NodeType.START,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: ['edge-1']
+          },
+          {
+            id: 'node-end',
+            name: 'End',
+            type: NodeType.END,
+            config: {},
+            incomingEdgeIds: ['edge-1'],
+            outgoingEdgeIds: []
+          }
+        ],
+        edges: [
+          {
+            id: 'edge-1',
+            sourceNodeId: 'node-start',
+            targetNodeId: 'node-end',
+            type: EdgeType.DEFAULT,
+            condition: undefined
+          }
+        ]
+      };
+
+      const result = validator.validate(workflow);
+      expect(result.isOk()).toBe(true);
+    });
+
+    it('应该拒绝STANDALONE类型 - 包含START_FROM_TRIGGER节点', () => {
+      const workflow: WorkflowDefinition = {
+        id: 'standalone-workflow',
+        name: 'Standalone Workflow',
+        version: '1.0.0',
+        type: WorkflowType.STANDALONE,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        nodes: [
+          {
+            id: 'node-start',
+            name: 'Start',
+            type: NodeType.START,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          },
+          {
+            id: 'node-start-trigger',
+            name: 'Start From Trigger',
+            type: NodeType.START_FROM_TRIGGER,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          },
+          {
+            id: 'node-end',
+            name: 'End',
+            type: NodeType.END,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          }
+        ],
+        edges: []
+      };
+
+      const result = validator.validate(workflow);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.message.includes('cannot contain START_FROM_TRIGGER'))).toBe(true);
+      }
+    });
+
+    it('应该拒绝STANDALONE类型 - 包含CONTINUE_FROM_TRIGGER节点', () => {
+      const workflow: WorkflowDefinition = {
+        id: 'standalone-workflow',
+        name: 'Standalone Workflow',
+        version: '1.0.0',
+        type: WorkflowType.STANDALONE,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        nodes: [
+          {
+            id: 'node-start',
+            name: 'Start',
+            type: NodeType.START,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          },
+          {
+            id: 'node-continue',
+            name: 'Continue From Trigger',
+            type: NodeType.CONTINUE_FROM_TRIGGER,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          },
+          {
+            id: 'node-end',
+            name: 'End',
+            type: NodeType.END,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          }
+        ],
+        edges: []
+      };
+
+      const result = validator.validate(workflow);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.message.includes('cannot contain CONTINUE_FROM_TRIGGER'))).toBe(true);
+      }
+    });
+
+    it('应该拒绝STANDALONE类型 - 包含SUBGRAPH节点', () => {
+      const workflow: WorkflowDefinition = {
+        id: 'standalone-workflow',
+        name: 'Standalone Workflow',
+        version: '1.0.0',
+        type: WorkflowType.STANDALONE,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        nodes: [
+          {
+            id: 'node-start',
+            name: 'Start',
+            type: NodeType.START,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          },
+          {
+            id: 'node-subgraph',
+            name: 'Subgraph',
+            type: NodeType.SUBGRAPH,
+            config: {
+              subgraphId: 'sub-workflow'
+            },
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          },
+          {
+            id: 'node-end',
+            name: 'End',
+            type: NodeType.END,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          }
+        ],
+        edges: []
+      };
+
+      const result = validator.validate(workflow);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.message.includes('cannot contain SUBGRAPH node'))).toBe(true);
+      }
+    });
+
+    it('应该验证DEPENDENT类型 - 包含SUBGRAPH节点', () => {
+      const workflow: WorkflowDefinition = {
+        id: 'dependent-workflow',
+        name: 'Dependent Workflow',
+        version: '1.0.0',
+        type: WorkflowType.DEPENDENT,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        nodes: [
+          {
+            id: 'node-start',
+            name: 'Start',
+            type: NodeType.START,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: ['edge-1']
+          },
+          {
+            id: 'node-subgraph',
+            name: 'Subgraph',
+            type: NodeType.SUBGRAPH,
+            config: {
+              subgraphId: 'sub-workflow'
+            },
+            incomingEdgeIds: ['edge-1'],
+            outgoingEdgeIds: ['edge-2']
+          },
+          {
+            id: 'node-end',
+            name: 'End',
+            type: NodeType.END,
+            config: {},
+            incomingEdgeIds: ['edge-2'],
+            outgoingEdgeIds: []
+          }
+        ],
+        edges: [
+          {
+            id: 'edge-1',
+            sourceNodeId: 'node-start',
+            targetNodeId: 'node-subgraph',
+            type: EdgeType.DEFAULT,
+            condition: undefined
+          },
+          {
+            id: 'edge-2',
+            sourceNodeId: 'node-subgraph',
+            targetNodeId: 'node-end',
+            type: EdgeType.DEFAULT,
+            condition: undefined
+          }
+        ]
+      };
+
+      const result = validator.validate(workflow);
+      expect(result.isOk()).toBe(true);
+    });
+
+    it('应该验证DEPENDENT类型 - 包含EXECUTE_TRIGGERED_SUBGRAPH触发器', () => {
+      const workflow: WorkflowDefinition = {
+        id: 'dependent-workflow',
+        name: 'Dependent Workflow',
+        version: '1.0.0',
+        type: WorkflowType.DEPENDENT,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        nodes: [
+          {
+            id: 'node-start',
+            name: 'Start',
+            type: NodeType.START,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: ['edge-1']
+          },
+          {
+            id: 'node-end',
+            name: 'End',
+            type: NodeType.END,
+            config: {},
+            incomingEdgeIds: ['edge-1'],
+            outgoingEdgeIds: []
+          }
+        ],
+        edges: [
+          {
+            id: 'edge-1',
+            sourceNodeId: 'node-start',
+            targetNodeId: 'node-end',
+            type: EdgeType.DEFAULT,
+            condition: undefined
+          }
+        ],
+        triggers: [
+          {
+            id: 'trigger-1',
+            name: 'Execute Triggered Subgraph',
+            type: 'event',
+            condition: {
+              eventType: 'NODE_COMPLETED'
+            },
+            action: {
+              type: 'EXECUTE_TRIGGERED_SUBGRAPH',
+              parameters: {
+                subgraphId: 'triggered-sub-workflow'
+              }
+            },
+            enabled: true
+          }
+        ]
+      };
+
+      const result = validator.validate(workflow);
+      expect(result.isOk()).toBe(true);
+    });
+
+    it('应该拒绝DEPENDENT类型 - 不包含SUBGRAPH节点或EXECUTE_TRIGGERED_SUBGRAPH触发器', () => {
+      const workflow: WorkflowDefinition = {
+        id: 'dependent-workflow',
+        name: 'Dependent Workflow',
+        version: '1.0.0',
+        type: WorkflowType.DEPENDENT,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        nodes: [
+          {
+            id: 'node-start',
+            name: 'Start',
+            type: NodeType.START,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: ['edge-1']
+          },
+          {
+            id: 'node-end',
+            name: 'End',
+            type: NodeType.END,
+            config: {},
+            incomingEdgeIds: ['edge-1'],
+            outgoingEdgeIds: []
+          }
+        ],
+        edges: [
+          {
+            id: 'edge-1',
+            sourceNodeId: 'node-start',
+            targetNodeId: 'node-end',
+            type: EdgeType.DEFAULT,
+            condition: undefined
+          }
+        ],
+        triggers: []
+      };
+
+      const result = validator.validate(workflow);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.message.includes('must contain SUBGRAPH node or EXECUTE_TRIGGERED_SUBGRAPH trigger'))).toBe(true);
+      }
+    });
+
+    it('应该拒绝DEPENDENT类型 - 包含START_FROM_TRIGGER节点', () => {
+      const workflow: WorkflowDefinition = {
+        id: 'dependent-workflow',
+        name: 'Dependent Workflow',
+        version: '1.0.0',
+        type: WorkflowType.DEPENDENT,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        nodes: [
+          {
+            id: 'node-start',
+            name: 'Start',
+            type: NodeType.START,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          },
+          {
+            id: 'node-start-trigger',
+            name: 'Start From Trigger',
+            type: NodeType.START_FROM_TRIGGER,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          },
+          {
+            id: 'node-end',
+            name: 'End',
+            type: NodeType.END,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          }
+        ],
+        edges: []
+      };
+
+      const result = validator.validate(workflow);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.message.includes('cannot contain START_FROM_TRIGGER'))).toBe(true);
+      }
+    });
+
+    it('应该拒绝DEPENDENT类型 - 包含CONTINUE_FROM_TRIGGER节点', () => {
+      const workflow: WorkflowDefinition = {
+        id: 'dependent-workflow',
+        name: 'Dependent Workflow',
+        version: '1.0.0',
+        type: WorkflowType.DEPENDENT,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        nodes: [
+          {
+            id: 'node-start',
+            name: 'Start',
+            type: NodeType.START,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          },
+          {
+            id: 'node-continue',
+            name: 'Continue From Trigger',
+            type: NodeType.CONTINUE_FROM_TRIGGER,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          },
+          {
+            id: 'node-end',
+            name: 'End',
+            type: NodeType.END,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          }
+        ],
+        edges: []
+      };
+
+      const result = validator.validate(workflow);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.message.includes('cannot contain CONTINUE_FROM_TRIGGER'))).toBe(true);
+      }
     });
   });
 });

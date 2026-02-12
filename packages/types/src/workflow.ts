@@ -14,6 +14,19 @@ import type { CheckpointMetadata } from './checkpoint';
 import type { ErrorHandlingConfig } from './thread';
 
 /**
+ * 工作流类型枚举
+ * 用于区分不同类型的工作流，影响预处理时机和检查点策略
+ */
+export enum WorkflowType {
+  /** 触发子工作流：必须包含START_FROM_TRIGGER和CONTINUE_FROM_TRIGGER节点，不包含start、end、subgraph节点 */
+  TRIGGERED_SUBWORKFLOW = 'TRIGGERED_SUBWORKFLOW',
+  /** 独立工作流：不包含EXECUTE_TRIGGERED_SUBGRAPH触发器，也不包含SUBGRAPH节点 */
+  STANDALONE = 'STANDALONE',
+  /** 依赖工作流：包含EXECUTE_TRIGGERED_SUBGRAPH触发器或SUBGRAPH节点 */
+  DEPENDENT = 'DEPENDENT'
+}
+
+/**
  * 工作流状态枚举
  */
 export enum WorkflowStatus {
@@ -46,6 +59,21 @@ export interface CheckpointConfig {
   checkpointAfterNode?: boolean;
   /** 默认检查点元数据 */
   defaultMetadata?: CheckpointMetadata;
+}
+
+/**
+ * 触发子工作流专用配置类型
+ * 定义triggered子工作流的特殊行为选项
+ */
+export interface TriggeredSubworkflowConfig {
+  /** 是否启用检查点（默认false） */
+  enableCheckpoints?: boolean;
+  /** 检查点配置（如果enableCheckpoints为true） */
+  checkpointConfig?: CheckpointConfig;
+  /** 执行超时时间（毫秒） */
+  timeout?: number;
+  /** 最大重试次数 */
+  maxRetries?: number;
 }
 
 /**
@@ -171,7 +199,9 @@ export interface PreprocessValidationResult {
 export class ProcessedWorkflowDefinition {
   // 原始工作流定义
   private readonly workflow: WorkflowDefinition;
-  
+
+  /** 工作流类型 */
+  readonly type: WorkflowType;
   /** 触发器（已展开，不包含引用） */
   readonly triggers?: WorkflowTrigger[];
   /** 图分析结果 */
@@ -203,6 +233,7 @@ export class ProcessedWorkflowDefinition {
     graph: Graph;
   }) {
     this.workflow = workflow;
+    this.type = workflow.type;
     this.triggers = processedData.triggers;
     this.graphAnalysis = processedData.graphAnalysis;
     this.validationResult = processedData.validationResult;
@@ -221,6 +252,7 @@ export class ProcessedWorkflowDefinition {
   get nodes(): Node[] { return this.workflow.nodes; }
   get edges(): Edge[] { return this.workflow.edges; }
   get variables(): WorkflowVariable[] | undefined { return this.workflow.variables; }
+  get triggeredSubworkflowConfig(): TriggeredSubworkflowConfig | undefined { return this.workflow.triggeredSubworkflowConfig; }
   get config(): WorkflowConfig | undefined { return this.workflow.config; }
   get metadata(): WorkflowMetadata | undefined { return this.workflow.metadata; }
   get version(): Version { return this.workflow.version; }
@@ -238,6 +270,8 @@ export interface WorkflowDefinition {
   id: ID;
   /** 工作流名称 */
   name: string;
+  /** 工作流类型 */
+  type: WorkflowType;
   /** 可选的工作流描述 */
   description?: string;
   /** 节点数组，定义工作流的所有节点 */
@@ -248,6 +282,8 @@ export interface WorkflowDefinition {
   variables?: WorkflowVariable[];
   /** 工作流触发器定义数组，用于声明工作流级别的触发器 */
   triggers?: (WorkflowTrigger | TriggerReference)[];
+  /** 触发子工作流专用配置（仅用于包含START_FROM_TRIGGER节点的工作流） */
+  triggeredSubworkflowConfig?: TriggeredSubworkflowConfig;
   /** 可选的工作流配置 */
   config?: WorkflowConfig;
   /** 可选的元数据信息 */

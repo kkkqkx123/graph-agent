@@ -10,7 +10,7 @@
 
 import { WorkflowRegistry } from '../../../core/services/workflow-registry';
 import { WorkflowValidator } from '../../../core/validation/workflow-validator';
-import { NodeType } from '@modular-agent/types';
+import { NodeType, WorkflowType } from '@modular-agent/types';
 import { EdgeType } from '@modular-agent/types';
 import { TriggerActionType } from '@modular-agent/types';
 import type { WorkflowDefinition } from '@modular-agent/types';
@@ -37,6 +37,7 @@ describe('触发子工作流集成测试', () => {
       const triggeredWorkflow: WorkflowDefinition = {
         id: 'triggered-workflow-1',
         name: 'Triggered Workflow',
+        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
         version: '1.0.0',
         description: 'A workflow triggered by events',
         variables: [],
@@ -136,6 +137,7 @@ describe('触发子工作流集成测试', () => {
       const invalidWorkflow: WorkflowDefinition = {
         id: 'triggered-invalid-1',
         name: 'Invalid Triggered Workflow',
+        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
         version: '1.0.0',
         description: 'Triggered workflow with isolated node',
         variables: [],
@@ -193,6 +195,7 @@ describe('触发子工作流集成测试', () => {
       const invalidWorkflow: WorkflowDefinition = {
         id: 'triggered-with-start',
         name: 'Invalid - Contains START',
+        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
         version: '1.0.0',
         description: 'Triggered workflow with START node',
         variables: [],
@@ -256,6 +259,7 @@ describe('触发子工作流集成测试', () => {
       const invalidWorkflow: WorkflowDefinition = {
         id: 'triggered-with-end',
         name: 'Invalid - Contains END',
+        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
         version: '1.0.0',
         description: 'Triggered workflow with END node',
         variables: [],
@@ -319,6 +323,7 @@ describe('触发子工作流集成测试', () => {
       const invalidWorkflow: WorkflowDefinition = {
         id: 'triggered-missing-start',
         name: 'Invalid - Missing START_FROM_TRIGGER',
+        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
         version: '1.0.0',
         description: 'Triggered workflow without START_FROM_TRIGGER',
         variables: [],
@@ -368,6 +373,7 @@ describe('触发子工作流集成测试', () => {
       const invalidWorkflow: WorkflowDefinition = {
         id: 'triggered-missing-end',
         name: 'Invalid - Missing CONTINUE_FROM_TRIGGER',
+        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
         version: '1.0.0',
         description: 'Triggered workflow without CONTINUE_FROM_TRIGGER',
         variables: [],
@@ -417,6 +423,7 @@ describe('触发子工作流集成测试', () => {
       const invalidWorkflow: WorkflowDefinition = {
         id: 'triggered-start-incoming',
         name: 'Invalid - START_FROM_TRIGGER has incoming',
+        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
         version: '1.0.0',
         description: 'Triggered workflow with incoming edges to START',
         variables: [],
@@ -480,6 +487,7 @@ describe('触发子工作流集成测试', () => {
       const invalidWorkflow: WorkflowDefinition = {
         id: 'triggered-end-outgoing',
         name: 'Invalid - CONTINUE_FROM_TRIGGER has outgoing',
+        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
         version: '1.0.0',
         description: 'Triggered workflow with outgoing edges from END',
         variables: [],
@@ -546,6 +554,7 @@ describe('触发子工作流集成测试', () => {
       const triggeredWorkflow: WorkflowDefinition = {
         id: 'triggered-subwf',
         name: 'Triggered Subworkflow',
+        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
         version: '1.0.0',
         description: 'Triggered workflow',
         variables: [],
@@ -606,6 +615,7 @@ describe('触发子工作流集成测试', () => {
       const parentWorkflow: WorkflowDefinition = {
         id: 'parent-with-triggered',
         name: 'Parent With Triggered Subworkflow',
+        type: WorkflowType.STANDALONE,
         version: '1.0.0',
         description: 'Parent workflow',
         variables: [],

@@ -110,11 +110,14 @@ describe('复杂工作流结构检查点集成测试', () => {
   /**
    * 创建 FORK/JOIN 工作流定义
    */
-  const createForkJoinWorkflow = (id: string, name: string): WorkflowDefinition => ({
-    id,
-    name,
-    version: '1.0.0',
-    description: 'FORK/JOIN workflow for checkpoint testing',
+  const createForkJoinWorkflow = (id: string, name: string): WorkflowDefinition => {
+    const { WorkflowType } = require('@modular-agent/types');
+    return {
+      id,
+      name,
+      type: WorkflowType.STANDALONE,
+      version: '1.0.0',
+      description: 'FORK/JOIN workflow for checkpoint testing',
     nodes: [
       {
         id: `${id}-start`,
@@ -240,16 +243,20 @@ describe('复杂工作流结构检查点集成测试', () => {
     },
     createdAt: Date.now(),
     updatedAt: Date.now()
-  });
+    };
+  };
 
   /**
    * 创建包含 Triggered 子工作流的工作流定义
    */
-  const createTriggeredSubworkflowWorkflow = (id: string, name: string): WorkflowDefinition => ({
-    id,
-    name,
-    version: '1.0.0',
-    description: 'Workflow with triggered subworkflow for checkpoint testing',
+  const createTriggeredSubworkflowWorkflow = (id: string, name: string): WorkflowDefinition => {
+    const { WorkflowType } = require('@modular-agent/types');
+    return {
+      id,
+      name,
+      type: WorkflowType.STANDALONE,
+      version: '1.0.0',
+      description: 'Workflow with triggered subworkflow for checkpoint testing',
     nodes: [
       {
         id: `${id}-start`,
@@ -313,7 +320,8 @@ describe('复杂工作流结构检查点集成测试', () => {
     },
     createdAt: Date.now(),
     updatedAt: Date.now()
-  });
+    };
+  };
 
   describe('场景1: FORK/JOIN 工作流检查点处理', () => {
     it('应该正确保存和恢复 forkJoinContext', async () => {

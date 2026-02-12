@@ -11,7 +11,7 @@
 import { WorkflowRegistry } from '../core/services/workflow-registry';
 import { nodeTemplateRegistry } from '../core/services/node-template-registry';
 import { triggerTemplateRegistry } from '../core/services/trigger-template-registry';
-import { NodeType } from '@modular-agent/types';
+import { NodeType, WorkflowType } from '@modular-agent/types';
 import { EdgeType } from '@modular-agent/types';
 import { EventType } from '@modular-agent/types';
 import { TriggerActionType } from '@modular-agent/types';
@@ -57,6 +57,7 @@ describe('Workflow到Graph注册集成测试', () => {
   const createBaseWorkflow = (id: string, name: string): WorkflowDefinition => ({
     id,
     name,
+    type: WorkflowType.STANDALONE,
     version: '1.0.0',
     description: 'Test workflow',
     nodes: [

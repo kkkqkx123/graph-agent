@@ -13,7 +13,7 @@ import { ThreadRegistry } from '../../../core/services/thread-registry';
 import { WorkflowRegistry } from '../../../core/services/workflow-registry';
 import { SingletonRegistry } from '../../../core/execution/context/singleton-registry';
 import type { WorkflowDefinition } from '@modular-agent/types';
-import { NodeType, EdgeType, ThreadStatus } from '@modular-agent/types';
+import { NodeType, EdgeType, ThreadStatus, WorkflowType } from '@modular-agent/types';
 
 describe('检查点资源API集成测试', () => {
   let api: CheckpointResourceAPI;
@@ -38,6 +38,7 @@ describe('检查点资源API集成测试', () => {
   const createTestWorkflow = (id: string, name: string): WorkflowDefinition => ({
     id,
     name,
+    type: WorkflowType.STANDALONE,
     version: '1.0.0',
     createdAt: Date.now(),
     updatedAt: Date.now(),

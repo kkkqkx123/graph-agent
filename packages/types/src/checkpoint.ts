@@ -143,6 +143,26 @@ export interface CheckpointConfigContext {
 }
 
 /**
+ * 检查点配置来源枚举
+ */
+export enum CheckpointConfigSource {
+  /** 节点级配置 */
+  NODE = 'node',
+  /** Hook配置 */
+  HOOK = 'hook',
+  /** Trigger配置 */
+  TRIGGER = 'trigger',
+  /** 工具配置 */
+  TOOL = 'tool',
+  /** 全局配置 */
+  GLOBAL = 'global',
+  /** 全局禁用 */
+  DISABLED = 'disabled',
+  /** 触发子工作流默认配置 */
+  TRIGGERED_SUBWORKFLOW = 'triggered_subworkflow'
+}
+
+/**
  * 检查点配置解析结果
  */
 export interface CheckpointConfigResult {
@@ -151,5 +171,5 @@ export interface CheckpointConfigResult {
   /** 检查点描述 */
   description?: string;
   /** 使用的配置来源 */
-  source: 'node' | 'hook' | 'trigger' | 'tool' | 'global' | 'disabled';
+  source: CheckpointConfigSource;
 }

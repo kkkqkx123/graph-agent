@@ -7,18 +7,17 @@
  * - 检查点恢复后工作流能正常继续执行
  */
 
-import { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
-import { ThreadBuilder } from '@modular-agent/sdk/core/execution/thread-builder';
-import { ThreadContext } from '@modular-agent/sdk/core/execution/context/thread-context';
-import { CheckpointCoordinator } from '../../core/execution/coordinators/checkpoint-coordinator';
-import { CheckpointStateManager } from '@modular-agent/sdk/core/execution/managers/checkpoint-state-manager';
-import { MemoryCheckpointStorage } from '../../core/storage/memory-checkpoint-storage';
-import { GlobalMessageStorage } from '../../core/services/global-message-storage';
+import { WorkflowRegistry } from '../../../core/services/workflow-registry';
+import { ThreadBuilder } from '../../../core/execution/thread-builder';
+import { ThreadContext } from '../../../core/execution/context/thread-context';
+import { CheckpointCoordinator } from '../../../core/execution/coordinators/checkpoint-coordinator';
+import { CheckpointStateManager } from '../../../core/execution/managers/checkpoint-state-manager';
+import { MemoryCheckpointStorage } from '../../../core/storage/memory-checkpoint-storage';
+import { GlobalMessageStorage } from '../../../core/services/global-message-storage';
 import { ThreadRegistry } from '../../../core/services/thread-registry';
-import { NodeType } from '@modular-agent/types/node';
-import { EdgeType } from '@modular-agent/types/edge';
+import { NodeType, EdgeType } from '@modular-agent/types';
 import { ThreadStatus } from '@modular-agent/types/thread';
-import type { WorkflowDefinition } from '@modular-agent/types/workflow';
+import type { WorkflowDefinition } from '@modular-agent/types';
 
 describe('检查点生命周期集成测试', () => {
   let workflowRegistry: WorkflowRegistry;
@@ -30,12 +29,12 @@ describe('检查点生命周期集成测试', () => {
   beforeAll(async () => {
     // 注册测试脚本到 code-service
     const { codeService } = await import('../../../core/services/code-service');
-    const { ScriptType } = await import('../../../types/code');
-    const { generateId } = await import('../../../utils/id-utils');
+    const { ScriptType } = await import('@modular-agent/types');
+    const { generateId } = await import('@modular-agent/common-utils');
 
     // 创建 JavaScript 执行器
-    const javascriptExecutor: import('../../../types/code').ScriptExecutor = {
-      async execute(script, options) {
+    const javascriptExecutor: import('@modular-agent/types').ScriptExecutor = {
+      async execute(script: any, options: any) {
         try {
           const result = eval(script.content || '');
           return {
@@ -56,7 +55,7 @@ describe('检查点生命周期集成测试', () => {
           };
         }
       },
-      validate(script) {
+      validate(script: any) {
         try {
           if (!script.content) {
             return { valid: false, errors: ['Script content is empty'] };
@@ -113,11 +112,14 @@ describe('检查点生命周期集成测试', () => {
   /**
    * 创建简单线性工作流定义
    */
-  const createSimpleWorkflow = (id: string, name: string): WorkflowDefinition => ({
-    id,
-    name,
-    version: '1.0.0',
-    description: 'Simple linear workflow for checkpoint testing',
+  const createSimpleWorkflow = (id: string, name: string): WorkflowDefinition => {
+    const { WorkflowType } = require('@modular-agent/types');
+    return {
+      id,
+      name,
+      type: WorkflowType.STANDALONE,
+      version: '1.0.0',
+      description: 'Simple linear workflow for checkpoint testing',
     nodes: [
       {
         id: `${id}-start`,
@@ -181,7 +183,8 @@ describe('检查点生命周期集成测试', () => {
     },
     createdAt: Date.now(),
     updatedAt: Date.now()
-  });
+    };
+  };
 
   describe('场景1: 端到端检查点生命周期验证', () => {
     it('应该成功完成从创建检查点到恢复并继续执行的完整流程', async () => {

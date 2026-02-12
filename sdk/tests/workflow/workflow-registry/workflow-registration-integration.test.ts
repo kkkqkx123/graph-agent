@@ -14,7 +14,7 @@ import { WorkflowRegistry } from '../../../core/services/workflow-registry';
 import { WorkflowValidator } from '../../../core/validation/workflow-validator';
 import { nodeTemplateRegistry } from '../../../core/services/node-template-registry';
 import { triggerTemplateRegistry } from '../../../core/services/trigger-template-registry';
-import { NodeType } from '@modular-agent/types';
+import { NodeType, WorkflowType } from '@modular-agent/types';
 import { EdgeType } from '@modular-agent/types';
 import { TriggerActionType } from '@modular-agent/types';
 import type { WorkflowDefinition } from '@modular-agent/types';
@@ -53,6 +53,7 @@ describe('Workflow加载与注册集成测试', () => {
   const createBaseWorkflow = (id: string, name: string): WorkflowDefinition => ({
     id,
     name,
+    type: WorkflowType.STANDALONE,
     version: '1.0.0',
     description: 'Test workflow',
     nodes: [
@@ -139,6 +140,7 @@ describe('Workflow加载与注册集成测试', () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-complex',
         name: 'Complex Workflow',
+        type: WorkflowType.STANDALONE,
         version: '1.0.0',
         description: 'Complex workflow with multiple nodes',
         nodes: [
@@ -303,6 +305,7 @@ describe('Workflow加载与注册集成测试', () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-template-node',
         name: 'Template Node Workflow',
+        type: WorkflowType.STANDALONE,
         version: '1.0.0',
         description: 'Template node workflow',
         variables: [],
@@ -390,6 +393,7 @@ describe('Workflow加载与注册集成测试', () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-template-trigger',
         name: 'Template Trigger Workflow',
+        type: WorkflowType.STANDALONE,
         version: '1.0.0',
         description: 'Template trigger workflow',
         variables: [],
@@ -462,6 +466,7 @@ describe('Workflow加载与注册集成测试', () => {
       const subworkflow: WorkflowDefinition = {
         id: 'processing-unit',
         name: 'Processing Subworkflow',
+        type: WorkflowType.STANDALONE,
         version: '1.0.0',
         description: 'Subworkflow for processing',
         variables: [],
@@ -533,6 +538,7 @@ describe('Workflow加载与注册集成测试', () => {
       const mainWorkflow: WorkflowDefinition = {
         id: 'workflow-with-subgraph',
         name: 'Main Workflow With Subgraph',
+        type: WorkflowType.STANDALONE,
         version: '1.0.0',
         description: 'Main workflow containing subgraph reference',
         variables: [],
@@ -649,6 +655,7 @@ describe('Workflow加载与注册集成测试', () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-invalid-template',
         name: 'Invalid Template Workflow',
+        type: WorkflowType.STANDALONE,
         version: '1.0.0',
         nodes: [
           {
@@ -724,6 +731,7 @@ describe('Workflow加载与注册集成测试', () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-cycle',
         name: 'Cycle Workflow',
+        type: WorkflowType.STANDALONE,
         version: '1.0.0',
         nodes: [
           {
@@ -801,6 +809,7 @@ describe('Workflow加载与注册集成测试', () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-invalid-subgraph',
         name: 'Invalid Subgraph Workflow',
+        type: WorkflowType.STANDALONE,
         version: '1.0.0',
         nodes: [
           {
@@ -877,6 +886,7 @@ describe('Workflow加载与注册集成测试', () => {
         const workflow: WorkflowDefinition = {
           id: `subworkflow-${i}`,
           name: `Subworkflow ${i}`,
+          type: WorkflowType.STANDALONE,
           version: '1.0.0',
           nodes: [
             {
@@ -928,6 +938,7 @@ describe('Workflow加载与注册集成测试', () => {
       const parentWorkflow: WorkflowDefinition = {
         id: 'parent-workflow-deep',
         name: 'Deep Parent Workflow',
+        type: WorkflowType.STANDALONE,
         version: '1.0.0',
         nodes: [
           {
@@ -997,6 +1008,7 @@ describe('Workflow加载与注册集成测试', () => {
       const invalidWorkflow: WorkflowDefinition = {
         id: 'workflow-invalid',
         name: 'Invalid Workflow',
+        type: WorkflowType.STANDALONE,
         version: '1.0.0',
         nodes: [],
         edges: [],
@@ -1019,6 +1031,7 @@ describe('Workflow加载与注册集成测试', () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-isolated',
         name: 'Isolated Node Workflow',
+        type: WorkflowType.STANDALONE,
         version: '1.0.0',
         nodes: [
           {
