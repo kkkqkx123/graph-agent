@@ -16,7 +16,7 @@
 
 import type { LLMMessage, LLMResult } from '@modular-agent/types/llm';
 import { LLMWrapper } from '../../llm/wrapper';
-import { ExecutionError, ThreadInterruptedException, LLMAbortError } from '@modular-agent/types/errors';
+import { ExecutionError, ThreadInterruptedException } from '@modular-agent/types/errors';
 
 /**
  * LLM执行请求数据
@@ -143,13 +143,18 @@ export class LLMExecutor {
         }))
       };
     } catch (error) {
-      // 处理 AbortError，转换为专门的 LLMAbortError
+      // 处理 AbortError，转换为 ThreadInterruptedException
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new LLMAbortError(
+        const reason = options?.abortSignal?.reason;
+        if (reason instanceof ThreadInterruptedException) {
+          throw reason; // 直接重新抛出
+        }
+        // 如果是其他 AbortError，转换为 ThreadInterruptedException
+        throw new ThreadInterruptedException(
           'LLM call aborted',
+          'STOP', // 默认为 STOP
           options?.threadId || '',
-          options?.nodeId || '',
-          error
+          options?.nodeId || ''
         );
       }
       

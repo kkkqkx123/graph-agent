@@ -39,6 +39,7 @@ import {
 import { LLMExecutionCoordinator } from './coordinators/llm-execution-coordinator';
 import { ThreadBuilder } from './thread-builder';
 import { ExecutionContext } from './context/execution-context';
+import { InterruptionDetector, InterruptionDetectorImpl } from './managers/interruption-detector';
 
 /**
  * ThreadExecutor - Thread 执行器
@@ -55,6 +56,7 @@ export class ThreadExecutor implements SubgraphContextFactory {
   private threadBuilder: ThreadBuilder;
   private workflowRegistry: WorkflowRegistry;
   private executionContext: ExecutionContext;
+  private interruptionDetector: InterruptionDetector;
 
   /**
    * 触发子工作流任务队列
@@ -85,6 +87,11 @@ export class ThreadExecutor implements SubgraphContextFactory {
       this.executionContext
     );
 
+    // 创建中断检测器
+    this.interruptionDetector = new InterruptionDetectorImpl(
+      this.executionContext.getThreadRegistry()
+    );
+
     // 创建节点执行协调器（从ExecutionContext获取Handler）
     this.nodeExecutionCoordinator = new NodeExecutionCoordinator(
       this.eventManager,
@@ -93,7 +100,8 @@ export class ThreadExecutor implements SubgraphContextFactory {
       this.executionContext.getHumanRelayHandler(),
       undefined,
       undefined,
-      this.executionContext.getThreadRegistry()
+      this.executionContext.getThreadRegistry(),
+      this.interruptionDetector
     );
   }
 
@@ -106,12 +114,9 @@ export class ThreadExecutor implements SubgraphContextFactory {
   private async checkInterruption(threadContext: ThreadContext): Promise<void> {
     const threadId = threadContext.getThreadId();
 
-    // 检查NodeExecutionCoordinator是否需要中断
-    if (this.nodeExecutionCoordinator.shouldInterrupt(threadId)) {
-      const interruptionType = threadContext.getShouldStop() ? 'STOP' : 'PAUSE';
-      
-      // 触发 AbortController 以中断正在进行的异步操作
-      threadContext.interrupt(interruptionType);
+    // 使用统一的中断检测器
+    if (this.interruptionDetector.shouldInterrupt(threadId)) {
+      const interruptionType = this.interruptionDetector.getInterruptionType(threadId)!;
       
       // 处理中断（创建检查点、触发事件）
       await this.nodeExecutionCoordinator.handleInterruption(
@@ -122,21 +127,6 @@ export class ThreadExecutor implements SubgraphContextFactory {
       
       throw new ThreadInterruptedException(
         `Thread ${interruptionType.toLowerCase()}`,
-        interruptionType,
-        threadId,
-        threadContext.getCurrentNodeId()
-      );
-    }
-
-    // 检查LLMExecutionCoordinator是否需要中断
-    if (this.llmExecutionCoordinator.shouldInterrupt(threadId)) {
-      const interruptionType = threadContext.getShouldStop() ? 'STOP' : 'PAUSE';
-      
-      // 触发 AbortController 以中断正在进行的异步操作
-      threadContext.interrupt(interruptionType);
-      
-      throw new ThreadInterruptedException(
-        `LLM execution ${interruptionType.toLowerCase()}`,
         interruptionType,
         threadId,
         threadContext.getCurrentNodeId()

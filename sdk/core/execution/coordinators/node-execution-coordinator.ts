@@ -39,6 +39,7 @@ import { CheckpointTriggerType } from '@modular-agent/types/checkpoint';
 import { ThreadStatus } from '@modular-agent/types/thread';
 import { emit } from '../utils/event/event-emitter';
 import { buildThreadPausedEvent, buildThreadCancelledEvent } from '../utils/event/event-builder';
+import type { InterruptionDetector } from '../managers/interruption-detector';
 
 /**
  * 节点执行协调器
@@ -51,7 +52,8 @@ export class NodeExecutionCoordinator {
     private humanRelayHandler?: HumanRelayHandler,
     private checkpointDependencies?: CheckpointDependencies,
     private globalCheckpointConfig?: any,
-    private threadRegistry?: any
+    private threadRegistry?: any,
+    private interruptionDetector?: InterruptionDetector
   ) { }
 
   /**
@@ -61,15 +63,15 @@ export class NodeExecutionCoordinator {
    * @returns 是否应该中断
    */
   shouldInterrupt(threadId: string): boolean {
-    if (!this.threadRegistry) {
-      return false;
+    if (this.interruptionDetector) {
+      return this.interruptionDetector.shouldInterrupt(threadId);
     }
-    
+
     const threadContext = this.threadRegistry.get(threadId);
     if (!threadContext) {
       return false;
     }
-    
+
     return threadContext.getShouldStop() || threadContext.getShouldPause();
   }
 
@@ -84,7 +86,7 @@ export class NodeExecutionCoordinator {
     if (!this.threadRegistry) {
       return;
     }
-    
+
     const threadContext = this.threadRegistry.get(threadId);
     if (!threadContext) {
       return;

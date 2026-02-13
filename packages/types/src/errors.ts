@@ -341,6 +341,7 @@ export class ToolError extends SDKError {
  * - 用户调用 pauseThread() 时，执行器在安全点抛出此异常
  * - 用户调用 stopThread() 时，执行器在安全点抛出此异常
  * - NodeExecutionCoordinator 和 LLMExecutionCoordinator 检测到中断标志时抛出
+ * - LLMExecutor 和 ToolCallExecutor 捕获 AbortError 后转换为 ThreadInterruptedException
  */
 export class ThreadInterruptedException extends SDKError {
   constructor(
@@ -355,59 +356,6 @@ export class ThreadInterruptedException extends SDKError {
 
   protected override getDefaultSeverity(): ErrorSeverity {
     return ErrorSeverity.INFO;
-  }
-}
-
-/**
- * LLM 调用中断错误
- *
- * 说明：
- * 1. 当 LLM 调用被 AbortSignal 中断时抛出
- * 2. 携带线程ID、节点ID等上下文信息
- * 3. 保留原始错误以便调试
- *
- * 使用场景：
- * - LLMExecutor 捕获 AbortError 后转换为 LLMAbortError
- * - LLMExecutionCoordinator 捕获 LLMAbortError 并转换为 ThreadInterruptedException
- */
-export class LLMAbortError extends Error {
-  override name = 'LLMAbortError';
-  
-  constructor(
-    message: string,
-    public readonly threadId: string,
-    public readonly nodeId: string,
-    public readonly originalError?: Error
-  ) {
-    super(message);
-    Error.captureStackTrace(this, this.constructor);
-  }
-}
-
-/**
- * 工具执行中断错误
- *
- * 说明：
- * 1. 当工具执行被 AbortSignal 中断时抛出
- * 2. 携带线程ID、节点ID、工具名称等上下文信息
- * 3. 保留原始错误以便调试
- *
- * 使用场景：
- * - ToolCallExecutor 捕获 AbortError 后转换为 ToolAbortError
- * - LLMExecutionCoordinator 捕获 ToolAbortError 并转换为 ThreadInterruptedException
- */
-export class ToolAbortError extends Error {
-  override name = 'ToolAbortError';
-  
-  constructor(
-    message: string,
-    public readonly threadId: string,
-    public readonly nodeId: string,
-    public readonly toolName: string,
-    public readonly originalError?: Error
-  ) {
-    super(message);
-    Error.captureStackTrace(this, this.constructor);
   }
 }
 

@@ -122,13 +122,10 @@ export class ThreadLifecycleCoordinator {
 
     const thread = threadContext.thread;
 
-    // 1. 设置暂停标志，通知执行器应该暂停
+    // 1. 请求暂停（InterruptionManager 会自动触发 AbortController）
     threadContext.setShouldPause(true);
 
-    // 2. 触发 AbortController 以中断正在进行的异步操作
-    threadContext.interrupt('PAUSE');
-
-    // 3. 完全委托给Manager进行状态转换和事件触发
+    // 2. 完全委托给Manager进行状态转换和事件触发
     await this.getLifecycleManager().pauseThread(thread);
   }
 
@@ -156,8 +153,8 @@ export class ThreadLifecycleCoordinator {
     // 1. 完全委托给Manager进行状态转换和事件触发
     await this.getLifecycleManager().resumeThread(thread);
 
-    // 2. 清除暂停标志
-    threadContext.setShouldPause(false);
+    // 2. 重置中断状态（包括 AbortController）
+    threadContext.resetInterrupt();
 
     // 3. 创建执行器并继续执行
     const threadExecutor = new ThreadExecutor(this.executionContext);
@@ -190,16 +187,13 @@ export class ThreadLifecycleCoordinator {
 
     const thread = threadContext.thread;
 
-    // 1. 设置停止标志，通知执行器应该停止
+    // 1. 请求停止（InterruptionManager 会自动触发 AbortController）
     threadContext.setShouldStop(true);
 
-    // 2. 触发 AbortController 以中断正在进行的异步操作
-    threadContext.interrupt('STOP');
-
-    // 3. 完全委托给Manager进行状态转换和事件触发
+    // 2. 完全委托给Manager进行状态转换和事件触发
     await this.getLifecycleManager().cancelThread(thread, 'user_requested');
 
-    // 4. 级联取消子Threads
+    // 3. 级联取消子Threads
     await this.getCascadeManager().cascadeCancel(threadId);
   }
 

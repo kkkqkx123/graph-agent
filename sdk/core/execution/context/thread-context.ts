@@ -35,7 +35,7 @@ import type { EventManager } from '../../services/event-manager';
 import type { ToolService } from '../../services/tool-service';
 import { LLMExecutor } from '../executors/llm-executor';
 import type { LifecycleCapable } from '../managers/lifecycle-capable';
-import { ThreadInterruptedException } from '@modular-agent/types/errors';
+import { InterruptionManager } from '../managers/interruption-manager';
 
 /**
  * ThreadContext - Thread 执行上下文
@@ -117,9 +117,9 @@ export class ThreadContext implements LifecycleCapable {
   private readonly llmExecutor: LLMExecutor;
 
   /**
-   * AbortController 用于中断正在进行的异步操作
+   * 中断管理器
    */
-  private abortController: AbortController = new AbortController();
+  public readonly interruptionManager: InterruptionManager;
 
   /**
    * 可用工具集合（从workflow配置）
@@ -175,6 +175,9 @@ export class ThreadContext implements LifecycleCapable {
     this.triggerStateManager.setWorkflowId(thread.workflowId);
 
     this.executionState = new ExecutionState();
+
+    // 初始化中断管理器
+    this.interruptionManager = new InterruptionManager(thread.id, thread.currentNodeId);
   }
 
   /**
@@ -242,6 +245,8 @@ export class ThreadContext implements LifecycleCapable {
    */
   setCurrentNodeId(nodeId: string): void {
     this.thread.currentNodeId = nodeId;
+    // 更新中断管理器中的节点ID
+    this.interruptionManager.updateNodeId(nodeId);
   }
 
   /**
@@ -249,7 +254,14 @@ export class ThreadContext implements LifecycleCapable {
    * @param shouldPause 是否应该暂停
    */
   setShouldPause(shouldPause: boolean): void {
-    this.thread.shouldPause = shouldPause;
+    if (shouldPause) {
+      this.interruptionManager.requestPause();
+    } else {
+      // 如果设置为 false，且当前是暂停状态，则恢复
+      if (this.interruptionManager.getInterruptionType() === 'PAUSE') {
+        this.interruptionManager.resume();
+      }
+    }
   }
 
   /**
@@ -257,7 +269,7 @@ export class ThreadContext implements LifecycleCapable {
    * @returns 是否应该暂停
    */
   getShouldPause(): boolean {
-    return this.thread.shouldPause ?? false;
+    return this.interruptionManager.getInterruptionType() === 'PAUSE';
   }
 
   /**
@@ -265,7 +277,9 @@ export class ThreadContext implements LifecycleCapable {
    * @param shouldStop 是否应该停止
    */
   setShouldStop(shouldStop: boolean): void {
-    this.thread.shouldStop = shouldStop;
+    if (shouldStop) {
+      this.interruptionManager.requestStop();
+    }
   }
 
   /**
@@ -273,7 +287,7 @@ export class ThreadContext implements LifecycleCapable {
    * @returns 是否应该停止
    */
   getShouldStop(): boolean {
-    return this.thread.shouldStop ?? false;
+    return this.interruptionManager.getInterruptionType() === 'STOP';
   }
 
   /**
@@ -281,7 +295,7 @@ export class ThreadContext implements LifecycleCapable {
    * @returns AbortSignal 实例
    */
   getAbortSignal(): AbortSignal {
-    return this.abortController.signal;
+    return this.interruptionManager.getAbortSignal();
   }
 
   /**
@@ -289,19 +303,18 @@ export class ThreadContext implements LifecycleCapable {
    * @param interruptionType 中断类型（PAUSE 或 STOP）
    */
   interrupt(interruptionType: 'PAUSE' | 'STOP'): void {
-    this.abortController.abort(new ThreadInterruptedException(
-      `Thread ${interruptionType.toLowerCase()}`,
-      interruptionType,
-      this.getThreadId(),
-      this.getCurrentNodeId()
-    ));
+    if (interruptionType === 'PAUSE') {
+      this.interruptionManager.requestPause();
+    } else {
+      this.interruptionManager.requestStop();
+    }
   }
 
   /**
    * 重置中断控制器（用于恢复）
    */
   resetInterrupt(): void {
-    this.abortController = new AbortController();
+    this.interruptionManager.resume();
   }
 
   /**
@@ -925,17 +938,17 @@ export class ThreadContext implements LifecycleCapable {
    */
   getActiveSubworkflowIds(): string[] {
     const subworkflows = new Set<string>();
-    
+
     // 1. 检查触发的子工作流
     const triggeredId = this.getTriggeredSubworkflowId();
     if (triggeredId) subworkflows.add(triggeredId);
-    
+
     // 2. 检查子图执行栈中的工作流
     const subgraphStack = this.executionState.getSubgraphStack();
     for (const context of subgraphStack) {
       subworkflows.add(context.workflowId);
     }
-    
+
     return Array.from(subworkflows);
   }
 
@@ -949,13 +962,13 @@ export class ThreadContext implements LifecycleCapable {
     if (this.getWorkflowId() === workflowId) {
       return true;
     }
-    
+
     // 2. 检查触发的子工作流
     const triggeredId = this.getTriggeredSubworkflowId();
     if (triggeredId === workflowId) {
       return true;
     }
-    
+
     // 3. 检查子图执行栈中的工作流
     const subgraphStack = this.executionState.getSubgraphStack();
     for (const context of subgraphStack) {
@@ -963,7 +976,7 @@ export class ThreadContext implements LifecycleCapable {
         return true;
       }
     }
-    
+
     return false;
   }
 }

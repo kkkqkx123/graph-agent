@@ -23,7 +23,7 @@ import { now } from '@modular-agent/common-utils';
 import type { ConversationManager } from '../managers/conversation-manager';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils';
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils';
-import { ThreadInterruptedException, ToolAbortError } from '@modular-agent/types/errors';
+import { ThreadInterruptedException } from '@modular-agent/types/errors';
 
 /**
  * 工具执行结果
@@ -241,14 +241,18 @@ export class ToolCallExecutor {
       const executionTime = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : String(error);
 
-      // 处理 AbortError，转换为专门的 ToolAbortError
+      // 处理 AbortError，转换为 ThreadInterruptedException
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new ToolAbortError(
+        const reason = options?.abortSignal?.reason;
+        if (reason instanceof ThreadInterruptedException) {
+          throw reason; // 直接重新抛出
+        }
+        // 如果是其他 AbortError，转换为 ThreadInterruptedException
+        throw new ThreadInterruptedException(
           'Tool execution aborted',
+          'STOP', // 默认为 STOP
           threadId || '',
-          nodeId || '',
-          toolCall.name,
-          error
+          nodeId || ''
         );
       }
 

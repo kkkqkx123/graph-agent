@@ -25,11 +25,12 @@ import { UserInteractionOperationType } from '@modular-agent/types';
 import type { ToolApprovalData } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
 import { ToolCallExecutor } from '../executors/tool-call-executor';
-import { ExecutionError, ThreadInterruptedException, LLMAbortError, ToolAbortError } from '@modular-agent/types/errors';
+import { ExecutionError, ThreadInterruptedException } from '@modular-agent/types/errors';
 import { generateId } from '@modular-agent/common-utils';
 import { CheckpointCoordinator } from './checkpoint-coordinator';
 import type { ExecutionContext } from '../context/execution-context';
 import { globalMessageStorage } from '../../services/global-message-storage';
+import type { InterruptionDetector } from '../managers/interruption-detector';
 
 /**
  * LLM 执行参数
@@ -88,12 +89,20 @@ export interface LLMExecutionResponse {
  * - 依赖注入
  */
 export class LLMExecutionCoordinator {
+  private interruptionDetector?: InterruptionDetector;
+
   constructor(
     private llmExecutor: LLMExecutor,
     private toolService: ToolService,
     private eventManager: EventManager,
     private executionContext?: ExecutionContext
-  ) { }
+  ) {
+    if (executionContext) {
+      this.interruptionDetector = new (require('../utils/interruption/interruption-detector').InterruptionDetectorImpl)(
+        executionContext.getThreadRegistry()
+      );
+    }
+  }
 
   /**
    * 检查是否应该中断当前执行
@@ -102,6 +111,11 @@ export class LLMExecutionCoordinator {
    * @returns 是否应该中断
    */
   shouldInterrupt(threadId: string): boolean {
+    if (this.interruptionDetector) {
+      return this.interruptionDetector.shouldInterrupt(threadId);
+    }
+    
+    // 向后兼容：如果没有提供 interruptionDetector，使用旧的方式
     if (!this.executionContext) {
       return false;
     }
@@ -142,20 +156,7 @@ export class LLMExecutionCoordinator {
         messages: conversationState.getMessages()
       };
     } catch (error) {
-      // 处理专门的 Abort 错误，转换为 ThreadInterruptedException
-      if (error instanceof LLMAbortError || error instanceof ToolAbortError) {
-        const threadContext = this.executionContext?.getThreadRegistry().get(params.threadId);
-        const interruptionType = threadContext?.getShouldStop() ? 'STOP' : 'PAUSE';
-
-        // 重新抛出 ThreadInterruptedException
-        throw new ThreadInterruptedException(
-          error.message,
-          interruptionType,
-          error.threadId,
-          error.nodeId
-        );
-      }
-
+      // ThreadInterruptedException 会自动向上传播，无需特殊处理
       return {
         success: false,
         error: error instanceof Error ? error : new Error(String(error))

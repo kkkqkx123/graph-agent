@@ -12,6 +12,8 @@
  * 包含的管理器：
  * - TriggerStateManager: 触发器状态管理器
  * - VariableStateManager: 变量状态管理器
+ * - InterruptionManager: 中断状态管理器
+ * - InterruptionDetector: 中断检测器
  * - LifecycleCapable: 统一的生命周期管理能力接口
  * - CheckpointCleanupPolicy: 检查点清理策略
  */
@@ -28,3 +30,6 @@ export {
 } from "./conversation-manager";
 
 export { WorkflowReferenceManager } from "./workflow-reference-manager";
+
+export { InterruptionManager, type InterruptionType } from "./interruption-manager";
+export { InterruptionDetector, InterruptionDetectorImpl } from "./interruption-detector";
