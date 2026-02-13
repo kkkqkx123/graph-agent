@@ -5,7 +5,7 @@
 
 import type { Node, LoopStartNodeConfig } from '@modular-agent/types/node';
 import type { Thread } from '@modular-agent/types/thread';
-import { ExecutionError, ValidationError } from '@modular-agent/types/errors';
+import { ExecutionError, ValidationError, RuntimeValidationError } from '@modular-agent/types/errors';
 import { now } from '@modular-agent/common-utils';
 
 /**
@@ -112,9 +112,13 @@ function resolveIterable(iterableConfig: any, thread: Thread): any {
             break;
 
           default:
-            throw new ValidationError(
+            throw new RuntimeValidationError(
               `Invalid variable scope '${scope}'. Supported scopes: input, output, global, thread`,
-              'iterable.scope'
+              {
+                operation: 'handle',
+                field: 'loop.scope',
+                value: scope
+              }
             );
         }
 
@@ -144,9 +148,13 @@ function resolveIterable(iterableConfig: any, thread: Thread): any {
 
   // 直接值，验证类型
   if (!isValidIterable(iterableConfig)) {
-    throw new ValidationError(
+    throw new RuntimeValidationError(
       `Iterable must be an array, object, number, string, or variable expression like {{input.list}}. Got: ${typeof iterableConfig}`,
-      'iterable'
+      {
+        operation: 'handle',
+        field: 'loop.iterable',
+        value: iterableConfig
+      }
     );
   }
 

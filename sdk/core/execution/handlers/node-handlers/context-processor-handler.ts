@@ -10,7 +10,7 @@
 
 import type { Node, ContextProcessorNodeConfig } from '@modular-agent/types/node';
 import type { Thread } from '@modular-agent/types/thread';
-import { ValidationError, ExecutionError } from '@modular-agent/types/errors';
+import { ValidationError, ExecutionError, RuntimeValidationError } from '@modular-agent/types/errors';
 import { now } from '@modular-agent/common-utils';
 import type { LLMMessage } from '@modular-agent/types/llm';
 
@@ -82,7 +82,7 @@ function handleTruncateOperation(
   config: any
 ): void {
   if (!config) {
-    throw new ValidationError('Truncate configuration is required', 'config');
+    throw new RuntimeValidationError('Truncate configuration is required', { operation: 'handle', field: 'config' });
   }
 
   // 如果指定了角色，使用类型索引
@@ -184,7 +184,7 @@ function handleInsertOperation(
   config: any
 ): void {
   if (!config) {
-    throw new ValidationError('Insert configuration is required', 'config');
+    throw new RuntimeValidationError('Insert configuration is required', { operation: 'handle', field: 'config' });
   }
 
   const currentIndices = conversationManager.getMarkMap().originalIndices;
@@ -224,7 +224,7 @@ function handleReplaceOperation(
   config: any
 ): void {
   if (!config) {
-    throw new ValidationError('Replace configuration is required', 'config');
+    throw new RuntimeValidationError('Replace configuration is required', { operation: 'handle', field: 'config' });
   }
 
   const allMessages = conversationManager.getAllMessages();
@@ -287,7 +287,7 @@ function handleFilterOperation(
   config: any
 ): void {
   if (!config) {
-    throw new ValidationError('Filter configuration is required', 'config');
+    throw new RuntimeValidationError('Filter configuration is required', { operation: 'handle', field: 'config' });
   }
 
   const allMessages = conversationManager.getAllMessages();

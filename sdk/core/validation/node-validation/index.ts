@@ -7,7 +7,7 @@
 
 import { NodeType } from '@modular-agent/types/node';
 import type { Node } from '@modular-agent/types/node';
-import { ValidationError } from '@modular-agent/types/errors';
+import { ConfigurationValidationError } from '@modular-agent/types/errors';
 import type { Result } from '@modular-agent/types/result';
 import { ok, err } from '@modular-agent/common-utils';
 
@@ -32,7 +32,7 @@ export { validateContinueFromTriggerNode } from './continue-from-trigger-validat
  * @param node 节点定义
  * @returns 验证结果
  */
-export function validateNodeByType(node: Node): Result<Node, ValidationError[]> {
+export function validateNodeByType(node: Node): Result<Node, ConfigurationValidationError[]> {
   switch (node.type) {
     case NodeType.START:
       const { validateStartNode } = require('./start-validator');
@@ -80,6 +80,9 @@ export function validateNodeByType(node: Node): Result<Node, ValidationError[]> 
       const { validateContinueFromTriggerNode } = require('./continue-from-trigger-validator');
       return validateContinueFromTriggerNode(node);
     default:
-      return err([new ValidationError(`Unknown node type: ${node.type}`, `node.${node.id}`)]);
+      return err([new ConfigurationValidationError(`Unknown node type: ${node.type}`, {
+        configType: 'node',
+        configPath: `node.${node.id}`
+      })]);
   }
 }

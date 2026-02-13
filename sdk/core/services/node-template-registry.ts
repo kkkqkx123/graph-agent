@@ -8,7 +8,7 @@
 import type { NodeTemplate, NodeTemplateSummary } from '@modular-agent/types/node-template';
 import type { Node } from '@modular-agent/types/node';
 import { NodeType } from '@modular-agent/types/node';
-import { ValidationError, NotFoundError } from '@modular-agent/types/errors';
+import { ValidationError, NotFoundError, ConfigurationValidationError, NodeTemplateNotFoundError } from '@modular-agent/types/errors';
 import { validateNodeByType } from '../validation/node-validation';
 
 /**
@@ -28,9 +28,12 @@ class NodeTemplateRegistry {
 
     // 检查名称是否已存在
     if (this.templates.has(template.name)) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         `Node template with name '${template.name}' already exists`,
-        'template.name'
+        {
+          configType: 'node',
+          configPath: 'template.name'
+        }
       );
     }
 
@@ -76,9 +79,8 @@ class NodeTemplateRegistry {
   update(name: string, updates: Partial<NodeTemplate>): void {
     const template = this.templates.get(name);
     if (!template) {
-      throw new NotFoundError(
+      throw new NodeTemplateNotFoundError(
         `Node template '${name}' not found`,
-        'template',
         name
       );
     }
@@ -105,9 +107,8 @@ class NodeTemplateRegistry {
    */
   unregister(name: string): void {
     if (!this.templates.has(name)) {
-      throw new NotFoundError(
+      throw new NodeTemplateNotFoundError(
         `Node template '${name}' not found`,
-        'template',
         name
       );
     }
@@ -229,23 +230,32 @@ class NodeTemplateRegistry {
   private validateTemplate(template: NodeTemplate): void {
     // 验证必需字段
     if (!template.name || typeof template.name !== 'string') {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Node template name is required and must be a string',
-        'template.name'
+        {
+          configType: 'node',
+          configPath: 'template.name'
+        }
       );
     }
 
     if (!template.type || !Object.values(NodeType).includes(template.type)) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         `Invalid node type: ${template.type}`,
-        'template.type'
+        {
+          configType: 'node',
+          configPath: 'template.type'
+        }
       );
     }
 
     if (!template.config) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Node template config is required',
-        'template.config'
+        {
+          configType: 'node',
+          configPath: 'template.config'
+        }
       );
     }
 
@@ -263,9 +273,12 @@ class NodeTemplateRegistry {
       validateNodeByType(mockNode);
     } catch (error) {
       if (error instanceof ValidationError) {
-        throw new ValidationError(
+        throw new ConfigurationValidationError(
           `Invalid node configuration for template '${template.name}': ${error.message}`,
-          `template.config`
+          {
+            configType: 'node',
+            configPath: 'template.config'
+          }
         );
       }
       throw error;
@@ -281,9 +294,8 @@ class NodeTemplateRegistry {
   export(name: string): string {
     const template = this.templates.get(name);
     if (!template) {
-      throw new NotFoundError(
+      throw new NodeTemplateNotFoundError(
         `Node template '${name}' not found`,
-        'template',
         name
       );
     }
@@ -305,9 +317,12 @@ class NodeTemplateRegistry {
       if (error instanceof ValidationError) {
         throw error;
       }
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         `Failed to import node template: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'json'
+        {
+          configType: 'node',
+          configPath: 'json'
+        }
       );
     }
   }

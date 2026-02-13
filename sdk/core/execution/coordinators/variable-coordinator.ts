@@ -21,7 +21,7 @@ import type { VariableScope } from '@modular-agent/types/common';
 import type { EventManager } from '../../services/event-manager';
 import { EventType } from '@modular-agent/types/events';
 import { now } from '@modular-agent/common-utils';
-import { ValidationError, ExecutionError } from '@modular-agent/types/errors';
+import { ValidationError, ExecutionError, RuntimeValidationError } from '@modular-agent/types/errors';
 import { VariableStateManager } from '../managers/variable-state-manager';
 import { VariableAccessor } from '../utils/variable-accessor';
 
@@ -154,34 +154,43 @@ export class VariableCoordinator {
     const variableDef = this.stateManager.getVariableDefinition(name);
 
     if (!variableDef) {
-      throw new ValidationError(
+      throw new RuntimeValidationError(
         `Variable '${name}' is not defined in workflow. Variables must be defined in WorkflowDefinition.`,
-        'variableName',
-        name,
-        { threadId: this.threadId, workflowId: this.workflowId }
+        {
+          operation: 'setVariable',
+          field: 'variableName',
+          value: name,
+          context: { threadId: this.threadId, workflowId: this.workflowId }
+        }
       );
     }
 
     if (variableDef.readonly) {
-      throw new ValidationError(
+      throw new RuntimeValidationError(
         `Variable '${name}' is readonly and cannot be modified`,
-        'variableName',
-        name,
-        { threadId: this.threadId, workflowId: this.workflowId }
+        {
+          operation: 'setVariable',
+          field: 'variableName',
+          value: name,
+          context: { threadId: this.threadId, workflowId: this.workflowId }
+        }
       );
     }
 
     if (!this.validateType(value, variableDef.type)) {
-      throw new ValidationError(
+      throw new RuntimeValidationError(
         `Type mismatch for variable '${name}'. Expected ${variableDef.type}, got ${typeof value}`,
-        'variableValue',
-        value,
         {
-          threadId: this.threadId,
-          workflowId: this.workflowId,
-          variableName: name,
-          expectedType: variableDef.type,
-          actualType: typeof value
+          operation: 'setVariable',
+          field: 'variableValue',
+          value: value,
+          context: {
+            threadId: this.threadId,
+            workflowId: this.workflowId,
+            variableName: name,
+            expectedType: variableDef.type,
+            actualType: typeof value
+          }
         }
       );
     }

@@ -6,7 +6,7 @@
 import { GenericResourceAPI } from '../generic-resource-api';
 import { threadRegistry, type ThreadRegistry } from '../../../core/services/thread-registry';
 import type { Thread } from '@modular-agent/types/thread';
-import { NotFoundError } from '@modular-agent/types/errors';
+import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types/errors';
 
 /**
  * 变量过滤器
@@ -129,7 +129,7 @@ export class VariableResourceAPI extends GenericResourceAPI<any, string, Variabl
     const thread = await this.getThread(threadId);
     
     if (!(name in thread.variableScopes.thread)) {
-      throw new NotFoundError(`Variable not found: ${name}`, 'variable', name);
+      throw new NotFoundError(`Variable not found: ${name}`, 'Variable', name);
     }
     
     return thread.variableScopes.thread[name];
@@ -285,7 +285,7 @@ export class VariableResourceAPI extends GenericResourceAPI<any, string, Variabl
   private async getThread(threadId: string): Promise<Thread> {
     const threadContext = this.registry.get(threadId);
     if (!threadContext) {
-      throw new NotFoundError(`Thread not found: ${threadId}`, 'thread', threadId);
+      throw new ThreadContextNotFoundError(`Thread not found: ${threadId}`, threadId);
     }
     return threadContext.thread;
   }

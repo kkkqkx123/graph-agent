@@ -6,7 +6,7 @@
 
 import { z } from 'zod';
 import type { LLMMessage, LLMMessageRole, LLMToolCall } from '@modular-agent/types/llm';
-import { ValidationError } from '@modular-agent/types/errors';
+import { SchemaValidationError } from '@modular-agent/types/errors';
 import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types/result';
 
@@ -120,7 +120,7 @@ export class MessageValidator {
    * @param message 消息对象
    * @returns 验证结果
    */
-  validateMessage(message: LLMMessage): Result<LLMMessage, ValidationError[]> {
+  validateMessage(message: LLMMessage): Result<LLMMessage, SchemaValidationError[]> {
     const result = messageSchema.safeParse(message);
     if (result.success) {
       return ok(message);
@@ -133,16 +133,16 @@ export class MessageValidator {
    * @param role 消息角色
    * @returns 验证结果
    */
-  validateRole(role: LLMMessageRole): Result<LLMMessageRole, ValidationError[]> {
+  validateRole(role: LLMMessageRole): Result<LLMMessageRole, SchemaValidationError[]> {
     if (!role) {
-      return err([new ValidationError('Message role is required', 'role')]);
+      return err([new SchemaValidationError('Message role is required', { field: 'role' })]);
     }
     const roleSchema = z.enum(['system', 'user', 'assistant', 'tool']);
     const result = roleSchema.safeParse(role);
     if (result.success) {
       return ok(role);
     }
-    return err([new ValidationError('Invalid message role', 'role')]);
+    return err([new SchemaValidationError('Invalid message role', { field: 'role' })]);
   }
 
   /**
@@ -151,7 +151,7 @@ export class MessageValidator {
    * @param role 消息角色
    * @returns 验证结果
    */
-  validateContent(content: string | any[], role: LLMMessageRole): Result<string | any[], ValidationError[]> {
+  validateContent(content: string | any[], role: LLMMessageRole): Result<string | any[], SchemaValidationError[]> {
     const result = messageContentSchema.safeParse(content);
     if (result.success) {
       // 对于tool角色，如果内容是数组，验证所有内容项都是tool_result类型
@@ -160,9 +160,9 @@ export class MessageValidator {
           const item = content[i];
           if (item.type !== 'tool_result') {
             return err([
-              new ValidationError(
+              new SchemaValidationError(
                 `Tool message content item at index ${i} must have type 'tool_result'`,
-                `content[${i}].type`
+                { field: `content[${i}].type` }
               )
             ]);
           }
@@ -178,7 +178,7 @@ export class MessageValidator {
    * @param toolCalls 工具调用数组
    * @returns 验证结果
    */
-  validateToolCalls(toolCalls?: LLMToolCall[]): Result<LLMToolCall[] | undefined, ValidationError[]> {
+  validateToolCalls(toolCalls?: LLMToolCall[]): Result<LLMToolCall[] | undefined, SchemaValidationError[]> {
     if (toolCalls === undefined || toolCalls === null) {
       return ok(undefined);
     }
@@ -194,9 +194,9 @@ export class MessageValidator {
    * @param toolCallId 工具调用ID
    * @returns 验证结果
    */
-  validateToolCallId(toolCallId?: string): Result<string | undefined, ValidationError[]> {
+  validateToolCallId(toolCallId?: string): Result<string | undefined, SchemaValidationError[]> {
     if (toolCallId === undefined || toolCallId === null) {
-      return err([new ValidationError('Tool message must have a toolCallId', 'toolCallId')]);
+      return err([new SchemaValidationError('Tool message must have a toolCallId', { field: 'toolCallId' })]);
     }
     const result = z.string().min(1, 'Tool call ID cannot be empty').transform((val) => val.trim()).refine((val) => val.length > 0, 'Tool call ID cannot be empty').safeParse(toolCallId);
     if (result.success) {
@@ -210,18 +210,18 @@ export class MessageValidator {
    * @param messages 消息数组
    * @returns 验证结果
    */
-  validateMessages(messages: LLMMessage[]): Result<LLMMessage[], ValidationError[]> {
+  validateMessages(messages: LLMMessage[]): Result<LLMMessage[], SchemaValidationError[]> {
     if (!Array.isArray(messages)) {
-      return err([new ValidationError('Messages must be an array', 'messages')]);
+      return err([new SchemaValidationError('Messages must be an array', { field: 'messages' })]);
     }
 
-    const allErrors: ValidationError[] = [];
+    const allErrors: SchemaValidationError[] = [];
     messages.forEach((message, index) => {
       const result = this.validateMessage(message);
       if (result.isErr()) {
         result.error.forEach((error) => {
           const field = error.field ? `messages[${index}].${error.field}` : `messages[${index}]`;
-          allErrors.push(new ValidationError(error.message, field, error.value));
+          allErrors.push(new SchemaValidationError(error.message, { field, value: error.value }));
         });
       }
     });
@@ -237,10 +237,10 @@ export class MessageValidator {
    * @param error zod错误
    * @returns ValidationResult
    */
-  private convertZodErrorToErrors(error: z.ZodError): ValidationError[] {
+  private convertZodErrorToErrors(error: z.ZodError): SchemaValidationError[] {
     return error.issues.map((issue) => {
       const field = issue.path.length > 0 ? issue.path.join('.') : undefined;
-      return new ValidationError(issue.message, field);
+      return new SchemaValidationError(issue.message, { field });
     });
   }
 }

@@ -4,7 +4,7 @@
  */
 
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types/trigger';
-import { ValidationError } from '@modular-agent/types/errors';
+import { ValidationError, RuntimeValidationError } from '@modular-agent/types/errors';
 
 /**
  * 创建成功结果
@@ -59,7 +59,7 @@ export async function customHandler(
     const { handler } = action.parameters;
 
     if (!handler || typeof handler !== 'function') {
-      throw new ValidationError('handler is required and must be a function for CUSTOM action', 'parameters.handler');
+      throw new RuntimeValidationError('handler is required and must be a function for CUSTOM action', { operation: 'handle', field: 'parameters.handler' });
     }
 
     // 执行自定义处理函数

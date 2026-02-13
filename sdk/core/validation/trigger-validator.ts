@@ -8,10 +8,9 @@ import type { WorkflowTrigger, TriggerCondition, TriggerAction, ExecuteTriggered
 import type { TriggerReference } from '@modular-agent/types/trigger-template';
 import { TriggerActionType } from '@modular-agent/types/trigger';
 import { EventType } from '@modular-agent/types/events';
-import { ValidationError } from '@modular-agent/types/errors';
+import { ConfigurationValidationError } from '@modular-agent/types/errors';
 import type { Result } from '@modular-agent/types/result';
 import { ok, err } from '@modular-agent/common-utils';
-import { LLMMessageRole } from '@modular-agent/types/llm';
 
 /**
  * 触发条件schema
@@ -158,14 +157,20 @@ const triggerReferenceSchema = z.object({
  * @param path 字段路径（用于错误路径）
  * @throws ValidationError 当配置无效时抛出
  */
-export function validateTriggerCondition(condition: TriggerCondition, path: string = 'condition'): Result<TriggerCondition, ValidationError[]> {
+export function validateTriggerCondition(condition: TriggerCondition, path: string = 'condition'): Result<TriggerCondition, ConfigurationValidationError[]> {
   const result = triggerConditionSchema.safeParse(condition);
   if (!result.success) {
     const error = result.error.issues[0];
     if (!error) {
-      return err([new ValidationError('Invalid trigger condition', path)]);
+      return err([new ConfigurationValidationError('Invalid trigger condition', {
+        configType: 'trigger',
+        configPath: path
+      })]);
     }
-    return err([new ValidationError(error.message, `${path}.${error.path.join('.')}`)]);
+    return err([new ConfigurationValidationError(error.message, {
+      configType: 'trigger',
+      configPath: `${path}.${error.path.join('.')}`
+    })]);
   }
   return ok(condition);
 }
@@ -179,14 +184,20 @@ export function validateTriggerCondition(condition: TriggerCondition, path: stri
 export function validateExecuteTriggeredSubgraphActionConfig(
   config: ExecuteTriggeredSubgraphActionConfig,
   path: string = 'action.parameters'
-): Result<ExecuteTriggeredSubgraphActionConfig, ValidationError[]> {
+): Result<ExecuteTriggeredSubgraphActionConfig, ConfigurationValidationError[]> {
   const result = executeTriggeredSubgraphActionConfigSchema.safeParse(config);
   if (!result.success) {
     const error = result.error.issues[0];
     if (!error) {
-      return err([new ValidationError('Invalid execute triggered subgraph action config', path)]);
+      return err([new ConfigurationValidationError('Invalid execute triggered subgraph action config', {
+        configType: 'trigger',
+        configPath: path
+      })]);
     }
-    return err([new ValidationError(error.message, `${path}.${error.path.join('.')}`)]);
+    return err([new ConfigurationValidationError(error.message, {
+      configType: 'trigger',
+      configPath: `${path}.${error.path.join('.')}`
+    })]);
   }
   return ok(config);
 }
@@ -197,14 +208,20 @@ export function validateExecuteTriggeredSubgraphActionConfig(
  * @param path 字段路径（用于错误路径）
  * @throws ValidationError 当配置无效时抛出
  */
-export function validateTriggerAction(action: TriggerAction, path: string = 'action'): Result<TriggerAction, ValidationError[]> {
+export function validateTriggerAction(action: TriggerAction, path: string = 'action'): Result<TriggerAction, ConfigurationValidationError[]> {
   const result = triggerActionSchema.safeParse(action);
   if (!result.success) {
     const error = result.error.issues[0];
     if (!error) {
-      return err([new ValidationError('Invalid trigger action', path)]);
+      return err([new ConfigurationValidationError('Invalid trigger action', {
+        configType: 'trigger',
+        configPath: path
+      })]);
     }
-    return err([new ValidationError(error.message, `${path}.${error.path.join('.')}`)]);
+    return err([new ConfigurationValidationError(error.message, {
+      configType: 'trigger',
+      configPath: `${path}.${error.path.join('.')}`
+    })]);
   }
 
   // 特殊处理：当 action.type 为 EXECUTE_TRIGGERED_SUBGRAPH 时，验证 parameters
@@ -227,14 +244,20 @@ export function validateTriggerAction(action: TriggerAction, path: string = 'act
  * @param path 字段路径（用于错误路径）
  * @throws ValidationError 当配置无效时抛出
  */
-export function validateWorkflowTrigger(trigger: WorkflowTrigger, path: string = 'triggers'): Result<WorkflowTrigger, ValidationError[]> {
+export function validateWorkflowTrigger(trigger: WorkflowTrigger, path: string = 'triggers'): Result<WorkflowTrigger, ConfigurationValidationError[]> {
   const result = workflowTriggerSchema.safeParse(trigger);
   if (!result.success) {
     const error = result.error.issues[0];
     if (!error) {
-      return err([new ValidationError('Invalid workflow trigger', path)]);
+      return err([new ConfigurationValidationError('Invalid workflow trigger', {
+        configType: 'trigger',
+        configPath: path
+      })]);
     }
-    return err([new ValidationError(error.message, `${path}.${error.path.join('.')}`)]);
+    return err([new ConfigurationValidationError(error.message, {
+      configType: 'trigger',
+      configPath: `${path}.${error.path.join('.')}`
+    })]);
   }
   return ok(trigger);
 }
@@ -245,14 +268,20 @@ export function validateWorkflowTrigger(trigger: WorkflowTrigger, path: string =
  * @param path 字段路径（用于错误路径）
  * @throws ValidationError 当配置无效时抛出
  */
-export function validateTriggerReference(reference: TriggerReference, path: string = 'triggers'): Result<TriggerReference, ValidationError[]> {
+export function validateTriggerReference(reference: TriggerReference, path: string = 'triggers'): Result<TriggerReference, ConfigurationValidationError[]> {
   const result = triggerReferenceSchema.safeParse(reference);
   if (!result.success) {
     const error = result.error.issues[0];
     if (!error) {
-      return err([new ValidationError('Invalid trigger reference', path)]);
+      return err([new ConfigurationValidationError('Invalid trigger reference', {
+        configType: 'trigger',
+        configPath: path
+      })]);
     }
-    return err([new ValidationError(error.message, `${path}.${error.path.join('.')}`)]);
+    return err([new ConfigurationValidationError(error.message, {
+      configType: 'trigger',
+      configPath: `${path}.${error.path.join('.')}`
+    })]);
   }
   return ok(reference);
 }
@@ -261,19 +290,22 @@ export function validateTriggerReference(reference: TriggerReference, path: stri
  * 验证触发器数组（包含 WorkflowTrigger 和 TriggerReference）
  * @param triggers 触发器数组
  * @param path 字段路径（用于错误路径）
- * @returns Result<(WorkflowTrigger | TriggerReference)[], ValidationError[]>
+ * @returns Result<(WorkflowTrigger | TriggerReference)[], ConfigurationValidationError[]>
  */
 export function validateTriggers(
   triggers: (WorkflowTrigger | TriggerReference)[],
   path: string = 'triggers'
-): Result<(WorkflowTrigger | TriggerReference)[], ValidationError[]> {
+): Result<(WorkflowTrigger | TriggerReference)[], ConfigurationValidationError[]> {
   if (!triggers || !Array.isArray(triggers)) {
-    return err([new ValidationError('Triggers must be an array', path)]);
+    return err([new ConfigurationValidationError('Triggers must be an array', {
+      configType: 'trigger',
+      configPath: path
+    })]);
   }
 
   // 检查触发器ID唯一性
   const triggerIds = new Set<string>();
-  const errors: ValidationError[] = [];
+  const errors: ConfigurationValidationError[] = [];
   for (let i = 0; i < triggers.length; i++) {
     const trigger = triggers[i];
     if (!trigger) continue;
@@ -283,13 +315,16 @@ export function validateTriggers(
     // 检查ID唯一性
     const triggerId = 'id' in trigger ? trigger.id : trigger.triggerId;
     if (triggerIds.has(triggerId)) {
-      errors.push(new ValidationError(`Trigger ID must be unique: ${triggerId}`, `${itemPath}.id`));
+      errors.push(new ConfigurationValidationError(`Trigger ID must be unique: ${triggerId}`, {
+        configType: 'trigger',
+        configPath: `${itemPath}.id`
+      }));
       continue;
     }
     triggerIds.add(triggerId);
 
     // 根据类型验证
-    let result: Result<WorkflowTrigger | TriggerReference, ValidationError[]>;
+    let result: Result<WorkflowTrigger | TriggerReference, ConfigurationValidationError[]>;
     if ('templateName' in trigger) {
       // TriggerReference
       result = validateTriggerReference(trigger, itemPath);

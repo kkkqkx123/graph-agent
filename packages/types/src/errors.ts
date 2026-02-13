@@ -378,3 +378,371 @@ export class CodeExecutionError extends SDKError {
     return ErrorSeverity.ERROR;
   }
 }
+
+// ============================================================================
+// 细分的验证错误类型
+// ============================================================================
+
+/**
+ * 配置验证错误选项
+ */
+export interface ConfigurationValidationErrorOptions {
+  /** 配置路径 */
+  configPath?: string;
+  /** 配置类型 */
+  configType?: 'workflow' | 'node' | 'trigger' | 'edge' | 'variable' | 'tool' | 'script' | 'schema' | 'llm';
+  /** 字段名称 */
+  field?: string;
+  /** 字段值 */
+  value?: any;
+  /** 额外上下文 */
+  context?: Record<string, any>;
+  /** 错误严重程度 */
+  severity?: ErrorSeverity;
+}
+
+/**
+ * 配置验证错误类型
+ *
+ * 专门用于工作流、节点、触发器等静态配置的验证错误
+ * 继承自 ValidationError
+ */
+export class ConfigurationValidationError extends ValidationError {
+  constructor(
+    message: string,
+    options?: ConfigurationValidationErrorOptions
+  ) {
+    const { configPath, configType, field, value, context, severity } = options || {};
+    super(message, field, value, { ...context, configPath, configType }, severity);
+  }
+
+  protected override getDefaultSeverity(): ErrorSeverity {
+    return ErrorSeverity.ERROR;
+  }
+}
+
+/**
+ * 运行时验证错误选项
+ */
+export interface RuntimeValidationErrorOptions {
+  /** 操作名称 */
+  operation?: string;
+  /** 字段名称 */
+  field?: string;
+  /** 字段值 */
+  value?: any;
+  /** 额外上下文 */
+  context?: Record<string, any>;
+  /** 错误严重程度 */
+  severity?: ErrorSeverity;
+}
+
+/**
+ * 运行时验证错误类型
+ *
+ * 专门用于运行时参数和状态的验证错误
+ * 继承自 ValidationError
+ */
+export class RuntimeValidationError extends ValidationError {
+  constructor(
+    message: string,
+    options?: RuntimeValidationErrorOptions
+  ) {
+    const { operation, field, value, context, severity } = options || {};
+    super(message, field, value, { ...context, operation }, severity);
+  }
+
+  protected override getDefaultSeverity(): ErrorSeverity {
+    return ErrorSeverity.ERROR;
+  }
+}
+
+/**
+ * Schema验证错误选项
+ */
+export interface SchemaValidationErrorOptions {
+  /** Schema路径 */
+  schemaPath?: string;
+  /** 验证错误列表 */
+  validationErrors?: Array<{ path: string; message: string }>;
+  /** 字段名称 */
+  field?: string;
+  /** 字段值 */
+  value?: any;
+  /** 额外上下文 */
+  context?: Record<string, any>;
+  /** 错误严重程度 */
+  severity?: ErrorSeverity;
+}
+
+/**
+ * Schema验证错误类型
+ *
+ * 专门用于JSON Schema验证失败
+ * 继承自 ValidationError
+ */
+export class SchemaValidationError extends ValidationError {
+  constructor(
+    message: string,
+    options?: SchemaValidationErrorOptions
+  ) {
+    const { schemaPath, validationErrors, field, value, context, severity } = options || {};
+    super(message, field, value, { ...context, schemaPath, validationErrors }, severity);
+  }
+
+  protected override getDefaultSeverity(): ErrorSeverity {
+    return ErrorSeverity.ERROR;
+  }
+}
+
+// ============================================================================
+// 细分的执行错误类型
+// ============================================================================
+
+/**
+ * 业务逻辑错误类型
+ *
+ * 专门用于业务逻辑相关的执行错误（如路由不匹配、条件不满足等）
+ * 继承自 ExecutionError，保持向后兼容性
+ */
+export class BusinessLogicError extends ExecutionError {
+  constructor(
+    message: string,
+    public readonly businessContext?: string,
+    public readonly ruleName?: string,
+    nodeId?: string,
+    workflowId?: string,
+    context?: Record<string, any>,
+    cause?: Error,
+    severity?: ErrorSeverity
+  ) {
+    super(message, nodeId, workflowId, { ...context, businessContext, ruleName }, cause, severity);
+  }
+
+  protected override getDefaultSeverity(): ErrorSeverity {
+    return ErrorSeverity.ERROR;
+  }
+}
+
+/**
+ * 系统执行错误类型
+ *
+ * 专门用于系统级别的执行错误（如状态管理失败、上下文丢失等）
+ * 继承自 ExecutionError，保持向后兼容性
+ */
+export class SystemExecutionError extends ExecutionError {
+  constructor(
+    message: string,
+    public readonly systemComponent?: string,
+    public readonly failurePoint?: string,
+    nodeId?: string,
+    workflowId?: string,
+    context?: Record<string, any>,
+    cause?: Error,
+    severity?: ErrorSeverity
+  ) {
+    super(message, nodeId, workflowId, { ...context, systemComponent, failurePoint }, cause, severity);
+  }
+
+  protected override getDefaultSeverity(): ErrorSeverity {
+    return ErrorSeverity.ERROR;
+  }
+}
+
+/**
+ * 资源访问错误类型
+ *
+ * 专门用于资源访问相关的执行错误
+ * 继承自 ExecutionError，保持向后兼容性
+ */
+export class ResourceAccessError extends ExecutionError {
+  constructor(
+    message: string,
+    public readonly resourceType?: string,
+    public readonly resourceId?: string,
+    public readonly accessType?: 'read' | 'write' | 'delete' | 'update',
+    nodeId?: string,
+    workflowId?: string,
+    context?: Record<string, any>,
+    cause?: Error,
+    severity?: ErrorSeverity
+  ) {
+    super(message, nodeId, workflowId, { ...context, resourceType, resourceId, accessType }, cause, severity);
+  }
+
+  protected override getDefaultSeverity(): ErrorSeverity {
+    return ErrorSeverity.ERROR;
+  }
+}
+
+// ============================================================================
+// 细分的未找到错误类型
+// ============================================================================
+
+/**
+ * 工作流未找到错误类型
+ *
+ * 专门用于工作流未找到的场景
+ * 继承自 NotFoundError，保持向后兼容性
+ */
+export class WorkflowNotFoundError extends NotFoundError {
+  constructor(
+    message: string,
+    workflowId: string,
+    context?: Record<string, any>,
+    severity?: ErrorSeverity
+  ) {
+    super(message, 'Workflow', workflowId, context, severity);
+  }
+
+  protected override getDefaultSeverity(): ErrorSeverity {
+    return ErrorSeverity.WARNING;
+  }
+}
+
+/**
+ * 节点未找到错误类型
+ *
+ * 专门用于节点未找到的场景
+ * 继承自 NotFoundError，保持向后兼容性
+ */
+export class NodeNotFoundError extends NotFoundError {
+  constructor(
+    message: string,
+    nodeId: string,
+    context?: Record<string, any>,
+    severity?: ErrorSeverity
+  ) {
+    super(message, 'Node', nodeId, context, severity);
+  }
+
+  protected override getDefaultSeverity(): ErrorSeverity {
+    return ErrorSeverity.WARNING;
+  }
+}
+
+/**
+ * 工具未找到错误类型
+ *
+ * 专门用于工具未找到的场景
+ * 继承自 NotFoundError，保持向后兼容性
+ */
+export class ToolNotFoundError extends NotFoundError {
+  constructor(
+    message: string,
+    toolName: string,
+    context?: Record<string, any>,
+    severity?: ErrorSeverity
+  ) {
+    super(message, 'Tool', toolName, context, severity);
+  }
+
+  protected override getDefaultSeverity(): ErrorSeverity {
+    return ErrorSeverity.WARNING;
+  }
+}
+
+/**
+ * 脚本未找到错误类型
+ *
+ * 专门用于脚本未找到的场景
+ * 继承自 NotFoundError，保持向后兼容性
+ */
+export class ScriptNotFoundError extends NotFoundError {
+  constructor(
+    message: string,
+    scriptName: string,
+    context?: Record<string, any>,
+    severity?: ErrorSeverity
+  ) {
+    super(message, 'Script', scriptName, context, severity);
+  }
+
+  protected override getDefaultSeverity(): ErrorSeverity {
+    return ErrorSeverity.WARNING;
+  }
+}
+
+/**
+ * 线程上下文未找到错误类型
+ *
+ * 专门用于线程上下文未找到的场景
+ * 继承自 NotFoundError，保持向后兼容性
+ */
+export class ThreadContextNotFoundError extends NotFoundError {
+  constructor(
+    message: string,
+    threadId: string,
+    context?: Record<string, any>,
+    severity?: ErrorSeverity
+  ) {
+    super(message, 'ThreadContext', threadId, context, severity);
+  }
+
+  protected override getDefaultSeverity(): ErrorSeverity {
+    return ErrorSeverity.WARNING;
+  }
+}
+
+/**
+ * 检查点未找到错误类型
+ *
+ * 专门用于检查点未找到的场景
+ * 继承自 NotFoundError，保持向后兼容性
+ */
+export class CheckpointNotFoundError extends NotFoundError {
+  constructor(
+    message: string,
+    checkpointId: string,
+    context?: Record<string, any>,
+    severity?: ErrorSeverity
+  ) {
+    super(message, 'Checkpoint', checkpointId, context, severity);
+  }
+
+  protected override getDefaultSeverity(): ErrorSeverity {
+    return ErrorSeverity.WARNING;
+  }
+}
+
+/**
+ * 触发器模板未找到错误类型
+ *
+ * 专门用于触发器模板未找到的场景
+ * 继承自 NotFoundError，保持向后兼容性
+ */
+export class TriggerTemplateNotFoundError extends NotFoundError {
+  constructor(
+    message: string,
+    templateName: string,
+    context?: Record<string, any>,
+    severity?: ErrorSeverity
+  ) {
+    super(message, 'TriggerTemplate', templateName, context, severity);
+  }
+
+  protected override getDefaultSeverity(): ErrorSeverity {
+    return ErrorSeverity.WARNING;
+  }
+}
+
+/**
+ * 节点模板未找到错误类型
+ *
+ * 专门用于节点模板未找到的场景
+ * 继承自 NotFoundError，保持向后兼容性
+ */
+export class NodeTemplateNotFoundError extends NotFoundError {
+  constructor(
+    message: string,
+    templateName: string,
+    context?: Record<string, any>,
+    severity?: ErrorSeverity
+  ) {
+    super(message, 'NodeTemplate', templateName, context, severity);
+  }
+
+  protected override getDefaultSeverity(): ErrorSeverity {
+    return ErrorSeverity.WARNING;
+  }
+}

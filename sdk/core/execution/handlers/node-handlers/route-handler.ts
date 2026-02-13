@@ -3,7 +3,7 @@
  * 负责执行ROUTE节点，根据条件选择下一个节点
  */
 
-import { ExecutionError } from '@modular-agent/types/errors';
+import { BusinessLogicError } from '@modular-agent/types/errors';
 import type { Node, RouteNodeConfig } from '@modular-agent/types/node';
 import type { Thread } from '@modular-agent/types/thread';
 import type { Condition, EvaluationContext } from '@modular-agent/types/condition';
@@ -80,5 +80,5 @@ export async function routeHandler(thread: Thread, node: Node, context?: any): P
     };
   }
 
-  throw new ExecutionError('No route matched and no default target specified', node.id);
+  throw new BusinessLogicError('No route matched and no default target specified', 'route', 'no_route_matched', node.id);
 }

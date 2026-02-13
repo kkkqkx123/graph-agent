@@ -16,7 +16,7 @@ import { NodeType } from '@modular-agent/types/node';
 import { generateId, now as getCurrentTimestamp } from '@modular-agent/common-utils';
 import { VariableCoordinator } from './coordinators/variable-coordinator';
 import { VariableStateManager } from './managers/variable-state-manager';
-import { ValidationError, ExecutionError } from '@modular-agent/types/errors';
+import { ValidationError, ExecutionError, RuntimeValidationError } from '@modular-agent/types/errors';
 import { type WorkflowRegistry } from '../services/workflow-registry';
 import { ExecutionContext } from './context/execution-context';
 import { TriggerStatus } from '@modular-agent/types/trigger';
@@ -73,17 +73,17 @@ export class ThreadBuilder {
   private async buildFromProcessedDefinition(processedWorkflow: ProcessedWorkflowDefinition, options: ThreadOptions = {}): Promise<ThreadContext> {
     // 步骤1：验证处理后的工作流定义
     if (!processedWorkflow.nodes || processedWorkflow.nodes.length === 0) {
-      throw new ValidationError('Processed workflow must have at least one node', 'workflow.nodes');
+      throw new RuntimeValidationError('Processed workflow must have at least one node', { field: 'workflow.nodes' });
     }
 
     const startNode = processedWorkflow.nodes.find(n => n.type === NodeType.START);
     if (!startNode) {
-      throw new ValidationError('Processed workflow must have a START node', 'workflow.nodes');
+      throw new RuntimeValidationError('Processed workflow must have a START node', { field: 'workflow.nodes' });
     }
 
     const endNode = processedWorkflow.nodes.find(n => n.type === NodeType.END);
     if (!endNode) {
-      throw new ValidationError('Processed workflow must have an END node', 'workflow.nodes');
+      throw new RuntimeValidationError('Processed workflow must have an END node', { field: 'workflow.nodes' });
     }
 
     // 步骤2：从 ProcessedWorkflowDefinition 获取图实例
@@ -210,7 +210,7 @@ export class ThreadBuilder {
   async buildFromTemplate(templateId: string, options: ThreadOptions = {}): Promise<ThreadContext> {
     const template = this.threadTemplates.get(templateId);
     if (!template) {
-      throw new ValidationError(`Thread template not found: ${templateId}`, 'templateId');
+      throw new RuntimeValidationError(`Thread template not found: ${templateId}`, { field: 'templateId', value: templateId });
     }
 
     // 深拷贝模板

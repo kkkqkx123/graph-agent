@@ -19,7 +19,7 @@ import { type ThreadRegistry } from '../../services/thread-registry';
 import { ThreadBuilder } from '../thread-builder';
 import type { EventManager } from '../../services/event-manager';
 import type { WorkflowRegistry } from '../../services/workflow-registry';
-import { NotFoundError } from '@modular-agent/types/errors';
+import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types/errors';
 import { fork, join, copy } from '../utils/thread-operations';
 import { ExecutionContext } from '../context/execution-context';
 
@@ -60,7 +60,7 @@ export class ThreadOperationCoordinator {
     // 步骤 1：获取父线程上下文
     const parentThreadContext = this.threadRegistry.get(parentThreadId);
     if (!parentThreadContext) {
-      throw new NotFoundError(`Parent thread not found: ${parentThreadId}`, 'Thread', parentThreadId);
+      throw new ThreadContextNotFoundError(`Parent thread not found: ${parentThreadId}`, parentThreadId);
     }
 
     // 步骤 2：使用 ThreadOperations 创建子线程（事件触发在内部处理）
@@ -94,7 +94,7 @@ export class ThreadOperationCoordinator {
     // 步骤 1：获取父线程上下文
     const parentThreadContext = this.threadRegistry.get(parentThreadId);
     if (!parentThreadContext) {
-      throw new NotFoundError(`Parent thread not found: ${parentThreadId}`, 'Thread', parentThreadId);
+      throw new ThreadContextNotFoundError(`Parent thread not found: ${parentThreadId}`, parentThreadId);
     }
 
     // 步骤 2：使用 ThreadOperations 执行 Join（事件触发在内部处理）
@@ -122,7 +122,7 @@ export class ThreadOperationCoordinator {
     // 步骤 1：获取源线程上下文
     const sourceThreadContext = this.threadRegistry.get(sourceThreadId);
     if (!sourceThreadContext) {
-      throw new NotFoundError(`Source thread not found: ${sourceThreadId}`, 'Thread', sourceThreadId);
+      throw new ThreadContextNotFoundError(`Source thread not found: ${sourceThreadId}`, sourceThreadId);
     }
 
     // 步骤 2：使用 ThreadOperations 创建副本（事件触发在内部处理）

@@ -7,7 +7,7 @@
 import { z } from 'zod';
 import type { Node } from '@modular-agent/types/node';
 import { NodeType } from '@modular-agent/types/node';
-import { ValidationError } from '@modular-agent/types/errors';
+import { ConfigurationValidationError } from '@modular-agent/types/errors';
 import type { Result } from '@modular-agent/types/result';
 import { ok, err } from '@modular-agent/common-utils';
 import { validateNodeByType } from './node-validation';
@@ -39,7 +39,7 @@ export class NodeValidator {
    * @param node 节点
    * @returns 验证结果
    */
-  validateNode(node: Node): Result<Node, ValidationError[]> {
+  validateNode(node: Node): Result<Node, ConfigurationValidationError[]> {
     // 首先验证基本信息
     const basicResult = nodeSchema.safeParse(node);
     if (!basicResult.success) {
@@ -60,7 +60,7 @@ export class NodeValidator {
    * @param node 节点
    * @returns 验证结果
    */
-  private validateNodeConfig(node: Node): Result<Node, ValidationError[]> {
+  private validateNodeConfig(node: Node): Result<Node, ConfigurationValidationError[]> {
     // 调用 node-validation 目录中的验证函数
     return validateNodeByType(node);
   }
@@ -70,7 +70,7 @@ export class NodeValidator {
    * @param nodes 节点数组
    * @returns 验证结果数组
    */
-  validateNodes(nodes: Node[]): Result<Node, ValidationError[]>[] {
+  validateNodes(nodes: Node[]): Result<Node, ConfigurationValidationError[]>[] {
     return nodes.map((node) => this.validateNode(node));
   }
 
@@ -80,12 +80,15 @@ export class NodeValidator {
    * @param prefix 字段路径前缀
    * @returns ValidationResult
    */
-  private convertZodError(error: z.ZodError, prefix?: string): ValidationError[] {
-    const errors: ValidationError[] = error.issues.map((issue) => {
+  private convertZodError(error: z.ZodError, prefix?: string): ConfigurationValidationError[] {
+    const errors: ConfigurationValidationError[] = error.issues.map((issue) => {
       const field = issue.path.length > 0
         ? (prefix ? `${prefix}.${issue.path.join('.')}` : issue.path.join('.'))
         : prefix;
-      return new ValidationError(issue.message, field);
+      return new ConfigurationValidationError(issue.message, {
+        configPath: field,
+        configType: 'node'
+      });
     });
     return errors;
   }

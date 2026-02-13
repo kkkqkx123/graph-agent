@@ -7,7 +7,7 @@ import { GenericResourceAPI } from '../generic-resource-api';
 import { threadRegistry, type ThreadRegistry } from '../../../core/services/thread-registry';
 import { TriggerStatus } from '@modular-agent/types/trigger';
 import type { Trigger } from '@modular-agent/types/trigger';
-import { NotFoundError } from '@modular-agent/types/errors';
+import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types/errors';
 import type { TriggerFilter } from '@modular-agent/sdk/api/types/management-types';
 
 /**
@@ -137,7 +137,7 @@ export class TriggerResourceAPI extends GenericResourceAPI<Trigger, string, Trig
     const trigger = triggerManager.get(triggerId);
     
     if (!trigger) {
-      throw new NotFoundError(`Trigger not found: ${triggerId}`, 'trigger', triggerId);
+      throw new NotFoundError(`Trigger not found: ${triggerId}`, 'Trigger', triggerId);
     }
     
     return trigger;
@@ -303,7 +303,7 @@ export class TriggerResourceAPI extends GenericResourceAPI<Trigger, string, Trig
   private async getTriggerManager(threadId: string) {
     const threadContext = this.registry.get(threadId);
     if (!threadContext) {
-      throw new NotFoundError(`Thread not found: ${threadId}`, 'thread', threadId);
+      throw new ThreadContextNotFoundError(`Thread not found: ${threadId}`, threadId);
     }
     return threadContext.triggerManager;
   }

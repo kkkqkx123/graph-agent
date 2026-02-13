@@ -5,7 +5,7 @@
 
 import type { Tool } from '@modular-agent/types/tool';
 import type { RestToolConfig } from '@modular-agent/types/tool';
-import { NetworkError, ToolError, ValidationError, TimeoutError, CircuitBreakerOpenError } from '@modular-agent/types/errors';
+import { NetworkError, ToolError, ValidationError, RuntimeValidationError, TimeoutError, CircuitBreakerOpenError } from '@modular-agent/types/errors';
 import { BaseExecutor } from '../core/base/BaseExecutor';
 import { ExecutorType } from '../core/types';
 import { HttpClient, InterceptorManager, HttpCache } from '@modular-agent/common-utils';
@@ -86,11 +86,14 @@ export class RestExecutor extends BaseExecutor {
     const queryParams = parameters['query'] || parameters['params'];
 
     if (!url) {
-      throw new ValidationError(
+      throw new RuntimeValidationError(
         'URL is required for REST tool',
-        'url',
-        url,
-        { toolName: tool.name, parameters }
+        {
+          operation: 'execute',
+          field: 'url',
+          value: url,
+          context: { toolName: tool.name, parameters }
+        }
       );
     }
 
@@ -140,11 +143,14 @@ export class RestExecutor extends BaseExecutor {
           response = await this.httpClient.get(url, processedConfig);
           break;
         default:
-          throw new ValidationError(
+          throw new RuntimeValidationError(
             `Unsupported HTTP method: ${method}`,
-            'method',
-            method,
-            { toolName: tool.name }
+            {
+              operation: 'execute',
+              field: 'method',
+              value: method,
+              context: { toolName: tool.name }
+            }
           );
       }
 

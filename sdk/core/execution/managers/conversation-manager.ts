@@ -16,7 +16,7 @@
  */
 
 import type { LLMMessage, LLMUsage, MessageMarkMap, TokenUsageHistory, TokenUsageStats, LLMMessageRole } from '@modular-agent/types/llm';
-import { ValidationError } from '@modular-agent/types/errors';
+import { ValidationError, RuntimeValidationError } from '@modular-agent/types/errors';
 import { TokenUsageTracker } from '../token-usage-tracker';
 import { MessageIndexManager } from './message-index-manager';
 import { TypeIndexManager } from './type-index-manager';
@@ -104,7 +104,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
   addMessage(message: LLMMessage): number {
     // 验证消息格式
     if (!message.role || !message.content) {
-      throw new ValidationError('Invalid message format: role and content are required', 'message');
+      throw new RuntimeValidationError('Invalid message format: role and content are required', { operation: 'addMessage', field: 'message' });
     }
 
     // 将消息追加到数组末尾

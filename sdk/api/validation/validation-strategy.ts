@@ -3,7 +3,7 @@
  * 提供统一的验证函数，返回 Result<T, ValidationError[]> 类型
  */
 
-import { ValidationError } from '@modular-agent/types/errors';
+import { ValidationError, SchemaValidationError } from '@modular-agent/types/errors';
 import type { Result } from '@modular-agent/types/result';
 import { ok, err } from '@modular-agent/common-utils';
 
@@ -24,10 +24,12 @@ export function validateRequiredFields<T>(
   for (const field of fields) {
     const value = data[field];
     if (value === null || value === undefined || value === '') {
-      errors.push(new ValidationError(
+      errors.push(new SchemaValidationError(
         `${String(field)}不能为空`,
-        `${fieldName}.${String(field)}`,
-        value
+        {
+          field: `${fieldName}.${String(field)}`,
+          value: value
+        }
       ));
     }
   }
@@ -56,26 +58,32 @@ export function validateStringLength(
   const errors: ValidationError[] = [];
 
   if (typeof value !== 'string') {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName}必须是字符串`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
     return err(errors);
   }
 
   if (value.length < min) {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName}长度不能少于${min}`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
   }
   if (value.length > max) {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName}长度不能超过${max}`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
   }
 
@@ -96,19 +104,23 @@ export function validatePositiveNumber(value: number, fieldName: string): Result
   const errors: ValidationError[] = [];
 
   if (typeof value !== 'number' || isNaN(value)) {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName}必须是数字`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
     return err(errors);
   }
 
   if (value < 0) {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName}不能为负数`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
   }
 
@@ -129,16 +141,20 @@ export function validateObject(value: any, fieldName: string): Result<any, Valid
   const errors: ValidationError[] = [];
 
   if (value === null || value === undefined) {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName}不能为空`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
   } else if (typeof value !== 'object' || Array.isArray(value)) {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName}必须是有效的对象`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
   }
 
@@ -164,16 +180,20 @@ export function validateArray(
   const errors: ValidationError[] = [];
 
   if (!Array.isArray(value)) {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName}必须是数组`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
   } else if (value.length < minLength) {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName}至少需要${minLength}个元素`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
   }
 
@@ -194,10 +214,12 @@ export function validateBoolean(value: any, fieldName: string): Result<boolean, 
   const errors: ValidationError[] = [];
 
   if (typeof value !== 'boolean') {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName}必须是布尔值`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
   }
 
@@ -225,19 +247,23 @@ export function validatePattern(
   const errors: ValidationError[] = [];
 
   if (typeof value !== 'string') {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName}必须是字符串`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
     return err(errors);
   }
 
   if (!regex.test(value)) {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       message || `${fieldName}格式不正确`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
   }
 
@@ -263,10 +289,12 @@ export function validateEnum<T>(
   const errors: ValidationError[] = [];
 
   if (!enumValues.includes(value)) {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName}必须是以下值之一: ${enumValues.join(', ')}`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
   }
 

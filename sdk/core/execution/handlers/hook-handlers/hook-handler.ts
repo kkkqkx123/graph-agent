@@ -11,7 +11,7 @@ import type { NodeExecutionResult } from '@modular-agent/types/thread';
 import type { NodeCustomEvent } from '@modular-agent/types/events';
 import type { CheckpointDependencies } from '../checkpoint-handlers/checkpoint-utils';
 import { createCheckpoint } from '../checkpoint-handlers/checkpoint-utils';
-import { ValidationError, ExecutionError, ErrorSeverity } from '@modular-agent/types/errors';
+import { ValidationError, RuntimeValidationError, ExecutionError, ErrorSeverity } from '@modular-agent/types/errors';
 
 /**
  * Hook执行上下文接口
@@ -89,15 +89,18 @@ async function executeSingleHook(
         );
       } catch (error) {
         // 抛出验证错误，标记为警告级别
-        throw new ValidationError(
+        throw new RuntimeValidationError(
           `Hook condition evaluation failed: ${error instanceof Error ? error.message : String(error)}`,
-          'hook.condition',
-          hook.condition,
           {
-            eventName: hook.eventName,
-            nodeId: context.node.id,
-            operation: 'hook_condition_evaluation',
-            severity: 'warning'
+            operation: 'evaluateCondition',
+            field: 'hook.condition',
+            value: error,
+            context: {
+              eventName: hook.eventName,
+              nodeId: context.node.id,
+              operation: 'hook_condition_evaluation'
+            },
+            severity: ErrorSeverity.WARNING
           }
         );
       }

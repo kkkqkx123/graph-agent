@@ -4,7 +4,7 @@
  */
 
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types/trigger';
-import { ValidationError } from '@modular-agent/types/errors';
+import { ValidationError, RuntimeValidationError } from '@modular-agent/types/errors';
 
 /**
  * 创建成功结果
@@ -59,7 +59,7 @@ export async function sendNotificationHandler(
     const { message, recipients, level } = action.parameters;
 
     if (!message) {
-      throw new ValidationError('message is required for SEND_NOTIFICATION action', 'parameters.message');
+      throw new RuntimeValidationError('message is required for SEND_NOTIFICATION action', { operation: 'handle', field: 'parameters.message' });
     }
 
     // 实现通知发送逻辑

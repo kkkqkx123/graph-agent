@@ -5,7 +5,7 @@
 
 import type { Node, CodeNodeConfig } from '@modular-agent/types/node';
 import type { Thread } from '@modular-agent/types/thread';
-import { ValidationError } from '@modular-agent/types/errors';
+import { ValidationError, RuntimeValidationError } from '@modular-agent/types/errors';
 import { now } from '@modular-agent/common-utils';
 import { codeService } from '../../../services/code-service';
 
@@ -28,13 +28,13 @@ function validateRiskLevel(risk: string, scriptName: string): void {
       break;
     case 'low':
       if (scriptName.includes('..') || scriptName.includes('~')) {
-        throw new ValidationError('Script path contains invalid characters', 'code.security');
+        throw new RuntimeValidationError('Script path contains invalid characters', { operation: 'handle', field: 'code.security' });
       }
       break;
     case 'medium':
       const dangerousCommands = ['rm -rf', 'del /f', 'format', 'shutdown'];
       if (dangerousCommands.some(cmd => scriptName.toLowerCase().includes(cmd))) {
-        throw new ValidationError('Script contains dangerous commands', 'code.security');
+        throw new RuntimeValidationError('Script contains dangerous commands', { operation: 'handle', field: 'code.security' });
       }
       break;
     case 'high':

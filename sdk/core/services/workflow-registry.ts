@@ -19,7 +19,7 @@ import { ProcessedWorkflowDefinition, WorkflowType } from '@modular-agent/types/
 import type { WorkflowReferenceInfo, WorkflowReferenceRelation, WorkflowReferenceType } from '@modular-agent/types/workflow-reference';
 import { processWorkflow, type ProcessOptions } from '../graph/workflow-processor';
 import { WorkflowReferenceManager } from '../execution/managers/workflow-reference-manager';
-import { ValidationError, ExecutionError } from '@modular-agent/types/errors';
+import { ValidationError, ExecutionError, ConfigurationValidationError, WorkflowNotFoundError } from '@modular-agent/types/errors';
 
 /**
  * 工作流摘要信息
@@ -157,9 +157,9 @@ class WorkflowRegistry {
     // 获取原始定义
     const workflow = this.get(workflowId);
     if (!workflow) {
-      throw new ValidationError(
+      throw new WorkflowNotFoundError(
         `Workflow with ID '${workflowId}' not found`,
-        'workflowId'
+        workflowId
       );
     }
 
@@ -178,17 +178,23 @@ class WorkflowRegistry {
     // 验证工作流定义
     const validationResult = this.validate(workflow);
     if (!validationResult.valid) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         `Workflow validation failed: ${validationResult.errors.join(', ')}`,
-        'workflow'
+        {
+          configType: 'workflow',
+          configPath: 'workflow'
+        }
       );
     }
 
     // 检查ID是否已存在
     if (this.workflows.has(workflow.id)) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         `Workflow with ID '${workflow.id}' already exists`,
-        'workflow.id'
+        {
+          configType: 'workflow',
+          configPath: 'workflow.id'
+        }
       );
     }
 
@@ -203,13 +209,15 @@ class WorkflowRegistry {
       // 预处理会在后台进行，但通常很快完成
       this.preprocessAndStore(workflow).catch(error => {
         // 抛出验证错误
-        throw new ValidationError(
+        throw new ConfigurationValidationError(
           `Workflow preprocessing failed: ${error instanceof Error ? error.message : String(error)}`,
-          'workflow.definition',
-          workflow,
           {
-            workflowId: workflow.id,
-            operation: 'workflow_preprocessing'
+            configType: 'workflow',
+            configPath: 'workflow.definition',
+            context: {
+              workflowId: workflow.id,
+              operation: 'workflow_preprocessing'
+            }
           }
         );
       });
@@ -358,9 +366,12 @@ class WorkflowRegistry {
     if (shouldCheck) {
       const checkResult = this.referenceManager.canSafelyDelete(workflowId, options);
       if (!checkResult.canDelete) {
-        throw new ValidationError(
+        throw new ConfigurationValidationError(
           checkResult.details,
-          'workflow.delete.referenced'
+          {
+            configType: 'workflow',
+            configPath: 'workflow.delete.referenced'
+          }
         );
       }
 
@@ -475,9 +486,9 @@ class WorkflowRegistry {
   export(workflowId: string): string {
     const workflow = this.workflows.get(workflowId);
     if (!workflow) {
-      throw new ValidationError(
+      throw new WorkflowNotFoundError(
         `Workflow with ID '${workflowId}' does not exist`,
-        'workflowId'
+        workflowId
       );
     }
 
@@ -496,9 +507,12 @@ class WorkflowRegistry {
       this.register(workflow);
       return workflow.id;
     } catch (error) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         `Failed to import workflow: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'json'
+        {
+          configType: 'workflow',
+          configPath: 'json'
+        }
       );
     }
   }

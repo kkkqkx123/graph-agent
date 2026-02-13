@@ -13,7 +13,7 @@
 import type { Script, ScriptType, ScriptExecutor, ScriptExecutionOptions, ScriptExecutionResult } from '@modular-agent/types/code';
 import type { ThreadContext } from '../execution/context/thread-context';
 import { CodeRegistry } from '../code/code-registry';
-import { NotFoundError, CodeExecutionError } from '@modular-agent/types/errors';
+import { CodeExecutionError, ScriptNotFoundError } from '@modular-agent/types/errors';
 
 /**
  * 脚本执行器注册表
@@ -109,9 +109,8 @@ class CodeService {
   getScript(scriptName: string): Script {
     const script = this.registry.get(scriptName);
     if (!script) {
-      throw new NotFoundError(
+      throw new ScriptNotFoundError(
         `Script '${scriptName}' not found`,
-        'script',
         scriptName
       );
     }

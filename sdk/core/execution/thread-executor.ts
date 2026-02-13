@@ -26,7 +26,7 @@ import type { ID } from '@modular-agent/types/common';
 import { ThreadContext } from './context/thread-context';
 import type { EventManager } from '../services/event-manager';
 import type { WorkflowRegistry } from '../services/workflow-registry';
-import { NotFoundError, ThreadInterruptedException } from '@modular-agent/types/errors';
+import { NotFoundError, ThreadInterruptedException, NodeNotFoundError } from '@modular-agent/types/errors';
 import { ThreadStatus } from '@modular-agent/types/thread';
 import { now, diffTimestamp } from '@modular-agent/common-utils';
 import { NodeExecutionCoordinator } from './coordinators/node-execution-coordinator';
@@ -193,12 +193,12 @@ export class ThreadExecutor implements SubgraphContextFactory {
     const graphNode = navigator.getGraph().getNode(currentNodeId);
 
     if (!graphNode) {
-      throw new NotFoundError(`Node not found: ${currentNodeId}`, 'Node', currentNodeId);
+      throw new NodeNotFoundError(`Node not found: ${currentNodeId}`, currentNodeId);
     }
 
     const currentNode = graphNode.originalNode;
     if (!currentNode) {
-      throw new NotFoundError(`Node originalNode not found: ${currentNodeId}`, 'Node', currentNodeId);
+      throw new NodeNotFoundError(`Node originalNode not found: ${currentNodeId}`, currentNodeId);
     }
 
     return currentNode;

@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import type { NodeHook } from '@modular-agent/types/node';
 import { HookType } from '@modular-agent/types/node';
-import { ValidationError } from '@modular-agent/types/errors';
+import { ConfigurationValidationError } from '@modular-agent/types/errors';
 import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types/result';
 
@@ -33,15 +33,21 @@ const hookSchema = z.object({
  * @param nodeId 节点ID（用于错误路径）
  * @throws ValidationError 当配置无效时抛出
  */
-export function validateHook(hook: NodeHook, nodeId: string): Result<NodeHook, ValidationError[]> {
+export function validateHook(hook: NodeHook, nodeId: string): Result<NodeHook, ConfigurationValidationError[]> {
   const result = hookSchema.safeParse(hook);
   if (!result.success) {
     const errors = result.error.issues;
     if (errors.length === 0) {
-      return err([new ValidationError('Invalid hook configuration', `node.${nodeId}.hooks`)]);
+      return err([new ConfigurationValidationError('Invalid hook configuration', {
+        configType: 'node',
+        configPath: `node.${nodeId}.hooks`
+      })]);
     }
     return err(errors.map(error =>
-      new ValidationError(error.message, `node.${nodeId}.hooks.${error.path.join('.')}`)
+      new ConfigurationValidationError(error.message, {
+        configType: 'node',
+        configPath: `node.${nodeId}.hooks.${error.path.join('.')}`
+      })
     ));
   }
   return ok(hook);
@@ -53,12 +59,15 @@ export function validateHook(hook: NodeHook, nodeId: string): Result<NodeHook, V
  * @param nodeId 节点ID（用于错误路径）
  * @throws ValidationError 当配置无效时抛出
  */
-export function validateHooks(hooks: NodeHook[], nodeId: string): Result<NodeHook[], ValidationError[]> {
+export function validateHooks(hooks: NodeHook[], nodeId: string): Result<NodeHook[], ConfigurationValidationError[]> {
   if (!hooks || !Array.isArray(hooks)) {
-    return err([new ValidationError('Hooks must be an array', `node.${nodeId}.hooks`)]);
+    return err([new ConfigurationValidationError('Hooks must be an array', {
+      configType: 'node',
+      configPath: `node.${nodeId}.hooks`
+    })]);
   }
 
-  const errors: ValidationError[] = [];
+  const errors: ConfigurationValidationError[] = [];
   for (let i = 0; i < hooks.length; i++) {
     const hook = hooks[i];
     if (!hook) continue;

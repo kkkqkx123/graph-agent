@@ -33,7 +33,7 @@ import type { WorkflowDefinition } from '@modular-agent/types/workflow';
 import type { Node } from '@modular-agent/types/node';
 import { NodeType } from '@modular-agent/types/node';
 import { WorkflowType } from '@modular-agent/types/workflow';
-import { ValidationError } from '@modular-agent/types/errors';
+import { ConfigurationValidationError } from '@modular-agent/types/errors';
 import type { Result } from '@modular-agent/types/result';
 import { ok, err } from '@modular-agent/common-utils';
 import { validateNodeByType } from './node-validation';
@@ -113,8 +113,8 @@ export class WorkflowValidator {
    * @param workflow 工作流定义
    * @returns 验证结果
    */
-  validate(workflow: WorkflowDefinition): Result<WorkflowDefinition, ValidationError[]> {
-    const errors: ValidationError[] = [];
+  validate(workflow: WorkflowDefinition): Result<WorkflowDefinition, ConfigurationValidationError[]> {
+    const errors: ConfigurationValidationError[] = [];
 
     // 验证基本信息
     errors.push(...this.validateBasicInfo(workflow));
@@ -154,7 +154,7 @@ export class WorkflowValidator {
    * @param workflow 工作流定义
    * @returns 验证结果
    */
-  private validateBasicInfo(workflow: WorkflowDefinition): ValidationError[] {
+  private validateBasicInfo(workflow: WorkflowDefinition): ConfigurationValidationError[] {
     const result = workflowBasicSchema.safeParse(workflow);
     if (result.success) {
       return [];
@@ -177,8 +177,8 @@ export class WorkflowValidator {
    * @param workflow 工作流定义
    * @returns 验证结果
    */
-  private validateWorkflowType(workflow: WorkflowDefinition): ValidationError[] {
-    const errors: ValidationError[] = [];
+  private validateWorkflowType(workflow: WorkflowDefinition): ConfigurationValidationError[] {
+    const errors: ConfigurationValidationError[] = [];
     const { type, nodes, triggers } = workflow;
 
     // 检查是否包含特殊节点
@@ -199,22 +199,31 @@ export class WorkflowValidator {
       case WorkflowType.TRIGGERED_SUBWORKFLOW:
         // 触发子工作流必须包含START_FROM_TRIGGER和CONTINUE_FROM_TRIGGER
         if (!hasStartFromTrigger) {
-          errors.push(new ValidationError(
+          errors.push(new ConfigurationValidationError(
             'Triggered subworkflow must contain START_FROM_TRIGGER node',
-            'workflow.type'
+            {
+              configType: 'workflow',
+              configPath: 'workflow.type'
+            }
           ));
         }
         if (!hasContinueFromTrigger) {
-          errors.push(new ValidationError(
+          errors.push(new ConfigurationValidationError(
             'Triggered subworkflow must contain CONTINUE_FROM_TRIGGER node',
-            'workflow.type'
+            {
+              configType: 'workflow',
+              configPath: 'workflow.type'
+            }
           ));
         }
         // 触发子工作流不应包含SUBGRAPH节点
         if (hasSubgraphNode) {
-          errors.push(new ValidationError(
+          errors.push(new ConfigurationValidationError(
             'Triggered subworkflow should not contain SUBGRAPH node',
-            'workflow.type'
+            {
+              configType: 'workflow',
+              configPath: 'workflow.type'
+            }
           ));
         }
         break;
@@ -222,15 +231,21 @@ export class WorkflowValidator {
       case WorkflowType.STANDALONE:
         // 独立工作流不应包含SUBGRAPH节点或EXECUTE_TRIGGERED_SUBGRAPH触发器
         if (hasSubgraphNode) {
-          errors.push(new ValidationError(
+          errors.push(new ConfigurationValidationError(
             'Standalone workflow should not contain SUBGRAPH node. Use DEPENDENT type instead.',
-            'workflow.type'
+            {
+              configType: 'workflow',
+              configPath: 'workflow.type'
+            }
           ));
         }
         if (hasExecuteTriggeredSubgraphTrigger) {
-          errors.push(new ValidationError(
+          errors.push(new ConfigurationValidationError(
             'Standalone workflow should not contain EXECUTE_TRIGGERED_SUBGRAPH trigger. Use DEPENDENT type instead.',
-            'workflow.type'
+            {
+              configType: 'workflow',
+              configPath: 'workflow.type'
+            }
           ));
         }
         break;
@@ -238,17 +253,23 @@ export class WorkflowValidator {
       case WorkflowType.DEPENDENT:
         // 依赖工作流必须包含SUBGRAPH节点或EXECUTE_TRIGGERED_SUBGRAPH触发器
         if (!hasSubgraphNode && !hasExecuteTriggeredSubgraphTrigger) {
-          errors.push(new ValidationError(
+          errors.push(new ConfigurationValidationError(
             'Dependent workflow must contain either SUBGRAPH node or EXECUTE_TRIGGERED_SUBGRAPH trigger',
-            'workflow.type'
+            {
+              configType: 'workflow',
+              configPath: 'workflow.type'
+            }
           ));
         }
         break;
 
       default:
-        errors.push(new ValidationError(
+        errors.push(new ConfigurationValidationError(
           `Invalid workflow type: ${type}`,
-          'workflow.type'
+          {
+            configType: 'workflow',
+            configPath: 'workflow.type'
+          }
         ));
     }
 
@@ -260,12 +281,15 @@ export class WorkflowValidator {
    * @param workflow 工作流定义
    * @returns 验证结果
    */
-  private validateNodes(workflow: WorkflowDefinition): ValidationError[] {
-    const errors: ValidationError[] = [];
+  private validateNodes(workflow: WorkflowDefinition): ConfigurationValidationError[] {
+    const errors: ConfigurationValidationError[] = [];
 
     // 验证节点数组不为空
     if (!workflow.nodes || workflow.nodes.length === 0) {
-      errors.push(new ValidationError('Workflow must have at least one node', 'workflow.nodes'));
+      errors.push(new ConfigurationValidationError('Workflow must have at least one node', {
+        configType: 'workflow',
+        configPath: 'workflow.nodes'
+      }));
       return errors;
     }
 
@@ -284,18 +308,30 @@ export class WorkflowValidator {
 
       // 验证节点基本字段
       if (!node.id || node.id === '') {
-        errors.push(new ValidationError('Node ID is required', `${path}.id`));
+        errors.push(new ConfigurationValidationError('Node ID is required', {
+          configType: 'node',
+          configPath: `${path}.id`
+        }));
       }
       if (!node.name || node.name === '') {
-        errors.push(new ValidationError('Node name is required', `${path}.name`));
+        errors.push(new ConfigurationValidationError('Node name is required', {
+          configType: 'node',
+          configPath: `${path}.name`
+        }));
       }
       if (!node.type) {
-        errors.push(new ValidationError('Node type is required', `${path}.type`));
+        errors.push(new ConfigurationValidationError('Node type is required', {
+          configType: 'node',
+          configPath: `${path}.type`
+        }));
       }
 
       // 检查节点ID唯一性
       if (node.id && nodeIds.has(node.id)) {
-        errors.push(new ValidationError(`Node ID must be unique: ${node.id}`, `${path}.id`));
+        errors.push(new ConfigurationValidationError(`Node ID must be unique: ${node.id}`, {
+          configType: 'node',
+          configPath: `${path}.id`
+        }));
       }
       if (node.id) {
         nodeIds.add(node.id);
@@ -336,34 +372,61 @@ export class WorkflowValidator {
     if (hasStartFromTrigger || hasContinueFromTrigger) {
       // 触发子工作流：必须包含START_FROM_TRIGGER和CONTINUE_FROM_TRIGGER，不能包含START和END
       if (!hasStartFromTrigger) {
-        errors.push(new ValidationError('Triggered subgraph must have exactly one START_FROM_TRIGGER node', 'workflow.nodes'));
+        errors.push(new ConfigurationValidationError('Triggered subgraph must have exactly one START_FROM_TRIGGER node', {
+          configType: 'workflow',
+          configPath: 'workflow.nodes'
+        }));
       } else if (startFromTriggerNodes.length > 1) {
-        errors.push(new ValidationError('Triggered subgraph must have exactly one START_FROM_TRIGGER node', 'workflow.nodes'));
+        errors.push(new ConfigurationValidationError('Triggered subgraph must have exactly one START_FROM_TRIGGER node', {
+          configType: 'workflow',
+          configPath: 'workflow.nodes'
+        }));
       }
 
       if (!hasContinueFromTrigger) {
-        errors.push(new ValidationError('Triggered subgraph must have exactly one CONTINUE_FROM_TRIGGER node', 'workflow.nodes'));
+        errors.push(new ConfigurationValidationError('Triggered subgraph must have exactly one CONTINUE_FROM_TRIGGER node', {
+          configType: 'workflow',
+          configPath: 'workflow.nodes'
+        }));
       } else if (continueFromTriggerNodes.length > 1) {
-        errors.push(new ValidationError('Triggered subgraph must have exactly one CONTINUE_FROM_TRIGGER node', 'workflow.nodes'));
+        errors.push(new ConfigurationValidationError('Triggered subgraph must have exactly one CONTINUE_FROM_TRIGGER node', {
+          configType: 'workflow',
+          configPath: 'workflow.nodes'
+        }));
       }
 
       if (startNodes.length > 0) {
-        errors.push(new ValidationError('Triggered subgraph cannot contain START node', 'workflow.nodes'));
+        errors.push(new ConfigurationValidationError('Triggered subgraph cannot contain START node', {
+          configType: 'workflow',
+          configPath: 'workflow.nodes'
+        }));
       }
 
       if (endNodes.length > 0) {
-        errors.push(new ValidationError('Triggered subgraph cannot contain END node', 'workflow.nodes'));
+        errors.push(new ConfigurationValidationError('Triggered subgraph cannot contain END node', {
+          configType: 'workflow',
+          configPath: 'workflow.nodes'
+        }));
       }
     } else {
       // 普通工作流：必须包含START和END节点
       if (startNodes.length === 0) {
-        errors.push(new ValidationError('Workflow must have exactly one START node', 'workflow.nodes'));
+        errors.push(new ConfigurationValidationError('Workflow must have exactly one START node', {
+          configType: 'workflow',
+          configPath: 'workflow.nodes'
+        }));
       } else if (startNodes.length > 1) {
-        errors.push(new ValidationError('Workflow must have exactly one START node', 'workflow.nodes'));
+        errors.push(new ConfigurationValidationError('Workflow must have exactly one START node', {
+          configType: 'workflow',
+          configPath: 'workflow.nodes'
+        }));
       }
 
       if (endNodes.length === 0) {
-        errors.push(new ValidationError('Workflow must have at least one END node', 'workflow.nodes'));
+        errors.push(new ConfigurationValidationError('Workflow must have at least one END node', {
+          configType: 'workflow',
+          configPath: 'workflow.nodes'
+        }));
       }
     }
 
@@ -375,8 +438,8 @@ export class WorkflowValidator {
    * @param workflow 工作流定义
    * @returns 验证结果
    */
-  private validateEdges(workflow: WorkflowDefinition): ValidationError[] {
-    const errors: ValidationError[] = [];
+  private validateEdges(workflow: WorkflowDefinition): ConfigurationValidationError[] {
+    const errors: ConfigurationValidationError[] = [];
     const edgeIds = new Set<string>();
 
     for (let i = 0; i < workflow.edges.length; i++) {
@@ -387,25 +450,40 @@ export class WorkflowValidator {
 
       // 检查边ID唯一性
       if (edgeIds.has(edge.id)) {
-        errors.push(new ValidationError(`Edge ID must be unique: ${edge.id}`, `${path}.id`));
+        errors.push(new ConfigurationValidationError(`Edge ID must be unique: ${edge.id}`, {
+          configType: 'edge',
+          configPath: `${path}.id`
+        }));
       }
       edgeIds.add(edge.id);
 
       // 检查边基本信息
       if (!edge.id) {
-        errors.push(new ValidationError('Edge ID is required', `${path}.id`));
+        errors.push(new ConfigurationValidationError('Edge ID is required', {
+          configType: 'edge',
+          configPath: `${path}.id`
+        }));
       }
 
       if (!edge.sourceNodeId) {
-        errors.push(new ValidationError('Edge source node ID is required', `${path}.sourceNodeId`));
+        errors.push(new ConfigurationValidationError('Edge source node ID is required', {
+          configType: 'edge',
+          configPath: `${path}.sourceNodeId`
+        }));
       }
 
       if (!edge.targetNodeId) {
-        errors.push(new ValidationError('Edge target node ID is required', `${path}.targetNodeId`));
+        errors.push(new ConfigurationValidationError('Edge target node ID is required', {
+          configType: 'edge',
+          configPath: `${path}.targetNodeId`
+        }));
       }
 
       if (!edge.type) {
-        errors.push(new ValidationError('Edge type is required', `${path}.type`));
+        errors.push(new ConfigurationValidationError('Edge type is required', {
+          configType: 'edge',
+          configPath: `${path}.type`
+        }));
       }
     }
 
@@ -418,22 +496,28 @@ export class WorkflowValidator {
    * @param workflow 工作流定义
    * @returns 验证结果
    */
-  private validateReferences(workflow: WorkflowDefinition): ValidationError[] {
-    const errors: ValidationError[] = [];
+  private validateReferences(workflow: WorkflowDefinition): ConfigurationValidationError[] {
+    const errors: ConfigurationValidationError[] = [];
     const nodeIds = new Set(workflow.nodes.map(n => n.id));
 
     // 检查边的节点引用
     for (const edge of workflow.edges) {
       if (!nodeIds.has(edge.sourceNodeId)) {
-        errors.push(new ValidationError(
+        errors.push(new ConfigurationValidationError(
           `Edge source node not found: ${edge.sourceNodeId}`,
-          `workflow.edges[${edge.id}].sourceNodeId`
+          {
+            configType: 'edge',
+            configPath: `workflow.edges[${edge.id}].sourceNodeId`
+          }
         ));
       }
       if (!nodeIds.has(edge.targetNodeId)) {
-        errors.push(new ValidationError(
+        errors.push(new ConfigurationValidationError(
           `Edge target node not found: ${edge.targetNodeId}`,
-          `workflow.edges[${edge.id}].targetNodeId`
+          {
+            configType: 'edge',
+            configPath: `workflow.edges[${edge.id}].targetNodeId`
+          }
         ));
       }
     }
@@ -446,7 +530,7 @@ export class WorkflowValidator {
    * @param workflow 工作流定义
    * @returns 验证结果
    */
-  private validateConfig(workflow: WorkflowDefinition): ValidationError[] {
+  private validateConfig(workflow: WorkflowDefinition): ConfigurationValidationError[] {
     if (!workflow.config) {
       return [];
     }
@@ -464,12 +548,15 @@ export class WorkflowValidator {
     * @param prefix 字段路径前缀
     * @returns ValidationError[]
     */
-  private convertZodError(error: z.ZodError, prefix?: string): ValidationError[] {
-    const errors: ValidationError[] = error.issues.map((issue) => {
+  private convertZodError(error: z.ZodError, prefix?: string): ConfigurationValidationError[] {
+    const errors: ConfigurationValidationError[] = error.issues.map((issue) => {
       const field = issue.path.length > 0
         ? (prefix ? `${prefix}.${issue.path.join('.')}` : issue.path.join('.'))
         : prefix;
-      return new ValidationError(issue.message, field);
+      return new ConfigurationValidationError(issue.message, {
+        configType: 'schema',
+        configPath: field
+      });
     });
     return errors;
   }
@@ -479,8 +566,8 @@ export class WorkflowValidator {
    * @param workflow 工作流定义
    * @returns 验证结果
    */
-  private validateTriggers(workflow: WorkflowDefinition): ValidationError[] {
-    const errors: ValidationError[] = [];
+  private validateTriggers(workflow: WorkflowDefinition): ConfigurationValidationError[] {
+    const errors: ConfigurationValidationError[] = [];
 
     // 如果没有触发器，直接返回成功
     if (!workflow.triggers || workflow.triggers.length === 0) {
@@ -502,7 +589,7 @@ export class WorkflowValidator {
    * @param workflow 工作流定义
    * @returns 验证结果
    */
-  private validateSelfReferences(workflow: WorkflowDefinition): ValidationError[] {
+  private validateSelfReferences(workflow: WorkflowDefinition): ConfigurationValidationError[] {
     const errors = SelfReferenceValidationStrategy.validateNodes(
       workflow.nodes,
       workflow.id
@@ -516,15 +603,18 @@ export class WorkflowValidator {
    * @param workflow 工作流定义
    * @returns 验证结果
    */
-  private validateTools(workflow: WorkflowDefinition): ValidationError[] {
-    const errors: ValidationError[] = [];
+  private validateTools(workflow: WorkflowDefinition): ConfigurationValidationError[] {
+    const errors: ConfigurationValidationError[] = [];
 
     // 验证availableTools配置
     if (workflow.availableTools) {
       if (!workflow.availableTools.initial || !(workflow.availableTools.initial instanceof Set)) {
-        errors.push(new ValidationError(
+        errors.push(new ConfigurationValidationError(
           'availableTools.initial must be a Set of tool IDs',
-          'workflow.availableTools.initial'
+          {
+            configType: 'workflow',
+            configPath: 'workflow.availableTools.initial'
+          }
         ));
       }
     }
@@ -538,16 +628,22 @@ export class WorkflowValidator {
           const path = `workflow.nodes[${i}].config.dynamicTools`;
 
           if (!llmConfig.dynamicTools.toolIds || !Array.isArray(llmConfig.dynamicTools.toolIds)) {
-            errors.push(new ValidationError(
+            errors.push(new ConfigurationValidationError(
               'dynamicTools.toolIds must be an array of tool IDs',
-              `${path}.toolIds`
+              {
+                configType: 'node',
+                configPath: `${path}.toolIds`
+              }
             ));
           }
 
           if (llmConfig.dynamicTools.descriptionTemplate && typeof llmConfig.dynamicTools.descriptionTemplate !== 'string') {
-            errors.push(new ValidationError(
+            errors.push(new ConfigurationValidationError(
               'dynamicTools.descriptionTemplate must be a string',
-              `${path}.descriptionTemplate`
+              {
+                configType: 'node',
+                configPath: `${path}.descriptionTemplate`
+              }
             ));
           }
         }

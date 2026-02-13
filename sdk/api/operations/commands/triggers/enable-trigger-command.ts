@@ -4,7 +4,7 @@
 
 import { BaseCommand } from '@modular-agent/sdk/api/types/command';
 import { CommandValidationResult } from '@modular-agent/sdk/api/types/command';
-import { NotFoundError } from '@modular-agent/types/errors';
+import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types/errors';
 import type { APIDependencies } from '../../../core/api-dependencies';
 
 /**
@@ -75,7 +75,7 @@ export class EnableTriggerCommand extends BaseCommand<void> {
   private async getTriggerManager(threadId: string) {
     const threadContext = this.dependencies.getThreadRegistry().get(threadId);
     if (!threadContext) {
-      throw new NotFoundError(`Thread not found: ${threadId}`, 'thread', threadId);
+      throw new ThreadContextNotFoundError(`Thread not found: ${threadId}`, threadId);
     }
     return threadContext.triggerManager;
   }

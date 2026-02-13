@@ -6,7 +6,7 @@
 import { GenericResourceAPI } from '../generic-resource-api';
 import { threadRegistry, type ThreadRegistry } from '../../../core/services/thread-registry';
 import type { LLMMessage } from '@modular-agent/types/llm';
-import { NotFoundError } from '@modular-agent/types/errors';
+import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types/errors';
 
 /**
  * 消息过滤器
@@ -147,7 +147,7 @@ export class MessageResourceAPI extends GenericResourceAPI<LLMMessage, string, M
   ): Promise<LLMMessage[]> {
     const threadContext = this.registry.get(threadId);
     if (!threadContext) {
-      throw new NotFoundError(`Thread not found: ${threadId}`, 'Thread', threadId);
+      throw new ThreadContextNotFoundError(`Thread not found: ${threadId}`, threadId);
     }
 
     let messages = threadContext.conversationManager.getMessages();
@@ -176,7 +176,7 @@ export class MessageResourceAPI extends GenericResourceAPI<LLMMessage, string, M
   async getRecentMessages(threadId: string, count: number): Promise<LLMMessage[]> {
     const threadContext = this.registry.get(threadId);
     if (!threadContext) {
-      throw new NotFoundError(`Thread not found: ${threadId}`, 'Thread', threadId);
+      throw new ThreadContextNotFoundError(`Thread not found: ${threadId}`, threadId);
     }
 
     return threadContext.conversationManager.getRecentMessages(count);
@@ -191,7 +191,7 @@ export class MessageResourceAPI extends GenericResourceAPI<LLMMessage, string, M
   async searchMessages(threadId: string, query: string): Promise<LLMMessage[]> {
     const threadContext = this.registry.get(threadId);
     if (!threadContext) {
-      throw new NotFoundError(`Thread not found: ${threadId}`, 'Thread', threadId);
+      throw new ThreadContextNotFoundError(`Thread not found: ${threadId}`, threadId);
     }
 
     const messages = threadContext.conversationManager.getMessages();
@@ -211,7 +211,7 @@ export class MessageResourceAPI extends GenericResourceAPI<LLMMessage, string, M
   async getMessageStats(threadId: string): Promise<MessageStats> {
     const threadContext = this.registry.get(threadId);
     if (!threadContext) {
-      throw new NotFoundError(`Thread not found: ${threadId}`, 'Thread', threadId);
+      throw new ThreadContextNotFoundError(`Thread not found: ${threadId}`, threadId);
     }
 
     const messages = threadContext.conversationManager.getMessages();

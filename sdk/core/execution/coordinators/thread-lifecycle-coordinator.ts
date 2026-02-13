@@ -18,7 +18,7 @@
  * - Manager只作为内部实现细节供Coordinator使用
  */
 
-import { NotFoundError } from '@modular-agent/types/errors';
+import { ThreadContextNotFoundError } from '@modular-agent/types/errors';
 import type { ThreadOptions, ThreadResult } from '@modular-agent/types/thread';
 import { ThreadStatus } from '@modular-agent/types/thread';
 import { ThreadBuilder } from '../thread-builder';
@@ -117,7 +117,7 @@ export class ThreadLifecycleCoordinator {
   async pauseThread(threadId: string): Promise<void> {
     const threadContext = this.executionContext.getThreadRegistry().get(threadId);
     if (!threadContext) {
-      throw new NotFoundError(`ThreadContext not found`, 'ThreadContext', threadId);
+      throw new ThreadContextNotFoundError(`ThreadContext not found`, threadId);
     }
 
     const thread = threadContext.thread;
@@ -145,7 +145,7 @@ export class ThreadLifecycleCoordinator {
   async resumeThread(threadId: string): Promise<ThreadResult> {
     const threadContext = this.executionContext.getThreadRegistry().get(threadId);
     if (!threadContext) {
-      throw new NotFoundError(`ThreadContext not found`, 'ThreadContext', threadId);
+      throw new ThreadContextNotFoundError(`ThreadContext not found`, threadId);
     }
 
     const thread = threadContext.thread;
@@ -182,7 +182,7 @@ export class ThreadLifecycleCoordinator {
   async stopThread(threadId: string): Promise<void> {
     const threadContext = this.executionContext.getThreadRegistry().get(threadId);
     if (!threadContext) {
-      throw new NotFoundError(`ThreadContext not found`, 'ThreadContext', threadId);
+      throw new ThreadContextNotFoundError(`ThreadContext not found`, threadId);
     }
 
     const thread = threadContext.thread;

@@ -5,7 +5,7 @@
 
 import type { Node, VariableNodeConfig } from '@modular-agent/types/node';
 import type { Thread } from '@modular-agent/types/thread';
-import { ValidationError } from '@modular-agent/types/errors';
+import { ValidationError, RuntimeValidationError } from '@modular-agent/types/errors';
 import { now } from '@modular-agent/common-utils';
 import { resolvePath } from '@modular-agent/common-utils';
 
@@ -92,7 +92,7 @@ function evaluateExpression(expression: string, variableType: string, thread: Th
     const result = func(...Object.values({ ...threadScope, ...globalScope }));
     return result;
   } catch (error) {
-    throw new ValidationError(`Failed to evaluate expression: ${expression}`, 'variable.expression');
+    throw new RuntimeValidationError(`Failed to evaluate expression: ${expression}`, { operation: 'handle', field: 'variable.expression' });
   }
 }
 
@@ -105,7 +105,7 @@ function convertType(value: any, targetType: string): any {
       const num = Number(value);
       // 对于字符串"not a number"这样的无效转换，应该抛出错误
       if (typeof value === 'string' && value.trim() && isNaN(num)) {
-        throw new ValidationError(`Failed to convert value to number: ${value}`, 'variable.type');
+        throw new RuntimeValidationError(`Failed to convert value to number: ${value}`, { operation: 'handle', field: 'variable.type', value });
       }
       return num;
 
@@ -122,7 +122,7 @@ function convertType(value: any, targetType: string): any {
       try {
         return Array.from(value);
       } catch (error) {
-        throw new ValidationError(`Failed to convert value to array: ${value}`, 'variable.type');
+        throw new RuntimeValidationError(`Failed to convert value to array: ${value}`, { operation: 'handle', field: 'variable.type', value });
       }
 
     case 'object':
@@ -135,11 +135,17 @@ function convertType(value: any, targetType: string): any {
       try {
         return Object(value);
       } catch (error) {
-        throw new ValidationError(`Failed to convert value to object: ${value}`, 'variable.type');
+        throw new RuntimeValidationError(`Failed to convert value to object: ${value}`, {
+          operation: 'handle',
+          field: 'variable.type'
+        });
       }
 
     default:
-      throw new ValidationError(`Invalid variable type: ${targetType}`, 'variable.type');
+      throw new RuntimeValidationError(`Invalid variable type: ${targetType}`, {
+        operation: 'handle',
+        field: 'variable.type'
+      });
   }
 }
 

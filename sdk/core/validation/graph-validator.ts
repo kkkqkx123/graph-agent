@@ -43,7 +43,7 @@ import type {
   GraphValidationOptions,
   GraphAnalysisResult,
 } from '@modular-agent/types';
-import { ValidationError } from '@modular-agent/types';
+import { ConfigurationValidationError } from '@modular-agent/types/errors';
 import type { Result } from '@modular-agent/types/result';
 import { ok, err } from '@modular-agent/common-utils';
 import { GraphData } from '../entities/graph-data';
@@ -63,8 +63,8 @@ export class GraphValidator {
   static validate(
     graph: GraphData,
     options: GraphValidationOptions = {}
-  ): Result<GraphData, ValidationError[]> {
-    const errorList: ValidationError[] = [];
+  ): Result<GraphData, ConfigurationValidationError[]> {
+    const errorList: ConfigurationValidationError[] = [];
 
     const opts = {
       checkCycles: true,
@@ -99,10 +99,13 @@ export class GraphValidator {
       const cycleResult = detectCycles(graph);
       if (cycleResult.hasCycle) {
         errorList.push(
-          new ValidationError('工作流中存在循环依赖', undefined, undefined, {
-            code: 'CYCLE_DETECTED',
-            cycleNodes: cycleResult.cycleNodes,
-            cycleEdges: cycleResult.cycleEdges,
+          new ConfigurationValidationError('工作流中存在循环依赖', {
+            configType: 'workflow',
+            context: {
+              code: 'CYCLE_DETECTED',
+              cycleNodes: cycleResult.cycleNodes,
+              cycleEdges: cycleResult.cycleEdges,
+            }
           })
         );
       }
@@ -121,9 +124,12 @@ export class GraphValidator {
         // 不可达节点
         for (const nodeId of reachabilityResult.unreachableNodes) {
           errorList.push(
-            new ValidationError(`节点(${nodeId})从START节点不可达`, undefined, undefined, {
-              code: 'UNREACHABLE_NODE',
-              nodeId,
+            new ConfigurationValidationError(`节点(${nodeId})从START节点不可达`, {
+              configType: 'workflow',
+              context: {
+                code: 'UNREACHABLE_NODE',
+                nodeId,
+              }
             })
           );
         }
@@ -131,9 +137,12 @@ export class GraphValidator {
         // 死节点
         for (const nodeId of reachabilityResult.deadEndNodes) {
           errorList.push(
-            new ValidationError(`节点(${nodeId})无法到达END节点`, undefined, undefined, {
-              code: 'DEAD_END_NODE',
-              nodeId,
+            new ConfigurationValidationError(`节点(${nodeId})无法到达END节点`, {
+              configType: 'workflow',
+              context: {
+                code: 'DEAD_END_NODE',
+                nodeId,
+              }
             })
           );
         }
@@ -173,14 +182,17 @@ export class GraphValidator {
    * - END节点不能有出边
    * - START节点唯一性（排除子工作流边界节点）
    */
-  private static validateStartEndNodes(graph: GraphData): ValidationError[] {
-    const errors: ValidationError[] = [];
+  private static validateStartEndNodes(graph: GraphData): ConfigurationValidationError[] {
+    const errors: ConfigurationValidationError[] = [];
 
     // 检查START节点
     if (!graph.startNodeId) {
       errors.push(
-        new ValidationError('工作流必须包含一个START节点', undefined, undefined, {
-          code: 'MISSING_START_NODE',
+        new ConfigurationValidationError('工作流必须包含一个START节点', {
+          configType: 'workflow',
+          context: {
+            code: 'MISSING_START_NODE',
+          }
         })
       );
     } else {
@@ -188,9 +200,12 @@ export class GraphValidator {
       const incomingEdges = graph.getIncomingEdges(graph.startNodeId);
       if (incomingEdges.length > 0) {
         errors.push(
-          new ValidationError('START节点不能有入边', undefined, undefined, {
-            code: 'START_NODE_HAS_INCOMING_EDGES',
-            nodeId: graph.startNodeId,
+          new ConfigurationValidationError('START节点不能有入边', {
+            configType: 'workflow',
+            context: {
+              code: 'START_NODE_HAS_INCOMING_EDGES',
+              nodeId: graph.startNodeId,
+            }
           })
         );
       }
@@ -199,8 +214,11 @@ export class GraphValidator {
     // 检查END节点
     if (graph.endNodeIds.size === 0) {
       errors.push(
-        new ValidationError('工作流必须包含至少一个END节点', undefined, undefined, {
-          code: 'MISSING_END_NODE',
+        new ConfigurationValidationError('工作流必须包含至少一个END节点', {
+          configType: 'workflow',
+          context: {
+            code: 'MISSING_END_NODE',
+          }
         })
       );
     } else {
@@ -209,9 +227,12 @@ export class GraphValidator {
         const outgoingEdges = graph.getOutgoingEdges(endNodeId);
         if (outgoingEdges.length > 0) {
           errors.push(
-            new ValidationError(`END节点(${endNodeId})不能有出边`, undefined, undefined, {
-              code: 'END_NODE_HAS_OUTGOING_EDGES',
-              nodeId: endNodeId,
+            new ConfigurationValidationError(`END节点(${endNodeId})不能有出边`, {
+              configType: 'workflow',
+              context: {
+                code: 'END_NODE_HAS_OUTGOING_EDGES',
+                nodeId: endNodeId,
+              }
             })
           );
         }
@@ -232,8 +253,11 @@ export class GraphValidator {
     }
     if (startNodeCount > 1) {
       errors.push(
-        new ValidationError('工作流只能包含一个START节点', undefined, undefined, {
-          code: 'MULTIPLE_START_NODES',
+        new ConfigurationValidationError('工作流只能包含一个START节点', {
+          configType: 'workflow',
+          context: {
+            code: 'MULTIPLE_START_NODES',
+          }
         })
       );
     }
@@ -244,8 +268,8 @@ export class GraphValidator {
   /**
    * 验证孤立节点
    */
-  private static validateIsolatedNodes(graph: GraphData): ValidationError[] {
-    const errors: ValidationError[] = [];
+  private static validateIsolatedNodes(graph: GraphData): ConfigurationValidationError[] {
+    const errors: ConfigurationValidationError[] = [];
 
     for (const node of graph.nodes.values()) {
       const incomingEdges = graph.getIncomingEdges(node.id);
@@ -263,9 +287,12 @@ export class GraphValidator {
 
       if (incomingEdges.length === 0 && outgoingEdges.length === 0) {
         errors.push(
-          new ValidationError(`节点(${node.id})是孤立节点，既没有入边也没有出边`, undefined, undefined, {
-            code: 'ISOLATED_NODE',
-            nodeId: node.id,
+          new ConfigurationValidationError(`节点(${node.id})是孤立节点，既没有入边也没有出边`, {
+            configType: 'workflow',
+            context: {
+              code: 'ISOLATED_NODE',
+              nodeId: node.id,
+            }
           })
         );
       }
@@ -290,8 +317,8 @@ export class GraphValidator {
    * @param graph 图数据
    * @returns 验证错误列表
    */
-  private static validateForkJoinPairs(graph: GraphData): ValidationError[] {
-    const errors: ValidationError[] = [];
+  private static validateForkJoinPairs(graph: GraphData): ConfigurationValidationError[] {
+    const errors: ConfigurationValidationError[] = [];
     // 使用forkPathIds数组的第一个元素作为配对标识符
     const forkNodes = new Map<ID, { nodeId: ID; forkPathIds: ID[] }>(); // forkPathIds[0] -> {nodeId, forkPathIds}
     const joinNodes = new Map<ID, { nodeId: ID; forkPathIds: ID[]; mainPathId?: ID }>(); // forkPathIds[0] -> {nodeId, forkPathIds, mainPathId}
@@ -307,9 +334,12 @@ export class GraphValidator {
         // 验证Fork节点配置
         if (!forkPaths || !Array.isArray(forkPaths) || forkPaths.length === 0) {
           errors.push(
-            new ValidationError(`FORK节点(${node.id})的forkPaths必须是非空数组`, undefined, undefined, {
-              code: 'INVALID_FORK_PATHS',
-              nodeId: node.id,
+            new ConfigurationValidationError(`FORK节点(${node.id})的forkPaths必须是非空数组`, {
+              configType: 'workflow',
+              context: {
+                code: 'INVALID_FORK_PATHS',
+                nodeId: node.id,
+              }
             })
           );
           continue;
@@ -321,9 +351,12 @@ export class GraphValidator {
         for (const forkPath of forkPaths) {
           if (!forkPath.pathId || !forkPath.childNodeId) {
             errors.push(
-              new ValidationError(`FORK节点(${node.id})的forkPaths中的每个元素必须包含pathId和childNodeId`, undefined, undefined, {
-                code: 'INVALID_FORK_PATH_ITEM',
-                nodeId: node.id,
+              new ConfigurationValidationError(`FORK节点(${node.id})的forkPaths中的每个元素必须包含pathId和childNodeId`, {
+                configType: 'workflow',
+                context: {
+                  code: 'INVALID_FORK_PATH_ITEM',
+                  nodeId: node.id,
+                }
               })
             );
             continue;
@@ -336,10 +369,13 @@ export class GraphValidator {
         for (const forkPathId of forkPathIds) {
           if (allForkPathIds.has(forkPathId)) {
             errors.push(
-              new ValidationError(`FORK节点(${node.id})的pathId(${forkPathId})在工作流定义内部不唯一`, undefined, undefined, {
-                code: 'DUPLICATE_FORK_PATH_ID',
-                nodeId: node.id,
-                forkPathId,
+              new ConfigurationValidationError(`FORK节点(${node.id})的pathId(${forkPathId})在工作流定义内部不唯一`, {
+                configType: 'workflow',
+                context: {
+                  code: 'DUPLICATE_FORK_PATH_ID',
+                  nodeId: node.id,
+                  forkPathId,
+                }
               })
             );
           } else {
@@ -354,10 +390,13 @@ export class GraphValidator {
         const pairId = forkPathIds[0]!;
         if (forkNodes.has(pairId)) {
           errors.push(
-            new ValidationError(`FORK节点(${node.id})的forkPaths第一个元素的pathId(${pairId})已被其他FORK节点使用`, undefined, undefined, {
-              code: 'DUPLICATE_FORK_PAIR_ID',
-              nodeId: node.id,
-              pairId,
+            new ConfigurationValidationError(`FORK节点(${node.id})的forkPaths第一个元素的pathId(${pairId})已被其他FORK节点使用`, {
+              configType: 'workflow',
+              context: {
+                code: 'DUPLICATE_FORK_PAIR_ID',
+                nodeId: node.id,
+                pairId,
+              }
             })
           );
         } else {
@@ -371,9 +410,12 @@ export class GraphValidator {
         // 验证Join节点配置
         if (!forkPathIds || !Array.isArray(forkPathIds) || forkPathIds.length === 0) {
           errors.push(
-            new ValidationError(`JOIN节点(${node.id})的forkPathIds必须是非空数组`, undefined, undefined, {
-              code: 'INVALID_FORK_PATH_IDS',
-              nodeId: node.id,
+            new ConfigurationValidationError(`JOIN节点(${node.id})的forkPathIds必须是非空数组`, {
+              configType: 'workflow',
+              context: {
+                code: 'INVALID_FORK_PATH_IDS',
+                nodeId: node.id,
+              }
             })
           );
           continue;
@@ -382,10 +424,13 @@ export class GraphValidator {
         // 验证mainPathId
         if (mainPathId && !forkPathIds.includes(mainPathId)) {
           errors.push(
-            new ValidationError(`JOIN节点(${node.id})的mainPathId(${mainPathId})必须在forkPathIds中`, undefined, undefined, {
-              code: 'MAIN_PATH_ID_NOT_FOUND',
-              nodeId: node.id,
-              mainPathId,
+            new ConfigurationValidationError(`JOIN节点(${node.id})的mainPathId(${mainPathId})必须在forkPathIds中`, {
+              configType: 'workflow',
+              context: {
+                code: 'MAIN_PATH_ID_NOT_FOUND',
+                nodeId: node.id,
+                mainPathId,
+              }
             })
           );
           continue;
@@ -395,10 +440,13 @@ export class GraphValidator {
         const pairId = forkPathIds[0];
         if (joinNodes.has(pairId)) {
           errors.push(
-            new ValidationError(`JOIN节点(${node.id})的forkPathIds第一个元素(${pairId})已被其他JOIN节点使用`, undefined, undefined, {
-              code: 'DUPLICATE_JOIN_PAIR_ID',
-              nodeId: node.id,
-              pairId,
+            new ConfigurationValidationError(`JOIN节点(${node.id})的forkPathIds第一个元素(${pairId})已被其他JOIN节点使用`, {
+              configType: 'workflow',
+              context: {
+                code: 'DUPLICATE_JOIN_PAIR_ID',
+                nodeId: node.id,
+                pairId,
+              }
             })
           );
         } else {
@@ -417,10 +465,13 @@ export class GraphValidator {
         // 验证Fork和Join的forkPathIds数组完全一致（包括顺序）
         if (JSON.stringify(forkInfo.forkPathIds) !== JSON.stringify(joinInfo.forkPathIds)) {
           errors.push(
-            new ValidationError(`FORK节点(${forkInfo.nodeId})和JOIN节点(${joinInfo.nodeId})的forkPathIds不一致`, undefined, undefined, {
-              code: 'FORK_JOIN_MISMATCH',
-              forkNodeId: forkInfo.nodeId,
-              joinNodeId: joinInfo.nodeId,
+            new ConfigurationValidationError(`FORK节点(${forkInfo.nodeId})和JOIN节点(${joinInfo.nodeId})的forkPathIds不一致`, {
+              configType: 'workflow',
+              context: {
+                code: 'FORK_JOIN_MISMATCH',
+                forkNodeId: forkInfo.nodeId,
+                joinNodeId: joinInfo.nodeId,
+              }
             })
           );
         } else {
@@ -440,9 +491,12 @@ export class GraphValidator {
     // 报告未配对的FORK节点
     for (const forkNodeId of unpairedForks) {
       errors.push(
-        new ValidationError(`FORK节点(${forkNodeId})没有配对的JOIN节点`, undefined, undefined, {
-          code: 'UNPAIRED_FORK',
-          nodeId: forkNodeId,
+        new ConfigurationValidationError(`FORK节点(${forkNodeId})没有配对的JOIN节点`, {
+          configType: 'workflow',
+          context: {
+            code: 'UNPAIRED_FORK',
+            nodeId: forkNodeId,
+          }
         })
       );
     }
@@ -450,9 +504,12 @@ export class GraphValidator {
     // 报告未配对的JOIN节点
     for (const joinNodeId of unpairedJoins) {
       errors.push(
-        new ValidationError(`JOIN节点(${joinNodeId})没有配对的FORK节点`, undefined, undefined, {
-          code: 'UNPAIRED_JOIN',
-          nodeId: joinNodeId,
+        new ConfigurationValidationError(`JOIN节点(${joinNodeId})没有配对的FORK节点`, {
+          configType: 'workflow',
+          context: {
+            code: 'UNPAIRED_JOIN',
+            nodeId: joinNodeId,
+          }
         })
       );
     }
@@ -462,14 +519,15 @@ export class GraphValidator {
       const reachableNodes = getReachableNodes(graph, forkNodeId);
       if (!reachableNodes.has(joinNodeId)) {
         errors.push(
-          new ValidationError(
+          new ConfigurationValidationError(
             `FORK节点(${forkNodeId})无法到达配对的JOIN节点(${joinNodeId})`,
-            undefined,
-            undefined,
             {
-              code: 'FORK_JOIN_NOT_REACHABLE',
-              nodeId: forkNodeId,
-              relatedNodeId: joinNodeId,
+              configType: 'workflow',
+              context: {
+                code: 'FORK_JOIN_NOT_REACHABLE',
+                nodeId: forkNodeId,
+                relatedNodeId: joinNodeId,
+              }
             }
           )
         );
@@ -491,21 +549,22 @@ export class GraphValidator {
    * @param graph 图数据
    * @returns 验证错误列表
    */
-  private static validateSubgraphExistence(graph: GraphData): ValidationError[] {
-    const errors: ValidationError[] = [];
+  private static validateSubgraphExistence(graph: GraphData): ConfigurationValidationError[] {
+    const errors: ConfigurationValidationError[] = [];
 
     for (const node of graph.nodes.values()) {
       if (node.type === 'SUBGRAPH' as NodeType) {
         const subgraphConfig = node.originalNode?.config as any;
         if (!subgraphConfig || !subgraphConfig.subgraphId) {
           errors.push(
-            new ValidationError(
+            new ConfigurationValidationError(
               `SUBGRAPH节点(${node.id})缺少subgraphId配置`,
-              undefined,
-              undefined,
               {
-                code: 'MISSING_SUBGRAPH_ID',
-                nodeId: node.id,
+                configType: 'workflow',
+                context: {
+                  code: 'MISSING_SUBGRAPH_ID',
+                  nodeId: node.id,
+                }
               }
             )
           );
@@ -521,8 +580,8 @@ export class GraphValidator {
    * @param graph 图数据
    * @returns 验证错误列表
    */
-  private static validateSubgraphCompatibility(graph: GraphData): ValidationError[] {
-    const errors: ValidationError[] = [];
+  private static validateSubgraphCompatibility(graph: GraphData): ConfigurationValidationError[] {
+    const errors: ConfigurationValidationError[] = [];
 
     for (const node of graph.nodes.values()) {
       if (node.type === 'SUBGRAPH' as NodeType) {
@@ -561,8 +620,8 @@ export class GraphValidator {
    * @param graph 图数据
    * @returns 验证错误列表
    */
-  private static validateTriggeredSubgraphNodes(graph: GraphData): ValidationError[] {
-    const errors: ValidationError[] = [];
+  private static validateTriggeredSubgraphNodes(graph: GraphData): ConfigurationValidationError[] {
+    const errors: ConfigurationValidationError[] = [];
 
     // 检查START_FROM_TRIGGER节点
     const startFromTriggerNodes: ID[] = [];
@@ -574,14 +633,20 @@ export class GraphValidator {
 
     if (startFromTriggerNodes.length === 0) {
       errors.push(
-        new ValidationError('触发子工作流必须包含一个START_FROM_TRIGGER节点', undefined, undefined, {
-          code: 'MISSING_START_FROM_TRIGGER_NODE',
+        new ConfigurationValidationError('触发子工作流必须包含一个START_FROM_TRIGGER节点', {
+          configType: 'workflow',
+          context: {
+            code: 'MISSING_START_FROM_TRIGGER_NODE',
+          }
         })
       );
     } else if (startFromTriggerNodes.length > 1) {
       errors.push(
-        new ValidationError('触发子工作流只能包含一个START_FROM_TRIGGER节点', undefined, undefined, {
-          code: 'MULTIPLE_START_FROM_TRIGGER_NODES',
+        new ConfigurationValidationError('触发子工作流只能包含一个START_FROM_TRIGGER节点', {
+          configType: 'workflow',
+          context: {
+            code: 'MULTIPLE_START_FROM_TRIGGER_NODES',
+          }
         })
       );
     } else {
@@ -590,9 +655,12 @@ export class GraphValidator {
       const incomingEdges = graph.getIncomingEdges(startNodeId);
       if (incomingEdges.length > 0) {
         errors.push(
-          new ValidationError('START_FROM_TRIGGER节点不能有入边', undefined, undefined, {
-            code: 'START_FROM_TRIGGER_NODE_HAS_INCOMING_EDGES',
-            nodeId: startNodeId,
+          new ConfigurationValidationError('START_FROM_TRIGGER节点不能有入边', {
+            configType: 'workflow',
+            context: {
+              code: 'START_FROM_TRIGGER_NODE_HAS_INCOMING_EDGES',
+              nodeId: startNodeId,
+            }
           })
         );
       }
@@ -608,14 +676,20 @@ export class GraphValidator {
 
     if (continueFromTriggerNodes.length === 0) {
       errors.push(
-        new ValidationError('触发子工作流必须包含一个CONTINUE_FROM_TRIGGER节点', undefined, undefined, {
-          code: 'MISSING_CONTINUE_FROM_TRIGGER_NODE',
+        new ConfigurationValidationError('触发子工作流必须包含一个CONTINUE_FROM_TRIGGER节点', {
+          configType: 'workflow',
+          context: {
+            code: 'MISSING_CONTINUE_FROM_TRIGGER_NODE',
+          }
         })
       );
     } else if (continueFromTriggerNodes.length > 1) {
       errors.push(
-        new ValidationError('触发子工作流只能包含一个CONTINUE_FROM_TRIGGER节点', undefined, undefined, {
-          code: 'MULTIPLE_CONTINUE_FROM_TRIGGER_NODES',
+        new ConfigurationValidationError('触发子工作流只能包含一个CONTINUE_FROM_TRIGGER节点', {
+          configType: 'workflow',
+          context: {
+            code: 'MULTIPLE_CONTINUE_FROM_TRIGGER_NODES',
+          }
         })
       );
     } else {
@@ -624,9 +698,12 @@ export class GraphValidator {
       const outgoingEdges = graph.getOutgoingEdges(endNodeId);
       if (outgoingEdges.length > 0) {
         errors.push(
-          new ValidationError('CONTINUE_FROM_TRIGGER节点不能有出边', undefined, undefined, {
-            code: 'CONTINUE_FROM_TRIGGER_NODE_HAS_OUTGOING_EDGES',
-            nodeId: endNodeId,
+          new ConfigurationValidationError('CONTINUE_FROM_TRIGGER节点不能有出边', {
+            configType: 'workflow',
+            context: {
+              code: 'CONTINUE_FROM_TRIGGER_NODE_HAS_OUTGOING_EDGES',
+              nodeId: endNodeId,
+            }
           })
         );
       }
@@ -636,17 +713,23 @@ export class GraphValidator {
     for (const node of graph.nodes.values()) {
       if (node.type === 'START' as NodeType) {
         errors.push(
-          new ValidationError('触发子工作流不能包含START节点', undefined, undefined, {
-            code: 'TRIGGERED_SUBGRAPH_CONTAINS_START_NODE',
-            nodeId: node.id,
+          new ConfigurationValidationError('触发子工作流不能包含START节点', {
+            configType: 'workflow',
+            context: {
+              code: 'TRIGGERED_SUBGRAPH_CONTAINS_START_NODE',
+              nodeId: node.id,
+            }
           })
         );
       }
       if (node.type === 'END' as NodeType) {
         errors.push(
-          new ValidationError('触发子工作流不能包含END节点', undefined, undefined, {
-            code: 'TRIGGERED_SUBGRAPH_CONTAINS_END_NODE',
-            nodeId: node.id,
+          new ConfigurationValidationError('触发子工作流不能包含END节点', {
+            configType: 'workflow',
+            context: {
+              code: 'TRIGGERED_SUBGRAPH_CONTAINS_END_NODE',
+              nodeId: node.id,
+            }
           })
         );
       }
@@ -661,8 +744,8 @@ export class GraphValidator {
    * @param graph 图数据
    * @returns 验证错误列表
    */
-  private static validateTriggeredSubgraphConnectivity(graph: GraphData): ValidationError[] {
-    const errors: ValidationError[] = [];
+  private static validateTriggeredSubgraphConnectivity(graph: GraphData): ConfigurationValidationError[] {
+    const errors: ConfigurationValidationError[] = [];
 
     // 查找START_FROM_TRIGGER和CONTINUE_FROM_TRIGGER节点
     let startNodeId: ID | null = null;
@@ -689,13 +772,14 @@ export class GraphValidator {
       }
       if (!reachableFromStart.has(node.id)) {
         errors.push(
-          new ValidationError(
+          new ConfigurationValidationError(
             `节点(${node.id})从START_FROM_TRIGGER节点不可达`,
-            undefined,
-            undefined,
             {
-              code: 'UNREACHABLE_FROM_START_FROM_TRIGGER',
-              nodeId: node.id,
+              configType: 'workflow',
+              context: {
+                code: 'UNREACHABLE_FROM_START_FROM_TRIGGER',
+                nodeId: node.id,
+              }
             }
           )
         );
@@ -710,13 +794,14 @@ export class GraphValidator {
       const reachableFromNode = getReachableNodes(graph, node.id);
       if (!reachableFromNode.has(endNodeId)) {
         errors.push(
-          new ValidationError(
+          new ConfigurationValidationError(
             `节点(${node.id})无法到达CONTINUE_FROM_TRIGGER节点`,
-            undefined,
-            undefined,
             {
-              code: 'CANNOT_REACH_CONTINUE_FROM_TRIGGER',
-              nodeId: node.id,
+              configType: 'workflow',
+              context: {
+                code: 'CANNOT_REACH_CONTINUE_FROM_TRIGGER',
+                nodeId: node.id,
+              }
             }
           )
         );

@@ -17,7 +17,7 @@
 
 import type { TriggerStatus, TriggerRuntimeState } from '@modular-agent/types/trigger';
 import type { ID } from '@modular-agent/types/common';
-import { ValidationError, ExecutionError, NotFoundError } from '@modular-agent/types/errors';
+import { ValidationError, ExecutionError, NotFoundError, RuntimeValidationError } from '@modular-agent/types/errors';
 import { now } from '@modular-agent/common-utils';
 import type { LifecycleCapable } from './lifecycle-capable';
 
@@ -69,19 +69,19 @@ export class TriggerStateManager implements LifecycleCapable<Map<ID, TriggerRunt
    */
   register(state: TriggerRuntimeState): void {
     if (!state.triggerId) {
-      throw new ValidationError('触发器 ID 不能为空', 'triggerId');
+      throw new RuntimeValidationError('触发器 ID 不能为空', { operation: 'register', field: 'triggerId' });
     }
     if (!state.threadId) {
-      throw new ValidationError('线程 ID 不能为空', 'threadId');
+      throw new RuntimeValidationError('线程 ID 不能为空', { operation: 'register', field: 'threadId' });
     }
     if (!state.workflowId) {
-      throw new ValidationError('工作流 ID 不能为空', 'workflowId');
+      throw new RuntimeValidationError('工作流 ID 不能为空', { operation: 'register', field: 'workflowId' });
     }
     if (state.threadId !== this.threadId) {
-      throw new ValidationError(`线程 ID 不匹配：期望 ${this.threadId}，实际 ${state.threadId}`, 'threadId', state.threadId);
+      throw new RuntimeValidationError(`线程 ID 不匹配：期望 ${this.threadId}，实际 ${state.threadId}`, { operation: 'register', field: 'threadId', value: state.threadId });
     }
     if (this.workflowId && state.workflowId !== this.workflowId) {
-      throw new ValidationError(`工作流 ID 不匹配：期望 ${this.workflowId}，实际 ${state.workflowId}`, 'workflowId', state.workflowId);
+      throw new RuntimeValidationError(`工作流 ID 不匹配：期望 ${this.workflowId}，实际 ${state.workflowId}`, { operation: 'register', field: 'workflowId', value: state.workflowId });
     }
 
     // 检查是否已存在
@@ -172,7 +172,7 @@ export class TriggerStateManager implements LifecycleCapable<Map<ID, TriggerRunt
     for (const [triggerId, state] of snapshot.entries()) {
       // 验证线程 ID
       if (state.threadId !== this.threadId) {
-        throw new ValidationError(`线程 ID 不匹配：期望 ${this.threadId}，实际 ${state.threadId}`, 'threadId', state.threadId);
+        throw new RuntimeValidationError(`线程 ID 不匹配：期望 ${this.threadId}，实际 ${state.threadId}`, { operation: 'update', field: 'threadId', value: state.threadId });
       }
 
       // 恢复状态

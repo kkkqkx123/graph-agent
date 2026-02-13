@@ -22,7 +22,7 @@ import { nodeTemplateRegistry } from '../services/node-template-registry';
 import { triggerTemplateRegistry } from '../services/trigger-template-registry';
 import { WorkflowValidator } from '../validation/workflow-validator';
 import { now } from '@modular-agent/common-utils';
-import { ValidationError } from '@modular-agent/types/errors';
+import { ConfigurationValidationError, NodeTemplateNotFoundError, WorkflowNotFoundError } from '@modular-agent/types/errors';
 
 export interface ProcessOptions extends GraphBuildOptions {
   workflowRegistry?: any;
@@ -41,9 +41,12 @@ export async function processWorkflow(
   // 1. 验证工作流定义
   const validationResult = validator.validate(workflow);
   if (validationResult.isErr()) {
-    throw new ValidationError(
+    throw new ConfigurationValidationError(
       `Workflow validation failed: ${validationResult.error.map(e => e.message).join(', ')}`,
-      'workflow'
+      {
+        configType: 'workflow',
+        configPath: 'workflow'
+      }
     );
   }
 
@@ -72,9 +75,12 @@ export async function processWorkflow(
 
   const buildResult = GraphBuilder.buildAndValidate(expandedWorkflow, buildOptions);
   if (!buildResult.isValid) {
-    throw new ValidationError(
+    throw new ConfigurationValidationError(
       `Graph build failed: ${buildResult.errors.join(', ')}`,
-      'workflow.graph'
+      {
+        configType: 'workflow',
+        configPath: 'workflow.graph'
+      }
     );
   }
 
@@ -91,9 +97,12 @@ export async function processWorkflow(
     );
 
     if (!subgraphResult.success) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         `Subgraph processing failed: ${subgraphResult.errors.join(', ')}`,
-        'workflow.subgraphs'
+        {
+          configType: 'workflow',
+          configPath: 'workflow.subgraphs'
+        }
       );
     }
 
@@ -131,18 +140,18 @@ export async function processWorkflow(
   // 7. 处理触发器引用的工作流
   if (options.workflowRegistry) {
     const triggeredWorkflowIds = extractTriggeredWorkflowIds(expandedTriggers);
-    
+
     for (const triggeredWorkflowId of triggeredWorkflowIds) {
       // 确保触发器引用的工作流已预处理
       const processedTriggeredWorkflow = await options.workflowRegistry.ensureProcessed(triggeredWorkflowId);
-      
+
       if (!processedTriggeredWorkflow) {
-        throw new ValidationError(
+        throw new WorkflowNotFoundError(
           `Triggered workflow '${triggeredWorkflowId}' referenced in triggers not found or failed to preprocess`,
-          'workflow.triggers'
+          triggeredWorkflowId
         );
       }
-      
+
       // 记录触发器引用的工作流ID
       subworkflowIds.add(triggeredWorkflowId);
     }
@@ -152,9 +161,12 @@ export async function processWorkflow(
   const graphValidationResult = GraphValidator.validate(buildResult.graph);
   if (graphValidationResult.isErr()) {
     const errors = graphValidationResult.error.map((e: { message: string }) => e.message).join(', ');
-    throw new ValidationError(
+    throw new ConfigurationValidationError(
       `Graph validation failed: ${errors}`,
-      'workflow.graph'
+      {
+        configType: 'workflow',
+        configPath: 'workflow.graph'
+      }
     );
   }
 
@@ -203,9 +215,9 @@ function expandNodeReferences(nodes: Node[]): Node[] {
       // 获取节点模板
       const template = nodeTemplateRegistry.get(templateName);
       if (!template) {
-        throw new ValidationError(
+        throw new NodeTemplateNotFoundError(
           `Node template not found: ${templateName}`,
-          `node.${node.id}.config.templateName`
+          templateName
         );
       }
 
@@ -288,10 +300,10 @@ function isTriggerReference(trigger: WorkflowTrigger | TriggerReference): boolea
  */
 function extractTriggeredWorkflowIds(triggers: WorkflowTrigger[]): Set<string> {
   const triggeredWorkflowIds = new Set<string>();
-  
+
   for (const trigger of triggers) {
     const triggerObj = trigger as any;
-    
+
     // 检查 action 类型是否为 EXECUTE_TRIGGERED_SUBGRAPH
     if (triggerObj?.action?.type === 'execute_triggered_subgraph') {
       const triggeredWorkflowId = triggerObj.action.parameters?.triggeredWorkflowId;
@@ -300,6 +312,6 @@ function extractTriggeredWorkflowIds(triggers: WorkflowTrigger[]): Set<string> {
       }
     }
   }
-  
+
   return triggeredWorkflowIds;
 }

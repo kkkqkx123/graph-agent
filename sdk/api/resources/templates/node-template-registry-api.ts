@@ -6,7 +6,7 @@
 
 import type { NodeTemplate } from '@modular-agent/types/node-template';
 import type { NodeTemplateFilter, NodeTemplateSummary } from '@modular-agent/sdk/api/types/registry-types';
-import { ValidationError } from '@modular-agent/types/errors';
+import { ValidationError, ConfigurationValidationError } from '@modular-agent/types/errors';
 import type { Result } from '@modular-agent/types/result';
 import { ok, err } from '@modular-agent/common-utils';
 import { NodeType } from '@modular-agent/types/node';
@@ -177,23 +177,35 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
 
     // 验证必需字段
     if (!template.name || typeof template.name !== 'string') {
-      errors.push(new ValidationError(
+      errors.push(new ConfigurationValidationError(
         'Node template name is required and must be a string',
-        'template.name'
+        {
+          configType: 'node',
+          configPath: 'template.name',
+          field: 'name'
+        }
       ));
     }
 
     if (!template.type || !Object.values(NodeType).includes(template.type)) {
-      errors.push(new ValidationError(
+      errors.push(new ConfigurationValidationError(
         `Invalid node type: ${template.type}`,
-        'template.type'
+        {
+          configType: 'node',
+          configPath: 'template.type',
+          field: 'type'
+        }
       ));
     }
 
     if (!template.config) {
-      errors.push(new ValidationError(
+      errors.push(new ConfigurationValidationError(
         'Node template config is required',
-        'template.config'
+        {
+          configType: 'node',
+          configPath: 'template.config',
+          field: 'config'
+        }
       ));
     }
 
@@ -218,14 +230,22 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
       return ok(template);
     } catch (error) {
       if (error instanceof ValidationError) {
-        errors.push(new ValidationError(
+        errors.push(new ConfigurationValidationError(
           `Invalid node configuration for template '${template.name}': ${error.message}`,
-          'template.config'
+          {
+            configType: 'node',
+            configPath: 'template.config',
+            field: 'config'
+          }
         ));
       } else {
-        errors.push(new ValidationError(
+        errors.push(new ConfigurationValidationError(
           error instanceof Error ? error.message : 'Unknown validation error',
-          'template.config'
+          {
+            configType: 'node',
+            configPath: 'template.config',
+            field: 'config'
+          }
         ));
       }
       return err(errors);

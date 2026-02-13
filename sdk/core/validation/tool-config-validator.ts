@@ -14,7 +14,7 @@ import type {
   McpToolConfig
 } from '@modular-agent/types/tool';
 import { ToolType } from '@modular-agent/types/tool';
-import { ValidationError } from '@modular-agent/types/errors';
+import { ConfigurationValidationError } from '@modular-agent/types/errors';
 import type { Result } from '@modular-agent/types/result';
 import { ok, err } from '@modular-agent/common-utils';
 
@@ -147,14 +147,20 @@ export class ToolConfigValidator {
    * @param tool 工具定义
    * @throws ValidationError 当工具定义无效时抛出
    */
-  validateTool(tool: Tool): Result<Tool, ValidationError[]> {
+  validateTool(tool: Tool): Result<Tool, ConfigurationValidationError[]> {
     const result = toolSchema.safeParse(tool);
     if (!result.success) {
       const error = result.error.issues[0];
       if (!error) {
-        return err([new ValidationError('Invalid tool configuration', 'tool')]);
+        return err([new ConfigurationValidationError('Invalid tool configuration', {
+          configType: 'tool',
+          field: 'tool'
+        })]);
       }
-      return err([new ValidationError(error.message, `tool.${error.path.join('.')}`)]);
+      return err([new ConfigurationValidationError(error.message, {
+        configType: 'tool',
+        configPath: `tool.${error.path.join('.')}`
+      })]);
     }
     return ok(tool);
   }
@@ -164,14 +170,20 @@ export class ToolConfigValidator {
    * @param parameters 工具参数schema
    * @throws ValidationError 当参数schema无效时抛出
    */
-  validateParameters(parameters: ToolParameters): Result<ToolParameters, ValidationError[]> {
+  validateParameters(parameters: ToolParameters): Result<ToolParameters, ConfigurationValidationError[]> {
     const result = toolParametersSchema.safeParse(parameters);
     if (!result.success) {
       const error = result.error.issues[0];
       if (!error) {
-        return err([new ValidationError('Invalid tool parameters schema', 'parameters')]);
+        return err([new ConfigurationValidationError('Invalid tool parameters schema', {
+          configType: 'tool',
+          field: 'parameters'
+        })]);
       }
-      return err([new ValidationError(error.message, `parameters.${error.path.join('.')}`)]);
+      return err([new ConfigurationValidationError(error.message, {
+        configType: 'tool',
+        configPath: `parameters.${error.path.join('.')}`
+      })]);
     }
     return ok(parameters);
   }
@@ -182,7 +194,7 @@ export class ToolConfigValidator {
    * @param config 工具配置
    * @throws ValidationError 当配置无效时抛出
    */
-  validateToolConfig(toolType: ToolType, config: any): Result<any, ValidationError[]> {
+  validateToolConfig(toolType: ToolType, config: any): Result<any, ConfigurationValidationError[]> {
     let result;
 
     switch (toolType) {
@@ -199,15 +211,24 @@ export class ToolConfigValidator {
         result = mcpToolConfigSchema.safeParse(config);
         break;
       default:
-        return err([new ValidationError(`Unknown tool type: ${toolType}`, 'type')]);
+        return err([new ConfigurationValidationError(`Unknown tool type: ${toolType}`, {
+          configType: 'tool',
+          field: 'type'
+        })]);
     }
 
     if (!result.success) {
       const error = result.error.issues[0];
       if (!error) {
-        return err([new ValidationError(`Invalid ${toolType} tool configuration`, 'config')]);
+        return err([new ConfigurationValidationError(`Invalid ${toolType} tool configuration`, {
+          configType: 'tool',
+          field: 'config'
+        })]);
       }
-      return err([new ValidationError(error.message, `config.${error.path.join('.')}`)]);
+      return err([new ConfigurationValidationError(error.message, {
+        configType: 'tool',
+        configPath: `config.${error.path.join('.')}`
+      })]);
     }
     return ok(config);
   }
@@ -218,16 +239,19 @@ export class ToolConfigValidator {
    * @param parameters 调用参数
    * @throws ValidationError 当调用参数无效时抛出
    */
-  validateToolCallParameters(tool: Tool, parameters: Record<string, any>): Result<Record<string, any>, ValidationError[]> {
+  validateToolCallParameters(tool: Tool, parameters: Record<string, any>): Result<Record<string, any>, ConfigurationValidationError[]> {
     const { properties, required } = tool.parameters;
-    const errors: ValidationError[] = [];
+    const errors: ConfigurationValidationError[] = [];
 
     // 验证必需参数
     for (const paramName of required) {
       if (!(paramName in parameters)) {
-        errors.push(new ValidationError(
+        errors.push(new ConfigurationValidationError(
           `Required parameter '${paramName}' is missing`,
-          `parameters.${paramName}`
+          {
+            configType: 'tool',
+            configPath: `parameters.${paramName}`
+          }
         ));
       }
     }
@@ -236,9 +260,12 @@ export class ToolConfigValidator {
     for (const [paramName, paramValue] of Object.entries(parameters)) {
       const property = properties[paramName];
       if (!property) {
-        errors.push(new ValidationError(
+        errors.push(new ConfigurationValidationError(
           `Unknown parameter '${paramName}'`,
-          `parameters.${paramName}`
+          {
+            configType: 'tool',
+            configPath: `parameters.${paramName}`
+          }
         ));
         continue;
       }
@@ -246,12 +273,15 @@ export class ToolConfigValidator {
       try {
         this.validateParameterValue(paramName, paramValue, property);
       } catch (error) {
-        if (error instanceof ValidationError) {
+        if (error instanceof ConfigurationValidationError) {
           errors.push(error);
         } else {
-          errors.push(new ValidationError(
+          errors.push(new ConfigurationValidationError(
             error instanceof Error ? error.message : String(error),
-            `parameters.${paramName}`
+            {
+              configType: 'tool',
+              configPath: `parameters.${paramName}`
+            }
           ));
         }
       }
@@ -279,9 +309,13 @@ export class ToolConfigValidator {
 
     // 验证枚举值
     if (enumValues && enumValues.length > 0 && !enumValues.includes(paramValue)) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         `Parameter '${paramName}' must be one of: ${enumValues.join(', ')}`,
-        `parameters.${paramName}`
+        {
+          configType: 'tool',
+          configPath: `parameters.${paramName}`,
+          value: paramValue
+        }
       );
     }
 
@@ -289,41 +323,61 @@ export class ToolConfigValidator {
     switch (type) {
       case 'string':
         if (typeof paramValue !== 'string') {
-          throw new ValidationError(
+          throw new ConfigurationValidationError(
             `Parameter '${paramName}' must be a string`,
-            `parameters.${paramName}`
+            {
+              configType: 'tool',
+              configPath: `parameters.${paramName}`,
+              value: paramValue
+            }
           );
         }
         break;
       case 'number':
         if (typeof paramValue !== 'number') {
-          throw new ValidationError(
+          throw new ConfigurationValidationError(
             `Parameter '${paramName}' must be a number`,
-            `parameters.${paramName}`
+            {
+              configType: 'tool',
+              configPath: `parameters.${paramName}`,
+              value: paramValue
+            }
           );
         }
         break;
       case 'boolean':
         if (typeof paramValue !== 'boolean') {
-          throw new ValidationError(
+          throw new ConfigurationValidationError(
             `Parameter '${paramName}' must be a boolean`,
-            `parameters.${paramName}`
+            {
+              configType: 'tool',
+              configPath: `parameters.${paramName}`,
+              value: paramValue
+            }
           );
         }
         break;
       case 'array':
         if (!Array.isArray(paramValue)) {
-          throw new ValidationError(
+          throw new ConfigurationValidationError(
             `Parameter '${paramName}' must be an array`,
-            `parameters.${paramName}`
+            {
+              configType: 'tool',
+              configPath: `parameters.${paramName}`,
+              value: paramValue
+            }
           );
         }
         break;
       case 'object':
         if (typeof paramValue !== 'object' || paramValue === null || Array.isArray(paramValue)) {
-          throw new ValidationError(
+          throw new ConfigurationValidationError(
             `Parameter '${paramName}' must be an object`,
-            `parameters.${paramName}`
+            {
+              configType: 'tool',
+              configPath: `parameters.${paramName}`,
+              value: paramValue
+            }
           );
         }
         break;
@@ -352,26 +406,38 @@ export class ToolConfigValidator {
         try {
           new URL(paramValue);
         } catch {
-          throw new ValidationError(
+          throw new ConfigurationValidationError(
             `Parameter '${paramName}' must be a valid URI`,
-            `parameters.${paramName}`
+            {
+              configType: 'tool',
+              configPath: `parameters.${paramName}`,
+              value: paramValue
+            }
           );
         }
         break;
       case 'email':
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(paramValue)) {
-          throw new ValidationError(
+          throw new ConfigurationValidationError(
             `Parameter '${paramName}' must be a valid email address`,
-            `parameters.${paramName}`
+            {
+              configType: 'tool',
+              configPath: `parameters.${paramName}`,
+              value: paramValue
+            }
           );
         }
         break;
       case 'date-time':
         if (isNaN(Date.parse(paramValue))) {
-          throw new ValidationError(
+          throw new ConfigurationValidationError(
             `Parameter '${paramName}' must be a valid date-time`,
-            `parameters.${paramName}`
+            {
+              configType: 'tool',
+              configPath: `parameters.${paramName}`,
+              value: paramValue
+            }
           );
         }
         break;
@@ -385,27 +451,33 @@ export class ToolConfigValidator {
    * @param environment 执行环境信息
    * @throws ValidationError 当工具与环境不兼容时抛出
    */
-  validateToolCompatibility(tool: Tool, environment: Record<string, any>): Result<Tool, ValidationError[]> {
+  validateToolCompatibility(tool: Tool, environment: Record<string, any>): Result<Tool, ConfigurationValidationError[]> {
     const { type, config } = tool;
-    const errors: ValidationError[] = [];
+    const errors: ConfigurationValidationError[] = [];
 
     switch (type) {
       case ToolType.REST:
         if (config && (config as RestToolConfig).baseUrl) {
           // 验证REST工具的网络连接
           if (!environment['networkAvailable']) {
-            errors.push(new ValidationError(
+            errors.push(new ConfigurationValidationError(
               'Network connectivity is required for REST tools',
-              'environment'
+              {
+                configType: 'tool',
+                field: 'environment'
+              }
             ));
           }
         }
         break;
       case ToolType.MCP:
         if (!environment['mcpAvailable']) {
-          errors.push(new ValidationError(
+          errors.push(new ConfigurationValidationError(
             'MCP protocol support is not available in the execution environment',
-            'environment'
+            {
+              configType: 'tool',
+              field: 'environment'
+            }
           ));
         }
         break;

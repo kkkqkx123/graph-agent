@@ -6,7 +6,7 @@
  */
 
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types/trigger';
-import { ValidationError } from '@modular-agent/types/errors';
+import { ValidationError, RuntimeValidationError } from '@modular-agent/types/errors';
 import { ExecutionContext } from '../../context/execution-context';
 
 /**
@@ -66,7 +66,7 @@ export async function resumeThreadHandler(
     const { threadId } = action.parameters;
 
     if (!threadId) {
-      throw new ValidationError('threadId is required for RESUME_THREAD action', 'parameters.threadId');
+      throw new RuntimeValidationError('threadId is required for RESUME_THREAD action', { operation: 'handle', field: 'parameters.threadId' });
     }
 
     // 通过Coordinator进行恢复流程协调

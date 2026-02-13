@@ -3,7 +3,7 @@
  * 提供通用的配置验证辅助函数
  */
 
-import { ValidationError } from '@modular-agent/types/errors';
+import { ValidationError, SchemaValidationError } from '@modular-agent/types/errors';
 
 /**
  * 验证必需字段
@@ -21,10 +21,12 @@ export function validateRequiredFields(
 
   for (const field of requiredFields) {
     if (obj[field] === undefined || obj[field] === null || obj[field] === '') {
-      errors.push(new ValidationError(
+      errors.push(new SchemaValidationError(
         `${fieldName}.${field} 是必需字段`,
-        `${fieldName}.${field}`,
-        obj[field]
+        {
+          field: `${fieldName}.${field}`,
+          value: obj[field]
+        }
       ));
     }
   }
@@ -51,35 +53,43 @@ export function validateStringField(
   const errors: ValidationError[] = [];
 
   if (typeof value !== 'string') {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName} 必须是字符串类型`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
     return errors;
   }
 
   if (options?.minLength && value.length < options.minLength) {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName} 长度不能小于 ${options.minLength}`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
   }
 
   if (options?.maxLength && value.length > options.maxLength) {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName} 长度不能大于 ${options.maxLength}`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
   }
 
   if (options?.pattern && !options.pattern.test(value)) {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName} 格式不正确`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
   }
 
@@ -105,35 +115,43 @@ export function validateNumberField(
   const errors: ValidationError[] = [];
 
   if (typeof value !== 'number' || isNaN(value)) {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName} 必须是数字类型`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
     return errors;
   }
 
   if (options?.integer && !Number.isInteger(value)) {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName} 必须是整数`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
   }
 
   if (options?.min !== undefined && value < options.min) {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName} 不能小于 ${options.min}`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
   }
 
   if (options?.max !== undefined && value > options.max) {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName} 不能大于 ${options.max}`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
   }
 
@@ -150,10 +168,12 @@ export function validateBooleanField(value: any, fieldName: string): ValidationE
   const errors: ValidationError[] = [];
 
   if (typeof value !== 'boolean') {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName} 必须是布尔类型`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
   }
 
@@ -178,27 +198,33 @@ export function validateArrayField(
   const errors: ValidationError[] = [];
 
   if (!Array.isArray(value)) {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName} 必须是数组类型`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
     return errors;
   }
 
   if (options?.minLength && value.length < options.minLength) {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName} 长度不能小于 ${options.minLength}`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
   }
 
   if (options?.maxLength && value.length > options.maxLength) {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName} 长度不能大于 ${options.maxLength}`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
   }
 
@@ -215,10 +241,12 @@ export function validateObjectField(value: any, fieldName: string): ValidationEr
   const errors: ValidationError[] = [];
 
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName} 必须是对象类型`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
   }
 
@@ -240,10 +268,12 @@ export function validateEnumField(
   const errors: ValidationError[] = [];
 
   if (!enumValues.includes(value)) {
-    errors.push(new ValidationError(
+    errors.push(new SchemaValidationError(
       `${fieldName} 必须是以下值之一: ${enumValues.join(', ')}`,
-      fieldName,
-      value
+      {
+        field: fieldName,
+        value: value
+      }
     ));
   }
 

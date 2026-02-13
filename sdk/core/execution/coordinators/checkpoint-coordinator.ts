@@ -3,7 +3,7 @@
  * 无状态服务，协调完整的检查点流程
  */
 
-import { NotFoundError } from '@modular-agent/types/errors';
+import { NotFoundError, ThreadContextNotFoundError, CheckpointNotFoundError, WorkflowNotFoundError } from '@modular-agent/types/errors';
 import type { Thread } from '@modular-agent/types/thread';
 import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot } from '@modular-agent/types/checkpoint';
 import type { ThreadRegistry } from '../../services/thread-registry';
@@ -47,7 +47,7 @@ export class CheckpointCoordinator {
     // 步骤1：从 ThreadRegistry 获取 ThreadContext 对象
     const threadContext = threadRegistry.get(threadId);
     if (!threadContext) {
-      throw new NotFoundError(`ThreadContext not found`, 'ThreadContext', threadId);
+      throw new ThreadContextNotFoundError(`ThreadContext not found`, threadId);
     }
 
     const thread = threadContext.thread;
@@ -133,7 +133,7 @@ export class CheckpointCoordinator {
     // 步骤1：从 CheckpointStateManager 加载检查点
     const checkpoint = await checkpointStateManager.get(checkpointId);
     if (!checkpoint) {
-      throw new NotFoundError(`Checkpoint not found`, 'Checkpoint', checkpointId);
+      throw new CheckpointNotFoundError(`Checkpoint not found`, checkpointId);
     }
 
     // 步骤2：验证 checkpoint 完整性和兼容性
@@ -143,7 +143,7 @@ export class CheckpointCoordinator {
     // ProcessedWorkflowDefinition 包含完整的预处理后的图结构
     const processedWorkflow = await workflowRegistry.ensureProcessed(checkpoint.workflowId);
     if (!processedWorkflow) {
-      throw new NotFoundError(`Processed workflow not found`, 'Workflow', checkpoint.workflowId);
+      throw new WorkflowNotFoundError(`Processed workflow not found`, checkpoint.workflowId);
     }
 
     // 从 ProcessedWorkflowDefinition 获取图结构

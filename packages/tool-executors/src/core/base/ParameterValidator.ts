@@ -5,7 +5,7 @@
 
 import { z } from 'zod';
 import type { Tool } from '@modular-agent/types/tool';
-import { ValidationError } from '@modular-agent/types/errors';
+import { ValidationError, RuntimeValidationError } from '@modular-agent/types/errors';
 
 /**
  * 参数验证器
@@ -24,13 +24,16 @@ export class ParameterValidator {
     if (!result.success) {
       const firstError = result.error.issues[0];
       if (!firstError) {
-        throw new ValidationError('Parameter validation failed', 'parameters', parameters);
+        throw new RuntimeValidationError('Parameter validation failed', { operation: 'validate', field: 'parameters', value: parameters });
       }
       const field = firstError.path.join('.');
-      throw new ValidationError(
+      throw new RuntimeValidationError(
         firstError.message,
-        field,
-        parameters
+        {
+          operation: 'validate',
+          field: field,
+          value: parameters
+        }
       );
     }
   }

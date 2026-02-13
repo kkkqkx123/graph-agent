@@ -8,7 +8,7 @@
  */
 
 import type { Node } from '@modular-agent/types/node';
-import { ValidationError } from '@modular-agent/types/errors';
+import { ConfigurationValidationError } from '@modular-agent/types/errors';
 
 /**
  * 子工作流配置接口
@@ -44,8 +44,8 @@ export class SelfReferenceValidationStrategy {
     node: Node,
     workflowId: string,
     path: string
-  ): ValidationError[] {
-    const errors: ValidationError[] = [];
+  ): ConfigurationValidationError[] {
+    const errors: ConfigurationValidationError[] = [];
 
     // 只验证 SUBGRAPH 节点
     if (node.type !== 'SUBGRAPH') {
@@ -56,11 +56,14 @@ export class SelfReferenceValidationStrategy {
 
     // 检查是否引用自身工作流
     if (config && config.subgraphId === workflowId) {
-      errors.push(new ValidationError(
+      errors.push(new ConfigurationValidationError(
         '子工作流节点不能引用自身工作流',
-        `${path}.config.subgraphId`,
-        undefined,
-        { code: 'SELF_REFERENCE', nodeId: node.id, subgraphId: config.subgraphId }
+        {
+          configType: 'node',
+          configPath: `${path}.config.subgraphId`,
+          value: config.subgraphId,
+          context: { code: 'SELF_REFERENCE', nodeId: node.id, subgraphId: config.subgraphId }
+        }
       ));
     }
 
@@ -78,8 +81,8 @@ export class SelfReferenceValidationStrategy {
     nodes: Node[],
     workflowId: string,
     pathPrefix: string = 'workflow.nodes'
-  ): ValidationError[] {
-    const errors: ValidationError[] = [];
+  ): ConfigurationValidationError[] {
+    const errors: ConfigurationValidationError[] = [];
 
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];

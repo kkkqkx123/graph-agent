@@ -15,7 +15,7 @@
 
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types/trigger';
 import type { ExecuteTriggeredSubgraphActionConfig } from '@modular-agent/types/trigger';
-import { NotFoundError, ValidationError } from '@modular-agent/types/errors';
+import { NotFoundError, ValidationError, RuntimeValidationError, ThreadContextNotFoundError, WorkflowNotFoundError } from '@modular-agent/types/errors';
 import { ExecutionContext } from '../../context/execution-context';
 import {
   executeSingleTriggeredSubgraph,
@@ -80,7 +80,7 @@ export async function executeTriggeredSubgraphHandler(
     const { triggeredWorkflowId, waitForCompletion = true } = parameters;
 
     if (!triggeredWorkflowId) {
-      throw new ValidationError('Missing required parameter: triggeredWorkflowId', 'triggeredWorkflowId');
+      throw new RuntimeValidationError('Missing required parameter: triggeredWorkflowId', { operation: 'handle', field: 'triggeredWorkflowId' });
     }
 
     // 获取主工作流线程上下文
@@ -88,13 +88,13 @@ export async function executeTriggeredSubgraphHandler(
     const threadId = context.getCurrentThreadId();
 
     if (!threadId) {
-      throw new NotFoundError('Current thread ID not found in execution context', 'ThreadContext', 'current');
+      throw new ThreadContextNotFoundError('Current thread ID not found in execution context', 'current');
     }
 
     const mainThreadContext = threadRegistry.get(threadId);
 
     if (!mainThreadContext) {
-      throw new NotFoundError(`Main thread context not found: ${threadId}`, 'ThreadContext', threadId);
+      throw new ThreadContextNotFoundError(`Main thread context not found: ${threadId}`, threadId);
     }
 
     // 获取工作流注册表
@@ -104,7 +104,7 @@ export async function executeTriggeredSubgraphHandler(
     const processedTriggeredWorkflow = await workflowRegistry.ensureProcessed(triggeredWorkflowId);
 
     if (!processedTriggeredWorkflow) {
-      throw new NotFoundError(`Triggered workflow not found: ${triggeredWorkflowId}`, 'Workflow', triggeredWorkflowId);
+      throw new WorkflowNotFoundError(`Triggered workflow not found: ${triggeredWorkflowId}`, triggeredWorkflowId);
     }
 
     // 准备输入数据（仅包含触发事件相关的数据）

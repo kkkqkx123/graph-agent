@@ -6,7 +6,7 @@
 
 import type { Tool, StatelessToolConfig, StatefulToolConfig, McpToolConfig } from '@modular-agent/types/tool';
 import { ToolType } from '@modular-agent/types/tool';
-import { ValidationError, NotFoundError } from '@modular-agent/types/errors';
+import { ConfigurationValidationError, ToolNotFoundError } from '@modular-agent/types/errors';
 
 /**
  * 工具注册表类
@@ -25,10 +25,13 @@ export class ToolRegistry {
 
     // 检查工具名称是否已存在
     if (this.tools.has(tool.name)) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         `Tool with name '${tool.name}' already exists`,
-        'name',
-        tool.name
+        {
+          configType: 'tool',
+          field: 'name',
+          value: tool.name
+        }
       );
     }
 
@@ -71,9 +74,8 @@ export class ToolRegistry {
    */
   remove(toolName: string): void {
     if (!this.tools.has(toolName)) {
-      throw new NotFoundError(
+      throw new ToolNotFoundError(
         `Tool '${toolName}' not found`,
-        'tool',
         toolName
       );
     }
@@ -132,61 +134,82 @@ export class ToolRegistry {
   validate(tool: Tool): boolean {
     // 验证必需字段
     if (!tool.name || typeof tool.name !== 'string') {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Tool name is required and must be a string',
-        'name',
-        tool.name
+        {
+          configType: 'tool',
+          field: 'name',
+          value: tool.name
+        }
       );
     }
 
     if (!tool.type || typeof tool.type !== 'string') {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Tool type is required and must be a string',
-        'type',
-        tool.type
+        {
+          configType: 'tool',
+          field: 'type',
+          value: tool.type
+        }
       );
     }
 
     if (!tool.description || typeof tool.description !== 'string') {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Tool description is required and must be a string',
-        'description',
-        tool.description
+        {
+          configType: 'tool',
+          field: 'description',
+          value: tool.description
+        }
       );
     }
 
     // 验证参数schema
     if (!tool.parameters) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Tool parameters schema is required',
-        'parameters',
-        tool.parameters
+        {
+          configType: 'tool',
+          field: 'parameters',
+          value: tool.parameters
+        }
       );
     }
 
     if (!tool.parameters.properties || typeof tool.parameters.properties !== 'object') {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Tool parameters properties is required and must be an object',
-        'parameters.properties',
-        tool.parameters.properties
+        {
+          configType: 'tool',
+          field: 'parameters.properties',
+          value: tool.parameters.properties
+        }
       );
     }
 
     if (!Array.isArray(tool.parameters.required)) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Tool parameters required is required and must be an array',
-        'parameters.required',
-        tool.parameters.required
+        {
+          configType: 'tool',
+          field: 'parameters.required',
+          value: tool.parameters.required
+        }
       );
     }
 
     // 验证required参数是否在properties中定义
     for (const requiredParam of tool.parameters.required) {
       if (!(requiredParam in tool.parameters.properties)) {
-        throw new ValidationError(
+        throw new ConfigurationValidationError(
           `Required parameter '${requiredParam}' is not defined in properties`,
-          'parameters.required',
-          tool.parameters.required
+          {
+            configType: 'tool',
+            field: 'parameters.required',
+            value: requiredParam
+          }
         );
       }
     }
@@ -197,10 +220,13 @@ export class ToolRegistry {
         case ToolType.STATELESS: {
           const config = tool.config as StatelessToolConfig;
           if (!config.execute || typeof config.execute !== 'function') {
-            throw new ValidationError(
+            throw new ConfigurationValidationError(
               'STATELESS tool must have an execute function in config',
-              'config.execute',
-              tool.config
+              {
+                configType: 'tool',
+                field: 'config.execute',
+                context: { toolType: tool.type }
+              }
             );
           }
           break;
@@ -209,10 +235,13 @@ export class ToolRegistry {
         case ToolType.STATEFUL: {
           const config = tool.config as StatefulToolConfig;
           if (!config.factory || typeof config.factory.create !== 'function') {
-            throw new ValidationError(
+            throw new ConfigurationValidationError(
               'STATEFUL tool must have a factory with create function in config',
-              'config.factory',
-              tool.config
+              {
+                configType: 'tool',
+                field: 'config.factory',
+                context: { toolType: tool.type }
+              }
             );
           }
           break;
@@ -225,27 +254,36 @@ export class ToolRegistry {
         case ToolType.MCP: {
           const config = tool.config as McpToolConfig;
           if (!config.serverName || typeof config.serverName !== 'string') {
-            throw new ValidationError(
+            throw new ConfigurationValidationError(
               'MCP tool must have a serverName in config',
-              'config.serverName',
-              tool.config
+              {
+                configType: 'tool',
+                field: 'config.serverName',
+                value: config.serverName
+              }
             );
           }
           break;
         }
 
         default:
-          throw new ValidationError(
+          throw new ConfigurationValidationError(
             `Unknown tool type: ${tool.type}`,
-            'type',
-            tool.type
+            {
+              configType: 'tool',
+              field: 'type',
+              value: tool.type
+            }
           );
       }
     } else if (tool.type === ToolType.STATELESS || tool.type === ToolType.STATEFUL || tool.type === ToolType.MCP) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         `${tool.type} tool must have a config`,
-        'config',
-        tool.config
+        {
+          configType: 'tool',
+          field: 'config',
+          value: tool.config
+        }
       );
     }
 

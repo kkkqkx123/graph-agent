@@ -4,7 +4,7 @@
  */
 
 import type { Script } from '@modular-agent/types/code';
-import { ValidationError, NotFoundError } from '@modular-agent/types/errors';
+import { ValidationError, NotFoundError, ConfigurationValidationError, ScriptNotFoundError } from '@modular-agent/types/errors';
 
 /**
  * 脚本注册表类
@@ -29,10 +29,12 @@ export class CodeRegistry {
 
     // 检查脚本名称是否已存在
     if (this.scripts.has(script.name)) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         `Script with name '${script.name}' already exists`,
-        'name',
-        script.name
+        {
+          configType: 'script',
+          field: 'name'
+        }
       );
     }
 
@@ -75,9 +77,8 @@ export class CodeRegistry {
    */
   remove(scriptName: string): void {
     if (!this.scripts.has(scriptName)) {
-      throw new NotFoundError(
+      throw new ScriptNotFoundError(
         `Script '${scriptName}' not found`,
-        'script',
         scriptName
       );
     }
@@ -136,80 +137,98 @@ export class CodeRegistry {
   validate(script: Script): boolean {
     // 验证必需字段
     if (!script.name || typeof script.name !== 'string') {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Script name is required and must be a string',
-        'name',
-        script.name
+        {
+          configType: 'script',
+          field: 'name'
+        }
       );
     }
 
     if (!script.type || typeof script.type !== 'string') {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Script type is required and must be a string',
-        'type',
-        script.type
+        {
+          configType: 'script',
+          field: 'type'
+        }
       );
     }
 
     if (!script.description || typeof script.description !== 'string') {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Script description is required and must be a string',
-        'description',
-        script.description
+        {
+          configType: 'script',
+          field: 'description'
+        }
       );
     }
 
     // 验证脚本内容或文件路径至少有一个
     if (!script.content && !script.filePath) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Script must have either content or filePath',
-        'content',
-        script.content
+        {
+          configType: 'script',
+          field: 'content'
+        }
       );
     }
 
     // 验证执行选项
     if (!script.options) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Script options are required',
-        'options',
-        script.options
+        {
+          configType: 'script',
+          field: 'options'
+        }
       );
     }
 
     // 验证超时时间
     if (script.options.timeout !== undefined && script.options.timeout < 0) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Script timeout must be a positive number',
-        'options.timeout',
-        script.options.timeout
+        {
+          configType: 'script',
+          field: 'options.timeout'
+        }
       );
     }
 
     // 验证重试次数
     if (script.options.retries !== undefined && script.options.retries < 0) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Script retries must be a non-negative number',
-        'options.retries',
-        script.options.retries
+        {
+          configType: 'script',
+          field: 'options.retries'
+        }
       );
     }
 
     // 验证重试延迟
     if (script.options.retryDelay !== undefined && script.options.retryDelay < 0) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Script retryDelay must be a non-negative number',
-        'options.retryDelay',
-        script.options.retryDelay
+        {
+          configType: 'script',
+          field: 'options.retryDelay'
+        }
       );
     }
 
     // 验证 enabled 字段（如果提供）
     if (script.enabled !== undefined && typeof script.enabled !== 'boolean') {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Script enabled must be a boolean',
-        'enabled',
-        script.enabled
+        {
+          configType: 'script',
+          field: 'enabled'
+        }
       );
     }
 
@@ -242,9 +261,8 @@ export class CodeRegistry {
   update(scriptName: string, updates: Partial<Script>): void {
     const script = this.get(scriptName);
     if (!script) {
-      throw new NotFoundError(
+      throw new ScriptNotFoundError(
         `Script '${scriptName}' not found`,
-        'script',
         scriptName
       );
     }

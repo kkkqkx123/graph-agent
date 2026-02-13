@@ -18,7 +18,7 @@
 import type { ThreadVariable } from '@modular-agent/types/thread';
 import type { VariableScope } from '@modular-agent/types/common';
 import type { WorkflowVariable } from '@modular-agent/types/workflow';
-import { ValidationError } from '@modular-agent/types/errors';
+import { ValidationError, RuntimeValidationError } from '@modular-agent/types/errors';
 import type { LifecycleCapable } from './lifecycle-capable';
 
 /**
@@ -197,7 +197,7 @@ export class VariableStateManager implements LifecycleCapable<{
         break;
       case 'local':
         if (this.variableScopes.local.length === 0) {
-          throw new ValidationError('Cannot set local variable outside of local scope context', 'scope');
+          throw new RuntimeValidationError('Cannot set local variable outside of local scope context', { operation: 'setVariable', field: 'scope' });
         }
         const localScope = this.variableScopes.local[this.variableScopes.local.length - 1];
         if (localScope) {
@@ -206,7 +206,7 @@ export class VariableStateManager implements LifecycleCapable<{
         break;
       case 'loop':
         if (this.variableScopes.loop.length === 0) {
-          throw new ValidationError('Cannot set loop variable outside of loop context', 'scope');
+          throw new RuntimeValidationError('Cannot set loop variable outside of loop context', { operation: 'setVariable', field: 'scope' });
         }
         const loopScope = this.variableScopes.loop[this.variableScopes.loop.length - 1];
         if (loopScope) {
@@ -270,7 +270,7 @@ export class VariableStateManager implements LifecycleCapable<{
    */
   exitLocalScope(): void {
     if (this.variableScopes.local.length === 0) {
-      throw new ValidationError('No local scope to exit', 'scope');
+      throw new RuntimeValidationError('No local scope to exit', { operation: 'exitLocalScope', field: 'scope' });
     }
     this.variableScopes.local.pop();
   }
@@ -296,7 +296,7 @@ export class VariableStateManager implements LifecycleCapable<{
    */
   exitLoopScope(): void {
     if (this.variableScopes.loop.length === 0) {
-      throw new ValidationError('No loop scope to exit', 'scope');
+      throw new RuntimeValidationError('No loop scope to exit', { operation: 'exitLoopScope', field: 'scope' });
     }
     this.variableScopes.loop.pop();
   }

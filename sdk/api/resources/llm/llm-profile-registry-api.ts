@@ -6,7 +6,7 @@
 
 import { ProfileManager } from '../../../core/llm/profile-manager';
 import type { LLMProfile, LLMProvider } from '@modular-agent/types/llm';
-import { ValidationError, NotFoundError, SDKError } from '@modular-agent/types/errors';
+import { ValidationError, NotFoundError, SDKError, ConfigurationValidationError, NodeTemplateNotFoundError } from '@modular-agent/types/errors';
 import { GenericResourceAPI } from '../generic-resource-api';
 import { getErrorMessage } from '@modular-agent/sdk/api/types/execution-result';
 import type { APIDependencies } from '../../core/api-dependencies';
@@ -234,31 +234,34 @@ export class LLMProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string
       // 验证Profile
       const validation = await this.validateProfile(profile);
       if (!validation.valid) {
-        throw new ValidationError(
+        throw new ConfigurationValidationError(
           `Invalid profile: ${validation.errors.join(', ')}`,
-          'profile',
-          profile,
-          { validationErrors: validation.errors }
+          {
+            configType: 'llm',
+            context: { validationErrors: validation.errors }
+          }
         );
       }
 
       // 检查API Key是否被隐藏
       if (profile.apiKey === '***HIDDEN***') {
-        throw new ValidationError(
+        throw new ConfigurationValidationError(
           'Cannot import profile with hidden API key',
-          'apiKey',
-          '***HIDDEN***',
-          { profileId: profile.id, reason: 'security' }
+          {
+            configType: 'llm',
+            context: { profileId: profile.id, reason: 'security' }
+          }
         );
       }
 
       const result = await this.create(profile);
       if (!result.success) {
-        throw new ValidationError(
+        throw new ConfigurationValidationError(
           `Failed to import profile: ${result.error}`,
-          'profile',
-          profile,
-          { importError: result.error }
+          {
+            configType: 'llm',
+            context: { importError: result.error }
+          }
         );
       }
 
@@ -267,11 +270,13 @@ export class LLMProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string
       if (error instanceof ValidationError) {
         throw error;
       }
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         `Failed to import profile: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'json',
-        json,
-        { parseError: error instanceof Error ? error.message : 'Unknown error' }
+        {
+          configType: 'llm',
+          configPath: 'profile',
+          context: { parseError: error instanceof Error ? error.message : 'Unknown error' }
+        }
       );
     }
   }
@@ -285,11 +290,13 @@ export class LLMProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string
     try {
       const profiles = JSON.parse(json) as LLMProfile[];
       if (!Array.isArray(profiles)) {
-        throw new ValidationError(
+        throw new ConfigurationValidationError(
           'Invalid format: expected array of profiles',
-          'profiles',
-          profiles,
-          { expectedType: 'array', receivedType: typeof profiles }
+          {
+            configType: 'llm',
+            configPath: 'profiles',
+            context: { expectedType: 'array', receivedType: typeof profiles }
+          }
         );
       }
 
@@ -304,12 +311,11 @@ export class LLMProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string
       if (error instanceof ValidationError) {
         throw error;
       }
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         `Failed to import profiles: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'profiles',
-        undefined,
         {
-          parseError: error instanceof Error ? error.message : 'Unknown error'
+          configType: 'llm',
+          configPath: 'profiles'
         }
       );
     }
@@ -341,9 +347,8 @@ export class LLMProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string
   async createFromTemplate(templateName: string, overrides: Partial<LLMProfile>): Promise<string> {
     const template = this.templates.get(templateName);
     if (!template) {
-      throw new NotFoundError(
+      throw new NodeTemplateNotFoundError(
         `Template not found: ${templateName}`,
-        'template',
         templateName,
         { templateName }
       );
@@ -367,11 +372,12 @@ export class LLMProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string
 
     const result = await this.create(profile);
     if (!result.success) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         `Failed to create profile from template: ${result.error}`,
-        'profile',
-        profile,
-        { templateName, createError: result.error }
+        {
+          configType: 'llm',
+          configPath: 'profile'
+        }
       );
     }
 

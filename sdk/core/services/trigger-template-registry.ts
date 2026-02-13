@@ -10,7 +10,7 @@ import type {
   TriggerTemplateSummary
 } from '@modular-agent/types/trigger-template';
 import type { WorkflowTrigger } from '@modular-agent/types/trigger';
-import { ValidationError, NotFoundError } from '@modular-agent/types/errors';
+import { ValidationError, NotFoundError, ConfigurationValidationError, TriggerTemplateNotFoundError } from '@modular-agent/types/errors';
 import { EventType } from '@modular-agent/types/events';
 import { TriggerActionType } from '@modular-agent/types/trigger';
 
@@ -31,9 +31,12 @@ class TriggerTemplateRegistry {
 
     // 检查名称是否已存在
     if (this.templates.has(template.name)) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         `Trigger template with name '${template.name}' already exists`,
-        'template.name'
+        {
+          configType: 'trigger',
+          configPath: 'template.name'
+        }
       );
     }
 
@@ -79,9 +82,8 @@ class TriggerTemplateRegistry {
   update(name: string, updates: Partial<TriggerTemplate>): void {
     const template = this.templates.get(name);
     if (!template) {
-      throw new NotFoundError(
+      throw new TriggerTemplateNotFoundError(
         `Trigger template '${name}' not found`,
-        'template',
         name
       );
     }
@@ -108,9 +110,8 @@ class TriggerTemplateRegistry {
    */
   unregister(name: string): void {
     if (!this.templates.has(name)) {
-      throw new NotFoundError(
+      throw new TriggerTemplateNotFoundError(
         `Trigger template '${name}' not found`,
-        'template',
         name
       );
     }
@@ -199,57 +200,78 @@ class TriggerTemplateRegistry {
   private validateTemplate(template: TriggerTemplate): void {
     // 验证必需字段
     if (!template.name || typeof template.name !== 'string') {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Trigger template name is required and must be a string',
-        'template.name'
+        {
+          configType: 'trigger',
+          configPath: 'template.name'
+        }
       );
     }
 
     if (!template.condition) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Trigger template condition is required',
-        'template.condition'
+        {
+          configType: 'trigger',
+          configPath: 'template.condition'
+        }
       );
     }
 
     if (!template.action) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Trigger template action is required',
-        'template.action'
+        {
+          configType: 'trigger',
+          configPath: 'template.action'
+        }
       );
     }
 
     // 验证触发条件
     if (!template.condition.eventType) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Trigger template condition eventType is required',
-        'template.condition.eventType'
+        {
+          configType: 'trigger',
+          configPath: 'template.condition.eventType'
+        }
       );
     }
 
     // 验证事件类型是否有效
     const validEventTypes = Object.values(EventType);
     if (!validEventTypes.includes(template.condition.eventType)) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         `Invalid event type: ${template.condition.eventType}`,
-        'template.condition.eventType'
+        {
+          configType: 'trigger',
+          configPath: 'template.condition.eventType'
+        }
       );
     }
 
     // 验证触发动作
     if (!template.action.type) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Trigger template action type is required',
-        'template.action.type'
+        {
+          configType: 'trigger',
+          configPath: 'template.action.type'
+        }
       );
     }
 
     // 验证动作类型是否有效
     const validActionTypes = Object.values(TriggerActionType);
     if (!validActionTypes.includes(template.action.type)) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         `Invalid action type: ${template.action.type}`,
-        'template.action.type'
+        {
+          configType: 'trigger',
+          configPath: 'template.action.type'
+        }
       );
     }
   }
@@ -263,9 +285,8 @@ class TriggerTemplateRegistry {
   export(name: string): string {
     const template = this.templates.get(name);
     if (!template) {
-      throw new NotFoundError(
+      throw new TriggerTemplateNotFoundError(
         `Trigger template '${name}' not found`,
-        'template',
         name
       );
     }
@@ -287,9 +308,12 @@ class TriggerTemplateRegistry {
       if (error instanceof ValidationError) {
         throw error;
       }
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         `Failed to import trigger template: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'json'
+        {
+          configType: 'trigger',
+          configPath: 'json'
+        }
       );
     }
   }
@@ -316,9 +340,8 @@ class TriggerTemplateRegistry {
   ): WorkflowTrigger {
     const template = this.get(templateName);
     if (!template) {
-      throw new NotFoundError(
+      throw new TriggerTemplateNotFoundError(
         `Trigger template '${templateName}' not found`,
-        'template',
         templateName
       );
     }

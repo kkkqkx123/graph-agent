@@ -6,7 +6,7 @@
  */
 
 import type { LLMProfile } from '@modular-agent/types/llm';
-import { ValidationError, NotFoundError } from '@modular-agent/types/errors';
+import { NotFoundError, ConfigurationValidationError } from '@modular-agent/types/errors';
 
 /**
  * Profile管理器类
@@ -135,47 +135,52 @@ export class ProfileManager {
     */
   private validateProfile(profile: LLMProfile): void {
     if (!profile.id) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Profile ID is required',
-        'profile.id',
-        profile?.id,
-        { profile }
+        {
+          configType: 'llm',
+          configPath: 'profile.id'
+        }
       );
     }
 
     if (!profile.name) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Profile name is required',
-        'profile.name',
-        profile?.name,
-        { profile }
+        {
+          configType: 'llm',
+          configPath: 'profile.name'
+        }
       );
     }
 
     if (!profile.provider) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Profile provider is required',
-        'profile.provider',
-        profile?.provider,
-        { profile }
+        {
+          configType: 'llm',
+          configPath: 'profile.provider'
+        }
       );
     }
 
     if (!profile.model) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Profile model is required',
-        'profile.model',
-        profile?.model,
-        { profile }
+        {
+          configType: 'llm',
+          configPath: 'profile.model'
+        }
       );
     }
 
     if (!profile.apiKey) {
-      throw new ValidationError(
+      throw new ConfigurationValidationError(
         'Profile apiKey is required',
-        'profile.apiKey',
-        profile?.apiKey,
-        { profile, note: 'API key must not be empty' }
+        {
+          configType: 'llm',
+          configPath: 'profile.apiKey'
+        }
       );
     }
   }

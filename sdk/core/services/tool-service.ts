@@ -13,7 +13,7 @@
 import type { Tool } from '@modular-agent/types';
 import type { ThreadContext } from '../execution/context/thread-context';
 import { ToolType } from '@modular-agent/types';
-import { NotFoundError, ToolError } from '@modular-agent/types';
+import { NotFoundError, ToolError, ToolNotFoundError } from '@modular-agent/types/errors';
 import { ToolRegistry } from '../tools/tool-registry';
 import type { IToolExecutor } from '@modular-agent/types/tool';
 import type { ToolExecutionOptions, ToolExecutionResult } from '@modular-agent/types/tool';
@@ -78,9 +78,8 @@ class ToolService {
   getTool(toolName: string): Tool {
     const tool = this.registry.get(toolName);
     if (!tool) {
-      throw new NotFoundError(
+      throw new ToolNotFoundError(
         `Tool '${toolName}' not found`,
-        'tool',
         toolName
       );
     }

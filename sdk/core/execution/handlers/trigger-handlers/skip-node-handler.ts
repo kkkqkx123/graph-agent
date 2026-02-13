@@ -5,7 +5,7 @@
 
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types/trigger';
 import type { NodeExecutionResult } from '@modular-agent/types/thread';
-import { ValidationError, NotFoundError } from '@modular-agent/types/errors';
+import { ValidationError, NotFoundError, RuntimeValidationError, ThreadContextNotFoundError } from '@modular-agent/types/errors';
 import { EventType } from '@modular-agent/types/events';
 import { ExecutionContext } from '../../context/execution-context';
 
@@ -77,7 +77,7 @@ export async function skipNodeHandler(
     const threadContext = threadRegistry.get(threadId);
 
     if (!threadContext) {
-      throw new NotFoundError(`ThreadContext not found: ${threadId}`, 'ThreadContext', threadId);
+      throw new ThreadContextNotFoundError(`ThreadContext not found: ${threadId}`, threadId);
     }
 
     const thread = threadContext.thread;

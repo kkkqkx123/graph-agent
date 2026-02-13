@@ -9,7 +9,7 @@
  */
 
 import type { BaseEvent, EventType, EventListener } from '@modular-agent/types/events';
-import { ValidationError, ExecutionError } from '@modular-agent/types/errors';
+import { ValidationError, ExecutionError, RuntimeValidationError } from '@modular-agent/types/errors';
 import { now, generateId } from '@modular-agent/common-utils';
 
 /**
@@ -77,10 +77,10 @@ class EventManager {
   ): () => void {
     // 验证参数
     if (!eventType) {
-      throw new ValidationError('EventType is required', 'eventType');
+      throw new RuntimeValidationError('EventType is required', { field: 'eventType' });
     }
     if (typeof listener !== 'function') {
-      throw new ValidationError('Listener must be a function', 'listener');
+      throw new RuntimeValidationError('Listener must be a function', { field: 'listener' });
     }
 
     // 创建监听器包装器
@@ -124,7 +124,7 @@ class EventManager {
    */
   offById(eventType: EventType, listenerId: string): boolean {
     if (!eventType) {
-      throw new ValidationError('EventType is required', 'eventType');
+      throw new RuntimeValidationError('EventType is required', { field: 'eventType' });
     }
 
     const wrappers = this.globalListeners.get(eventType);
@@ -155,10 +155,10 @@ class EventManager {
   private unregisterGlobalListener<T>(eventType: string, listener: (event: T) => void | Promise<void>): boolean {
     // 验证参数
     if (!eventType) {
-      throw new ValidationError('EventType is required', 'eventType');
+      throw new RuntimeValidationError('EventType is required', { field: 'eventType' });
     }
     if (typeof listener !== 'function') {
-      throw new ValidationError('Listener must be a function', 'listener');
+      throw new RuntimeValidationError('Listener must be a function', { field: 'listener' });
     }
 
     // 获取监听器数组
@@ -191,10 +191,10 @@ class EventManager {
   async emit<T extends BaseEvent>(event: T): Promise<void> {
     // 验证事件
     if (!event) {
-      throw new ValidationError('Event is required', 'event');
+      throw new RuntimeValidationError('Event is required', { field: 'event' });
     }
     if (!event.type) {
-      throw new ValidationError('Event type is required', 'event.type');
+      throw new RuntimeValidationError('Event type is required', { field: 'event.type' });
     }
 
     // 添加传播控制标志
@@ -279,10 +279,10 @@ class EventManager {
   ): () => void {
     // 验证参数
     if (!eventType) {
-      throw new ValidationError('EventType is required', 'eventType');
+      throw new RuntimeValidationError('EventType is required', { field: 'eventType' });
     }
     if (typeof listener !== 'function') {
-      throw new ValidationError('Listener must be a function', 'listener');
+      throw new RuntimeValidationError('Listener must be a function', { field: 'listener' });
     }
 
     // 创建包装监听器

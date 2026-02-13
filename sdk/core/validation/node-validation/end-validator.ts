@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import type { Node } from '@modular-agent/types/node';
 import { NodeType } from '@modular-agent/types/node';
-import { ValidationError } from '@modular-agent/types/errors';
+import { ConfigurationValidationError } from '@modular-agent/types/errors';
 import type { Result } from '@modular-agent/types/result';
 import { ok, err } from '@modular-agent/common-utils';
 
@@ -20,14 +20,20 @@ const endNodeConfigSchema = z.object({}).strict();
  * @param node 节点定义
  * @returns 验证结果
  */
-export function validateEndNode(node: Node): Result<Node, ValidationError[]> {
+export function validateEndNode(node: Node): Result<Node, ConfigurationValidationError[]> {
   if (node.type !== NodeType.END) {
-    return err([new ValidationError(`Invalid node type for end validator: ${node.type}`, `node.${node.id}`)]);
+    return err([new ConfigurationValidationError(`Invalid node type for end validator: ${node.type}`, {
+      configType: 'node',
+      configPath: `node.${node.id}`
+    })]);
   }
 
   const result = endNodeConfigSchema.safeParse(node.config || {});
   if (!result.success) {
-    return err([new ValidationError('END node must have no configuration', `node.${node.id}.config`)]);
+    return err([new ConfigurationValidationError('END node must have no configuration', {
+      configType: 'node',
+      configPath: `node.${node.id}.config`
+    })]);
   }
   return ok(node);
 }

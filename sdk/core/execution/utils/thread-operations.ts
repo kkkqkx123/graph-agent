@@ -9,7 +9,7 @@ import type { ThreadContext } from '../context/thread-context';
 import type { ThreadBuilder } from '../thread-builder';
 import type { ThreadRegistry } from '../../services/thread-registry';
 import type { EventManager } from '../../services/event-manager';
-import { ExecutionError, TimeoutError, ValidationError } from '@modular-agent/types/errors';
+import { ExecutionError, RuntimeValidationError } from '@modular-agent/types/errors';
 import {
   buildThreadForkStartedEvent,
   buildThreadForkCompletedEvent,
@@ -71,11 +71,15 @@ export async function fork(
 ): Promise<ThreadContext> {
   // 步骤1：验证 Fork 配置
   if (!forkConfig.forkId) {
-    throw new ValidationError('Fork config must have forkId', 'fork.forkId');
+    throw new RuntimeValidationError('Fork config must have forkId', {
+      field: 'fork.forkId'
+    });
   }
 
   if (forkConfig.forkStrategy && forkConfig.forkStrategy !== 'serial' && forkConfig.forkStrategy !== 'parallel') {
-    throw new ValidationError(`Invalid forkStrategy: ${forkConfig.forkStrategy}`, 'fork.forkStrategy');
+    throw new RuntimeValidationError(`Invalid forkStrategy: ${forkConfig.forkStrategy}`, {
+      field: 'fork.forkStrategy'
+    });
   }
 
   // 触发THREAD_FORK_STARTED事件
@@ -121,11 +125,15 @@ export async function join(
 ): Promise<JoinResult> {
   // 步骤1：验证 Join 配置
   if (!joinStrategy) {
-    throw new ValidationError('Join config must have joinStrategy', 'join.joinStrategy');
+    throw new RuntimeValidationError('Join config must have joinStrategy', {
+      field: 'join.joinStrategy'
+    });
   }
 
   if (timeout < 0) {
-    throw new ValidationError('Join timeout must be non-negative', 'join.timeout');
+    throw new RuntimeValidationError('Join timeout must be non-negative', {
+      field: 'join.timeout'
+    });
   }
 
   // 触发THREAD_JOIN_STARTED事件
@@ -174,7 +182,7 @@ export async function join(
       const mainThread = completedThreads.find(thread =>
         thread.forkJoinContext?.forkPathId === mainPathId
       );
-      
+
       if (!mainThread) {
         throw new ExecutionError(
           `Main thread not found for mainPathId: ${mainPathId}`,
@@ -183,7 +191,7 @@ export async function join(
           { mainPathId, completedThreadIds: completedThreads.map(t => t.id) }
         );
       }
-      
+
       const mainThreadContext = threadRegistry.get(mainThread.id);
       if (!mainThreadContext) {
         throw new ExecutionError(
@@ -193,7 +201,7 @@ export async function join(
           { mainPathId, mainThreadId: mainThread.id }
         );
       }
-      
+
       try {
         // 将主线程的ConversationManager内容复制到父线程
         parentThreadContext.conversationManager.restoreFromSnapshot(
@@ -377,7 +385,7 @@ async function waitForCompletion(
       break;
 
     default:
-      throw new ValidationError(`Invalid join strategy: ${joinStrategy}`, 'joinStrategy');
+      throw new RuntimeValidationError(`Invalid join strategy: ${joinStrategy}`, { field: 'joinStrategy', value: joinStrategy });
   }
 
   // 触发THREAD_JOIN_CONDITION_MET事件

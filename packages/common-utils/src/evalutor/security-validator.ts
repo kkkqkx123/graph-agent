@@ -10,7 +10,7 @@
  */
 
 import { z } from 'zod';
-import { ValidationError } from '@modular-agent/types/errors';
+import { ValidationError, RuntimeValidationError } from '@modular-agent/types/errors';
 
 /**
  * 安全配置
@@ -65,10 +65,13 @@ export function validateExpression(expression: string): void {
   const result = expressionSchema.safeParse(expression);
   if (!result.success) {
     const message = result.error.issues[0]?.message || 'Expression validation failed';
-    throw new ValidationError(
+    throw new RuntimeValidationError(
       message,
-      'expression',
-      expression
+      {
+        operation: 'validateExpression',
+        field: 'expression',
+        value: expression
+      }
     );
   }
 }
@@ -81,20 +84,26 @@ export function validateExpression(expression: string): void {
 export function validatePath(path: string): void {
   // 检查是否为字符串
   if (!path || typeof path !== 'string') {
-    throw new ValidationError(
+    throw new RuntimeValidationError(
       'Path must be a non-empty string',
-      'path',
-      path
+      {
+        operation: 'validatePath',
+        field: 'path',
+        value: path
+      }
     );
   }
 
   // 检查是否包含禁止的属性
   for (const forbidden of SECURITY_CONFIG.FORBIDDEN_PROPERTIES) {
     if (path.includes(forbidden)) {
-      throw new ValidationError(
+      throw new RuntimeValidationError(
         `Path contains forbidden property: ${forbidden}`,
-        'path',
-        path
+        {
+          operation: 'validatePath',
+          field: 'path',
+          value: path
+        }
       );
     }
   }
@@ -103,20 +112,26 @@ export function validatePath(path: string): void {
   const result = pathSchema.safeParse(path);
   if (!result.success) {
     const message = result.error.issues[0]?.message || 'Path validation failed';
-    throw new ValidationError(
+    throw new RuntimeValidationError(
       message,
-      'path',
-      path
+      {
+        operation: 'validatePath',
+        field: 'path',
+        value: path
+      }
     );
   }
 
   // 检查路径深度
   const depth = path.split('.').length;
   if (depth > SECURITY_CONFIG.MAX_PATH_DEPTH) {
-    throw new ValidationError(
+    throw new RuntimeValidationError(
       `Path depth exceeds maximum limit of ${SECURITY_CONFIG.MAX_PATH_DEPTH}`,
-      'path',
-      path
+      {
+        operation: 'validatePath',
+        field: 'path',
+        value: path
+      }
     );
   }
 }
@@ -131,20 +146,26 @@ export function validateArrayIndex(array: any[], index: number): void {
   const arraySchema = z.array(z.any());
   const arrayResult = arraySchema.safeParse(array);
   if (!arrayResult.success) {
-    throw new ValidationError(
+    throw new RuntimeValidationError(
       'Target is not an array',
-      'array',
-      array
+      {
+        operation: 'validateArrayAccess',
+        field: 'array',
+        value: array
+      }
     );
   }
 
   const indexSchema = z.number().int().nonnegative().max(array.length - 1);
   const indexResult = indexSchema.safeParse(index);
   if (!indexResult.success) {
-    throw new ValidationError(
+    throw new RuntimeValidationError(
       `Array index ${index} out of bounds. Array length is ${array.length}`,
-      'index',
-      index
+      {
+        operation: 'validateArrayAccess',
+        field: 'index',
+        value: index
+      }
     );
   }
 }
@@ -174,10 +195,13 @@ export function validateValueType(value: any): void {
       message = result.error.issues[0]?.message || 'Value type validation failed';
     }
 
-    throw new ValidationError(
+    throw new RuntimeValidationError(
       message,
-      'value',
-      value
+      {
+        operation: 'validateType',
+        field: 'value',
+        value: value
+      }
     );
   }
 }

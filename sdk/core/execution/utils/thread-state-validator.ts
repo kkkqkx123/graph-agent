@@ -13,7 +13,7 @@
  */
 
 import type { ThreadStatus } from '@modular-agent/types/thread';
-import { ValidationError } from '@modular-agent/types/errors';
+import { RuntimeValidationError } from '@modular-agent/types/errors';
 
 /**
  * 状态转换规则定义
@@ -58,11 +58,13 @@ export function validateTransition(
   targetStatus: ThreadStatus
 ): void {
   if (!isValidTransition(currentStatus, targetStatus)) {
-    throw new ValidationError(
+    throw new RuntimeValidationError(
       `Invalid state transition: ${currentStatus} -> ${targetStatus}`,
-      'thread.status',
-      currentStatus,
-      { threadId, currentStatus, targetStatus }
+      {
+        operation: 'validateStateTransition',
+        field: 'thread.status',
+        value: { currentStatus, targetStatus }
+      }
     );
   }
 }

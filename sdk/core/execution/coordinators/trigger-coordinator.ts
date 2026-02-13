@@ -28,7 +28,7 @@ import type {
 import type { BaseEvent, NodeCustomEvent } from '@modular-agent/types/events';
 import type { ID } from '@modular-agent/types/common';
 import { getTriggerHandler } from '../handlers/trigger-handlers';
-import { ValidationError, ExecutionError } from '@modular-agent/types/errors';
+import { ValidationError, ExecutionError, ConfigurationValidationError, RuntimeValidationError } from '@modular-agent/types/errors';
 import { EventType } from '@modular-agent/types/events';
 import { now } from '@modular-agent/common-utils';
 import type { ThreadRegistry } from '../../services/thread-registry';
@@ -84,21 +84,33 @@ export class TriggerCoordinator {
   register(workflowTrigger: WorkflowTrigger, workflowId: ID): void {
     // 验证触发器
     if (!workflowTrigger.id) {
-      throw new ValidationError('触发器 ID 不能为空', 'trigger.id');
+      throw new ConfigurationValidationError('触发器 ID 不能为空', {
+        configType: 'trigger',
+        configPath: 'trigger.id'
+      });
     }
     if (!workflowTrigger.name) {
-      throw new ValidationError('触发器名称不能为空', 'trigger.name');
+      throw new ConfigurationValidationError('触发器名称不能为空', {
+        configType: 'trigger',
+        configPath: 'trigger.name'
+      });
     }
     if (!workflowTrigger.condition || !workflowTrigger.condition.eventType) {
-      throw new ValidationError('触发条件不能为空', 'trigger.condition');
+      throw new ConfigurationValidationError('触发条件不能为空', {
+        configType: 'trigger',
+        configPath: 'trigger.condition'
+      });
     }
     if (!workflowTrigger.action || !workflowTrigger.action.type) {
-      throw new ValidationError('触发动作不能为空', 'trigger.action');
+      throw new ConfigurationValidationError('触发动作不能为空', {
+        configType: 'trigger',
+        configPath: 'trigger.action'
+      });
     }
 
     // 检查是否已存在
     if (this.stateManager.hasState(workflowTrigger.id)) {
-      throw new ValidationError(`触发器状态 ${workflowTrigger.id} 已存在`, 'trigger.id', workflowTrigger.id);
+      throw new RuntimeValidationError(`触发器状态 ${workflowTrigger.id} 已存在`, { operation: 'registerTrigger', field: 'trigger.id', value: workflowTrigger.id });
     }
 
     // 创建运行时状态

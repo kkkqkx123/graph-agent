@@ -4,7 +4,7 @@
  */
 
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types/trigger';
-import { NotFoundError, ValidationError } from '@modular-agent/types/errors';
+import { NotFoundError, ValidationError, RuntimeValidationError, ThreadContextNotFoundError } from '@modular-agent/types/errors';
 import { ExecutionContext } from '../../context/execution-context';
 
 /**
@@ -63,7 +63,7 @@ export async function setVariableHandler(
     const { threadId, variables } = action.parameters;
 
     if (!threadId || !variables) {
-      throw new ValidationError('Missing required parameters: threadId and variables');
+      throw new RuntimeValidationError('Missing required parameters: threadId and variables', { operation: 'handle' });
     }
 
     // 获取ThreadContext
@@ -71,7 +71,7 @@ export async function setVariableHandler(
     const threadContext = threadRegistry.get(threadId);
 
     if (!threadContext) {
-      throw new NotFoundError(`ThreadContext not found: ${threadId}`, 'ThreadContext', threadId);
+      throw new ThreadContextNotFoundError(`ThreadContext not found: ${threadId}`, threadId);
     }
 
     // 使用ThreadContext的updateVariable方法更新已定义的变量
