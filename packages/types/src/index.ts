@@ -26,6 +26,7 @@ export * from './trigger-template';
 // 集成类型
 export * from './tool';
 export * from './llm';
+export * from './message';
 export * from './code';
 export * from './checkpoint';
 export * from './checkpoint-storage';

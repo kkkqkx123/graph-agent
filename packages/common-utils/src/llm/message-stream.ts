@@ -387,6 +387,8 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
           break;
         }
         const lastBlock = this.currentMessageSnapshot.content[this.currentMessageSnapshot.content.length - 1];
+        if (!lastBlock) break;
+        
         if (event.data.delta.type === 'text_delta') {
           if (lastBlock.type === 'text') {
             lastBlock.text += event.data.delta.text;
@@ -399,17 +401,34 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
             } as MessageStreamTextEvent);
           }
         } else if (event.data.delta.type === 'input_json_delta') {
-          if (lastBlock.type === 'tool_use') {
-            if (!lastBlock.input) {
-              lastBlock.input = '';
+          if (lastBlock.type === 'tool_use' && lastBlock.tool_use) {
+            // 如果 input 已经是对象，说明 API 已经提供了完整的 input，不需要追加
+            // 只有当 input 是字符串或 undefined 时才追加 JSON 片段
+            if (typeof lastBlock.tool_use.input !== 'object') {
+              const currentInput = typeof lastBlock.tool_use.input === 'string'
+                ? lastBlock.tool_use.input
+                : '';
+              lastBlock.tool_use.input = currentInput + event.data.delta.partial_json;
             }
-            lastBlock.input += event.data.delta.partial_json;
           }
         }
         break;
 
       case 'content_block_stop':
-        // 不做任何操作
+        // 尝试将 tool_use 的 input 从字符串解析为对象
+        if (this.currentMessageSnapshot && Array.isArray(this.currentMessageSnapshot.content)) {
+          const lastBlock = this.currentMessageSnapshot.content[this.currentMessageSnapshot.content.length - 1];
+          if (lastBlock && lastBlock.type === 'tool_use' && lastBlock.tool_use) {
+            if (typeof lastBlock.tool_use.input === 'string') {
+              try {
+                lastBlock.tool_use.input = JSON.parse(lastBlock.tool_use.input);
+              } catch (e) {
+                // 如果解析失败，保持为字符串
+                console.warn('Failed to parse tool_use.input as JSON:', e);
+              }
+            }
+          }
+        }
         break;
 
       case 'message_stop':

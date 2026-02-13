@@ -1,0 +1,408 @@
+/**
+ * 消息数组管理器实现
+ * 实现消息数组管理的核心逻辑
+ */
+
+import type {
+  Message,
+  MessageArrayState,
+  MessageOperationConfig,
+  MessageOperationResult,
+  MessageArrayStats,
+  BatchSnapshot,
+  AppendMessageOperation,
+  InsertMessageOperation,
+  ReplaceMessageOperation,
+  TruncateMessageOperation,
+  ClearMessageOperation,
+  FilterMessageOperation,
+  RollbackMessageOperation
+} from '@modular-agent/types';
+import type { MessageArrayManager } from './message-array-manager';
+
+/**
+ * 消息数组管理器实现类
+ */
+export class MessageArrayManagerImpl implements MessageArrayManager {
+  private state: MessageArrayState;
+  
+  constructor(initialMessages: Message[] = []) {
+    this.state = {
+      messages: initialMessages,
+      batchSnapshots: [],
+      currentBatchIndex: 0,
+      totalMessageCount: initialMessages.length
+    };
+  }
+  
+  execute(operation: MessageOperationConfig): MessageOperationResult {
+    switch (operation.operation) {
+      case 'APPEND':
+        return this.executeAppend(operation as AppendMessageOperation);
+      case 'INSERT':
+        return this.executeInsert(operation as InsertMessageOperation);
+      case 'REPLACE':
+        return this.executeReplace(operation as ReplaceMessageOperation);
+      case 'TRUNCATE':
+        return this.executeTruncate(operation as TruncateMessageOperation);
+      case 'CLEAR':
+        return this.executeClear(operation as ClearMessageOperation);
+      case 'FILTER':
+        return this.executeFilter(operation as FilterMessageOperation);
+      case 'ROLLBACK':
+        return this.executeRollback(operation as RollbackMessageOperation);
+      default:
+        throw new Error(`Unsupported operation type: ${(operation as any).operation}`);
+    }
+  }
+  
+  getState(): MessageArrayState {
+    return { ...this.state };
+  }
+  
+  getCurrentMessages(): Message[] {
+    return [...this.state.messages];
+  }
+  
+  getStats(): MessageArrayStats {
+    return this.calculateStats(this.state);
+  }
+  
+  rollback(batchIndex: number): MessageOperationResult {
+    const operation: RollbackMessageOperation = {
+      operation: 'ROLLBACK',
+      targetBatchIndex: batchIndex
+    };
+    return this.executeRollback(operation);
+  }
+  
+  getBatchSnapshot(batchIndex: number): BatchSnapshot | null {
+    return this.state.batchSnapshots[batchIndex] || null;
+  }
+  
+  /**
+   * 执行 APPEND 操作（低开销，不创建新批次）
+   */
+  private executeAppend(operation: AppendMessageOperation): MessageOperationResult {
+    // 直接追加消息到当前批次
+    const newMessages = [...this.state.messages, ...operation.messages];
+    
+    // 不创建新批次，不创建快照
+    const newState: MessageArrayState = {
+      messages: newMessages,
+      batchSnapshots: this.state.batchSnapshots,
+      currentBatchIndex: this.state.currentBatchIndex,
+      totalMessageCount: newMessages.length
+    };
+    
+    this.state = newState;
+    
+    return {
+      state: this.getState(),
+      affectedBatchIndex: this.state.currentBatchIndex,
+      stats: this.calculateStats(newState)
+    };
+  }
+  
+  /**
+   * 执行 INSERT 操作（高开销，创建新批次）
+   */
+  private executeInsert(operation: InsertMessageOperation): MessageOperationResult {
+    // 验证插入位置
+    if (operation.position < 0 || operation.position > this.state.messages.length) {
+      throw new Error(`Invalid insert position: ${operation.position}. Must be between 0 and ${this.state.messages.length}`);
+    }
+    
+    // 创建当前批次的快照（深拷贝）
+    const snapshot: BatchSnapshot = {
+      batchIndex: this.state.currentBatchIndex,
+      timestamp: Date.now(),
+      messages: JSON.parse(JSON.stringify(this.state.messages)), // 深拷贝
+      messageCount: this.state.messages.length,
+      description: `Before INSERT at position ${operation.position}`
+    };
+    
+    // 执行插入操作
+    const newMessages = [...this.state.messages];
+    newMessages.splice(operation.position, 0, ...operation.messages);
+    
+    // 创建新批次
+    const newBatchIndex = this.state.currentBatchIndex + 1;
+    const newState: MessageArrayState = {
+      messages: newMessages,
+      batchSnapshots: [...this.state.batchSnapshots, snapshot],
+      currentBatchIndex: newBatchIndex,
+      totalMessageCount: newMessages.length
+    };
+    
+    this.state = newState;
+    
+    return {
+      state: this.getState(),
+      affectedBatchIndex: newBatchIndex,
+      stats: this.calculateStats(newState)
+    };
+  }
+  
+  /**
+   * 执行 REPLACE 操作（高开销，创建新批次）
+   */
+  private executeReplace(operation: ReplaceMessageOperation): MessageOperationResult {
+    // 验证替换索引
+    if (operation.index < 0 || operation.index >= this.state.messages.length) {
+      throw new Error(`Invalid replace index: ${operation.index}. Must be between 0 and ${this.state.messages.length - 1}`);
+    }
+    
+    // 创建当前批次的快照（深拷贝）
+    const snapshot: BatchSnapshot = {
+      batchIndex: this.state.currentBatchIndex,
+      timestamp: Date.now(),
+      messages: JSON.parse(JSON.stringify(this.state.messages)), // 深拷贝
+      messageCount: this.state.messages.length,
+      description: `Before REPLACE at index ${operation.index}`
+    };
+    
+    // 执行替换操作
+    const newMessages = [...this.state.messages];
+    newMessages[operation.index] = operation.message;
+    
+    // 创建新批次
+    const newBatchIndex = this.state.currentBatchIndex + 1;
+    const newState: MessageArrayState = {
+      messages: newMessages,
+      batchSnapshots: [...this.state.batchSnapshots, snapshot],
+      currentBatchIndex: newBatchIndex,
+      totalMessageCount: newMessages.length
+    };
+    
+    this.state = newState;
+    
+    return {
+      state: this.getState(),
+      affectedBatchIndex: newBatchIndex,
+      stats: this.calculateStats(newState)
+    };
+  }
+  
+  /**
+   * 执行 TRUNCATE 操作（高开销，创建新批次）
+   */
+  private executeTruncate(operation: TruncateMessageOperation): MessageOperationResult {
+    // 创建当前批次的快照（深拷贝）
+    const snapshot: BatchSnapshot = {
+      batchIndex: this.state.currentBatchIndex,
+      timestamp: Date.now(),
+      messages: JSON.parse(JSON.stringify(this.state.messages)), // 深拷贝
+      messageCount: this.state.messages.length,
+      description: 'Before TRUNCATE'
+    };
+    
+    // 执行截断操作
+    let newMessages = [...this.state.messages];
+    
+    // 按角色过滤
+    if (operation.role) {
+      newMessages = newMessages.filter(msg => msg.role === operation.role);
+    }
+    
+    // 应用截断规则
+    if (operation.keepFirst !== undefined) {
+      newMessages = newMessages.slice(0, operation.keepFirst);
+    } else if (operation.keepLast !== undefined) {
+      newMessages = newMessages.slice(-operation.keepLast);
+    } else if (operation.removeFirst !== undefined) {
+      newMessages = newMessages.slice(operation.removeFirst);
+    } else if (operation.removeLast !== undefined) {
+      newMessages = newMessages.slice(0, -operation.removeLast);
+    } else if (operation.range) {
+      newMessages = newMessages.slice(operation.range.start, operation.range.end);
+    }
+    
+    // 创建新批次
+    const newBatchIndex = this.state.currentBatchIndex + 1;
+    const newState: MessageArrayState = {
+      messages: newMessages,
+      batchSnapshots: [...this.state.batchSnapshots, snapshot],
+      currentBatchIndex: newBatchIndex,
+      totalMessageCount: newMessages.length
+    };
+    
+    this.state = newState;
+    
+    return {
+      state: this.getState(),
+      affectedBatchIndex: newBatchIndex,
+      stats: this.calculateStats(newState)
+    };
+  }
+  
+  /**
+   * 执行 CLEAR 操作（低开销，创建新批次，快照为空）
+   */
+  private executeClear(operation: ClearMessageOperation): MessageOperationResult {
+    // 创建空快照（无额外拷贝开销）
+    const snapshot: BatchSnapshot = {
+      batchIndex: this.state.currentBatchIndex,
+      timestamp: Date.now(),
+      messages: [], // 空数组，无拷贝开销
+      messageCount: 0,
+      description: 'Before CLEAR'
+    };
+    
+    // 执行清空操作
+    const keepSystemMessage = operation.keepSystemMessage ?? true;
+    const newMessages = keepSystemMessage
+      ? this.state.messages.filter((msg: Message) => msg.role === 'system')
+      : [];
+    
+    // 创建新批次
+    const newBatchIndex = this.state.currentBatchIndex + 1;
+    const newState: MessageArrayState = {
+      messages: newMessages,
+      batchSnapshots: [...this.state.batchSnapshots, snapshot],
+      currentBatchIndex: newBatchIndex,
+      totalMessageCount: newMessages.length
+    };
+    
+    this.state = newState;
+    
+    return {
+      state: this.getState(),
+      affectedBatchIndex: newBatchIndex,
+      stats: this.calculateStats(newState)
+    };
+  }
+  
+  /**
+   * 执行 FILTER 操作（高开销，创建新批次）
+   */
+  private executeFilter(operation: FilterMessageOperation): MessageOperationResult {
+    // 创建当前批次的快照（深拷贝）
+    const snapshot: BatchSnapshot = {
+      batchIndex: this.state.currentBatchIndex,
+      timestamp: Date.now(),
+      messages: JSON.parse(JSON.stringify(this.state.messages)), // 深拷贝
+      messageCount: this.state.messages.length,
+      description: 'Before FILTER'
+    };
+    
+    // 执行过滤操作
+    let newMessages = [...this.state.messages];
+    
+    // 按角色过滤
+    if (operation.roles && operation.roles.length > 0) {
+      newMessages = newMessages.filter(msg => operation.roles!.includes(msg.role));
+    }
+    
+    // 按内容关键词过滤（包含）
+    if (operation.contentContains && operation.contentContains.length > 0) {
+      newMessages = newMessages.filter(msg => {
+        const content = this.extractTextContent(msg.content);
+        return operation.contentContains!.some((keyword: string) => content.includes(keyword));
+      });
+    }
+    
+    // 按内容关键词排除（不包含）
+    if (operation.contentExcludes && operation.contentExcludes.length > 0) {
+      newMessages = newMessages.filter(msg => {
+        const content = this.extractTextContent(msg.content);
+        return !operation.contentExcludes!.some((keyword: string) => content.includes(keyword));
+      });
+    }
+    
+    // 创建新批次
+    const newBatchIndex = this.state.currentBatchIndex + 1;
+    const newState: MessageArrayState = {
+      messages: newMessages,
+      batchSnapshots: [...this.state.batchSnapshots, snapshot],
+      currentBatchIndex: newBatchIndex,
+      totalMessageCount: newMessages.length
+    };
+    
+    this.state = newState;
+    
+    return {
+      state: this.getState(),
+      affectedBatchIndex: newBatchIndex,
+      stats: this.calculateStats(newState)
+    };
+  }
+  
+  /**
+   * 执行 ROLLBACK 操作（不创建新批次）
+   */
+  private executeRollback(operation: RollbackMessageOperation): MessageOperationResult {
+    // 验证批次索引
+    if (operation.targetBatchIndex < 0 || operation.targetBatchIndex > this.state.currentBatchIndex) {
+      throw new Error(`Invalid batch index: ${operation.targetBatchIndex}. Must be between 0 and ${this.state.currentBatchIndex}`);
+    }
+    
+    // 获取目标快照
+    const targetSnapshot = this.state.batchSnapshots[operation.targetBatchIndex];
+    
+    if (!targetSnapshot) {
+      // 回退到批次0（初始状态）
+      const newState: MessageArrayState = {
+        messages: [],
+        batchSnapshots: [],
+        currentBatchIndex: 0,
+        totalMessageCount: 0
+      };
+      
+      this.state = newState;
+      
+      return {
+        state: this.getState(),
+        affectedBatchIndex: 0,
+        stats: this.calculateStats(newState)
+      };
+    }
+    
+    // 恢复到目标批次状态
+    const newState: MessageArrayState = {
+      messages: JSON.parse(JSON.stringify(targetSnapshot.messages)), // 深拷贝恢复
+      batchSnapshots: this.state.batchSnapshots.slice(0, operation.targetBatchIndex),
+      currentBatchIndex: operation.targetBatchIndex,
+      totalMessageCount: targetSnapshot.messageCount
+    };
+    
+    this.state = newState;
+    
+    return {
+      state: this.getState(),
+      affectedBatchIndex: operation.targetBatchIndex,
+      stats: this.calculateStats(newState)
+    };
+  }
+  
+  /**
+   * 计算统计信息
+   */
+  private calculateStats(state: MessageArrayState): MessageArrayStats {
+    return {
+      totalMessages: state.messages.length,
+      currentBatchMessages: state.messages.length,
+      totalBatches: state.currentBatchIndex + 1,
+      currentBatchIndex: state.currentBatchIndex
+    };
+  }
+  
+  /**
+   * 提取消息的文本内容
+   */
+  private extractTextContent(content: Message['content']): string {
+    if (typeof content === 'string') {
+      return content;
+    }
+    
+    // 处理数组类型的内容
+    return content
+      .map((item: any) => {
+        if (item.type === 'text') {
+          return item.text || '';
+        }
+        return '';
+      })
+      .join(' ');
+  }
+}
