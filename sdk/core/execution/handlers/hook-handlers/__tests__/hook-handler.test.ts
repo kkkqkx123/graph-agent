@@ -9,27 +9,6 @@ import {
 import { HookType } from '@modular-agent/types/node';
 import type { Node, NodeHook } from '@modular-agent/types/node';
 import type { Thread, NodeExecutionResult } from '@modular-agent/types/thread';
-import type { NodeCustomEvent } from '@modular-agent/types/events';
-
-// Mock condition-evaluator
-jest.mock('../../../../../utils/evalutor/condition-evaluator', () => ({
-  conditionEvaluator: {
-    evaluate: jest.fn()
-  }
-}));
-
-// Mock utils module
-jest.mock('../utils', () => ({
-  buildHookEvaluationContext: jest.fn(),
-  convertToEvaluationContext: jest.fn(),
-  generateHookEventData: jest.fn(),
-  emitHookEvent: jest.fn()
-}));
-
-// Mock createCheckpoint
-jest.mock('../../checkpoint-handlers/checkpoint-utils', () => ({
-  createCheckpoint: jest.fn()
-}));
 
 describe('hook-handler', () => {
   let mockThread: Thread;
@@ -310,7 +289,6 @@ describe('hook-handler', () => {
         nodeType: 'LLM_NODE',
         step: 1,
         status: 'COMPLETED',
-        data: { output: 'generated text' },
         executionTime: 1500,
         error: null
       };

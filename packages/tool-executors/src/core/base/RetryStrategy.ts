@@ -4,7 +4,7 @@
  */
 
 import { TimeoutError, HttpError, NetworkError } from '@modular-agent/types/errors';
-import { RateLimitError, executeWithRetry, type RetryConfig } from '@modular-agent/common-utils';
+import { InternalServerError, RateLimitError, ServiceUnavailableError, executeWithRetry, type RetryConfig } from '@modular-agent/common-utils';
 
 /**
  * 重试策略配置
@@ -48,19 +48,32 @@ export class RetryStrategy {
       return true;
     }
 
-    // HttpError - 精确判断状态码
-    if (error instanceof HttpError) {
-      return error.statusCode === 429 || 
-             (error.statusCode != null && error.statusCode >= 500 && error.statusCode < 600);
-    }
-
-    // NetworkError - 其他网络错误重试
-    if (error instanceof NetworkError) {
+    // 具体的 HTTP 错误类型 - 优先检查
+    if (error instanceof RateLimitError) {
       return true;
     }
 
-    // RateLimitError - 限流重试
-    if (error instanceof RateLimitError) {
+    if (error instanceof InternalServerError) {
+      return true;
+    }
+
+    if (error instanceof ServiceUnavailableError) {
+      return true;
+    }
+
+    // 通用 HttpError - 根据状态码判断（作为回退机制）
+    if (error instanceof HttpError) {
+      // 5xx 服务器错误重试
+      if (error.statusCode >= 500 && error.statusCode < 600) {
+        return true;
+      }
+
+      // 其他 HTTP 错误不重试（4xx 客户端错误）
+      return false;
+    }
+
+    // NetworkError - 网络连接错误重试
+    if (error instanceof NetworkError) {
       return true;
     }
 

@@ -1,10 +1,15 @@
 /**
  * ErrorService 单元测试
  * 测试全局错误处理服务的各种功能
+ *
+ * 改进说明：
+ * - ErrorService 现在只接受 SDKError，不再进行错误标准化
+ * - 错误标准化逻辑已移到 error-handler.ts 中
+ * - 直接使用 error.severity 确定日志级别
  */
 
-import { ErrorService } from '../error-service';
-import { ValidationError, ExecutionError, ToolError, NotFoundError } from '@modular-agent/types/errors';
+import { errorService } from '../error-service';
+import { ValidationError, ExecutionError, ToolError, NotFoundError, SDKError, ErrorSeverity } from '@modular-agent/types/errors';
 import { EventManager } from '../event-manager';
 import type { ErrorEvent } from '@modular-agent/types/events';
 
@@ -12,7 +17,6 @@ import type { ErrorEvent } from '@modular-agent/types/events';
 jest.mock('../event-manager');
 
 describe('ErrorService', () => {
-  let errorService: ErrorService;
   let mockEventManager: jest.Mocked<EventManager>;
 
   beforeEach(() => {
@@ -31,14 +35,11 @@ describe('ErrorService', () => {
       stopPropagation: jest.fn(),
       isPropagationStopped: jest.fn()
     } as any;
-
-    // 创建 ErrorService 实例
-    errorService = new ErrorService(mockEventManager);
   });
 
   describe('handleError', () => {
-    it('应该标准化普通Error为ExecutionError', async () => {
-      const error = new Error('Test error');
+    it('应该处理 ERROR 级别的错误', async () => {
+      const error = new ValidationError('Test validation error', 'test-field');
       const context = {
         threadId: 'thread-123',
         workflowId: 'workflow-456',
@@ -54,79 +55,13 @@ describe('ErrorService', () => {
           threadId: 'thread-123',
           workflowId: 'workflow-456',
           nodeId: 'node-789',
-          error: expect.any(ExecutionError)
-        })
-      );
-    });
-
-    it('应该根据operation类型包装为合适的SDKError', async () => {
-      const error = new Error('Tool error');
-      const context = {
-        operation: 'tool_execution',
-        toolName: 'test-tool',
-        toolType: 'native'
-      };
-
-      await errorService.handleError(error, context);
-
-      expect(mockEventManager.emit).toHaveBeenCalledWith(
-        expect.objectContaining({
-          error: expect.any(ToolError)
-        })
-      );
-    });
-
-    it('应该根据operation类型包装为ValidationError', async () => {
-      const error = new Error('Validation error');
-      const context = {
-        operation: 'validation',
-        field: 'test-field',
-        value: 'test-value'
-      };
-
-      await errorService.handleError(error, context);
-
-      expect(mockEventManager.emit).toHaveBeenCalledWith(
-        expect.objectContaining({
-          error: expect.any(ValidationError)
-        })
-      );
-    });
-
-    it('应该根据operation类型包装为NotFoundError', async () => {
-      const error = new Error('Not found error');
-      const context = {
-        operation: 'find',
-        resourceType: 'workflow',
-        resourceId: 'workflow-123'
-      };
-
-      await errorService.handleError(error, context);
-
-      expect(mockEventManager.emit).toHaveBeenCalledWith(
-        expect.objectContaining({
-          error: expect.any(NotFoundError)
-        })
-      );
-    });
-
-    it('应该直接返回SDKError', async () => {
-      const error = new ValidationError('Test validation error', 'test-field');
-      const context = {
-        threadId: 'thread-123'
-      };
-
-      await errorService.handleError(error, context);
-
-      expect(mockEventManager.emit).toHaveBeenCalledWith(
-        expect.objectContaining({
           error: error
         })
       );
     });
 
-    it('应该触发错误事件', async () => {
-      const error = new Error('Test error');
+    it('应该处理 WARNING 级别的错误', async () => {
+      const error = new NotFoundError('Resource not found', 'workflow', 'workflow-123');
       const context = {
         threadId: 'thread-123',
         workflowId: 'workflow-456'
@@ -139,13 +74,49 @@ describe('ErrorService', () => {
           type: 'ERROR',
           threadId: 'thread-123',
           workflowId: 'workflow-456',
-          error: expect.any(Error)
+          error: error
+        })
+      );
+    });
+
+    it('应该处理 INFO 级别的错误', async () => {
+      const error = new SDKError('Info message', ErrorSeverity.INFO);
+      const context = {
+        threadId: 'thread-123'
+      };
+
+      await errorService.handleError(error, context);
+
+      expect(mockEventManager.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'ERROR',
+          threadId: 'thread-123',
+          error: error
+        })
+      );
+    });
+
+    it('应该触发错误事件', async () => {
+      const error = new ExecutionError('Test error', 'node-123', 'workflow-456');
+      const context = {
+        threadId: 'thread-123',
+        workflowId: 'workflow-456'
+      };
+
+      await errorService.handleError(error, context);
+
+      expect(mockEventManager.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'ERROR',
+          threadId: 'thread-123',
+          workflowId: 'workflow-456',
+          error: error
         })
       );
     });
 
     it('应该记录错误日志', async () => {
-      const error = new Error('Test error');
+      const error = new ToolError('Tool execution failed', 'test-tool', 'native');
       const context = {
         threadId: 'thread-123'
       };
@@ -157,73 +128,36 @@ describe('ErrorService', () => {
     });
   });
 
-  describe('错误标准化', () => {
-    it('应该根据operation包含tool包装为ToolError', async () => {
-      const error = new Error('Tool execution failed');
-      const context = {
-        operation: 'tool_execution',
-        toolName: 'my-tool',
-        toolType: 'native'
-      };
+  describe('severity 驱动的日志级别', () => {
+    it('ERROR 级别应该使用 error 日志', async () => {
+      const error = new ValidationError('Validation failed', 'field');
+      const context = { threadId: 'thread-123' };
 
       await errorService.handleError(error, context);
 
-      expect(mockEventManager.emit).toHaveBeenCalledWith(
-        expect.objectContaining({
-          error: expect.any(ToolError)
-        })
-      );
+      expect(mockEventManager.emit).toHaveBeenCalled();
+      // 验证错误包含正确的 severity
+      expect(error.severity).toBe(ErrorSeverity.ERROR);
     });
 
-    it('应该根据operation包含validation包装为ValidationError', async () => {
-      const error = new Error('Invalid input');
-      const context = {
-        operation: 'validation',
-        field: 'email',
-        value: 'invalid-email'
-      };
+    it('WARNING 级别应该使用 warn 日志', async () => {
+      const error = new NotFoundError('Not found', 'resource', 'id');
+      const context = { threadId: 'thread-123' };
 
       await errorService.handleError(error, context);
 
-      expect(mockEventManager.emit).toHaveBeenCalledWith(
-        expect.objectContaining({
-          error: expect.any(ValidationError)
-        })
-      );
+      expect(mockEventManager.emit).toHaveBeenCalled();
+      expect(error.severity).toBe(ErrorSeverity.WARNING);
     });
 
-    it('应该根据operation包含find或get包装为NotFoundError', async () => {
-      const error = new Error('Resource not found');
-      const context = {
-        operation: 'find',
-        resourceType: 'user',
-        resourceId: 'user-123'
-      };
+    it('INFO 级别应该使用 info 日志', async () => {
+      const error = new SDKError('Info message', ErrorSeverity.INFO);
+      const context = { threadId: 'thread-123' };
 
       await errorService.handleError(error, context);
 
-      expect(mockEventManager.emit).toHaveBeenCalledWith(
-        expect.objectContaining({
-          error: expect.any(NotFoundError)
-        })
-      );
-    });
-
-    it('应该默认包装为ExecutionError', async () => {
-      const error = new Error('General error');
-      const context = {
-        operation: 'unknown_operation',
-        nodeId: 'node-123',
-        workflowId: 'workflow-123'
-      };
-
-      await errorService.handleError(error, context);
-
-      expect(mockEventManager.emit).toHaveBeenCalledWith(
-        expect.objectContaining({
-          error: expect.any(ExecutionError)
-        })
-      );
+      expect(mockEventManager.emit).toHaveBeenCalled();
+      expect(error.severity).toBe(ErrorSeverity.INFO);
     });
   });
 });

@@ -7,7 +7,9 @@
 
 import { TimeoutError, NetworkError, HttpError } from '@modular-agent/types/errors';
 import {
+  InternalServerError,
   RateLimitError,
+  ServiceUnavailableError,
 } from './errors';
 
 /**
@@ -112,12 +114,20 @@ function shouldRetry(error: any): boolean {
     return true;
   }
 
-  // RateLimitError - 限流重试
+  // 具体的 HTTP 错误类型 - 优先检查
   if (error instanceof RateLimitError) {
     return true;
   }
 
-  // HttpError - 检查状态码（必须在NetworkError之前检查）
+  if (error instanceof InternalServerError) {
+    return true;
+  }
+
+  if (error instanceof ServiceUnavailableError) {
+    return true;
+  }
+
+  // 通用 HttpError - 根据状态码判断（作为回退机制）
   if (error instanceof HttpError) {
     const statusCode = error.statusCode;
 
@@ -126,12 +136,16 @@ function shouldRetry(error: any): boolean {
       return false;
     }
 
-    // 其他所有 HTTP 错误都重试
-    // 包括：429（限流）、5xx（服务器错误）、以及其他4xx（如426等）
-    return true;
+    // 5xx 服务器错误重试
+    if (statusCode >= 500 && statusCode < 600) {
+      return true;
+    }
+
+    // 其他 HTTP 错误不重试（4xx 客户端错误）
+    return false;
   }
 
-  // NetworkError - 网络错误重试（必须在HttpError之后检查）
+  // NetworkError - 网络连接错误重试
   if (error instanceof NetworkError) {
     return true;
   }

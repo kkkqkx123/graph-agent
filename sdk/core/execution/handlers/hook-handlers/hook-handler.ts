@@ -11,7 +11,7 @@ import type { NodeExecutionResult } from '@modular-agent/types/thread';
 import type { NodeCustomEvent } from '@modular-agent/types/events';
 import type { CheckpointDependencies } from '../checkpoint-handlers/checkpoint-utils';
 import { createCheckpoint } from '../checkpoint-handlers/checkpoint-utils';
-import { ValidationError, ExecutionError } from '@modular-agent/types/errors';
+import { ValidationError, ExecutionError, ErrorSeverity } from '@modular-agent/types/errors';
 
 /**
  * Hook执行上下文接口
@@ -119,7 +119,7 @@ async function executeSingleHook(
           context.checkpointDependencies
         );
       } catch (error) {
-        // 抛出执行错误，标记为信息级别（不影响主流程）
+        // 抛出执行错误，标记为警告级别（检查点创建失败不影响主流程）
         throw new ExecutionError(
           'Failed to create checkpoint for hook',
           context.node.id,
@@ -127,10 +127,10 @@ async function executeSingleHook(
           {
             eventName: hook.eventName,
             nodeId: context.node.id,
-            operation: 'checkpoint_creation',
-            severity: 'info'
+            operation: 'checkpoint_creation'
           },
-          error instanceof Error ? error : new Error(String(error))
+          error instanceof Error ? error : new Error(String(error)),
+          ErrorSeverity.WARNING
         );
       }
     }
@@ -144,7 +144,7 @@ async function executeSingleHook(
       try {
         await customHandler(context, hook, eventData);
       } catch (error) {
-        // 抛出执行错误
+        // 抛出执行错误，标记为错误级别（自定义处理程序执行失败）
         throw new ExecutionError(
           'Custom handler execution failed',
           context.node.id,
@@ -154,7 +154,8 @@ async function executeSingleHook(
             nodeId: context.node.id,
             operation: 'custom_handler_execution'
           },
-          error instanceof Error ? error : new Error(String(error))
+          error instanceof Error ? error : new Error(String(error)),
+          ErrorSeverity.ERROR
         );
       }
     }
@@ -162,7 +163,7 @@ async function executeSingleHook(
     // 触发自定义事件
     await emitHookEvent(context, hook.eventName, eventData, emitEvent);
   } catch (error) {
-    // 抛出执行错误
+    // 抛出执行错误，标记为错误级别（Hook执行失败）
     throw new ExecutionError(
       'Hook execution failed',
       context.node.id,
@@ -173,7 +174,8 @@ async function executeSingleHook(
         hookType,
         operation: 'hook_execution'
       },
-      error instanceof Error ? error : new Error(String(error))
+      error instanceof Error ? error : new Error(String(error)),
+      ErrorSeverity.ERROR
     );
   }
 }

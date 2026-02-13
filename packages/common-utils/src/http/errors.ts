@@ -5,7 +5,6 @@
 
 import {
   SDKError,
-  ErrorCode,
   HttpError,
 } from '@modular-agent/types/errors';
 
@@ -19,7 +18,6 @@ export class BadRequestError extends HttpError {
     cause?: Error
   ) {
     super(message, 400, context, cause);
-    this.name = 'BadRequestError';
   }
 }
 
@@ -33,7 +31,6 @@ export class UnauthorizedError extends HttpError {
     cause?: Error
   ) {
     super(message, 401, context, cause);
-    this.name = 'UnauthorizedError';
   }
 }
 
@@ -47,7 +44,6 @@ export class ForbiddenError extends HttpError {
     cause?: Error
   ) {
     super(message, 403, context, cause);
-    this.name = 'ForbiddenError';
   }
 }
 
@@ -62,7 +58,6 @@ export class NotFoundHttpError extends HttpError {
     cause?: Error
   ) {
     super(message, 404, { ...context, url }, cause);
-    this.name = 'NotFoundHttpError';
   }
 }
 
@@ -76,7 +71,6 @@ export class ConflictError extends HttpError {
     cause?: Error
   ) {
     super(message, 409, context, cause);
-    this.name = 'ConflictError';
   }
 }
 
@@ -90,7 +84,6 @@ export class UnprocessableEntityError extends HttpError {
     cause?: Error
   ) {
     super(message, 422, context, cause);
-    this.name = 'UnprocessableEntityError';
   }
 }
 
@@ -104,7 +97,6 @@ export class RateLimitError extends HttpError {
     context?: Record<string, any>
   ) {
     super(message, 429, context);
-    this.name = 'RateLimitError';
   }
 }
 
@@ -118,7 +110,6 @@ export class InternalServerError extends HttpError {
     cause?: Error
   ) {
     super(message, 500, context, cause);
-    this.name = 'InternalServerError';
   }
 }
 
@@ -132,6 +123,5 @@ export class ServiceUnavailableError extends HttpError {
     cause?: Error
   ) {
     super(message, 503, context, cause);
-    this.name = 'ServiceUnavailableError';
   }
 }
