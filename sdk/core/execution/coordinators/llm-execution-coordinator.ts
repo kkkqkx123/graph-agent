@@ -25,8 +25,7 @@ import { UserInteractionOperationType } from '@modular-agent/types';
 import type { ToolApprovalData } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
 import { ToolCallExecutor } from '../executors/tool-call-executor';
-import { TokenUsageTracker } from '../token-usage-tracker';
-import { ExecutionError } from '@modular-agent/types/errors';
+import { ExecutionError, ThreadInterruptedException, LLMAbortError, ToolAbortError } from '@modular-agent/types/errors';
 import { generateId } from '@modular-agent/common-utils';
 import { CheckpointCoordinator } from './checkpoint-coordinator';
 import type { ExecutionContext } from '../context/execution-context';
@@ -97,6 +96,25 @@ export class LLMExecutionCoordinator {
   ) { }
 
   /**
+   * 检查是否应该中断当前执行
+   *
+   * @param threadId Thread ID
+   * @returns 是否应该中断
+   */
+  shouldInterrupt(threadId: string): boolean {
+    if (!this.executionContext) {
+      return false;
+    }
+
+    const threadContext = this.executionContext.getThreadRegistry().get(threadId);
+    if (!threadContext) {
+      return false;
+    }
+
+    return threadContext.getShouldStop() || threadContext.getShouldPause();
+  }
+
+  /**
    * 执行 LLM 调用
    *
    * 此方法作为高层协调入口，直接协调各个组件处理完整流程：
@@ -124,6 +142,20 @@ export class LLMExecutionCoordinator {
         messages: conversationState.getMessages()
       };
     } catch (error) {
+      // 处理专门的 Abort 错误，转换为 ThreadInterruptedException
+      if (error instanceof LLMAbortError || error instanceof ToolAbortError) {
+        const threadContext = this.executionContext?.getThreadRegistry().get(params.threadId);
+        const interruptionType = threadContext?.getShouldStop() ? 'STOP' : 'PAUSE';
+
+        // 重新抛出 ThreadInterruptedException
+        throw new ThreadInterruptedException(
+          error.message,
+          interruptionType,
+          error.threadId,
+          error.nodeId
+        );
+      }
+
       return {
         success: false,
         error: error instanceof Error ? error : new Error(String(error))
@@ -153,6 +185,21 @@ export class LLMExecutionCoordinator {
       maxToolCallsPerRequest,
       threadId, nodeId
     } = params;
+
+    // 获取 AbortSignal
+    const threadContext = this.executionContext?.getThreadRegistry().get(threadId);
+    const abortSignal = threadContext?.getAbortSignal();
+
+    // 检查是否应该中断
+    if (this.shouldInterrupt(threadId)) {
+      const interruptionType = threadContext?.getShouldStop() ? 'STOP' : 'PAUSE';
+      throw new ThreadInterruptedException(
+        `LLM execution ${interruptionType.toLowerCase()}`,
+        interruptionType,
+        threadId,
+        nodeId
+      );
+    }
 
     // 步骤1：添加用户消息
     const userMessage = {
@@ -203,7 +250,19 @@ export class LLMExecutionCoordinator {
       availableTools = this.getAvailableTools(workflowTools, dynamicTools);
     }
 
-    // 执行 LLM 调用
+    // 执行 LLM 调用前再次检查中断
+    if (this.shouldInterrupt(threadId)) {
+      const threadContext = this.executionContext?.getThreadRegistry().get(threadId);
+      const interruptionType = threadContext?.getShouldStop() ? 'STOP' : 'PAUSE';
+      throw new ThreadInterruptedException(
+        `LLM execution ${interruptionType.toLowerCase()} before LLM call`,
+        interruptionType,
+        threadId,
+        nodeId
+      );
+    }
+
+    // 执行 LLM 调用（传递 AbortSignal）
     const llmResult = await this.llmExecutor.executeLLMCall(
       conversationState.getMessages(),
       {
@@ -211,7 +270,8 @@ export class LLMExecutionCoordinator {
         profileId: profileId || 'default',
         parameters: parameters || {},
         tools: availableTools
-      }
+      },
+      { abortSignal }
     );
 
     // 更新 Token 使用统计
@@ -262,7 +322,19 @@ export class LLMExecutionCoordinator {
         );
       }
 
-      // 创建工具调用执行器并执行工具调用
+      // 执行工具调用前检查中断
+      if (this.shouldInterrupt(threadId)) {
+        const threadContext = this.executionContext?.getThreadRegistry().get(threadId);
+        const interruptionType = threadContext?.getShouldStop() ? 'STOP' : 'PAUSE';
+        throw new ThreadInterruptedException(
+          `LLM execution ${interruptionType.toLowerCase()} before tool calls`,
+          interruptionType,
+          threadId,
+          nodeId
+        );
+      }
+
+      // 创建工具调用执行器并执行工具调用（传递 AbortSignal）
       const toolCallExecutor = new ToolCallExecutor(this.toolService, this.eventManager);
       await this.executeToolCallsWithApproval(
         llmResult.toolCalls,
@@ -270,7 +342,8 @@ export class LLMExecutionCoordinator {
         threadId,
         nodeId,
         params.workflowConfig,
-        toolCallExecutor
+        toolCallExecutor,
+        { abortSignal }
       );
     }
 
@@ -299,6 +372,7 @@ export class LLMExecutionCoordinator {
    * @param nodeId 节点ID
    * @param workflowConfig 工作流配置
    * @param toolCallExecutor 工具调用执行器
+   * @param options 执行选项（包含 AbortSignal）
    */
   private async executeToolCallsWithApproval(
     toolCalls: Array<{ id: string; name: string; arguments: string }>,
@@ -306,7 +380,8 @@ export class LLMExecutionCoordinator {
     threadId: string,
     nodeId: string,
     workflowConfig: WorkflowConfig | undefined,
-    toolCallExecutor: ToolCallExecutor
+    toolCallExecutor: ToolCallExecutor,
+    options?: { abortSignal?: AbortSignal }
   ): Promise<void> {
     for (const toolCall of toolCalls) {
       // 检查是否需要人工审批
@@ -347,12 +422,13 @@ export class LLMExecutionCoordinator {
         }
       }
 
-      // 执行工具调用
+      // 执行工具调用（传递 AbortSignal）
       await toolCallExecutor.executeToolCalls(
         [toolCall],
         conversationState,
         threadId,
-        nodeId
+        nodeId,
+        options
       );
     }
   }

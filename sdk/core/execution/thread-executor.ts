@@ -26,7 +26,7 @@ import type { ID } from '@modular-agent/types/common';
 import { ThreadContext } from './context/thread-context';
 import type { EventManager } from '../services/event-manager';
 import type { WorkflowRegistry } from '../services/workflow-registry';
-import { NotFoundError } from '@modular-agent/types/errors';
+import { NotFoundError, ThreadInterruptedException } from '@modular-agent/types/errors';
 import { ThreadStatus } from '@modular-agent/types/thread';
 import { now, diffTimestamp } from '@modular-agent/common-utils';
 import { NodeExecutionCoordinator } from './coordinators/node-execution-coordinator';
@@ -50,6 +50,7 @@ import { ExecutionContext } from './context/execution-context';
  */
 export class ThreadExecutor implements SubgraphContextFactory {
   private nodeExecutionCoordinator: NodeExecutionCoordinator;
+  private llmExecutionCoordinator: LLMExecutionCoordinator;
   private eventManager: EventManager;
   private threadBuilder: ThreadBuilder;
   private workflowRegistry: WorkflowRegistry;
@@ -77,19 +78,70 @@ export class ThreadExecutor implements SubgraphContextFactory {
     this.threadBuilder = new ThreadBuilder(this.workflowRegistry, this.executionContext);
 
     // 创建 LLM 执行协调器
-    const llmExecutionCoordinator = new LLMExecutionCoordinator(
+    this.llmExecutionCoordinator = new LLMExecutionCoordinator(
       this.executionContext.getLlmExecutor(),
       this.executionContext.getToolService(),
-      this.eventManager
+      this.eventManager,
+      this.executionContext
     );
 
     // 创建节点执行协调器（从ExecutionContext获取Handler）
     this.nodeExecutionCoordinator = new NodeExecutionCoordinator(
       this.eventManager,
-      llmExecutionCoordinator,
+      this.llmExecutionCoordinator,
       this.executionContext.getUserInteractionHandler(),
-      this.executionContext.getHumanRelayHandler()
+      this.executionContext.getHumanRelayHandler(),
+      undefined,
+      undefined,
+      this.executionContext.getThreadRegistry()
     );
+  }
+
+  /**
+   * 检查中断状态
+   *
+   * @param threadContext 线程上下文
+   * @throws ThreadInterruptedException 当检测到中断时抛出
+   */
+  private async checkInterruption(threadContext: ThreadContext): Promise<void> {
+    const threadId = threadContext.getThreadId();
+
+    // 检查NodeExecutionCoordinator是否需要中断
+    if (this.nodeExecutionCoordinator.shouldInterrupt(threadId)) {
+      const interruptionType = threadContext.getShouldStop() ? 'STOP' : 'PAUSE';
+      
+      // 触发 AbortController 以中断正在进行的异步操作
+      threadContext.interrupt(interruptionType);
+      
+      // 处理中断（创建检查点、触发事件）
+      await this.nodeExecutionCoordinator.handleInterruption(
+        threadId,
+        threadContext.getCurrentNodeId(),
+        interruptionType
+      );
+      
+      throw new ThreadInterruptedException(
+        `Thread ${interruptionType.toLowerCase()}`,
+        interruptionType,
+        threadId,
+        threadContext.getCurrentNodeId()
+      );
+    }
+
+    // 检查LLMExecutionCoordinator是否需要中断
+    if (this.llmExecutionCoordinator.shouldInterrupt(threadId)) {
+      const interruptionType = threadContext.getShouldStop() ? 'STOP' : 'PAUSE';
+      
+      // 触发 AbortController 以中断正在进行的异步操作
+      threadContext.interrupt(interruptionType);
+      
+      throw new ThreadInterruptedException(
+        `LLM execution ${interruptionType.toLowerCase()}`,
+        interruptionType,
+        threadId,
+        threadContext.getCurrentNodeId()
+      );
+    }
   }
 
   /**
@@ -101,10 +153,8 @@ export class ThreadExecutor implements SubgraphContextFactory {
     try {
       // 执行主循环
       while (true) {
-        // 检查是否需要暂停或停止
-        if (threadContext.getShouldPause() || threadContext.getShouldStop()) {
-          break;
-        }
+        // 检查中断状态
+        await this.checkInterruption(threadContext);
 
         // 获取当前节点
         const currentNode = this.getCurrentNode(threadContext);
@@ -132,6 +182,13 @@ export class ThreadExecutor implements SubgraphContextFactory {
 
       return this.createThreadResult(threadContext);
     } catch (error) {
+      // 处理线程中断异常
+      if (error instanceof ThreadInterruptedException) {
+        // 中断异常已经被协调器处理过，直接返回结果
+        return this.createThreadResult(threadContext);
+      }
+      
+      // 处理其他错误
       await handleExecutionError(threadContext, error);
       return this.createThreadResult(threadContext);
     }

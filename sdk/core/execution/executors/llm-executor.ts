@@ -16,7 +16,7 @@
 
 import type { LLMMessage, LLMResult } from '@modular-agent/types/llm';
 import { LLMWrapper } from '../../llm/wrapper';
-import { ExecutionError } from '@modular-agent/types/errors';
+import { ExecutionError, ThreadInterruptedException, LLMAbortError } from '@modular-agent/types/errors';
 
 /**
  * LLM执行请求数据
@@ -79,17 +79,19 @@ export class LLMExecutor {
 
   /**
    * 执行单次LLM调用
-   * 
+   *
    * 注意：此方法只执行一次LLM调用，不处理工具调用循环
    * 工具调用的协调由 LLMCoordinator 负责
-   * 
+   *
    * @param messages 消息数组
    * @param requestData 请求数据
+   * @param options 执行选项（包含 AbortSignal 和上下文信息）
    * @returns LLM执行结果
    */
   async executeLLMCall(
     messages: LLMMessage[],
-    requestData: LLMExecutionRequestData
+    requestData: LLMExecutionRequestData,
+    options?: { abortSignal?: AbortSignal, threadId?: string, nodeId?: string }
   ): Promise<LLMExecutionResult> {
     // 构建LLM请求
     const llmRequest = {
@@ -97,7 +99,8 @@ export class LLMExecutor {
       messages: messages,
       tools: requestData.tools,
       parameters: requestData.parameters,
-      stream: requestData.stream || false
+      stream: requestData.stream || false,
+      signal: options?.abortSignal // 传递 AbortSignal
     };
 
     let finalResult: LLMResult | null = null;
@@ -140,6 +143,16 @@ export class LLMExecutor {
         }))
       };
     } catch (error) {
+      // 处理 AbortError，转换为专门的 LLMAbortError
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new LLMAbortError(
+          'LLM call aborted',
+          options?.threadId || '',
+          options?.nodeId || '',
+          error
+        );
+      }
+      
       throw new ExecutionError(
         `LLM call failed: ${error instanceof Error ? error.message : String(error)}`,
         undefined,

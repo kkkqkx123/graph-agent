@@ -35,6 +35,7 @@ import type { EventManager } from '../../services/event-manager';
 import type { ToolService } from '../../services/tool-service';
 import { LLMExecutor } from '../executors/llm-executor';
 import type { LifecycleCapable } from '../managers/lifecycle-capable';
+import { ThreadInterruptedException } from '@modular-agent/types/errors';
 
 /**
  * ThreadContext - Thread 执行上下文
@@ -114,6 +115,11 @@ export class ThreadContext implements LifecycleCapable {
    * LLM 执行器
    */
   private readonly llmExecutor: LLMExecutor;
+
+  /**
+   * AbortController 用于中断正在进行的异步操作
+   */
+  private abortController: AbortController = new AbortController();
 
   /**
    * 可用工具集合（从workflow配置）
@@ -250,8 +256,8 @@ export class ThreadContext implements LifecycleCapable {
    * 获取暂停标志
    * @returns 是否应该暂停
    */
-  getShouldPause(): boolean | undefined {
-    return this.thread.shouldPause;
+  getShouldPause(): boolean {
+    return this.thread.shouldPause ?? false;
   }
 
   /**
@@ -266,8 +272,36 @@ export class ThreadContext implements LifecycleCapable {
    * 获取停止标志
    * @returns 是否应该停止
    */
-  getShouldStop(): boolean | undefined {
-    return this.thread.shouldStop;
+  getShouldStop(): boolean {
+    return this.thread.shouldStop ?? false;
+  }
+
+  /**
+   * 获取 AbortSignal
+   * @returns AbortSignal 实例
+   */
+  getAbortSignal(): AbortSignal {
+    return this.abortController.signal;
+  }
+
+  /**
+   * 中断当前执行
+   * @param interruptionType 中断类型（PAUSE 或 STOP）
+   */
+  interrupt(interruptionType: 'PAUSE' | 'STOP'): void {
+    this.abortController.abort(new ThreadInterruptedException(
+      `Thread ${interruptionType.toLowerCase()}`,
+      interruptionType,
+      this.getThreadId(),
+      this.getCurrentNodeId()
+    ));
+  }
+
+  /**
+   * 重置中断控制器（用于恢复）
+   */
+  resetInterrupt(): void {
+    this.abortController = new AbortController();
   }
 
   /**

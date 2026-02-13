@@ -25,7 +25,7 @@ import { LLMExecutionCoordinator } from './llm-execution-coordinator';
 import { enterSubgraph, exitSubgraph, getSubgraphInput, getSubgraphOutput } from '../handlers/subgraph-handler';
 import { EventType } from '@modular-agent/types/events';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '@modular-agent/types/events';
-import { ExecutionError } from '@modular-agent/types/errors';
+import { ExecutionError, ThreadInterruptedException } from '@modular-agent/types/errors';
 import { executeHook } from '../handlers/hook-handlers';
 import { HookType } from '@modular-agent/types/node';
 import { NodeType } from '@modular-agent/types/node';
@@ -36,6 +36,9 @@ import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/che
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils';
 import { resolveCheckpointConfig } from '../handlers/checkpoint-handlers/checkpoint-config-resolver';
 import { CheckpointTriggerType } from '@modular-agent/types/checkpoint';
+import { ThreadStatus } from '@modular-agent/types/thread';
+import { emit } from '../utils/event/event-emitter';
+import { buildThreadPausedEvent, buildThreadCancelledEvent } from '../utils/event/event-builder';
 
 /**
  * 节点执行协调器
@@ -47,8 +50,81 @@ export class NodeExecutionCoordinator {
     private userInteractionHandler?: UserInteractionHandler,
     private humanRelayHandler?: HumanRelayHandler,
     private checkpointDependencies?: CheckpointDependencies,
-    private globalCheckpointConfig?: any
+    private globalCheckpointConfig?: any,
+    private threadRegistry?: any
   ) { }
+
+  /**
+   * 检查是否应该中断当前执行
+   *
+   * @param threadId Thread ID
+   * @returns 是否应该中断
+   */
+  shouldInterrupt(threadId: string): boolean {
+    if (!this.threadRegistry) {
+      return false;
+    }
+    
+    const threadContext = this.threadRegistry.get(threadId);
+    if (!threadContext) {
+      return false;
+    }
+    
+    return threadContext.getShouldStop() || threadContext.getShouldPause();
+  }
+
+  /**
+   * 处理中断操作
+   *
+   * @param threadId Thread ID
+   * @param nodeId 节点ID
+   * @param type 中断类型（PAUSE 或 STOP）
+   */
+  async handleInterruption(threadId: string, nodeId: string, type: 'PAUSE' | 'STOP'): Promise<void> {
+    if (!this.threadRegistry) {
+      return;
+    }
+    
+    const threadContext = this.threadRegistry.get(threadId);
+    if (!threadContext) {
+      return;
+    }
+
+    // 创建中断检查点
+    if (this.checkpointDependencies) {
+      try {
+        await createCheckpoint(
+          {
+            threadId,
+            nodeId,
+            description: `Thread ${type.toLowerCase()} at node: ${nodeId}`,
+            metadata: {
+              customFields: {
+                interruptionType: type,
+                interruptedAt: now()
+              }
+            }
+          },
+          this.checkpointDependencies
+        );
+      } catch (error) {
+        console.error(`Failed to create interruption checkpoint:`, error);
+        // 检查点创建失败不应影响中断流程
+      }
+    }
+
+    // 触发相应的事件
+    if (type === 'PAUSE') {
+      threadContext.setStatus(ThreadStatus.PAUSED);
+      const pausedEvent = buildThreadPausedEvent(threadContext.thread);
+      await emit(this.eventManager, pausedEvent);
+    } else if (type === 'STOP') {
+      threadContext.setStatus(ThreadStatus.CANCELLED);
+      threadContext.setEndTime(now());
+      const cancelledEvent = buildThreadCancelledEvent(threadContext.thread, 'user_requested');
+      await emit(this.eventManager, cancelledEvent);
+    }
+  }
 
   /**
    * 执行节点
@@ -59,6 +135,19 @@ export class NodeExecutionCoordinator {
   async executeNode(threadContext: ThreadContext, node: Node): Promise<NodeExecutionResult> {
     const nodeId = node.id;
     const nodeType = node.type;
+    const threadId = threadContext.getThreadId();
+
+    // 检查是否应该中断
+    if (this.shouldInterrupt(threadId)) {
+      const interruptionType = threadContext.getShouldStop() ? 'STOP' : 'PAUSE';
+      await this.handleInterruption(threadId, nodeId, interruptionType);
+      throw new ThreadInterruptedException(
+        `Thread ${interruptionType.toLowerCase()} at node: ${nodeId}`,
+        interruptionType,
+        threadId,
+        nodeId
+      );
+    }
 
     // 获取GraphNode以检查边界信息
     const navigator = threadContext.getNavigator();

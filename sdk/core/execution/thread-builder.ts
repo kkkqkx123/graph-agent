@@ -112,7 +112,9 @@ export class ThreadBuilder {
       output: {},
       nodeResults: [],
       startTime: now,
-      errors: []
+      errors: [],
+      shouldPause: false,
+      shouldStop: false
     };
 
     // 步骤4：从 WorkflowDefinition 初始化变量
@@ -245,6 +247,8 @@ export class ThreadBuilder {
       startTime: now,
       endTime: undefined,
       errors: [],
+      shouldPause: false,
+      shouldStop: false,
       threadType: ThreadType.TRIGGERED_SUBWORKFLOW,
       triggeredSubworkflowContext: {
         parentThreadId: sourceThread.id,
@@ -317,6 +321,8 @@ export class ThreadBuilder {
       startTime: now,
       endTime: undefined,
       errors: [],
+      shouldPause: false,
+      shouldStop: false,
       threadType: ThreadType.FORK_JOIN,
       forkJoinContext: {
         forkId: forkConfig.forkId,

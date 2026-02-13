@@ -192,6 +192,8 @@ export interface ToolExecutionOptions {
   retryDelay?: number;
   /** 是否启用指数退避 */
   exponentialBackoff?: boolean;
+  /** 中止信号（用于取消执行） */
+  signal?: AbortSignal;
 }
 
 /**

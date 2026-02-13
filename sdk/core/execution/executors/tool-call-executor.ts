@@ -23,6 +23,7 @@ import { now } from '@modular-agent/common-utils';
 import type { ConversationManager } from '../managers/conversation-manager';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils';
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils';
+import { ThreadInterruptedException, ToolAbortError } from '@modular-agent/types/errors';
 
 /**
  * 工具执行结果
@@ -59,22 +60,30 @@ export class ToolCallExecutor {
    * @param conversationState 对话管理器
    * @param threadId 线程ID
    * @param nodeId 节点ID
+   * @param options 执行选项（包含 AbortSignal）
    * @returns 执行结果数组
    */
   async executeToolCalls(
     toolCalls: Array<{ id: string; name: string; arguments: string }>,
     conversationState: ConversationManager,
     threadId?: string,
-    nodeId?: string
+    nodeId?: string,
+    options?: { abortSignal?: AbortSignal }
   ): Promise<ToolExecutionResult[]> {
     const results: ToolExecutionResult[] = [];
 
     for (const toolCall of toolCalls) {
+      // 检查中断信号
+      if (options?.abortSignal?.aborted) {
+        throw options.abortSignal.reason || new ThreadInterruptedException('Tool execution aborted', 'STOP');
+      }
+
       const result = await this.executeSingleToolCall(
         toolCall,
         conversationState,
         threadId,
-        nodeId
+        nodeId,
+        options
       );
       results.push(result);
     }
@@ -89,13 +98,15 @@ export class ToolCallExecutor {
    * @param conversationState 对话管理器
    * @param threadId 线程ID
    * @param nodeId 节点ID
+   * @param options 执行选项（包含 AbortSignal）
    * @returns 执行结果
    */
   private async executeSingleToolCall(
     toolCall: { id: string; name: string; arguments: string },
     conversationState: ConversationManager,
     threadId?: string,
-    nodeId?: string
+    nodeId?: string,
+    options?: { abortSignal?: AbortSignal }
   ): Promise<ToolExecutionResult> {
     const startTime = Date.now();
 
@@ -151,7 +162,8 @@ export class ToolCallExecutor {
         {
           timeout: 30000,
           retries: 0,
-          retryDelay: 1000
+          retryDelay: 1000,
+          signal: options?.abortSignal // 传递 AbortSignal
         }
       );
 
@@ -228,6 +240,17 @@ export class ToolCallExecutor {
     } catch (error) {
       const executionTime = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : String(error);
+
+      // 处理 AbortError，转换为专门的 ToolAbortError
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new ToolAbortError(
+          'Tool execution aborted',
+          threadId || '',
+          nodeId || '',
+          toolCall.name,
+          error
+        );
+      }
 
       // 将错误信息作为工具结果添加到对话历史
       const toolMessage = {

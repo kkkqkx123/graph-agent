@@ -329,6 +329,89 @@ export class ToolError extends SDKError {
 
 
 /**
+ * 线程中断异常类型
+ *
+ * 说明：
+ * 1. 用于表示线程执行被用户请求中断（暂停或停止）
+ * 2. 这是一个控制流异常，不是真正的错误
+ * 3. 执行器捕获此异常后，会根据中断类型进行相应处理
+ * 4. 中断类型：PAUSE（暂停，可恢复）或 STOP（停止，不可恢复）
+ *
+ * 使用场景：
+ * - 用户调用 pauseThread() 时，执行器在安全点抛出此异常
+ * - 用户调用 stopThread() 时，执行器在安全点抛出此异常
+ * - NodeExecutionCoordinator 和 LLMExecutionCoordinator 检测到中断标志时抛出
+ */
+export class ThreadInterruptedException extends SDKError {
+  constructor(
+    message: string,
+    public readonly interruptionType: 'PAUSE' | 'STOP',
+    public readonly threadId?: string,
+    public readonly nodeId?: string,
+    context?: Record<string, any>
+  ) {
+    super(message, ErrorSeverity.INFO, { ...context, interruptionType, threadId, nodeId });
+  }
+
+  protected override getDefaultSeverity(): ErrorSeverity {
+    return ErrorSeverity.INFO;
+  }
+}
+
+/**
+ * LLM 调用中断错误
+ *
+ * 说明：
+ * 1. 当 LLM 调用被 AbortSignal 中断时抛出
+ * 2. 携带线程ID、节点ID等上下文信息
+ * 3. 保留原始错误以便调试
+ *
+ * 使用场景：
+ * - LLMExecutor 捕获 AbortError 后转换为 LLMAbortError
+ * - LLMExecutionCoordinator 捕获 LLMAbortError 并转换为 ThreadInterruptedException
+ */
+export class LLMAbortError extends Error {
+  override name = 'LLMAbortError';
+  
+  constructor(
+    message: string,
+    public readonly threadId: string,
+    public readonly nodeId: string,
+    public readonly originalError?: Error
+  ) {
+    super(message);
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+/**
+ * 工具执行中断错误
+ *
+ * 说明：
+ * 1. 当工具执行被 AbortSignal 中断时抛出
+ * 2. 携带线程ID、节点ID、工具名称等上下文信息
+ * 3. 保留原始错误以便调试
+ *
+ * 使用场景：
+ * - ToolCallExecutor 捕获 AbortError 后转换为 ToolAbortError
+ * - LLMExecutionCoordinator 捕获 ToolAbortError 并转换为 ThreadInterruptedException
+ */
+export class ToolAbortError extends Error {
+  override name = 'ToolAbortError';
+  
+  constructor(
+    message: string,
+    public readonly threadId: string,
+    public readonly nodeId: string,
+    public readonly toolName: string,
+    public readonly originalError?: Error
+  ) {
+    super(message);
+    Error.captureStackTrace(this, this.constructor);
+  }
+}
+
+/**
  * 脚本执行错误类型
  */
 export class CodeExecutionError extends SDKError {

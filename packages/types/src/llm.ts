@@ -106,6 +106,8 @@ export interface LLMRequest {
   tools?: ToolSchema[];
   /** 是否流式传输 */
   stream?: boolean;
+  /** AbortSignal 用于中断请求 */
+  signal?: AbortSignal;
 }
 
 /**

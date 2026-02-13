@@ -24,10 +24,6 @@ import { ThreadStatus } from '@modular-agent/types/thread';
 import { ThreadBuilder } from '../thread-builder';
 import { ThreadExecutor } from '../thread-executor';
 import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager';
-import {
-  waitForThreadPaused,
-  waitForThreadCancelled
-} from '../utils/event/event-waiter';
 import { ThreadCascadeManager } from '../managers/thread-cascade-manager';
 import { ExecutionContext } from '../context/execution-context';
 import { now } from '@modular-agent/common-utils';
@@ -103,12 +99,17 @@ export class ThreadLifecycleCoordinator {
 
   /**
    * 暂停 Thread 执行
-   * 
+   *
    * 流程：
    * 1. 获取Thread上下文
    * 2. 设置暂停标志
-   * 3. 等待执行器响应暂停完成
+   * 3. 触发 AbortController 以中断正在进行的异步操作
    * 4. 更新Thread状态
+   *
+   * 注意：
+   * - 不再等待执行器响应，执行器会在安全点检测到暂停标志并自行处理
+   * - AbortController 会中断正在进行的 LLM 调用和工具执行
+   * - 执行器会触发 THREAD_PAUSED 事件
    *
    * @param threadId Thread ID
    * @throws NotFoundError ThreadContext不存在
@@ -124,8 +125,8 @@ export class ThreadLifecycleCoordinator {
     // 1. 设置暂停标志，通知执行器应该暂停
     threadContext.setShouldPause(true);
 
-    // 2. 等待执行器在安全点处暂停并触发THREAD_PAUSED事件
-    await waitForThreadPaused(this.executionContext.getEventManager(), threadId, 5000);
+    // 2. 触发 AbortController 以中断正在进行的异步操作
+    threadContext.interrupt('PAUSE');
 
     // 3. 完全委托给Manager进行状态转换和事件触发
     await this.getLifecycleManager().pauseThread(thread);
@@ -165,13 +166,18 @@ export class ThreadLifecycleCoordinator {
 
   /**
    * 停止 Thread 执行
-   * 
+   *
    * 流程：
    * 1. 获取Thread上下文
    * 2. 设置停止标志
-   * 3. 等待执行器响应停止完成
+   * 3. 触发 AbortController 以中断正在进行的异步操作
    * 4. 更新Thread状态为CANCELLED
    * 5. 级联取消子Threads
+   *
+   * 注意：
+   * - 不再等待执行器响应，执行器会在安全点检测到停止标志并自行处理
+   * - AbortController 会中断正在进行的 LLM 调用和工具执行
+   * - 执行器会触发 THREAD_CANCELLED 事件
    *
    * @param threadId Thread ID
    * @throws NotFoundError ThreadContext不存在
@@ -187,8 +193,8 @@ export class ThreadLifecycleCoordinator {
     // 1. 设置停止标志，通知执行器应该停止
     threadContext.setShouldStop(true);
 
-    // 2. 等待执行器在安全点处停止并触发THREAD_CANCELLED事件
-    await waitForThreadCancelled(this.executionContext.getEventManager(), threadId, 5000);
+    // 2. 触发 AbortController 以中断正在进行的异步操作
+    threadContext.interrupt('STOP');
 
     // 3. 完全委托给Manager进行状态转换和事件触发
     await this.getLifecycleManager().cancelThread(thread, 'user_requested');
