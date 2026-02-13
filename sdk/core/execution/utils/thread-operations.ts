@@ -138,51 +138,21 @@ export async function join(
   }
 
   // 步骤2：等待子 thread 完成
-  // 如果 timeout 为 0，表示不超时，使用一个很大的值代替
-  const timeoutMs = timeout > 0 ? timeout * 1000 : Number.MAX_SAFE_INTEGER;
+  // 如果 timeout 为 0，表示不超时，传递 undefined
+  const timeoutMs = timeout > 0 ? timeout * 1000 : undefined;
 
-  let completedThreads: Thread[];
-  let failedThreads: Thread[];
+  // 统一使用 eventManager.waitFor() 的超时机制
+  const result = await waitForCompletion(
+    childThreadIds,
+    joinStrategy,
+    threadRegistry,
+    timeoutMs,
+    parentThreadId,
+    eventManager
+  );
 
-  if (timeout > 0) {
-    // 使用 Promise.race 实现超时控制
-    try {
-      const result = await Promise.race([
-        waitForCompletion(
-          childThreadIds,
-          joinStrategy,
-          threadRegistry,
-          timeoutMs,
-          parentThreadId,
-          eventManager
-        ),
-        new Promise<never>((_, reject) => {
-          setTimeout(() => {
-            reject(new TimeoutError('Join operation timeout', timeout));
-          }, timeoutMs);
-        })
-      ]);
-      completedThreads = result.completedThreads;
-      failedThreads = result.failedThreads;
-    } catch (error) {
-      if (error instanceof TimeoutError) {
-        throw error;
-      }
-      throw error;
-    }
-  } else {
-    // 不超时，直接等待
-    const result = await waitForCompletion(
-      childThreadIds,
-      joinStrategy,
-      threadRegistry,
-      timeoutMs,
-      parentThreadId,
-      eventManager
-    );
-    completedThreads = result.completedThreads;
-    failedThreads = result.failedThreads;
-  }
+  const completedThreads = result.completedThreads;
+  const failedThreads = result.failedThreads;
 
   // 步骤3：根据策略判断是否继续
   if (!validateJoinStrategy(completedThreads, failedThreads, childThreadIds, joinStrategy)) {
@@ -292,7 +262,7 @@ async function waitForCompletion(
   childThreadIds: string[],
   joinStrategy: JoinStrategy,
   threadRegistry: ThreadRegistry,
-  timeout: number,
+  timeout: number | undefined,
   parentThreadId?: string,
   eventManager?: EventManager
 ): Promise<{ completedThreads: Thread[]; failedThreads: Thread[] }> {
@@ -438,7 +408,7 @@ async function waitForCompletionByPolling(
   childThreadIds: string[],
   joinStrategy: JoinStrategy,
   threadRegistry: ThreadRegistry,
-  timeout: number,
+  timeout: number | undefined,
   parentThreadId?: string,
   eventManager?: EventManager
 ): Promise<{ completedThreads: Thread[]; failedThreads: Thread[] }> {

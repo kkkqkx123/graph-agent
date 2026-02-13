@@ -15,6 +15,8 @@
 import type { ThreadRegistry } from '../../services/thread-registry';
 import { ThreadLifecycleManager } from './thread-lifecycle-manager';
 import type { Thread } from '@modular-agent/types/thread';
+import type { EventManager } from '../../services/event-manager';
+import { EventType } from '@modular-agent/types/events';
 
 /**
  * ThreadCascadeManager - Thread级联管理器
@@ -22,7 +24,8 @@ import type { Thread } from '@modular-agent/types/thread';
 export class ThreadCascadeManager {
   constructor(
     private threadRegistry: ThreadRegistry,
-    private lifecycleManager: ThreadLifecycleManager
+    private lifecycleManager: ThreadLifecycleManager,
+    private eventManager: EventManager
   ) { }
 
   /**
@@ -131,25 +134,120 @@ export class ThreadCascadeManager {
   }
 
   /**
-   * 等待所有子线程完成
-   * 
+   * 等待所有子线程完成（基于事件驱动）
+   *
    * @param parentThreadId 父线程ID
    * @param timeout 超时时间（毫秒）
    * @returns 是否所有子线程都已完成
    */
   async waitForAllChildrenCompleted(parentThreadId: string, timeout: number = 30000): Promise<boolean> {
-    const startTime = Date.now();
-
-    while (Date.now() - startTime < timeout) {
-      if (!this.hasActiveChildThreads(parentThreadId)) {
-        return true;
-      }
-
-      // 等待100ms后再次检查
-      await new Promise(resolve => setTimeout(resolve, 100));
+    const parentContext = this.threadRegistry.get(parentThreadId);
+    if (!parentContext) {
+      return false;
     }
 
-    return false;
+    // 获取子线程ID列表
+    const childThreadIds = parentContext.thread.triggeredSubworkflowContext?.childThreadIds || [];
+    if (childThreadIds.length === 0) {
+      return true;
+    }
+
+    // 为每个子线程创建完成Promise
+    const completionPromises = childThreadIds.map(childThreadId => {
+      return this.waitForChildThreadCompletion(childThreadId, timeout);
+    });
+
+    try {
+      // 等待所有子线程完成
+      await Promise.all(completionPromises);
+      return true;
+    } catch (error) {
+      // 超时或其他错误
+      return false;
+    }
+  }
+
+  /**
+   * 等待单个子线程完成
+   *
+   * @param childThreadId 子线程ID
+   * @param timeout 超时时间（毫秒）
+   * @returns Promise，当子线程完成时解析
+   * @private
+   */
+  private async waitForChildThreadCompletion(childThreadId: string, timeout: number): Promise<void> {
+    const childContext = this.threadRegistry.get(childThreadId);
+    if (!childContext) {
+      throw new Error(`Child thread ${childThreadId} not found`);
+    }
+
+    const currentStatus = childContext.getStatus();
+
+    // 如果已经完成，直接返回
+    if (this.isTerminalStatus(currentStatus)) {
+      return;
+    }
+
+    // 创建超时Promise
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error(`Timeout waiting for child thread ${childThreadId}`)), timeout);
+    });
+
+    // 创建事件监听Promise
+    const eventPromise = new Promise<void>((resolve) => {
+      // 监听线程完成事件
+      const unregisterCompleted = this.eventManager.on(
+        EventType.THREAD_COMPLETED,
+        (event) => {
+          if (event.threadId === childThreadId) {
+            unregisterCompleted();
+            unregisterFailed();
+            unregisterCancelled();
+            resolve();
+          }
+        }
+      );
+
+      // 监听线程失败事件
+      const unregisterFailed = this.eventManager.on(
+        EventType.THREAD_FAILED,
+        (event) => {
+          if (event.threadId === childThreadId) {
+            unregisterCompleted();
+            unregisterFailed();
+            unregisterCancelled();
+            resolve();
+          }
+        }
+      );
+
+      // 监听线程取消事件
+      const unregisterCancelled = this.eventManager.on(
+        EventType.THREAD_CANCELLED,
+        (event) => {
+          if (event.threadId === childThreadId) {
+            unregisterCompleted();
+            unregisterFailed();
+            unregisterCancelled();
+            resolve();
+          }
+        }
+      );
+    });
+
+    // 等待事件或超时
+    await Promise.race([eventPromise, timeoutPromise]);
+  }
+
+  /**
+   * 检查状态是否为终止状态
+   *
+   * @param status 线程状态
+   * @returns 是否为终止状态
+   * @private
+   */
+  private isTerminalStatus(status: string): boolean {
+    return status === 'COMPLETED' || status === 'FAILED' || status === 'CANCELLED';
   }
 
   /**

@@ -29,7 +29,7 @@ import { EventType } from '@modular-agent/types/events';
 export async function waitForThreadPaused(
   eventManager: EventManager,
   threadId: string,
-  timeout: number = 5000
+  timeout: number | undefined = 5000
 ): Promise<void> {
   await eventManager.waitFor(EventType.THREAD_PAUSED, timeout);
 }
@@ -45,7 +45,7 @@ export async function waitForThreadPaused(
 export async function waitForThreadCancelled(
   eventManager: EventManager,
   threadId: string,
-  timeout: number = 5000
+  timeout: number | undefined = 5000
 ): Promise<void> {
   await eventManager.waitFor(EventType.THREAD_CANCELLED, timeout);
 }
@@ -61,7 +61,7 @@ export async function waitForThreadCancelled(
 export async function waitForThreadCompleted(
   eventManager: EventManager,
   threadId: string,
-  timeout: number = 30000
+  timeout: number | undefined = 30000
 ): Promise<void> {
   await eventManager.waitFor(EventType.THREAD_COMPLETED, timeout);
 }
@@ -77,7 +77,7 @@ export async function waitForThreadCompleted(
 export async function waitForThreadFailed(
   eventManager: EventManager,
   threadId: string,
-  timeout: number = 30000
+  timeout: number | undefined = 30000
 ): Promise<void> {
   await eventManager.waitFor(EventType.THREAD_FAILED, timeout);
 }
@@ -93,7 +93,7 @@ export async function waitForThreadFailed(
 export async function waitForThreadResumed(
   eventManager: EventManager,
   threadId: string,
-  timeout: number = 5000
+  timeout: number | undefined = 5000
 ): Promise<void> {
   await eventManager.waitFor(EventType.THREAD_RESUMED, timeout);
 }
@@ -109,7 +109,7 @@ export async function waitForThreadResumed(
 export async function waitForAnyLifecycleEvent(
   eventManager: EventManager,
   threadId: string,
-  timeout: number = 5000
+  timeout: number | undefined = 5000
 ): Promise<void> {
   // 使用Promise.race等待任意一个生命周期事件
   const events = [
@@ -140,7 +140,7 @@ export async function waitForAnyLifecycleEvent(
 export async function waitForMultipleThreadsCompleted(
   eventManager: EventManager,
   threadIds: string[],
-  timeout: number = 30000
+  timeout: number | undefined = 30000
 ): Promise<void> {
   const promises = threadIds.map(threadId =>
     waitForThreadCompleted(eventManager, threadId, timeout)
@@ -160,7 +160,7 @@ export async function waitForMultipleThreadsCompleted(
 export async function waitForAnyThreadCompleted(
   eventManager: EventManager,
   threadIds: string[],
-  timeout: number = 30000
+  timeout: number | undefined = 30000
 ): Promise<string> {
   const promises = threadIds.map(threadId =>
     waitForThreadCompleted(eventManager, threadId, timeout)
@@ -181,7 +181,7 @@ export async function waitForAnyThreadCompleted(
 export async function waitForAnyThreadCompletion(
   eventManager: EventManager,
   threadIds: string[],
-  timeout: number = 30000
+  timeout: number | undefined = 30000
 ): Promise<{ threadId: string; status: 'COMPLETED' | 'FAILED' }> {
   const completedPromises = threadIds.map(threadId =>
     waitForThreadCompleted(eventManager, threadId, timeout)
@@ -209,7 +209,7 @@ export async function waitForNodeCompleted(
   eventManager: EventManager,
   threadId: string,
   nodeId: string,
-  timeout: number = 30000
+  timeout: number | undefined = 30000
 ): Promise<void> {
   await eventManager.waitFor(EventType.NODE_COMPLETED, timeout);
 }
@@ -227,7 +227,7 @@ export async function waitForNodeFailed(
   eventManager: EventManager,
   threadId: string,
   nodeId: string,
-  timeout: number = 30000
+  timeout: number | undefined = 30000
 ): Promise<void> {
   await eventManager.waitFor(EventType.NODE_FAILED, timeout);
 }

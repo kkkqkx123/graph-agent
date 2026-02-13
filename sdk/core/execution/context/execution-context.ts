@@ -103,8 +103,8 @@ export class ExecutionContext {
     const lifecycleManager = new ThreadLifecycleManager(eventManager);
     this.componentRegistry.register('lifecycleManager', lifecycleManager);
 
-    // 5. ThreadCascadeManager 依赖 ThreadRegistry 和 ThreadLifecycleManager
-    const cascadeManager = new ThreadCascadeManager(threadRegistry, lifecycleManager);
+    // 5. ThreadCascadeManager 依赖 ThreadRegistry、ThreadLifecycleManager 和 EventManager
+    const cascadeManager = new ThreadCascadeManager(threadRegistry, lifecycleManager, eventManager);
     this.componentRegistry.register('cascadeManager', cascadeManager);
 
     // 6. ThreadLifecycleCoordinator 依赖 ExecutionContext

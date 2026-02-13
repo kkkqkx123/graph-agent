@@ -11,8 +11,8 @@ import { workflowRegistry } from '../../../services/workflow-registry';
 import { toolService } from '../../../services/tool-service';
 import { ThreadStatus, ThreadType } from '@modular-agent/types/thread';
 import { generateId, now } from '@modular-agent/common-utils';
-import type { Thread } from '@modular-agent/types/thread';
-import type { Graph } from '@modular-agent/types/graph';
+import type { Thread, ThreadResult } from '@modular-agent/types/thread';
+import type { Graph } from '@modular-agent/types';
 import { ThreadContext } from '../../context/thread-context';
 import { ConversationManager } from '../conversation-manager';
 import { LLMExecutor } from '../../executors/llm-executor';
@@ -26,7 +26,7 @@ describe('ThreadCascadeManager', () => {
 
   beforeEach(() => {
     lifecycleManager = new ThreadLifecycleManager(eventManager);
-    cascadeManager = new ThreadCascadeManager(threadRegistry, lifecycleManager);
+    cascadeManager = new ThreadCascadeManager(threadRegistry, lifecycleManager, eventManager);
 
     // 创建父线程
     parentThread = createMockThread('parent-thread');
@@ -174,10 +174,41 @@ describe('ThreadCascadeManager', () => {
       childThread1.status = ThreadStatus.RUNNING;
       childThread2.status = ThreadStatus.RUNNING;
 
-      // 模拟子线程在100ms后完成
-      setTimeout(() => {
+      // 模拟子线程在100ms后完成并触发事件
+      setTimeout(async () => {
         childThread1.status = ThreadStatus.COMPLETED;
         childThread2.status = ThreadStatus.COMPLETED;
+        // 触发完成事件
+        const result1: ThreadResult = {
+          threadId: childThread1.id,
+          output: {},
+          executionTime: 100,
+          nodeResults: [],
+          metadata: {
+            status: ThreadStatus.COMPLETED,
+            startTime: childThread1.startTime,
+            endTime: now(),
+            executionTime: 100,
+            nodeCount: 0,
+            errorCount: 0
+          }
+        };
+        const result2: ThreadResult = {
+          threadId: childThread2.id,
+          output: {},
+          executionTime: 100,
+          nodeResults: [],
+          metadata: {
+            status: ThreadStatus.COMPLETED,
+            startTime: childThread2.startTime,
+            endTime: now(),
+            executionTime: 100,
+            nodeCount: 0,
+            errorCount: 0
+          }
+        };
+        await lifecycleManager.completeThread(childThread1, result1);
+        await lifecycleManager.completeThread(childThread2, result2);
       }, 100);
 
       const result = await cascadeManager.waitForAllChildrenCompleted(parentThread.id, 5000);
@@ -192,6 +223,45 @@ describe('ThreadCascadeManager', () => {
       const result = await cascadeManager.waitForAllChildrenCompleted(parentThread.id, 100);
 
       expect(result).toBe(false);
+    });
+
+    it('应该在子线程已经完成时立即返回true', async () => {
+      childThread1.status = ThreadStatus.COMPLETED;
+      childThread2.status = ThreadStatus.COMPLETED;
+
+      const result = await cascadeManager.waitForAllChildrenCompleted(parentThread.id, 5000);
+
+      expect(result).toBe(true);
+    });
+
+    it('应该在子线程失败时返回true', async () => {
+      childThread1.status = ThreadStatus.RUNNING;
+      childThread2.status = ThreadStatus.RUNNING;
+
+      // 模拟子线程失败
+      setTimeout(async () => {
+        await lifecycleManager.failThread(childThread1, new Error('Test error'));
+        await lifecycleManager.failThread(childThread2, new Error('Test error'));
+      }, 100);
+
+      const result = await cascadeManager.waitForAllChildrenCompleted(parentThread.id, 5000);
+
+      expect(result).toBe(true);
+    });
+
+    it('应该在子线程取消时返回true', async () => {
+      childThread1.status = ThreadStatus.RUNNING;
+      childThread2.status = ThreadStatus.RUNNING;
+
+      // 模拟子线程取消
+      setTimeout(async () => {
+        await lifecycleManager.cancelThread(childThread1, 'Test cancel');
+        await lifecycleManager.cancelThread(childThread2, 'Test cancel');
+      }, 100);
+
+      const result = await cascadeManager.waitForAllChildrenCompleted(parentThread.id, 5000);
+
+      expect(result).toBe(true);
     });
   });
 
@@ -243,7 +313,7 @@ function createMockThread(id: string): Thread {
     variableScopes: {
       global: {},
       thread: {},
-      subgraph: [],
+      local: [],
       loop: []
     },
     input: {},
