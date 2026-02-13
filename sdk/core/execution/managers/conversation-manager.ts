@@ -5,21 +5,22 @@
  * 核心职责：
  * 1. 消息历史管理
  * 2. Token统计和事件触发（委托给 TokenUsageTracker）
- * 3. 消息索引管理（委托给 MessageIndexManager）
+ * 3. 消息索引管理（使用工具函数）
  *
  * 重要说明：
  * - ConversationManager只管理状态，不负责执行逻辑
  * - 执行逻辑由LLMExecutor负责
  * - Token统计委托给TokenUsageTracker
- * - 消息索引管理委托给MessageIndexManager
+ * - 消息索引管理使用工具函数
  * - 上下文压缩通过触发器+子工作流实现，不在此模块
  */
 
 import type { LLMMessage, LLMUsage, MessageMarkMap, TokenUsageHistory, TokenUsageStats, LLMMessageRole } from '@modular-agent/types/llm';
 import { ValidationError, RuntimeValidationError } from '@modular-agent/types/errors';
 import { TokenUsageTracker } from '../token-usage-tracker';
-import { MessageIndexManager } from './message-index-manager';
 import { TypeIndexManager } from './type-index-manager';
+import { getVisibleOriginalIndices, getVisibleMessages } from '../../utils/visible-range-calculator';
+import { startNewBatch, rollbackToBatch as rollbackBatch } from '../../utils/batch-management-utils';
 import type { EventManager } from '../../services/event-manager';
 import type { TokenLimitExceededEvent } from '@modular-agent/types/events';
 import { EventType } from '@modular-agent/types/events';
@@ -71,7 +72,7 @@ export interface ConversationState {
 export class ConversationManager implements LifecycleCapable<ConversationState> {
   private messages: LLMMessage[] = [];
   private tokenUsageTracker: TokenUsageTracker;
-  private indexManager: MessageIndexManager;
+  private markMap: MessageMarkMap;
   private typeIndexManager: TypeIndexManager;
   private eventManager?: EventManager;
   private workflowId?: string;
@@ -87,7 +88,18 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
     this.tokenUsageTracker = new TokenUsageTracker({
       tokenLimit: options.tokenLimit
     });
-    this.indexManager = new MessageIndexManager();
+    this.markMap = {
+      originalIndices: [],
+      typeIndices: {
+        system: [],
+        user: [],
+        assistant: [],
+        tool: []
+      },
+      batchBoundaries: [0],
+      boundaryToBatch: [0],
+      currentBatch: 0
+    };
     this.typeIndexManager = new TypeIndexManager();
     this.eventManager = options.eventManager;
     this.workflowId = options.workflowId;
@@ -111,8 +123,9 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
     this.messages.push({ ...message });
     const newIndex = this.messages.length - 1;
 
-    // 同步更新索引
-    this.indexManager.addIndex(newIndex);
+    // 同步更新标记映射
+    this.markMap.originalIndices.push(newIndex);
+    this.markMap.typeIndices[message.role].push(newIndex);
     
     // 同步更新类型索引
     this.typeIndexManager.addIndex(message.role, newIndex);
@@ -137,8 +150,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    * @returns 消息数组的副本
    */
   getMessages(): LLMMessage[] {
-    const uncompressedIndices = this.indexManager.getUncompressedIndices();
-    return this.indexManager.filterMessages(this.messages, uncompressedIndices);
+    return getVisibleMessages(this.messages, this.markMap);
   }
 
   /**
@@ -156,9 +168,9 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    * @returns 消息数组
    */
   getMessagesByRange(start: number, end: number): LLMMessage[] {
-    const uncompressedIndices = this.indexManager.getUncompressedIndices();
-    const filteredIndices = uncompressedIndices.filter(idx => idx >= start && idx < end);
-    return this.indexManager.filterMessages(this.messages, filteredIndices);
+    const visibleIndices = getVisibleOriginalIndices(this.markMap);
+    const filteredIndices = visibleIndices.filter(idx => idx >= start && idx < end);
+    return filteredIndices.map(idx => ({ ...this.messages[idx]! }));
   }
 
   /**
@@ -180,8 +192,19 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
       this.messages = [];
     }
 
-    // 重置索引管理器
-    this.indexManager.reset();
+    // 重置标记映射
+    this.markMap = {
+      originalIndices: [],
+      typeIndices: {
+        system: [],
+        user: [],
+        assistant: [],
+        tool: []
+      },
+      batchBoundaries: [0],
+      boundaryToBatch: [0],
+      currentBatch: 0
+    };
     
     // 重置类型索引管理器
     this.typeIndexManager.reset();
@@ -343,7 +366,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    * @param targetBatch 目标批次号
    */
   rollbackToBatch(targetBatch: number): void {
-    this.indexManager.rollbackToBatch(targetBatch);
+    this.markMap = rollbackBatch(this.markMap, targetBatch);
   }
 
   /**
@@ -351,15 +374,37 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    * @returns 标记映射
    */
   getMarkMap(): MessageMarkMap {
-    return this.indexManager.getMarkMap();
+    return {
+      ...this.markMap,
+      originalIndices: [...this.markMap.originalIndices],
+      typeIndices: {
+        system: [...this.markMap.typeIndices.system],
+        user: [...this.markMap.typeIndices.user],
+        assistant: [...this.markMap.typeIndices.assistant],
+        tool: [...this.markMap.typeIndices.tool]
+      },
+      batchBoundaries: [...this.markMap.batchBoundaries],
+      boundaryToBatch: [...this.markMap.boundaryToBatch]
+    };
   }
 
   /**
-   * 获取索引管理器实例（用于内部操作）
-   * @returns MessageIndexManager 实例
+   * 设置标记映射
+   * @param markMap 标记映射
    */
-  getIndexManager(): MessageIndexManager {
-    return this.indexManager;
+  setMarkMap(markMap: MessageMarkMap): void {
+    this.markMap = {
+      ...markMap,
+      originalIndices: [...markMap.originalIndices],
+      typeIndices: {
+        system: [...markMap.typeIndices.system],
+        user: [...markMap.typeIndices.user],
+        assistant: [...markMap.typeIndices.assistant],
+        tool: [...markMap.typeIndices.tool]
+      },
+      batchBoundaries: [...markMap.batchBoundaries],
+      boundaryToBatch: [...markMap.boundaryToBatch]
+    };
   }
 
   /**
@@ -383,7 +428,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    * @param indices 索引数组
    */
   setOriginalIndices(indices: number[]): void {
-    this.indexManager.setOriginalIndices(indices);
+    this.markMap.originalIndices = [...indices];
   }
 
   /**
@@ -406,8 +451,19 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
     // 复制 token 使用统计
     clonedManager.tokenUsageTracker = this.tokenUsageTracker.clone();
 
-    // 复制索引管理器
-    clonedManager.indexManager = this.indexManager.clone();
+    // 复制标记映射
+    clonedManager.markMap = {
+      ...this.markMap,
+      originalIndices: [...this.markMap.originalIndices],
+      typeIndices: {
+        system: [...this.markMap.typeIndices.system],
+        user: [...this.markMap.typeIndices.user],
+        assistant: [...this.markMap.typeIndices.assistant],
+        tool: [...this.markMap.typeIndices.tool]
+      },
+      batchBoundaries: [...this.markMap.batchBoundaries],
+      boundaryToBatch: [...this.markMap.boundaryToBatch]
+    };
     
     // 复制类型索引管理器
     clonedManager.typeIndexManager = this.typeIndexManager.clone();
@@ -520,7 +576,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    */
   startNewBatchWithInitialTools(boundaryIndex: number): void {
     // 开始新批次
-    this.indexManager.startNewBatch(boundaryIndex);
+    this.markMap = startNewBatch(this.markMap, boundaryIndex);
     
     // 检查是否已存在工具描述消息
     if (!this.hasToolDescriptionMessage()) {

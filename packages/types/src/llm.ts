@@ -323,3 +323,148 @@ export interface ContextModificationConfig {
   /** 批次号（用于 batch_start 和 batch_end） */
   batch?: number;
 }
+
+// ============================================================================
+// 统一消息操作接口（批次感知）
+// ============================================================================
+
+/**
+ * 消息操作上下文
+ * 包含完整的消息状态信息
+ */
+export interface MessageOperationContext {
+  /** 完整的消息数组（包含已压缩和可见消息） */
+  messages: LLMMessage[];
+  /** 消息标记映射 */
+  markMap: MessageMarkMap;
+  /** 操作选项 */
+  options?: MessageOperationOptions;
+}
+
+/**
+ * 消息操作选项
+ */
+export interface MessageOperationOptions {
+  /** 是否只操作可见消息（默认true） */
+  visibleOnly?: boolean;
+  /** 是否自动创建新批次（默认false） */
+  autoCreateBatch?: boolean;
+  /** 批次ID（用于指定操作的批次） */
+  batchId?: number;
+}
+
+/**
+ * 消息操作配置基础接口
+ */
+export interface MessageOperationConfig {
+  /** 操作类型 */
+  operation: string;
+}
+
+/**
+ * 截断操作配置（批次感知）
+ */
+export interface TruncateMessageOperation extends MessageOperationConfig {
+  operation: 'TRUNCATE';
+  /** 保留前N条可见消息 */
+  keepFirst?: number;
+  /** 保留后N条可见消息 */
+  keepLast?: number;
+  /** 删除前N条可见消息 */
+  removeFirst?: number;
+  /** 删除后N条可见消息 */
+  removeLast?: number;
+  /** 保留可见消息的索引范围 [start, end) */
+  range?: { start: number; end: number };
+  /** 按角色过滤后再截断 */
+  role?: LLMMessageRole;
+  /** 截断后是否开始新批次 */
+  createNewBatch?: boolean;
+}
+
+/**
+ * 插入操作配置（批次感知）
+ */
+export interface InsertMessageOperation extends MessageOperationConfig {
+  operation: 'INSERT';
+  /** 插入位置（相对于可见消息的索引，-1表示末尾） */
+  position: number;
+  /** 要插入的消息数组 */
+  messages: LLMMessage[];
+  /** 插入后是否开始新批次 */
+  createNewBatch?: boolean;
+}
+
+/**
+ * 替换操作配置（批次感知）
+ */
+export interface ReplaceMessageOperation extends MessageOperationConfig {
+  operation: 'REPLACE';
+  /** 要替换的可见消息索引 */
+  index: number;
+  /** 新的消息内容 */
+  message: LLMMessage;
+  /** 替换后是否开始新批次 */
+  createNewBatch?: boolean;
+}
+
+/**
+ * 清空操作配置（批次感知）
+ */
+export interface ClearMessageOperation extends MessageOperationConfig {
+  operation: 'CLEAR';
+  /** 是否保留系统消息 */
+  keepSystemMessage?: boolean;
+  /** 是否保留工具描述消息 */
+  keepToolDescription?: boolean;
+  /** 清空后是否开始新批次 */
+  createNewBatch?: boolean;
+}
+
+/**
+ * 过滤操作配置（批次感知）
+ */
+export interface FilterMessageOperation extends MessageOperationConfig {
+  operation: 'FILTER';
+  /** 按角色过滤 */
+  roles?: LLMMessageRole[];
+  /** 按内容关键词过滤（包含指定关键词的消息） */
+  contentContains?: string[];
+  /** 按内容关键词排除（不包含指定关键词的消息） */
+  contentExcludes?: string[];
+  /** 过滤后是否开始新批次 */
+  createNewBatch?: boolean;
+}
+
+/**
+ * 批次管理操作配置
+ */
+export interface BatchManagementOperation extends MessageOperationConfig {
+  operation: 'BATCH_MANAGEMENT';
+  /** 批次操作类型 */
+  batchOperation: 'START_NEW_BATCH' | 'ROLLBACK_TO_BATCH' | 'MERGE_BATCHES';
+  /** 目标批次ID（用于回退或合并） */
+  targetBatchId?: number;
+  /** 边界索引（用于开始新批次） */
+  boundaryIndex?: number;
+}
+
+/**
+ * 消息操作结果
+ */
+export interface MessageOperationResult {
+  /** 操作后的完整消息数组 */
+  messages: LLMMessage[];
+  /** 更新后的消息标记映射 */
+  markMap: MessageMarkMap;
+  /** 操作影响的可见消息索引 */
+  affectedVisibleIndices?: number[];
+  /** 新创建的批次ID（如果有） */
+  newBatchId?: number;
+  /** 操作统计信息 */
+  stats?: {
+    originalMessageCount: number;
+    visibleMessageCount: number;
+    compressedMessageCount: number;
+  };
+}

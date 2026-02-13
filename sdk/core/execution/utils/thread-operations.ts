@@ -10,6 +10,7 @@ import type { ThreadBuilder } from '../thread-builder';
 import type { ThreadRegistry } from '../../services/thread-registry';
 import type { EventManager } from '../../services/event-manager';
 import { ExecutionError, RuntimeValidationError } from '@modular-agent/types/errors';
+import { MessageArrayUtils } from '../../utils/message-array-utils';
 import {
   buildThreadForkStartedEvent,
   buildThreadForkCompletedEvent,
@@ -203,10 +204,14 @@ export async function join(
       }
 
       try {
-        // 将主线程的ConversationManager内容复制到父线程
-        parentThreadContext.conversationManager.restoreFromSnapshot(
-          mainThreadContext.conversationManager.createSnapshot()
-        );
+        // 使用 MessageArrayUtils 克隆主线程的消息并合并到父线程
+        const mainMessages = mainThreadContext.conversationManager.getMessages();
+        const clonedMessages = MessageArrayUtils.cloneMessages(mainMessages);
+        
+        // 将克隆的消息添加到父线程
+        for (const msg of clonedMessages) {
+          parentThreadContext.conversationManager.addMessage(msg);
+        }
       } catch (error) {
         throw new ExecutionError(
           `Failed to merge conversation history from main thread`,

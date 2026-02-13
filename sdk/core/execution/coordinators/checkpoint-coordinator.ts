@@ -193,7 +193,7 @@ export class CheckpointCoordinator {
 
     // 步骤8：恢复索引状态
     if (checkpoint.threadState.conversationState) {
-      conversationManager.getIndexManager().setMarkMap(checkpoint.threadState.conversationState.markMap);
+      conversationManager.setMarkMap(checkpoint.threadState.conversationState.markMap);
 
       // 恢复Token统计
       conversationManager.getTokenUsageTracker().setState(

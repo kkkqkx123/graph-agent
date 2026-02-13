@@ -1,5 +1,5 @@
 /**
- * ContinueFromTrigger节点处理函数
+ * ContinueFromTrigger节点处理函数（批次感知）
  * 负责在子工作流执行完成后，将结果回调到主工作流
  */
 
@@ -8,6 +8,10 @@ import type { Thread } from '@modular-agent/types/thread';
 import type { ContinueFromTriggerNodeConfig } from '@modular-agent/types/node';
 import { ThreadStatus } from '@modular-agent/types/thread';
 import { now } from '@modular-agent/common-utils';
+import { MessageArrayUtils } from '../../../utils/message-array-utils';
+import { executeOperation } from '../../../utils/message-operation-utils';
+import { getVisibleMessages } from '../../../utils/visible-range-calculator';
+import type { MessageOperationContext } from '@modular-agent/types/llm';
 
 /**
  * 检查节点是否可以执行
@@ -70,32 +74,34 @@ export async function continueFromTriggerHandler(
     }
   }
 
-  // 处理对话历史回调
+  // 处理对话历史回调（批次感知）
   if (config.conversationHistoryCallback) {
     const conversationManager = context?.conversationManager;
     if (conversationManager) {
-      let messagesToCallback: any[] = [];
+      const allMessages = conversationManager.getAllMessages();
+      const markMap = conversationManager.getIndexManager().getMarkMap();
       
-      const options = config.conversationHistoryCallback!;
+      // 构建操作上下文
+      const operationContext: MessageOperationContext = {
+        messages: allMessages,
+        markMap: markMap,
+        options: config.callbackOptions
+      };
       
-      if (options.lastN !== undefined) {
-        messagesToCallback = conversationManager.getRecentMessages(options.lastN);
-      } else if (options.lastNByRole) {
-        messagesToCallback = conversationManager.getRecentMessagesByRole(
-          options.lastNByRole.role,
-          options.lastNByRole.count
-        );
-      } else if (options.byRole) {
-        messagesToCallback = conversationManager.getMessagesByRole(options.byRole);
-      } else if (options.range) {
-        messagesToCallback = conversationManager.getMessagesByRange(
-          options.range.start,
-          options.range.end
-        );
-      }
+      // 执行消息操作
+      const result = executeOperation(
+        operationContext,
+        config.conversationHistoryCallback
+      );
+      
+      // 获取可见消息回传到主线程
+      const visibleMessages = getVisibleMessages(
+        result.messages,
+        result.markMap
+      );
       
       // 将消息回传到主线程
-      mainThreadContext.addMessages(messagesToCallback);
+      mainThreadContext.addMessages(visibleMessages);
     }
   }
 
