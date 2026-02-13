@@ -313,25 +313,48 @@ class EventManager {
    * 等待特定事件触发
    * @param eventType 事件类型
    * @param timeout 超时时间（毫秒）
+   * @param filter 事件过滤器函数，返回true时才解析Promise
    * @returns Promise，解析为事件对象
    */
-  waitFor<T extends BaseEvent>(eventType: EventType, timeout?: number): Promise<T> {
+  waitFor<T extends BaseEvent>(
+    eventType: EventType,
+    timeout?: number,
+    filter?: (event: T) => boolean
+  ): Promise<T> {
     return new Promise((resolve, reject) => {
       let timeoutId: NodeJS.Timeout | undefined;
+      let resolved = false;
 
-      // 创建一次性监听器
-      const unregister = this.once(eventType, (event: T) => {
+      // 创建监听器（不使用once，因为filter可能返回false）
+      const listener = (event: T) => {
+        // 检查过滤器
+        if (filter && !filter(event)) {
+          return; // 不匹配，继续等待
+        }
+        
+        // 标记为已解决
+        resolved = true;
+        
+        // 清理资源
         if (timeoutId) {
           clearTimeout(timeoutId);
         }
+        this.off(eventType, listener);
+        
+        // 解析Promise
         resolve(event);
-      });
+      };
+
+      // 注册监听器
+      this.on(eventType, listener);
 
       // 设置超时
       if (timeout) {
         timeoutId = setTimeout(() => {
-          unregister();
-          reject(new Error(`Timeout waiting for event ${eventType}`));
+          if (!resolved) {
+            this.off(eventType, listener);
+            reject(new Error(`Timeout waiting for event ${eventType}`));
+          }
         }, timeout);
       }
     });

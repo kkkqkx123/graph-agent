@@ -19,98 +19,143 @@ import type { EventManager } from '../../../services/event-manager';
 import { EventType } from '@modular-agent/types/events';
 
 /**
+ * 表示始终等待的特殊值
+ * 使用 -1 表示无限等待，符合系统级编程惯例（如 C#、Java、POSIX）
+ */
+export const WAIT_FOREVER = -1;
+
+/**
  * 等待Thread暂停事件
- * 
+ *
  * @param eventManager 事件管理器
  * @param threadId Thread ID
- * @param timeout 超时时间（毫秒），默认5000ms
+ * @param timeout 超时时间（毫秒），默认5000ms。使用 WAIT_FOREVER 或 -1 表示始终等待
  * @returns Promise，超时或事件触发时解析
+ *
+ * @example
+ * // 使用默认超时（5000ms）
+ * await waitForThreadPaused(eventManager, threadId);
+ *
+ * @example
+ * // 自定义超时（10秒）
+ * await waitForThreadPaused(eventManager, threadId, 10000);
+ *
+ * @example
+ * // 始终等待
+ * await waitForThreadPaused(eventManager, threadId, WAIT_FOREVER);
  */
 export async function waitForThreadPaused(
   eventManager: EventManager,
   threadId: string,
-  timeout: number | undefined = 5000
+  timeout: number = 5000
 ): Promise<void> {
-  await eventManager.waitFor(EventType.THREAD_PAUSED, timeout);
+  const actualTimeout = timeout === WAIT_FOREVER ? undefined : timeout;
+  await eventManager.waitFor(
+    EventType.THREAD_PAUSED,
+    actualTimeout,
+    (event) => event.threadId === threadId
+  );
 }
 
 /**
  * 等待Thread取消事件
- * 
+ *
  * @param eventManager 事件管理器
  * @param threadId Thread ID
- * @param timeout 超时时间（毫秒），默认5000ms
+ * @param timeout 超时时间（毫秒），默认5000ms。使用 WAIT_FOREVER 或 -1 表示始终等待
  * @returns Promise，超时或事件触发时解析
  */
 export async function waitForThreadCancelled(
   eventManager: EventManager,
   threadId: string,
-  timeout: number | undefined = 5000
+  timeout: number = 5000
 ): Promise<void> {
-  await eventManager.waitFor(EventType.THREAD_CANCELLED, timeout);
+  const actualTimeout = timeout === WAIT_FOREVER ? undefined : timeout;
+  await eventManager.waitFor(
+    EventType.THREAD_CANCELLED,
+    actualTimeout,
+    (event) => event.threadId === threadId
+  );
 }
 
 /**
  * 等待Thread完成事件
- * 
+ *
  * @param eventManager 事件管理器
  * @param threadId Thread ID
- * @param timeout 超时时间（毫秒），默认30000ms
+ * @param timeout 超时时间（毫秒），默认30000ms。使用 WAIT_FOREVER 或 -1 表示始终等待
  * @returns Promise，超时或事件触发时解析
  */
 export async function waitForThreadCompleted(
   eventManager: EventManager,
   threadId: string,
-  timeout: number | undefined = 30000
+  timeout: number = 30000
 ): Promise<void> {
-  await eventManager.waitFor(EventType.THREAD_COMPLETED, timeout);
+  const actualTimeout = timeout === WAIT_FOREVER ? undefined : timeout;
+  await eventManager.waitFor(
+    EventType.THREAD_COMPLETED,
+    actualTimeout,
+    (event) => event.threadId === threadId
+  );
 }
 
 /**
  * 等待Thread失败事件
- * 
+ *
  * @param eventManager 事件管理器
  * @param threadId Thread ID
- * @param timeout 超时时间（毫秒），默认30000ms
+ * @param timeout 超时时间（毫秒），默认30000ms。使用 WAIT_FOREVER 或 -1 表示始终等待
  * @returns Promise，超时或事件触发时解析
  */
 export async function waitForThreadFailed(
   eventManager: EventManager,
   threadId: string,
-  timeout: number | undefined = 30000
+  timeout: number = 30000
 ): Promise<void> {
-  await eventManager.waitFor(EventType.THREAD_FAILED, timeout);
+  const actualTimeout = timeout === WAIT_FOREVER ? undefined : timeout;
+  await eventManager.waitFor(
+    EventType.THREAD_FAILED,
+    actualTimeout,
+    (event) => event.threadId === threadId
+  );
 }
 
 /**
  * 等待Thread恢复事件
- * 
+ *
  * @param eventManager 事件管理器
  * @param threadId Thread ID
- * @param timeout 超时时间（毫秒），默认5000ms
+ * @param timeout 超时时间（毫秒），默认5000ms。使用 WAIT_FOREVER 或 -1 表示始终等待
  * @returns Promise，超时或事件触发时解析
  */
 export async function waitForThreadResumed(
   eventManager: EventManager,
   threadId: string,
-  timeout: number | undefined = 5000
+  timeout: number = 5000
 ): Promise<void> {
-  await eventManager.waitFor(EventType.THREAD_RESUMED, timeout);
+  const actualTimeout = timeout === WAIT_FOREVER ? undefined : timeout;
+  await eventManager.waitFor(
+    EventType.THREAD_RESUMED,
+    actualTimeout,
+    (event) => event.threadId === threadId
+  );
 }
 
 /**
  * 等待任意Thread生命周期事件
- * 
+ *
  * @param eventManager 事件管理器
  * @param threadId Thread ID
- * @param timeout 超时时间（毫秒），默认5000ms
+ * @param timeout 超时时间（毫秒），默认5000ms。使用 WAIT_FOREVER 或 -1 表示始终等待
  * @returns Promise，超时或任意生命周期事件触发时解析
  */
 export async function waitForAnyLifecycleEvent(
   eventManager: EventManager,
   threadId: string,
-  timeout: number | undefined = 5000
+  timeout: number = 5000
 ): Promise<void> {
+  const actualTimeout = timeout === WAIT_FOREVER ? undefined : timeout;
+  
   // 使用Promise.race等待任意一个生命周期事件
   const events = [
     EventType.THREAD_PAUSED,
@@ -120,9 +165,13 @@ export async function waitForAnyLifecycleEvent(
     EventType.THREAD_RESUMED
   ];
 
-  // 创建多个等待Promise
+  // 创建多个等待Promise，每个都使用threadId过滤器
   const promises = events.map(eventType =>
-    eventManager.waitFor(eventType, timeout)
+    eventManager.waitFor(
+      eventType,
+      actualTimeout,
+      (event) => event.threadId === threadId
+    )
   );
 
   // 等待任意一个事件触发
@@ -134,13 +183,13 @@ export async function waitForAnyLifecycleEvent(
  *
  * @param eventManager 事件管理器
  * @param threadIds 线程ID数组
- * @param timeout 超时时间（毫秒），默认30000ms
+ * @param timeout 超时时间（毫秒），默认30000ms。使用 WAIT_FOREVER 或 -1 表示始终等待
  * @returns Promise，所有线程完成或超时时解析
  */
 export async function waitForMultipleThreadsCompleted(
   eventManager: EventManager,
   threadIds: string[],
-  timeout: number | undefined = 30000
+  timeout: number = 30000
 ): Promise<void> {
   const promises = threadIds.map(threadId =>
     waitForThreadCompleted(eventManager, threadId, timeout)
@@ -154,13 +203,13 @@ export async function waitForMultipleThreadsCompleted(
  *
  * @param eventManager 事件管理器
  * @param threadIds 线程ID数组
- * @param timeout 超时时间（毫秒），默认30000ms
+ * @param timeout 超时时间（毫秒），默认30000ms。使用 WAIT_FOREVER 或 -1 表示始终等待
  * @returns Promise，任意线程完成或超时时解析，返回完成的线程ID
  */
 export async function waitForAnyThreadCompleted(
   eventManager: EventManager,
   threadIds: string[],
-  timeout: number | undefined = 30000
+  timeout: number = 30000
 ): Promise<string> {
   const promises = threadIds.map(threadId =>
     waitForThreadCompleted(eventManager, threadId, timeout)
@@ -175,13 +224,13 @@ export async function waitForAnyThreadCompleted(
  *
  * @param eventManager 事件管理器
  * @param threadIds 线程ID数组
- * @param timeout 超时时间（毫秒），默认30000ms
+ * @param timeout 超时时间（毫秒），默认30000ms。使用 WAIT_FOREVER 或 -1 表示始终等待
  * @returns Promise，任意线程完成或失败时解析，返回线程ID和状态
  */
 export async function waitForAnyThreadCompletion(
   eventManager: EventManager,
   threadIds: string[],
-  timeout: number | undefined = 30000
+  timeout: number = 30000
 ): Promise<{ threadId: string; status: 'COMPLETED' | 'FAILED' }> {
   const completedPromises = threadIds.map(threadId =>
     waitForThreadCompleted(eventManager, threadId, timeout)
@@ -202,16 +251,21 @@ export async function waitForAnyThreadCompletion(
  * @param eventManager 事件管理器
  * @param threadId 线程ID
  * @param nodeId 节点ID
- * @param timeout 超时时间（毫秒），默认30000ms
+ * @param timeout 超时时间（毫秒），默认30000ms。使用 WAIT_FOREVER 或 -1 表示始终等待
  * @returns Promise，超时或事件触发时解析
  */
 export async function waitForNodeCompleted(
   eventManager: EventManager,
   threadId: string,
   nodeId: string,
-  timeout: number | undefined = 30000
+  timeout: number = 30000
 ): Promise<void> {
-  await eventManager.waitFor(EventType.NODE_COMPLETED, timeout);
+  const actualTimeout = timeout === WAIT_FOREVER ? undefined : timeout;
+  await eventManager.waitFor(
+    EventType.NODE_COMPLETED,
+    actualTimeout,
+    (event: any) => event.threadId === threadId && event.nodeId === nodeId
+  );
 }
 
 /**
@@ -220,16 +274,21 @@ export async function waitForNodeCompleted(
  * @param eventManager 事件管理器
  * @param threadId 线程ID
  * @param nodeId 节点ID
- * @param timeout 超时时间（毫秒），默认30000ms
+ * @param timeout 超时时间（毫秒），默认30000ms。使用 WAIT_FOREVER 或 -1 表示始终等待
  * @returns Promise，超时或事件触发时解析
  */
 export async function waitForNodeFailed(
   eventManager: EventManager,
   threadId: string,
   nodeId: string,
-  timeout: number | undefined = 30000
+  timeout: number = 30000
 ): Promise<void> {
-  await eventManager.waitFor(EventType.NODE_FAILED, timeout);
+  const actualTimeout = timeout === WAIT_FOREVER ? undefined : timeout;
+  await eventManager.waitFor(
+    EventType.NODE_FAILED,
+    actualTimeout,
+    (event: any) => event.threadId === threadId && event.nodeId === nodeId
+  );
 }
 
 /**
