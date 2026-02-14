@@ -14,11 +14,3 @@ export enum WorkflowType {
   /** 依赖工作流：包含EXECUTE_TRIGGERED_SUBGRAPH触发器或SUBGRAPH节点 */
   DEPENDENT = 'DEPENDENT'
 }
-
-/**
- * 工作流状态枚举
- */
-export enum WorkflowStatus {
-  DRAFT = 'DRAFT',
-  ACTIVE = 'ACTIVE'
-}

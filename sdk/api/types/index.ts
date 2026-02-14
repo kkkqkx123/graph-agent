@@ -24,7 +24,7 @@ export { DEFAULT_EXECUTION_OPTIONS, mergeExecutionOptions } from './execution-op
 // 核心类型
 export type { ThreadOptions, SDKOptions, SDKDependencies } from './core-types';
 
-// 注册表类型
+// 注册表类型（从 types 层导入）
 export type {
   WorkflowFilter,
   ThreadFilter,
@@ -32,9 +32,9 @@ export type {
   ThreadSummary,
   NodeTemplateFilter,
   NodeTemplateSummary
-} from './registry-types';
+} from '@modular-agent/types';
 
-// 管理类型
+// 管理类型（从 types 层导入）
 export type {
   CheckpointFilter,
   CheckpointSummary,
@@ -42,15 +42,15 @@ export type {
   VariableUpdateOptions,
   VariableFilter,
   TriggerFilter
-} from './management-types';
+} from '@modular-agent/types';
 
-// 工具类型
+// 工具类型（从 types 层导入）
 export type {
   ToolFilter,
   ToolOptions,
   ToolExecutionResult,
   ToolTestResult
-} from './tools-types';
+} from '@modular-agent/types';
 
 // 脚本类型
 export type {

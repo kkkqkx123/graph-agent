@@ -12,7 +12,7 @@ import {
 
 import type { Script } from '@modular-agent/types';
 import { ScriptType } from '@modular-agent/types';
-import type { ScriptFilter, ScriptRegistrationConfig } from '@modular-agent/sdk/api/types/code-types';
+import type { ScriptFilter, ScriptRegistrationConfig } from '@modular-agent/types';
 import { NotFoundError } from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api';
 import type { APIDependencies } from '../../core/api-dependencies';
@@ -99,6 +99,9 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    */
   protected applyFilter(scripts: Script[], filter: ScriptFilter): Script[] {
     return scripts.filter(script => {
+      if (filter.ids && !filter.ids.some(id => script.id.includes(id))) {
+        return false;
+      }
       if (filter.name && !script.name.includes(filter.name)) {
         return false;
       }

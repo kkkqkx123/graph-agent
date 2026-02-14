@@ -9,8 +9,7 @@ import {
   validateObject
 } from '../../validation/validation-strategy';
 
-import type { Tool } from '@modular-agent/types';
-import type { ToolFilter } from '@modular-agent/sdk/api/types/tools-types';
+import type { Tool, ToolFilter } from '@modular-agent/types';
 import { NotFoundError } from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api';
 import type { APIDependencies } from '../../core/api-dependencies';
@@ -110,6 +109,9 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
    */
   protected applyFilter(tools: Tool[], filter: ToolFilter): Tool[] {
     return tools.filter(tool => {
+      if (filter.ids && !filter.ids.some(id => tool.id.includes(id))) {
+        return false;
+      }
       if (filter.name && !tool.name.includes(filter.name)) {
         return false;
       }
@@ -124,6 +126,8 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
           return false;
         }
       }
+      // enabled 过滤暂时不支持，因为 Tool 接口没有 enabled 字段
+      // TODO: 如果需要支持 enabled 过滤，需要从其他地方获取工具的启用状态
       return true;
     });
   }

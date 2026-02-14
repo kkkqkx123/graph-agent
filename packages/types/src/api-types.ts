@@ -4,7 +4,6 @@
  */
 
 import type { ID, Timestamp } from './common';
-import { WorkflowStatus } from './workflow';
 import { ThreadStatus } from './thread';
 import { ToolType } from './tool';
 import type { ScriptType } from './code';
@@ -63,8 +62,6 @@ export interface WorkflowFilter {
   ids?: ID[];
   /** 工作流名称（支持模糊匹配） */
   name?: string;
-  /** 工作流状态 */
-  status?: WorkflowStatus;
   /** 标签数组 */
   tags?: string[];
   /** 作者 */
@@ -433,8 +430,6 @@ export interface WorkflowSummary {
   name: string;
   /** 工作流描述 */
   description?: string;
-  /** 工作流状态 */
-  status: WorkflowStatus;
   /** 版本 */
   version: string;
   /** 节点数量 */

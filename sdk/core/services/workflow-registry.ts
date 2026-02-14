@@ -13,26 +13,14 @@ import type {
   WorkflowDefinition,
   WorkflowMetadata,
   WorkflowRelationship,
-  WorkflowHierarchy
+  WorkflowHierarchy,
+  WorkflowSummary
 } from '@modular-agent/types';
 import { ProcessedWorkflowDefinition, WorkflowType } from '@modular-agent/types';
 import type { WorkflowReferenceInfo, WorkflowReferenceRelation, WorkflowReferenceType } from '@modular-agent/types';
 import { processWorkflow, type ProcessOptions } from '../graph/workflow-processor';
 import { WorkflowReferenceManager } from '../execution/managers/workflow-reference-manager';
 import { ValidationError, ExecutionError, ConfigurationValidationError, WorkflowNotFoundError } from '@modular-agent/types';
-
-/**
- * 工作流摘要信息
- */
-export interface WorkflowSummary {
-  id: string;
-  name: string;
-  description?: string;
-  version: string;
-  createdAt: number;
-  updatedAt: number;
-  metadata?: WorkflowMetadata;
-}
 
 /**
  * 工作流版本信息
@@ -317,9 +305,12 @@ class WorkflowRegistry {
         name: workflow.name,
         description: workflow.description,
         version: workflow.version,
+        nodeCount: workflow.nodes.length,
+        edgeCount: workflow.edges.length,
         createdAt: workflow.createdAt,
         updatedAt: workflow.updatedAt,
-        metadata: workflow.metadata
+        tags: workflow.metadata?.tags,
+        category: workflow.metadata?.category
       });
     }
     return summaries;

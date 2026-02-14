@@ -7,8 +7,7 @@ import { GenericResourceAPI } from '../generic-resource-api';
 import { threadRegistry, type ThreadRegistry } from '../../../core/services/thread-registry';
 import { TriggerStatus } from '@modular-agent/types';
 import type { Trigger } from '@modular-agent/types';
-import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types';
-import type { TriggerFilter } from '@modular-agent/sdk/api/types/management-types';
+import { NotFoundError, ThreadContextNotFoundError, TriggerFilter } from '@modular-agent/types';
 
 /**
  * TriggerResourceAPI - 触发器资源管理API
@@ -85,19 +84,13 @@ export class TriggerResourceAPI extends GenericResourceAPI<Trigger, string, Trig
    */
   protected applyFilter(triggers: Trigger[], filter: TriggerFilter): Trigger[] {
     return triggers.filter(trigger => {
-      if (filter.triggerId && trigger.id !== filter.triggerId) {
+      if (filter.ids && !filter.ids.includes(trigger.id)) {
         return false;
       }
       if (filter.name && !trigger.name.toLowerCase().includes(filter.name.toLowerCase())) {
         return false;
       }
-      if (filter.status && trigger.status !== filter.status) {
-        return false;
-      }
       if (filter.workflowId && trigger.workflowId !== filter.workflowId) {
-        return false;
-      }
-      if (filter.threadId && trigger.threadId !== filter.threadId) {
         return false;
       }
       return true;

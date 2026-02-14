@@ -5,20 +5,11 @@
 
 import { GenericResourceAPI } from '../generic-resource-api';
 import { threadRegistry, type ThreadRegistry } from '../../../core/services/thread-registry';
-import type { Thread } from '@modular-agent/types';
+import type { Thread, VariableFilter } from '@modular-agent/types';
 import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types';
 
-/**
- * 变量过滤器
- */
-export interface VariableFilter {
-  /** 线程ID */
-  threadId?: string;
-  /** 变量名称 */
-  name?: string;
-  /** 变量类型 */
-  type?: string;
-}
+// 重新导出 VariableFilter 供外部使用
+export type { VariableFilter };
 
 /**
  * 变量定义信息

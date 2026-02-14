@@ -4,8 +4,7 @@
  */
 
 import { GenericResourceAPI } from '../generic-resource-api';
-import type { BaseEvent } from '@modular-agent/types';
-import type { EventFilter } from '@modular-agent/sdk/api/types/management-types';
+import type { BaseEvent, EventFilter } from '@modular-agent/types';
 
 /**
  * 事件统计信息
@@ -90,10 +89,10 @@ export class EventResourceAPI extends GenericResourceAPI<BaseEvent, string, Even
       if (filter.nodeId && 'nodeId' in event && (event as any).nodeId !== filter.nodeId) {
         return false;
       }
-      if (filter.startTimeFrom && event.timestamp < filter.startTimeFrom) {
+      if (filter.timestampRange?.start && event.timestamp < filter.timestampRange.start) {
         return false;
       }
-      if (filter.startTimeTo && event.timestamp > filter.startTimeTo) {
+      if (filter.timestampRange?.end && event.timestamp > filter.timestampRange.end) {
         return false;
       }
       return true;

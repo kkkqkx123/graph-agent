@@ -5,8 +5,7 @@
  */
 
 import { threadRegistry as globalThreadRegistry, type ThreadRegistry } from '../../../core/services/thread-registry';
-import type { Thread, ThreadResult, ThreadStatus } from '@modular-agent/types';
-import type { ThreadFilter, ThreadSummary } from '@modular-agent/sdk/api/types/registry-types';
+import type { Thread, ThreadResult, ThreadStatus, ThreadFilter, ThreadSummary } from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api';
 import { getErrorMessage } from '@modular-agent/sdk/api/types/execution-result';
 import type { APIDependencies } from '../../core/api-dependencies';
@@ -90,7 +89,7 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
    */
   protected applyFilter(resources: Thread[], filter: ThreadFilter): Thread[] {
     return resources.filter(thread => {
-      if (filter.threadId && !thread.id.includes(filter.threadId)) {
+      if (filter.ids && !filter.ids.some(id => thread.id.includes(id))) {
         return false;
       }
       if (filter.workflowId && thread.workflowId !== filter.workflowId) {
@@ -99,11 +98,13 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
       if (filter.status && thread.status !== filter.status) {
         return false;
       }
-      if (filter.startTimeFrom && thread.startTime < filter.startTimeFrom) {
-        return false;
-      }
-      if (filter.startTimeTo && thread.startTime > filter.startTimeTo) {
-        return false;
+      if (filter.createdAtRange) {
+        if (filter.createdAtRange.start && thread.startTime < filter.createdAtRange.start) {
+          return false;
+        }
+        if (filter.createdAtRange.end && thread.startTime > filter.createdAtRange.end) {
+          return false;
+        }
       }
       return true;
     });
@@ -122,14 +123,16 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
     const threads = result.data;
 
     return threads.map(thread => ({
-      threadId: thread.id,
+      id: thread.id,
       workflowId: thread.workflowId,
-      workflowVersion: thread.workflowVersion,
+      workflowName: '', // TODO: 从工作流注册表获取工作流名称
       status: thread.status,
+      threadType: thread.threadType,
       currentNodeId: thread.currentNodeId,
       startTime: thread.startTime,
       endTime: thread.endTime,
-      executionTime: thread.endTime ? thread.endTime - thread.startTime : undefined
+      executionTime: thread.endTime ? thread.endTime - thread.startTime : undefined,
+      errorCount: 0 // TODO: 从实际数据中获取错误数量
     }));
   }
 

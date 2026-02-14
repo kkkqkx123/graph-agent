@@ -85,10 +85,19 @@ export class CheckpointResourceAPI extends GenericResourceAPI<Checkpoint, string
    */
   protected applyFilter(checkpoints: Checkpoint[], filter: CheckpointFilter): Checkpoint[] {
     return checkpoints.filter(cp => {
+      if (filter.ids && !filter.ids.some(id => cp.id.includes(id))) {
+        return false;
+      }
       if (filter.threadId && cp.threadId !== filter.threadId) {
         return false;
       }
       if (filter.workflowId && cp.workflowId !== filter.workflowId) {
+        return false;
+      }
+      if (filter.timestampRange?.start && cp.timestamp < filter.timestampRange.start) {
+        return false;
+      }
+      if (filter.timestampRange?.end && cp.timestamp > filter.timestampRange.end) {
         return false;
       }
       if (filter.startTimeFrom && cp.timestamp < filter.startTimeFrom) {

@@ -4,8 +4,7 @@
  * 重构版本：继承GenericResourceAPI，提高代码复用性和一致性
  */
 
-import type { NodeTemplate } from '@modular-agent/types';
-import type { NodeTemplateFilter, NodeTemplateSummary } from '@modular-agent/sdk/api/types/registry-types';
+import type { NodeTemplate, NodeTemplateFilter, NodeTemplateSummary } from '@modular-agent/types';
 import { ValidationError, ConfigurationValidationError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
@@ -85,7 +84,7 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
       if (filter.name && !template.name.includes(filter.name)) {
         return false;
       }
-      if (filter.type && template.type !== filter.type) {
+      if (filter.nodeType && template.type !== filter.nodeType) {
         return false;
       }
       if (filter.category && template.metadata?.['category'] !== filter.category) {
@@ -116,7 +115,7 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
       if (filter.name && !summary.name.includes(filter.name)) {
         return false;
       }
-      if (filter.type && summary.type !== filter.type) {
+      if (filter.nodeType && summary.type !== filter.nodeType) {
         return false;
       }
       if (filter.category && summary.category !== filter.category) {

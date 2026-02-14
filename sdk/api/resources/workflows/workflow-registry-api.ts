@@ -11,8 +11,7 @@ import {
 } from '../../validation/validation-strategy';
 
 import { GenericResourceAPI } from '../generic-resource-api';
-import type { WorkflowDefinition } from '@modular-agent/types';
-import type { WorkflowFilter, WorkflowSummary } from '@modular-agent/sdk/api/types/registry-types';
+import type { WorkflowDefinition, WorkflowFilter, WorkflowSummary } from '@modular-agent/types';
 import type { APIDependencies } from '../../core/api-dependencies';
 
 /**
@@ -162,7 +161,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
    */
   protected applyFilter(workflows: WorkflowDefinition[], filter: WorkflowFilter): WorkflowDefinition[] {
     return workflows.filter(workflow => {
-      if (filter.id && !workflow.id.includes(filter.id)) {
+      if (filter.ids && !filter.ids.some(id => workflow.id.includes(id))) {
         return false;
       }
       if (filter.name && !workflow.name.includes(filter.name)) {
@@ -266,7 +265,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
 
     // 应用过滤条件
     return summaries.filter((summary: WorkflowSummary) => {
-      if (filter.id && !summary.id.includes(filter.id)) {
+      if (filter.ids && !filter.ids.some(id => summary.id.includes(id))) {
         return false;
       }
       if (filter.name && !summary.name.includes(filter.name)) {
@@ -275,17 +274,15 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
       if (filter.version && summary.version !== filter.version) {
         return false;
       }
-      if (filter.tags && summary.metadata?.tags) {
-        if (!filter.tags.every(tag => summary.metadata?.tags?.includes(tag))) {
+      if (filter.tags && summary.tags) {
+        if (!filter.tags.every(tag => summary.tags?.includes(tag))) {
           return false;
         }
       }
-      if (filter.category && summary.metadata?.category !== filter.category) {
+      if (filter.category && summary.category !== filter.category) {
         return false;
       }
-      if (filter.author && summary.metadata?.author !== filter.author) {
-        return false;
-      }
+      // author 过滤暂时不支持，因为 WorkflowSummary 没有 author 字段
       return true;
     });
   }
