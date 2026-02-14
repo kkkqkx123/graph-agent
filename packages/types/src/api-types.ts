@@ -4,12 +4,12 @@
  */
 
 import type { ID, Timestamp } from './common';
-import type { WorkflowStatus } from './workflow';
-import type { ThreadStatus } from './thread';
-import type { ToolType } from './tool';
+import { WorkflowStatus } from './workflow';
+import { ThreadStatus } from './thread';
+import { ToolType } from './tool';
 import type { ScriptType } from './code';
-import type { CheckpointTriggerType } from './checkpoint';
-import type { EventType } from './events';
+import { CheckpointTriggerType } from './checkpoint';
+import { EventType } from './events';
 
 // ============================================================================
 // SDK配置类型

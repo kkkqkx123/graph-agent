@@ -10,7 +10,8 @@
  */
 
 import type { ID, Timestamp, Metadata } from './common';
-import type { TriggerCondition, TriggerAction } from './trigger';
+import type { TriggerCondition } from './trigger';
+import type { TriggerAction } from './trigger';
 
 /**
  * 触发器模板定义

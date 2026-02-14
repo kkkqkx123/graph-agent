@@ -4,7 +4,8 @@
  */
 
 import type { ID, Metadata, Timestamp } from './common';
-import type { NodeType, NodeConfig } from './node';
+import { NodeType } from './node';
+import type { NodeConfig } from './node';
 
 /**
  * 节点模板
