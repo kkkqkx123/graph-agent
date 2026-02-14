@@ -3,7 +3,7 @@
  * 定义检查点、事件、变量、触发器管理相关的类型
  */
 
-import type { EventType } from '@modular-agent/types/events';
+import type { EventType } from '@modular-agent/types';
 
 /**
  * 检查点过滤器

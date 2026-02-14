@@ -9,8 +9,8 @@ import { ExecutionContext } from '../context/execution-context';
 import { join, ForkConfig } from '@modular-agent/common-utils';
 import { ThreadOperationCoordinator } from '../coordinators/thread-operation-coordinator';
 import { ConversationManager } from '../managers/conversation-manager';
-import type { Thread } from '@modular-agent/types/thread';
-import { ThreadStatus } from '@modular-agent/types/thread';
+import type { Thread } from '@modular-agent/types';
+import { ThreadStatus } from '@modular-agent/types';
 
 describe('Fork/Join 主线程上下文处理', () => {
   let executionContext: ExecutionContext;

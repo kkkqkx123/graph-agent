@@ -9,9 +9,9 @@
  */
 
 import { errorService } from '../error-service';
-import { ValidationError, ExecutionError, ToolError, NotFoundError, SDKError, ErrorSeverity } from '@modular-agent/types/errors';
+import { ValidationError, ExecutionError, ToolError, NotFoundError, SDKError, ErrorSeverity } from '@modular-agent/types';
 import { EventManager } from '../event-manager';
-import type { ErrorEvent } from '@modular-agent/types/events';
+import type { ErrorEvent } from '@modular-agent/types';
 
 // Mock EventManager
 jest.mock('../event-manager');

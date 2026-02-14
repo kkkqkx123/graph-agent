@@ -5,7 +5,7 @@
  * 所有函数都是纯函数，不持有任何状态
  */
 
-import type { 
+import type {
   MessageOperationContext,
   MessageOperationConfig,
   MessageOperationResult,
@@ -17,7 +17,7 @@ import type {
   BatchManagementOperation,
   LLMMessage,
   MessageMarkMap
-} from '@modular-agent/types/llm';
+} from '@modular-agent/types';
 import { getCurrentBoundary, getVisibleOriginalIndices, visibleIndexToOriginal, getVisibleMessages } from './visible-range-calculator';
 import { startNewBatch } from './batch-management-utils';
 import { MessageArrayUtils } from './message-array-utils';
@@ -121,7 +121,7 @@ function executeTruncateOperation(
   return {
     messages: workingMessages,
     markMap: workingMarkMap,
-    affectedVisibleIndices,
+    affectedBatchIndex: workingMarkMap.currentBatch,
     stats: calculateStats(workingMessages, workingMarkMap)
   };
 }
@@ -190,7 +190,7 @@ function executeInsertOperation(
   return {
     messages: workingMessages,
     markMap: workingMarkMap,
-    affectedVisibleIndices,
+    affectedBatchIndex: workingMarkMap.currentBatch,
     stats: calculateStats(workingMessages, workingMarkMap)
   };
 }
@@ -231,7 +231,7 @@ function executeReplaceOperation(
   return {
     messages: workingMessages,
     markMap: workingMarkMap,
-    affectedVisibleIndices,
+    affectedBatchIndex: workingMarkMap.currentBatch,
     stats: calculateStats(workingMessages, workingMarkMap)
   };
 }
@@ -303,7 +303,7 @@ function executeClearOperation(
   return {
     messages: workingMessages,
     markMap: workingMarkMap,
-    affectedVisibleIndices,
+    affectedBatchIndex: workingMarkMap.currentBatch,
     stats: calculateStats(workingMessages, workingMarkMap)
   };
 }
@@ -389,7 +389,7 @@ function executeFilterOperation(
   return {
     messages: workingMessages,
     markMap: workingMarkMap,
-    affectedVisibleIndices,
+    affectedBatchIndex: workingMarkMap.currentBatch,
     stats: calculateStats(workingMessages, workingMarkMap)
   };
 }
@@ -413,16 +413,12 @@ function executeBatchManagementOperation(
       break;
       
     case 'ROLLBACK_TO_BATCH':
-      if (operation.targetBatchId === undefined) {
-        throw new Error('targetBatchId is required for ROLLBACK_TO_BATCH operation');
+      if (operation.targetBatch === undefined) {
+        throw new Error('targetBatch is required for ROLLBACK_TO_BATCH operation');
       }
       const { rollbackToBatch } = require('./batch-management-utils');
-      workingMarkMap = rollbackToBatch(workingMarkMap, operation.targetBatchId);
+      workingMarkMap = rollbackToBatch(workingMarkMap, operation.targetBatch);
       break;
-      
-    case 'MERGE_BATCHES':
-      // MERGE_BATCHES 操作需要额外的参数，这里暂时不支持
-      throw new Error('MERGE_BATCHES operation is not yet supported');
       
     default:
       throw new Error(`Unsupported batch operation: ${operation.batchOperation}`);
@@ -431,6 +427,7 @@ function executeBatchManagementOperation(
   return {
     messages,
     markMap: workingMarkMap,
+    affectedBatchIndex: workingMarkMap.currentBatch,
     stats: calculateStats(messages, workingMarkMap)
   };
 }

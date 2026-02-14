@@ -4,7 +4,7 @@
  */
 
 import type { UserInteractionHandler } from '@modular-agent/types';
-import type { ThreadOptions } from '@modular-agent/types/thread';
+import type { ThreadOptions } from '@modular-agent/types';
 import type { ExecutionContext } from '../../core/execution/context/execution-context';
 
 /**

@@ -3,8 +3,8 @@
  */
 
 import { executeTriggeredSubgraphHandler } from '../execute-triggered-subgraph-handler';
-import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types/trigger';
-import { TriggerActionType } from '@modular-agent/types/trigger';
+import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
+import { TriggerActionType } from '@modular-agent/types';
 import { ExecutionContext } from '../../../context/execution-context';
 import { executeSingleTriggeredSubgraph } from '../../triggered-subgraph-handler';
 

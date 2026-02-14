@@ -5,7 +5,7 @@
  */
 
 import { MessageArrayUtils } from '../message-array-utils';
-import type { LLMMessage } from '@modular-agent/types/llm';
+import type { LLMMessage } from '@modular-agent/types';
 
 describe('MessageArrayUtils', () => {
   // 测试数据

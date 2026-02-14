@@ -6,9 +6,9 @@ import {
   executeHook,
   type HookExecutionContext
 } from '../hook-handler';
-import { HookType } from '@modular-agent/types/node';
-import type { Node, NodeHook } from '@modular-agent/types/node';
-import type { Thread, NodeExecutionResult } from '@modular-agent/types/thread';
+import { HookType } from '@modular-agent/types';
+import type { Node, NodeHook } from '@modular-agent/types';
+import type { Thread, NodeExecutionResult } from '@modular-agent/types';
 
 describe('hook-handler', () => {
   let mockThread: Thread;

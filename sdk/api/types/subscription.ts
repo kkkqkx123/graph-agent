@@ -3,7 +3,7 @@
  * 定义事件订阅操作的统一接口
  */
 
-import type { EventType, EventListener, BaseEvent } from '@modular-agent/types/events';
+import type { EventType, EventListener, BaseEvent } from '@modular-agent/types';
 
 /**
  * Subscription 元数据

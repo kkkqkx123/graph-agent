@@ -12,7 +12,7 @@ import type {
   LLMProfile,
   LLMMessage,
   LLMToolCall
-} from '@modular-agent/types/llm';
+} from '@modular-agent/types';
 import { generateId } from '../../utils';
 import { convertToolsToGeminiFormat } from '../tool-converter';
 import { extractAndFilterSystemMessages } from '../message-helper';

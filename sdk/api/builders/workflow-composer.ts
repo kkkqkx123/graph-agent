@@ -3,11 +3,11 @@
  * 支持工作流的串联、并联和结果合并
  */
 
-import type { WorkflowDefinition } from '@modular-agent/types/workflow';
-import type { ThreadResult } from '@modular-agent/types/thread';
+import type { WorkflowDefinition } from '@modular-agent/types';
+import type { ThreadResult } from '@modular-agent/types';
 import { Observable, create, type Observer } from '../utils/observable';
 import { ok, err } from '@modular-agent/common-utils';
-import type { Result } from '@modular-agent/types/result';
+import type { Result } from '@modular-agent/types';
 
 /**
  * 工作流组合类型

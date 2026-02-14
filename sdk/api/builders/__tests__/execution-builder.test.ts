@@ -5,8 +5,8 @@
 import { ExecutionBuilder } from '../execution-builder';
 import { ThreadExecutorAPI } from '@modular-agent/sdk/core/thread-executor-api';
 import { workflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
-import type { WorkflowDefinition } from '@modular-agent/types/workflow';
-import { NodeType } from '@modular-agent/types/node';
+import type { WorkflowDefinition } from '@modular-agent/types';
+import { NodeType } from '@modular-agent/types';
 
 describe('ExecutionBuilder', () => {
   let executionBuilder: ExecutionBuilder;

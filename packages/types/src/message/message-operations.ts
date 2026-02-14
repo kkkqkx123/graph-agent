@@ -5,18 +5,20 @@
 
 import type { Message } from './message';
 import type { MessageArrayState, MessageArrayStats } from './message-array';
+import type { MessageMarkMap } from './message-mark-map';
 
 /**
  * 消息操作类型
  */
-export type MessageOperationType = 
-  | 'APPEND'      // 尾插消息（不创建新批次）
-  | 'INSERT'      // 中间插入消息（创建新批次）
-  | 'REPLACE'     // 替换消息（创建新批次）
-  | 'TRUNCATE'    // 截断消息（创建新批次）
-  | 'CLEAR'       // 清空消息（创建新批次，快照为空）
-  | 'FILTER'      // 过滤消息（创建新批次）
-  | 'ROLLBACK';   // 回退到指定批次
+export type MessageOperationType =
+  | 'APPEND'             // 尾插消息（不创建新批次）
+  | 'INSERT'             // 中间插入消息（创建新批次）
+  | 'REPLACE'            // 替换消息（创建新批次）
+  | 'TRUNCATE'           // 截断消息（创建新批次）
+  | 'CLEAR'              // 清空消息（创建新批次，快照为空）
+  | 'FILTER'             // 过滤消息（创建新批次）
+  | 'ROLLBACK'           // 回退到指定批次
+  | 'BATCH_MANAGEMENT';  // 批次管理操作
 
 /**
  * 消息操作配置基础接口
@@ -44,6 +46,8 @@ export interface InsertMessageOperation extends MessageOperationConfig {
   position: number;
   /** 要插入的消息数组 */
   messages: Message[];
+  /** 插入后是否开始新批次 */
+  createNewBatch?: boolean;
 }
 
 /**
@@ -55,6 +59,8 @@ export interface ReplaceMessageOperation extends MessageOperationConfig {
   index: number;
   /** 新的消息内容 */
   message: Message;
+  /** 替换后是否开始新批次 */
+  createNewBatch?: boolean;
 }
 
 /**
@@ -74,6 +80,8 @@ export interface TruncateMessageOperation extends MessageOperationConfig {
   range?: { start: number; end: number };
   /** 按角色过滤后再截断 */
   role?: Message['role'];
+  /** 截断后是否开始新批次 */
+  createNewBatch?: boolean;
 }
 
 /**
@@ -83,6 +91,10 @@ export interface ClearMessageOperation extends MessageOperationConfig {
   operation: 'CLEAR';
   /** 是否保留系统消息 */
   keepSystemMessage?: boolean;
+  /** 是否保留工具描述消息 */
+  keepToolDescription?: boolean;
+  /** 清空后是否开始新批次 */
+  createNewBatch?: boolean;
 }
 
 /**
@@ -96,6 +108,8 @@ export interface FilterMessageOperation extends MessageOperationConfig {
   contentContains?: string[];
   /** 按内容关键词排除（不包含指定关键词的消息） */
   contentExcludes?: string[];
+  /** 过滤后是否开始新批次 */
+  createNewBatch?: boolean;
 }
 
 /**
@@ -111,10 +125,16 @@ export interface RollbackMessageOperation extends MessageOperationConfig {
  * 消息操作结果
  */
 export interface MessageOperationResult {
-  /** 操作后的消息数组状态 */
-  state: MessageArrayState;
+  /** 操作后的消息数组 */
+  messages: Message[];
+  /** 操作后的标记映射 */
+  markMap: MessageMarkMap;
   /** 操作影响的批次索引 */
   affectedBatchIndex: number;
   /** 操作统计信息 */
-  stats: MessageArrayStats;
+  stats: {
+    originalMessageCount: number;
+    visibleMessageCount: number;
+    compressedMessageCount: number;
+  };
 }

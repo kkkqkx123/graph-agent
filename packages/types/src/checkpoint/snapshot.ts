@@ -41,6 +41,8 @@ export interface ThreadStateSnapshot {
   conversationState?: {
     /** 消息数组状态 */
     messageArrayState?: any;
+    /** 消息标记映射 */
+    markMap?: any;
     /** Token使用统计 */
     tokenUsage: TokenUsageStats | null;
     /** 当前请求Token使用 */

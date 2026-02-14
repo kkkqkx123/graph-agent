@@ -5,10 +5,10 @@
  */
 
 import { z } from 'zod';
-import type { LLMMessage, LLMMessageRole, LLMToolCall } from '@modular-agent/types/llm';
-import { SchemaValidationError } from '@modular-agent/types/errors';
+import type { LLMMessage, MessageRole, LLMToolCall } from '@modular-agent/types';
+import { SchemaValidationError } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
-import type { Result } from '@modular-agent/types/result';
+import type { Result } from '@modular-agent/types';
 
 /**
  * 文本内容项schema
@@ -133,7 +133,7 @@ export class MessageValidator {
    * @param role 消息角色
    * @returns 验证结果
    */
-  validateRole(role: LLMMessageRole): Result<LLMMessageRole, SchemaValidationError[]> {
+  validateRole(role: MessageRole): Result<MessageRole, SchemaValidationError[]> {
     if (!role) {
       return err([new SchemaValidationError('Message role is required', { field: 'role' })]);
     }
@@ -151,7 +151,7 @@ export class MessageValidator {
    * @param role 消息角色
    * @returns 验证结果
    */
-  validateContent(content: string | any[], role: LLMMessageRole): Result<string | any[], SchemaValidationError[]> {
+  validateContent(content: string | any[], role: MessageRole): Result<string | any[], SchemaValidationError[]> {
     const result = messageContentSchema.safeParse(content);
     if (result.success) {
       // 对于tool角色，如果内容是数组，验证所有内容项都是tool_result类型

@@ -3,7 +3,8 @@
  */
 
 import type { ID } from '../../common';
-import type { LLMMessageRole } from '../../llm';
+import type { MessageRole } from '../../message';
+import type { TruncateMessageOperation, FilterMessageOperation } from '../../message';
 
 /**
  * 子图节点配置
@@ -42,29 +43,25 @@ export interface ContinueFromTriggerNodeConfig {
     operation: 'TRUNCATE' | 'FILTER';
     
     /** 截断操作配置 */
-    truncate?: {
+    truncate?: TruncateMessageOperation & {
       /** 回传最后N条可见消息 */
       lastN?: number;
       /** 回传最后N条指定角色的可见消息 */
       lastNByRole?: {
-        role: LLMMessageRole;
+        role: MessageRole;
         count: number;
       };
     };
     
     /** 过滤操作配置 */
-    filter?: {
+    filter?: FilterMessageOperation & {
       /** 回传指定角色的所有可见消息 */
-      byRole?: LLMMessageRole;
+      byRole?: MessageRole;
       /** 回传指定范围的可见消息 */
       range?: {
         start: number;
         end: number;
       };
-      /** 按内容关键词过滤（包含指定关键词的消息） */
-      contentContains?: string[];
-      /** 按内容关键词排除（不包含指定关键词的消息） */
-      contentExcludes?: string[];
     };
   };
   /** 回调选项 */

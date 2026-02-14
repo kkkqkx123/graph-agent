@@ -19,7 +19,7 @@
  */
 
 export { TriggerStateManager } from "./trigger-state-manager";
-export type { TriggerRuntimeState } from '@modular-agent/types/trigger';
+export type { TriggerRuntimeState } from '@modular-agent/types';
 export { VariableStateManager } from "./variable-state-manager";
 export { type LifecycleCapable } from "./lifecycle-capable";
 

@@ -16,8 +16,8 @@
 
 import { InterruptionManager } from '../managers/interruption-manager';
 import { InterruptionDetectorImpl } from '../managers/interruption-detector';
-import { ThreadInterruptedException } from '@modular-agent/types/errors';
-import { ThreadStatus } from '@modular-agent/types/thread';
+import { ThreadInterruptedException } from '@modular-agent/types';
+import { ThreadStatus } from '@modular-agent/types';
 import type { ThreadRegistry } from '../../services/thread-registry';
 
 // Mock ThreadRegistry

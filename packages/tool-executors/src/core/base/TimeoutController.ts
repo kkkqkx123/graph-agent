@@ -3,7 +3,7 @@
  * 负责控制执行超时
  */
 
-import { TimeoutError } from '@modular-agent/types/errors';
+import { TimeoutError } from '@modular-agent/types';
 
 /**
  * 超时控制器

@@ -5,8 +5,8 @@
  * 所有函数都是纯函数，不持有任何状态
  */
 
-import type { MessageMarkMap } from '@modular-agent/types/llm';
-import { ExecutionError } from '@modular-agent/types/errors';
+import type { MessageMarkMap } from '@modular-agent/types';
+import { ExecutionError } from '@modular-agent/types';
 
 /**
  * 开始新批次

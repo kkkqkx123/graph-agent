@@ -18,7 +18,7 @@
  * - 触发器处理函数（通过Coordinator）
  */
 
-import type { Thread, ThreadStatus, ThreadResult } from '@modular-agent/types/thread';
+import type { Thread, ThreadStatus, ThreadResult } from '@modular-agent/types';
 import type { EventManager } from '../../services/event-manager';
 import { globalMessageStorage } from '../../services/global-message-storage';
 import { validateTransition } from '../utils/thread-state-validator';

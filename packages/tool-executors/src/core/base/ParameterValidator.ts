@@ -4,8 +4,8 @@
  */
 
 import { z } from 'zod';
-import type { Tool } from '@modular-agent/types/tool';
-import { ValidationError, RuntimeValidationError } from '@modular-agent/types/errors';
+import type { Tool } from '@modular-agent/types';
+import { ValidationError, RuntimeValidationError } from '@modular-agent/types';
 
 /**
  * 参数验证器

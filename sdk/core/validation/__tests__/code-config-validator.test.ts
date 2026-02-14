@@ -3,8 +3,8 @@
  */
 
 import { CodeConfigValidator } from '../code-config-validator';
-import { ValidationError } from '@modular-agent/types/errors';
-import { ScriptType } from '@modular-agent/types/code';
+import { ValidationError } from '@modular-agent/types';
+import { ScriptType } from '@modular-agent/types';
 
 describe('CodeConfigValidator', () => {
   let validator: CodeConfigValidator;

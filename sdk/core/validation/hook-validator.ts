@@ -4,11 +4,11 @@
  */
 
 import { z } from 'zod';
-import type { NodeHook } from '@modular-agent/types/node';
-import { HookType } from '@modular-agent/types/node';
-import { ConfigurationValidationError } from '@modular-agent/types/errors';
+import type { NodeHook } from '@modular-agent/types';
+import { HookType } from '@modular-agent/types';
+import { ConfigurationValidationError } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
-import type { Result } from '@modular-agent/types/result';
+import type { Result } from '@modular-agent/types';
 
 /**
  * Hook配置schema

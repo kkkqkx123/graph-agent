@@ -15,7 +15,7 @@
  * - 批次版本控制，支持不同批次的消息快照
  */
 
-import type { LLMMessage } from '@modular-agent/types/llm';
+import type { LLMMessage } from '@modular-agent/types';
 
 /**
  * 批次消息快照

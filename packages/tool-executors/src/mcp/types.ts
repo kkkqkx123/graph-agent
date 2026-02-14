@@ -2,7 +2,7 @@
  * MCP执行器类型定义
  */
 
-import type { Tool } from '@modular-agent/types/tool';
+import type { Tool } from '@modular-agent/types';
 
 /**
  * MCP工具定义接口

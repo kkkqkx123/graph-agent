@@ -3,7 +3,7 @@
  */
 
 import { HttpClient } from '../http-client';
-import { TimeoutError, NetworkError, CircuitBreakerOpenError, HttpError } from '@modular-agent/types/errors';
+import { TimeoutError, NetworkError, CircuitBreakerOpenError, HttpError } from '@modular-agent/types';
 import { RateLimitError } from '../errors';
 
 // Mock fetch

@@ -4,7 +4,7 @@
  * 与持久化数据分离，专注于执行时状态管理
  */
 
-import type { ID } from '@modular-agent/types/common';
+import type { ID } from '@modular-agent/types';
 
 /**
  * 子图执行上下文

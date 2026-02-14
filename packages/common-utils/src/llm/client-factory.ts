@@ -5,15 +5,15 @@
  * 使用工厂模式创建客户端，缓存客户端实例以提高性能
  */
 
-import type { LLMClient, LLMProfile } from '@modular-agent/types/llm';
-import { LLMProvider } from '@modular-agent/types/llm';
+import type { LLMClient, LLMProfile } from '@modular-agent/types';
+import { LLMProvider } from '@modular-agent/types';
 import { OpenAIChatClient } from './clients/openai-chat';
 import { OpenAIResponseClient } from './clients/openai-response';
 import { AnthropicClient } from './clients/anthropic';
 import { GeminiNativeClient } from './clients/gemini-native';
 import { GeminiOpenAIClient } from './clients/gemini-openai';
 // import { HumanRelayClient } from './clients/human-relay'; // TODO: 实现HumanRelayClient
-import { ConfigurationError } from '@modular-agent/types/errors';
+import { ConfigurationError } from '@modular-agent/types';
 
 /**
  * 客户端工厂类

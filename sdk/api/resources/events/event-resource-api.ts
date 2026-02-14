@@ -4,7 +4,7 @@
  */
 
 import { GenericResourceAPI } from '../generic-resource-api';
-import type { BaseEvent } from '@modular-agent/types/events';
+import type { BaseEvent } from '@modular-agent/types';
 import type { EventFilter } from '@modular-agent/sdk/api/types/management-types';
 
 /**

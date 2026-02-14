@@ -6,7 +6,7 @@
  * 所有函数都是纯函数，不持有任何状态
  */
 
-import type { LLMMessage, LLMUsage } from '@modular-agent/types/llm';
+import type { LLMMessage, LLMUsage } from '@modular-agent/types';
 import { encodeText, encodeObject } from '@utils/token-encoder';
 
 /**

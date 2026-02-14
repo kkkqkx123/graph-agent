@@ -8,12 +8,12 @@
  * - 返回执行结果
  */
 
-import type { Node, ContextProcessorNodeConfig } from '@modular-agent/types/node';
-import type { Thread } from '@modular-agent/types/thread';
-import { ExecutionError, RuntimeValidationError } from '@modular-agent/types/errors';
+import type { Node, ContextProcessorNodeConfig } from '@modular-agent/types';
+import type { Thread } from '@modular-agent/types';
+import { ExecutionError, RuntimeValidationError } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
 import { executeOperation } from '../../../utils/message-operation-utils';
-import type { MessageOperationContext } from '@modular-agent/types/llm';
+import type { MessageOperationContext } from '@modular-agent/types';
 
 /**
  * 上下文处理器执行结果

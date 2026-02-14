@@ -3,14 +3,14 @@
  * 提供流畅的链式API来构建工作流定义，支持从模板添加节点和触发器
  */
 
-import type { WorkflowDefinition, WorkflowVariable, WorkflowConfig, WorkflowMetadata } from '@modular-agent/types/workflow';
-import type { Node, NodeConfig } from '@modular-agent/types/node';
-import { NodeType } from '@modular-agent/types/node';
+import type { WorkflowDefinition, WorkflowVariable, WorkflowConfig, WorkflowMetadata } from '@modular-agent/types';
+import type { Node, NodeConfig } from '@modular-agent/types';
+import { NodeType } from '@modular-agent/types';
 import type { Edge } from '@modular-agent/types';
 import { EdgeType } from '@modular-agent/types';
-import type { Condition } from '@modular-agent/types/condition';
-import type { WorkflowTrigger } from '@modular-agent/types/trigger';
-import type { TriggerReference } from '@modular-agent/types/trigger-template';
+import type { Condition } from '@modular-agent/types';
+import type { WorkflowTrigger } from '@modular-agent/types';
+import type { TriggerReference } from '@modular-agent/types';
 import { generateId } from '@modular-agent/common-utils';
 import { now } from '@modular-agent/common-utils';
 import { nodeTemplateRegistry } from '../../core/services/node-template-registry';

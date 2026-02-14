@@ -15,9 +15,9 @@ import { ThreadRegistry } from '../../../core/services/thread-registry';
 import { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
 import { ThreadBuilder } from '@modular-agent/sdk/core/execution/thread-builder';
 import { CheckpointCoordinator } from '../../core/execution/coordinators/checkpoint-coordinator';
-import type { CleanupPolicy } from '@modular-agent/types/checkpoint-storage';
-import { NodeType } from '@modular-agent/types/node';
-import { EdgeType } from '@modular-agent/types/edge';
+import type { CleanupPolicy } from '@modular-agent/types';
+import { NodeType } from '@modular-agent/types';
+import { EdgeType } from '@modular-agent/types';
 
 describe('检查点清理策略集成测试', () => {
   let workflowRegistry: WorkflowRegistry;

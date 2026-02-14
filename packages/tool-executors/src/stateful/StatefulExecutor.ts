@@ -3,9 +3,9 @@
  * 执行应用层提供的有状态工具，通过实例池管理工具实例，支持生命周期管理和健康检查
  */
 
-import type { Tool } from '@modular-agent/types/tool';
-import type { StatefulToolConfig } from '@modular-agent/types/tool';
-import { ToolError } from '@modular-agent/types/errors';
+import type { Tool } from '@modular-agent/types';
+import type { StatefulToolConfig } from '@modular-agent/types';
+import { ToolError } from '@modular-agent/types';
 import { BaseExecutor } from '../core/base/BaseExecutor';
 import { ExecutorType } from '../core/types';
 import { InstancePool } from './pool/InstancePool';

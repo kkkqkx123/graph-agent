@@ -3,9 +3,9 @@
  * 提供流畅的链式API来创建和注册节点模板
  */
 
-import type { NodeTemplate } from '@modular-agent/types/node-template';
-import type { NodeType, NodeConfig } from '@modular-agent/types/node';
-import type { Metadata } from '@modular-agent/types/common';
+import type { NodeTemplate } from '@modular-agent/types';
+import type { NodeType, NodeConfig } from '@modular-agent/types';
+import type { Metadata } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
 import { nodeTemplateRegistry } from '../../core/services/node-template-registry';
 

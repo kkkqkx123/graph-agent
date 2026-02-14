@@ -4,9 +4,9 @@
  */
 
 import * as eventBuilder from '../event-builder';
-import { EventType } from '@modular-agent/types/events';
-import type { Thread, ThreadResult } from '@modular-agent/types/thread';
-import { ThreadStatus } from '@modular-agent/types/thread';
+import { EventType } from '@modular-agent/types';
+import type { Thread, ThreadResult } from '@modular-agent/types';
+import { ThreadStatus } from '@modular-agent/types';
 
 // Mock the 'now' function
 jest.mock('../../../../../utils', () => ({

@@ -5,7 +5,7 @@
 import { BaseCommand } from '@modular-agent/sdk/api/types/command';
 import { CommandValidationResult, validationSuccess, validationFailure } from '@modular-agent/sdk/api/types/command';
 import { CheckpointCoordinator } from '../../../../core/execution/coordinators/checkpoint-coordinator';
-import type { Thread } from '@modular-agent/types/thread';
+import type { Thread } from '@modular-agent/types';
 import { globalMessageStorage } from '../../../../core/services/global-message-storage';
 import type { APIDependencies } from '../../../core/api-dependencies';
 

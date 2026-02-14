@@ -3,8 +3,8 @@
  */
 
 import { WorkflowComposer, sequential, parallel, mergeWorkflows } from '../workflow-composer';
-import type { WorkflowDefinition } from '@modular-agent/types/workflow';
-import type { ThreadResult } from '@modular-agent/types/thread';
+import type { WorkflowDefinition } from '@modular-agent/types';
+import type { ThreadResult } from '@modular-agent/types';
 
 describe('WorkflowComposer', () => {
   let mockExecutor: jest.Mock;

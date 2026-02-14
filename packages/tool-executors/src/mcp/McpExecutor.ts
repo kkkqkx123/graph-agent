@@ -3,9 +3,9 @@
  * 执行MCP协议工具，支持会话池管理、健康检查、自动重连
  */
 
-import type { Tool } from '@modular-agent/types/tool';
-import type { McpToolConfig } from '@modular-agent/types/tool';
-import { NetworkError, ToolError, ConfigurationError } from '@modular-agent/types/errors';
+import type { Tool } from '@modular-agent/types';
+import type { McpToolConfig } from '@modular-agent/types';
+import { NetworkError, ToolError, ConfigurationError } from '@modular-agent/types';
 import { BaseExecutor } from '../core/base/BaseExecutor';
 import { ExecutorType } from '../core/types';
 import { SessionPool } from './session/SessionPool';

@@ -3,7 +3,7 @@
  */
 
 import { MessageIndexManager } from '../message-index-manager';
-import type { LLMMessage } from '@modular-agent/types/llm';
+import type { LLMMessage } from '@modular-agent/types';
 
 describe('MessageIndexManager', () => {
   let indexManager: MessageIndexManager;

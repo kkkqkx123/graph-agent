@@ -5,10 +5,10 @@
  * subgraph节点在执行阶段不存在，故不需要任何处理
  */
 
-import { NodeType } from '@modular-agent/types/node';
-import type { Node } from '@modular-agent/types/node';
-import { ConfigurationValidationError } from '@modular-agent/types/errors';
-import type { Result } from '@modular-agent/types/result';
+import { NodeType } from '@modular-agent/types';
+import type { Node } from '@modular-agent/types';
+import { ConfigurationValidationError } from '@modular-agent/types';
+import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 
 export { validateForkNode } from './fork-validator';

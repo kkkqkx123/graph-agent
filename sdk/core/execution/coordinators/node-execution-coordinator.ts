@@ -16,27 +16,27 @@
  */
 
 import { ThreadContext } from '../context/thread-context';
-import type { Node } from '@modular-agent/types/node';
-import type { NodeExecutionResult } from '@modular-agent/types/thread';
+import type { Node } from '@modular-agent/types';
+import type { NodeExecutionResult } from '@modular-agent/types';
 import type { EventManager } from '../../services/event-manager';
 import type { UserInteractionHandler } from '@modular-agent/types';
 import type { HumanRelayHandler } from '@modular-agent/types';
 import { LLMExecutionCoordinator } from './llm-execution-coordinator';
 import { enterSubgraph, exitSubgraph, getSubgraphInput, getSubgraphOutput } from '../handlers/subgraph-handler';
-import { EventType } from '@modular-agent/types/events';
-import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '@modular-agent/types/events';
-import { ExecutionError, ThreadInterruptedException } from '@modular-agent/types/errors';
+import { EventType } from '@modular-agent/types';
+import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '@modular-agent/types';
+import { ExecutionError, ThreadInterruptedException } from '@modular-agent/types';
 import { executeHook } from '../handlers/hook-handlers';
-import { HookType } from '@modular-agent/types/node';
-import { NodeType } from '@modular-agent/types/node';
+import { HookType } from '@modular-agent/types';
+import { NodeType } from '@modular-agent/types';
 import { now, diffTimestamp } from '@modular-agent/common-utils';
 import { getNodeHandler } from '../handlers/node-handlers';
-import { SUBGRAPH_METADATA_KEYS, SubgraphBoundaryType } from '@modular-agent/types/subgraph';
+import { SUBGRAPH_METADATA_KEYS, SubgraphBoundaryType } from '@modular-agent/types';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils';
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils';
 import { resolveCheckpointConfig } from '../handlers/checkpoint-handlers/checkpoint-config-resolver';
-import { CheckpointTriggerType } from '@modular-agent/types/checkpoint';
-import { ThreadStatus } from '@modular-agent/types/thread';
+import { CheckpointTriggerType } from '@modular-agent/types';
+import { ThreadStatus } from '@modular-agent/types';
 import { emit } from '../utils/event/event-emitter';
 import { buildThreadPausedEvent, buildThreadCancelledEvent } from '../utils/event/event-builder';
 import type { InterruptionDetector } from '../managers/interruption-detector';

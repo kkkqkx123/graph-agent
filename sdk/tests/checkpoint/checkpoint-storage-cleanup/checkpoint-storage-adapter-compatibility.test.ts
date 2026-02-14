@@ -14,9 +14,9 @@ import { ThreadRegistry } from '../../../core/services/thread-registry';
 import { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
 import { ThreadBuilder } from '@modular-agent/sdk/core/execution/thread-builder';
 import { CheckpointCoordinator } from '../../core/execution/coordinators/checkpoint-coordinator';
-import type { CheckpointStorage } from '@modular-agent/types/checkpoint-storage';
-import { NodeType } from '@modular-agent/types/node';
-import { EdgeType } from '@modular-agent/types/edge';
+import type { CheckpointStorage } from '@modular-agent/types';
+import { NodeType } from '@modular-agent/types';
+import { EdgeType } from '@modular-agent/types';
 
 // 自定义存储实现用于测试
 class TestCheckpointStorage implements CheckpointStorage {

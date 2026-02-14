@@ -3,7 +3,7 @@
  */
 
 import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '@modular-agent/sdk/api/types/command';
-import type { LLMRequest, LLMResult } from '@modular-agent/types/llm';
+import type { LLMRequest, LLMResult } from '@modular-agent/types';
 import { LLMWrapper } from '../../../../core/llm/wrapper';
 
 /**

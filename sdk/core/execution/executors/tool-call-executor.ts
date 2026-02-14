@@ -16,14 +16,14 @@
 
 import type { ToolService } from '../../services/tool-service';
 import type { EventManager } from '../../services/event-manager';
-import type { Tool } from '@modular-agent/types/tool';
+import type { Tool } from '@modular-agent/types';
 import { safeEmit } from '../utils/event/event-emitter';
-import { EventType } from '@modular-agent/types/events';
+import { EventType } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
 import type { ConversationManager } from '../managers/conversation-manager';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils';
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils';
-import { ThreadInterruptedException } from '@modular-agent/types/errors';
+import { ThreadInterruptedException } from '@modular-agent/types';
 
 /**
  * 工具执行结果

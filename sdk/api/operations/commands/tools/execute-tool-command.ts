@@ -3,8 +3,8 @@
  */
 
 import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '@modular-agent/sdk/api/types/command';
-import type { ToolOptions } from '@modular-agent/types/api-types';
-import type { ToolExecutionResult } from '@modular-agent/types/tool';
+import type { ToolOptions } from '@modular-agent/types';
+import type { ToolExecutionResult } from '@modular-agent/types';
 import type { APIDependencies } from '../../../core/api-dependencies';
 
 /**

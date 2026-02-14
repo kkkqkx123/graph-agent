@@ -27,7 +27,7 @@
  */
 
 import type { ThreadContext } from '../context/thread-context';
-import type { VariableScope } from '@modular-agent/types/common';
+import type { VariableScope } from '@modular-agent/types';
 import { resolvePath } from '@modular-agent/common-utils';
 
 /**

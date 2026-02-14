@@ -4,14 +4,14 @@
  * 执行时机由上层有状态模块（如ThreadExecutor）管理
  */
 
-import type { Node, NodeHook } from '@modular-agent/types/node';
-import { HookType } from '@modular-agent/types/node';
-import type { Thread } from '@modular-agent/types/thread';
-import type { NodeExecutionResult } from '@modular-agent/types/thread';
-import type { NodeCustomEvent } from '@modular-agent/types/events';
+import type { Node, NodeHook } from '@modular-agent/types';
+import { HookType } from '@modular-agent/types';
+import type { Thread } from '@modular-agent/types';
+import type { NodeExecutionResult } from '@modular-agent/types';
+import type { NodeCustomEvent } from '@modular-agent/types';
 import type { CheckpointDependencies } from '../checkpoint-handlers/checkpoint-utils';
 import { createCheckpoint } from '../checkpoint-handlers/checkpoint-utils';
-import { ValidationError, RuntimeValidationError, ExecutionError, ErrorSeverity } from '@modular-agent/types/errors';
+import { ValidationError, RuntimeValidationError, ExecutionError, ErrorSeverity } from '@modular-agent/types';
 
 /**
  * Hook执行上下文接口

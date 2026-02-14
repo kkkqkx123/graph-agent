@@ -32,7 +32,7 @@ export type { AllAPIs } from './api/core/api-factory';
 // Export common utilities
 // Result类型 - 从核心层导入
 export { ok, err, tryCatch, tryCatchAsync, all, any } from '@modular-agent/common-utils';
-export type { Result, Ok, Err } from '@modular-agent/types/result';
+export type { Result, Ok, Err } from '@modular-agent/types';
 export * from '@modular-agent/common-utils';
 
 // Export execution result types

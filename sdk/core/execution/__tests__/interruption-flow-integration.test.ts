@@ -18,13 +18,13 @@
 import { ThreadExecutor } from '../thread-executor';
 import { ThreadContext } from '../context/thread-context';
 import { ExecutionContext } from '../context/execution-context';
-import { ThreadStatus } from '@modular-agent/types/thread';
-import { ThreadInterruptedException } from '@modular-agent/types/errors';
-import { NodeType } from '@modular-agent/types/node';
-import type { Node } from '@modular-agent/types/node';
+import { ThreadStatus } from '@modular-agent/types';
+import { ThreadInterruptedException } from '@modular-agent/types';
+import { NodeType } from '@modular-agent/types';
+import type { Node } from '@modular-agent/types';
 import type { Graph } from '@modular-agent/types';
-import type { Thread } from '@modular-agent/types/thread';
-import type { NodeExecutionResult } from '@modular-agent/types/thread';
+import type { Thread } from '@modular-agent/types';
+import type { NodeExecutionResult } from '@modular-agent/types';
 import { generateId, now } from '@modular-agent/common-utils';
 
 // Mock 依赖

@@ -11,10 +11,10 @@ import {
   validateTriggerReference,
   validateTriggers
 } from '../trigger-validator';
-import { EventType } from '@modular-agent/types/events';
-import { TriggerActionType } from '@modular-agent/types/trigger';
-import { ValidationError } from '@modular-agent/types/errors';
-import { LLMMessageRole } from '@modular-agent/types/llm';
+import { EventType } from '@modular-agent/types';
+import { TriggerActionType } from '@modular-agent/types';
+import { ValidationError } from '@modular-agent/types';
+import { MessageRole } from '@modular-agent/types';
 
 describe('validateTriggerCondition', () => {
   it('应该验证有效的触发条件', () => {
@@ -213,7 +213,7 @@ describe('validateExecuteTriggeredSubgraphActionConfig', () => {
         mergeOptions: {
           includeConversationHistory: {
             lastNByRole: {
-              role: 'assistant' as LLMMessageRole,
+              role: 'assistant' as MessageRole,
               count: 3
             }
           }
@@ -229,7 +229,7 @@ describe('validateExecuteTriggeredSubgraphActionConfig', () => {
         triggeredWorkflowId: 'workflow-123',
         mergeOptions: {
           includeConversationHistory: {
-            byRole: 'user' as LLMMessageRole
+            byRole: 'user' as MessageRole
           }
         }
       };
@@ -261,7 +261,7 @@ describe('validateExecuteTriggeredSubgraphActionConfig', () => {
         mergeOptions: {
           includeConversationHistory: {
             rangeByRole: {
-              role: 'assistant' as LLMMessageRole,
+              role: 'assistant' as MessageRole,
               start: 0,
               end: 5
             }

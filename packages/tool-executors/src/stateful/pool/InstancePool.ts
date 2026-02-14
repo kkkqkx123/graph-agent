@@ -4,7 +4,7 @@
  */
 
 import type { ToolInstanceFactory, InstancePoolConfig, InstanceInfo } from '../types';
-import { ToolError } from '@modular-agent/types/errors';
+import { ToolError } from '@modular-agent/types';
 
 /**
  * 实例池

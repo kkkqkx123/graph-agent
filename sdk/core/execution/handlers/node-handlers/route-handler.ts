@@ -3,10 +3,10 @@
  * 负责执行ROUTE节点，根据条件选择下一个节点
  */
 
-import { BusinessLogicError } from '@modular-agent/types/errors';
-import type { Node, RouteNodeConfig } from '@modular-agent/types/node';
-import type { Thread } from '@modular-agent/types/thread';
-import type { Condition, EvaluationContext } from '@modular-agent/types/condition';
+import { BusinessLogicError } from '@modular-agent/types';
+import type { Node, RouteNodeConfig } from '@modular-agent/types';
+import type { Thread } from '@modular-agent/types';
+import type { Condition, EvaluationContext } from '@modular-agent/types';
 import { conditionEvaluator } from '@modular-agent/common-utils';
 
 /**

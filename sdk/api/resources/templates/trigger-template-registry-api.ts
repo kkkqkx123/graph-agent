@@ -8,7 +8,7 @@ import type {
   TriggerTemplate,
   TriggerTemplateSummary,
   TriggerTemplateFilter
-} from '@modular-agent/types/trigger-template';
+} from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api';
 import type { APIDependencies } from '../../core/api-dependencies';
 

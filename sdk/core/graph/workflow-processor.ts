@@ -12,17 +12,17 @@ import type {
   ID,
   Graph
 } from '@modular-agent/types';
-import { ProcessedWorkflowDefinition } from '@modular-agent/types/workflow';
-import type { Node } from '@modular-agent/types/node';
-import type { WorkflowTrigger } from '@modular-agent/types/trigger';
-import type { TriggerReference } from '@modular-agent/types/trigger-template';
+import { ProcessedWorkflowDefinition } from '@modular-agent/types';
+import type { Node } from '@modular-agent/types';
+import type { WorkflowTrigger } from '@modular-agent/types';
+import type { TriggerReference } from '@modular-agent/types';
 import { GraphBuilder } from './graph-builder';
 import { GraphValidator } from '../validation/graph-validator';
 import { nodeTemplateRegistry } from '../services/node-template-registry';
 import { triggerTemplateRegistry } from '../services/trigger-template-registry';
 import { WorkflowValidator } from '../validation/workflow-validator';
 import { now } from '@modular-agent/common-utils';
-import { ConfigurationValidationError, NodeTemplateNotFoundError, WorkflowNotFoundError } from '@modular-agent/types/errors';
+import { ConfigurationValidationError, NodeTemplateNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
 
 export interface ProcessOptions extends GraphBuildOptions {
   workflowRegistry?: any;

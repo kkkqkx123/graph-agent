@@ -4,8 +4,8 @@
  */
 
 import type { HookExecutionContext } from '../index';
-import type { NodeCustomEvent } from '@modular-agent/types/events';
-import { EventType } from '@modular-agent/types/events';
+import type { NodeCustomEvent } from '@modular-agent/types';
+import { EventType } from '@modular-agent/types';
 
 /**
  * 触发自定义事件

@@ -3,9 +3,9 @@
  * 提供流畅的链式API来创建和注册触发器模板
  */
 
-import type { TriggerTemplate } from '@modular-agent/types/trigger-template';
-import type { TriggerCondition, TriggerAction } from '@modular-agent/types/trigger';
-import type { Metadata } from '@modular-agent/types/common';
+import type { TriggerTemplate } from '@modular-agent/types';
+import type { TriggerCondition, TriggerAction } from '@modular-agent/types';
+import type { Metadata } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
 import { triggerTemplateRegistry } from '../../core/services/trigger-template-registry';
 

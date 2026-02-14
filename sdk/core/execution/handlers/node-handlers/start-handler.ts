@@ -3,9 +3,9 @@
  * 负责执行START节点，标记工作流的开始，初始化Thread状态
  */
 
-import type { Node } from '@modular-agent/types/node';
-import type { Thread } from '@modular-agent/types/thread';
-import { ThreadStatus } from '@modular-agent/types/thread';
+import type { Node } from '@modular-agent/types';
+import type { Thread } from '@modular-agent/types';
+import { ThreadStatus } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
 
 /**

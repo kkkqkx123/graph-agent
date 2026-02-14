@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod';
-import type { ID } from '@modular-agent/types/common';
+import type { ID } from '@modular-agent/types';
 
 /**
  * 生成新ID（使用UUID v4）

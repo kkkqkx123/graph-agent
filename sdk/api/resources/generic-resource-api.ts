@@ -9,7 +9,7 @@
 
 import type { ExecutionResult } from '@modular-agent/sdk/api/types/execution-result';
 import { success, failure } from '@modular-agent/sdk/api/types/execution-result';
-import { SDKError } from '@modular-agent/types/errors';
+import { SDKError } from '@modular-agent/types';
 
 /**
  * 通用资源API基类

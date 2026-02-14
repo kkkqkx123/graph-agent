@@ -3,7 +3,7 @@
  * 定义所有执行器必须实现的核心契约
  */
 
-import type { Tool, ToolExecutionOptions, ToolExecutionResult } from '@modular-agent/types/tool';
+import type { Tool, ToolExecutionOptions, ToolExecutionResult } from '@modular-agent/types';
 
 /**
  * 工具执行器接口

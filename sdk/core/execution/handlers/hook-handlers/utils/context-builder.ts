@@ -4,7 +4,7 @@
  */
 
 import type { HookExecutionContext } from '../index';
-import type { EvaluationContext } from '@modular-agent/types/condition';
+import type { EvaluationContext } from '@modular-agent/types';
 
 /**
  * Hook评估上下文（内部使用）

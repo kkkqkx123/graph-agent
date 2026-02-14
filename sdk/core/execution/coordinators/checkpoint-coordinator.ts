@@ -3,9 +3,9 @@
  * 无状态服务，协调完整的检查点流程
  */
 
-import { NotFoundError, ThreadContextNotFoundError, CheckpointNotFoundError, WorkflowNotFoundError } from '@modular-agent/types/errors';
-import type { Thread } from '@modular-agent/types/thread';
-import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot } from '@modular-agent/types/checkpoint';
+import { NotFoundError, ThreadContextNotFoundError, CheckpointNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
+import type { Thread } from '@modular-agent/types';
+import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot } from '@modular-agent/types';
 import type { ThreadRegistry } from '../../services/thread-registry';
 import type { WorkflowRegistry } from '../../services/workflow-registry';
 import type { GlobalMessageStorage } from '../../services/global-message-storage';

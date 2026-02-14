@@ -8,13 +8,13 @@ import type {
   HttpClientConfig,
   HttpRequestOptions,
   HttpResponse,
-} from '@modular-agent/types/http';
+} from '@modular-agent/types';
 import {
   NetworkError,
   TimeoutError,
   CircuitBreakerOpenError,
   HttpError,
-} from '@modular-agent/types/errors';
+} from '@modular-agent/types';
 import {
   BadRequestError,
   UnauthorizedError,
@@ -168,7 +168,7 @@ export class HttpClient {
   /**
    * 日志记录辅助方法
    */
-  private log(level: keyof import('@modular-agent/types/http').HttpLogger, msg: string, context?: any) {
+  private log(level: keyof import('@modular-agent/types').HttpLogger, msg: string, context?: any) {
     if (!this.config.logger?.[level]) return;
     this.config.logger[level]!(msg, context);
   }

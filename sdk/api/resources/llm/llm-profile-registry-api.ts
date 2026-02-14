@@ -5,8 +5,8 @@
  */
 
 import { ProfileManager } from '../../../core/llm/profile-manager';
-import type { LLMProfile, LLMProvider } from '@modular-agent/types/llm';
-import { ValidationError, NotFoundError, SDKError, ConfigurationValidationError, NodeTemplateNotFoundError } from '@modular-agent/types/errors';
+import type { LLMProfile, LLMProvider } from '@modular-agent/types';
+import { ValidationError, NotFoundError, SDKError, ConfigurationValidationError, NodeTemplateNotFoundError } from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api';
 import { getErrorMessage } from '@modular-agent/sdk/api/types/execution-result';
 import type { APIDependencies } from '../../core/api-dependencies';

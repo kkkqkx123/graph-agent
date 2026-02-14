@@ -36,7 +36,7 @@ export { ConversationManager, type ConversationState } from './managers/conversa
 export type { ConversationManagerOptions } from './managers/conversation-manager';
 export { TokenUsageTracker } from './token-usage-tracker';
 export type { TokenUsageTrackerOptions, FullTokenUsageStats } from './token-usage-tracker';
-export type { TokenUsageStats } from '@modular-agent/types/llm';
+export type { TokenUsageStats } from '@modular-agent/types';
 
 // Hook处理函数
 export * from './handlers/hook-handlers';

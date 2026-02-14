@@ -3,9 +3,9 @@
  * 执行REST API调用，支持所有HTTP方法、拦截器、缓存、熔断器等
  */
 
-import type { Tool } from '@modular-agent/types/tool';
-import type { RestToolConfig } from '@modular-agent/types/tool';
-import { NetworkError, ToolError, ValidationError, RuntimeValidationError, TimeoutError, CircuitBreakerOpenError } from '@modular-agent/types/errors';
+import type { Tool } from '@modular-agent/types';
+import type { RestToolConfig } from '@modular-agent/types';
+import { NetworkError, ToolError, ValidationError, RuntimeValidationError, TimeoutError, CircuitBreakerOpenError } from '@modular-agent/types';
 import { BaseExecutor } from '../core/base/BaseExecutor';
 import { ExecutorType } from '../core/types';
 import { HttpClient, InterceptorManager, HttpCache } from '@modular-agent/common-utils';

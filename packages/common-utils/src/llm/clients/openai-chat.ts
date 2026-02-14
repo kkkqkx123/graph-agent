@@ -12,7 +12,7 @@ import type {
   LLMProfile,
   LLMMessage,
   LLMToolCall
-} from '@modular-agent/types/llm';
+} from '@modular-agent/types';
 import { convertToolsToOpenAIFormat } from '../tool-converter';
 
 /**

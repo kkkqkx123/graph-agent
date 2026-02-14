@@ -3,7 +3,7 @@
  * 提供 Result 和 ExecutionResult 之间的转换功能
  */
 
-import type { Result } from '@modular-agent/types/result';
+import type { Result } from '@modular-agent/types';
 import type { ExecutionResult, ExecutionError } from '@modular-agent/sdk/api/types/execution-result';
 import { success, failure, isSuccess, isFailure } from '@modular-agent/sdk/api/types/execution-result';
 import { ok, err } from '@modular-agent/common-utils';

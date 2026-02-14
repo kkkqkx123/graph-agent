@@ -19,11 +19,11 @@
  * human relay是llm client的替代品，目的在于以人的输入代替llm api调用，与人工审核无关
  */
 
-import type { LLMMessage } from '@modular-agent/types/llm';
+import type { LLMMessage } from '@modular-agent/types';
 import type { HumanRelayRequest, HumanRelayResponse, HumanRelayExecutionResult, HumanRelayHandler, HumanRelayContext } from '@modular-agent/types';
 import type { EventManager } from '../../services/event-manager';
 import type { ThreadContext } from '../context/thread-context';
-import { EventType } from '@modular-agent/types/events';
+import { EventType } from '@modular-agent/types';
 import { generateId, now } from '@modular-agent/common-utils';
 
 /**

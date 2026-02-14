@@ -3,7 +3,7 @@
  */
 
 import { GlobalMessageStorage } from '../global-message-storage';
-import type { LLMMessage } from '@modular-agent/types/llm';
+import type { LLMMessage } from '@modular-agent/types';
 
 describe('GlobalMessageStorage', () => {
   let storage: GlobalMessageStorage;

@@ -3,7 +3,7 @@
  * 提供通用的配置验证辅助函数
  */
 
-import { ValidationError, SchemaValidationError } from '@modular-agent/types/errors';
+import { ValidationError, SchemaValidationError } from '@modular-agent/types';
 
 /**
  * 验证必需字段

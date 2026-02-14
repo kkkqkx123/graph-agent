@@ -3,11 +3,11 @@
  */
 
 import { userInteractionHandler } from '../user-interaction-handler';
-import type { Node, UserInteractionNodeConfig } from '@modular-agent/types/node';
-import { NodeType } from '@modular-agent/types/node';
-import type { Thread } from '@modular-agent/types/thread';
-import { ThreadStatus } from '@modular-agent/types/thread';
-import { ExecutionError } from '@modular-agent/types/errors';
+import type { Node, UserInteractionNodeConfig } from '@modular-agent/types';
+import { NodeType } from '@modular-agent/types';
+import type { Thread } from '@modular-agent/types';
+import { ThreadStatus } from '@modular-agent/types';
+import { ExecutionError } from '@modular-agent/types';
 
 describe('user-interaction-handler', () => {
   let mockThread: Thread;

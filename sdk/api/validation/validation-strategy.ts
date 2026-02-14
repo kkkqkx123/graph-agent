@@ -3,8 +3,8 @@
  * 提供统一的验证函数，返回 Result<T, ValidationError[]> 类型
  */
 
-import { ValidationError, SchemaValidationError } from '@modular-agent/types/errors';
-import type { Result } from '@modular-agent/types/result';
+import { ValidationError, SchemaValidationError } from '@modular-agent/types';
+import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 
 /**

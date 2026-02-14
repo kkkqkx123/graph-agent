@@ -5,8 +5,8 @@
  * 通过ThreadLifecycleCoordinator协调恢复流程
  */
 
-import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types/trigger';
-import { ValidationError, RuntimeValidationError } from '@modular-agent/types/errors';
+import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
+import { ValidationError, RuntimeValidationError } from '@modular-agent/types';
 import { ExecutionContext } from '../../context/execution-context';
 
 /**

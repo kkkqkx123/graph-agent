@@ -2,8 +2,8 @@
  * REST执行器类型定义
  */
 
-// 从 @modular-agent/types/http 导入基础类型
-import type { HTTPMethod, HttpResponse } from '@modular-agent/types/http';
+// 从 @modular-agent/types 导入基础类型
+import type { HTTPMethod, HttpResponse } from '@modular-agent/types';
 // 从 @modular-agent/common-utils 导入拦截器和缓存类型
 import type {
   RequestInterceptor,

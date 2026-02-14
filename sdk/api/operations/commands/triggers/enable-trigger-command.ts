@@ -4,7 +4,7 @@
 
 import { BaseCommand } from '@modular-agent/sdk/api/types/command';
 import { CommandValidationResult } from '@modular-agent/sdk/api/types/command';
-import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types/errors';
+import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types';
 import type { APIDependencies } from '../../../core/api-dependencies';
 
 /**

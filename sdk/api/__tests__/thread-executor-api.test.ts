@@ -4,9 +4,9 @@
 
 import { ThreadExecutorAPI } from '../operations/execution/thread-executor-api';
 import { WorkflowRegistry } from '@modular-agent/sdk/core/registry/workflow-registry';
-import type { WorkflowDefinition } from '@modular-agent/types/workflow';
-import { NodeType } from '@modular-agent/types/node';
-import { EdgeType } from '@modular-agent/types/edge';
+import type { WorkflowDefinition } from '@modular-agent/types';
+import { NodeType } from '@modular-agent/types';
+import { EdgeType } from '@modular-agent/types';
 
 describe('ThreadExecutorAPI', () => {
   let api: ThreadExecutorAPI;

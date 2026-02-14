@@ -3,7 +3,7 @@
  */
 
 import { EventManager } from '../event-manager';
-import { EventType } from '@modular-agent/types/events';
+import { EventType } from '@modular-agent/types';
 
 describe('EventManager', () => {
   let eventManager: EventManager;

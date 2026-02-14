@@ -16,7 +16,7 @@ import { MemoryCheckpointStorage } from '../../../core/storage/memory-checkpoint
 import { GlobalMessageStorage } from '../../../core/services/global-message-storage';
 import { ThreadRegistry } from '../../../core/services/thread-registry';
 import { NodeType, EdgeType } from '@modular-agent/types';
-import { ThreadStatus } from '@modular-agent/types/thread';
+import { ThreadStatus } from '@modular-agent/types';
 import type { WorkflowDefinition } from '@modular-agent/types';
 
 describe('检查点生命周期集成测试', () => {

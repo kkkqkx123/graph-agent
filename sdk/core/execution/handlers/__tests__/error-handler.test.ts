@@ -4,10 +4,10 @@
  */
 
 import { handleNodeFailure, handleExecutionError } from '../error-handler';
-import { ValidationError, ExecutionError, ToolError, NotFoundError } from '@modular-agent/types/errors';
+import { ValidationError, ExecutionError, ToolError, NotFoundError } from '@modular-agent/types';
 import { EventManager } from '../../../services/event-manager';
-import type { Node } from '@modular-agent/types/node';
-import type { NodeExecutionResult } from '@modular-agent/types/thread';
+import type { Node } from '@modular-agent/types';
+import type { NodeExecutionResult } from '@modular-agent/types';
 import { SingletonRegistry } from '../../context/singleton-registry';
 
 // Mock EventManager

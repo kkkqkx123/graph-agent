@@ -19,7 +19,7 @@ import { type ThreadRegistry } from '../../services/thread-registry';
 import { ThreadBuilder } from '../thread-builder';
 import type { EventManager } from '../../services/event-manager';
 import type { WorkflowRegistry } from '../../services/workflow-registry';
-import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types/errors';
+import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types';
 import { fork, join, copy } from '../utils/thread-operations';
 import { ExecutionContext } from '../context/execution-context';
 

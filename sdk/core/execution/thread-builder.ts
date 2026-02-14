@@ -7,19 +7,19 @@
  * 使用 ExecutionContext 获取 WorkflowRegistry
  */
 
-import { ProcessedWorkflowDefinition } from '@modular-agent/types/workflow';
-import type { Thread, ThreadOptions, ThreadStatus } from '@modular-agent/types/thread';
-import { ThreadType } from '@modular-agent/types/thread';
+import { ProcessedWorkflowDefinition } from '@modular-agent/types';
+import type { Thread, ThreadOptions, ThreadStatus } from '@modular-agent/types';
+import { ThreadType } from '@modular-agent/types';
 import { ConversationManager } from './managers/conversation-manager';
 import { ThreadContext } from './context/thread-context';
-import { NodeType } from '@modular-agent/types/node';
+import { NodeType } from '@modular-agent/types';
 import { generateId, now as getCurrentTimestamp } from '@modular-agent/common-utils';
 import { VariableCoordinator } from './coordinators/variable-coordinator';
 import { VariableStateManager } from './managers/variable-state-manager';
-import { ValidationError, ExecutionError, RuntimeValidationError } from '@modular-agent/types/errors';
+import { ValidationError, ExecutionError, RuntimeValidationError } from '@modular-agent/types';
 import { type WorkflowRegistry } from '../services/workflow-registry';
 import { ExecutionContext } from './context/execution-context';
-import { TriggerStatus } from '@modular-agent/types/trigger';
+import { TriggerStatus } from '@modular-agent/types';
 
 /**
  * ThreadBuilder - Thread构建器

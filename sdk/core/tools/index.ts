@@ -8,5 +8,5 @@
 export { ToolRegistry } from './tool-registry';
 
 // 类型定义（从types包导入）
-export type { ToolExecutionOptions, ToolExecutionResult } from '@modular-agent/types/tool';
-export type { IToolExecutor } from '@modular-agent/types/tool';
+export type { ToolExecutionOptions, ToolExecutionResult } from '@modular-agent/types';
+export type { IToolExecutor } from '@modular-agent/types';

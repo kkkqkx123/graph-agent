@@ -6,7 +6,7 @@
 import {
   SDKError,
   HttpError,
-} from '@modular-agent/types/errors';
+} from '@modular-agent/types';
 
 /**
  * HTTP 400 - 请求格式错误

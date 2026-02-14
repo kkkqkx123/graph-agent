@@ -6,8 +6,8 @@
 
 import type { ParsedConfig } from '../types';
 import { ConfigType } from '../types';
-import type { Result } from '@modular-agent/types/result';
-import { ValidationError } from '@modular-agent/types/errors';
+import type { Result } from '@modular-agent/types';
+import { ValidationError } from '@modular-agent/types';
 import { validateScriptConfig } from '../validators/script-validator';
 import { ok } from '@modular-agent/common-utils';
 

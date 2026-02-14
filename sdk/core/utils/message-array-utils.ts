@@ -11,7 +11,8 @@
  * - 职责单一：每个方法只做一件事
  */
 
-import type { LLMMessage, LLMMessageRole } from '@modular-agent/types/llm';
+import type { LLMMessage } from '@modular-agent/types';
+import type { MessageRole } from '@modular-agent/types';
 
 /**
  * 截断选项
@@ -28,7 +29,7 @@ export interface TruncateOptions {
   /** 按范围截断 */
   range?: { start: number; end: number };
   /** 按角色过滤后截断 */
-  role?: LLMMessageRole;
+  role?: MessageRole;
 }
 
 /**
@@ -70,7 +71,7 @@ export interface MessageValidationResult {
 /**
  * 消息分组结果
  */
-export type MessageGroupByRole = Record<LLMMessageRole, LLMMessage[]>;
+export type MessageGroupByRole = Record<MessageRole, LLMMessage[]>;
 
 /**
  * 消息数组操作工具类
@@ -221,7 +222,7 @@ export class MessageArrayUtils {
    */
   static filterMessagesByRole(
     messages: LLMMessage[],
-    roles: LLMMessageRole[]
+    roles: MessageRole[]
   ): LLMMessage[] {
     return messages.filter(msg => roles.includes(msg.role));
   }
@@ -355,7 +356,7 @@ export class MessageArrayUtils {
       return { valid: false, errors };
     }
 
-    const validRoles: LLMMessageRole[] = ['system', 'user', 'assistant', 'tool'];
+    const validRoles: MessageRole[] = ['system', 'user', 'assistant', 'tool'];
 
     for (let i = 0; i < messages.length; i++) {
       const msg = messages[i];
@@ -450,7 +451,7 @@ export class MessageArrayUtils {
    */
   static getRecentMessagesByRole(
     messages: LLMMessage[],
-    role: LLMMessageRole,
+    role: MessageRole,
     count: number
   ): LLMMessage[] {
     const filtered = this.filterMessagesByRole(messages, [role]);

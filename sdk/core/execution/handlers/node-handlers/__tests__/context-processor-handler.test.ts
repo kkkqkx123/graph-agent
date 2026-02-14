@@ -3,12 +3,12 @@
  */
 
 import { contextProcessorHandler } from '../context-processor-handler';
-import type { Node, ContextProcessorNodeConfig } from '@modular-agent/types/node';
-import { NodeType } from '@modular-agent/types/node';
-import type { Thread } from '@modular-agent/types/thread';
-import { ThreadStatus } from '@modular-agent/types/thread';
-import { ValidationError, ExecutionError } from '@modular-agent/types/errors';
-import type { LLMMessage } from '@modular-agent/types/llm';
+import type { Node, ContextProcessorNodeConfig } from '@modular-agent/types';
+import { NodeType } from '@modular-agent/types';
+import type { Thread } from '@modular-agent/types';
+import { ThreadStatus } from '@modular-agent/types';
+import { ValidationError, ExecutionError } from '@modular-agent/types';
+import type { LLMMessage } from '@modular-agent/types';
 
 // Mock ConversationManager
 class MockConversationManager {

@@ -8,10 +8,10 @@
  * - 配置验证和转换逻辑在config-utils.ts中
  */
 
-import { ExecutionError } from '@modular-agent/types/errors';
-import { NodeType } from '@modular-agent/types/node';
-import type { Node } from '@modular-agent/types/node';
-import type { Thread } from '@modular-agent/types/thread';
+import { ExecutionError } from '@modular-agent/types';
+import { NodeType } from '@modular-agent/types';
+import type { Node } from '@modular-agent/types';
+import type { Thread } from '@modular-agent/types';
 
 /**
  * 节点处理函数类型

@@ -9,8 +9,8 @@
  */
 
 import type { EventManager } from '../../../services/event-manager';
-import type { Event, EventType } from '@modular-agent/types/events';
-import { ExecutionError } from '@modular-agent/types/errors';
+import type { Event, EventType } from '@modular-agent/types';
+import { ExecutionError } from '@modular-agent/types';
 
 /**
  * 安全触发事件

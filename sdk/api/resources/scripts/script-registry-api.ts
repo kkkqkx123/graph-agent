@@ -10,10 +10,10 @@ import {
   validateEnum
 } from '../../validation/validation-strategy';
 
-import type { Script } from '@modular-agent/types/code';
-import { ScriptType } from '@modular-agent/types/code';
+import type { Script } from '@modular-agent/types';
+import { ScriptType } from '@modular-agent/types';
 import type { ScriptFilter, ScriptRegistrationConfig } from '@modular-agent/sdk/api/types/code-types';
-import { NotFoundError } from '@modular-agent/types/errors';
+import { NotFoundError } from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api';
 import type { APIDependencies } from '../../core/api-dependencies';
 

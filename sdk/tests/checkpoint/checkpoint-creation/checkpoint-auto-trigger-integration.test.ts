@@ -16,8 +16,8 @@ import { GlobalMessageStorage } from '../../../core/services/global-message-stor
 import { ThreadRegistry } from '../../../core/services/thread-registry';
 import { NodeType, HookType, WorkflowType } from '@modular-agent/types';
 import { EdgeType, CheckpointTriggerType } from '@modular-agent/types';
-import type { WorkflowDefinition } from '@modular-agent/types/workflow';
-import type { Node } from '@modular-agent/types/node';
+import type { WorkflowDefinition } from '@modular-agent/types';
+import type { Node } from '@modular-agent/types';
 
 describe('检查点自动触发机制集成测试', () => {
   let workflowRegistry: WorkflowRegistry;
@@ -29,7 +29,7 @@ describe('检查点自动触发机制集成测试', () => {
   beforeAll(async () => {
     // 注册测试脚本
     const { codeService } = await import('../../../core/services/code-service');
-    const { ScriptType } = await import('@modular-agent/types/code');
+    const { ScriptType } = await import('@modular-agent/types');
     const { generateId } = await import('@modular-agent/common-utils');
 
     const javascriptExecutor: any = {

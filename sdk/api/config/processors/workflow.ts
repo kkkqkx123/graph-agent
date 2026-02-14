@@ -6,13 +6,13 @@
 
 import type { ParsedConfig } from '../types';
 import { ConfigType, ConfigFormat } from '../types';
-import type { Result } from '@modular-agent/types/result';
-import { ValidationError } from '@modular-agent/types/errors';
+import type { Result } from '@modular-agent/types';
+import { ValidationError } from '@modular-agent/types';
 import { validateWorkflowConfig } from '../validators/workflow-validator';
 import { ConfigTransformer } from '../config-transformer';
-import type { WorkflowDefinition } from '@modular-agent/types/workflow';
+import type { WorkflowDefinition } from '@modular-agent/types';
 import { stringifyJson } from '../json-parser';
-import { ConfigurationError } from '@modular-agent/types/errors';
+import { ConfigurationError } from '@modular-agent/types';
 import { ok } from '@modular-agent/common-utils';
 
 /**

@@ -3,9 +3,9 @@
  * 负责初始化触发子工作流，接收来自主线程的输入数据
  */
 
-import type { Node } from '@modular-agent/types/node';
-import type { Thread } from '@modular-agent/types/thread';
-import { ThreadStatus } from '@modular-agent/types/thread';
+import type { Node } from '@modular-agent/types';
+import type { Thread } from '@modular-agent/types';
+import { ThreadStatus } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
 
 /**

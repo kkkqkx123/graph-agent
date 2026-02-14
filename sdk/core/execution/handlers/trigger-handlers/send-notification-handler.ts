@@ -3,8 +3,8 @@
  * 负责执行发送通知的触发动作
  */
 
-import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types/trigger';
-import { ValidationError, RuntimeValidationError } from '@modular-agent/types/errors';
+import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
+import { ValidationError, RuntimeValidationError } from '@modular-agent/types';
 
 /**
  * 创建成功结果

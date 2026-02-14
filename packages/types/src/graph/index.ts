@@ -14,7 +14,3 @@ export * from './analysis';
 
 // 导出合并相关类型
 export * from './merge';
-
-// 为了向后兼容，重新导出 Graph 和 GraphAnalysisResult
-export type { Graph } from './structure';
-export type { GraphAnalysisResult } from './analysis';

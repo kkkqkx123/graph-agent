@@ -4,13 +4,13 @@
  * 支持Result、Promise和Observable三种接口
  */
 
-import type { ThreadResult, ThreadOptions } from '@modular-agent/types/thread';
+import type { ThreadResult, ThreadOptions } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
-import type { Result } from '@modular-agent/types/result';
+import type { Result } from '@modular-agent/types';
 import { Observable, create, type Observer } from '../utils/observable';
 import { ExecuteThreadCommand } from '../operations/commands/execution/execute-thread-command';
 import { isSuccess } from '@modular-agent/sdk/api/types/execution-result';
-import { ExecutionError } from '@modular-agent/types/errors';
+import { ExecutionError } from '@modular-agent/types';
 
 /**
  * ExecutionBuilder - 流畅的执行构建器

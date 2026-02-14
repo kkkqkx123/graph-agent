@@ -7,14 +7,14 @@ import {
   shouldCreateCheckpoint,
   getCheckpointDescription
 } from '../checkpoint-config-resolver';
-import { CheckpointTriggerType, CheckpointConfigSource } from '@modular-agent/types/checkpoint';
-import type { CheckpointConfig, TriggeredSubworkflowConfig } from '@modular-agent/types/workflow';
-import type { Node, NodeHook } from '@modular-agent/types/node';
-import type { Trigger } from '@modular-agent/types/trigger';
-import { TriggerActionType } from '@modular-agent/types/trigger';
-import type { Tool } from '@modular-agent/types/tool';
-import { WorkflowType } from '@modular-agent/types/workflow';
-import type { ProcessedWorkflowDefinition } from '@modular-agent/types/workflow';
+import { CheckpointTriggerType, CheckpointConfigSource } from '@modular-agent/types';
+import type { CheckpointConfig, TriggeredSubworkflowConfig } from '@modular-agent/types';
+import type { Node, NodeHook } from '@modular-agent/types';
+import type { Trigger } from '@modular-agent/types';
+import { TriggerActionType } from '@modular-agent/types';
+import type { Tool } from '@modular-agent/types';
+import { WorkflowType } from '@modular-agent/types';
+import type { ProcessedWorkflowDefinition } from '@modular-agent/types';
 
 describe('CheckpointConfigResolver', () => {
   let globalConfig: CheckpointConfig;

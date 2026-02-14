@@ -4,10 +4,10 @@
  * 注意：实际验证逻辑委托给 WorkflowValidator，这里仅作为适配器
  */
 
-import type { WorkflowDefinition } from '@modular-agent/types/workflow';
+import type { WorkflowDefinition } from '@modular-agent/types';
 import type { ConfigFile } from '../types';
-import type { Result } from '@modular-agent/types/result';
-import { ValidationError } from '@modular-agent/types/errors';
+import type { Result } from '@modular-agent/types';
+import { ValidationError } from '@modular-agent/types';
 import { WorkflowValidator } from '../../../core/validation/workflow-validator';
 
 /**

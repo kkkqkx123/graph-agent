@@ -17,9 +17,9 @@
  */
 
 import type { EventManager } from './event-manager';
-import { SDKError, ErrorContext, ErrorSeverity } from '@modular-agent/types/errors';
-import { EventType } from '@modular-agent/types/events';
-import type { ErrorEvent } from '@modular-agent/types/events';
+import { SDKError, ErrorContext, ErrorSeverity } from '@modular-agent/types';
+import { EventType } from '@modular-agent/types';
+import type { ErrorEvent } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
 import { logger } from '../logger';
 

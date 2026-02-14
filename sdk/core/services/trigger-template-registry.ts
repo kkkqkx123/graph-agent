@@ -8,11 +8,11 @@
 import type {
   TriggerTemplate,
   TriggerTemplateSummary
-} from '@modular-agent/types/trigger-template';
-import type { WorkflowTrigger } from '@modular-agent/types/trigger';
-import { ValidationError, NotFoundError, ConfigurationValidationError, TriggerTemplateNotFoundError } from '@modular-agent/types/errors';
-import { EventType } from '@modular-agent/types/events';
-import { TriggerActionType } from '@modular-agent/types/trigger';
+} from '@modular-agent/types';
+import type { WorkflowTrigger } from '@modular-agent/types';
+import { ValidationError, NotFoundError, ConfigurationValidationError, TriggerTemplateNotFoundError } from '@modular-agent/types';
+import { EventType } from '@modular-agent/types';
+import { TriggerActionType } from '@modular-agent/types';
 
 /**
  * 触发器模板注册表类

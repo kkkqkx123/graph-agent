@@ -15,13 +15,13 @@
  * - 支持多种配置类型：工作流、节点模板、触发器模板、脚本
  */
 
-import type { Node } from '@modular-agent/types/node';
+import type { Node } from '@modular-agent/types';
 import type { Edge } from '@modular-agent/types';
-import type { WorkflowDefinition } from '@modular-agent/types/workflow';
-import type { NodeTemplate } from '@modular-agent/types/node-template';
-import type { TriggerTemplate } from '@modular-agent/types/trigger-template';
-import type { Script } from '@modular-agent/types/code';
-import type { LLMProfile } from '@modular-agent/types/llm';
+import type { WorkflowDefinition } from '@modular-agent/types';
+import type { NodeTemplate } from '@modular-agent/types';
+import type { TriggerTemplate } from '@modular-agent/types';
+import type { Script } from '@modular-agent/types';
+import type { LLMProfile } from '@modular-agent/types';
 
 /**
  * 配置格式枚举

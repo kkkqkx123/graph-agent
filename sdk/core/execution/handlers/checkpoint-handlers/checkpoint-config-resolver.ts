@@ -3,19 +3,19 @@
  * 处理检查点配置的优先级规则
  */
 
-import type { CheckpointConfig, ProcessedWorkflowDefinition } from '@modular-agent/types/workflow';
-import { WorkflowType } from '@modular-agent/types/workflow';
-import type { Node, NodeHook } from '@modular-agent/types/node';
-import type { Trigger } from '@modular-agent/types/trigger';
-import type { Tool } from '@modular-agent/types/tool';
+import type { CheckpointConfig, ProcessedWorkflowDefinition } from '@modular-agent/types';
+import { WorkflowType } from '@modular-agent/types';
+import type { Node, NodeHook } from '@modular-agent/types';
+import type { Trigger } from '@modular-agent/types';
+import type { Tool } from '@modular-agent/types';
 import {
   CheckpointTriggerType,
   CheckpointConfigSource
-} from '@modular-agent/types/checkpoint';
+} from '@modular-agent/types';
 import type {
   CheckpointConfigContext,
   CheckpointConfigResult
-} from '@modular-agent/types/checkpoint';
+} from '@modular-agent/types';
 
 /**
  * 解析检查点配置

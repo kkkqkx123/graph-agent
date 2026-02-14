@@ -5,8 +5,8 @@
 
 import { GenericResourceAPI } from '../generic-resource-api';
 import { CheckpointStateManager } from '../../../core/execution/managers/checkpoint-state-manager';
-import type { Checkpoint, CheckpointMetadata } from '@modular-agent/types/checkpoint';
-import type { CheckpointFilter } from '@modular-agent/types/api-types';
+import type { Checkpoint, CheckpointMetadata } from '@modular-agent/types';
+import type { CheckpointFilter } from '@modular-agent/types';
 import { MemoryCheckpointStorage } from '../../../core/storage/memory-checkpoint-storage';
 import { CheckpointCoordinator } from '../../../core/execution/coordinators/checkpoint-coordinator';
 import { globalMessageStorage } from '../../../core/services/global-message-storage';

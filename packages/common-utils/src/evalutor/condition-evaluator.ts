@@ -3,7 +3,7 @@
  * 提供统一的条件评估功能，支持表达式字符串
  */
 
-import type { Condition, EvaluationContext } from '@modular-agent/types/condition';
+import type { Condition, EvaluationContext } from '@modular-agent/types';
 import { ExpressionEvaluator } from './expression-parser';
 
 /**

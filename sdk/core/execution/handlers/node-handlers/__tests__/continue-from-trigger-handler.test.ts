@@ -3,10 +3,10 @@
  */
 
 import { continueFromTriggerHandler } from '../continue-from-trigger-handler';
-import type { Node, ContinueFromTriggerNodeConfig } from '@modular-agent/types/node';
-import { NodeType } from '@modular-agent/types/node';
-import type { Thread } from '@modular-agent/types/thread';
-import { ThreadStatus } from '@modular-agent/types/thread';
+import type { Node, ContinueFromTriggerNodeConfig } from '@modular-agent/types';
+import { NodeType } from '@modular-agent/types';
+import type { Thread } from '@modular-agent/types';
+import { ThreadStatus } from '@modular-agent/types';
 
 describe('continue-from-trigger-handler', () => {
   let mockThread: Thread;

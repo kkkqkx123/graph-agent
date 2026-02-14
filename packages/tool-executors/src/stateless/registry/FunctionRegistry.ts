@@ -4,7 +4,7 @@
  */
 
 import type { FunctionRegistryItem, FunctionRegistryConfig } from '../types';
-import { ToolError } from '@modular-agent/types/errors';
+import { ToolError } from '@modular-agent/types';
 
 /**
  * 函数注册表

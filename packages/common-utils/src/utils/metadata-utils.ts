@@ -3,7 +3,7 @@
  * 提供元数据的创建、查询、修改和合并功能
  */
 
-import type { Metadata } from '@modular-agent/types/common';
+import type { Metadata } from '@modular-agent/types';
 
 /**
  * 创建空元数据

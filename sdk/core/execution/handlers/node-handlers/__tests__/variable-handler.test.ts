@@ -3,11 +3,11 @@
  */
 
 import { variableHandler } from '../variable-handler';
-import type { Node, VariableNodeConfig } from '@modular-agent/types/node';
-import { NodeType } from '@modular-agent/types/node';
-import type { Thread } from '@modular-agent/types/thread';
-import { ThreadStatus } from '@modular-agent/types/thread';
-import { ValidationError } from '@modular-agent/types/errors';
+import type { Node, VariableNodeConfig } from '@modular-agent/types';
+import { NodeType } from '@modular-agent/types';
+import type { Thread } from '@modular-agent/types';
+import { ThreadStatus } from '@modular-agent/types';
+import { ValidationError } from '@modular-agent/types';
 
 describe('variable-handler', () => {
   let mockThread: Thread;

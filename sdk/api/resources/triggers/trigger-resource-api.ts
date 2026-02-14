@@ -5,9 +5,9 @@
 
 import { GenericResourceAPI } from '../generic-resource-api';
 import { threadRegistry, type ThreadRegistry } from '../../../core/services/thread-registry';
-import { TriggerStatus } from '@modular-agent/types/trigger';
-import type { Trigger } from '@modular-agent/types/trigger';
-import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types/errors';
+import { TriggerStatus } from '@modular-agent/types';
+import type { Trigger } from '@modular-agent/types';
+import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types';
 import type { TriggerFilter } from '@modular-agent/sdk/api/types/management-types';
 
 /**

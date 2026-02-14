@@ -4,8 +4,8 @@
 
 import { LLMExecutor } from '../llm-executor';
 import { LLMWrapper } from '@modular-agent/common-utils';
-import type { LLMMessage, LLMResult } from '@modular-agent/types/llm';
-import { ExecutionError } from '@modular-agent/types/errors';
+import type { LLMMessage, LLMResult } from '@modular-agent/types';
+import { ExecutionError } from '@modular-agent/types';
 
 // Mock LLMWrapper
 jest.mock('../../../llm/wrapper');

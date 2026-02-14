@@ -16,10 +16,10 @@ import { CheckpointStateManager } from '@modular-agent/sdk/core/execution/manage
 import { MemoryCheckpointStorage } from '../../core/storage/memory-checkpoint-storage';
 import { GlobalMessageStorage } from '../../core/services/global-message-storage';
 import { ThreadRegistry } from '../../../core/services/thread-registry';
-import { NodeType } from '@modular-agent/types/node';
-import { EdgeType } from '@modular-agent/types/edge';
-import { ThreadStatus } from '@modular-agent/types/thread';
-import type { WorkflowDefinition } from '@modular-agent/types/workflow';
+import { NodeType } from '@modular-agent/types';
+import { EdgeType } from '@modular-agent/types';
+import { ThreadStatus } from '@modular-agent/types';
+import type { WorkflowDefinition } from '@modular-agent/types';
 
 describe('检查点恢复生命周期集成测试', () => {
   let workflowRegistry: WorkflowRegistry;

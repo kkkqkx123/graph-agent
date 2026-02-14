@@ -3,8 +3,8 @@
  * Join节点作为占位符，实际的Join操作由ThreadExecutor调用ThreadCoordinator处理
  */
 
-import type { Node, JoinNodeConfig } from '@modular-agent/types/node';
-import type { Thread } from '@modular-agent/types/thread';
+import type { Node, JoinNodeConfig } from '@modular-agent/types';
+import type { Thread } from '@modular-agent/types';
 
 /**
  * 检查节点是否可以执行

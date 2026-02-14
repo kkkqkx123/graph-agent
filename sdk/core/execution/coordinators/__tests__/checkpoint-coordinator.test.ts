@@ -11,13 +11,13 @@ import { ExecutionContext } from '../../context/execution-context';
 import { ThreadRegistry } from '../../../services/thread-registry';
 import { WorkflowRegistry } from '../../../services/workflow-registry';
 import { GlobalMessageStorage } from '../../../services/global-message-storage';
-import { NotFoundError } from '@modular-agent/types/errors';
-import { ThreadStatus } from '@modular-agent/types/thread';
-import type { Thread, NodeExecutionResult } from '@modular-agent/types/thread';
-import type { Checkpoint } from '@modular-agent/types/checkpoint';
-import type { WorkflowDefinition } from '@modular-agent/types/workflow';
-import type { Graph } from '@modular-agent/types/graph';
-import type { LLMMessage } from '@modular-agent/types/llm';
+import { NotFoundError } from '@modular-agent/types';
+import { ThreadStatus } from '@modular-agent/types';
+import type { Thread, NodeExecutionResult } from '@modular-agent/types';
+import type { Checkpoint } from '@modular-agent/types';
+import type { WorkflowDefinition } from '@modular-agent/types';
+import type { Graph } from '@modular-agent/types';
+import type { LLMMessage } from '@modular-agent/types';
 
 // Mock 依赖
 jest.mock('../../managers/checkpoint-state-manager');

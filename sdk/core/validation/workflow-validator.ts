@@ -29,18 +29,18 @@
  */
 
 import { z } from 'zod';
-import type { WorkflowDefinition } from '@modular-agent/types/workflow';
-import type { Node } from '@modular-agent/types/node';
-import { NodeType } from '@modular-agent/types/node';
-import { WorkflowType } from '@modular-agent/types/workflow';
-import { ConfigurationValidationError } from '@modular-agent/types/errors';
-import type { Result } from '@modular-agent/types/result';
+import type { WorkflowDefinition } from '@modular-agent/types';
+import type { Node } from '@modular-agent/types';
+import { NodeType } from '@modular-agent/types';
+import { WorkflowType } from '@modular-agent/types';
+import { ConfigurationValidationError } from '@modular-agent/types';
+import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 import { validateNodeByType } from './node-validation';
 import { validateHooks } from './hook-validator';
 import { validateTriggers } from './trigger-validator';
 import { SelfReferenceValidationStrategy } from './strategies/self-reference-validation-strategy';
-import { TriggerActionType } from '@modular-agent/types/trigger';
+import { TriggerActionType } from '@modular-agent/types';
 
 /**
  * 工作流变量schema

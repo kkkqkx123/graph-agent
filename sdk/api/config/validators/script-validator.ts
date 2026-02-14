@@ -4,11 +4,11 @@
  * 注意：实际验证逻辑完全委托给 CodeConfigValidator，这里仅作为适配器
  */
 
-import type { Script } from '@modular-agent/types/code';
+import type { Script } from '@modular-agent/types';
 import type { ConfigFile } from '../types';
 import { ok, err } from '@modular-agent/common-utils';
-import type { Result } from '@modular-agent/types/result';
-import { ValidationError } from '@modular-agent/types/errors';
+import type { Result } from '@modular-agent/types';
+import { ValidationError } from '@modular-agent/types';
 import { CodeConfigValidator } from '../../../core/validation/code-config-validator';
 import {
   validateRequiredFields,

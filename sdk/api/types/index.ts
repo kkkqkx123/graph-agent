@@ -67,4 +67,4 @@ export type {
 export type {
   TriggerTemplateFilter,
   TriggerTemplateSummary
-} from '@modular-agent/types/trigger-template';
+} from '@modular-agent/types';

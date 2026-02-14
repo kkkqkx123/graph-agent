@@ -4,7 +4,7 @@
 
 import type { ID, Metadata } from '../common';
 import { EventType } from '../events';
-import type { LLMMessageRole } from '../llm';
+import type { MessageRole } from '../message';
 
 /**
  * 触发条件接口
@@ -75,11 +75,11 @@ export interface ConversationHistoryOptions {
   lastN?: number;
   /** 回传最后N条指定角色的消息 */
   lastNByRole?: {
-    role: LLMMessageRole;
+    role: MessageRole;
     count: number;
   };
   /** 回传指定角色的所有消息 */
-  byRole?: LLMMessageRole;
+  byRole?: MessageRole;
   /** 回传指定范围的消息（基于完整消息列表） */
   range?: {
     start: number;
@@ -87,7 +87,7 @@ export interface ConversationHistoryOptions {
   };
   /** 回传指定范围的指定角色消息 */
   rangeByRole?: {
-    role: LLMMessageRole;
+    role: MessageRole;
     start: number;
     end: number;
   };

@@ -12,10 +12,10 @@ import type {
   StatefulToolConfig,
   RestToolConfig,
   McpToolConfig
-} from '@modular-agent/types/tool';
-import { ToolType } from '@modular-agent/types/tool';
-import { ConfigurationValidationError } from '@modular-agent/types/errors';
-import type { Result } from '@modular-agent/types/result';
+} from '@modular-agent/types';
+import { ToolType } from '@modular-agent/types';
+import { ConfigurationValidationError } from '@modular-agent/types';
+import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 
 /**

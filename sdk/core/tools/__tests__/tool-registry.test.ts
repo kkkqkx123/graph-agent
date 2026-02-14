@@ -3,9 +3,9 @@
  */
 
 import { ToolRegistry } from '../tool-registry';
-import type { Tool } from '@modular-agent/types/tool';
-import { ToolType } from '@modular-agent/types/tool';
-import { ValidationError, NotFoundError } from '@modular-agent/types/errors';
+import type { Tool } from '@modular-agent/types';
+import { ToolType } from '@modular-agent/types';
+import { ValidationError, NotFoundError } from '@modular-agent/types';
 
 describe('ToolRegistry', () => {
   let registry: ToolRegistry;

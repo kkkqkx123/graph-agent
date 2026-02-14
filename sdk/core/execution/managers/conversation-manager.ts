@@ -15,15 +15,16 @@
  * - 上下文压缩通过触发器+子工作流实现，不在此模块
  */
 
-import type { LLMMessage, LLMUsage, MessageMarkMap, TokenUsageHistory, TokenUsageStats, LLMMessageRole } from '@modular-agent/types/llm';
-import { ValidationError, RuntimeValidationError } from '@modular-agent/types/errors';
+import type { LLMMessage, LLMUsage, TokenUsageHistory, TokenUsageStats } from '@modular-agent/types';
+import type { MessageRole, MessageMarkMap } from '@modular-agent/types';
+import { ValidationError, RuntimeValidationError } from '@modular-agent/types';
 import { TokenUsageTracker } from '../token-usage-tracker';
 import { TypeIndexManager } from './type-index-manager';
 import { getVisibleOriginalIndices, getVisibleMessages } from '../../utils/visible-range-calculator';
 import { startNewBatch, rollbackToBatch as rollbackBatch } from '../../utils/batch-management-utils';
 import type { EventManager } from '../../services/event-manager';
-import type { TokenLimitExceededEvent } from '@modular-agent/types/events';
-import { EventType } from '@modular-agent/types/events';
+import type { TokenLimitExceededEvent } from '@modular-agent/types';
+import { EventType } from '@modular-agent/types';
 import type { LifecycleCapable } from './lifecycle-capable';
 
 /**
@@ -58,6 +59,8 @@ export interface ConversationManagerOptions {
 export interface ConversationState {
   /** 消息历史 */
   messages: LLMMessage[];
+  /** 消息标记映射 */
+  markMap: MessageMarkMap;
   /** 累积的 Token 使用统计 */
   tokenUsage: TokenUsageStats | null;
   /** 当前请求的 Token 使用统计 */
@@ -302,7 +305,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    * @param role 消息角色
    * @returns 消息数组
    */
-  getMessagesByRole(role: LLMMessageRole): LLMMessage[] {
+  getMessagesByRole(role: MessageRole): LLMMessage[] {
     const indices = this.typeIndexManager.getIndicesByRole(role);
     return indices.map(index => ({ ...this.messages[index]! }));
   }
@@ -313,7 +316,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    * @param n 消息数量
    * @returns 消息数组
    */
-  getRecentMessagesByRole(role: LLMMessageRole, n: number): LLMMessage[] {
+  getRecentMessagesByRole(role: MessageRole, n: number): LLMMessage[] {
     const indices = this.typeIndexManager.getRecentIndicesByRole(role, n);
     return indices.map(index => ({ ...this.messages[index]! }));
   }
@@ -325,7 +328,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    * @param end 结束位置（在类型数组中的位置）
    * @returns 消息数组
    */
-  getMessagesByRoleRange(role: LLMMessageRole, start: number, end: number): LLMMessage[] {
+  getMessagesByRoleRange(role: MessageRole, start: number, end: number): LLMMessage[] {
     const indices = this.typeIndexManager.getRangeIndicesByRole(role, start, end);
     return indices.map(index => ({ ...this.messages[index]! }));
   }
@@ -335,7 +338,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    * @param role 消息角色
    * @returns 消息数量
    */
-  getMessageCountByRole(role: LLMMessageRole): number {
+  getMessageCountByRole(role: MessageRole): number {
     return this.typeIndexManager.getCountByRole(role);
   }
 
@@ -478,6 +481,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
   createSnapshot(): ConversationState {
     return {
       messages: this.getAllMessages().map(msg => ({ ...msg })),
+      markMap: this.getMarkMap(),
       tokenUsage: this.getTokenUsage(),
       currentRequestUsage: this.getCurrentRequestUsage(),
       usageHistory: this.getUsageHistory()

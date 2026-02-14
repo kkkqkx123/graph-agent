@@ -3,7 +3,7 @@
  * 提供时间戳的创建、转换和格式化功能
  */
 
-import type { Timestamp } from '@modular-agent/types/common';
+import type { Timestamp } from '@modular-agent/types';
 
 /**
  * 创建当前时间戳

@@ -4,12 +4,12 @@
  * 重构版本：继承GenericResourceAPI，提高代码复用性和一致性
  */
 
-import type { NodeTemplate } from '@modular-agent/types/node-template';
+import type { NodeTemplate } from '@modular-agent/types';
 import type { NodeTemplateFilter, NodeTemplateSummary } from '@modular-agent/sdk/api/types/registry-types';
-import { ValidationError, ConfigurationValidationError } from '@modular-agent/types/errors';
-import type { Result } from '@modular-agent/types/result';
+import { ValidationError, ConfigurationValidationError } from '@modular-agent/types';
+import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
-import { NodeType } from '@modular-agent/types/node';
+import { NodeType } from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api';
 import type { APIDependencies } from '../../core/api-dependencies';
 

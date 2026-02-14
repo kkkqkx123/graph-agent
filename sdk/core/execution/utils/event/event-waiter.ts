@@ -16,7 +16,7 @@
  */
 
 import type { EventManager } from '../../../services/event-manager';
-import { EventType } from '@modular-agent/types/events';
+import { EventType } from '@modular-agent/types';
 
 /**
  * 表示始终等待的特殊值

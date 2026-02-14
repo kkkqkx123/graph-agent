@@ -3,9 +3,9 @@
  */
 
 import { TriggerTemplateRegistry } from '../trigger-template-registry';
-import { EventType } from '@modular-agent/types/events';
-import { TriggerActionType } from '@modular-agent/types/trigger';
-import { ValidationError, NotFoundError } from '@modular-agent/types/errors';
+import { EventType } from '@modular-agent/types';
+import { TriggerActionType } from '@modular-agent/types';
+import { ValidationError, NotFoundError } from '@modular-agent/types';
 
 describe('TriggerTemplateRegistry', () => {
   let registry: TriggerTemplateRegistry;

@@ -6,9 +6,9 @@ import { TriggerCoordinator } from '../trigger-coordinator';
 import { ThreadRegistry } from '../../../services/thread-registry';
 import { WorkflowRegistry } from '../../../services/workflow-registry';
 import { TriggerStateManager } from '../../managers/trigger-state-manager';
-import { EventType } from '@modular-agent/types/events';
-import { ValidationError, ExecutionError } from '@modular-agent/types/errors';
-import { TriggerActionType, TriggerStatus, TriggerType } from '@modular-agent/types/trigger';
+import { EventType } from '@modular-agent/types';
+import { ValidationError, ExecutionError } from '@modular-agent/types';
+import { TriggerActionType, TriggerStatus, TriggerType } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
 
 // Mock 依赖

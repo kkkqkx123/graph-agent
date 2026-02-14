@@ -4,9 +4,9 @@
  * 由于仅被tool-service使用，不需要特意改造为单例模式
  */
 
-import type { Tool, StatelessToolConfig, StatefulToolConfig, McpToolConfig } from '@modular-agent/types/tool';
-import { ToolType } from '@modular-agent/types/tool';
-import { ConfigurationValidationError, ToolNotFoundError } from '@modular-agent/types/errors';
+import type { Tool, StatelessToolConfig, StatefulToolConfig, McpToolConfig } from '@modular-agent/types';
+import { ToolType } from '@modular-agent/types';
+import { ConfigurationValidationError, ToolNotFoundError } from '@modular-agent/types';
 
 /**
  * 工具注册表类

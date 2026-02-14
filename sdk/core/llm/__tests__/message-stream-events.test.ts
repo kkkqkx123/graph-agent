@@ -15,7 +15,7 @@ import {
   type MessageStreamAbortEvent,
   type MessageStreamEndEvent
 } from '../message-stream-events';
-import type { LLMMessage, LLMResult } from '@modular-agent/types/llm';
+import type { LLMMessage, LLMResult } from '@modular-agent/types';
 
 describe('MessageStreamEvents', () => {
   describe('MessageStreamEventType', () => {

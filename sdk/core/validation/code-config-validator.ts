@@ -4,11 +4,11 @@
  */
 
 import { z } from 'zod';
-import type { Script, ScriptExecutionOptions, SandboxConfig } from '@modular-agent/types/code';
-import { ScriptType } from '@modular-agent/types/code';
-import { ConfigurationValidationError } from '@modular-agent/types/errors';
+import type { Script, ScriptExecutionOptions, SandboxConfig } from '@modular-agent/types';
+import { ScriptType } from '@modular-agent/types';
+import { ConfigurationValidationError } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
-import type { Result } from '@modular-agent/types/result';
+import type { Result } from '@modular-agent/types';
 
 /**
  * 沙箱配置schema

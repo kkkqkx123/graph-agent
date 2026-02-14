@@ -12,7 +12,7 @@ export type MessageRole = 'system' | 'user' | 'assistant' | 'tool';
  * 消息内容类型
  */
 export type MessageContent = string | Array<{
-  type: 'text' | 'image' | 'tool_use' | 'tool_result';
+  type: 'text' | 'image_url' | 'tool_use' | 'tool_result';
   text?: string;
   image_url?: { url: string };
   tool_use?: {

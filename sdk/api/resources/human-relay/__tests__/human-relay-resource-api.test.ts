@@ -6,7 +6,7 @@ import { HumanRelayResourceAPI, type HumanRelayConfig, type HumanRelayFilter } f
 import type { HumanRelayHandler, HumanRelayRequest, HumanRelayResponse } from '@modular-agent/types';
 import { SingletonRegistry } from '@modular-agent/sdk/core/execution/context/singleton-registry';
 import { EventManager } from '@modular-agent/sdk/core/services/event-manager';
-import { EventType } from '@modular-agent/types/events';
+import { EventType } from '@modular-agent/types';
 
 // Mock SingletonRegistry
 jest.mock('../../../../core/execution/context/singleton-registry');

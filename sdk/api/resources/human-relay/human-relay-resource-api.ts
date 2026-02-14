@@ -24,13 +24,13 @@ import { GenericResourceAPI } from '../generic-resource-api';
 import type { ExecutionResult } from '@modular-agent/sdk/api/types/execution-result';
 import { success, failure } from '@modular-agent/sdk/api/types/execution-result';
 import type { HumanRelayHandler, HumanRelayRequest, HumanRelayResponse } from '@modular-agent/types';
-import { EventType } from '@modular-agent/types/events';
+import { EventType } from '@modular-agent/types';
 import type {
   HumanRelayRequestedEvent,
   HumanRelayRespondedEvent,
   HumanRelayProcessedEvent,
   HumanRelayFailedEvent
-} from '@modular-agent/types/events';
+} from '@modular-agent/types';
 import type { APIDependencies } from '../../core/api-dependencies';
 
 /**

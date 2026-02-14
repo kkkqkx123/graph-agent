@@ -5,7 +5,8 @@
  * 所有函数都是纯函数，不持有任何状态
  */
 
-import type { LLMMessage, MessageMarkMap } from '@modular-agent/types/llm';
+import type { LLMMessage } from '@modular-agent/types';
+import type { MessageMarkMap } from '@modular-agent/types';
 
 /**
  * 获取当前批次的边界索引

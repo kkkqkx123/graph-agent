@@ -13,9 +13,9 @@
  * - CONTINUE_FROM_TRIGGER节点负责回调数据到主线程
  */
 
-import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types/trigger';
-import type { ExecuteTriggeredSubgraphActionConfig } from '@modular-agent/types/trigger';
-import { NotFoundError, ValidationError, RuntimeValidationError, ThreadContextNotFoundError, WorkflowNotFoundError } from '@modular-agent/types/errors';
+import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
+import type { ExecuteTriggeredSubgraphActionConfig } from '@modular-agent/types';
+import { NotFoundError, ValidationError, RuntimeValidationError, ThreadContextNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
 import { ExecutionContext } from '../../context/execution-context';
 import {
   executeSingleTriggeredSubgraph,

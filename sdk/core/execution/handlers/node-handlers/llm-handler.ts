@@ -8,9 +8,9 @@
  * - 返回执行结果
  */
 
-import type { Node, LLMNodeConfig } from '@modular-agent/types/node';
-import type { Thread } from '@modular-agent/types/thread';
-import { ExecutionError } from '@modular-agent/types/errors';
+import type { Node, LLMNodeConfig } from '@modular-agent/types';
+import type { Thread } from '@modular-agent/types';
+import { ExecutionError } from '@modular-agent/types';
 import { now, diffTimestamp } from '@modular-agent/common-utils';
 import { LLMExecutionCoordinator } from '../../coordinators/llm-execution-coordinator';
 import { LLMWrapper } from '../../../llm/wrapper';

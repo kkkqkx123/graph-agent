@@ -2,7 +2,7 @@
  * 核心类型定义
  */
 
-import type { Tool } from '@modular-agent/types/tool';
+import type { Tool } from '@modular-agent/types';
 
 /**
  * 执行器类型

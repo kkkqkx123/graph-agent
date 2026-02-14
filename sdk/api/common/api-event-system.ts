@@ -13,7 +13,7 @@ import {
   APIEventData,
   APIEventListener
 } from '../types/event-types';
-import { SDKError, ErrorSeverity } from '@modular-agent/types/errors';
+import { SDKError, ErrorSeverity } from '@modular-agent/types';
 
 /**
  * 事件总线类

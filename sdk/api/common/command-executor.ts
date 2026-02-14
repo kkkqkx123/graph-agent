@@ -6,7 +6,7 @@
 import type { Command, CommandValidationResult } from '@modular-agent/sdk/api/types/command';
 import type { ExecutionResult } from '@modular-agent/sdk/api/types/execution-result';
 import { failure } from '@modular-agent/sdk/api/types/execution-result';
-import { SDKError } from '@modular-agent/types/errors';
+import { SDKError } from '@modular-agent/types';
 
 /**
  * Command执行器

@@ -3,11 +3,11 @@
  */
 
 import { codeHandler } from '../code-handler';
-import type { Node, CodeNodeConfig } from '@modular-agent/types/node';
-import { NodeType } from '@modular-agent/types/node';
-import type { Thread } from '@modular-agent/types/thread';
-import { ThreadStatus } from '@modular-agent/types/thread';
-import { ValidationError } from '@modular-agent/types/errors';
+import type { Node, CodeNodeConfig } from '@modular-agent/types';
+import { NodeType } from '@modular-agent/types';
+import type { Thread } from '@modular-agent/types';
+import { ThreadStatus } from '@modular-agent/types';
+import { ValidationError } from '@modular-agent/types';
 
 // Mock codeService
 jest.mock('../../../../../core/services/code-service', () => ({

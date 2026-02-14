@@ -3,15 +3,15 @@
  * 负责在子工作流执行完成后，将结果回调到主工作流
  */
 
-import type { Node } from '@modular-agent/types/node';
-import type { Thread } from '@modular-agent/types/thread';
-import type { ContinueFromTriggerNodeConfig } from '@modular-agent/types/node';
-import { ThreadStatus } from '@modular-agent/types/thread';
+import type { Node } from '@modular-agent/types';
+import type { Thread } from '@modular-agent/types';
+import type { ContinueFromTriggerNodeConfig } from '@modular-agent/types';
+import { ThreadStatus } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
 import { MessageArrayUtils } from '../../../utils/message-array-utils';
 import { executeOperation } from '../../../utils/message-operation-utils';
 import { getVisibleMessages } from '../../../utils/visible-range-calculator';
-import type { MessageOperationContext } from '@modular-agent/types/llm';
+import type { MessageOperationContext } from '@modular-agent/types';
 
 /**
  * 检查节点是否可以执行

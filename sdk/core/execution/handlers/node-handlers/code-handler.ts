@@ -3,9 +3,9 @@
  * 负责执行CODE节点，执行脚本代码，支持多种脚本语言
  */
 
-import type { Node, CodeNodeConfig } from '@modular-agent/types/node';
-import type { Thread } from '@modular-agent/types/thread';
-import { ValidationError, RuntimeValidationError } from '@modular-agent/types/errors';
+import type { Node, CodeNodeConfig } from '@modular-agent/types';
+import type { Thread } from '@modular-agent/types';
+import { ValidationError, RuntimeValidationError } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
 import { codeService } from '../../../services/code-service';
 

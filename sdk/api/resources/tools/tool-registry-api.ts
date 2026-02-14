@@ -9,9 +9,9 @@ import {
   validateObject
 } from '../../validation/validation-strategy';
 
-import type { Tool } from '@modular-agent/types/tool';
+import type { Tool } from '@modular-agent/types';
 import type { ToolFilter } from '@modular-agent/sdk/api/types/tools-types';
-import { NotFoundError } from '@modular-agent/types/errors';
+import { NotFoundError } from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api';
 import type { APIDependencies } from '../../core/api-dependencies';
 

@@ -14,7 +14,7 @@ import type {
   CountBasedCleanupPolicy,
   SizeBasedCleanupPolicy,
   CleanupPolicy
-} from '@modular-agent/types/checkpoint-storage';
+} from '@modular-agent/types';
 
 describe('CheckpointCleanupPolicy', () => {
   // 创建测试用的检查点数据

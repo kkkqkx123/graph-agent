@@ -6,7 +6,7 @@ import { ToolCallExecutor } from '../tool-call-executor';
 import type { ToolService } from '../../../services/tool-service';
 import type { EventManager } from '../../../services/event-manager';
 import type { ConversationManager } from '../../managers/conversation-manager';
-import { EventType } from '@modular-agent/types/events';
+import { EventType } from '@modular-agent/types';
 
 // Mock dependencies
 const mockToolService = {

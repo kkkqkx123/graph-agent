@@ -3,7 +3,7 @@
  * 基于 common-utils 的 executeWithRetry 实现，提供便捷的接口
  */
 
-import { TimeoutError, HttpError, NetworkError } from '@modular-agent/types/errors';
+import { TimeoutError, HttpError, NetworkError } from '@modular-agent/types';
 import { InternalServerError, RateLimitError, ServiceUnavailableError, executeWithRetry, type RetryConfig } from '@modular-agent/common-utils';
 
 /**

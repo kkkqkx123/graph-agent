@@ -1,5 +1,5 @@
 import { InterruptionManager } from '../interruption-manager';
-import { ThreadInterruptedException } from '@modular-agent/types/errors';
+import { ThreadInterruptedException } from '@modular-agent/types';
 
 describe('InterruptionManager', () => {
   let interruptionManager: InterruptionManager;

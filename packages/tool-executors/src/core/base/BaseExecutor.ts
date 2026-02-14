@@ -3,7 +3,7 @@
  * 提供通用的执行逻辑：参数验证、重试机制、超时控制、标准化结果格式
  */
 
-import type { Tool, ToolExecutionOptions, ToolExecutionResult } from '@modular-agent/types/tool';
+import type { Tool, ToolExecutionOptions, ToolExecutionResult } from '@modular-agent/types';
 import { IToolExecutor } from '../interfaces/IToolExecutor';
 import { ParameterValidator } from './ParameterValidator';
 import { RetryStrategy } from './RetryStrategy';

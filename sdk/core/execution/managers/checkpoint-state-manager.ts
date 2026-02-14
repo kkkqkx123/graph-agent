@@ -3,8 +3,8 @@
  * 有状态服务，维护检查点的内部状态
  */
 
-import type { Checkpoint } from '@modular-agent/types/checkpoint';
-import type { CheckpointStorage, CheckpointStorageMetadata, CleanupPolicy, CleanupResult } from '@modular-agent/types/checkpoint-storage';
+import type { Checkpoint } from '@modular-agent/types';
+import type { CheckpointStorage, CheckpointStorageMetadata, CleanupPolicy, CleanupResult } from '@modular-agent/types';
 import { LifecycleCapable } from './lifecycle-capable';
 import { serializeCheckpoint, deserializeCheckpoint } from '../utils/checkpoint-serializer';
 import { createCleanupStrategy } from '../utils/checkpoint-cleanup-policy';
@@ -177,7 +177,7 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
    * @param options 查询选项
    * @returns 检查点ID数组
    */
-  async list(options?: import('@modular-agent/types/checkpoint-storage').CheckpointListOptions): Promise<string[]> {
+  async list(options?: import('@modular-agent/types').CheckpointListOptions): Promise<string[]> {
     return this.storage.list(options);
   }
 

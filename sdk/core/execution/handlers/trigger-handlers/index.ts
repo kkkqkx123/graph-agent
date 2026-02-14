@@ -8,9 +8,9 @@
  * - 与 NodeHandler 保持一致的架构设计
  */
 
-import { ExecutionError } from '@modular-agent/types/errors';
-import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types/trigger';
-import { TriggerActionType } from '@modular-agent/types/trigger';
+import { ExecutionError } from '@modular-agent/types';
+import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
+import { TriggerActionType } from '@modular-agent/types';
 
 /**
  * 触发器处理器类型

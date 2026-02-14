@@ -3,11 +3,11 @@
  */
 
 import { WorkflowRegistry } from '../workflow-registry';
-import { NodeType } from '@modular-agent/types/node';
-import { EdgeType } from '@modular-agent/types/edge';
-import { WorkflowType } from '@modular-agent/types/workflow';
-import { ValidationError, NotFoundError } from '@modular-agent/types/errors';
-import { TriggerActionType } from '@modular-agent/types/trigger';
+import { NodeType } from '@modular-agent/types';
+import { EdgeType } from '@modular-agent/types';
+import { WorkflowType } from '@modular-agent/types';
+import { ValidationError, NotFoundError } from '@modular-agent/types';
+import { TriggerActionType } from '@modular-agent/types';
 
 describe('WorkflowRegistry', () => {
   let registry: WorkflowRegistry;

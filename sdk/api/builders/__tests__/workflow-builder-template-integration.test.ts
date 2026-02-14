@@ -6,9 +6,9 @@
 import { WorkflowBuilder } from '../workflow-builder';
 import { NodeTemplateBuilder } from '../node-template-builder';
 import { TriggerTemplateBuilder } from '../trigger-template-builder';
-import { NodeType } from '@modular-agent/types/node';
-import { EventType } from '@modular-agent/types/events';
-import { TriggerActionType } from '@modular-agent/types/trigger';
+import { NodeType } from '@modular-agent/types';
+import { EventType } from '@modular-agent/types';
+import { TriggerActionType } from '@modular-agent/types';
 import { nodeTemplateRegistry } from '@modular-agent/sdk/core/services/node-template-registry';
 import { triggerTemplateRegistry } from '@modular-agent/sdk/core/services/trigger-template-registry';
 

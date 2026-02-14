@@ -10,10 +10,10 @@
  * - 通过依赖注入传入 Mock
  */
 
-import type { Script, ScriptType, ScriptExecutor, ScriptExecutionOptions, ScriptExecutionResult } from '@modular-agent/types/code';
+import type { Script, ScriptType, ScriptExecutor, ScriptExecutionOptions, ScriptExecutionResult } from '@modular-agent/types';
 import type { ThreadContext } from '../execution/context/thread-context';
 import { CodeRegistry } from '../code/code-registry';
-import { CodeExecutionError, ScriptNotFoundError } from '@modular-agent/types/errors';
+import { CodeExecutionError, ScriptNotFoundError } from '@modular-agent/types';
 
 /**
  * 脚本执行器注册表

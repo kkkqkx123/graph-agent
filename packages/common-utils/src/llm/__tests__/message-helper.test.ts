@@ -2,7 +2,7 @@
  * LLM 消息辅助工具单元测试
  */
 
-import type { LLMMessage } from '@modular-agent/types/llm';
+import type { LLMMessage } from '@modular-agent/types';
 import {
   extractSystemMessage,
   filterSystemMessages,

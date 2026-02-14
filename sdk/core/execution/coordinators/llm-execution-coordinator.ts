@@ -13,19 +13,19 @@
  * - 职责分离：将具体执行逻辑委托给专门组件
  */
 
-import type { LLMMessage } from '@modular-agent/types/llm';
-import type { WorkflowConfig } from '@modular-agent/types/workflow';
+import type { LLMMessage } from '@modular-agent/types';
+import type { WorkflowConfig } from '@modular-agent/types';
 import { ConversationManager } from '../managers/conversation-manager';
 import { LLMExecutor } from '../executors/llm-executor';
 import { type ToolService } from '../../services/tool-service';
 import type { EventManager } from '../../services/event-manager';
 import { safeEmit } from '../utils/event/event-emitter';
-import { EventType } from '@modular-agent/types/events';
+import { EventType } from '@modular-agent/types';
 import { UserInteractionOperationType } from '@modular-agent/types';
 import type { ToolApprovalData } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
 import { ToolCallExecutor } from '../executors/tool-call-executor';
-import { ExecutionError, ThreadInterruptedException } from '@modular-agent/types/errors';
+import { ExecutionError, ThreadInterruptedException } from '@modular-agent/types';
 import { generateId } from '@modular-agent/common-utils';
 import { CheckpointCoordinator } from './checkpoint-coordinator';
 import type { ExecutionContext } from '../context/execution-context';

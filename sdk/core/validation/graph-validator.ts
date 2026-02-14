@@ -43,11 +43,11 @@ import type {
   GraphValidationOptions,
   GraphAnalysisResult,
 } from '@modular-agent/types';
-import { ConfigurationValidationError } from '@modular-agent/types/errors';
-import type { Result } from '@modular-agent/types/result';
+import { ConfigurationValidationError } from '@modular-agent/types';
+import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 import { GraphData } from '../entities/graph-data';
-import { SUBGRAPH_METADATA_KEYS } from '@modular-agent/types/subgraph';
+import { SUBGRAPH_METADATA_KEYS } from '@modular-agent/types';
 import { analyzeGraph } from '../graph/utils/graph-analyzer';
 import { detectCycles } from '../graph/utils/graph-cycle-detector';
 import { analyzeReachability } from '../graph/utils/graph-reachability-analyzer';

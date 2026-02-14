@@ -3,8 +3,8 @@
  */
 
 import { ProfileManager } from '../profile-manager';
-import type { LLMProfile } from '@modular-agent/types/llm';
-import { ValidationError, NotFoundError } from '@modular-agent/types/errors';
+import type { LLMProfile } from '@modular-agent/types';
+import { ValidationError, NotFoundError } from '@modular-agent/types';
 
 describe('ProfileManager', () => {
   let manager: ProfileManager;

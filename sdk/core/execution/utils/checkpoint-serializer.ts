@@ -3,7 +3,7 @@
  * 纯函数实现，无状态
  */
 
-import type { Checkpoint } from '@modular-agent/types/checkpoint';
+import type { Checkpoint } from '@modular-agent/types';
 
 /**
  * 序列化检查点为字节数组

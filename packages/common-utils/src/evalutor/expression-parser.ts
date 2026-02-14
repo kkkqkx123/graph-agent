@@ -31,7 +31,7 @@
  * - 嵌套路径默认从 variables 数据源查找，除非使用显式前缀
  */
 
-import type { EvaluationContext } from '@modular-agent/types/condition';
+import type { EvaluationContext } from '@modular-agent/types';
 import { validateExpression, validatePath } from './security-validator';
 import { resolvePath } from './path-resolver';
 

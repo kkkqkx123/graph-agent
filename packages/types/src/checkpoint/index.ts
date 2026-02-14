@@ -11,9 +11,3 @@ export * from './snapshot';
 
 // 导出配置类型
 export * from './config';
-
-// 为了向后兼容，重新导出 CheckpointTriggerType
-export { CheckpointTriggerType } from './config';
-
-// 为了向后兼容，重新导出 CheckpointConfigSource
-export { CheckpointConfigSource } from './config';

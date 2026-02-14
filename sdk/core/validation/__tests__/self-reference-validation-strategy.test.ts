@@ -4,8 +4,8 @@
  */
 
 import { SelfReferenceValidationStrategy } from '../strategies/self-reference-validation-strategy';
-import { NodeType } from '@modular-agent/types/node';
-import type { Node } from '@modular-agent/types/node';
+import { NodeType } from '@modular-agent/types';
+import type { Node } from '@modular-agent/types';
 
 describe('SelfReferenceValidationStrategy', () => {
   describe('isSubgraphNode', () => {

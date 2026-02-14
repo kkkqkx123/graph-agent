@@ -17,11 +17,12 @@
  */
 
 import type { Thread, VariableScope } from '@modular-agent/types';
-import type { ID } from '@modular-agent/types/common';
-import type { TriggerRuntimeState } from '@modular-agent/types/trigger';
-import type { StatefulToolFactory } from '@modular-agent/types/tool';
-import type { LLMMessage, LLMMessageRole } from '@modular-agent/types/llm';
-import type { WorkflowDefinition } from '@modular-agent/types/workflow';
+import type { ID } from '@modular-agent/types';
+import type { TriggerRuntimeState } from '@modular-agent/types';
+import type { StatefulToolFactory } from '@modular-agent/types';
+import type { LLMMessage } from '@modular-agent/types';
+import type { MessageRole } from '@modular-agent/types';
+import type { WorkflowDefinition } from '@modular-agent/types';
 import { ConversationManager } from '../managers/conversation-manager';
 import { VariableCoordinator } from '../coordinators/variable-coordinator';
 import { VariableStateManager } from '../managers/variable-state-manager';
@@ -501,7 +502,7 @@ export class ThreadContext implements LifecycleCapable {
    * @param role 消息角色
    * @returns 消息数组
    */
-  getMessagesByRole(role: LLMMessageRole): LLMMessage[] {
+  getMessagesByRole(role: MessageRole): LLMMessage[] {
     return this.conversationManager.getMessagesByRole(role);
   }
 
@@ -511,7 +512,7 @@ export class ThreadContext implements LifecycleCapable {
    * @param n 消息数量
    * @returns 消息数组
    */
-  getRecentMessagesByRole(role: LLMMessageRole, n: number): LLMMessage[] {
+  getRecentMessagesByRole(role: MessageRole, n: number): LLMMessage[] {
     return this.conversationManager.getRecentMessagesByRole(role, n);
   }
 
@@ -522,7 +523,7 @@ export class ThreadContext implements LifecycleCapable {
    * @param end 结束位置（在类型数组中的位置）
    * @returns 消息数组
    */
-  getMessagesByRoleRange(role: LLMMessageRole, start: number, end: number): LLMMessage[] {
+  getMessagesByRoleRange(role: MessageRole, start: number, end: number): LLMMessage[] {
     return this.conversationManager.getMessagesByRoleRange(role, start, end);
   }
 

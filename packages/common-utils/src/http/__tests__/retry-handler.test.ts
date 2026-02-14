@@ -3,7 +3,7 @@
  */
 
 import { executeWithRetry } from '../retry-handler';
-import { TimeoutError, NetworkError, HttpError } from '@modular-agent/types/errors';
+import { TimeoutError, NetworkError, HttpError } from '@modular-agent/types';
 import { RateLimitError } from '../errors';
 
 describe('executeWithRetry', () => {

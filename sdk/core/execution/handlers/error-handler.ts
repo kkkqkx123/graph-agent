@@ -16,10 +16,10 @@
  */
 
 import { ThreadContext } from '../context/thread-context';
-import type { Node } from '@modular-agent/types/node';
-import type { NodeExecutionResult } from '@modular-agent/types/thread';
-import { ThreadStatus } from '@modular-agent/types/thread';
-import { ErrorContext, SDKError, ErrorSeverity } from '@modular-agent/types/errors';
+import type { Node } from '@modular-agent/types';
+import type { NodeExecutionResult } from '@modular-agent/types';
+import { ThreadStatus } from '@modular-agent/types';
+import { ErrorContext, SDKError, ErrorSeverity } from '@modular-agent/types';
 import { errorService } from '../../services/error-service';
 import { now } from '@modular-agent/common-utils';
 

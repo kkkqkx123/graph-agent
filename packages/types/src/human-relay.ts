@@ -6,7 +6,7 @@
  */
 
 import type { ID, Metadata, VariableScope } from './common';
-import type { LLMMessage } from './llm';
+import type { LLMMessage } from './message';
 
 /**
  * HumanRelay 请求类型

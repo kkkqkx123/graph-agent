@@ -8,14 +8,14 @@
  * 3. 支持索引的添加、删除和范围查询
  */
 
-import type { LLMMessageRole } from '@modular-agent/types/llm';
+import type { MessageRole } from '@modular-agent/types';
 
 /**
  * 类型索引管理器类
  */
 export class TypeIndexManager {
   /** 按类型分组的索引映射 */
-  private typeIndices: Map<LLMMessageRole, number[]> = new Map();
+  private typeIndices: Map<MessageRole, number[]> = new Map();
   
   /** 全局消息总数 */
   private totalMessages: number = 0;
@@ -33,7 +33,7 @@ export class TypeIndexManager {
    * @param role 消息角色
    * @param index 消息索引
    */
-  addIndex(role: LLMMessageRole, index: number): void {
+  addIndex(role: MessageRole, index: number): void {
     const indices = this.typeIndices.get(role);
     if (!indices) {
       this.typeIndices.set(role, [index]);
@@ -48,7 +48,7 @@ export class TypeIndexManager {
    * @param role 消息角色
    * @returns 索引数组的副本
    */
-  getIndicesByRole(role: LLMMessageRole): number[] {
+  getIndicesByRole(role: MessageRole): number[] {
     const indices = this.typeIndices.get(role);
     return indices ? [...indices] : [];
   }
@@ -59,7 +59,7 @@ export class TypeIndexManager {
    * @param n 消息数量
    * @returns 索引数组
    */
-  getRecentIndicesByRole(role: LLMMessageRole, n: number): number[] {
+  getRecentIndicesByRole(role: MessageRole, n: number): number[] {
     const indices = this.typeIndices.get(role);
     if (!indices) {
       return [];
@@ -74,7 +74,7 @@ export class TypeIndexManager {
    * @param end 结束位置（在类型数组中的位置）
    * @returns 索引数组
    */
-  getRangeIndicesByRole(role: LLMMessageRole, start: number, end: number): number[] {
+  getRangeIndicesByRole(role: MessageRole, start: number, end: number): number[] {
     const indices = this.typeIndices.get(role);
     if (!indices) {
       return [];
@@ -87,7 +87,7 @@ export class TypeIndexManager {
    * @param role 消息角色
    * @returns 消息数量
    */
-  getCountByRole(role: LLMMessageRole): number {
+  getCountByRole(role: MessageRole): number {
     const indices = this.typeIndices.get(role);
     return indices ? indices.length : 0;
   }
@@ -96,8 +96,8 @@ export class TypeIndexManager {
    * 获取所有类型索引
    * @returns 类型索引映射的副本
    */
-  getAllTypeIndices(): Map<LLMMessageRole, number[]> {
-    const result = new Map<LLMMessageRole, number[]>();
+  getAllTypeIndices(): Map<MessageRole, number[]> {
+    const result = new Map<MessageRole, number[]>();
     for (const [role, indices] of this.typeIndices) {
       result.set(role, [...indices]);
     }

@@ -9,7 +9,7 @@ import { PauseThreadCommand } from '../pause-thread-command';
 import { ResumeThreadCommand } from '../resume-thread-command';
 import { ThreadLifecycleCoordinator } from '../../core/execution/coordinators/thread-lifecycle-coordinator';
 import { ExecutionContext } from '../../core/execution/context/execution-context';
-import type { ThreadResult, ThreadOptions } from '@modular-agent/types/thread';
+import type { ThreadResult, ThreadOptions } from '@modular-agent/types';
 
 // Mock ThreadLifecycleCoordinator
 jest.mock('../../../../../core/execution/coordinators/thread-lifecycle-coordinator');

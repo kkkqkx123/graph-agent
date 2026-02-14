@@ -3,10 +3,10 @@
  */
 
 import { endHandler } from '../end-handler';
-import type { Node, EndNodeConfig } from '@modular-agent/types/node';
-import { NodeType } from '@modular-agent/types/node';
-import type { Thread } from '@modular-agent/types/thread';
-import { ThreadStatus } from '@modular-agent/types/thread';
+import type { Node, EndNodeConfig } from '@modular-agent/types';
+import { NodeType } from '@modular-agent/types';
+import type { Thread } from '@modular-agent/types';
+import { ThreadStatus } from '@modular-agent/types';
 
 // Mock utils functions
 jest.mock('../../../../../utils', () => ({

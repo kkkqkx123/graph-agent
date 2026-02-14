@@ -3,8 +3,8 @@
  */
 
 import { CodeService } from '../code-service';
-import { ScriptType } from '@modular-agent/types/code';
-import { NotFoundError, CodeExecutionError } from '@modular-agent/types/errors';
+import { ScriptType } from '@modular-agent/types';
+import { NotFoundError, CodeExecutionError } from '@modular-agent/types';
 
 describe('CodeService', () => {
   let codeService: CodeService;

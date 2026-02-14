@@ -4,12 +4,12 @@
  * 所有函数都是纯函数，不持有任何状态
  */
 
-import type { Thread } from '@modular-agent/types/thread';
+import type { Thread } from '@modular-agent/types';
 import type { ThreadContext } from '../context/thread-context';
 import type { ThreadBuilder } from '../thread-builder';
 import type { ThreadRegistry } from '../../services/thread-registry';
 import type { EventManager } from '../../services/event-manager';
-import { ExecutionError, RuntimeValidationError } from '@modular-agent/types/errors';
+import { ExecutionError, RuntimeValidationError } from '@modular-agent/types';
 import { MessageArrayUtils } from '../../utils/message-array-utils';
 import {
   buildThreadForkStartedEvent,

@@ -16,12 +16,12 @@
  */
 
 import type { ThreadContext } from '../context/thread-context';
-import type { Thread } from '@modular-agent/types/thread';
-import type { VariableScope } from '@modular-agent/types/common';
+import type { Thread } from '@modular-agent/types';
+import type { VariableScope } from '@modular-agent/types';
 import type { EventManager } from '../../services/event-manager';
-import { EventType } from '@modular-agent/types/events';
+import { EventType } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
-import { ValidationError, ExecutionError, RuntimeValidationError } from '@modular-agent/types/errors';
+import { ValidationError, ExecutionError, RuntimeValidationError } from '@modular-agent/types';
 import { VariableStateManager } from '../managers/variable-state-manager';
 import { VariableAccessor } from '../utils/variable-accessor';
 

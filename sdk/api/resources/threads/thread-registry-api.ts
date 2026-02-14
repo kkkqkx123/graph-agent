@@ -5,7 +5,7 @@
  */
 
 import { threadRegistry as globalThreadRegistry, type ThreadRegistry } from '../../../core/services/thread-registry';
-import type { Thread, ThreadResult, ThreadStatus } from '@modular-agent/types/thread';
+import type { Thread, ThreadResult, ThreadStatus } from '@modular-agent/types';
 import type { ThreadFilter, ThreadSummary } from '@modular-agent/sdk/api/types/registry-types';
 import { GenericResourceAPI } from '../generic-resource-api';
 import { getErrorMessage } from '@modular-agent/sdk/api/types/execution-result';

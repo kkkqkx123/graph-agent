@@ -11,7 +11,7 @@ import type {
   WorkflowReferenceInfo,
   WorkflowReferenceRelation,
   WorkflowReferenceType
-} from '@modular-agent/types/workflow-reference';
+} from '@modular-agent/types';
 import { checkWorkflowReferences as checkReferences } from '../utils/workflow-reference-checker';
 
 export class WorkflowReferenceManager {

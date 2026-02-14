@@ -37,3 +37,19 @@ export type {
   RollbackMessageOperation,
   MessageOperationResult
 } from './message-operations';
+
+// 消息操作上下文类型
+export type {
+  MessageOperationContext
+} from './message-context';
+
+// 消息标记映射类型
+export type {
+  MessageMarkMap
+} from './message-mark-map';
+
+// 批次管理操作类型
+export type {
+  BatchManagementOperation,
+  BatchManagementOperationType
+} from './batch-management-operation';

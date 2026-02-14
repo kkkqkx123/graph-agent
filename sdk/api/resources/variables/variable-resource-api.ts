@@ -5,8 +5,8 @@
 
 import { GenericResourceAPI } from '../generic-resource-api';
 import { threadRegistry, type ThreadRegistry } from '../../../core/services/thread-registry';
-import type { Thread } from '@modular-agent/types/thread';
-import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types/errors';
+import type { Thread } from '@modular-agent/types';
+import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types';
 
 /**
  * 变量过滤器

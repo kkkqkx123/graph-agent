@@ -2,7 +2,7 @@
  * LLM 工具定义转换工具单元测试
  */
 
-import type { ToolSchema, ToolParameters } from '@modular-agent/types/tool';
+import type { ToolSchema, ToolParameters } from '@modular-agent/types';
 import {
   convertToolsToOpenAIFormat,
   convertToolsToAnthropicFormat,

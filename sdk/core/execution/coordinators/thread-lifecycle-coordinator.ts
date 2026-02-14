@@ -18,9 +18,9 @@
  * - Manager只作为内部实现细节供Coordinator使用
  */
 
-import { ThreadContextNotFoundError } from '@modular-agent/types/errors';
-import type { ThreadOptions, ThreadResult } from '@modular-agent/types/thread';
-import { ThreadStatus } from '@modular-agent/types/thread';
+import { ThreadContextNotFoundError } from '@modular-agent/types';
+import type { ThreadOptions, ThreadResult } from '@modular-agent/types';
+import { ThreadStatus } from '@modular-agent/types';
 import { ThreadBuilder } from '../thread-builder';
 import { ThreadExecutor } from '../thread-executor';
 import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager';

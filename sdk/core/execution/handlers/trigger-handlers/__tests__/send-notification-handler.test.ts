@@ -3,9 +3,9 @@
  */
 
 import { sendNotificationHandler } from '../send-notification-handler';
-import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types/trigger';
-import { TriggerActionType } from '@modular-agent/types/trigger';
-import { ValidationError } from '@modular-agent/types/errors';
+import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
+import { TriggerActionType } from '@modular-agent/types';
+import { ValidationError } from '@modular-agent/types';
 
 describe('send-notification-handler', () => {
   let mockAction: TriggerAction;

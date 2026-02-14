@@ -13,7 +13,7 @@
  * - 线程安全：确保状态变更的原子性
  */
 
-import { ThreadInterruptedException } from '@modular-agent/types/errors';
+import { ThreadInterruptedException } from '@modular-agent/types';
 
 /**
  * 中断类型

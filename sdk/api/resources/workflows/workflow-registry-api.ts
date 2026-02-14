@@ -11,7 +11,7 @@ import {
 } from '../../validation/validation-strategy';
 
 import { GenericResourceAPI } from '../generic-resource-api';
-import type { WorkflowDefinition } from '@modular-agent/types/workflow';
+import type { WorkflowDefinition } from '@modular-agent/types';
 import type { WorkflowFilter, WorkflowSummary } from '@modular-agent/sdk/api/types/registry-types';
 import type { APIDependencies } from '../../core/api-dependencies';
 

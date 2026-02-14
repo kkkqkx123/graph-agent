@@ -13,10 +13,10 @@
 import type { Tool } from '@modular-agent/types';
 import type { ThreadContext } from '../execution/context/thread-context';
 import { ToolType } from '@modular-agent/types';
-import { NotFoundError, ToolError, ToolNotFoundError } from '@modular-agent/types/errors';
+import { NotFoundError, ToolError, ToolNotFoundError } from '@modular-agent/types';
 import { ToolRegistry } from '../tools/tool-registry';
-import type { IToolExecutor } from '@modular-agent/types/tool';
-import type { ToolExecutionOptions, ToolExecutionResult } from '@modular-agent/types/tool';
+import type { IToolExecutor } from '@modular-agent/types';
+import type { ToolExecutionOptions, ToolExecutionResult } from '@modular-agent/types';
 import { StatelessExecutor } from '@modular-agent/tool-executors';
 import { StatefulExecutor } from '@modular-agent/tool-executors';
 import { RestExecutor } from '@modular-agent/tool-executors';

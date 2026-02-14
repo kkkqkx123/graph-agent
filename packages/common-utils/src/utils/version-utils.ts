@@ -4,7 +4,7 @@
  * 遵循语义化版本规范（如 "1.0.0"）
  */
 
-import type { Version } from '@modular-agent/types/common';
+import type { Version } from '@modular-agent/types';
 
 /**
  * 创建初始版本（"1.0.0"）

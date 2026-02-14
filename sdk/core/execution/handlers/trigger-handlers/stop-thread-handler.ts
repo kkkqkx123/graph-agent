@@ -5,8 +5,8 @@
  * 通过ThreadLifecycleCoordinator协调停止流程，包括级联取消子线程
  */
 
-import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types/trigger';
-import { ValidationError, RuntimeValidationError } from '@modular-agent/types/errors';
+import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
+import { ValidationError, RuntimeValidationError } from '@modular-agent/types';
 import { ExecutionContext } from '../../context/execution-context';
 
 /**

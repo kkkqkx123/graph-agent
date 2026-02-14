@@ -4,9 +4,9 @@
 
 import { VariableManagerAPI } from '../operations/state/variable-manager-api';
 import { ThreadRegistry } from '@modular-agent/sdk/core/registry/thread-registry';
-import type { ThreadVariable } from '@modular-agent/types/thread';
-import { ThreadStatus } from '@modular-agent/types/thread';
-import { NotFoundError, ValidationError } from '@modular-agent/types/errors';
+import type { ThreadVariable } from '@modular-agent/types';
+import { ThreadStatus } from '@modular-agent/types';
+import { NotFoundError, ValidationError } from '@modular-agent/types';
 import { ExecutionContext } from '../../core/execution/context/execution-context';
 
 describe('VariableManagerAPI', () => {

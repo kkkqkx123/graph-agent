@@ -5,11 +5,11 @@
 
 import { ThreadLifecycleManager } from '../thread-lifecycle-manager';
 import { eventManager } from '../../../services/event-manager';
-import { ThreadStatus } from '@modular-agent/types/thread';
-import { EventType } from '@modular-agent/types/events';
+import { ThreadStatus } from '@modular-agent/types';
+import { EventType } from '@modular-agent/types';
 import { generateId, now } from '@modular-agent/common-utils';
-import type { Thread } from '@modular-agent/types/thread';
-import type { Graph } from '@modular-agent/types/graph';
+import type { Thread } from '@modular-agent/types';
+import type { Graph } from '@modular-agent/types';
 
 describe('ThreadLifecycleManager', () => {
   let lifecycleManager: ThreadLifecycleManager;

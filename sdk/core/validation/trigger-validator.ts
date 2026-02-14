@@ -4,12 +4,12 @@
  */
 
 import { z } from 'zod';
-import type { WorkflowTrigger, TriggerCondition, TriggerAction, ExecuteTriggeredSubgraphActionConfig } from '@modular-agent/types/trigger';
-import type { TriggerReference } from '@modular-agent/types/trigger-template';
-import { TriggerActionType } from '@modular-agent/types/trigger';
-import { EventType } from '@modular-agent/types/events';
-import { ConfigurationValidationError } from '@modular-agent/types/errors';
-import type { Result } from '@modular-agent/types/result';
+import type { WorkflowTrigger, TriggerCondition, TriggerAction, ExecuteTriggeredSubgraphActionConfig } from '@modular-agent/types';
+import type { TriggerReference } from '@modular-agent/types';
+import { TriggerActionType } from '@modular-agent/types';
+import { EventType } from '@modular-agent/types';
+import { ConfigurationValidationError } from '@modular-agent/types';
+import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 
 /**

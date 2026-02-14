@@ -3,9 +3,9 @@
  * 执行应用层提供的无状态函数工具，通过函数注册表管理函数，支持版本控制和调用统计
  */
 
-import type { Tool } from '@modular-agent/types/tool';
-import type { StatelessToolConfig } from '@modular-agent/types/tool';
-import { ToolError } from '@modular-agent/types/errors';
+import type { Tool } from '@modular-agent/types';
+import type { StatelessToolConfig } from '@modular-agent/types';
+import { ToolError } from '@modular-agent/types';
 import { BaseExecutor } from '../core/base/BaseExecutor';
 import { ExecutorType } from '../core/types';
 import { FunctionRegistry } from './registry/FunctionRegistry';

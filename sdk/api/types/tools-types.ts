@@ -3,7 +3,7 @@
  * 定义工具服务相关的类型
  */
 
-import type { ToolType } from '@modular-agent/types/tool';
+import type { ToolType } from '@modular-agent/types';
 
 /**
  * 工具过滤器

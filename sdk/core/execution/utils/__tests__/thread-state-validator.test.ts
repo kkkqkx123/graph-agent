@@ -9,8 +9,8 @@ import {
   isTerminalStatus,
   isActiveStatus
 } from '../thread-state-validator';
-import { ValidationError } from '@modular-agent/types/errors';
-import { ThreadStatus } from '@modular-agent/types/thread';
+import { ValidationError } from '@modular-agent/types';
+import { ThreadStatus } from '@modular-agent/types';
 
 describe('thread-state-validator', () => {
   describe('isValidTransition', () => {

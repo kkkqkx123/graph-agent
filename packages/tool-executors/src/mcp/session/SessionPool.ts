@@ -5,7 +5,7 @@
 
 import type { IMcpTransport, McpServerConfig, McpSessionInfo } from '../types';
 import { StdioTransport } from '../transport/StdioTransport';
-import { NetworkError, ConfigurationError } from '@modular-agent/types/errors';
+import { NetworkError, ConfigurationError } from '@modular-agent/types';
 
 /**
  * 会话池配置

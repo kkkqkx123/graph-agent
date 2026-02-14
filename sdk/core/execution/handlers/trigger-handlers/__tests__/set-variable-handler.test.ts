@@ -3,9 +3,9 @@
  */
 
 import { setVariableHandler } from '../set-variable-handler';
-import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types/trigger';
-import { TriggerActionType } from '@modular-agent/types/trigger';
-import { ValidationError, NotFoundError } from '@modular-agent/types/errors';
+import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
+import { TriggerActionType } from '@modular-agent/types';
+import { ValidationError, NotFoundError } from '@modular-agent/types';
 import { ExecutionContext } from '../../../context/execution-context';
 
 // Mock ExecutionContext

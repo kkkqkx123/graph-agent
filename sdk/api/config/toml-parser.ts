@@ -4,7 +4,7 @@
  */
 
 import type { WorkflowConfigFile } from './types';
-import { ConfigurationError } from '@modular-agent/types/errors';
+import { ConfigurationError } from '@modular-agent/types';
 
 /**
  * 获取TOML解析器实例

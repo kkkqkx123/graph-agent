@@ -3,10 +3,10 @@
  * 负责执行跳过节点的触发动作
  */
 
-import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types/trigger';
-import type { NodeExecutionResult } from '@modular-agent/types/thread';
-import { ValidationError, NotFoundError, RuntimeValidationError, ThreadContextNotFoundError } from '@modular-agent/types/errors';
-import { EventType } from '@modular-agent/types/events';
+import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
+import type { NodeExecutionResult } from '@modular-agent/types';
+import { ValidationError, NotFoundError, RuntimeValidationError, ThreadContextNotFoundError } from '@modular-agent/types';
+import { EventType } from '@modular-agent/types';
 import { ExecutionContext } from '../../context/execution-context';
 
 /**

@@ -4,9 +4,9 @@
  */
 
 import { MessageValidator } from '../message-validator';
-import type { LLMMessage, LLMMessageRole } from '@modular-agent/types/llm';
-import type { Result } from '@modular-agent/types/result';
-import { ValidationError } from '@modular-agent/types/errors';
+import type { LLMMessage, MessageRole } from '@modular-agent/types';
+import type { Result } from '@modular-agent/types';
+import { ValidationError } from '@modular-agent/types';
 
 describe('MessageValidator', () => {
   let validator: MessageValidator;

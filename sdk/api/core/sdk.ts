@@ -13,7 +13,7 @@ import { APIDependencies } from './api-dependencies';
 import { SDKAPIDependencies } from './sdk-api-dependencies';
 import { getData } from '@modular-agent/sdk/api/types/execution-result';
 import type { SDKOptions, SDKDependencies } from '@modular-agent/types';
-import { ExecutionError } from '@modular-agent/types/errors';
+import { ExecutionError } from '@modular-agent/types';
 import { logger } from '../index';
 
 /**

@@ -4,7 +4,7 @@
  */
 
 import { MemoryCheckpointStorage } from '../memory-checkpoint-storage';
-import type { CheckpointStorageMetadata, CheckpointListOptions } from '@modular-agent/types/checkpoint-storage';
+import type { CheckpointStorageMetadata, CheckpointListOptions } from '@modular-agent/types';
 
 describe('MemoryCheckpointStorage', () => {
   let storage: MemoryCheckpointStorage;
