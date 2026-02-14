@@ -74,12 +74,9 @@ function executeTruncateOperation(
       .filter((msg): msg is LLMMessage => msg !== undefined);
     
     // 执行截断操作
+    const truncateOptions = convertStrategyToOptions(operation.strategy);
     const truncatedMessages = MessageArrayUtils.truncateMessages(visibleMessages, {
-      keepFirst: operation.keepFirst,
-      keepLast: operation.keepLast,
-      removeFirst: operation.removeFirst,
-      removeLast: operation.removeLast,
-      range: operation.range,
+      ...truncateOptions,
       role: operation.role
     });
     
@@ -99,12 +96,9 @@ function executeTruncateOperation(
     workingMessages = rebuildMessagesArray(messages, keptOriginalIndices);
   } else {
     // 操作完整消息数组
+    const truncateOptions = convertStrategyToOptions(operation.strategy);
     workingMessages = MessageArrayUtils.truncateMessages(messages, {
-      keepFirst: operation.keepFirst,
-      keepLast: operation.keepLast,
-      removeFirst: operation.removeFirst,
-      removeLast: operation.removeLast,
-      range: operation.range,
+      ...truncateOptions,
       role: operation.role
     });
     
@@ -600,4 +594,26 @@ function calculateStats(messages: LLMMessage[], markMap: MessageMarkMap): {
     visibleMessageCount,
     compressedMessageCount
   };
+}
+
+/**
+ * 将截断策略转换为选项
+ */
+function convertStrategyToOptions(
+  strategy: TruncateMessageOperation['strategy']
+): Record<string, number | { start: number; end: number }> {
+  switch (strategy.type) {
+    case 'KEEP_FIRST':
+      return { keepFirst: strategy.count };
+    case 'KEEP_LAST':
+      return { keepLast: strategy.count };
+    case 'REMOVE_FIRST':
+      return { removeFirst: strategy.count };
+    case 'REMOVE_LAST':
+      return { removeLast: strategy.count };
+    case 'RANGE':
+      return { range: { start: strategy.start, end: strategy.end } };
+    default:
+      throw new Error(`Unsupported strategy type: ${(strategy as any).type}`);
+  }
 }

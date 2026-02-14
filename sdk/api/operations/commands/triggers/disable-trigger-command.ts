@@ -2,8 +2,7 @@
  * DisableTriggerCommand - 禁用触发器
  */
 
-import { BaseCommand } from '@modular-agent/sdk/api/types/command';
-import { CommandValidationResult } from '@modular-agent/sdk/api/types/command';
+import { BaseCommand, CommandValidationResult } from '../../../types/command';
 import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types';
 import type { APIDependencies } from '../../../core/api-dependencies';
 

@@ -2,7 +2,7 @@
  * OnEventSubscription - 注册事件监听器
  */
 
-import { BaseSubscription, SubscriptionMetadata } from '@modular-agent/sdk/api/types/subscription';
+import { BaseSubscription, SubscriptionMetadata } from '../../../types/subscription';
 import type { EventType, EventListener, BaseEvent } from '@modular-agent/types';
 import type { APIDependencies } from '../../../core/api-dependencies';
 

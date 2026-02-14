@@ -2,7 +2,7 @@
  * ExecuteScriptCommand - 执行脚本命令
  */
 
-import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '@modular-agent/sdk/api/types/command';
+import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
 import type { ScriptOptions } from '@modular-agent/types';
 import type { ScriptExecutionResult } from '@modular-agent/types';
 import type { APIDependencies } from '../../../core/api-dependencies';

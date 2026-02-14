@@ -12,7 +12,7 @@
  */
 
 import type { LLMMessage } from '@modular-agent/types';
-import type { MessageRole } from '@modular-agent/types';
+import { MessageRole } from '@modular-agent/types';
 
 /**
  * 截断选项
@@ -356,7 +356,7 @@ export class MessageArrayUtils {
       return { valid: false, errors };
     }
 
-    const validRoles: MessageRole[] = ['system', 'user', 'assistant', 'tool'];
+    const validRoles: MessageRole[] = [MessageRole.SYSTEM, MessageRole.USER, MessageRole.ASSISTANT, MessageRole.TOOL];
 
     for (let i = 0; i < messages.length; i++) {
       const msg = messages[i];

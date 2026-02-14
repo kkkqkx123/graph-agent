@@ -2,8 +2,7 @@
  * RestoreFromCheckpointCommand - 从检查点恢复线程
  */
 
-import { BaseCommand } from '@modular-agent/sdk/api/types/command';
-import { CommandValidationResult, validationSuccess, validationFailure } from '@modular-agent/sdk/api/types/command';
+import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
 import { CheckpointCoordinator } from '../../../../core/execution/coordinators/checkpoint-coordinator';
 import type { Thread } from '@modular-agent/types';
 import { globalMessageStorage } from '../../../../core/services/global-message-storage';

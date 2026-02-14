@@ -23,7 +23,7 @@ import type { LLMMessage } from '@modular-agent/types';
 import type { HumanRelayRequest, HumanRelayResponse, HumanRelayExecutionResult, HumanRelayHandler, HumanRelayContext } from '@modular-agent/types';
 import type { EventManager } from '../../services/event-manager';
 import type { ThreadContext } from '../context/thread-context';
-import { EventType } from '@modular-agent/types';
+import { EventType, MessageRole } from '@modular-agent/types';
 import { generateId, now } from '@modular-agent/common-utils';
 
 /**
@@ -244,7 +244,7 @@ export function convertToLLMMessage(
   response: HumanRelayResponse
 ): LLMMessage {
   return {
-    role: 'user',
+    role: MessageRole.USER,
     content: response.content
   };
 }

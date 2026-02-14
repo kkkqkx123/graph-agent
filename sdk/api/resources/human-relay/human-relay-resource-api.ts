@@ -21,8 +21,8 @@ import {
 } from '../../validation/validation-strategy';
 
 import { GenericResourceAPI } from '../generic-resource-api';
-import type { ExecutionResult } from '@modular-agent/sdk/api/types/execution-result';
-import { success, failure } from '@modular-agent/sdk/api/types/execution-result';
+import type { ExecutionResult } from '../../types/execution-result';
+import { success, failure } from '../../types/execution-result';
 import type { HumanRelayHandler, HumanRelayRequest, HumanRelayResponse } from '@modular-agent/types';
 import { EventType } from '@modular-agent/types';
 import type {

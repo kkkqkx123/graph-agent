@@ -8,7 +8,7 @@ import { ProfileManager } from '../../../core/llm/profile-manager';
 import type { LLMProfile, LLMProvider } from '@modular-agent/types';
 import { ValidationError, NotFoundError, SDKError, ConfigurationValidationError, NodeTemplateNotFoundError } from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api';
-import { getErrorMessage } from '@modular-agent/sdk/api/types/execution-result';
+import { getErrorMessage } from '../../types/execution-result';
 import type { APIDependencies } from '../../core/api-dependencies';
 
 /**
@@ -330,7 +330,7 @@ export class LLMProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string
     if (!result.success) {
       throw new Error(getErrorMessage(result) || 'Failed to get profiles for export');
     }
-    const exportData = result.data.map(profile => ({
+    const exportData = result.data.map((profile: LLMProfile) => ({
       ...profile,
       apiKey: '***HIDDEN***'
     }));

@@ -7,7 +7,7 @@
 import { threadRegistry as globalThreadRegistry, type ThreadRegistry } from '../../../core/services/thread-registry';
 import type { Thread, ThreadResult, ThreadStatus, ThreadFilter, ThreadSummary } from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api';
-import { getErrorMessage } from '@modular-agent/sdk/api/types/execution-result';
+import { getErrorMessage } from '../../types/execution-result';
 import type { APIDependencies } from '../../core/api-dependencies';
 
 
@@ -122,7 +122,7 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
     }
     const threads = result.data;
 
-    return threads.map(thread => ({
+    return threads.map((thread: Thread) => ({
       id: thread.id,
       workflowId: thread.workflowId,
       workflowName: '', // TODO: 从工作流注册表获取工作流名称

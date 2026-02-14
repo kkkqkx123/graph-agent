@@ -5,7 +5,7 @@
 
 import { readFile } from 'fs/promises';
 import { resolve } from 'path';
-import { parseJson, parseToml } from '@modular-agent/sdk/api';
+import { parseJson, parseToml } from '@modular-agent/sdk';
 import { createLogger } from '../utils/logger';
 
 const logger = createLogger();

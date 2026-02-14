@@ -16,7 +16,8 @@
  */
 
 import type { LLMMessage, LLMUsage, TokenUsageHistory, TokenUsageStats } from '@modular-agent/types';
-import type { MessageRole, MessageMarkMap } from '@modular-agent/types';
+import type { MessageMarkMap } from '@modular-agent/types';
+import { MessageRole } from '@modular-agent/types';
 import { ValidationError, RuntimeValidationError } from '@modular-agent/types';
 import { TokenUsageTracker } from '../token-usage-tracker';
 import { TypeIndexManager } from './type-index-manager';
@@ -566,7 +567,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
 
     if (toolDescriptions.length > 0) {
       return {
-        role: 'system' as const,
+        role: MessageRole.SYSTEM,
         content: `可用工具:\n${toolDescriptions}`
       };
     }

@@ -3,15 +3,6 @@
  * 导出所有API模块和类型
  */
 
-// Import SDK logger and create API-level child logger
-import { logger as sdkLogger } from '../index';
-
-/**
- * API层日志器
- * 用于记录API层的日志信息
- */
-export const logger = sdkLogger.child('api');
-
 // Command模式核心
 export {
   Command,
@@ -22,7 +13,7 @@ export {
   CommandValidationResult,
   validationSuccess,
   validationFailure
-} from '@modular-agent/sdk/api/types/command';
+} from './types/command';
 
 export { CommandExecutor } from './common/command-executor';
 

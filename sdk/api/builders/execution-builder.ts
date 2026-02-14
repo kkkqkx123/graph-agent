@@ -9,7 +9,7 @@ import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 import { Observable, create, type Observer } from '../utils/observable';
 import { ExecuteThreadCommand } from '../operations/commands/execution/execute-thread-command';
-import { isSuccess } from '@modular-agent/sdk/api/types/execution-result';
+import { isSuccess } from '../types/execution-result';
 import { ExecutionError } from '@modular-agent/types';
 
 /**

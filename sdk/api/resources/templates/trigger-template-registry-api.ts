@@ -115,7 +115,7 @@ export class TriggerTemplateRegistryAPI extends GenericResourceAPI<TriggerTempla
       return [];
     }
 
-    return result.data.map(template => {
+    return result.data.map((template: TriggerTemplate) => {
       const summary: TriggerTemplateSummary = {
         name: template.name,
         description: template.description,

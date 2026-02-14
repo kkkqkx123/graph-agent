@@ -5,16 +5,14 @@
  * 重构说明：
  * - 使用APIFactory统一管理API实例创建
  * - 支持全局配置和依赖注入
- * - 保持向后兼容性
  */
 
 import { APIFactory, type SDKAPIConfig } from './api-factory';
 import { APIDependencies } from './api-dependencies';
 import { SDKAPIDependencies } from './sdk-api-dependencies';
-import { getData } from '@modular-agent/sdk/api/types/execution-result';
+import { getData } from '../types/execution-result';
 import type { SDKOptions, SDKDependencies } from '@modular-agent/types';
-import { ExecutionError } from '@modular-agent/types';
-import { logger } from '../index';
+import { logger } from '../../index';
 
 /**
  * SDK主类 - 统一API入口（内部类，不导出）

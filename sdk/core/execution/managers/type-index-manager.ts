@@ -8,7 +8,7 @@
  * 3. 支持索引的添加、删除和范围查询
  */
 
-import type { MessageRole } from '@modular-agent/types';
+import { MessageRole } from '@modular-agent/types';
 
 /**
  * 类型索引管理器类
@@ -22,10 +22,10 @@ export class TypeIndexManager {
 
   constructor() {
     // 初始化所有类型的索引数组
-    this.typeIndices.set('system', []);
-    this.typeIndices.set('user', []);
-    this.typeIndices.set('assistant', []);
-    this.typeIndices.set('tool', []);
+    this.typeIndices.set(MessageRole.SYSTEM, []);
+    this.typeIndices.set(MessageRole.USER, []);
+    this.typeIndices.set(MessageRole.ASSISTANT, []);
+    this.typeIndices.set(MessageRole.TOOL, []);
   }
 
   /**
@@ -165,10 +165,10 @@ export class TypeIndexManager {
    * 重置类型索引管理器
    */
   reset(): void {
-    this.typeIndices.set('system', []);
-    this.typeIndices.set('user', []);
-    this.typeIndices.set('assistant', []);
-    this.typeIndices.set('tool', []);
+    this.typeIndices.set(MessageRole.SYSTEM, []);
+    this.typeIndices.set(MessageRole.USER, []);
+    this.typeIndices.set(MessageRole.ASSISTANT, []);
+    this.typeIndices.set(MessageRole.TOOL, []);
     this.totalMessages = 0;
   }
 

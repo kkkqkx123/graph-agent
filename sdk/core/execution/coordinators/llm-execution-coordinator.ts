@@ -14,6 +14,7 @@
  */
 
 import type { LLMMessage } from '@modular-agent/types';
+import { MessageRole } from '@modular-agent/types';
 import type { WorkflowConfig } from '@modular-agent/types';
 import { ConversationManager } from '../managers/conversation-manager';
 import { LLMExecutor } from '../executors/llm-executor';
@@ -204,7 +205,7 @@ export class LLMExecutionCoordinator {
 
     // 步骤1：添加用户消息
     const userMessage = {
-      role: 'user' as const,
+      role: MessageRole.USER,
       content: prompt
     };
     conversationState.addMessage(userMessage);
@@ -285,7 +286,7 @@ export class LLMExecutionCoordinator {
 
     // 将 LLM 响应添加到对话历史
     const assistantMessage = {
-      role: 'assistant' as const,
+      role: MessageRole.ASSISTANT,
       content: llmResult.content,
       toolCalls: llmResult.toolCalls?.map((tc: any) => ({
         id: tc.id,
@@ -398,7 +399,7 @@ export class LLMExecutionCoordinator {
         if (!approvalResult.approved) {
           // 用户拒绝，跳过此工具调用
           const toolMessage = {
-            role: 'tool' as const,
+            role: MessageRole.TOOL,
             content: JSON.stringify({
               error: 'Tool call was rejected by user approval',
               rejected: true
@@ -417,7 +418,7 @@ export class LLMExecutionCoordinator {
         // 如果用户提供了额外指令，添加到对话历史
         if (approvalResult.userInstruction) {
           conversationState.addMessage({
-            role: 'user',
+            role: MessageRole.USER,
             content: approvalResult.userInstruction
           });
         }

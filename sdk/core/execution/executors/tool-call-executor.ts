@@ -18,7 +18,7 @@ import type { ToolService } from '../../services/tool-service';
 import type { EventManager } from '../../services/event-manager';
 import type { Tool } from '@modular-agent/types';
 import { safeEmit } from '../utils/event/event-emitter';
-import { EventType } from '@modular-agent/types';
+import { EventType, MessageRole } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
 import type { ConversationManager } from '../managers/conversation-manager';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils';
@@ -171,7 +171,7 @@ export class ToolCallExecutor {
 
       // 将工具结果添加到对话历史
       const toolMessage = {
-        role: 'tool' as const,
+        role: MessageRole.TOOL,
         content: result.success && result.result !== undefined
           ? JSON.stringify(result.result)
           : JSON.stringify({ error: result.error }),
@@ -258,7 +258,7 @@ export class ToolCallExecutor {
 
       // 将错误信息作为工具结果添加到对话历史
       const toolMessage = {
-        role: 'tool' as const,
+        role: MessageRole.TOOL,
         content: JSON.stringify({ error: errorMessage }),
         toolCallId: toolCall.id
       };
