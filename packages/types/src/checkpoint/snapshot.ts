@@ -7,6 +7,7 @@ import { ThreadStatus } from '../thread';
 import type { NodeExecutionResult } from '../thread';
 import type { TriggerRuntimeState } from '../trigger';
 import type { TokenUsageStats } from '../llm';
+import type { MessageMarkMap } from '../message';
 
 /**
  * 线程状态快照类型
@@ -38,11 +39,11 @@ export interface ThreadStateSnapshot {
   /** 错误信息数组 */
   errors: any[];
   /** 对话状态（仅存储索引信息，用于恢复 ConversationManager） */
-  conversationState?: {
+  conversationState: {
     /** 消息数组状态 */
     messageArrayState?: any;
     /** 消息标记映射 */
-    markMap?: any;
+    markMap: MessageMarkMap;
     /** Token使用统计 */
     tokenUsage: TokenUsageStats | null;
     /** 当前请求Token使用 */
