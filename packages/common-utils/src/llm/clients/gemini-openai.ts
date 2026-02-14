@@ -15,7 +15,7 @@ import type {
   LLMToolCall
 } from '@modular-agent/types';
 import { generateId } from '../../utils';
-import { convertToolsToOpenAIFormat } from '../tool-converter';
+import { convertToolsToOpenAIFormat } from '../../tool';
 
 /**
  * Gemini OpenAI兼容客户端

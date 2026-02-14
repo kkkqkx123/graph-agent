@@ -13,7 +13,7 @@ import type {
   LLMMessage,
   LLMToolCall
 } from '@modular-agent/types';
-import { convertToolsToAnthropicFormat } from '../tool-converter';
+import { convertToolsToAnthropicFormat } from '../../tool';
 import { extractAndFilterSystemMessages } from '../message-helper';
 
 /**

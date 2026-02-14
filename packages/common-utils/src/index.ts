@@ -13,6 +13,9 @@ export * from './utils';
 // 表达式求值器
 export * from './evalutor';
 
+// 工具定义转换模块
+export * from './tool';
+
 // LLM相关基础设施
 export * from './llm';
 

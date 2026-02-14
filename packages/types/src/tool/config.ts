@@ -5,19 +5,29 @@
 import type { Metadata } from '../common';
 
 /**
- * 工具参数属性类型
+ * 工具参数属性类型（基于JSON Schema Draft 2020-12）
+ *
+ * 注意：验证由LLM端负责，此类型仅用于格式转换和文档说明
  */
 export interface ToolProperty {
-  /** 参数类型（string、number、boolean、array、object） */
-  type: 'string' | 'number' | 'boolean' | 'array' | 'object';
+  /** 参数类型（string、number、integer、boolean、array、object、null） */
+  type: 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object' | 'null';
   /** 参数描述 */
   description?: string;
   /** 默认值（可选） */
   default?: any;
   /** 枚举值（可选） */
   enum?: any[];
-  /** 格式约束（可选，如uri、email等） */
+  /** 格式约束（可选，如uri、email、date、date-time等） */
   format?: string;
+  
+  // 对象结构
+  /** 对象属性定义 */
+  properties?: Record<string, ToolProperty>;
+  /** 必需属性列表 */
+  required?: string[];
+  /** 额外属性定义 */
+  additionalProperties?: boolean | ToolProperty;
 }
 
 /**

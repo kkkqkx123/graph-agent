@@ -12,7 +12,6 @@ export * from './message-stream-events';
 
 // 工具函数
 export * from './message-helper';
-export * from './tool-converter';
 
 // 客户端实现
 export * from './clients';

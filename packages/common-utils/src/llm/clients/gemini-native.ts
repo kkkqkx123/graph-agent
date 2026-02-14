@@ -14,7 +14,7 @@ import type {
   LLMToolCall
 } from '@modular-agent/types';
 import { generateId } from '../../utils';
-import { convertToolsToGeminiFormat } from '../tool-converter';
+import { convertToolsToGeminiFormat } from '../../tool';
 import { extractAndFilterSystemMessages } from '../message-helper';
 
 /**

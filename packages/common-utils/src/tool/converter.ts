@@ -1,5 +1,5 @@
 /**
- * LLM 工具定义转换工具
+ * 工具定义转换工具
  * 提供不同 LLM 提供商的工具定义格式转换
  */
 
@@ -64,11 +64,13 @@ export function convertToolsToOpenAIFormat(tools: ToolSchema[]): OpenAITool[] {
 /**
  * 转换为 Anthropic 格式的工具定义
  *
+ * Anthropic要求input_schema必须明确指定type字段为'object'
+ *
  * @example
  * const tools = convertToolsToAnthropicFormat([
  *   { name: 'search', description: 'Search web', parameters: {...} }
  * ]);
- * // 结果: [{ name: 'search', description: 'Search web', input_schema: {...} }]
+ * // 结果: [{ name: 'search', description: 'Search web', input_schema: { type: 'object', ... } }]
  */
 export function convertToolsToAnthropicFormat(tools: ToolSchema[]): AnthropicTool[] {
   if (!tools || tools.length === 0) {
@@ -78,7 +80,10 @@ export function convertToolsToAnthropicFormat(tools: ToolSchema[]): AnthropicToo
   return tools.map(tool => ({
     name: tool.name,
     description: tool.description,
-    input_schema: tool.parameters
+    input_schema: {
+      type: 'object',
+      ...tool.parameters
+    }
   }));
 }
 

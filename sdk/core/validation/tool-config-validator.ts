@@ -19,15 +19,24 @@ import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 
 /**
- * 工具参数属性schema
+ * 工具参数属性schema（基于JSON Schema Draft 2020-12）
+ *
+ * 注意：验证由LLM端负责，此验证器仅检查基本结构完整性
  */
-const toolPropertySchema = z.object({
-  type: z.enum(['string', 'number', 'boolean', 'array', 'object']),
-  description: z.string().optional(),
-  default: z.any().optional(),
-  enum: z.array(z.any()).optional(),
-  format: z.string().optional(),
-});
+const toolPropertySchema: z.ZodType<ToolProperty> = z.lazy(() =>
+  z.object({
+    type: z.enum(['string', 'number', 'integer', 'boolean', 'array', 'object', 'null']),
+    description: z.string().optional(),
+    default: z.any().optional(),
+    enum: z.array(z.any()).optional(),
+    format: z.string().optional(),
+    
+    // 对象结构
+    properties: z.record(z.string(), toolPropertySchema).optional(),
+    required: z.array(z.string()).optional(),
+    additionalProperties: z.union([z.boolean(), toolPropertySchema]).optional(),
+  })
+);
 
 /**
  * 工具参数schema
@@ -295,6 +304,9 @@ export class ToolConfigValidator {
 
   /**
    * 验证参数值
+   *
+   * 注意：详细的约束验证由LLM端负责，此方法仅进行基本的类型检查
+   *
    * @param paramName 参数名称
    * @param paramValue 参数值
    * @param property 参数属性定义
@@ -319,7 +331,7 @@ export class ToolConfigValidator {
       );
     }
 
-    // 验证类型
+    // 验证基本类型
     switch (type) {
       case 'string':
         if (typeof paramValue !== 'string') {
@@ -337,6 +349,18 @@ export class ToolConfigValidator {
         if (typeof paramValue !== 'number') {
           throw new ConfigurationValidationError(
             `Parameter '${paramName}' must be a number`,
+            {
+              configType: 'tool',
+              configPath: `parameters.${paramName}`,
+              value: paramValue
+            }
+          );
+        }
+        break;
+      case 'integer':
+        if (typeof paramValue !== 'number' || !Number.isInteger(paramValue)) {
+          throw new ConfigurationValidationError(
+            `Parameter '${paramName}' must be an integer`,
             {
               configType: 'tool',
               configPath: `parameters.${paramName}`,
@@ -381,33 +405,10 @@ export class ToolConfigValidator {
           );
         }
         break;
-    }
-
-    // 验证格式约束
-    if (property.format) {
-      this.validateParameterFormat(paramName, paramValue, property.format);
-    }
-  }
-
-  /**
-   * 验证参数格式
-   * @param paramName 参数名称
-   * @param paramValue 参数值
-   * @param format 格式约束
-   * @throws ValidationError 当格式无效时抛出
-   */
-  private validateParameterFormat(
-    paramName: string,
-    paramValue: any,
-    format: string
-  ): void {
-    switch (format) {
-      case 'uri':
-        try {
-          new URL(paramValue);
-        } catch {
+      case 'null':
+        if (paramValue !== null) {
           throw new ConfigurationValidationError(
-            `Parameter '${paramName}' must be a valid URI`,
+            `Parameter '${paramName}' must be null`,
             {
               configType: 'tool',
               configPath: `parameters.${paramName}`,
@@ -416,32 +417,6 @@ export class ToolConfigValidator {
           );
         }
         break;
-      case 'email':
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(paramValue)) {
-          throw new ConfigurationValidationError(
-            `Parameter '${paramName}' must be a valid email address`,
-            {
-              configType: 'tool',
-              configPath: `parameters.${paramName}`,
-              value: paramValue
-            }
-          );
-        }
-        break;
-      case 'date-time':
-        if (isNaN(Date.parse(paramValue))) {
-          throw new ConfigurationValidationError(
-            `Parameter '${paramName}' must be a valid date-time`,
-            {
-              configType: 'tool',
-              configPath: `parameters.${paramName}`,
-              value: paramValue
-            }
-          );
-        }
-        break;
-      // 可以添加更多格式验证
     }
   }
 

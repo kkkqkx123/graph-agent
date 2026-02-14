@@ -1,5 +1,5 @@
 /**
- * LLM 工具定义转换工具单元测试
+ * 工具定义转换工具单元测试
  */
 
 import type { ToolSchema, ToolParameters } from '@modular-agent/types';
@@ -12,7 +12,7 @@ import {
   OpenAITool,
   AnthropicTool,
   GeminiTool
-} from '../tool-converter';
+} from '../converter';
 
 describe('tool-converter', () => {
   const mockToolSchemas: ToolSchema[] = [
@@ -119,13 +119,19 @@ describe('tool-converter', () => {
       expect(result[0]).toEqual({
         name: 'search',
         description: 'Search the web for information',
-        input_schema: mockToolSchemas[0]!.parameters
+        input_schema: {
+          type: 'object',
+          ...mockToolSchemas[0]!.parameters
+        }
       });
 
       expect(result[1]).toEqual({
         name: 'calculate',
         description: 'Perform mathematical calculations',
-        input_schema: mockToolSchemas[1]!.parameters
+        input_schema: {
+          type: 'object',
+          ...mockToolSchemas[1]!.parameters
+        }
       });
     });
 
@@ -152,7 +158,10 @@ describe('tool-converter', () => {
       expect(result[0]).toEqual({
         name: 'no_params',
         description: 'Tool without parameters',
-        input_schema: mockEmptyParameters
+        input_schema: {
+          type: 'object',
+          ...mockEmptyParameters
+        }
       });
     });
   });
