@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@modular-agent/types": "workspace:*",
-    "@modular-agent/common-utils": "workspace:*"
+    "@modular-agent/common-utils": "workspace:*",
+    "zod": "workspace:*"
   }
 }
