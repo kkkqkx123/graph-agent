@@ -6,11 +6,11 @@
 import { ThreadContext } from '../context/thread-context';
 import { ThreadBuilder } from '../thread-builder';
 import { ExecutionContext } from '../context/execution-context';
-import { join, ForkConfig } from '@modular-agent/common-utils';
+import { join, ForkConfig } from '../utils/thread-operations';
 import { ThreadOperationCoordinator } from '../coordinators/thread-operation-coordinator';
 import { ConversationManager } from '../managers/conversation-manager';
-import type { Thread } from '@modular-agent/types';
-import { ThreadStatus } from '@modular-agent/types';
+import type { Thread, PreprocessedGraph, MessageRole } from '@modular-agent/types';
+import { ThreadStatus, MessageRole as MessageRoleEnum } from '@modular-agent/types';
 
 describe('Fork/Join 主线程上下文处理', () => {
   let executionContext: ExecutionContext;
@@ -103,7 +103,7 @@ describe('Fork/Join 主线程上下文处理', () => {
 
       // 在主线程中添加消息
       child1.conversationManager.addMessage({
-        role: 'user',
+        role: MessageRoleEnum.USER,
         content: 'Main thread message'
       });
 
@@ -149,7 +149,7 @@ describe('Fork/Join 主线程上下文处理', () => {
 
       // 在第一个子线程中添加消息
       child1.conversationManager.addMessage({
-        role: 'user',
+        role: MessageRoleEnum.USER,
         content: 'First child message'
       });
 
@@ -244,7 +244,7 @@ function createMockThreadContext(threadId: string, context: ExecutionContext): T
     variableScopes: {
       global: {},
       thread: {},
-      subgraph: [],
+      local: [],
       loop: []
     },
     input: {},
@@ -268,15 +268,16 @@ function createMockThreadContext(threadId: string, context: ExecutionContext): T
 }
 
 /**
- * 创建模拟的Graph对象
+ * 创建模拟的PreprocessedGraph对象
  */
-function createMockGraph() {
+function createMockGraph(): PreprocessedGraph {
   const nodes = new Map();
   const edges = new Map();
   const adjacencyList: Map<string, Set<string>> = new Map();
   const reverseAdjacencyList: Map<string, Set<string>> = new Map();
 
   return {
+    // Graph接口属性
     nodes,
     edges,
     adjacencyList,
@@ -298,6 +299,38 @@ function createMockGraph() {
     getNodeCount: () => 0,
     getEdgeCount: () => 0,
     getSourceNodes: () => [],
-    getSinkNodes: () => []
-  };
+    getSinkNodes: () => [],
+    // PreprocessedGraph特定属性
+    idMapping: {
+      nodeIds: new Map(),
+      edgeIds: new Map(),
+      reverseNodeIds: new Map(),
+      reverseEdgeIds: new Map(),
+      subgraphNamespaces: new Map()
+    },
+    nodeConfigs: new Map(),
+    triggerConfigs: new Map(),
+    subgraphRelationships: [],
+    graphAnalysis: {
+      cycleDetection: { hasCycle: false },
+      reachability: {
+        reachableFromStart: new Set(),
+        reachableToEnd: new Set(),
+        unreachableNodes: new Set(),
+        deadEndNodes: new Set()
+      },
+      topologicalSort: { success: true, sortedNodes: [] },
+      forkJoinValidation: { isValid: true, unpairedForks: [], unpairedJoins: [], pairs: new Map() },
+      nodeStats: { total: 0, byType: new Map() },
+      edgeStats: { total: 0, byType: new Map() }
+    },
+    validationResult: { isValid: true, errors: [], warnings: [], validatedAt: Date.now() },
+    topologicalOrder: [],
+    subgraphMergeLogs: [],
+    processedAt: Date.now(),
+    workflowId: 'test-workflow',
+    workflowVersion: '1.0.0',
+    hasSubgraphs: false,
+    subworkflowIds: new Set()
+  } as PreprocessedGraph;
 }

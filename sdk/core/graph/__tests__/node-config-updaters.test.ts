@@ -4,8 +4,7 @@
 
 import type { IdMapping } from '@modular-agent/types';
 import { NodeType } from '@modular-agent/types';
-// 导入以触发自动注册
-import '../node-config-updaters';
+import { getNodeConfigUpdater } from '../utils/node-config-updaters';
 
 describe('节点配置更新器', () => {
   let idMapping: IdMapping;
@@ -40,9 +39,7 @@ describe('节点配置更新器', () => {
     let updater: any;
     
     beforeEach(() => {
-      // 动态导入以获取已注册的更新器
-      const { nodeConfigUpdaterRegistry } = require('../node-config-updater-registry');
-      updater = nodeConfigUpdaterRegistry.get(NodeType.ROUTE);
+      updater = getNodeConfigUpdater(NodeType.ROUTE);
     });
     
     describe('containsIdReferences', () => {
@@ -125,8 +122,7 @@ describe('节点配置更新器', () => {
     let updater: any;
     
     beforeEach(() => {
-      const { nodeConfigUpdaterRegistry } = require('../node-config-updater-registry');
-      updater = nodeConfigUpdaterRegistry.get(NodeType.FORK);
+      updater = getNodeConfigUpdater(NodeType.FORK);
     });
     
     describe('containsIdReferences', () => {
@@ -190,8 +186,7 @@ describe('节点配置更新器', () => {
     let updater: any;
     
     beforeEach(() => {
-      const { nodeConfigUpdaterRegistry } = require('../node-config-updater-registry');
-      updater = nodeConfigUpdaterRegistry.get(NodeType.JOIN);
+      updater = getNodeConfigUpdater(NodeType.JOIN);
     });
     
     describe('containsIdReferences', () => {
@@ -261,8 +256,7 @@ describe('节点配置更新器', () => {
     let updater: any;
     
     beforeEach(() => {
-      const { nodeConfigUpdaterRegistry } = require('../node-config-updater-registry');
-      updater = nodeConfigUpdaterRegistry.get(NodeType.SUBGRAPH);
+      updater = getNodeConfigUpdater(NodeType.SUBGRAPH);
     });
     
     describe('containsIdReferences', () => {

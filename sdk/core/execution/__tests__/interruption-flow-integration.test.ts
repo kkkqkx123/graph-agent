@@ -25,6 +25,7 @@ import type { Node } from '@modular-agent/types';
 import type { Graph } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
 import type { NodeExecutionResult } from '@modular-agent/types';
+import type { PreprocessedGraph } from '@modular-agent/types';
 import { generateId, now } from '@modular-agent/common-utils';
 
 // Mock 依赖
@@ -642,30 +643,6 @@ describe('中断功能完整调用链集成测试', () => {
 function createTestThreadContext(nodeId: string, threadId?: string): ThreadContext {
   const actualThreadId = threadId || generateId();
   
-  const mockThread: Thread = {
-    id: actualThreadId,
-    workflowId: 'test-workflow',
-    workflowVersion: '1.0.0',
-    status: ThreadStatus.CREATED,
-    currentNodeId: nodeId,
-    graph: {} as Graph,
-    variables: [],
-    variableScopes: {
-      global: {},
-      thread: {},
-      local: [],
-      loop: []
-    },
-    input: {},
-    output: {},
-    nodeResults: [],
-    startTime: now(),
-    errors: [],
-    shouldPause: false,
-    shouldStop: false
-  };
-
-  // 创建测试用的图
   const testNode = {
     id: nodeId,
     type: NodeType.START,
@@ -681,11 +658,12 @@ function createTestThreadContext(nodeId: string, threadId?: string): ThreadConte
     }
   };
   
-  const testGraph: Graph = {
+  const testGraph = {
     nodes: new Map([[nodeId, testNode]]),
     edges: new Map(),
     adjacencyList: new Map(),
     reverseAdjacencyList: new Map(),
+    startNodeId: nodeId,
     endNodeIds: new Set(),
     getNode: (id: string) => testGraph.nodes.get(id),
     getEdge: (id: string) => testGraph.edges.get(id),
@@ -702,7 +680,62 @@ function createTestThreadContext(nodeId: string, threadId?: string): ThreadConte
     getNodeCount: () => testGraph.nodes.size,
     getEdgeCount: () => testGraph.edges.size,
     getSourceNodes: () => [],
-    getSinkNodes: () => []
+    getSinkNodes: () => [],
+    // PreprocessedGraph 属性
+    idMapping: {
+      nodeIds: new Map(),
+      edgeIds: new Map(),
+      reverseNodeIds: new Map(),
+      reverseEdgeIds: new Map(),
+      subgraphNamespaces: new Map()
+    },
+    nodeConfigs: new Map(),
+    triggerConfigs: new Map(),
+    subgraphRelationships: [],
+    graphAnalysis: {
+      cycleDetection: { hasCycle: false },
+      reachability: {
+        reachableFromStart: new Set(),
+        reachableToEnd: new Set(),
+        unreachableNodes: new Set(),
+        deadEndNodes: new Set()
+      },
+      topologicalSort: { success: true, sortedNodes: [] },
+      forkJoinValidation: { isValid: true, unpairedForks: [], unpairedJoins: [], pairs: new Map() },
+      nodeStats: { total: 0, byType: new Map() },
+      edgeStats: { total: 0, byType: new Map() }
+    },
+    validationResult: { isValid: true, errors: [], warnings: [], validatedAt: Date.now() },
+    topologicalOrder: [],
+    subgraphMergeLogs: [],
+    processedAt: Date.now(),
+    workflowId: 'test-workflow',
+    workflowVersion: '1.0.0',
+    hasSubgraphs: false,
+    subworkflowIds: new Set()
+  } as PreprocessedGraph;
+
+  const mockThread: Thread = {
+    id: actualThreadId,
+    workflowId: 'test-workflow',
+    workflowVersion: '1.0.0',
+    status: ThreadStatus.CREATED,
+    currentNodeId: nodeId,
+    graph: testGraph,
+    variables: [],
+    variableScopes: {
+      global: {},
+      thread: {},
+      local: [],
+      loop: []
+    },
+    input: {},
+    output: {},
+    nodeResults: [],
+    startTime: now(),
+    errors: [],
+    shouldPause: false,
+    shouldStop: false
   };
 
   const mockNavigator = new MockGraphNavigator(testGraph);

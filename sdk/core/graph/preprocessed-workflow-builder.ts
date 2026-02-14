@@ -17,7 +17,7 @@ import type { Node } from '@modular-agent/types';
 import type { Edge } from '@modular-agent/types';
 import type { NodeType } from '@modular-agent/types';
 import { GraphData } from '../entities/graph-data';
-import { nodeConfigUpdaterRegistry } from './node-config-updater-registry';
+import { updateIdReferences } from './utils/node-config-updaters';
 import { generateSubgraphNamespace } from '@modular-agent/common-utils';
 import { NodeType as NodeTypeEnum } from '@modular-agent/types';
 
@@ -248,8 +248,8 @@ export class PreprocessedWorkflowBuilder {
         continue;
       }
       
-      // 使用注册的更新器更新配置
-      const updatedNode = nodeConfigUpdaterRegistry.updateIdReferences(node, this.idMapping);
+      // 使用更新器更新配置
+      const updatedNode = updateIdReferences(node, this.idMapping);
       nodeConfigs.set(indexId.toString(), updatedNode.config);
     }
     
