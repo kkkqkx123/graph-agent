@@ -5,7 +5,7 @@
 import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
 import type { ScriptOptions } from '@modular-agent/types';
 import type { ScriptExecutionResult } from '@modular-agent/types';
-import type { APIDependencies } from '../../../core/api-dependencies';
+import type { APIDependencyManager } from '../../../core/sdk-dependencies';
 
 /**
  * 执行脚本命令
@@ -14,7 +14,7 @@ export class ExecuteScriptCommand extends BaseCommand<ScriptExecutionResult> {
   constructor(
     private readonly scriptName: string,
     private readonly options: ScriptOptions | undefined,
-    private readonly dependencies: APIDependencies
+    private readonly dependencies: APIDependencyManager
   ) {
     super();
   }

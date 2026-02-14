@@ -8,13 +8,13 @@ import { threadRegistry as globalThreadRegistry, type ThreadRegistry } from '../
 import type { Thread, ThreadResult, ThreadStatus, ThreadFilter, ThreadSummary } from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api';
 import { getErrorMessage } from '../../types/execution-result';
-import type { APIDependencies } from '../../core/api-dependencies';
+import type { APIDependencyManager } from '../../core/sdk-dependencies';
 
 
 /**
  * ThreadRegistryAPI - 线程管理API
  * 默认使用全局线程注册表单例
- * 
+ *
  * 重构说明：
  * - 继承GenericResourceAPI，复用通用CRUD操作
  * - 实现所有抽象方法以适配ThreadRegistry
@@ -22,13 +22,13 @@ import type { APIDependencies } from '../../core/api-dependencies';
  * - 新增缓存、日志、验证等增强功能
  */
 export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, ThreadFilter> {
-  private dependencies: APIDependencies;
+  private dependencies: APIDependencyManager;
 
   /**
    * 创建 ThreadRegistryAPI 实例
    * @param dependencies API依赖项
    */
-  constructor(dependencies: APIDependencies) {
+  constructor(dependencies: APIDependencyManager) {
     super();
     this.dependencies = dependencies;
   }

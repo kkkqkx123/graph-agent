@@ -59,8 +59,8 @@ import { UserInteractionResourceAPI, type UserInteractionConfig, type UserIntera
 // Human Relay资源管理
 import { HumanRelayResourceAPI, type HumanRelayConfig, type HumanRelayFilter } from './human-relay/human-relay-resource-api';
 
-// 配置依赖接口
-import type { APIDependencies } from '../core/api-dependencies';
+// 依赖管理
+import type { APIDependencyManager } from '../core/sdk-dependencies';
 
 // 重新导出所有资源管理API
 export { GenericResourceAPI };
@@ -82,7 +82,7 @@ export { HumanRelayResourceAPI, type HumanRelayConfig, type HumanRelayFilter };
 /**
  * 创建所有资源管理API实例的工厂函数
  */
-export function createResourceAPIs(dependencies: APIDependencies) {
+export function createResourceAPIs(dependencies: APIDependencyManager) {
   return {
     checkpoints: new CheckpointResourceAPI(),
     messages: new MessageResourceAPI(),

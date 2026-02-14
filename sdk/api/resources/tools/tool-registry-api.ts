@@ -12,11 +12,11 @@ import {
 import type { Tool, ToolFilter } from '@modular-agent/types';
 import { NotFoundError } from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api';
-import type { APIDependencies } from '../../core/api-dependencies';
+import type { APIDependencyManager } from '../../core/sdk-dependencies';
 
 /**
  * ToolRegistryAPI - 工具资源管理API
- * 
+ *
  * 改进点：
  * - 继承GenericResourceAPI，减少重复代码
  * - 统一的缓存管理
@@ -25,9 +25,9 @@ import type { APIDependencies } from '../../core/api-dependencies';
  * - 保持向后兼容性
  */
 export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter> {
-  private dependencies: APIDependencies;
+  private dependencies: APIDependencyManager;
 
-  constructor(dependencies: APIDependencies) {
+  constructor(dependencies: APIDependencyManager) {
     super();
     this.dependencies = dependencies;
   }

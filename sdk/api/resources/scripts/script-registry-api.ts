@@ -15,11 +15,11 @@ import { ScriptType } from '@modular-agent/types';
 import type { ScriptFilter, ScriptRegistrationConfig } from '@modular-agent/types';
 import { NotFoundError } from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api';
-import type { APIDependencies } from '../../core/api-dependencies';
+import type { APIDependencyManager } from '../../core/sdk-dependencies';
 
 /**
  * ScriptRegistryAPI - 脚本资源管理API
- * 
+ *
  * 改进点：
  * - 继承GenericResourceAPI，减少重复代码
  * - 统一的缓存管理
@@ -28,9 +28,9 @@ import type { APIDependencies } from '../../core/api-dependencies';
  * - 保持向后兼容性
  */
 export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, ScriptFilter> {
-  private dependencies: APIDependencies;
+  private dependencies: APIDependencyManager;
 
-  constructor(dependencies: APIDependencies) {
+  constructor(dependencies: APIDependencyManager) {
     super();
     this.dependencies = dependencies;
   }

@@ -4,7 +4,7 @@
 
 import { BaseSubscription, SubscriptionMetadata } from '../../../types/subscription';
 import type { EventType, EventListener, BaseEvent } from '@modular-agent/types';
-import type { APIDependencies } from '../../../core/api-dependencies';
+import type { APIDependencyManager } from '../../../core/sdk-dependencies';
 
 /**
  * 取消事件监听器参数
@@ -22,7 +22,7 @@ export interface OffEventParams {
 export class OffEventSubscription extends BaseSubscription {
   constructor(
     private readonly params: OffEventParams,
-    private readonly dependencies: APIDependencies
+    private readonly dependencies: APIDependencyManager
   ) {
     super();
   }

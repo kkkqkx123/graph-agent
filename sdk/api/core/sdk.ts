@@ -4,14 +4,13 @@
  *
  * 重构说明：
  * - 使用APIFactory统一管理API实例创建
- * - 支持全局配置和依赖注入
+ * - 简化配置，移除不必要的配置机制
  */
 
-import { APIFactory, type SDKAPIConfig } from './api-factory';
-import { APIDependencies } from './api-dependencies';
-import { SDKAPIDependencies } from './sdk-api-dependencies';
+import { APIFactory } from './api-factory';
+import { APIDependencyManager } from './sdk-dependencies';
 import { getData } from '../types/execution-result';
-import type { SDKOptions, SDKDependencies } from '@modular-agent/types';
+import type { SDKOptions } from '@modular-agent/types';
 import { logger } from '../../index';
 
 /**
@@ -19,44 +18,17 @@ import { logger } from '../../index';
  */
 class SDK {
   private factory: APIFactory;
-
+  private dependencies: APIDependencyManager;
 
   /**
    * 创建SDK实例
    * @param options SDK配置选项
-   * @param dependencies SDK依赖项
    */
-  constructor(options?: SDKOptions, dependencies?: SDKDependencies) {
+  constructor(options?: SDKOptions) {
     // 初始化API工厂
     this.factory = APIFactory.getInstance();
-
-    // 配置工厂
-    const config: SDKAPIConfig = {
-      workflow: {
-        enableValidation: options?.enableValidation ?? true
-      },
-      tool: {
-        enableValidation: true
-      },
-      thread: {
-        enableValidation: true
-      },
-      script: {
-        enableValidation: true
-      },
-      profile: {
-        enableValidation: true
-      },
-      nodeTemplate: {
-        enableValidation: true
-      },
-      triggerTemplate: {
-        enableValidation: true
-      }
-    };
-
-    this.factory.configure(config);
-
+    // 初始化依赖管理器
+    this.dependencies = new APIDependencyManager();
   }
 
   /**
@@ -130,15 +102,7 @@ class SDK {
   }
 
   /**
-   * 配置SDK
-   * @param config SDK API配置
-   */
-  configure(config: SDKAPIConfig): void {
-    this.factory.configure(config);
-  }
-
-  /**
-   * 重置SDK配置
+   * 重置SDK
    */
   reset(): void {
     this.factory.reset();
@@ -184,58 +148,35 @@ class SDK {
    */
   async destroy(): Promise<void> {
     // 清理各个模块的资源
-    try {
-      await this.workflows.clear();
-    } catch (error) {
-      logger.error('Failed to cleanup workflows resource', { error: error instanceof Error ? error.message : String(error) });
+    const cleanupTasks = [
+      { name: 'workflows', task: () => this.workflows.clear() },
+      { name: 'threads', task: () => this.threads.clear() },
+      { name: 'tools', task: () => this.tools.clear() },
+      { name: 'scripts', task: () => this.scripts.clear() },
+      { name: 'nodeTemplates', task: () => this.nodeTemplates.clear() },
+      { name: 'triggerTemplates', task: () => this.triggerTemplates.clear() },
+      { name: 'profiles', task: () => this.profiles.clear() },
+      { name: 'userInteractions', task: () => this.userInteractions.clear() },
+      { name: 'humanRelay', task: () => this.humanRelay.clear() }
+    ];
+
+    for (const { name, task } of cleanupTasks) {
+      try {
+        await task();
+      } catch (error) {
+        logger.error(`Failed to cleanup ${name} resource`, { error: error instanceof Error ? error.message : String(error) });
+      }
     }
 
-    try {
-      await this.threads.clear();
-    } catch (error) {
-      logger.error('Failed to cleanup threads resource', { error: error instanceof Error ? error.message : String(error) });
-    }
+    // 清理工厂实例
+    this.factory.reset();
 
+    // 清理依赖管理器
     try {
-      await this.tools.clear();
+      const context = this.dependencies.getExecutionContext();
+      await context.destroy();
     } catch (error) {
-      logger.error('Failed to cleanup tools resource', { error: error instanceof Error ? error.message : String(error) });
-    }
-
-    try {
-      await this.scripts.clear();
-    } catch (error) {
-      logger.error('Failed to cleanup scripts resource', { error: error instanceof Error ? error.message : String(error) });
-    }
-
-    try {
-      await this.nodeTemplates.clear();
-    } catch (error) {
-      logger.error('Failed to cleanup nodeTemplates resource', { error: error instanceof Error ? error.message : String(error) });
-    }
-
-    try {
-      await this.triggerTemplates.clear();
-    } catch (error) {
-      logger.error('Failed to cleanup triggerTemplates resource', { error: error instanceof Error ? error.message : String(error) });
-    }
-
-    try {
-      await this.profiles.clear();
-    } catch (error) {
-      logger.error('Failed to cleanup profiles resource', { error: error instanceof Error ? error.message : String(error) });
-    }
-
-    try {
-      await this.userInteractions.clear();
-    } catch (error) {
-      logger.error('Failed to cleanup userInteractions resource', { error: error instanceof Error ? error.message : String(error) });
-    }
-
-    try {
-      await this.humanRelay.clear();
-    } catch (error) {
-      logger.error('Failed to cleanup humanRelay resource', { error: error instanceof Error ? error.message : String(error) });
+      logger.error('Failed to cleanup dependencies', { error: error instanceof Error ? error.message : String(error) });
     }
 
     logger.info('SDK instance destroyed');
@@ -248,5 +189,5 @@ class SDK {
  */
 export const sdk = new SDK();
 
-// 导出依赖接口和实现
-export { APIDependencies, SDKAPIDependencies };
+// 导出依赖管理类
+export { APIDependencyManager };

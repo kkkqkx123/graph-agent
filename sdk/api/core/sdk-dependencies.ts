@@ -1,24 +1,34 @@
 /**
- * SDKAPIDependencies - SDK API依赖实现
- * 实现APIDependencies接口，提供API层所需的所有Core层服务实例
+ * APIDependencyManager - API依赖管理类
+ * 统一管理API层所需的所有Core层依赖
  *
  * 设计原则：
- * - 封装ExecutionContext的复杂性
- * - 提供统一的依赖获取方式
- * - 支持测试隔离
+ * - 严格约束实例获取方式
+ * - 保证API层不会以错误的方式获取各类实例
+ * - 规范化依赖管理
+ * - 所有方法返回具体类型，确保类型安全
+ * - 统一通过ExecutionContext获取依赖
  */
 
 import { ExecutionContext } from '../../core/execution/context/execution-context';
-import { APIDependencies } from './api-dependencies';
+import type { WorkflowRegistry } from '../../core/services/workflow-registry';
+import type { ThreadRegistry } from '../../core/services/thread-registry';
+import type { EventManager } from '../../core/services/event-manager';
+import type { CheckpointStateManager } from '../../core/execution/managers/checkpoint-state-manager';
+import type { ToolService } from '../../core/services/tool-service';
+import type { LLMExecutor } from '../../core/execution/executors/llm-executor';
+import type { CodeService } from '../../core/services/code-service';
+import type { NodeTemplateRegistry } from '../../core/services/node-template-registry';
+import type { TriggerTemplateRegistry } from '../../core/services/trigger-template-registry';
 import { codeService } from '../../core/services/code-service';
 import { nodeTemplateRegistry } from '../../core/services/node-template-registry';
 import { triggerTemplateRegistry } from '../../core/services/trigger-template-registry';
 
 /**
- * SDK API依赖实现类
+ * API依赖管理类
  * 通过ExecutionContext管理所有依赖实例
  */
-export class SDKAPIDependencies implements APIDependencies {
+export class APIDependencyManager {
   private executionContext: ExecutionContext;
   
   /**
@@ -32,63 +42,63 @@ export class SDKAPIDependencies implements APIDependencies {
   /**
    * 获取工作流注册表
    */
-  getWorkflowRegistry(): any {
+  getWorkflowRegistry(): WorkflowRegistry {
     return this.executionContext.getWorkflowRegistry();
   }
   
   /**
    * 获取线程注册表
    */
-  getThreadRegistry(): any {
+  getThreadRegistry(): ThreadRegistry {
     return this.executionContext.getThreadRegistry();
   }
   
   /**
    * 获取事件管理器
    */
-  getEventManager(): any {
+  getEventManager(): EventManager {
     return this.executionContext.getEventManager();
   }
   
   /**
    * 获取检查点状态管理器
    */
-  getCheckpointStateManager(): any {
+  getCheckpointStateManager(): CheckpointStateManager {
     return this.executionContext.getCheckpointStateManager();
   }
   
   /**
    * 获取工具服务
    */
-  getToolService(): any {
+  getToolService(): ToolService {
     return this.executionContext.getToolService();
   }
   
   /**
    * 获取LLM执行器
    */
-  getLlmExecutor(): any {
+  getLlmExecutor(): LLMExecutor {
     return this.executionContext.getLlmExecutor();
   }
   
   /**
    * 获取代码服务
    */
-  getCodeService(): any {
+  getCodeService(): CodeService {
     return codeService;
   }
   
   /**
    * 获取节点模板注册表
    */
-  getNodeTemplateRegistry(): any {
+  getNodeTemplateRegistry(): NodeTemplateRegistry {
     return nodeTemplateRegistry;
   }
   
   /**
    * 获取触发器模板注册表
    */
-  getTriggerTemplateRegistry(): any {
+  getTriggerTemplateRegistry(): TriggerTemplateRegistry {
     return triggerTemplateRegistry;
   }
   

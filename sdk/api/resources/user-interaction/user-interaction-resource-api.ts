@@ -31,7 +31,7 @@ import type {
   UserInteractionFailedEvent
 } from '@modular-agent/types';
 import { ExecutionError } from '@modular-agent/types';
-import type { APIDependencies } from '../../core/api-dependencies';
+import type { APIDependencyManager } from '../../core/sdk-dependencies';
 
 /**
  * 用户交互配置
@@ -63,11 +63,11 @@ export interface UserInteractionFilter {
  * 用户交互资源管理API
  */
 export class UserInteractionResourceAPI extends GenericResourceAPI<UserInteractionConfig, string, UserInteractionFilter> {
-  private dependencies: APIDependencies;
+  private dependencies: APIDependencyManager;
   private userInteractionHandler?: UserInteractionHandler;
   private configs: Map<string, UserInteractionConfig> = new Map();
 
-  constructor(dependencies: APIDependencies) {
+  constructor(dependencies: APIDependencyManager) {
     super();
     this.dependencies = dependencies;
   }

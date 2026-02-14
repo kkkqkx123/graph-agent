@@ -1,11 +1,10 @@
 /**
  * APIFactory - API工厂类
- * 统一管理所有资源API实例的创建和配置
- * 
+ * 统一管理所有资源API实例的创建
+ *
  * 设计模式：
  * - Factory模式：统一创建API实例
  * - Singleton模式：确保工厂实例唯一
- * - Builder模式：支持链式配置
  */
 
 import { WorkflowRegistryAPI } from '../resources/workflows/workflow-registry-api';
@@ -17,14 +16,7 @@ import { NodeRegistryAPI } from '../resources/templates/node-template-registry-a
 import { TriggerTemplateRegistryAPI } from '../resources/templates/trigger-template-registry-api';
 import { UserInteractionResourceAPI } from '../resources/user-interaction/user-interaction-resource-api';
 import { HumanRelayResourceAPI } from '../resources/human-relay/human-relay-resource-api';
-import { SDKAPIDependencies } from './sdk-api-dependencies';
-
-/**
- * SDK API配置接口
- */
-export interface SDKAPIConfig {
-  // 配置选项已移除，不再支持配置
-}
+import { APIDependencyManager } from './sdk-dependencies';
 
 /**
  * 所有API实例集合
@@ -52,30 +44,23 @@ export interface AllAPIs {
 
 /**
  * API工厂类
- * 
+ *
  * 使用示例：
  * ```typescript
  * // 获取工厂实例
  * const factory = APIFactory.getInstance();
- * 
- * // 配置工厂
- * factory.configure({
- *   workflow: { enableCache: true, cacheTTL: 60000 },
- *   tool: { enableLogging: true }
- * });
- * 
+ *
  * // 创建单个API
  * const workflowAPI = factory.createWorkflowAPI();
- * 
+ *
  * // 创建所有API
  * const apis = factory.createAllAPIs();
  * ```
  */
 export class APIFactory {
   private static instance: APIFactory;
-  private config: SDKAPIConfig = {};
   private apiInstances: Partial<AllAPIs> = {};
-  private dependencies: SDKAPIDependencies = new SDKAPIDependencies();
+  private dependencies: APIDependencyManager = new APIDependencyManager();
 
   private constructor() { }
 
@@ -90,113 +75,82 @@ export class APIFactory {
   }
 
   /**
-   * 配置工厂
-   * @param config SDK API配置
-   */
-  public configure(config: SDKAPIConfig): void {
-    this.config = { ...this.config, ...config };
-    // 清除已创建的实例，以便使用新配置重新创建
-    this.apiInstances = {};
-  }
-
-  /**
-   * 获取配置
-   * @returns 当前配置
-   */
-  public getConfig(): SDKAPIConfig {
-    return { ...this.config };
-  }
-
-  /**
-   * 重置工厂配置和实例
+   * 重置工厂实例
    */
   public reset(): void {
-    this.config = {};
     this.apiInstances = {};
+  }
+
+  /**
+   * 创建API实例的通用方法
+   * @param key API实例的键名
+   * @param APIConstructor API构造函数
+   * @returns API实例
+   */
+  private createAPI<T extends AllAPIs[keyof AllAPIs]>(
+    key: keyof AllAPIs,
+    APIConstructor: new (deps: APIDependencyManager) => T
+  ): T {
+    if (!this.apiInstances[key]) {
+      (this.apiInstances as any)[key] = new APIConstructor(this.dependencies);
+    }
+    return (this.apiInstances as any)[key];
   }
 
   /**
    * 创建工作流API
-   * @param options 可选配置（覆盖全局配置）
    * @returns WorkflowRegistryAPI实例
    */
   public createWorkflowAPI(): WorkflowRegistryAPI {
-    if (!this.apiInstances.workflows) {
-      this.apiInstances.workflows = new WorkflowRegistryAPI(this.dependencies);
-    }
-    return this.apiInstances.workflows;
+    return this.createAPI('workflows', WorkflowRegistryAPI);
   }
 
   /**
    * 创建工具API
-   * @param options 可选配置（覆盖全局配置）
    * @returns ToolRegistryAPI实例
    */
   public createToolAPI(): ToolRegistryAPI {
-    if (!this.apiInstances.tools) {
-      this.apiInstances.tools = new ToolRegistryAPI(this.dependencies);
-    }
-    return this.apiInstances.tools;
+    return this.createAPI('tools', ToolRegistryAPI);
   }
 
   /**
    * 创建线程API
-   * @param options 可选配置（覆盖全局配置）
    * @returns ThreadRegistryAPI实例
    */
   public createThreadAPI(): ThreadRegistryAPI {
-    if (!this.apiInstances.threads) {
-      this.apiInstances.threads = new ThreadRegistryAPI(this.dependencies);
-    }
-    return this.apiInstances.threads;
+    return this.createAPI('threads', ThreadRegistryAPI);
   }
 
   /**
    * 创建脚本API
-   * @param options 可选配置（覆盖全局配置）
    * @returns ScriptRegistryAPI实例
    */
   public createScriptAPI(): ScriptRegistryAPI {
-    if (!this.apiInstances.scripts) {
-      this.apiInstances.scripts = new ScriptRegistryAPI(this.dependencies);
-    }
-    return this.apiInstances.scripts;
+    return this.createAPI('scripts', ScriptRegistryAPI);
   }
 
   /**
    * 创建Profile API
-   * @param options 可选配置（覆盖全局配置）
    * @returns ProfileRegistryAPI实例
    */
   public createProfileAPI(): LLMProfileRegistryAPI {
-    if (!this.apiInstances.profiles) {
-      this.apiInstances.profiles = new LLMProfileRegistryAPI(this.dependencies);
-    }
-    return this.apiInstances.profiles;
+    return this.createAPI('profiles', LLMProfileRegistryAPI);
   }
 
   /**
    * 创建节点模板API
-   * @param options 可选配置（覆盖全局配置）
    * @returns NodeRegistryAPI实例
    */
   public createNodeTemplateAPI(): NodeRegistryAPI {
-    if (!this.apiInstances.nodeTemplates) {
-      this.apiInstances.nodeTemplates = new NodeRegistryAPI(this.dependencies);
-    }
-    return this.apiInstances.nodeTemplates;
+    return this.createAPI('nodeTemplates', NodeRegistryAPI);
   }
 
   /**
    * 创建触发器模板API
-   * @param options 可选配置（覆盖全局配置）
    * @returns TriggerTemplateRegistryAPI实例
    */
   public createTriggerTemplateAPI(): TriggerTemplateRegistryAPI {
-    if (!this.apiInstances.triggerTemplates) {
-      this.apiInstances.triggerTemplates = new TriggerTemplateRegistryAPI(this.dependencies);
-    }
-    return this.apiInstances.triggerTemplates;
+    return this.createAPI('triggerTemplates', TriggerTemplateRegistryAPI);
   }
 
   /**
@@ -204,10 +158,7 @@ export class APIFactory {
    * @returns UserInteractionResourceAPI实例
    */
   public createUserInteractionAPI(): UserInteractionResourceAPI {
-    if (!this.apiInstances.userInteractions) {
-      this.apiInstances.userInteractions = new UserInteractionResourceAPI(this.dependencies);
-    }
-    return this.apiInstances.userInteractions;
+    return this.createAPI('userInteractions', UserInteractionResourceAPI);
   }
 
   /**
@@ -215,15 +166,11 @@ export class APIFactory {
    * @returns HumanRelayResourceAPI实例
    */
   public createHumanRelayAPI(): HumanRelayResourceAPI {
-    if (!this.apiInstances.humanRelay) {
-      this.apiInstances.humanRelay = new HumanRelayResourceAPI(this.dependencies);
-    }
-    return this.apiInstances.humanRelay;
+    return this.createAPI('humanRelay', HumanRelayResourceAPI);
   }
 
   /**
    * 创建所有API实例
-   * @param options 可选配置（覆盖全局配置）
    * @returns 所有API实例
    */
   public createAllAPIs(): AllAPIs {
@@ -239,20 +186,6 @@ export class APIFactory {
       humanRelay: this.createHumanRelayAPI()
     };
   }
-
-  /**
-   * 清除所有缓存的API实例
-   */
-  public clearInstances(): void {
-    this.apiInstances = {};
-  }
-
-  /**
-   * 合并配置选项
-   * @param globalConfig 全局配置
-   * @param localConfig 局部配置
-   * @returns 合并后的配置
-   */
 }
 
 /**

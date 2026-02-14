@@ -5,7 +5,7 @@
 import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
 import type { ToolOptions } from '@modular-agent/types';
 import type { ToolExecutionResult } from '@modular-agent/types';
-import type { APIDependencies } from '../../../core/api-dependencies';
+import type { APIDependencyManager } from '../../../core/sdk-dependencies';
 
 /**
  * 执行工具命令
@@ -15,7 +15,7 @@ export class ExecuteToolCommand extends BaseCommand<ToolExecutionResult> {
     private readonly toolName: string,
     private readonly parameters: Record<string, any>,
     private readonly options: ToolOptions | undefined,
-    private readonly dependencies: APIDependencies
+    private readonly dependencies: APIDependencyManager
   ) {
     super();
   }

@@ -9,7 +9,7 @@ import type { LLMProfile, LLMProvider } from '@modular-agent/types';
 import { ValidationError, NotFoundError, SDKError, ConfigurationValidationError, NodeTemplateNotFoundError } from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api';
 import { getErrorMessage } from '../../types/execution-result';
-import type { APIDependencies } from '../../core/api-dependencies';
+import type { APIDependencyManager } from '../../core/sdk-dependencies';
 
 /**
  * Profile模板类型
@@ -51,7 +51,7 @@ export class LLMProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string
   private profileManager: ProfileManager;
   private templates: Map<string, LLMProfileTemplate> = new Map();
 
-  constructor(dependencies: APIDependencies) {
+  constructor(dependencies: APIDependencyManager) {
     super();
     this.profileManager = new ProfileManager();
     this.initializeTemplates();

@@ -6,7 +6,7 @@ import { BaseCommand, CommandValidationResult, validationSuccess, validationFail
 import { CheckpointCoordinator } from '../../../../core/execution/coordinators/checkpoint-coordinator';
 import type { Thread } from '@modular-agent/types';
 import { globalMessageStorage } from '../../../../core/services/global-message-storage';
-import type { APIDependencies } from '../../../core/api-dependencies';
+import type { APIDependencyManager } from '../../../core/sdk-dependencies';
 
 /**
  * 从检查点恢复参数
@@ -22,7 +22,7 @@ export interface RestoreFromCheckpointParams {
 export class RestoreFromCheckpointCommand extends BaseCommand<Thread> {
   constructor(
     private readonly params: RestoreFromCheckpointParams,
-    private readonly dependencies: APIDependencies
+    private readonly dependencies: APIDependencyManager
   ) {
     super();
   }

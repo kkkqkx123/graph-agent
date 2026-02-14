@@ -12,15 +12,15 @@ import {
 
 import { GenericResourceAPI } from '../generic-resource-api';
 import type { WorkflowDefinition, WorkflowFilter, WorkflowSummary } from '@modular-agent/types';
-import type { APIDependencies } from '../../core/api-dependencies';
+import type { APIDependencyManager } from '../../core/sdk-dependencies';
 
 /**
  * WorkflowRegistryAPI - 工作流管理API
  */
 export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, string, WorkflowFilter> {
-  private dependencies: APIDependencies;
+  private dependencies: APIDependencyManager;
 
-  constructor(dependencies: APIDependencies) {
+  constructor(dependencies: APIDependencyManager) {
     super();
     this.dependencies = dependencies;
   }

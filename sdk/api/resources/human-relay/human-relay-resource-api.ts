@@ -31,7 +31,7 @@ import type {
   HumanRelayProcessedEvent,
   HumanRelayFailedEvent
 } from '@modular-agent/types';
-import type { APIDependencies } from '../../core/api-dependencies';
+import type { APIDependencyManager } from '../../core/sdk-dependencies';
 
 /**
  * Human Relay配置
@@ -67,11 +67,11 @@ export interface HumanRelayFilter {
  * Human Relay资源管理API
  */
 export class HumanRelayResourceAPI extends GenericResourceAPI<HumanRelayConfig, string, HumanRelayFilter> {
-  private dependencies: APIDependencies;
+  private dependencies: APIDependencyManager;
   private humanRelayHandler?: HumanRelayHandler;
   private configs: Map<string, HumanRelayConfig> = new Map();
 
-  constructor(dependencies: APIDependencies) {
+  constructor(dependencies: APIDependencyManager) {
     super();
     this.dependencies = dependencies;
   }

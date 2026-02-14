@@ -10,12 +10,12 @@ import type {
   TriggerTemplateFilter
 } from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api';
-import type { APIDependencies } from '../../core/api-dependencies';
+import type { APIDependencyManager } from '../../core/sdk-dependencies';
 
 
 /**
  * 触发器模板注册表 API 类
- * 
+ *
  * 重构说明：
  * - 继承GenericResourceAPI，复用通用CRUD操作
  * - 实现所有抽象方法以适配TriggerTemplateRegistry
@@ -23,9 +23,9 @@ import type { APIDependencies } from '../../core/api-dependencies';
  * - 新增缓存、日志、验证等增强功能
  */
 export class TriggerTemplateRegistryAPI extends GenericResourceAPI<TriggerTemplate, string, TriggerTemplateFilter> {
-  private dependencies: APIDependencies;
+  private dependencies: APIDependencyManager;
 
-  constructor(dependencies: APIDependencies) {
+  constructor(dependencies: APIDependencyManager) {
     super();
     this.dependencies = dependencies;
   }

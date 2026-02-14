@@ -3,8 +3,9 @@
  */
 
 import { WorkflowRegistryAPI } from '../workflow-registry-api';
-import type { APIDependencies } from '../../core/api-dependencies';
+import type { APIDependencyManager } from '../../../core/sdk-dependencies';
 import type { WorkflowDefinition } from '@modular-agent/types';
+import { WorkflowType } from '@modular-agent/types';
 
 // Mock dependencies
 const mockWorkflowRegistry = {
@@ -15,7 +16,7 @@ const mockWorkflowRegistry = {
   checkWorkflowReferences: jest.fn(),
 } as any;
 
-const mockDependencies: APIDependencies = {
+const mockDependencies: APIDependencyManager = {
   getWorkflowRegistry: () => mockWorkflowRegistry,
   getThreadRegistry: jest.fn(),
   getEventManager: jest.fn(),
@@ -40,6 +41,7 @@ describe('WorkflowRegistryAPI', () => {
     const baseWorkflow: WorkflowDefinition = {
       id: 'test-workflow',
       name: 'Test Workflow',
+      type: WorkflowType.STANDALONE,
       version: '1.0.0',
       nodes: [],
       edges: [],
@@ -165,6 +167,7 @@ describe('WorkflowRegistryAPI', () => {
     const baseWorkflow: WorkflowDefinition = {
       id: 'test-workflow',
       name: 'Test Workflow',
+      type: WorkflowType.STANDALONE,
       version: '1.0.0',
       nodes: [],
       edges: [],

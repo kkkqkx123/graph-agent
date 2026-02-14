@@ -4,7 +4,7 @@
 
 import { BaseCommand, CommandValidationResult } from '../../../types/command';
 import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types';
-import type { APIDependencies } from '../../../core/api-dependencies';
+import type { APIDependencyManager } from '../../../core/sdk-dependencies';
 
 /**
  * 禁用触发器参数
@@ -22,7 +22,7 @@ export interface DisableTriggerParams {
 export class DisableTriggerCommand extends BaseCommand<void> {
   constructor(
     private readonly params: DisableTriggerParams,
-    private readonly dependencies: APIDependencies
+    private readonly dependencies: APIDependencyManager
   ) {
     super();
   }

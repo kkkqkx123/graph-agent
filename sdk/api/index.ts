@@ -75,7 +75,7 @@ export {
 } from './resources';
 
 // API工厂
-export { APIFactory, apiFactory, type SDKAPIConfig, type AllAPIs } from './core/api-factory';
+export { APIFactory, apiFactory, type AllAPIs } from './core/api-factory';
 
 
 // 事件系统类型
