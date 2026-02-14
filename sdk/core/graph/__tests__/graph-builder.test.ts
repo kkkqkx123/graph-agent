@@ -6,7 +6,7 @@
 import { GraphBuilder } from '../graph-builder';
 import { GraphData } from '../../entities/graph-data';
 import type { WorkflowDefinition, GraphNode, GraphEdge } from '@modular-agent/types';
-import { NodeType, EdgeType } from '@modular-agent/types';
+import { NodeType, EdgeType, WorkflowType } from '@modular-agent/types';
 
 /**
  * 创建简单的工作流定义
@@ -17,6 +17,7 @@ function createSimpleWorkflow(): WorkflowDefinition {
     name: 'Simple Workflow',
     description: 'A simple workflow',
     version: '1.0.0',
+    type: WorkflowType.STANDALONE,
     createdAt: Date.now(),
     updatedAt: Date.now(),
     nodes: [
@@ -79,6 +80,7 @@ function createBranchWorkflow(): WorkflowDefinition {
     name: 'Branch Workflow',
     description: 'A workflow with branches',
     version: '1.0.0',
+    type: WorkflowType.STANDALONE,
     createdAt: Date.now(),
     updatedAt: Date.now(),
     nodes: [
@@ -180,6 +182,7 @@ function createForkJoinWorkflow(): WorkflowDefinition {
     name: 'Fork/Join Workflow',
     description: 'A workflow with fork/join',
     version: '1.0.0',
+    type: WorkflowType.STANDALONE,
     createdAt: Date.now(),
     updatedAt: Date.now(),
     nodes: [
@@ -288,6 +291,7 @@ function createSubgraphWorkflow(): WorkflowDefinition {
     name: 'Subgraph Workflow',
     description: 'A workflow with subgraph',
     version: '1.0.0',
+    type: WorkflowType.DEPENDENT,
     createdAt: Date.now(),
     updatedAt: Date.now(),
     nodes: [
@@ -348,6 +352,7 @@ function createSubWorkflow(): WorkflowDefinition {
     name: 'Sub Workflow',
     description: 'A sub workflow',
     version: '1.0.0',
+    type: WorkflowType.STANDALONE,
     createdAt: Date.now(),
     updatedAt: Date.now(),
     nodes: [
@@ -476,16 +481,17 @@ describe('GraphBuilder', () => {
     });
 
     it('should handle empty workflow', () => {
-      const workflow: WorkflowDefinition = {
-        id: 'wf1',
-        name: 'Empty Workflow',
-        description: 'Empty',
-        version: '1.0.0',
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        nodes: [],
-        edges: [],
-      };
+       const workflow: WorkflowDefinition = {
+         id: 'wf1',
+         name: 'Empty Workflow',
+         description: 'Empty',
+         version: '1.0.0',
+         type: WorkflowType.STANDALONE,
+         createdAt: Date.now(),
+         updatedAt: Date.now(),
+         nodes: [],
+         edges: [],
+       };
 
       const graph = GraphBuilder.build(workflow);
 
@@ -496,14 +502,15 @@ describe('GraphBuilder', () => {
     });
 
     it('should handle workflow with multiple END nodes', () => {
-      const workflow: WorkflowDefinition = {
-        id: 'wf1',
-        name: 'Multiple Ends',
-        description: 'Test',
-        version: '1.0.0',
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        nodes: [
+       const workflow: WorkflowDefinition = {
+         id: 'wf1',
+         name: 'Multiple Ends',
+         description: 'Test',
+         version: '1.0.0',
+         type: WorkflowType.STANDALONE,
+         createdAt: Date.now(),
+         updatedAt: Date.now(),
+         nodes: [
           {
             id: 'start',
             type: NodeType.START,
@@ -578,14 +585,15 @@ describe('GraphBuilder', () => {
     });
 
     it('should return errors for invalid workflow', () => {
-      const workflow: WorkflowDefinition = {
-        id: 'wf1',
-        name: 'Invalid Workflow',
-        description: 'No start node',
-        version: '1.0.0',
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        nodes: [
+       const workflow: WorkflowDefinition = {
+         id: 'wf1',
+         name: 'Invalid Workflow',
+         description: 'No start node',
+         version: '1.0.0',
+         type: WorkflowType.STANDALONE,
+         createdAt: Date.now(),
+         updatedAt: Date.now(),
+         nodes: [
           {
             id: 'llm',
             type: NodeType.LLM,
@@ -636,55 +644,56 @@ describe('GraphBuilder', () => {
   });
 
   describe('processSubgraphs', () => {
-    it('should process subgraph nodes', () => {
-      const mainWorkflow = createSubgraphWorkflow();
-      const subWorkflow = createSubWorkflow();
+    it('should process subgraph nodes', async () => {
+       const mainWorkflow = createSubgraphWorkflow();
+       const subWorkflow = createSubWorkflow();
 
-      const graph = GraphBuilder.build(mainWorkflow);
+       const graph = GraphBuilder.build(mainWorkflow);
 
-      const workflowRegistry = {
-        get: (id: string) => {
-          if (id === 'subwf1') {
-            return subWorkflow;
-          }
-          return undefined;
-        },
-        registerSubgraphRelationship: jest.fn(),
-      };
+       const workflowRegistry = {
+         get: (id: string) => {
+           if (id === 'subwf1') {
+             return subWorkflow;
+           }
+           return undefined;
+         },
+         registerSubgraphRelationship: jest.fn(),
+       };
 
-      const result = GraphBuilder.processSubgraphs(graph, workflowRegistry);
+       const result = await GraphBuilder.processSubgraphs(graph, workflowRegistry);
 
-      expect(result.success).toBe(true);
-      expect(result.addedNodeIds.length).toBeGreaterThan(0);
-      expect(result.removedNodeIds).toContain('subgraph');
-      expect(result.subworkflowIds).toContain('subwf1');
-    });
+       expect(result.success).toBe(true);
+       expect(result.addedNodeIds.length).toBeGreaterThan(0);
+       expect(result.removedNodeIds).toContain('subgraph');
+       expect(result.subworkflowIds).toContain('subwf1');
+     });
 
-    it('should handle missing subworkflow', () => {
-      const mainWorkflow = createSubgraphWorkflow();
-      const graph = GraphBuilder.build(mainWorkflow);
+    it('should handle missing subworkflow', async () => {
+       const mainWorkflow = createSubgraphWorkflow();
+       const graph = GraphBuilder.build(mainWorkflow);
 
-      const workflowRegistry = {
-        get: () => undefined,
-        registerSubgraphRelationship: jest.fn(),
-      };
+       const workflowRegistry = {
+         get: () => undefined,
+         registerSubgraphRelationship: jest.fn(),
+       };
 
-      const result = GraphBuilder.processSubgraphs(graph, workflowRegistry);
+       const result = await GraphBuilder.processSubgraphs(graph, workflowRegistry);
 
-      expect(result.success).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
-      expect(result.errors[0]).toContain('not found');
-    });
+       expect(result.success).toBe(false);
+       expect(result.errors.length).toBeGreaterThan(0);
+       expect(result.errors[0]).toContain('not found');
+     });
 
-    it('should handle subgraph node without subgraphId', () => {
-      const workflow: WorkflowDefinition = {
-        id: 'wf1',
-        name: 'Invalid Subgraph',
-        description: 'Test',
-        version: '1.0.0',
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        nodes: [
+    it('should handle subgraph node without subgraphId', async () => {
+       const workflow: WorkflowDefinition = {
+         id: 'wf1',
+         name: 'Invalid Subgraph',
+         description: 'Test',
+         version: '1.0.0',
+         type: WorkflowType.DEPENDENT,
+         createdAt: Date.now(),
+         updatedAt: Date.now(),
+         nodes: [
           {
             id: 'start',
             type: NodeType.START,
@@ -729,37 +738,162 @@ describe('GraphBuilder', () => {
         ],
       };
 
-      const graph = GraphBuilder.build(workflow);
+       const graph = GraphBuilder.build(workflow);
 
-      const workflowRegistry = {
-        get: jest.fn(),
-        registerSubgraphRelationship: jest.fn(),
-      };
+       const workflowRegistry = {
+         get: jest.fn(),
+         registerSubgraphRelationship: jest.fn(),
+       };
 
-      const result = GraphBuilder.processSubgraphs(graph, workflowRegistry);
+       const result = await GraphBuilder.processSubgraphs(graph, workflowRegistry);
 
-      expect(result.success).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
-      expect(result.errors[0]).toContain('missing subgraphId');
-    });
+       expect(result.success).toBe(false);
+       expect(result.errors.length).toBeGreaterThan(0);
+       expect(result.errors[0]).toContain('missing subgraphId');
+     });
 
-    it('should handle maximum recursion depth', () => {
-      const mainWorkflow = createSubgraphWorkflow();
-      const graph = GraphBuilder.build(mainWorkflow);
+    it('should handle maximum recursion depth', async () => {
+       const mainWorkflow = createSubgraphWorkflow();
+       const graph = GraphBuilder.build(mainWorkflow);
 
-      const workflowRegistry = {
-        get: () => createSubWorkflow(),
-        registerSubgraphRelationship: jest.fn(),
-      };
+       const workflowRegistry = {
+         get: () => createSubWorkflow(),
+         registerSubgraphRelationship: jest.fn(),
+       };
 
-      const result = GraphBuilder.processSubgraphs(graph, workflowRegistry, 0);
+       const result = await GraphBuilder.processSubgraphs(graph, workflowRegistry, 0);
 
-      expect(result.success).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
-      expect(result.errors[0]).toContain('Maximum recursion depth');
-    });
+       expect(result.success).toBe(false);
+       expect(result.errors.length).toBeGreaterThan(0);
+       expect(result.errors[0]).toContain('Maximum recursion depth');
+     });
 
-    it('should create namespaced node IDs', () => {
+    it('should create namespaced node IDs', async () => {
+       const mainWorkflow = createSubgraphWorkflow();
+       const subWorkflow = createSubWorkflow();
+
+       const graph = GraphBuilder.build(mainWorkflow);
+
+       const workflowRegistry = {
+         get: (id: string) => {
+           if (id === 'subwf1') {
+             return subWorkflow;
+           }
+           return undefined;
+         },
+         registerSubgraphRelationship: jest.fn(),
+       };
+
+       const result = await GraphBuilder.processSubgraphs(graph, workflowRegistry);
+
+       expect(result.success).toBe(true);
+       expect(result.nodeIdMapping.size).toBeGreaterThan(0);
+
+       // Check that original IDs are mapped to namespaced IDs
+       const subStartMapping = result.nodeIdMapping.get('subStart');
+       expect(subStartMapping).toBeDefined();
+       expect(subStartMapping).toContain('sg_'); // Namespace prefix contains 'sg_'
+       expect(subStartMapping).toContain('subStart');
+     });
+
+    it('should create namespaced edge IDs', async () => {
+       const mainWorkflow = createSubgraphWorkflow();
+       const subWorkflow = createSubWorkflow();
+
+       const graph = GraphBuilder.build(mainWorkflow);
+
+       const workflowRegistry = {
+         get: (id: string) => {
+           if (id === 'subwf1') {
+             return subWorkflow;
+           }
+           return undefined;
+         },
+         registerSubgraphRelationship: jest.fn(),
+       };
+
+       const result = await GraphBuilder.processSubgraphs(graph, workflowRegistry);
+
+       expect(result.success).toBe(true);
+       expect(result.edgeIdMapping.size).toBeGreaterThan(0);
+
+       // Check that original edge IDs are mapped to namespaced IDs
+       const subE1Mapping = result.edgeIdMapping.get('subE1');
+       expect(subE1Mapping).toBeDefined();
+       expect(subE1Mapping).toContain('sg_'); // Namespace prefix contains 'sg_'
+       expect(subE1Mapping).toContain('subE1');
+     });
+
+    it('should add boundary metadata to start and end nodes', async () => {
+       const mainWorkflow = createSubgraphWorkflow();
+       const subWorkflow = createSubWorkflow();
+
+       const graph = GraphBuilder.build(mainWorkflow);
+
+       const workflowRegistry = {
+         get: (id: string) => {
+           if (id === 'subwf1') {
+             return subWorkflow;
+           }
+           return undefined;
+         },
+         registerSubgraphRelationship: jest.fn(),
+       };
+
+       const result = await GraphBuilder.processSubgraphs(graph, workflowRegistry);
+
+       expect(result.success).toBe(true);
+
+       // Find the namespaced start node
+       const subStartId = result.nodeIdMapping.get('subStart');
+       expect(subStartId).toBeDefined();
+
+       const subStartNode = graph.getNode(subStartId!);
+       expect(subStartNode).toBeDefined();
+       expect(subStartNode?.internalMetadata).toBeDefined();
+       expect(subStartNode?.internalMetadata?.['subgraphBoundaryType']).toBe('entry');
+
+       // Find the namespaced end node
+       const subEndId = result.nodeIdMapping.get('subEnd');
+       expect(subEndId).toBeDefined();
+
+       const subEndNode = graph.getNode(subEndId!);
+       expect(subEndNode).toBeDefined();
+       expect(subEndNode?.internalMetadata).toBeDefined();
+       expect(subEndNode?.internalMetadata?.['subgraphBoundaryType']).toBe('exit');
+     });
+
+    it('should connect incoming edges to subgraph start node', async () => {
+       const mainWorkflow = createSubgraphWorkflow();
+       const subWorkflow = createSubWorkflow();
+
+       const graph = GraphBuilder.build(mainWorkflow);
+
+       const workflowRegistry = {
+         get: (id: string) => {
+           if (id === 'subwf1') {
+             return subWorkflow;
+           }
+           return undefined;
+         },
+         registerSubgraphRelationship: jest.fn(),
+       };
+
+       const result = await GraphBuilder.processSubgraphs(graph, workflowRegistry);
+
+       expect(result.success).toBe(true);
+
+       // Find the namespaced start node
+       const subStartId = result.nodeIdMapping.get('subStart');
+       expect(subStartId).toBeDefined();
+
+       // Check that the incoming edge from 'start' now points to the namespaced start node
+       const incomingEdges = graph.getIncomingEdges(subStartId!);
+       expect(incomingEdges.length).toBeGreaterThan(0);
+       expect(incomingEdges[0]!.sourceNodeId).toBe('start');
+     });
+
+    it('should connect outgoing edges from subgraph end nodes', async () => {
       const mainWorkflow = createSubgraphWorkflow();
       const subWorkflow = createSubWorkflow();
 
@@ -775,132 +909,7 @@ describe('GraphBuilder', () => {
         registerSubgraphRelationship: jest.fn(),
       };
 
-      const result = GraphBuilder.processSubgraphs(graph, workflowRegistry);
-
-      expect(result.success).toBe(true);
-      expect(result.nodeIdMapping.size).toBeGreaterThan(0);
-
-      // Check that original IDs are mapped to namespaced IDs
-      const subStartMapping = result.nodeIdMapping.get('subStart');
-      expect(subStartMapping).toBeDefined();
-      expect(subStartMapping).toContain('sg_'); // Namespace prefix contains 'sg_'
-      expect(subStartMapping).toContain('subStart');
-    });
-
-    it('should create namespaced edge IDs', () => {
-      const mainWorkflow = createSubgraphWorkflow();
-      const subWorkflow = createSubWorkflow();
-
-      const graph = GraphBuilder.build(mainWorkflow);
-
-      const workflowRegistry = {
-        get: (id: string) => {
-          if (id === 'subwf1') {
-            return subWorkflow;
-          }
-          return undefined;
-        },
-        registerSubgraphRelationship: jest.fn(),
-      };
-
-      const result = GraphBuilder.processSubgraphs(graph, workflowRegistry);
-
-      expect(result.success).toBe(true);
-      expect(result.edgeIdMapping.size).toBeGreaterThan(0);
-
-      // Check that original edge IDs are mapped to namespaced IDs
-      const subE1Mapping = result.edgeIdMapping.get('subE1');
-      expect(subE1Mapping).toBeDefined();
-      expect(subE1Mapping).toContain('sg_'); // Namespace prefix contains 'sg_'
-      expect(subE1Mapping).toContain('subE1');
-    });
-
-    it('should add boundary metadata to start and end nodes', () => {
-      const mainWorkflow = createSubgraphWorkflow();
-      const subWorkflow = createSubWorkflow();
-
-      const graph = GraphBuilder.build(mainWorkflow);
-
-      const workflowRegistry = {
-        get: (id: string) => {
-          if (id === 'subwf1') {
-            return subWorkflow;
-          }
-          return undefined;
-        },
-        registerSubgraphRelationship: jest.fn(),
-      };
-
-      const result = GraphBuilder.processSubgraphs(graph, workflowRegistry);
-
-      expect(result.success).toBe(true);
-
-      // Find the namespaced start node
-      const subStartId = result.nodeIdMapping.get('subStart');
-      expect(subStartId).toBeDefined();
-
-      const subStartNode = graph.getNode(subStartId!);
-      expect(subStartNode).toBeDefined();
-      expect(subStartNode?.internalMetadata).toBeDefined();
-      expect(subStartNode?.internalMetadata?.['subgraphBoundaryType']).toBe('entry');
-
-      // Find the namespaced end node
-      const subEndId = result.nodeIdMapping.get('subEnd');
-      expect(subEndId).toBeDefined();
-
-      const subEndNode = graph.getNode(subEndId!);
-      expect(subEndNode).toBeDefined();
-      expect(subEndNode?.internalMetadata).toBeDefined();
-      expect(subEndNode?.internalMetadata?.['subgraphBoundaryType']).toBe('exit');
-    });
-
-    it('should connect incoming edges to subgraph start node', () => {
-      const mainWorkflow = createSubgraphWorkflow();
-      const subWorkflow = createSubWorkflow();
-
-      const graph = GraphBuilder.build(mainWorkflow);
-
-      const workflowRegistry = {
-        get: (id: string) => {
-          if (id === 'subwf1') {
-            return subWorkflow;
-          }
-          return undefined;
-        },
-        registerSubgraphRelationship: jest.fn(),
-      };
-
-      const result = GraphBuilder.processSubgraphs(graph, workflowRegistry);
-
-      expect(result.success).toBe(true);
-
-      // Find the namespaced start node
-      const subStartId = result.nodeIdMapping.get('subStart');
-      expect(subStartId).toBeDefined();
-
-      // Check that the incoming edge from 'start' now points to the namespaced start node
-      const incomingEdges = graph.getIncomingEdges(subStartId!);
-      expect(incomingEdges.length).toBeGreaterThan(0);
-      expect(incomingEdges[0]!.sourceNodeId).toBe('start');
-    });
-
-    it('should connect outgoing edges from subgraph end nodes', () => {
-      const mainWorkflow = createSubgraphWorkflow();
-      const subWorkflow = createSubWorkflow();
-
-      const graph = GraphBuilder.build(mainWorkflow);
-
-      const workflowRegistry = {
-        get: (id: string) => {
-          if (id === 'subwf1') {
-            return subWorkflow;
-          }
-          return undefined;
-        },
-        registerSubgraphRelationship: jest.fn(),
-      };
-
-      const result = GraphBuilder.processSubgraphs(graph, workflowRegistry);
+      const result = await GraphBuilder.processSubgraphs(graph, workflowRegistry);
 
       expect(result.success).toBe(true);
 
@@ -912,9 +921,9 @@ describe('GraphBuilder', () => {
       const outgoingEdges = graph.getOutgoingEdges(subEndId!);
       expect(outgoingEdges.length).toBeGreaterThan(0);
       expect(outgoingEdges[0]!.targetNodeId).toBe('end');
-    });
+      });
 
-    it('should register subgraph relationship', () => {
+      it('should register subgraph relationship', async () => {
       const mainWorkflow = createSubgraphWorkflow();
       const subWorkflow = createSubWorkflow();
 
@@ -932,16 +941,16 @@ describe('GraphBuilder', () => {
         registerSubgraphRelationship,
       };
 
-      GraphBuilder.processSubgraphs(graph, workflowRegistry);
+      await GraphBuilder.processSubgraphs(graph, workflowRegistry);
 
       expect(registerSubgraphRelationship).toHaveBeenCalledWith(
         'wf4',
         'subgraph',
         'subwf1'
       );
-    });
+      });
 
-    it('should handle workflow with no subgraph nodes', () => {
+      it('should handle workflow with no subgraph nodes', async () => {
       const workflow = createSimpleWorkflow();
       const graph = GraphBuilder.build(workflow);
 
@@ -950,12 +959,12 @@ describe('GraphBuilder', () => {
         registerSubgraphRelationship: jest.fn(),
       };
 
-      const result = GraphBuilder.processSubgraphs(graph, workflowRegistry);
+      const result = await GraphBuilder.processSubgraphs(graph, workflowRegistry);
 
       expect(result.success).toBe(true);
       expect(result.addedNodeIds.length).toBe(0);
       expect(result.removedNodeIds.length).toBe(0);
       expect(result.subworkflowIds.length).toBe(0);
-    });
+      });
   });
 });

@@ -129,8 +129,8 @@ export function convertToolsByProvider(
     case 'ANTHROPIC':
       return convertToolsToAnthropicFormat(tools);
     case 'GEMINI_NATIVE':
-    case 'GEMINI_OPENAI':
       return convertToolsToGeminiFormat(tools);
+    case 'GEMINI_OPENAI':
     case 'OPENAI_CHAT':
     case 'OPENAI_RESPONSE':
     default:
