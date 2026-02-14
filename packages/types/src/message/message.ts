@@ -4,9 +4,14 @@
  */
 
 /**
- * 消息角色
+ * 消息角色枚举
  */
-export type MessageRole = 'system' | 'user' | 'assistant' | 'tool';
+export enum MessageRole {
+  SYSTEM = 'system',
+  USER = 'user',
+  ASSISTANT = 'assistant',
+  TOOL = 'tool'
+}
 
 /**
  * 消息内容类型

@@ -4,8 +4,8 @@
  */
 
 import type { Message } from './message';
-import type { MessageArrayState, MessageArrayStats } from './message-array';
 import type { MessageMarkMap } from './message-mark-map';
+import { MessageRole } from './message';
 
 /**
  * 消息操作类型
@@ -68,18 +68,18 @@ export interface ReplaceMessageOperation extends MessageOperationConfig {
  */
 export interface TruncateMessageOperation extends MessageOperationConfig {
   operation: 'TRUNCATE';
-  /** 保留前N条消息 */
-  keepFirst?: number;
-  /** 保留后N条消息 */
-  keepLast?: number;
-  /** 删除前N条消息 */
-  removeFirst?: number;
-  /** 删除后N条消息 */
-  removeLast?: number;
-  /** 保留消息的索引范围 [start, end) */
-  range?: { start: number; end: number };
-  /** 按角色过滤后再截断 */
-  role?: Message['role'];
+
+  /** 截断策略（枚举） */
+  strategy:
+  | { type: 'KEEP_FIRST'; count: number }
+  | { type: 'KEEP_LAST'; count: number }
+  | { type: 'REMOVE_FIRST'; count: number }
+  | { type: 'REMOVE_LAST'; count: number }
+  | { type: 'RANGE'; start: number; end: number };
+
+  /** 角色过滤（在执行截断前先过滤出指定角色的消息） */
+  role?: MessageRole;
+
   /** 截断后是否开始新批次 */
   createNewBatch?: boolean;
 }

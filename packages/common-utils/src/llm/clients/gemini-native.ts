@@ -13,6 +13,7 @@ import type {
   LLMMessage,
   LLMToolCall
 } from '@modular-agent/types';
+import { MessageRole } from '@modular-agent/types';
 import { generateId } from '../../utils';
 import { convertToolsToGeminiFormat } from '../../tool';
 import { extractAndFilterSystemMessages } from '../message-helper';
@@ -166,7 +167,7 @@ export class GeminiNativeClient extends BaseLLMClient {
       model: this.profile.model,
       content,
       message: {
-        role: 'assistant',
+        role: MessageRole.ASSISTANT,
         content,
         toolCalls: toolCalls.length > 0 ? toolCalls : undefined
       },
@@ -223,7 +224,7 @@ export class GeminiNativeClient extends BaseLLMClient {
       model: this.profile.model,
       content,
       message: {
-        role: 'assistant',
+        role: MessageRole.ASSISTANT,
         content,
         toolCalls: toolCalls.length > 0 ? toolCalls : undefined
       },

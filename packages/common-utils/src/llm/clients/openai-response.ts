@@ -14,6 +14,7 @@ import type {
   LLMMessage,
   LLMToolCall
 } from '@modular-agent/types';
+import { MessageRole } from '@modular-agent/types';
 import { convertToolsToOpenAIFormat } from '../../tool';
 
 /**
@@ -129,7 +130,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
       model: data.model,
       content: lastOutput.content?.[0]?.text || '',
       message: {
-        role: 'assistant',
+        role: MessageRole.ASSISTANT,
         content: lastOutput.content?.[0]?.text || '',
         toolCalls: lastOutput.tool_calls ? this.parseToolCalls(lastOutput.tool_calls) : undefined
       },
@@ -161,7 +162,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
       model: data.model,
       content: lastOutput.content?.[0]?.text || '',
       message: {
-        role: 'assistant',
+        role: MessageRole.ASSISTANT,
         content: lastOutput.content?.[0]?.text || '',
         toolCalls: lastOutput.tool_calls ? this.parseToolCalls(lastOutput.tool_calls) : undefined
       },

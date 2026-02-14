@@ -14,6 +14,7 @@ import type {
   LLMMessage,
   LLMToolCall
 } from '@modular-agent/types';
+import { MessageRole } from '@modular-agent/types';
 import { generateId } from '../../utils';
 import { convertToolsToOpenAIFormat } from '../../tool';
 
@@ -152,7 +153,7 @@ export class GeminiOpenAIClient extends BaseLLMClient {
       model: this.profile.model,
       content,
       message: {
-        role: 'assistant',
+        role: MessageRole.ASSISTANT,
         content,
         toolCalls: toolCalls.length > 0 ? toolCalls : undefined
       },
@@ -188,7 +189,7 @@ export class GeminiOpenAIClient extends BaseLLMClient {
       model: this.profile.model,
       content,
       message: {
-        role: 'assistant',
+        role: MessageRole.ASSISTANT,
         content,
         toolCalls: toolCalls.length > 0 ? toolCalls : undefined
       },

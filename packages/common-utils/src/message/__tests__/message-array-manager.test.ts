@@ -12,6 +12,7 @@ import type {
   FilterMessageOperation,
   RollbackMessageOperation
 } from '@modular-agent/types';
+import { MessageRole } from '@modular-agent/types';
 import { MessageArrayManager } from '../message-array-manager';
 
 describe('MessageArrayManager', () => {
@@ -23,9 +24,9 @@ describe('MessageArrayManager', () => {
   });
 
   const initialMessages: Message[] = [
-    createMockMessage('system', 'You are a helpful assistant'),
-    createMockMessage('user', 'Hello'),
-    createMockMessage('assistant', 'Hi there!')
+    createMockMessage(MessageRole.SYSTEM, 'You are a helpful assistant'),
+    createMockMessage(MessageRole.USER, 'Hello'),
+    createMockMessage(MessageRole.ASSISTANT, 'Hi there!')
   ];
 
   describe('初始化', () => {
@@ -53,7 +54,7 @@ describe('MessageArrayManager', () => {
   describe('APPEND 操作', () => {
     it('应该正确追加消息（不创建新批次）', () => {
       const manager = new MessageArrayManager(initialMessages);
-      const newMessages = [createMockMessage('user', 'How are you?')];
+      const newMessages = [createMockMessage(MessageRole.USER, 'How are you?')];
       
       const operation: AppendMessageOperation = {
         operation: 'APPEND',
@@ -73,8 +74,8 @@ describe('MessageArrayManager', () => {
     it('应该支持批量追加', () => {
       const manager = new MessageArrayManager(initialMessages);
       const newMessages = [
-        createMockMessage('user', 'First'),
-        createMockMessage('user', 'Second')
+        createMockMessage(MessageRole.USER, 'First'),
+        createMockMessage(MessageRole.USER, 'Second')
       ];
       
       const operation: AppendMessageOperation = {
@@ -93,7 +94,7 @@ describe('MessageArrayManager', () => {
   describe('INSERT 操作', () => {
     it('应该正确在中间插入消息（创建新批次）', () => {
       const manager = new MessageArrayManager(initialMessages);
-      const newMessage = createMockMessage('user', 'Inserted message');
+      const newMessage = createMockMessage(MessageRole.USER, 'Inserted message');
       
       const operation: InsertMessageOperation = {
         operation: 'INSERT',
@@ -113,7 +114,7 @@ describe('MessageArrayManager', () => {
 
     it('应该在开头插入消息', () => {
       const manager = new MessageArrayManager(initialMessages);
-      const newMessage = createMockMessage('system', 'New system message');
+      const newMessage = createMockMessage(MessageRole.SYSTEM, 'New system message');
       
       const operation: InsertMessageOperation = {
         operation: 'INSERT',
@@ -129,7 +130,7 @@ describe('MessageArrayManager', () => {
 
     it('应该在末尾插入消息', () => {
       const manager = new MessageArrayManager(initialMessages);
-      const newMessage = createMockMessage('user', 'Last message');
+      const newMessage = createMockMessage(MessageRole.USER, 'Last message');
       
       const operation: InsertMessageOperation = {
         operation: 'INSERT',
@@ -149,7 +150,7 @@ describe('MessageArrayManager', () => {
         const operation: InsertMessageOperation = {
           operation: 'INSERT',
           position: -1,
-          messages: [createMockMessage('user', 'test')]
+          messages: [createMockMessage(MessageRole.USER, 'test')]
         };
         manager.execute(operation);
       }).toThrow('Invalid insert position');
@@ -158,7 +159,7 @@ describe('MessageArrayManager', () => {
         const operation: InsertMessageOperation = {
           operation: 'INSERT',
           position: 10,
-          messages: [createMockMessage('user', 'test')]
+          messages: [createMockMessage(MessageRole.USER, 'test')]
         };
         manager.execute(operation);
       }).toThrow('Invalid insert position');
@@ -170,7 +171,7 @@ describe('MessageArrayManager', () => {
       const operation: InsertMessageOperation = {
         operation: 'INSERT',
         position: 1,
-        messages: [createMockMessage('user', 'test')]
+        messages: [createMockMessage(MessageRole.USER, 'test')]
       };
       
       manager.execute(operation);
@@ -185,7 +186,7 @@ describe('MessageArrayManager', () => {
   describe('REPLACE 操作', () => {
     it('应该正确替换消息（创建新批次）', () => {
       const manager = new MessageArrayManager(initialMessages);
-      const newMessage = createMockMessage('user', 'Replaced message');
+      const newMessage = createMockMessage(MessageRole.USER, 'Replaced message');
       
       const operation: ReplaceMessageOperation = {
         operation: 'REPLACE',
@@ -209,7 +210,7 @@ describe('MessageArrayManager', () => {
         const operation: ReplaceMessageOperation = {
           operation: 'REPLACE',
           index: -1,
-          message: createMockMessage('user', 'test')
+          message: createMockMessage(MessageRole.USER, 'test')
         };
         manager.execute(operation);
       }).toThrow('Invalid replace index');
@@ -218,7 +219,7 @@ describe('MessageArrayManager', () => {
         const operation: ReplaceMessageOperation = {
           operation: 'REPLACE',
           index: 10,
-          message: createMockMessage('user', 'test')
+          message: createMockMessage(MessageRole.USER, 'test')
         };
         manager.execute(operation);
       }).toThrow('Invalid replace index');
@@ -231,7 +232,7 @@ describe('MessageArrayManager', () => {
       
       const operation: TruncateMessageOperation = {
         operation: 'TRUNCATE',
-        keepFirst: 2
+        strategy: { type: 'KEEP_FIRST', count: 2 }
       };
       
       const result = manager.execute(operation);
@@ -246,7 +247,7 @@ describe('MessageArrayManager', () => {
       
       const operation: TruncateMessageOperation = {
         operation: 'TRUNCATE',
-        keepLast: 2
+        strategy: { type: 'KEEP_LAST', count: 2 }
       };
       
       const result = manager.execute(operation);
@@ -261,7 +262,7 @@ describe('MessageArrayManager', () => {
       
       const operation: TruncateMessageOperation = {
         operation: 'TRUNCATE',
-        removeFirst: 1
+        strategy: { type: 'REMOVE_FIRST', count: 1 }
       };
       
       const result = manager.execute(operation);
@@ -275,7 +276,7 @@ describe('MessageArrayManager', () => {
       
       const operation: TruncateMessageOperation = {
         operation: 'TRUNCATE',
-        removeLast: 1
+        strategy: { type: 'REMOVE_LAST', count: 1 }
       };
       
       const result = manager.execute(operation);
@@ -289,7 +290,7 @@ describe('MessageArrayManager', () => {
       
       const operation: TruncateMessageOperation = {
         operation: 'TRUNCATE',
-        range: { start: 1, end: 2 }
+        strategy: { type: 'RANGE', start: 1, end: 2 }
       };
       
       const result = manager.execute(operation);
@@ -303,14 +304,14 @@ describe('MessageArrayManager', () => {
       
       const operation: TruncateMessageOperation = {
         operation: 'TRUNCATE',
-        role: 'user',
-        keepFirst: 1
+        strategy: { type: 'KEEP_FIRST', count: 1 },
+        role: MessageRole.USER
       };
       
       const result = manager.execute(operation);
       
       expect(result.messages).toHaveLength(1);
-      expect(result.messages[0]?.role).toBe('user');
+      expect(result.messages[0]?.role).toBe(MessageRole.USER);
     });
   });
 
@@ -327,7 +328,7 @@ describe('MessageArrayManager', () => {
       
       const state = manager.getState();
       expect(result.messages).toHaveLength(1);
-      expect(result.messages[0]?.role).toBe('system');
+      expect(result.messages[0]?.role).toBe(MessageRole.SYSTEM);
       expect(result.affectedBatchIndex).toBe(1);
       expect(state.batchSnapshots).toHaveLength(1);
     });
@@ -367,13 +368,13 @@ describe('MessageArrayManager', () => {
       
       const operation: FilterMessageOperation = {
         operation: 'FILTER',
-        roles: ['user', 'assistant']
+        roles: [MessageRole.USER, MessageRole.ASSISTANT]
       };
       
       const result = manager.execute(operation);
       
       expect(result.messages).toHaveLength(2);
-      expect(result.messages.every(msg => msg.role !== 'system')).toBe(true);
+      expect(result.messages.every(msg => msg.role !== MessageRole.SYSTEM)).toBe(true);
     });
 
     it('应该正确按内容关键词过滤（包含）', () => {
@@ -412,14 +413,14 @@ describe('MessageArrayManager', () => {
       
       const operation: FilterMessageOperation = {
         operation: 'FILTER',
-        roles: ['user', 'assistant'],
+        roles: [MessageRole.USER, MessageRole.ASSISTANT],
         contentContains: ['Hi']
       };
       
       const result = manager.execute(operation);
       
       expect(result.messages).toHaveLength(1);
-      expect(result.messages[0]?.role).toBe('assistant');
+      expect(result.messages[0]?.role).toBe(MessageRole.ASSISTANT);
     });
   });
 
@@ -431,13 +432,13 @@ describe('MessageArrayManager', () => {
       const insertOp: InsertMessageOperation = {
         operation: 'INSERT',
         position: 1,
-        messages: [createMockMessage('user', 'test')]
+        messages: [createMockMessage(MessageRole.USER, 'test')]
       };
       manager.execute(insertOp);
       
       const appendOp: AppendMessageOperation = {
         operation: 'APPEND',
-        messages: [createMockMessage('user', 'another')]
+        messages: [createMockMessage(MessageRole.USER, 'another')]
       };
       manager.execute(appendOp);
       
@@ -480,7 +481,7 @@ describe('MessageArrayManager', () => {
       const operation: InsertMessageOperation = {
         operation: 'INSERT',
         position: 1,
-        messages: [createMockMessage('user', 'test')]
+        messages: [createMockMessage(MessageRole.USER, 'test')]
       };
       manager.execute(operation);
       
@@ -510,7 +511,7 @@ describe('MessageArrayManager', () => {
       const operation: InsertMessageOperation = {
         operation: 'INSERT',
         position: 1,
-        messages: [createMockMessage('user', 'test')]
+        messages: [createMockMessage(MessageRole.USER, 'test')]
       };
       manager.execute(operation);
       
@@ -539,7 +540,7 @@ describe('MessageArrayManager', () => {
       const operation: InsertMessageOperation = {
         operation: 'INSERT',
         position: 1,
-        messages: [createMockMessage('user', 'test')]
+        messages: [createMockMessage(MessageRole.USER, 'test')]
       };
       manager.execute(operation);
       
@@ -566,14 +567,14 @@ describe('MessageArrayManager', () => {
       const insertOp: InsertMessageOperation = {
         operation: 'INSERT',
         position: 1,
-        messages: [createMockMessage('user', 'inserted')]
+        messages: [createMockMessage(MessageRole.USER, 'inserted')]
       };
       manager.execute(insertOp);
       
       // 操作2：追加
       const appendOp: AppendMessageOperation = {
         operation: 'APPEND',
-        messages: [createMockMessage('user', 'appended')]
+        messages: [createMockMessage(MessageRole.USER, 'appended')]
       };
       manager.execute(appendOp);
       
@@ -581,7 +582,7 @@ describe('MessageArrayManager', () => {
       const replaceOp: ReplaceMessageOperation = {
         operation: 'REPLACE',
         index: 2,
-        message: createMockMessage('assistant', 'replaced')
+        message: createMockMessage(MessageRole.ASSISTANT, 'replaced')
       };
       manager.execute(replaceOp);
       
@@ -602,7 +603,7 @@ describe('MessageArrayManager', () => {
       
       const operation: AppendMessageOperation = {
         operation: 'APPEND',
-        messages: [createMockMessage('user', 'first')]
+        messages: [createMockMessage(MessageRole.USER, 'first')]
       };
       const result = manager.execute(operation);
       

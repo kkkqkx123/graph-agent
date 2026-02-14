@@ -13,6 +13,7 @@ import type {
   LLMMessage,
   LLMToolCall
 } from '@modular-agent/types';
+import { MessageRole } from '@modular-agent/types';
 import { convertToolsToAnthropicFormat } from '../../tool';
 import { extractAndFilterSystemMessages } from '../message-helper';
 
@@ -153,7 +154,7 @@ export class AnthropicClient extends BaseLLMClient {
       model: data.model,
       content,
       message: {
-        role: 'assistant',
+        role: MessageRole.ASSISTANT,
         content,
         toolCalls
       },
@@ -185,7 +186,7 @@ export class AnthropicClient extends BaseLLMClient {
             model: this.profile.model,
             content: data.delta.text,
             message: {
-              role: 'assistant',
+              role: MessageRole.ASSISTANT,
               content: data.delta.text
             },
             finishReason: '',
@@ -210,7 +211,7 @@ export class AnthropicClient extends BaseLLMClient {
             model: this.profile.model,
             content: '',
             message: {
-              role: 'assistant',
+              role: MessageRole.ASSISTANT,
               content: '',
               toolCalls: [toolCall]
             },
@@ -229,7 +230,7 @@ export class AnthropicClient extends BaseLLMClient {
             model: this.profile.model,
             content: '',
             message: {
-              role: 'assistant',
+              role: MessageRole.ASSISTANT,
               content: ''
             },
             usage: {

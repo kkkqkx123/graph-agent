@@ -19,6 +19,7 @@ import type {
   RollbackMessageOperation,
   MessageMarkMap
 } from '@modular-agent/types';
+import { MessageRole } from '@modular-agent/types';
 
 /**
  * 消息数组管理器类
@@ -236,22 +237,31 @@ export class MessageArrayManager {
     // 执行截断操作
     let newMessages = [...this.state.messages];
     
-    // 按角色过滤
+    // 先按角色过滤（如果指定了 role）
     if (operation.role) {
       newMessages = newMessages.filter(msg => msg.role === operation.role);
     }
     
-    // 应用截断规则
-    if (operation.keepFirst !== undefined) {
-      newMessages = newMessages.slice(0, operation.keepFirst);
-    } else if (operation.keepLast !== undefined) {
-      newMessages = newMessages.slice(-operation.keepLast);
-    } else if (operation.removeFirst !== undefined) {
-      newMessages = newMessages.slice(operation.removeFirst);
-    } else if (operation.removeLast !== undefined) {
-      newMessages = newMessages.slice(0, -operation.removeLast);
-    } else if (operation.range) {
-      newMessages = newMessages.slice(operation.range.start, operation.range.end);
+    // 应用截断策略
+    const strategy = operation.strategy;
+    switch (strategy.type) {
+      case 'KEEP_FIRST':
+        newMessages = newMessages.slice(0, strategy.count);
+        break;
+      case 'KEEP_LAST':
+        newMessages = newMessages.slice(-strategy.count);
+        break;
+      case 'REMOVE_FIRST':
+        newMessages = newMessages.slice(strategy.count);
+        break;
+      case 'REMOVE_LAST':
+        newMessages = newMessages.slice(0, -strategy.count);
+        break;
+      case 'RANGE':
+        newMessages = newMessages.slice(strategy.start, strategy.end);
+        break;
+      default:
+        throw new Error(`Unknown strategy type: ${(strategy as any).type}`);
     }
     
     // 创建新批次

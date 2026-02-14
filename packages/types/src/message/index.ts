@@ -6,11 +6,12 @@
 // 消息基础类型
 export type {
   Message,
-  MessageRole,
   MessageContent,
   LLMMessage,
   LLMToolCall
 } from './message';
+
+export { MessageRole } from './message';
 
 // 批次快照类型
 export type {
