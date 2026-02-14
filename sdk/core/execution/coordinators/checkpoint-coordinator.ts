@@ -15,6 +15,7 @@ import { VariableStateManager } from '../managers/variable-state-manager';
 import { ThreadContext } from '../context/thread-context';
 import { ExecutionContext } from '../context/execution-context';
 import { generateId, now } from '@modular-agent/common-utils';
+import { graphRegistry } from '../../services/graph-registry';
 
 /**
  * 检查点依赖项
@@ -139,17 +140,17 @@ export class CheckpointCoordinator {
     // 步骤2：验证 checkpoint 完整性和兼容性
     CheckpointCoordinator.validateCheckpoint(checkpoint);
 
-    // 步骤3：从 WorkflowRegistry 获取 ProcessedWorkflowDefinition
-    // ProcessedWorkflowDefinition 包含完整的预处理后的图结构
-    const processedWorkflow = await workflowRegistry.ensureProcessed(checkpoint.workflowId);
+    // 步骤3：从 GraphRegistry 获取 PreprocessedGraph
+    // PreprocessedGraph 包含完整的预处理后的图结构
+    const processedWorkflow = await graphRegistry.ensureProcessed(checkpoint.workflowId);
     if (!processedWorkflow) {
       throw new WorkflowNotFoundError(`Processed workflow not found`, checkpoint.workflowId);
     }
 
-    // 从 ProcessedWorkflowDefinition 获取图结构
+    // PreprocessedGraph 本身就是 Graph，包含完整的图结构
     // 设计目的：恢复后的 Thread 需要完整的图结构(graph中存储的是合并后的工作流，完成了命名冲突的处理)
     // 来继续执行工作流（例如：查找节点、遍历边、执行图算法等）
-    const graph = processedWorkflow.graph;
+    const graph = processedWorkflow;
 
     // 步骤4：恢复 Thread 状态
     // 将 nodeResults Record 转换回数组格式

@@ -14,7 +14,7 @@ import type { Trigger } from '@modular-agent/types';
 import { TriggerActionType } from '@modular-agent/types';
 import type { Tool } from '@modular-agent/types';
 import { WorkflowType } from '@modular-agent/types';
-import type { ProcessedWorkflowDefinition } from '@modular-agent/types';
+import type { WorkflowDefinition } from '@modular-agent/types';
 
 describe('CheckpointConfigResolver', () => {
   let globalConfig: CheckpointConfig;
@@ -276,11 +276,11 @@ describe('CheckpointConfigResolver', () => {
     });
 
     describe('triggered子工作流检查点配置', () => {
-      // 创建mock的ProcessedWorkflowDefinition
-      const createMockProcessedWorkflow = (
+      // 创建mock的WorkflowDefinition
+      const createMockWorkflow = (
         type: WorkflowType,
         triggeredSubworkflowConfig?: TriggeredSubworkflowConfig
-      ): ProcessedWorkflowDefinition => {
+      ): WorkflowDefinition => {
         const workflowDefinition: any = {
           id: 'test-workflow',
           name: 'Test Workflow',
@@ -300,56 +300,13 @@ describe('CheckpointConfigResolver', () => {
           workflowDefinition.triggeredSubworkflowConfig = triggeredSubworkflowConfig;
         }
 
-        // 创建一个简单的mock对象，包含必要的属性
-        return {
-          type: type,
-          triggers: [],
-          graphAnalysis: {
-            hasCycles: false,
-            cycles: [],
-            topologicalOrder: [],
-            isDAG: true,
-            startNodes: [],
-            endNodes: [],
-            isolatedNodes: []
-          },
-          validationResult: {
-            isValid: true,
-            errors: [],
-            warnings: [],
-            validatedAt: Date.now()
-          },
-          subgraphMergeLogs: [],
-          processedAt: Date.now(),
-          hasSubgraphs: false,
-          subworkflowIds: new Set(),
-          topologicalOrder: [],
-          graph: {
-            nodes: new Map(),
-            edges: new Map(),
-            adjacencyList: new Map(),
-            reverseAdjacencyList: new Map()
-          },
-          get id() { return workflowDefinition.id; },
-          get name() { return workflowDefinition.name; },
-          get description() { return workflowDefinition.description; },
-          get nodes() { return workflowDefinition.nodes; },
-          get edges() { return workflowDefinition.edges; },
-          get variables() { return workflowDefinition.variables; },
-          get triggeredSubworkflowConfig() { return workflowDefinition.triggeredSubworkflowConfig; },
-          get config() { return workflowDefinition.config; },
-          get metadata() { return workflowDefinition.metadata; },
-          get version() { return workflowDefinition.version; },
-          get createdAt() { return workflowDefinition.createdAt; },
-          get updatedAt() { return workflowDefinition.updatedAt; },
-          get availableTools() { return workflowDefinition.availableTools; }
-        } as unknown as ProcessedWorkflowDefinition;
+        return workflowDefinition;
       };
 
-      let triggeredWorkflow: ProcessedWorkflowDefinition;
+      let triggeredWorkflow: WorkflowDefinition;
 
       beforeEach(() => {
-        triggeredWorkflow = createMockProcessedWorkflow(WorkflowType.TRIGGERED_SUBWORKFLOW);
+        triggeredWorkflow = createMockWorkflow(WorkflowType.TRIGGERED_SUBWORKFLOW);
       });
 
       it('应该默认不创建检查点对于triggered子工作流', () => {

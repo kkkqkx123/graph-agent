@@ -23,6 +23,7 @@ import {
   type ExecutedSubgraphResult
 } from '../triggered-subgraph-handler';
 import { ThreadExecutor } from '../../thread-executor';
+import { graphRegistry } from '../../../services/graph-registry';
 
 /**
  * 创建成功结果
@@ -97,11 +98,8 @@ export async function executeTriggeredSubgraphHandler(
       throw new ThreadContextNotFoundError(`Main thread context not found: ${threadId}`, threadId);
     }
 
-    // 获取工作流注册表
-    const workflowRegistry = context.getWorkflowRegistry();
-    
     // 确保triggered子工作流已完整预处理（包括引用展开）
-    const processedTriggeredWorkflow = await workflowRegistry.ensureProcessed(triggeredWorkflowId);
+    const processedTriggeredWorkflow = await graphRegistry.ensureProcessed(triggeredWorkflowId);
 
     if (!processedTriggeredWorkflow) {
       throw new WorkflowNotFoundError(`Triggered workflow not found: ${triggeredWorkflowId}`, triggeredWorkflowId);

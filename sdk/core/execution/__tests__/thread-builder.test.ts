@@ -7,7 +7,7 @@ import { ThreadContext } from '../context/thread-context';
 import { ExecutionContext } from '../context/execution-context';
 import { ValidationError } from '@modular-agent/types';
 import { NodeType } from '@modular-agent/types';
-import { ProcessedWorkflowDefinition } from '@modular-agent/types';
+import { PreprocessedGraphData } from '../../entities/preprocessed-graph-data';
 import { GraphData } from '../../entities/graph-data';
 import type { ThreadOptions } from '@modular-agent/types';
 
@@ -184,40 +184,47 @@ describe('ThreadBuilder', () => {
         originalNode: workflow.nodes[1]
       });
 
-      // 预处理后的元数据
-      const processedData = {
-        processedAt: Date.now(),
-        hasSubgraphs: false,
-        graphAnalysis: {
-          cycleDetection: { hasCycle: false, cycleNodes: [], cycleEdges: [] },
-          reachability: {
-            reachableFromStart: new Set<string>(['start', 'end']),
-            reachableToEnd: new Set<string>(['start', 'end']),
-            unreachableNodes: new Set<string>(),
-            deadEndNodes: new Set<string>()
-          },
-          topologicalSort: { success: true, sortedNodes: ['start', 'end'] },
-          forkJoinValidation: {
-            isValid: true,
-            unpairedForks: [],
-            unpairedJoins: [],
-            pairs: new Map()
-          },
-          nodeStats: { total: 2, byType: new Map() },
-          edgeStats: { total: 0, byType: new Map() }
+      // 创建PreprocessedGraph
+      const processedWorkflow = new PreprocessedGraphData();
+      processedWorkflow.nodes = graph.nodes;
+      processedWorkflow.edges = graph.edges;
+      processedWorkflow.adjacencyList = graph.adjacencyList;
+      processedWorkflow.reverseAdjacencyList = graph.reverseAdjacencyList;
+      processedWorkflow.startNodeId = 'start';
+      processedWorkflow.endNodeIds.add('end');
+      processedWorkflow.workflowId = workflowId;
+      processedWorkflow.workflowVersion = workflow.version;
+      processedWorkflow.triggers = workflow.triggers;
+      processedWorkflow.variables = workflow.variables;
+      processedWorkflow.hasSubgraphs = false;
+      processedWorkflow.subworkflowIds = new Set<string>();
+      processedWorkflow.processedAt = Date.now();
+      processedWorkflow.graphAnalysis = {
+        cycleDetection: { hasCycle: false, cycleNodes: [], cycleEdges: [] },
+        reachability: {
+          reachableFromStart: new Set<string>(['start', 'end']),
+          reachableToEnd: new Set<string>(['start', 'end']),
+          unreachableNodes: new Set<string>(),
+          deadEndNodes: new Set<string>()
         },
-        validationResult: {
+        topologicalSort: { success: true, sortedNodes: ['start', 'end'] },
+        forkJoinValidation: {
           isValid: true,
-          errors: [],
-          warnings: [],
-          validatedAt: Date.now()
+          unpairedForks: [],
+          unpairedJoins: [],
+          pairs: new Map()
         },
-        subgraphMergeLogs: [],
-        subworkflowIds: new Set<string>(),
-        topologicalOrder: ['start', 'end'],
-        graph: graph
+        nodeStats: { total: 2, byType: new Map() },
+        edgeStats: { total: 0, byType: new Map() }
       };
-      const processedWorkflow = new ProcessedWorkflowDefinition(workflow, processedData);
+      processedWorkflow.validationResult = {
+        isValid: true,
+        errors: [],
+        warnings: [],
+        validatedAt: Date.now()
+      };
+      processedWorkflow.subgraphMergeLogs = [];
+      processedWorkflow.topologicalOrder = ['start', 'end'];
 
       workflowRegistry.addProcessedWorkflow(processedWorkflow);
 
@@ -290,39 +297,46 @@ describe('ThreadBuilder', () => {
         updatedAt: Date.now(),
         availableTools: { initial: new Set<string>() }
       };
-      const processedData = {
-        processedAt: Date.now(),
-        hasSubgraphs: false,
-        graphAnalysis: {
-          cycleDetection: { hasCycle: false, cycleNodes: [], cycleEdges: [] },
-          reachability: {
-            reachableFromStart: new Set<string>(['end']),
-            reachableToEnd: new Set<string>(['end']),
-            unreachableNodes: new Set<string>(),
-            deadEndNodes: new Set<string>()
-          },
-          topologicalSort: { success: true, sortedNodes: ['end'] },
-          forkJoinValidation: {
-            isValid: true,
-            unpairedForks: [],
-            unpairedJoins: [],
-            pairs: new Map()
-          },
-          nodeStats: { total: 1, byType: new Map() },
-          edgeStats: { total: 0, byType: new Map() }
+      // 创建PreprocessedGraph
+      const processedWorkflow = new PreprocessedGraphData();
+      processedWorkflow.nodes = new Map();
+      processedWorkflow.edges = new Map();
+      processedWorkflow.adjacencyList = new Map();
+      processedWorkflow.reverseAdjacencyList = new Map();
+      processedWorkflow.endNodeIds.add('end');
+      processedWorkflow.workflowId = workflowId;
+      processedWorkflow.workflowVersion = workflow.version;
+      processedWorkflow.triggers = workflow.triggers;
+      processedWorkflow.variables = workflow.variables;
+      processedWorkflow.hasSubgraphs = false;
+      processedWorkflow.subworkflowIds = new Set<string>();
+      processedWorkflow.processedAt = Date.now();
+      processedWorkflow.graphAnalysis = {
+        cycleDetection: { hasCycle: false, cycleNodes: [], cycleEdges: [] },
+        reachability: {
+          reachableFromStart: new Set<string>(['end']),
+          reachableToEnd: new Set<string>(['end']),
+          unreachableNodes: new Set<string>(),
+          deadEndNodes: new Set<string>()
         },
-        validationResult: {
+        topologicalSort: { success: true, sortedNodes: ['end'] },
+        forkJoinValidation: {
           isValid: true,
-          errors: [],
-          warnings: [],
-          validatedAt: Date.now()
+          unpairedForks: [],
+          unpairedJoins: [],
+          pairs: new Map()
         },
-        subgraphMergeLogs: [],
-        subworkflowIds: new Set<string>(),
-        topologicalOrder: ['end'],
-        graph: new GraphData()
+        nodeStats: { total: 1, byType: new Map() },
+        edgeStats: { total: 0, byType: new Map() }
       };
-      const processedWorkflow = new ProcessedWorkflowDefinition(workflow, processedData);
+      processedWorkflow.validationResult = {
+        isValid: true,
+        errors: [],
+        warnings: [],
+        validatedAt: Date.now()
+      };
+      processedWorkflow.subgraphMergeLogs = [];
+      processedWorkflow.topologicalOrder = ['end'];
 
       workflowRegistry.addProcessedWorkflow(processedWorkflow);
 
@@ -370,40 +384,46 @@ describe('ThreadBuilder', () => {
         originalNode: workflow.nodes[0]
       });
 
-      // 预处理后的元数据
-      const processedData = {
-        processedAt: Date.now(),
-        hasSubgraphs: false,
-        graphAnalysis: {
-          cycleDetection: { hasCycle: false, cycleNodes: [], cycleEdges: [] },
-          reachability: {
-            reachableFromStart: new Set<string>(['start']),
-            reachableToEnd: new Set<string>(['start']),
-            unreachableNodes: new Set<string>(),
-            deadEndNodes: new Set<string>()
-          },
-          topologicalSort: { success: true, sortedNodes: ['start'] },
-          forkJoinValidation: {
-            isValid: true,
-            unpairedForks: [],
-            unpairedJoins: [],
-            pairs: new Map()
-          },
-          nodeStats: { total: 1, byType: new Map() },
-          edgeStats: { total: 0, byType: new Map() }
+      // 创建PreprocessedGraph
+      const processedWorkflow = new PreprocessedGraphData();
+      processedWorkflow.nodes = graph.nodes;
+      processedWorkflow.edges = graph.edges;
+      processedWorkflow.adjacencyList = graph.adjacencyList;
+      processedWorkflow.reverseAdjacencyList = graph.reverseAdjacencyList;
+      processedWorkflow.startNodeId = 'start';
+      processedWorkflow.workflowId = workflowId;
+      processedWorkflow.workflowVersion = workflow.version;
+      processedWorkflow.triggers = workflow.triggers;
+      processedWorkflow.variables = workflow.variables;
+      processedWorkflow.hasSubgraphs = false;
+      processedWorkflow.subworkflowIds = new Set<string>();
+      processedWorkflow.processedAt = Date.now();
+      processedWorkflow.graphAnalysis = {
+        cycleDetection: { hasCycle: false, cycleNodes: [], cycleEdges: [] },
+        reachability: {
+          reachableFromStart: new Set<string>(['start']),
+          reachableToEnd: new Set<string>(['start']),
+          unreachableNodes: new Set<string>(),
+          deadEndNodes: new Set<string>()
         },
-        validationResult: {
+        topologicalSort: { success: true, sortedNodes: ['start'] },
+        forkJoinValidation: {
           isValid: true,
-          errors: [],
-          warnings: [],
-          validatedAt: Date.now()
+          unpairedForks: [],
+          unpairedJoins: [],
+          pairs: new Map()
         },
-        subgraphMergeLogs: [],
-        subworkflowIds: new Set<string>(),
-        topologicalOrder: ['start'],
-        graph: graph
+        nodeStats: { total: 1, byType: new Map() },
+        edgeStats: { total: 0, byType: new Map() }
       };
-      const processedWorkflow = new ProcessedWorkflowDefinition(workflow, processedData);
+      processedWorkflow.validationResult = {
+        isValid: true,
+        errors: [],
+        warnings: [],
+        validatedAt: Date.now()
+      };
+      processedWorkflow.subgraphMergeLogs = [];
+      processedWorkflow.topologicalOrder = ['start'];
 
       workflowRegistry.addProcessedWorkflow(processedWorkflow);
 
@@ -525,7 +545,7 @@ describe('ThreadBuilder', () => {
       expect(copiedThread.variableScopes.global).toBe(sourceThreadContext.thread.variableScopes.global); // 引用共享
       expect(copiedThread.variableScopes.thread).not.toBe(sourceThreadContext.thread.variableScopes.thread); // 深拷贝
       expect(copiedThread.variableScopes.thread).toEqual(sourceThreadContext.thread.variableScopes.thread);
-      expect(copiedThread.variableScopes.subgraph).toEqual([]); // 清空
+      expect(copiedThread.variableScopes.local).toEqual([]); // 清空
       expect(copiedThread.variableScopes.loop).toEqual([]); // 清空
     });
   });
@@ -587,7 +607,7 @@ describe('ThreadBuilder', () => {
       expect(forkThread.variableScopes.global).toBe(parentThreadContext.thread.variableScopes.global); // 引用共享
       expect(forkThread.variableScopes.thread).not.toBe(parentThreadContext.thread.variableScopes.thread); // 深拷贝
       expect(forkThread.variableScopes.thread).toEqual(parentThreadContext.thread.variableScopes.thread);
-      expect(forkThread.variableScopes.subgraph).toEqual([]); // 清空
+      expect(forkThread.variableScopes.local).toEqual([]); // 清空
       expect(forkThread.variableScopes.loop).toEqual([]); // 清空
 
       // 验证Fork/Join上下文

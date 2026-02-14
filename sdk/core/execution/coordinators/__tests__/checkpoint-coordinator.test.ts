@@ -114,20 +114,26 @@ describe('CheckpointCoordinator', () => {
   let mockProcessedWorkflow: any;
   let dependencies: CheckpointDependencies;
 
-  // 创建 mock ProcessedWorkflowDefinition（在 beforeEach 外部）
+  // 创建 mock PreprocessedGraph（在 beforeEach 外部）
   mockProcessedWorkflow = {
-    workflow: {} as WorkflowDefinition,
-    graph: {
-      getNode: jest.fn()
-    } as any,
+    workflowId: 'test-workflow',
+    workflowVersion: '1.0.0',
+    nodes: new Map(),
+    edges: new Map(),
+    adjacencyList: new Map(),
+    reverseAdjacencyList: new Map(),
+    startNodeId: 'start',
+    endNodeIds: new Set(['end']),
     triggers: [],
+    variables: [],
     graphAnalysis: {},
     validationResult: { isValid: true },
     subgraphMergeLogs: [],
     processedAt: Date.now(),
     hasSubgraphs: false,
     subworkflowIds: new Set(),
-    topologicalOrder: []
+    topologicalOrder: [],
+    getNode: jest.fn()
   };
 
   beforeEach(() => {

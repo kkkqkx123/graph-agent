@@ -3,7 +3,7 @@
  * 处理检查点配置的优先级规则
  */
 
-import type { CheckpointConfig, ProcessedWorkflowDefinition } from '@modular-agent/types';
+import type { CheckpointConfig, WorkflowDefinition } from '@modular-agent/types';
 import { WorkflowType } from '@modular-agent/types';
 import type { Node, NodeHook } from '@modular-agent/types';
 import type { Trigger } from '@modular-agent/types';
@@ -41,7 +41,7 @@ export function resolveCheckpointConfig(
   triggerConfig: Trigger | undefined,
   toolConfig: Tool | undefined,
   context: CheckpointConfigContext,
-  workflow?: ProcessedWorkflowDefinition
+  workflow?: WorkflowDefinition
 ): CheckpointConfigResult {
   // 特殊处理：如果是triggered子工作流，默认不创建检查点
   if (workflow && workflow.type === WorkflowType.TRIGGERED_SUBWORKFLOW) {

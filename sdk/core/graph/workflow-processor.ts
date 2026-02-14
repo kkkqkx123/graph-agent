@@ -3,6 +3,7 @@
  * 负责工作流的预处理，包括节点展开、图构建、验证等
  * 基于现有 GraphBuilder 和 GraphValidator
  * 集成预处理ID映射方案
+ * 返回 PreprocessedGraph 而不是 ProcessedWorkflowDefinition
  */
 
 import type {
@@ -11,9 +12,8 @@ import type {
   SubgraphMergeLog,
   PreprocessValidationResult,
   ID,
-  Graph
+  PreprocessedGraph
 } from '@modular-agent/types';
-import { ProcessedWorkflowDefinition } from '@modular-agent/types';
 import type { Node } from '@modular-agent/types';
 import type { WorkflowTrigger } from '@modular-agent/types';
 import type { TriggerReference } from '@modular-agent/types';
@@ -23,8 +23,10 @@ import { nodeTemplateRegistry } from '../services/node-template-registry';
 import { triggerTemplateRegistry } from '../services/trigger-template-registry';
 import { WorkflowValidator } from '../validation/workflow-validator';
 import { PreprocessedWorkflowBuilder } from './preprocessed-workflow-builder';
+import { PreprocessedGraphData } from '../entities/preprocessed-graph-data';
 import { now } from '@modular-agent/common-utils';
 import { ConfigurationValidationError, NodeTemplateNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
+import { graphRegistry } from '../services/graph-registry';
 
 export interface ProcessOptions extends GraphBuildOptions {
   workflowRegistry?: any;
@@ -33,11 +35,12 @@ export interface ProcessOptions extends GraphBuildOptions {
 
 /**
  * 预处理工作流
+ * 返回 PreprocessedGraph 而不是 ProcessedWorkflowDefinition
  */
 export async function processWorkflow(
   workflow: WorkflowDefinition,
   options: ProcessOptions = {}
-): Promise<ProcessedWorkflowDefinition> {
+): Promise<PreprocessedGraph> {
   const validator = new WorkflowValidator();
 
   // 1. 验证工作流定义
@@ -145,7 +148,7 @@ export async function processWorkflow(
 
     for (const triggeredWorkflowId of triggeredWorkflowIds) {
       // 确保触发器引用的工作流已预处理
-      const processedTriggeredWorkflow = await options.workflowRegistry.ensureProcessed(triggeredWorkflowId);
+      const processedTriggeredWorkflow = await graphRegistry.ensureProcessed(triggeredWorkflowId);
 
       if (!processedTriggeredWorkflow) {
         throw new WorkflowNotFoundError(
@@ -187,24 +190,39 @@ export async function processWorkflow(
   const preprocessedBuilder = new PreprocessedWorkflowBuilder();
   const preprocessedResult = await preprocessedBuilder.build(expandedWorkflow, options.workflowRegistry);
   
-  // 12. 创建处理后的工作流定义
-  // 注意：buildResult.graph 是 GraphData 类型，实现了 Graph 接口
-  // graph字段直接包含在ProcessedWorkflowDefinition中，无需依赖GraphRegistry
-  return new ProcessedWorkflowDefinition(expandedWorkflow, {
-    triggers: expandedTriggers,
-    graphAnalysis,
-    validationResult: preprocessValidation,
-    subgraphMergeLogs,
-    processedAt: now(),
-    hasSubgraphs,
-    subworkflowIds,
-    topologicalOrder: graphAnalysis.topologicalSort.sortedNodes,
-    graph: preprocessedResult.graph,
-    idMapping: preprocessedResult.idMapping,
-    nodeConfigs: preprocessedResult.nodeConfigs,
-    triggerConfigs: preprocessedResult.triggerConfigs,
-    subgraphRelationships: preprocessedResult.subgraphRelationships,
-  });
+  // 12. 创建PreprocessedGraphData
+  const preprocessedGraph = new PreprocessedGraphData();
+  
+  // 复制图结构
+  preprocessedGraph.nodes = preprocessedResult.graph.nodes;
+  preprocessedGraph.edges = preprocessedResult.graph.edges;
+  preprocessedGraph.adjacencyList = preprocessedResult.graph.adjacencyList;
+  preprocessedGraph.reverseAdjacencyList = preprocessedResult.graph.reverseAdjacencyList;
+  preprocessedGraph.startNodeId = preprocessedResult.graph.startNodeId;
+  preprocessedGraph.endNodeIds = preprocessedResult.graph.endNodeIds;
+  
+  // 设置ID映射相关字段
+  preprocessedGraph.idMapping = preprocessedResult.idMapping;
+  preprocessedGraph.nodeConfigs = preprocessedResult.nodeConfigs;
+  preprocessedGraph.triggerConfigs = preprocessedResult.triggerConfigs;
+  preprocessedGraph.subgraphRelationships = preprocessedResult.subgraphRelationships;
+  
+  // 设置预处理元数据
+  preprocessedGraph.graphAnalysis = graphAnalysis;
+  preprocessedGraph.validationResult = preprocessValidation;
+  preprocessedGraph.topologicalOrder = graphAnalysis.topologicalSort.sortedNodes;
+  preprocessedGraph.subgraphMergeLogs = subgraphMergeLogs;
+  preprocessedGraph.processedAt = now();
+  
+  // 设置工作流元数据
+  preprocessedGraph.workflowId = expandedWorkflow.id;
+  preprocessedGraph.workflowVersion = expandedWorkflow.version;
+  preprocessedGraph.triggers = expandedTriggers;
+  preprocessedGraph.variables = expandedWorkflow.variables;
+  preprocessedGraph.hasSubgraphs = hasSubgraphs;
+  preprocessedGraph.subworkflowIds = subworkflowIds;
+  
+  return preprocessedGraph;
 }
 
 /**

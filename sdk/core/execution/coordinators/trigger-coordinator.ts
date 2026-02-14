@@ -39,6 +39,7 @@ import { CheckpointStateManager } from '../managers/checkpoint-state-manager';
 import { convertToTrigger } from '@modular-agent/types';
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils';
+import { graphRegistry } from '../../services/graph-registry';
 
 /**
  * TriggerCoordinator - 触发器协调器
@@ -337,14 +338,14 @@ export class TriggerCoordinator {
       return undefined;
     }
 
-    // 获取处理后的工作流定义
-    const processedWorkflow = this.workflowRegistry.getProcessed(targetWorkflowId);
+    // 获取处理后的图
+    const processedWorkflow = graphRegistry.get(targetWorkflowId);
     if (!processedWorkflow || !processedWorkflow.triggers) {
       return undefined;
     }
 
     // 查找触发器定义
-    return processedWorkflow.triggers.find(t => t.id === triggerId);
+    return processedWorkflow.triggers.find((t: any) => t.id === triggerId);
   }
 
   /**

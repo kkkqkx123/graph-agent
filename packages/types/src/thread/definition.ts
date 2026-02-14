@@ -3,7 +3,7 @@
  */
 
 import type { ID, Timestamp, Version, Metadata } from '../common';
-import type { Graph } from '../graph';
+import type { PreprocessedGraph } from '../graph';
 import type { ThreadStatus, ThreadType } from './status';
 import type { ForkJoinContext, TriggeredSubworkflowContext } from './context';
 import type { ThreadVariable } from './variables';
@@ -24,8 +24,8 @@ export interface Thread {
   status: ThreadStatus;
   /** 当前执行节点ID */
   currentNodeId: ID;
-  /** 工作流图结构（使用 Graph 接口） */
-  graph: Graph;
+  /** 预处理后的工作流图结构（使用 PreprocessedGraph 接口） */
+  graph: PreprocessedGraph;
   /** 变量数组（用于持久化和元数据） */
   variables: ThreadVariable[];
   /** 四级作用域变量存储 */

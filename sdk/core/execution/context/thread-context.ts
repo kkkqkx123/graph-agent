@@ -14,6 +14,7 @@
  * - 不管理执行状态（由 ExecutionState 负责）
  * - 不管理子工作流执行历史（由 SubgraphExecutionManager 负责）
  * - 直接依赖具体实现，不使用接口抽象
+ * - 不依赖 workflowRegistry，所有信息从 PreprocessedGraph 获取
  */
 
 import type { Thread, VariableScope } from '@modular-agent/types';
@@ -22,7 +23,6 @@ import type { TriggerRuntimeState } from '@modular-agent/types';
 import type { StatefulToolFactory } from '@modular-agent/types';
 import type { LLMMessage } from '@modular-agent/types';
 import type { MessageRole } from '@modular-agent/types';
-import type { WorkflowDefinition } from '@modular-agent/types';
 import { ConversationManager } from '../managers/conversation-manager';
 import { VariableCoordinator } from '../coordinators/variable-coordinator';
 import { VariableStateManager } from '../managers/variable-state-manager';
@@ -98,7 +98,7 @@ export class ThreadContext implements LifecycleCapable {
   private readonly threadRegistry: ThreadRegistry;
 
   /**
-   * 工作流注册表
+   * 工作流注册表（仅用于TriggerCoordinator查询触发器定义）
    */
   private readonly workflowRegistry: WorkflowRegistry;
 
@@ -132,7 +132,7 @@ export class ThreadContext implements LifecycleCapable {
    * @param thread Thread 实例
    * @param conversationManager 对话管理器
    * @param threadRegistry Thread 注册表
-   * @param workflowRegistry Workflow 注册表（可选）
+   * @param workflowRegistry Workflow 注册表（仅用于TriggerCoordinator）
    */
   constructor(
     thread: Thread,
@@ -898,13 +898,12 @@ export class ThreadContext implements LifecycleCapable {
   }
 
   /**
-   * 初始化可用工具（从workflow配置）
-   * @param workflow 工作流定义
+   * 初始化可用工具（从PreprocessedGraph）
+   * 注意：可用工具已在构造函数中从PreprocessedGraph初始化
    */
-  initializeAvailableTools(workflow: WorkflowDefinition): void {
-    if (workflow.availableTools?.initial) {
-      this.availableTools = new Set(workflow.availableTools.initial);
-    }
+  initializeAvailableTools(): void {
+    // 可用工具已在构造函数中从PreprocessedGraph初始化
+    // 此方法保留用于向后兼容，但不再需要参数
   }
 
   /**

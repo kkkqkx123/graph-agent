@@ -20,9 +20,11 @@ import type { LLMExecutor } from '../../core/execution/executors/llm-executor';
 import type { CodeService } from '../../core/services/code-service';
 import type { NodeTemplateRegistry } from '../../core/services/node-template-registry';
 import type { TriggerTemplateRegistry } from '../../core/services/trigger-template-registry';
+import type { GraphRegistry } from '../../core/services/graph-registry';
 import { codeService } from '../../core/services/code-service';
 import { nodeTemplateRegistry } from '../../core/services/node-template-registry';
 import { triggerTemplateRegistry } from '../../core/services/trigger-template-registry';
+import { graphRegistry } from '../../core/services/graph-registry';
 
 /**
  * API依赖管理类
@@ -100,6 +102,13 @@ export class APIDependencyManager {
    */
   getTriggerTemplateRegistry(): TriggerTemplateRegistry {
     return triggerTemplateRegistry;
+  }
+  
+  /**
+   * 获取图注册表
+   */
+  getGraphRegistry(): GraphRegistry {
+    return graphRegistry;
   }
   
   /**

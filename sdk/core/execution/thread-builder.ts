@@ -2,12 +2,12 @@
  * ThreadBuilder - Thread构建器
  * 负责从WorkflowRegistry获取WorkflowDefinition并创建ThreadContext实例
  * 提供Thread模板缓存和深拷贝支持
- * 支持使用预处理后的工作流定义和图导航
+ * 支持使用预处理后的图和图导航
  *
  * 使用 ExecutionContext 获取 WorkflowRegistry
  */
 
-import { ProcessedWorkflowDefinition } from '@modular-agent/types';
+import type { PreprocessedGraph } from '@modular-agent/types';
 import type { Thread, ThreadOptions, ThreadStatus } from '@modular-agent/types';
 import { ThreadType } from '@modular-agent/types';
 import { ConversationManager } from './managers/conversation-manager';
@@ -16,10 +16,11 @@ import { NodeType } from '@modular-agent/types';
 import { generateId, now as getCurrentTimestamp } from '@modular-agent/common-utils';
 import { VariableCoordinator } from './coordinators/variable-coordinator';
 import { VariableStateManager } from './managers/variable-state-manager';
-import { ValidationError, ExecutionError, RuntimeValidationError } from '@modular-agent/types';
+import { ExecutionError, RuntimeValidationError } from '@modular-agent/types';
 import { type WorkflowRegistry } from '../services/workflow-registry';
 import { ExecutionContext } from './context/execution-context';
 import { TriggerStatus } from '@modular-agent/types';
+import { graphRegistry } from '../services/graph-registry';
 
 /**
  * ThreadBuilder - Thread构建器
@@ -47,7 +48,7 @@ export class ThreadBuilder {
 
   /**
    * 从WorkflowRegistry获取工作流并构建ThreadContext
-   * 统一使用ProcessedWorkflowDefinition路径
+   * 统一使用PreprocessedGraph路径
    * @param workflowId 工作流ID
    * @param options 线程选项
    * @returns ThreadContext实例
@@ -57,38 +58,37 @@ export class ThreadBuilder {
     // 这会自动处理：
     // 1. 无依赖工作流：已在注册时预处理，直接返回缓存
     // 2. 有依赖工作流：延迟到此时预处理，确保所有依赖都已注册
-    const processedWorkflow = await this.workflowRegistry.ensureProcessed(workflowId);
+    const preprocessedGraph = await graphRegistry.ensureProcessed(workflowId);
 
-    // 从ProcessedWorkflowDefinition构建
-    return this.buildFromProcessedDefinition(processedWorkflow, options);
+    // 从PreprocessedGraph构建
+    return this.buildFromPreprocessedGraph(preprocessedGraph, options);
   }
 
   /**
-   * 从ProcessedWorkflowDefinition构建ThreadContext（内部方法）
-   * 使用预处理后的工作流定义和图导航
-   * @param processedWorkflow 处理后的工作流定义
+   * 从PreprocessedGraph构建ThreadContext（内部方法）
+   * 使用预处理后的图和图导航
+   * @param preprocessedGraph 预处理后的图
    * @param options 线程选项
    * @returns ThreadContext实例
    */
-  private async buildFromProcessedDefinition(processedWorkflow: ProcessedWorkflowDefinition, options: ThreadOptions = {}): Promise<ThreadContext> {
-    // 步骤1：验证处理后的工作流定义
-    if (!processedWorkflow.nodes || processedWorkflow.nodes.length === 0) {
-      throw new RuntimeValidationError('Processed workflow must have at least one node', { field: 'workflow.nodes' });
+  private async buildFromPreprocessedGraph(preprocessedGraph: PreprocessedGraph, options: ThreadOptions = {}): Promise<ThreadContext> {
+    // 步骤1：验证预处理后的图
+    if (!preprocessedGraph.nodes || preprocessedGraph.nodes.size === 0) {
+      throw new RuntimeValidationError('Preprocessed graph must have at least one node', { field: 'graph.nodes' });
     }
 
-    const startNode = processedWorkflow.nodes.find(n => n.type === NodeType.START);
+    const startNode = Array.from(preprocessedGraph.nodes.values()).find(n => n.type === NodeType.START);
     if (!startNode) {
-      throw new RuntimeValidationError('Processed workflow must have a START node', { field: 'workflow.nodes' });
+      throw new RuntimeValidationError('Preprocessed graph must have a START node', { field: 'graph.nodes' });
     }
 
-    const endNode = processedWorkflow.nodes.find(n => n.type === NodeType.END);
+    const endNode = Array.from(preprocessedGraph.nodes.values()).find(n => n.type === NodeType.END);
     if (!endNode) {
-      throw new RuntimeValidationError('Processed workflow must have an END node', { field: 'workflow.nodes' });
+      throw new RuntimeValidationError('Preprocessed graph must have an END node', { field: 'graph.nodes' });
     }
 
-    // 步骤2：从 ProcessedWorkflowDefinition 获取图实例
-    // ProcessedWorkflowDefinition 现在直接包含完整的图结构
-    const threadGraphData = processedWorkflow.graph;
+    // 步骤2：PreprocessedGraph 本身就是 Graph，包含完整的图结构
+    const threadGraphData = preprocessedGraph;
 
     // 步骤3：创建 Thread 实例
     const threadId = generateId();
@@ -96,8 +96,8 @@ export class ThreadBuilder {
 
     const thread: Partial<Thread> = {
       id: threadId,
-      workflowId: processedWorkflow.id,
-      workflowVersion: processedWorkflow.version,
+      workflowId: preprocessedGraph.workflowId,
+      workflowVersion: preprocessedGraph.workflowVersion,
       status: 'CREATED' as ThreadStatus,
       currentNodeId: startNode.id,
       graph: threadGraphData,
@@ -117,17 +117,17 @@ export class ThreadBuilder {
       shouldStop: false
     };
 
-    // 步骤4：从 WorkflowDefinition 初始化变量
-    this.variableCoordinator.initializeFromWorkflow(thread as Thread, processedWorkflow.variables || []);
+    // 步骤4：从 PreprocessedGraph 初始化变量
+    this.variableCoordinator.initializeFromWorkflow(thread as Thread, preprocessedGraph.variables || []);
 
     // 步骤5：创建 ConversationManager 实例
     const conversationManager = new ConversationManager({
       tokenLimit: options.tokenLimit || 4000,
       eventManager: this.executionContext.getEventManager(),
-      workflowId: processedWorkflow.id,
+      workflowId: preprocessedGraph.workflowId,
       threadId: threadId,
       toolService: this.executionContext.getToolService(),
-      availableTools: processedWorkflow.availableTools
+      availableTools: preprocessedGraph.availableTools
     });
 
     // 步骤6：创建 ThreadContext
@@ -145,7 +145,7 @@ export class ThreadBuilder {
     threadContext.initializeVariables();
 
     // 步骤8：注册工作流触发器到 ThreadContext 的 TriggerManager
-    this.registerWorkflowTriggers(threadContext, processedWorkflow);
+    this.registerWorkflowTriggers(threadContext, preprocessedGraph);
 
     return threadContext;
   }
@@ -154,11 +154,11 @@ export class ThreadBuilder {
    * 注册工作流触发器到 ThreadContext 的 TriggerStateManager
    * 初始化触发器的运行时状态，而不是存储触发器定义副本
    * @param threadContext ThreadContext 实例
-   * @param workflow 工作流定义
+   * @param preprocessedGraph 预处理后的图
    */
-  private registerWorkflowTriggers(threadContext: ThreadContext, workflow: ProcessedWorkflowDefinition): void {
-    // 检查工作流是否有触发器定义
-    if (!workflow.triggers || workflow.triggers.length === 0) {
+  private registerWorkflowTriggers(threadContext: ThreadContext, preprocessedGraph: PreprocessedGraph): void {
+    // 检查预处理后的图是否有触发器定义
+    if (!preprocessedGraph.triggers || preprocessedGraph.triggers.length === 0) {
       return;
     }
 
@@ -166,16 +166,16 @@ export class ThreadBuilder {
     const triggerStateManager = threadContext.triggerStateManager;
 
     // 确保工作流 ID 已设置
-    triggerStateManager.setWorkflowId(workflow.id);
+    triggerStateManager.setWorkflowId(preprocessedGraph.workflowId);
 
     // 初始化所有触发器的运行时状态
-    for (const workflowTrigger of workflow.triggers) {
+    for (const workflowTrigger of preprocessedGraph.triggers) {
       try {
         // 创建运行时状态
         const state = {
           triggerId: workflowTrigger.id,
           threadId: threadContext.getThreadId(),
-          workflowId: workflow.id,
+          workflowId: preprocessedGraph.workflowId,
           status: workflowTrigger.enabled !== false ? TriggerStatus.ENABLED : TriggerStatus.DISABLED,
           triggerCount: 0,
           updatedAt: getCurrentTimestamp()
@@ -188,7 +188,7 @@ export class ThreadBuilder {
         throw new ExecutionError(
           `Failed to register trigger state ${workflowTrigger.id}`,
           undefined,
-          workflow.id,
+          preprocessedGraph.workflowId,
           {
             triggerId: workflowTrigger.id,
             threadId: threadContext.getThreadId(),

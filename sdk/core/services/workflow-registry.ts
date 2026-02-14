@@ -1,10 +1,9 @@
 /**
  * WorkflowRegistry - 工作流注册器
  * 负责工作流定义的注册、查询和管理
- * 预处理逻辑委托给 processWorkflow 函数
  * 引用管理委托给 WorkflowReferenceManager
- * 
- * 同时管理基础工作流和预处理后的工作流
+ *
+ * 预处理后的图由 GraphRegistry 管理
  *
  * 本模块导出全局单例实例，不导出类定义
  */
@@ -16,11 +15,11 @@ import type {
   WorkflowHierarchy,
   WorkflowSummary
 } from '@modular-agent/types';
-import { ProcessedWorkflowDefinition, WorkflowType } from '@modular-agent/types';
+import { WorkflowType } from '@modular-agent/types';
 import type { WorkflowReferenceInfo, WorkflowReferenceRelation, WorkflowReferenceType } from '@modular-agent/types';
-import { processWorkflow, type ProcessOptions } from '../graph/workflow-processor';
 import { WorkflowReferenceManager } from '../execution/managers/workflow-reference-manager';
 import { ValidationError, ExecutionError, ConfigurationValidationError, WorkflowNotFoundError } from '@modular-agent/types';
+import { graphRegistry } from './graph-registry';
 
 /**
  * 工作流版本信息
@@ -36,7 +35,6 @@ export interface WorkflowVersion {
  */
 class WorkflowRegistry {
   private workflows: Map<string, WorkflowDefinition> = new Map();
-  private processedWorkflows: Map<string, ProcessedWorkflowDefinition> = new Map();
   private workflowRelationships: Map<string, WorkflowRelationship> = new Map();
   private activeWorkflows: Set<string> = new Set();
   private referenceManager: WorkflowReferenceManager;
@@ -48,6 +46,9 @@ class WorkflowRegistry {
   } = {}) {
     this.maxRecursionDepth = options.maxRecursionDepth ?? 10;
     this.referenceManager = new WorkflowReferenceManager(this, options.threadRegistry);
+    
+    // 设置 graphRegistry 的 workflowRegistry 引用
+    graphRegistry.setWorkflowRegistry(this);
   }
 
   /**
@@ -132,32 +133,6 @@ class WorkflowRegistry {
   }
 
   /**
-   * 确保工作流已预处理（统一预处理入口）
-   * @param workflowId 工作流ID
-   * @returns 处理后的工作流定义
-   * @throws ValidationError 如果工作流不存在或预处理失败
-   */
-  async ensureProcessed(workflowId: string): Promise<ProcessedWorkflowDefinition> {
-    // 检查缓存
-    let processed = this.getProcessed(workflowId);
-    if (processed) return processed;
-
-    // 获取原始定义
-    const workflow = this.get(workflowId);
-    if (!workflow) {
-      throw new WorkflowNotFoundError(
-        `Workflow with ID '${workflowId}' not found`,
-        workflowId
-      );
-    }
-
-    // 预处理（会递归处理所有子工作流）
-    processed = await this.preprocessAndStore(workflow);
-
-    return processed;
-  }
-
-  /**
    * 注册工作流定义
    * @param workflow 工作流定义
    * @throws ValidationError 如果工作流定义无效或ID已存在
@@ -195,7 +170,7 @@ class WorkflowRegistry {
     if (workflow.type === WorkflowType.STANDALONE || workflow.type === WorkflowType.TRIGGERED_SUBWORKFLOW) {
       // 注意：这里不 await，因为 register 是同步方法
       // 预处理会在后台进行，但通常很快完成
-      this.preprocessAndStore(workflow).catch(error => {
+      graphRegistry.preprocessAndStore(workflow).catch(error => {
         // 抛出验证错误
         throw new ConfigurationValidationError(
           `Workflow preprocessing failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -382,7 +357,6 @@ class WorkflowRegistry {
     }
 
     this.workflows.delete(workflowId);
-    this.processedWorkflows.delete(workflowId);
 
     // 清理引用关系
     this.referenceManager.cleanupWorkflowReferences(workflowId);
@@ -403,7 +377,6 @@ class WorkflowRegistry {
    */
   clear(): void {
     this.workflows.clear();
-    this.processedWorkflows.clear();
     this.workflowRelationships.clear();
     this.activeWorkflows.clear();
     // 重新创建引用管理器，不传递 threadRegistry
@@ -506,46 +479,6 @@ class WorkflowRegistry {
         }
       );
     }
-  }
-
-  /**
-   * 获取处理后的工作流定义
-   * @param workflowId 工作流ID
-   * @returns 处理后的工作流定义，如果不存在则返回undefined
-   */
-  getProcessed(workflowId: string): ProcessedWorkflowDefinition | undefined {
-    return this.processedWorkflows.get(workflowId);
-  }
-
-  /**
-   * 预处理工作流并存储
-   * @param workflow 原始工作流定义
-   * @returns 处理后的工作流定义
-   * @throws ValidationError 如果预处理失败
-   */
-  async preprocessAndStore(workflow: WorkflowDefinition): Promise<ProcessedWorkflowDefinition> {
-    // 检查是否已经预处理过
-    const existing = this.processedWorkflows.get(workflow.id);
-    if (existing) {
-      return existing;
-    }
-
-    // 调用 processWorkflow 进行预处理
-    const processOptions: ProcessOptions = {
-      workflowRegistry: this,
-      maxRecursionDepth: this.maxRecursionDepth,
-      validate: true,
-      computeTopologicalOrder: true,
-      detectCycles: true,
-      analyzeReachability: true,
-    };
-
-    const processed = await processWorkflow(workflow, processOptions);
-
-    // 缓存处理结果
-    this.processedWorkflows.set(workflow.id, processed);
-
-    return processed;
   }
 
   /**

@@ -14,3 +14,6 @@ export * from './analysis';
 
 // 导出合并相关类型
 export * from './merge';
+
+// 导出预处理图类型
+export * from './preprocessed-graph';

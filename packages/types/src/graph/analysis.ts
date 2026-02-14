@@ -2,7 +2,6 @@
  * 图分析结果类型定义
  */
 
-import type { ID } from '../common';
 import { NodeType } from '../node';
 import type { EdgeType } from '../edge';
 import type { CycleDetectionResult, ReachabilityResult, TopologicalSortResult, ForkJoinValidationResult } from './validation';

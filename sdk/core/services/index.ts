@@ -11,6 +11,9 @@ export { threadRegistry, type ThreadRegistry } from './thread-registry';
 // 工作流注册表单例
 export { workflowRegistry, type WorkflowRegistry } from './workflow-registry';
 
+// 图注册表单例
+export { graphRegistry, type GraphRegistry } from './graph-registry';
+
 // 事件管理器单例
 export { eventManager, type EventManager } from './event-manager';
 

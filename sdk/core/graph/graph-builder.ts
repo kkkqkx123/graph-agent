@@ -18,6 +18,7 @@ import { GraphData } from '../entities/graph-data';
 import { GraphValidator } from '../validation/graph-validator';
 import { generateSubgraphNamespace, generateNamespacedNodeId, generateNamespacedEdgeId, generateId } from '@modular-agent/common-utils';
 import { SUBGRAPH_METADATA_KEYS } from '@modular-agent/types';
+import { graphRegistry } from '../services/graph-registry';
 
 /**
  * 图构建器类
@@ -229,10 +230,10 @@ export class GraphBuilder {
         }
 
         // 预处理子工作流（会递归处理其所有引用和嵌套子工作流）
-        await workflowRegistry.preprocessAndStore(subworkflow);
+        await graphRegistry.preprocessAndStore(subworkflow);
 
         // 重新获取预处理后的子工作流
-        processedSubworkflow = workflowRegistry.getProcessed(subworkflowId);
+        processedSubworkflow = graphRegistry.get(subworkflowId);
         if (!processedSubworkflow) {
           errors.push(`Failed to preprocess subworkflow (${subworkflowId}) for SUBGRAPH node (${subgraphNode.id})`);
           continue;

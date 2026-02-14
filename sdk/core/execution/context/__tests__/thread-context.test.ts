@@ -313,7 +313,8 @@ describe('ThreadContext', () => {
         }
       } as any;
       
-      threadContext.initializeAvailableTools(workflow);
+      // 可用工具已在构造函数中从PreprocessedGraph初始化
+      threadContext.initializeAvailableTools();
       
       expect(threadContext.getAvailableTools()).toEqual(['tool1', 'tool2']);
       expect(threadContext.isToolAvailable('tool1')).toBe(true);
