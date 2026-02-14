@@ -2,6 +2,7 @@
  * 工作流预处理器
  * 负责工作流的预处理，包括节点展开、图构建、验证等
  * 基于现有 GraphBuilder 和 GraphValidator
+ * 集成预处理ID映射方案
  */
 
 import type {
@@ -21,6 +22,7 @@ import { GraphValidator } from '../validation/graph-validator';
 import { nodeTemplateRegistry } from '../services/node-template-registry';
 import { triggerTemplateRegistry } from '../services/trigger-template-registry';
 import { WorkflowValidator } from '../validation/workflow-validator';
+import { PreprocessedWorkflowBuilder } from './preprocessed-workflow-builder';
 import { now } from '@modular-agent/common-utils';
 import { ConfigurationValidationError, NodeTemplateNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
 
@@ -181,7 +183,11 @@ export async function processWorkflow(
     validatedAt: now(),
   };
 
-  // 11. 创建处理后的工作流定义
+  // 11. 使用PreprocessedWorkflowBuilder构建预处理工作流（包含ID映射）
+  const preprocessedBuilder = new PreprocessedWorkflowBuilder();
+  const preprocessedResult = await preprocessedBuilder.build(expandedWorkflow, options.workflowRegistry);
+  
+  // 12. 创建处理后的工作流定义
   // 注意：buildResult.graph 是 GraphData 类型，实现了 Graph 接口
   // graph字段直接包含在ProcessedWorkflowDefinition中，无需依赖GraphRegistry
   return new ProcessedWorkflowDefinition(expandedWorkflow, {
@@ -193,7 +199,11 @@ export async function processWorkflow(
     hasSubgraphs,
     subworkflowIds,
     topologicalOrder: graphAnalysis.topologicalSort.sortedNodes,
-    graph: buildResult.graph,
+    graph: preprocessedResult.graph,
+    idMapping: preprocessedResult.idMapping,
+    nodeConfigs: preprocessedResult.nodeConfigs,
+    triggerConfigs: preprocessedResult.triggerConfigs,
+    subgraphRelationships: preprocessedResult.subgraphRelationships,
   });
 }
 

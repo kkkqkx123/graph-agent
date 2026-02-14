@@ -18,6 +18,9 @@ export * from './variables';
 // 导出预处理相关类型
 export * from './preprocess';
 
+// 导出ID映射相关类型
+export * from './id-mapping';
+
 // 导出关系类型
 export * from './relationship';
 

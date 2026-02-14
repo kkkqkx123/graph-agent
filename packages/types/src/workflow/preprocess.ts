@@ -6,6 +6,7 @@ import type { ID, Timestamp } from '../common';
 import type { WorkflowDefinition } from './definition';
 import type { WorkflowTrigger } from '../trigger';
 import type { GraphAnalysisResult, Graph } from '../graph';
+import type { IdMapping, SubgraphRelationship } from './id-mapping';
 
 /**
  * 子工作流合并日志类型
@@ -69,6 +70,14 @@ export class ProcessedWorkflowDefinition {
   readonly topologicalOrder: ID[];
   /** 完整的、合并后的图结构 */
   readonly graph: Graph;
+  /** ID映射表（构建阶段临时数据） */
+  readonly idMapping: IdMapping;
+  /** 预处理后的节点配置（已更新ID引用） */
+  readonly nodeConfigs: Map<ID, any>;
+  /** 预处理后的触发器配置（已更新ID引用） */
+  readonly triggerConfigs: Map<ID, any>;
+  /** 子工作流关系 */
+  readonly subgraphRelationships: SubgraphRelationship[];
 
   constructor(workflow: WorkflowDefinition, processedData: {
     triggers?: WorkflowTrigger[];
@@ -80,6 +89,10 @@ export class ProcessedWorkflowDefinition {
     subworkflowIds: Set<ID>;
     topologicalOrder: ID[];
     graph: Graph;
+    idMapping: IdMapping;
+    nodeConfigs: Map<ID, any>;
+    triggerConfigs: Map<ID, any>;
+    subgraphRelationships: SubgraphRelationship[];
   }) {
     this.workflow = workflow;
     this.type = workflow.type;
@@ -92,6 +105,10 @@ export class ProcessedWorkflowDefinition {
     this.subworkflowIds = processedData.subworkflowIds;
     this.topologicalOrder = processedData.topologicalOrder;
     this.graph = processedData.graph;
+    this.idMapping = processedData.idMapping;
+    this.nodeConfigs = processedData.nodeConfigs;
+    this.triggerConfigs = processedData.triggerConfigs;
+    this.subgraphRelationships = processedData.subgraphRelationships;
   }
 
   // 代理访问原始workflow的所有字段
