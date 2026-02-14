@@ -5,7 +5,7 @@
 
 import { NotFoundError, ThreadContextNotFoundError, CheckpointNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
-import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot } from '@modular-agent/types';
+import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot, MessageMarkMap } from '@modular-agent/types';
 import type { ThreadRegistry } from '../../services/thread-registry';
 import type { WorkflowRegistry } from '../../services/workflow-registry';
 import type { GlobalMessageStorage } from '../../services/global-message-storage';
@@ -193,7 +193,9 @@ export class CheckpointCoordinator {
 
     // 步骤8：恢复索引状态
     if (checkpoint.threadState.conversationState) {
-      conversationManager.setMarkMap(checkpoint.threadState.conversationState.markMap);
+      if (checkpoint.threadState.conversationState.markMap) {
+        conversationManager.setMarkMap(checkpoint.threadState.conversationState.markMap as MessageMarkMap);
+      }
 
       // 恢复Token统计
       conversationManager.getTokenUsageTracker().setState(

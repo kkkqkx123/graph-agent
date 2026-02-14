@@ -16,7 +16,8 @@ import type {
   TruncateMessageOperation,
   ClearMessageOperation,
   FilterMessageOperation,
-  RollbackMessageOperation
+  RollbackMessageOperation,
+  MessageMarkMap
 } from '@modular-agent/types';
 import type { MessageArrayManager } from './message-array-manager';
 
@@ -65,7 +66,12 @@ export class MessageArrayManagerImpl implements MessageArrayManager {
   }
   
   getStats(): MessageArrayStats {
-    return this.calculateStats(this.state);
+    return {
+      totalMessages: this.state.messages.length,
+      currentBatchMessages: this.state.messages.length,
+      totalBatches: this.state.currentBatchIndex + 1,
+      currentBatchIndex: this.state.currentBatchIndex
+    };
   }
   
   rollback(batchIndex: number): MessageOperationResult {
@@ -98,7 +104,8 @@ export class MessageArrayManagerImpl implements MessageArrayManager {
     this.state = newState;
     
     return {
-      state: this.getState(),
+      messages: newMessages,
+      markMap: this.createMarkMap(newMessages),
       affectedBatchIndex: this.state.currentBatchIndex,
       stats: this.calculateStats(newState)
     };
@@ -138,7 +145,8 @@ export class MessageArrayManagerImpl implements MessageArrayManager {
     this.state = newState;
     
     return {
-      state: this.getState(),
+      messages: newMessages,
+      markMap: this.createMarkMap(newMessages),
       affectedBatchIndex: newBatchIndex,
       stats: this.calculateStats(newState)
     };
@@ -178,7 +186,8 @@ export class MessageArrayManagerImpl implements MessageArrayManager {
     this.state = newState;
     
     return {
-      state: this.getState(),
+      messages: newMessages,
+      markMap: this.createMarkMap(newMessages),
       affectedBatchIndex: newBatchIndex,
       stats: this.calculateStats(newState)
     };
@@ -230,7 +239,8 @@ export class MessageArrayManagerImpl implements MessageArrayManager {
     this.state = newState;
     
     return {
-      state: this.getState(),
+      messages: newMessages,
+      markMap: this.createMarkMap(newMessages),
       affectedBatchIndex: newBatchIndex,
       stats: this.calculateStats(newState)
     };
@@ -267,7 +277,8 @@ export class MessageArrayManagerImpl implements MessageArrayManager {
     this.state = newState;
     
     return {
-      state: this.getState(),
+      messages: newMessages,
+      markMap: this.createMarkMap(newMessages),
       affectedBatchIndex: newBatchIndex,
       stats: this.calculateStats(newState)
     };
@@ -322,7 +333,8 @@ export class MessageArrayManagerImpl implements MessageArrayManager {
     this.state = newState;
     
     return {
-      state: this.getState(),
+      messages: newMessages,
+      markMap: this.createMarkMap(newMessages),
       affectedBatchIndex: newBatchIndex,
       stats: this.calculateStats(newState)
     };
@@ -352,7 +364,8 @@ export class MessageArrayManagerImpl implements MessageArrayManager {
       this.state = newState;
       
       return {
-        state: this.getState(),
+        messages: [],
+        markMap: this.createMarkMap([]),
         affectedBatchIndex: 0,
         stats: this.calculateStats(newState)
       };
@@ -369,7 +382,8 @@ export class MessageArrayManagerImpl implements MessageArrayManager {
     this.state = newState;
     
     return {
-      state: this.getState(),
+      messages: newState.messages,
+      markMap: this.createMarkMap(newState.messages),
       affectedBatchIndex: operation.targetBatchIndex,
       stats: this.calculateStats(newState)
     };
@@ -378,12 +392,42 @@ export class MessageArrayManagerImpl implements MessageArrayManager {
   /**
    * 计算统计信息
    */
-  private calculateStats(state: MessageArrayState): MessageArrayStats {
+  private calculateStats(state: MessageArrayState): {
+    originalMessageCount: number;
+    visibleMessageCount: number;
+    compressedMessageCount: number;
+  } {
     return {
-      totalMessages: state.messages.length,
-      currentBatchMessages: state.messages.length,
-      totalBatches: state.currentBatchIndex + 1,
-      currentBatchIndex: state.currentBatchIndex
+      originalMessageCount: state.totalMessageCount,
+      visibleMessageCount: state.messages.length,
+      compressedMessageCount: state.messages.length
+    };
+  }
+
+  /**
+   * 创建消息标记映射
+   */
+  private createMarkMap(messages: Message[]): MessageMarkMap {
+    const typeIndices: Record<string, number[]> = {
+      system: [],
+      user: [],
+      assistant: [],
+      tool: []
+    };
+
+    messages.forEach((msg, index) => {
+      const roleArray = typeIndices[msg.role];
+      if (roleArray) {
+        roleArray.push(index);
+      }
+    });
+
+    return {
+      originalIndices: messages.map((_, index) => index),
+      typeIndices: typeIndices as any,
+      batchBoundaries: [0],
+      boundaryToBatch: [0],
+      currentBatch: this.state.currentBatchIndex
     };
   }
   
