@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@modular-agent/types": "workspace:*",
-    "zod": "workspace:*"
+    "zod": "^4.3.6"
   },
   "devDependencies": {}
 }

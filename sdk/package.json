@@ -39,7 +39,7 @@
         "@modular-agent/common-utils": "workspace:*",
         "@modular-agent/tool-executors": "workspace:*",
         "tiktoken": "^1.0.22",
-        "zod": "workspace:*"
+        "zod": "^4.3.6"
     },
     "devDependencies": {},
     "engines": {

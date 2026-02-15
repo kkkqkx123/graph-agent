@@ -26,6 +26,6 @@
     "@modular-agent/common-utils": "workspace:*"
   },
   "devDependencies": {
-    "rimraf": "^workspace:*"
+    "rimraf": "^6.1.2"
   }
 }

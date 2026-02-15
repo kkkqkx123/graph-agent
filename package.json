@@ -40,8 +40,7 @@
     "ts-jest": "^29.4.6",
     "rimraf": "^6.1.2",
     "eslint": "^10.0.0",
-    "prettier": "^3.8.1",
-    "zod": "^4.3.6"
+    "prettier": "^3.8.1"
   },
   "engines": {
     "node": ">=22.0.0",

@@ -50,8 +50,6 @@ export class ConfigLoader {
         'package.json',
         '.modular-agentrc',
         '.modular-agentrc.json',
-        '.modular-agentrc.yaml',
-        '.modular-agentrc.yml',
         '.modular-agentrc.ts',
         '.modular-agentrc.js',
         'modular-agent.config.js',
@@ -70,7 +68,7 @@ export class ConfigLoader {
 
     try {
       const result = await this.explorer.search();
-      
+
       if (result?.config) {
         // 验证配置
         const validatedConfig = ConfigSchema.parse(result.config);
