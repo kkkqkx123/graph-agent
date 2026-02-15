@@ -216,7 +216,7 @@ export type {
   CancelledEvent,
   ProgressEvent,
   NodeExecutedEvent
-} from './builders/execution-builder';
+} from './types/execution-events';
 export type {
   WorkflowCompositionConfig,
   WorkflowCompositionItem,

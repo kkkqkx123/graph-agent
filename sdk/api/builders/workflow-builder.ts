@@ -15,6 +15,7 @@ import { generateId } from '@modular-agent/common-utils';
 import { now } from '@modular-agent/common-utils';
 import { SingletonRegistry } from '../../core/execution/context/singleton-registry';
 import { ConfigParser, ConfigFormat } from '../config';
+import { NodeBuilder } from './node-builder';
 
 /**
  * WorkflowBuilder - 声明式工作流构建器
@@ -106,15 +107,25 @@ export class WorkflowBuilder {
    * @returns this
    */
   addNode(id: string, type: NodeType, config: NodeConfig, name?: string): this {
-    const node: Node = {
-      id,
-      type,
-      name: name || id,
-      config,
-      outgoingEdgeIds: [],
-      incomingEdgeIds: []
-    };
+    const nodeBuilder = NodeBuilder.create(id)
+      .type(type)
+      .config(config);
+    if (name) {
+      nodeBuilder.name(name);
+    }
+    const node = nodeBuilder.build();
     this.nodes.set(id, node);
+    return this;
+  }
+
+  /**
+   * 使用NodeBuilder添加节点
+   * @param nodeBuilder NodeBuilder实例
+   * @returns this
+   */
+  addNodeWithBuilder(nodeBuilder: NodeBuilder): this {
+    const node = nodeBuilder.build();
+    this.nodes.set(node.id, node);
     return this;
   }
 
@@ -379,7 +390,7 @@ export class WorkflowBuilder {
    */
   private updateNodeEdgeReferences(): void {
     // 清空所有节点的边引用
-    for (const node of this.nodes.values()) {
+    for (const node of Array.from(this.nodes.values())) {
       node.outgoingEdgeIds = [];
       node.incomingEdgeIds = [];
     }

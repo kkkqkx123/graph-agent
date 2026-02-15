@@ -95,6 +95,54 @@ export class NodeTemplateBuilder {
   }
 
   /**
+   * 合并配置（部分更新）
+   * @param partialConfig 部分配置对象，将浅合并到现有配置
+   * @returns this
+   */
+  mergeConfig(partialConfig: Partial<NodeConfig>): this {
+    if (!this.template.config) {
+      this.template.config = {} as NodeConfig;
+    }
+    this.template.config = { ...this.template.config, ...partialConfig };
+    return this;
+  }
+
+  /**
+   * 添加或更新元数据项
+   * @param key 元数据键
+   * @param value 元数据值
+   * @returns this
+   */
+  addMetadata(key: string, value: any): this {
+    if (!this.template.metadata) {
+      this.template.metadata = {};
+    }
+    this.template.metadata[key] = value;
+    return this;
+  }
+
+  /**
+   * 移除元数据项
+   * @param key 元数据键
+   * @returns this
+   */
+  removeMetadata(key: string): this {
+    if (this.template.metadata) {
+      delete this.template.metadata[key];
+    }
+    return this;
+  }
+
+  /**
+   * 清空所有元数据
+   * @returns this
+   */
+  clearMetadata(): this {
+    this.template.metadata = {};
+    return this;
+  }
+
+  /**
    * 构建节点模板
    * @returns 节点模板
    */

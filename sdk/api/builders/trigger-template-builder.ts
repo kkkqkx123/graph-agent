@@ -3,9 +3,8 @@
  * 提供流畅的链式API来创建和注册触发器模板
  */
 
-import type { TriggerTemplate } from '@modular-agent/types';
-import type { TriggerCondition, TriggerAction } from '@modular-agent/types';
-import type { Metadata } from '@modular-agent/types';
+import type { TriggerTemplate, TriggerCondition, TriggerAction, Metadata } from '@modular-agent/types';
+import { EventType, TriggerActionType } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
 import { SingletonRegistry } from '../../core/execution/context/singleton-registry';
 
@@ -118,6 +117,114 @@ export class TriggerTemplateBuilder {
       this.template.metadata['tags'] = [];
     }
     this.template.metadata['tags'].push(...tags);
+    return this;
+  }
+
+  /**
+   * 基于事件类型设置触发条件（类型安全）
+   * @param eventType 事件类型
+   * @param eventName 自定义事件名称（仅用于 NODE_CUSTOM_EVENT 事件）
+   * @param metadata 条件元数据
+   * @returns this
+   */
+  withEventCondition(eventType: EventType, eventName?: string, metadata?: Metadata): this {
+    this.template.condition = {
+      eventType,
+      ...(eventName && { eventName }),
+      ...(metadata && { metadata })
+    };
+    return this;
+  }
+
+  /**
+   * 设置触发动作（类型安全）
+   * @param type 动作类型
+   * @param parameters 动作参数
+   * @param metadata 动作元数据
+   * @returns this
+   */
+  withAction(type: TriggerActionType, parameters: Record<string, any> = {}, metadata?: Metadata): this {
+    this.template.action = {
+      type,
+      parameters,
+      ...(metadata && { metadata })
+    };
+    return this;
+  }
+
+  /**
+   * 设置启动工作流动动作
+   * @param workflowId 要启动的工作流ID
+   * @param parameters 额外参数
+   * @returns this
+   */
+  startWorkflow(workflowId: string, parameters: Record<string, any> = {}): this {
+    return this.withAction(TriggerActionType.START_WORKFLOW, {
+      workflowId,
+      ...parameters
+    });
+  }
+
+  /**
+   * 设置停止线程动作
+   * @param reason 停止原因
+   * @param parameters 额外参数
+   * @returns this
+   */
+  stopThread(reason?: string, parameters: Record<string, any> = {}): this {
+    return this.withAction(TriggerActionType.STOP_THREAD, {
+      ...(reason && { reason }),
+      ...parameters
+    });
+  }
+
+  /**
+   * 设置执行触发子工作流动动作
+   * @param triggeredWorkflowId 触发子工作流ID
+   * @param waitForCompletion 是否等待完成
+   * @param parameters 额外参数
+   * @returns this
+   */
+  executeTriggeredSubgraph(triggeredWorkflowId: string, waitForCompletion: boolean = true, parameters: Record<string, any> = {}): this {
+    return this.withAction(TriggerActionType.EXECUTE_TRIGGERED_SUBGRAPH, {
+      triggeredWorkflowId,
+      waitForCompletion,
+      ...parameters
+    });
+  }
+
+  /**
+   * 添加或更新元数据项
+   * @param key 元数据键
+   * @param value 元数据值
+   * @returns this
+   */
+  addMetadata(key: string, value: any): this {
+    if (!this.template.metadata) {
+      this.template.metadata = {};
+    }
+    this.template.metadata[key] = value;
+    return this;
+  }
+
+  /**
+   * 移除元数据项
+   * @param key 元数据键
+   * @returns this
+   */
+  removeMetadata(key: string): this {
+    if (this.template.metadata) {
+      delete this.template.metadata[key];
+    }
+    return this;
+  }
+
+  /**
+   * 清空所有元数据
+   * @returns this
+   */
+  clearMetadata(): this {
+    this.template.metadata = {};
     return this;
   }
 
