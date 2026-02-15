@@ -8,6 +8,7 @@ import type { NodeExecutionResult } from '@modular-agent/types';
 import { ValidationError, NotFoundError, RuntimeValidationError, ThreadContextNotFoundError } from '@modular-agent/types';
 import { EventType } from '@modular-agent/types';
 import { ExecutionContext } from '../../context/execution-context';
+import { getErrorMessage } from '@modular-agent/common-utils';
 
 /**
  * 创建成功结果
@@ -41,7 +42,7 @@ function createFailureResult(
     success: false,
     action,
     executionTime,
-    error: error instanceof Error ? error.message : String(error),
+    error: getErrorMessage(error),
 
   };
 }

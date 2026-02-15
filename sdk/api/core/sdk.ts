@@ -12,6 +12,7 @@ import { APIDependencyManager } from './sdk-dependencies';
 import { getData } from '../types/execution-result';
 import type { SDKOptions } from '@modular-agent/types';
 import { logger } from '../../index';
+import { getErrorMessage } from '@modular-agent/common-utils';
 
 /**
  * SDK主类 - 统一API入口（内部类，不导出）
@@ -134,7 +135,7 @@ class SDK {
       } catch (error) {
         details[module.name] = {
           status: 'unhealthy',
-          error: error instanceof Error ? error.message : String(error)
+          error: getErrorMessage(error)
         };
         overallStatus = 'degraded';
       }
@@ -164,7 +165,7 @@ class SDK {
       try {
         await task();
       } catch (error) {
-        logger.error(`Failed to cleanup ${name} resource`, { error: error instanceof Error ? error.message : String(error) });
+        logger.error(`Failed to cleanup ${name} resource`, { error: getErrorMessage(error) });
       }
     }
 
@@ -176,7 +177,7 @@ class SDK {
       const context = this.dependencies.getExecutionContext();
       await context.destroy();
     } catch (error) {
-      logger.error('Failed to cleanup dependencies', { error: error instanceof Error ? error.message : String(error) });
+      logger.error('Failed to cleanup dependencies', { error: getErrorMessage(error) });
     }
 
     logger.info('SDK instance destroyed');

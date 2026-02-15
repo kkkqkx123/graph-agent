@@ -6,7 +6,7 @@
 import type { ExecutionResult } from './execution-result';
 import { SDKError, ExecutionError as SDKExecutionError } from '@modular-agent/types';
 import { CommandValidator } from '../utils/command-validator';
-import { ok, err } from '@modular-agent/common-utils';
+import { ok, err, isError } from '@modular-agent/common-utils';
 
 /**
  * 命令元数据
@@ -146,7 +146,7 @@ export abstract class BaseCommand<T> implements Command<T> {
       sdkError = error;
     }
     // 如果是普通 Error，转换为 SDKExecutionError
-    else if (error instanceof Error) {
+    else if (isError(error)) {
       sdkError = new SDKExecutionError(
         error.message,
         undefined,

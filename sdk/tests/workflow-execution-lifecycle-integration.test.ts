@@ -16,6 +16,7 @@ import { NodeType } from '@modular-agent/types';
 import { EdgeType } from '@modular-agent/types';
 import { WorkflowType } from '@modular-agent/types';
 import type { WorkflowDefinition } from '@modular-agent/types';
+import { getErrorMessage } from '@modular-agent/common-utils';
 
 describe.skip('工作流执行引擎完整执行和生命周期管理集成测试', () => {
   let workflowRegistry: WorkflowRegistry;
@@ -45,9 +46,9 @@ describe.skip('工作流执行引擎完整执行和生命周期管理集成测�
             success: false,
             scriptName: script.name,
             scriptType: script.type,
-            stderr: error instanceof Error ? error.message : String(error),
+            stderr: getErrorMessage(error),
             executionTime: 0,
-            error: error instanceof Error ? error.message : String(error)
+            error: getErrorMessage(error)
           };
         }
       },
@@ -63,7 +64,7 @@ describe.skip('工作流执行引擎完整执行和生命周期管理集成测�
         } catch (error) {
           return {
             valid: false,
-            errors: [error instanceof Error ? error.message : 'Invalid script syntax']
+            errors: [getErrorMessage(error)]
           };
         }
       },

@@ -28,9 +28,9 @@ import type {
 import type { BaseEvent, NodeCustomEvent } from '@modular-agent/types';
 import type { ID } from '@modular-agent/types';
 import { getTriggerHandler } from '../handlers/trigger-handlers';
-import { ValidationError, ExecutionError, ConfigurationValidationError, RuntimeValidationError } from '@modular-agent/types';
+import { ValidationError, ExecutionError, ConfigurationValidationError, RuntimeValidationError, SystemExecutionError } from '@modular-agent/types';
 import { EventType } from '@modular-agent/types';
-import { now } from '@modular-agent/common-utils';
+import { now, getErrorOrNew } from '@modular-agent/common-utils';
 import type { ThreadRegistry } from '../../services/thread-registry';
 import type { WorkflowRegistry } from '../../services/workflow-registry';
 import type { GlobalMessageStorage } from '../../services/global-message-storage';
@@ -289,9 +289,14 @@ export class TriggerCoordinator {
           dependencies
         );
       } catch (error) {
-        console.error(
-          `Failed to create checkpoint for trigger "${trigger.name}":`,
-          error
+        // 抛出系统执行错误，由 ErrorService 统一处理
+        throw new SystemExecutionError(
+          `Failed to create checkpoint for trigger "${trigger.name}"`,
+          'TriggerCoordinator',
+          'executeTrigger',
+          undefined,
+          undefined,
+          { triggerName: trigger.name, originalError: getErrorOrNew(error) }
         );
         // 检查点创建失败不应影响触发器执行
       }

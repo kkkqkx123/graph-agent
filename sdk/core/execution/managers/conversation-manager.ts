@@ -18,7 +18,7 @@
 import type { LLMMessage, LLMUsage, TokenUsageHistory, TokenUsageStats } from '@modular-agent/types';
 import type { MessageMarkMap } from '@modular-agent/types';
 import { MessageRole } from '@modular-agent/types';
-import { ValidationError, RuntimeValidationError } from '@modular-agent/types';
+import { ValidationError, RuntimeValidationError, ErrorSeverity } from '@modular-agent/types';
 import { TokenUsageTracker } from '../token-usage-tracker';
 import { TypeIndexManager } from './type-index-manager';
 import { getVisibleOriginalIndices, getVisibleMessages } from '../../utils/visible-range-calculator';
@@ -361,8 +361,14 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
       await this.eventManager.emit(event);
     }
 
-    // 2. 记录警告日志作为兜底机制
-    console.warn(`Token limit exceeded: ${tokensUsed} > ${this.tokenUsageTracker['tokenLimit']}`);
+    // 2. 抛出警告错误，由 ErrorService 统一处理
+    throw new ValidationError(
+      `Token limit exceeded: ${tokensUsed} > ${this.tokenUsageTracker['tokenLimit']}`,
+      'tokenLimit',
+      this.tokenUsageTracker['tokenLimit'],
+      { tokensUsed, tokenLimit: this.tokenUsageTracker['tokenLimit'] },
+      ErrorSeverity.WARNING
+    );
   }
 
   /**

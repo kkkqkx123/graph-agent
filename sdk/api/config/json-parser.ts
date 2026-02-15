@@ -5,6 +5,7 @@
 
 import type { WorkflowConfigFile } from './types';
 import { ConfigurationError } from '@modular-agent/types';
+import { isError } from '@modular-agent/common-utils';
 
 /**
  * 解析JSON内容
@@ -43,7 +44,7 @@ export function parseJson(content: string): WorkflowConfigFile {
     if (error instanceof ConfigurationError) {
       throw error;
     }
-    if (error instanceof Error) {
+    if (isError(error)) {
       throw new ConfigurationError(
         `JSON解析失败: ${error.message}`,
         undefined,
@@ -104,7 +105,7 @@ export async function loadJsonFromFile(filePath: string): Promise<string> {
   try {
     return await fs.readFile(filePath, 'utf-8');
   } catch (error) {
-    if (error instanceof Error) {
+    if (isError(error)) {
       throw new ConfigurationError(
         `读取文件失败: ${error.message}`,
         filePath,
@@ -135,7 +136,7 @@ export async function saveJsonToFile(
     if (error instanceof ConfigurationError) {
       throw error;
     }
-    if (error instanceof Error) {
+    if (isError(error)) {
       throw new ConfigurationError(
         `保存文件失败: ${error.message}`,
         filePath,

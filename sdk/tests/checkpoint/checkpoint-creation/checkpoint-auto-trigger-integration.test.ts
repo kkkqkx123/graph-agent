@@ -18,6 +18,7 @@ import { NodeType, HookType, WorkflowType } from '@modular-agent/types';
 import { EdgeType, CheckpointTriggerType } from '@modular-agent/types';
 import type { WorkflowDefinition } from '@modular-agent/types';
 import type { Node } from '@modular-agent/types';
+import { getErrorMessage } from '@modular-agent/common-utils';
 
 describe('检查点自动触发机制集成测试', () => {
   let workflowRegistry: WorkflowRegistry;
@@ -48,9 +49,9 @@ describe('检查点自动触发机制集成测试', () => {
             success: false,
             scriptName: script.name,
             scriptType: script.type,
-            stderr: error instanceof Error ? error.message : String(error),
+            stderr: getErrorMessage(error),
             executionTime: 0,
-            error: error instanceof Error ? error.message : String(error)
+            error: getErrorMessage(error)
           };
         }
       },
@@ -64,7 +65,7 @@ describe('检查点自动触发机制集成测试', () => {
         } catch (error) {
           return {
             valid: false,
-            errors: [error instanceof Error ? error.message : 'Invalid script syntax']
+            errors: [getErrorMessage(error)]
           };
         }
       },

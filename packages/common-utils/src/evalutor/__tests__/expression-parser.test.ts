@@ -1,5 +1,6 @@
 import { ExpressionEvaluator, parseExpression, parseValue, parseCompoundExpression } from '../expression-parser';
 import type { EvaluationContext } from '@modular-agent/types';
+import { RuntimeValidationError } from '@modular-agent/types';
 
 describe('ExpressionParser', () => {
   describe('parse', () => {
@@ -269,15 +270,15 @@ describe('ExpressionEvaluator', () => {
       expect(evaluator.evaluate('nonExistentVar == null', context)).toBe(false); // undefined !== null
     });
 
-    test('should return false when encountering errors', () => {
+    test('should throw RuntimeValidationError when encountering errors', () => {
       const context: EvaluationContext = {
         variables: {},
         input: {},
         output: {}
       };
 
-      // Invalid expression should return false
-      expect(evaluator.evaluate('invalid == expression ==', context)).toBe(false);
+      // Invalid expression should throw RuntimeValidationError
+      expect(() => evaluator.evaluate('invalid == expression ==', context)).toThrow(RuntimeValidationError);
     });
 
     test('should use explicit prefixes to avoid data source conflicts', () => {

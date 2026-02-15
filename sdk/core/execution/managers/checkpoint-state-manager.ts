@@ -9,9 +9,10 @@ import type { EventManager } from '../../services/event-manager';
 import { LifecycleCapable } from './lifecycle-capable';
 import { serializeCheckpoint, deserializeCheckpoint } from '../utils/checkpoint-serializer';
 import { createCleanupStrategy } from '../utils/checkpoint-cleanup-policy';
-import { generateId, now } from '@modular-agent/common-utils';
+import { generateId, now, getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
 import { EventType } from '@modular-agent/types';
 import { safeEmit } from '../utils/event/event-emitter';
+import { SystemExecutionError } from '@modular-agent/types';
 
 /**
  * 从检查点提取存储元数据
@@ -167,8 +168,15 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
         try {
           await this.executeCleanup();
         } catch (error) {
-          console.error('Error executing cleanup policy:', error);
-          // 清理失败不应影响检查点创建
+          // 抛出系统执行错误，由 ErrorService 统一处理
+          throw new SystemExecutionError(
+            'Error executing cleanup policy',
+            'CheckpointStateManager',
+            'executeCleanup',
+            undefined,
+            undefined,
+            { originalError: getErrorOrNew(error) }
+          );
         }
       }
 
@@ -181,7 +189,7 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
         workflowId: checkpointData.workflowId,
         threadId: checkpointData.threadId,
         operation: 'create',
-        error: error instanceof Error ? error.message : String(error)
+        error: getErrorMessage(error)
       });
       throw error;
     }
@@ -242,7 +250,7 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
         threadId: '',
         checkpointId,
         operation: 'delete',
-        error: error instanceof Error ? error.message : String(error)
+        error: getErrorMessage(error)
       });
       throw error;
     }

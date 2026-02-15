@@ -6,7 +6,7 @@
 import type { Node, LoopStartNodeConfig } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
 import { ExecutionError, ValidationError, RuntimeValidationError } from '@modular-agent/types';
-import { now } from '@modular-agent/common-utils';
+import { now, getErrorMessage } from '@modular-agent/common-utils';
 
 /**
  * 循环状态
@@ -137,7 +137,7 @@ function resolveIterable(iterableConfig: any, thread: Thread): any {
           throw error;
         }
         throw new ExecutionError(
-          `Failed to resolve iterable expression '${iterableConfig}': ${error instanceof Error ? error.message : String(error)}`,
+          `Failed to resolve iterable expression '${iterableConfig}': ${getErrorMessage(error)}`,
           thread.currentNodeId,
           thread.workflowId,
           { iterableConfig }

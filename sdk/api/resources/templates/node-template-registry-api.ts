@@ -7,7 +7,7 @@
 import type { NodeTemplate, NodeTemplateFilter, NodeTemplateSummary } from '@modular-agent/types';
 import { ValidationError, ConfigurationValidationError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
-import { ok, err } from '@modular-agent/common-utils';
+import { ok, err, getErrorMessage } from '@modular-agent/common-utils';
 import { NodeType } from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api';
 import type { APIDependencyManager } from '../../core/sdk-dependencies';
@@ -239,7 +239,7 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
         ));
       } else {
         errors.push(new ConfigurationValidationError(
-          error instanceof Error ? error.message : 'Unknown validation error',
+          getErrorMessage(error),
           {
             configType: 'node',
             configPath: 'template.config',

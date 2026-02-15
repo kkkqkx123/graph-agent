@@ -5,6 +5,7 @@
 
 import { GenericResourceAPI } from '../generic-resource-api';
 import type { BaseEvent, EventFilter } from '@modular-agent/types';
+import { getErrorMessage } from '@modular-agent/common-utils';
 
 /**
  * 事件统计信息
@@ -314,7 +315,7 @@ export class EventResourceAPI extends GenericResourceAPI<BaseEvent, string, Even
       }
       this.eventHistory = events;
     } catch (error) {
-      throw new Error(`Failed to import event history: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(`Failed to import event history: ${getErrorMessage(error)}`);
     }
   }
 

@@ -11,6 +11,7 @@
 import type { EventManager } from '../../../services/event-manager';
 import type { Event, EventType } from '@modular-agent/types';
 import { ExecutionError } from '@modular-agent/types';
+import { getErrorOrNew } from '@modular-agent/common-utils';
 
 /**
  * 安全触发事件
@@ -40,7 +41,7 @@ export async function safeEmit(
         operation: 'event_emit',
         severity: 'info'
       },
-      error instanceof Error ? error : new Error(String(error))
+      getErrorOrNew(error)
     );
   }
 }

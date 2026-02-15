@@ -16,7 +16,7 @@ import type {
 import { ToolType } from '@modular-agent/types';
 import { ConfigurationValidationError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
-import { ok, err } from '@modular-agent/common-utils';
+import { ok, err, getErrorMessage } from '@modular-agent/common-utils';
 
 /**
  * 工具参数属性schema（基于JSON Schema Draft 2020-12）
@@ -286,7 +286,7 @@ export class ToolConfigValidator {
           errors.push(error);
         } else {
           errors.push(new ConfigurationValidationError(
-            error instanceof Error ? error.message : String(error),
+            getErrorMessage(error),
             {
               configType: 'tool',
               configPath: `parameters.${paramName}`

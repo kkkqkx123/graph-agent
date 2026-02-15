@@ -4,6 +4,8 @@
  */
 
 import type { LifecycleCapable } from '../managers/lifecycle-capable';
+import { SystemExecutionError } from '@modular-agent/types';
+import { getErrorOrNew } from '@modular-agent/common-utils';
 
 /**
  * 生命周期管理器
@@ -33,8 +35,15 @@ export class LifecycleManager {
             await cleanupResult;
           }
         } catch (error) {
-          console.error(`Error cleaning up component ${key}:`, error);
-          // 继续清理其他组件，不中断整个销毁流程
+          // 抛出系统执行错误，由 ErrorService 统一处理
+          throw new SystemExecutionError(
+            `Error cleaning up component ${key}`,
+            'LifecycleManager',
+            'cleanup',
+            undefined,
+            undefined,
+            { componentName: key, originalError: getErrorOrNew(error) }
+          );
         }
       }
     }

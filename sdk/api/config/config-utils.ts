@@ -5,6 +5,7 @@
 
 import * as path from 'path';
 import { ConfigFormat } from './types';
+import { isError } from '@modular-agent/common-utils';
 
 /**
  * 根据文件扩展名检测配置格式
@@ -36,7 +37,7 @@ export async function readConfigFile(filePath: string): Promise<string> {
   try {
     return await fs.readFile(filePath, 'utf-8');
   } catch (error) {
-    if (error instanceof Error) {
+    if (isError(error)) {
       throw new Error(`读取配置文件失败: ${error.message}`);
     }
     throw new Error('读取配置文件失败: 未知错误');

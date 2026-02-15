@@ -11,7 +11,7 @@
 import type { Node, LLMNodeConfig } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
 import { ExecutionError } from '@modular-agent/types';
-import { now, diffTimestamp } from '@modular-agent/common-utils';
+import { now, diffTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
 import { LLMExecutionCoordinator } from '../../coordinators/llm-execution-coordinator';
 import { LLMWrapper } from '../../../llm/wrapper';
 import { executeHumanRelay } from '../human-relay-handler';
@@ -112,7 +112,7 @@ export async function llmHandler(
     const endTime = now();
     return {
       status: 'FAILED',
-      error: error instanceof Error ? error : new Error(String(error)),
+      error: getErrorOrNew(error),
       executionTime: diffTimestamp(startTime, endTime)
     };
   }

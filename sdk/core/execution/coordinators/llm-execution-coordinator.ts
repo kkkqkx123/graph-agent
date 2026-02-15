@@ -24,10 +24,9 @@ import { safeEmit } from '../utils/event/event-emitter';
 import { EventType } from '@modular-agent/types';
 import { UserInteractionOperationType } from '@modular-agent/types';
 import type { ToolApprovalData } from '@modular-agent/types';
-import { now } from '@modular-agent/common-utils';
+import { now, generateId, getErrorOrNew } from '@modular-agent/common-utils';
 import { ToolCallExecutor } from '../executors/tool-call-executor';
-import { ExecutionError, ThreadInterruptedException } from '@modular-agent/types';
-import { generateId } from '@modular-agent/common-utils';
+import { ExecutionError, ThreadInterruptedException, SystemExecutionError, ErrorSeverity } from '@modular-agent/types';
 import { CheckpointCoordinator } from './checkpoint-coordinator';
 import type { ExecutionContext } from '../context/execution-context';
 import { SingletonRegistry } from '../context/singleton-registry';
@@ -161,7 +160,7 @@ export class LLMExecutionCoordinator {
       // ThreadInterruptedException 会自动向上传播，无需特殊处理
       return {
         success: false,
-        error: error instanceof Error ? error : new Error(String(error))
+        error: getErrorOrNew(error)
       };
     }
   }
@@ -508,8 +507,17 @@ export class LLMExecutionCoordinator {
           }
         });
       } catch (error) {
-        // 检查点创建失败不影响审批流程
-        console.warn('Failed to create checkpoint for tool approval:', error);
+        // 抛出系统执行错误（WARNING级别），由 ErrorService 统一处理
+        throw new SystemExecutionError(
+          'Failed to create checkpoint for tool approval',
+          'LLMExecutionCoordinator',
+          'handleToolApproval',
+          undefined,
+          undefined,
+          { toolCallId: toolCall.id },
+          getErrorOrNew(error),
+          ErrorSeverity.WARNING
+        );
       }
     }
 
@@ -558,7 +566,17 @@ export class LLMExecutionCoordinator {
           const checkpointStateManager = this.executionContext.getCheckpointStateManager();
           await checkpointStateManager.delete(checkpointId);
         } catch (error) {
-          console.warn('Failed to cleanup checkpoint:', error);
+          // 抛出系统执行错误（WARNING级别），由 ErrorService 统一处理
+          throw new SystemExecutionError(
+            'Failed to cleanup checkpoint',
+            'LLMExecutionCoordinator',
+            'handleToolApproval',
+            undefined,
+            undefined,
+            { checkpointId },
+            getErrorOrNew(error),
+            ErrorSeverity.WARNING
+          );
         }
       }
     }

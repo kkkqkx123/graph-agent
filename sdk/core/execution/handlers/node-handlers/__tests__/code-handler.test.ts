@@ -1,5 +1,8 @@
 /**
  * Code节点处理函数单元测试
+ * 
+ * 测试范围：纯执行逻辑和历史记录
+ * 注意：验证、安全检查、状态判断由应用层负责，不在此测试
  */
 
 import { codeHandler } from '../code-handler';
@@ -7,7 +10,6 @@ import type { Node, CodeNodeConfig } from '@modular-agent/types';
 import { NodeType } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
 import { ThreadStatus } from '@modular-agent/types';
-import { ValidationError } from '@modular-agent/types';
 
 // Mock codeService
 jest.mock('../../../../../core/services/code-service', () => ({
@@ -36,7 +38,7 @@ describe('code-handler', () => {
       variableScopes: {
         global: {},
         thread: {},
-        subgraph: [],
+        local: [],
         loop: []
       },
       input: {},
@@ -127,176 +129,7 @@ describe('code-handler', () => {
     });
   });
 
-  describe('风险等级验证测试', () => {
-    it('应该允许none风险等级的任何脚本名称', async () => {
-      mockExecute.mockResolvedValue({
-        success: true,
-        scriptName: 'any-script-name',
-        scriptType: 'JAVASCRIPT',
-        executionTime: 100
-      });
 
-      mockNode = {
-        id: 'code-node-1',
-        name: 'Code Node',
-        type: NodeType.CODE,
-        config: {
-          scriptName: 'any-script-name',
-          scriptType: 'javascript',
-          risk: 'none'
-        } as CodeNodeConfig,
-        incomingEdgeIds: [],
-        outgoingEdgeIds: []
-      };
-
-      await expect(codeHandler(mockThread, mockNode)).resolves.toBeDefined();
-    });
-
-    it('应该阻止low风险等级包含..或~的脚本名称', async () => {
-      mockNode = {
-        id: 'code-node-1',
-        name: 'Code Node',
-        type: NodeType.CODE,
-        config: {
-          scriptName: 'script-with-..-path',
-          scriptType: 'javascript',
-          risk: 'low'
-        } as CodeNodeConfig,
-        incomingEdgeIds: [],
-        outgoingEdgeIds: []
-      };
-
-      await expect(codeHandler(mockThread, mockNode))
-        .rejects
-        .toThrow(ValidationError);
-    });
-
-    it('应该阻止medium风险等级包含危险命令的脚本名称', async () => {
-      const dangerousCommands = ['rm -rf', 'del /f', 'format', 'shutdown'];
-      
-      for (const command of dangerousCommands) {
-        mockNode = {
-          id: 'code-node-1',
-          name: 'Code Node',
-          type: NodeType.CODE,
-          config: {
-            scriptName: `script-with-${command}`,
-            scriptType: 'javascript',
-            risk: 'medium'
-          } as CodeNodeConfig,
-          incomingEdgeIds: [],
-          outgoingEdgeIds: []
-        };
-
-        await expect(codeHandler(mockThread, mockNode))
-          .rejects
-          .toThrow(ValidationError);
-      }
-    });
-
-    it('应该允许high风险等级的任何脚本名称（但记录警告）', async () => {
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
-
-      mockExecute.mockResolvedValue({
-        success: true,
-        scriptName: 'dangerous-script',
-        scriptType: 'JAVASCRIPT',
-        executionTime: 100
-      });
-
-      mockNode = {
-        id: 'code-node-1',
-        name: 'Code Node',
-        type: NodeType.CODE,
-        config: {
-          scriptName: 'dangerous-script',
-          scriptType: 'javascript',
-          risk: 'high'
-        } as CodeNodeConfig,
-        incomingEdgeIds: [],
-        outgoingEdgeIds: []
-      };
-
-      await expect(codeHandler(mockThread, mockNode)).resolves.toBeDefined();
-      expect(consoleWarnSpy).toHaveBeenCalledWith('Executing high-risk script: dangerous-script');
-
-      consoleWarnSpy.mockRestore();
-    });
-  });
-
-  describe('执行条件测试', () => {
-    it('应该在非RUNNING状态下跳过执行', async () => {
-      const nonRunningStates = [
-        ThreadStatus.CREATED,
-        ThreadStatus.PAUSED,
-        ThreadStatus.COMPLETED,
-        ThreadStatus.FAILED,
-        ThreadStatus.CANCELLED,
-        ThreadStatus.TIMEOUT
-      ];
-
-      for (const status of nonRunningStates) {
-        mockThread.status = status;
-        mockThread.nodeResults = [];
-
-        mockNode = {
-          id: 'code-node-1',
-          name: 'Code Node',
-          type: NodeType.CODE,
-          config: {
-            scriptName: 'test-script',
-            scriptType: 'javascript',
-            risk: 'none'
-          } as CodeNodeConfig,
-          incomingEdgeIds: [],
-          outgoingEdgeIds: []
-        };
-
-        const result = await codeHandler(mockThread, mockNode);
-
-        expect(result).toMatchObject({
-          nodeId: 'code-node-1',
-          nodeType: 'CODE',
-          status: 'SKIPPED',
-          step: 1,
-          executionTime: 0
-        });
-
-        // 验证没有调用codeService
-        expect(mockExecute).not.toHaveBeenCalled();
-        // 验证没有添加到nodeResults
-        expect(mockThread.nodeResults).toHaveLength(0);
-      }
-    });
-
-    it('应该在RUNNING状态下正常执行', async () => {
-      mockThread.status = ThreadStatus.RUNNING;
-      mockExecute.mockResolvedValue({
-        success: true,
-        scriptName: 'test-script',
-        scriptType: 'JAVASCRIPT',
-        executionTime: 100
-      });
-
-      mockNode = {
-        id: 'code-node-1',
-        name: 'Code Node',
-        type: NodeType.CODE,
-        config: {
-          scriptName: 'test-script',
-          scriptType: 'javascript',
-          risk: 'none'
-        } as CodeNodeConfig,
-        incomingEdgeIds: [],
-        outgoingEdgeIds: []
-      };
-
-      await codeHandler(mockThread, mockNode);
-
-      expect(mockExecute).toHaveBeenCalledWith('test-script');
-      expect(mockThread.nodeResults).toHaveLength(1);
-    });
-  });
 
   describe('边界情况测试', () => {
     it('应该正确处理空的nodeResults数组', async () => {

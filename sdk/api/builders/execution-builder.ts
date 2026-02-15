@@ -5,7 +5,7 @@
  */
 
 import type { ThreadResult, ThreadOptions } from '@modular-agent/types';
-import { ok, err } from '@modular-agent/common-utils';
+import { ok, err, getErrorOrNew } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 import { Observable, create, type Observer } from '../utils/observable';
 import { ExecuteThreadCommand } from '../operations/commands/execution/execute-thread-command';
@@ -157,12 +157,12 @@ export class ExecutionBuilder {
             {
               operation: 'error_callback'
             },
-            callbackError instanceof Error ? callbackError : new Error(String(callbackError))
+            getErrorOrNew(callbackError)
           );
         }
       });
 
-      return err(error instanceof Error ? error : new Error(String(error)));
+      return err(getErrorOrNew(error));
     }
   }
 
@@ -431,7 +431,7 @@ export class ExecutionBuilder {
           timestamp: Date.now(),
           workflowId: this.workflowId!,
           threadId: error.threadId || 'unknown',
-          error: error instanceof Error ? error : new Error(String(error))
+          error: getErrorOrNew(error)
         });
       };
 

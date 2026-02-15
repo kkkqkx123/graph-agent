@@ -6,6 +6,8 @@
 import type { HookExecutionContext } from '../index';
 import type { NodeCustomEvent } from '@modular-agent/types';
 import { EventType } from '@modular-agent/types';
+import { SystemExecutionError } from '@modular-agent/types';
+import { getErrorOrNew } from '@modular-agent/common-utils';
 
 /**
  * 触发自定义事件
@@ -37,10 +39,14 @@ export async function emitHookEvent(
   try {
     await emitEvent(event);
   } catch (error) {
-    // 事件触发失败不应影响节点执行结果
-    console.error(
-      `Failed to emit custom event "${eventName}" for node "${node.id}":`,
-      error
+    // 抛出系统执行错误，由 ErrorService 统一处理
+    throw new SystemExecutionError(
+      `Failed to emit custom event "${eventName}" for node "${node.id}"`,
+      'HookEventEmitter',
+      'emitHookEvent',
+      node.id,
+      undefined,
+      { eventName, nodeId: node.id, originalError: getErrorOrNew(error) }
     );
   }
 }

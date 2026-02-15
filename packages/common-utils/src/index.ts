@@ -10,6 +10,9 @@ export * from './http';
 // 工具函数
 export * from './utils';
 
+// 错误处理工具
+export * from './error/error-utils';
+
 // 表达式求值器
 export * from './evalutor';
 

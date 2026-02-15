@@ -86,13 +86,11 @@ export interface TruncateMessageOperation extends MessageOperationConfig {
 
 /**
  * CLEAR 操作配置
+ * 注意：SDK 提供的是完全清空的原子操作。
+ * 如需保留特定消息（如系统消息），应在应用层用 FILTER 先过滤后再 CLEAR
  */
 export interface ClearMessageOperation extends MessageOperationConfig {
   operation: 'CLEAR';
-  /** 是否保留系统消息 */
-  keepSystemMessage?: boolean;
-  /** 是否保留工具描述消息 */
-  keepToolDescription?: boolean;
   /** 清空后是否开始新批次 */
   createNewBatch?: boolean;
 }

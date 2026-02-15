@@ -16,6 +16,7 @@ import { EventManager } from '../../../core/services/event-manager';
 import type { WorkflowDefinition } from '@modular-agent/types';
 import { NodeType, EdgeType, ThreadStatus, WorkflowType, EventType } from '@modular-agent/types';
 import type { CheckpointCreatedEvent, CheckpointDeletedEvent, CheckpointRestoredEvent, CheckpointFailedEvent } from '@modular-agent/types';
+import { getErrorMessage } from '@modular-agent/common-utils';
 
 // 模拟外部系统
 class MockMonitoringService {
@@ -378,7 +379,7 @@ describe('检查点外部系统集成测试', () => {
             severity: 'ERROR',
             message: 'Failed to create checkpoint',
             threadId: threadId,
-            error: error instanceof Error ? error.message : String(error)
+            error: getErrorMessage(error)
           });
           throw error;
         }

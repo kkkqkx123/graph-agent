@@ -11,7 +11,7 @@
 
 import type { BaseEvent, EventType, EventListener } from '@modular-agent/types';
 import { ValidationError, ExecutionError, RuntimeValidationError } from '@modular-agent/types';
-import { now, generateId } from '@modular-agent/common-utils';
+import { now, generateId, getErrorOrNew } from '@modular-agent/common-utils';
 
 /**
  * 监听器包装器
@@ -239,7 +239,7 @@ class EventManager {
             eventType: event.type,
             operation: 'event_listener'
           },
-          error instanceof Error ? error : new Error(String(error))
+          getErrorOrNew(error)
         );
       }
     }

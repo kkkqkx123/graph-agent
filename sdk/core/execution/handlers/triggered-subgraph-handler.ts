@@ -20,7 +20,7 @@ import { ThreadContext } from '../context/thread-context';
 import type { EventManager } from '../../services/event-manager';
 import { EventType } from '@modular-agent/types';
 import type { ThreadResult } from '@modular-agent/types';
-import { now } from '@modular-agent/common-utils';
+import { now, getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
 import { createSubgraphMetadata } from './subgraph-handler';
 
 /**
@@ -160,7 +160,7 @@ export async function emitSubgraphFailedEvent(
     workflowId: mainThreadContext.getWorkflowId(),
     subgraphId: task.subgraphId,
     triggerId: task.triggerId,
-    error: error instanceof Error ? error.message : error,
+    error: getErrorMessage(error),
     executionTime,
     timestamp: now()
   });
@@ -230,7 +230,7 @@ export async function executeSingleTriggeredSubgraph(
     await emitSubgraphFailedEvent(
       task.mainThreadContext,
       task,
-      error instanceof Error ? error : new Error(String(error)),
+      getErrorOrNew(error),
       executionTime,
       eventManager
     );

@@ -11,6 +11,7 @@ import type { Node } from '@modular-agent/types';
 import { NodeType } from '@modular-agent/types';
 import { ValidationError, NotFoundError, ConfigurationValidationError, NodeTemplateNotFoundError } from '@modular-agent/types';
 import { validateNodeByType } from '../validation/node-validation';
+import { getErrorMessage } from '@modular-agent/common-utils';
 
 /**
  * 节点注册表类
@@ -319,7 +320,7 @@ class NodeTemplateRegistry {
         throw error;
       }
       throw new ConfigurationValidationError(
-        `Failed to import node template: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to import node template: ${getErrorMessage(error)}`,
         {
           configType: 'node',
           configPath: 'json'

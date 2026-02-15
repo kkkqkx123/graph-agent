@@ -1,5 +1,6 @@
 import { ConditionEvaluator, conditionEvaluator } from '../condition-evaluator';
 import type { Condition, EvaluationContext } from '@modular-agent/types';
+import { RuntimeValidationError } from '@modular-agent/types';
 
 describe('ConditionEvaluator', () => {
   let evaluator: ConditionEvaluator;
@@ -243,7 +244,7 @@ describe('ConditionEvaluator', () => {
       expect(evaluator.evaluate({ expression: 'undefinedVar != null' }, context)).toBe(true);
     });
 
-    test('should return false when expression field is missing', () => {
+    test('should throw RuntimeValidationError when expression field is missing', () => {
       const condition: Condition = {
         expression: ''
       };
@@ -253,11 +254,10 @@ describe('ConditionEvaluator', () => {
         output: {}
       };
 
-      const result = evaluator.evaluate(condition, context);
-      expect(result).toBe(false);
+      expect(() => evaluator.evaluate(condition, context)).toThrow(RuntimeValidationError);
     });
 
-    test('should return false when expression is empty string', () => {
+    test('should throw RuntimeValidationError when expression is empty string', () => {
       const condition: Condition = {
         expression: ''
       };
@@ -267,11 +267,10 @@ describe('ConditionEvaluator', () => {
         output: {}
       };
 
-      const result = evaluator.evaluate(condition, context);
-      expect(result).toBe(false);
+      expect(() => evaluator.evaluate(condition, context)).toThrow(RuntimeValidationError);
     });
 
-    test('should return false when expression cannot be parsed', () => {
+    test('should throw RuntimeValidationError when expression cannot be parsed', () => {
       const condition: Condition = {
         expression: 'invalid expression without operator'
       };
@@ -281,8 +280,7 @@ describe('ConditionEvaluator', () => {
         output: {}
       };
 
-      const result = evaluator.evaluate(condition, context);
-      expect(result).toBe(false);
+      expect(() => evaluator.evaluate(condition, context)).toThrow(RuntimeValidationError);
     });
 
     test('should handle expressions with metadata', () => {
@@ -303,19 +301,19 @@ describe('ConditionEvaluator', () => {
       expect(evaluator.evaluate(condition, context)).toBe(true);
     });
 
-    test('should catch and handle expression evaluation errors gracefully', () => {
+    test('should return false when variable does not exist', () => {
       const condition: Condition = {
-        expression: 'age == invalid'
+        expression: 'nonExistentVariable > 100'
       };
       const context: EvaluationContext = {
-        variables: { age: 25 },
+        variables: {},
         input: {},
         output: {}
       };
 
-      // Should return false instead of throwing
-      expect(() => evaluator.evaluate(condition, context)).not.toThrow();
-      expect(evaluator.evaluate(condition, context)).toBe(false);
+      // Should return false and log warning
+      const result = evaluator.evaluate(condition, context);
+      expect(result).toBe(false);
     });
 
     test('should evaluate complex expressions with multiple conditions', () => {
@@ -389,7 +387,7 @@ describe('ConditionEvaluator', () => {
   });
 
   describe('error handling', () => {
-    test('should not throw exception for invalid expressions', () => {
+    test('should throw RuntimeValidationError for invalid expressions', () => {
       const condition: Condition = {
         expression: 'this is not a valid expression'
       };
@@ -399,10 +397,10 @@ describe('ConditionEvaluator', () => {
         output: {}
       };
 
-      expect(() => evaluator.evaluate(condition, context)).not.toThrow();
+      expect(() => evaluator.evaluate(condition, context)).toThrow(RuntimeValidationError);
     });
 
-    test('should return false when evaluation encounters an error', () => {
+    test('should return false when variable does not exist', () => {
       const condition: Condition = {
         expression: 'nonExistentVariable > 100'
       };
@@ -416,12 +414,25 @@ describe('ConditionEvaluator', () => {
       expect(result).toBe(false);
     });
 
-    test('should handle malformed comparison expressions', () => {
+    test('should throw RuntimeValidationError for malformed comparison expressions', () => {
       const condition: Condition = {
         expression: 'age >'  // Missing right operand
       };
       const context: EvaluationContext = {
         variables: { age: 25 },
+        input: {},
+        output: {}
+      };
+
+      expect(() => evaluator.evaluate(condition, context)).toThrow(RuntimeValidationError);
+    });
+
+    test('should return false when type mismatch in comparison', () => {
+      const condition: Condition = {
+        expression: 'stringValue > 100'
+      };
+      const context: EvaluationContext = {
+        variables: { stringValue: 'hello' },
         input: {},
         output: {}
       };

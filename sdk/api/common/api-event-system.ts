@@ -14,6 +14,7 @@ import {
   APIEventListener
 } from '../types/event-types';
 import { SDKError, ErrorSeverity } from '@modular-agent/types';
+import { getErrorOrNew } from '@modular-agent/common-utils';
 
 /**
  * 事件总线类
@@ -86,7 +87,7 @@ export class APIEventBus {
             eventType: event.type,
             operation: 'event_listener'
           },
-          error instanceof Error ? error : new Error(String(error))
+          getErrorOrNew(error)
         );
       }
     }

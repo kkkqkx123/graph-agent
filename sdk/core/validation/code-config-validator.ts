@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import type { Script, ScriptExecutionOptions, SandboxConfig } from '@modular-agent/types';
 import { ScriptType } from '@modular-agent/types';
-import { ConfigurationValidationError } from '@modular-agent/types';
+import { ConfigurationValidationError, ErrorSeverity } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 
@@ -184,19 +184,9 @@ export class CodeConfigValidator {
 
     // 验证内容与脚本类型的兼容性
     if (content) {
-      try {
-        this.validateContentCompatibility(scriptType, content);
-      } catch (error) {
-        if (error instanceof ConfigurationValidationError) {
-          return err([error]);
-        }
-        return err([new ConfigurationValidationError(
-          error instanceof Error ? error.message : String(error),
-          {
-            configType: 'script',
-            field: 'content'
-          }
-        )]);
+      const contentResult = this.validateContentCompatibility(scriptType, content);
+      if (contentResult.isErr()) {
+        return contentResult;
       }
     }
 
@@ -229,32 +219,61 @@ export class CodeConfigValidator {
    * 验证内容与脚本类型的兼容性
    * @param scriptType 脚本类型
    * @param content 脚本内容
-   * @throws ValidationError 当内容与类型不兼容时抛出
+   * @returns 验证结果
    */
-  private validateContentCompatibility(scriptType: ScriptType, content: string): void {
+  private validateContentCompatibility(scriptType: ScriptType, content: string): Result<void, ConfigurationValidationError[]> {
     // 基本语法检查
     switch (scriptType) {
       case ScriptType.SHELL:
         if (!content.includes('#!/bin/bash') && !content.includes('#!/bin/sh')) {
-          console.warn('Shell script may be missing shebang line');
+          return err([new ConfigurationValidationError(
+            'Shell script may be missing shebang line',
+            {
+              configType: 'script',
+              field: 'content',
+              severity: ErrorSeverity.WARNING
+            }
+          )]);
         }
         break;
       case ScriptType.POWERSHELL:
         if (!content.includes('#') && !content.includes('Write-Host')) {
-          console.warn('PowerShell script may be missing proper syntax');
+          return err([new ConfigurationValidationError(
+            'PowerShell script may be missing proper syntax',
+            {
+              configType: 'script',
+              field: 'content',
+              severity: ErrorSeverity.WARNING
+            }
+          )]);
         }
         break;
       case ScriptType.PYTHON:
         if (!content.includes('def ') && !content.includes('import ')) {
-          console.warn('Python script may be missing proper syntax');
+          return err([new ConfigurationValidationError(
+            'Python script may be missing proper syntax',
+            {
+              configType: 'script',
+              field: 'content',
+              severity: ErrorSeverity.WARNING
+            }
+          )]);
         }
         break;
       case ScriptType.JAVASCRIPT:
         if (!content.includes('function') && !content.includes('const') && !content.includes('let')) {
-          console.warn('JavaScript script may be missing proper syntax');
+          return err([new ConfigurationValidationError(
+            'JavaScript script may be missing proper syntax',
+            {
+              configType: 'script',
+              field: 'content',
+              severity: ErrorSeverity.WARNING
+            }
+          )]);
         }
         break;
     }
+    return ok(undefined);
   }
 
   /**

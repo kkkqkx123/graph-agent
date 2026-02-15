@@ -11,11 +11,13 @@ import type {
   LLMProfile
 } from '@modular-agent/types';
 import { ProfileManager } from './profile-manager';
-import { ClientFactory, MessageStream } from '@modular-agent/common-utils';
+import { ClientFactory, MessageStream, tryCatchAsync } from '@modular-agent/common-utils';
 import { ConfigurationError, LLMError } from '@modular-agent/types';
 import { now, diffTimestamp, generateId } from '@modular-agent/common-utils';
 import type { EventManager } from '../services/event-manager';
 import { MessageStreamBridge, MessageStreamBridgeContext } from './message-stream-bridge';
+import type { Result } from '@modular-agent/types';
+import { ok, err } from '@modular-agent/common-utils';
 
 /**
  * LLM包装器类
@@ -45,44 +47,55 @@ export class LLMWrapper {
    * 非流式生成
    *
    * @param request LLM请求
-   * @returns LLM响应结果
+   * @returns Result<LLMResult, LLMError>
    */
-  async generate(request: LLMRequest): Promise<LLMResult> {
+  async generate(request: LLMRequest): Promise<Result<LLMResult, LLMError>> {
     const profile = this.getProfile(request.profileId);
     if (!profile) {
-      throw new ConfigurationError(
+      return err(new LLMError(
         'LLM Profile not found',
-        request.profileId || 'default',
-        { availableProfiles: this.profileManager.list().map(p => p.id) }
-      );
+        'unknown',
+        undefined,
+        undefined,
+        {
+          profileId: request.profileId || 'default',
+          availableProfiles: this.profileManager.list().map(p => p.id)
+        }
+      ));
     }
     
     const client = this.clientFactory.createClient(profile);
     const startTime = now();
     
-    try {
-      const result = await client.generate(request);
-      result.duration = diffTimestamp(startTime, now());
-      return result;
-    } catch (error) {
-      throw this.handleError(error, profile);
+    const result = await tryCatchAsync(client.generate(request));
+    
+    if (result.isErr()) {
+      return err(this.convertToLLMError(result.error, profile));
     }
+    
+    result.value.duration = diffTimestamp(startTime, now());
+    return ok(result.value);
   }
 
   /**
    * 流式生成
    *
    * @param request LLM请求
-   * @returns MessageStream
+   * @returns Result<MessageStream, LLMError>
    */
-  async generateStream(request: LLMRequest): Promise<MessageStream> {
+  async generateStream(request: LLMRequest): Promise<Result<MessageStream, LLMError>> {
     const profile = this.getProfile(request.profileId);
     if (!profile) {
-      throw new ConfigurationError(
+      return err(new LLMError(
         'LLM Profile not found',
-        request.profileId || 'default',
-        { availableProfiles: this.profileManager.list().map(p => p.id) }
-      );
+        'unknown',
+        undefined,
+        undefined,
+        {
+          profileId: request.profileId || 'default',
+          availableProfiles: this.profileManager.list().map(p => p.id)
+        }
+      ));
     }
     
     const client = this.clientFactory.createClient(profile);
@@ -113,12 +126,12 @@ export class LLMWrapper {
         }
       }
       
-      return stream;
+      return ok(stream);
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         stream.abort(); // 触发 ABORT 事件，桥接器会转换为 SDK 事件
       }
-      throw this.handleError(error, profile);
+      return err(this.convertToLLMError(error, profile));
     } finally {
       // 清理桥接器
       if (bridge) {
@@ -200,7 +213,7 @@ export class LLMWrapper {
   }
 
   /**
-   * 处理错误，转换为LLMError
+   * 转换错误为LLMError
    *
    * 统一处理来自HTTP客户端和LLM客户端的各种错误，
    * 包装成LLMError，附加provider、model等profile信息
@@ -209,9 +222,16 @@ export class LLMWrapper {
    * @param profile LLM Profile
    * @returns LLMError
    */
-  private handleError(error: any, profile: LLMProfile): LLMError {
-    const errorMessage = error?.message || String(error);
-    const errorCode = error?.code || error?.status;
+  private convertToLLMError(error: unknown, profile: LLMProfile): LLMError {
+    // 如果已经是LLMError，直接返回
+    if (error instanceof LLMError) {
+      return error;
+    }
+    
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorCode = error instanceof Error && ('code' in error || 'status' in error)
+      ? (error as any).code || (error as any).status
+      : undefined;
 
     return new LLMError(
       `${profile.provider} API error: ${errorMessage}`,
@@ -225,4 +245,4 @@ export class LLMWrapper {
       error instanceof Error ? error : undefined
     );
   }
-  }
+}

@@ -23,6 +23,7 @@ import { ValidationError, ExecutionError, ConfigurationValidationError, Workflow
 import type { GraphRegistry } from './graph-registry';
 import { processWorkflow, type ProcessOptions } from '../graph/workflow-processor';
 import { SingletonRegistry } from '../execution/context/singleton-registry';
+import { getErrorMessage } from '@modular-agent/common-utils';
 
 /**
  * 工作流版本信息
@@ -176,7 +177,7 @@ export class WorkflowRegistry {
     this.preprocessWorkflow(workflow).catch(error => {
       // 抛出验证错误
       throw new ConfigurationValidationError(
-        `Workflow preprocessing failed: ${error instanceof Error ? error.message : String(error)}`,
+        `Workflow preprocessing failed: ${getErrorMessage(error)}`,
         {
           configType: 'workflow',
           configPath: 'workflow.definition',
@@ -505,7 +506,7 @@ export class WorkflowRegistry {
       return workflow.id;
     } catch (error) {
       throw new ConfigurationValidationError(
-        `Failed to import workflow: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to import workflow: ${getErrorMessage(error)}`,
         {
           configType: 'workflow',
           configPath: 'json'

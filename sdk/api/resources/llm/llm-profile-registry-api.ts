@@ -8,7 +8,8 @@ import { ProfileManager } from '../../../core/llm/profile-manager';
 import type { LLMProfile, LLMProvider } from '@modular-agent/types';
 import { ValidationError, NotFoundError, ConfigurationValidationError, NodeTemplateNotFoundError } from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api';
-import { getErrorMessage, isSuccess, getData } from '../../types/execution-result';
+import { isSuccess, getData } from '../../types/execution-result';
+import { getErrorMessage } from '@modular-agent/common-utils';
 import type { APIDependencyManager } from '../../core/sdk-dependencies';
 
 /**
@@ -272,11 +273,11 @@ export class LLMProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string
         throw error;
       }
       throw new ConfigurationValidationError(
-        `Failed to import profile: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to import profile: ${getErrorMessage(error)}`,
         {
           configType: 'llm',
           configPath: 'profile',
-          context: { parseError: error instanceof Error ? error.message : 'Unknown error' }
+          context: { parseError: getErrorMessage(error) }
         }
       );
     }
@@ -313,7 +314,7 @@ export class LLMProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string
         throw error;
       }
       throw new ConfigurationValidationError(
-        `Failed to import profiles: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to import profiles: ${getErrorMessage(error)}`,
         {
           configType: 'llm',
           configPath: 'profiles'

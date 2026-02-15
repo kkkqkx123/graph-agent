@@ -25,11 +25,11 @@ import { LLMExecutionCoordinator } from './llm-execution-coordinator';
 import { enterSubgraph, exitSubgraph, getSubgraphInput, getSubgraphOutput } from '../handlers/subgraph-handler';
 import { EventType } from '@modular-agent/types';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '@modular-agent/types';
-import { ExecutionError, ThreadInterruptedException } from '@modular-agent/types';
+import { ExecutionError, ThreadInterruptedException, SystemExecutionError } from '@modular-agent/types';
 import { executeHook } from '../handlers/hook-handlers';
 import { HookType } from '@modular-agent/types';
 import { NodeType } from '@modular-agent/types';
-import { now, diffTimestamp } from '@modular-agent/common-utils';
+import { now, diffTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
 import { getNodeHandler } from '../handlers/node-handlers';
 import { SUBGRAPH_METADATA_KEYS, SubgraphBoundaryType } from '@modular-agent/types';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils';
@@ -110,8 +110,15 @@ export class NodeExecutionCoordinator {
           this.checkpointDependencies
         );
       } catch (error) {
-        console.error(`Failed to create interruption checkpoint:`, error);
-        // 检查点创建失败不应影响中断流程
+        // 抛出系统执行错误，由 ErrorService 统一处理
+        throw new SystemExecutionError(
+          'Failed to create interruption checkpoint',
+          'NodeExecutionCoordinator',
+          'handleInterruption',
+          nodeId,
+          undefined,
+          { nodeId, originalError: getErrorOrNew(error) }
+        );
       }
     }
 
@@ -197,11 +204,15 @@ export class NodeExecutionCoordinator {
               this.checkpointDependencies
             );
           } catch (error) {
-            console.error(
-              `Failed to create checkpoint before node "${node.name}":`,
-              error
+            // 抛出系统执行错误，由 ErrorService 统一处理
+            throw new SystemExecutionError(
+              `Failed to create checkpoint before node "${node.name}"`,
+              'NodeExecutionCoordinator',
+              'executeNode',
+              node.id,
+              undefined,
+              { nodeId: node.id, nodeName: node.name, originalError: getErrorOrNew(error) }
             );
-            // 检查点创建失败不应影响节点执行
           }
         }
       }
@@ -264,11 +275,15 @@ export class NodeExecutionCoordinator {
               this.checkpointDependencies
             );
           } catch (error) {
-            console.error(
-              `Failed to create checkpoint after node "${node.name}":`,
-              error
+            // 抛出系统执行错误，由 ErrorService 统一处理
+            throw new SystemExecutionError(
+              `Failed to create checkpoint after node "${node.name}"`,
+              'NodeExecutionCoordinator',
+              'executeNode',
+              node.id,
+              undefined,
+              { nodeId: node.id, nodeName: node.name, originalError: getErrorOrNew(error) }
             );
-            // 检查点创建失败不应影响节点执行
           }
         }
       }

@@ -24,7 +24,7 @@ import type { HumanRelayRequest, HumanRelayResponse, HumanRelayExecutionResult, 
 import type { EventManager } from '../../services/event-manager';
 import type { ThreadContext } from '../context/thread-context';
 import { EventType, MessageRole } from '@modular-agent/types';
-import { generateId, now } from '@modular-agent/common-utils';
+import { generateId, now, getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
 
 /**
  * HumanRelay 任务接口
@@ -185,7 +185,7 @@ export async function emitHumanRelayFailedEvent(
     workflowId: task.threadContext.getWorkflowId(),
     threadId: task.threadContext.getThreadId(),
     requestId: task.requestId,
-    reason: error instanceof Error ? error.message : error
+    reason: getErrorMessage(error)
   });
 }
 
@@ -313,7 +313,7 @@ export async function executeHumanRelay(
     // 触发 HUMAN_RELAY_FAILED 事件
     await emitHumanRelayFailedEvent(
       task,
-      error instanceof Error ? error : new Error(String(error)),
+      getErrorOrNew(error),
       eventManager
     );
     throw error;

@@ -14,6 +14,7 @@ import type { WorkflowTrigger } from '@modular-agent/types';
 import { ValidationError, NotFoundError, ConfigurationValidationError, TriggerTemplateNotFoundError } from '@modular-agent/types';
 import { EventType } from '@modular-agent/types';
 import { TriggerActionType } from '@modular-agent/types';
+import { getErrorMessage } from '@modular-agent/common-utils';
 
 /**
  * 触发器模板注册表类
@@ -310,7 +311,7 @@ class TriggerTemplateRegistry {
         throw error;
       }
       throw new ConfigurationValidationError(
-        `Failed to import trigger template: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to import trigger template: ${getErrorMessage(error)}`,
         {
           configType: 'trigger',
           configPath: 'json'

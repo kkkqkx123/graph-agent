@@ -11,6 +11,7 @@ import type { ThreadRegistry } from '../../services/thread-registry';
 import type { EventManager } from '../../services/event-manager';
 import { ExecutionError, RuntimeValidationError } from '@modular-agent/types';
 import { MessageArrayUtils } from '../../utils/message-array-utils';
+import { getErrorMessage, getErrorOrUndefined } from '@modular-agent/common-utils';
 import {
   buildThreadForkStartedEvent,
   buildThreadForkCompletedEvent,
@@ -217,8 +218,8 @@ export async function join(
           `Failed to merge conversation history from main thread`,
           undefined,
           parentThreadId,
-          { mainPathId, mainThreadId: mainThread.id, error: error instanceof Error ? error.message : String(error) },
-          error instanceof Error ? error : undefined
+          { mainPathId, mainThreadId: mainThread.id, error: getErrorMessage(error) },
+          getErrorOrUndefined(error)
         );
       }
     }

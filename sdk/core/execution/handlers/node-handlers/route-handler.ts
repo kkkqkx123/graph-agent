@@ -8,6 +8,7 @@ import type { Node, RouteNodeConfig } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
 import type { Condition, EvaluationContext } from '@modular-agent/types';
 import { conditionEvaluator } from '@modular-agent/common-utils';
+import { getErrorOrNew } from '@modular-agent/common-utils';
 
 /**
  * 检查节点是否可以执行
@@ -33,8 +34,15 @@ function evaluateRouteCondition(condition: Condition, thread: Thread): boolean {
 
     return conditionEvaluator.evaluate(condition, context);
   } catch (error) {
-    console.error(`Failed to evaluate route condition: ${condition.expression}`, error);
-    return false;
+    // 抛出业务逻辑错误，由 ErrorService 统一处理
+    throw new BusinessLogicError(
+      `Failed to evaluate route condition: ${condition.expression}`,
+      'route',
+      'condition_evaluation',
+      undefined,
+      undefined,
+      { expression: condition.expression, originalError: getErrorOrNew(error) }
+    );
   }
 }
 

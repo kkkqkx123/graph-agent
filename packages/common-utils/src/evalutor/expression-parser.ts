@@ -32,8 +32,10 @@
  */
 
 import type { EvaluationContext } from '@modular-agent/types';
+import { RuntimeValidationError } from '@modular-agent/types';
 import { validateExpression, validatePath } from './security-validator';
 import { resolvePath } from './path-resolver';
+import { getGlobalLogger } from '../logger/logger';
 
 /**
  * 解析表达式字符串
@@ -185,6 +187,8 @@ export function parseCompoundExpression(expression: string): Array<{ expression:
  * 表达式求值器
  */
 export class ExpressionEvaluator {
+  private logger = getGlobalLogger().child('ExpressionEvaluator', { pkg: 'common-utils' });
+
   /**
    * 求值表达式
    * @param expression 表达式字符串
@@ -192,24 +196,29 @@ export class ExpressionEvaluator {
    * @returns 求值结果
    */
   evaluate(expression: string, context: EvaluationContext): boolean {
-    try {
-      // 检查是否为复合表达式（包含逻辑运算符）
-      if (expression.includes('&&') || expression.includes('||')) {
-        return this.evaluateCompoundExpression(expression, context);
-      }
-
-      // 简单表达式
-      const parsed = parseExpression(expression);
-      if (!parsed) {
-        console.error(`Failed to parse expression: ${expression}`);
-        return false;
-      }
-
-      return this.evaluateCondition(parsed, context);
-    } catch (error) {
-      console.error(`Failed to evaluate expression: ${expression}`, error);
-      return false;
+    // 检查是否为复合表达式（包含逻辑运算符）
+    if (expression.includes('&&') || expression.includes('||')) {
+      return this.evaluateCompoundExpression(expression, context);
     }
+
+    // 简单表达式
+    const parsed = parseExpression(expression);
+    if (!parsed) {
+      throw new RuntimeValidationError(
+        `Failed to parse expression: "${expression}" - invalid syntax or unsupported operator`,
+        {
+          operation: 'expression_parsing',
+          field: 'expression',
+          value: expression,
+          context: {
+            reason: 'Expression could not be parsed',
+            hint: 'Check for valid operators: ==, !=, >, <, >=, <=, contains, in'
+          }
+        }
+      );
+    }
+
+    return this.evaluateCondition(parsed, context, expression);
   }
 
   /**
@@ -219,12 +228,34 @@ export class ExpressionEvaluator {
     const subExpressions = parseCompoundExpression(expression);
 
     if (subExpressions.length === 0) {
-      return false;
+      throw new RuntimeValidationError(
+        `Failed to parse compound expression: "${expression}" - no valid sub-expressions found`,
+        {
+          operation: 'compound_expression_parsing',
+          field: 'expression',
+          value: expression,
+          context: {
+            reason: 'Compound expression parsing returned empty result',
+            hint: 'Check for balanced parentheses and valid logical operators (&&, ||)'
+          }
+        }
+      );
     }
 
     const first = subExpressions[0];
     if (!first) {
-      return false;
+      throw new RuntimeValidationError(
+        `Invalid compound expression structure: "${expression}" - first sub-expression is null`,
+        {
+          operation: 'compound_expression_parsing',
+          field: 'expression',
+          value: expression,
+          context: {
+            reason: 'First sub-expression is null',
+            subExpressionCount: subExpressions.length
+          }
+        }
+      );
     }
 
     let result = this.evaluate(first.expression, context);
@@ -252,7 +283,8 @@ export class ExpressionEvaluator {
    */
   private evaluateCondition(
     condition: { variablePath: string; operator: string; value: any },
-    context: EvaluationContext
+    context: EvaluationContext,
+    originalExpression?: string
   ): boolean {
     // 处理纯布尔值表达式（variablePath 为空）
     if (!condition.variablePath) {
@@ -267,26 +299,82 @@ export class ExpressionEvaluator {
       compareValue = this.getVariableValue(compareValue.path, context);
     }
 
+    // 如果变量不存在，记录警告日志但不返回 false，让比较操作符正常处理
+    if (variableValue === undefined) {
+      this.logger.warn(
+        `Variable not found in condition evaluation: ${condition.variablePath}`,
+        { variablePath: condition.variablePath, operator: condition.operator, compareValue }
+      );
+    }
+
     switch (condition.operator) {
       case '==':
         return variableValue === compareValue;
       case '!=':
         return variableValue !== compareValue;
       case '>':
-        return typeof variableValue === 'number' && typeof compareValue === 'number' && variableValue > compareValue;
+        if (typeof variableValue !== 'number' || typeof compareValue !== 'number') {
+          this.logger.warn(
+            `Type mismatch in comparison: ${condition.variablePath} (${typeof variableValue}) > ${typeof compareValue}`,
+            { variablePath: condition.variablePath, variableValue, compareValue }
+          );
+          return false;
+        }
+        return variableValue > compareValue;
       case '<':
-        return typeof variableValue === 'number' && typeof compareValue === 'number' && variableValue < compareValue;
+        if (typeof variableValue !== 'number' || typeof compareValue !== 'number') {
+          this.logger.warn(
+            `Type mismatch in comparison: ${condition.variablePath} (${typeof variableValue}) < ${typeof compareValue}`,
+            { variablePath: condition.variablePath, variableValue, compareValue }
+          );
+          return false;
+        }
+        return variableValue < compareValue;
       case '>=':
-        return typeof variableValue === 'number' && typeof compareValue === 'number' && variableValue >= compareValue;
+        if (typeof variableValue !== 'number' || typeof compareValue !== 'number') {
+          this.logger.warn(
+            `Type mismatch in comparison: ${condition.variablePath} (${typeof variableValue}) >= ${typeof compareValue}`,
+            { variablePath: condition.variablePath, variableValue, compareValue }
+          );
+          return false;
+        }
+        return variableValue >= compareValue;
       case '<=':
-        return typeof variableValue === 'number' && typeof compareValue === 'number' && variableValue <= compareValue;
+        if (typeof variableValue !== 'number' || typeof compareValue !== 'number') {
+          this.logger.warn(
+            `Type mismatch in comparison: ${condition.variablePath} (${typeof variableValue}) <= ${typeof compareValue}`,
+            { variablePath: condition.variablePath, variableValue, compareValue }
+          );
+          return false;
+        }
+        return variableValue <= compareValue;
       case 'contains':
         return String(variableValue).includes(String(compareValue));
       case 'in':
-        return Array.isArray(compareValue) && compareValue.includes(variableValue);
+        if (!Array.isArray(compareValue)) {
+          this.logger.warn(
+            `Right operand of 'in' operator must be an array: ${typeof compareValue}`,
+            { variablePath: condition.variablePath, compareValue }
+          );
+          return false;
+        }
+        return compareValue.includes(variableValue);
       default:
-        console.error(`Unknown operator: ${condition.operator}`);
-        return false;
+        throw new RuntimeValidationError(
+          `Unknown operator "${condition.operator}" in expression: "${originalExpression || condition.variablePath + ' ' + condition.operator + ' ' + JSON.stringify(compareValue)}"`,
+          {
+            operation: 'condition_evaluation',
+            field: 'operator',
+            value: condition.operator,
+            context: {
+              variablePath: condition.variablePath,
+              variableValue,
+              compareValue,
+              originalExpression,
+              hint: 'Supported operators: ==, !=, >, <, >=, <=, contains, in'
+            }
+          }
+        );
     }
   }
 

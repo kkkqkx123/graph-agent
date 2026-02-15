@@ -16,6 +16,9 @@ import { StatelessExecutor } from '@modular-agent/tool-executors';
 import { StatefulExecutor } from '@modular-agent/tool-executors';
 import { RestExecutor } from '@modular-agent/tool-executors';
 import { McpExecutor } from '@modular-agent/tool-executors';
+import { tryCatchAsync } from '@modular-agent/common-utils';
+import type { Result } from '@modular-agent/types';
+import { ok, err } from '@modular-agent/common-utils';
 
 /**
  * 工具服务类
@@ -131,51 +134,45 @@ class ToolService {
    * @param parameters 工具参数
    * @param options 执行选项
    * @param threadId 线程ID（可选，用于有状态工具）
-   * @returns 执行结果
-   * @throws NotFoundError 如果工具不存在
-   * @throws ToolError 如果执行失败
+   * @returns Result<ToolExecutionResult, ToolError>
    */
   async execute(
     toolName: string,
     parameters: Record<string, any>,
     options: ToolExecutionOptions = {},
     threadId?: string
-  ): Promise<ToolExecutionResult> {
+  ): Promise<Result<ToolExecutionResult, ToolError>> {
     // 获取工具定义
     const tool = this.getTool(toolName);
 
     // 获取对应的执行器
     const executor = this.executors.get(tool.type);
     if (!executor) {
-      throw new ToolError(
+      return err(new ToolError(
         `No executor found for tool type '${tool.type}'`,
         toolName,
-        tool.type
-      );
+        tool.type,
+        { parameters }
+      ));
     }
 
     // 直接调用执行器（执行器已内置验证、重试、超时功能）
-    try {
-      return await executor.execute(tool, parameters, options, threadId);
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new ToolError(
-          `Tool execution failed: ${error.message}`,
-          toolName,
-          tool.type,
-          { parameters },
-          error
-        );
-      }
-      throw error;
+    const result = await tryCatchAsync(
+      executor.execute(tool, parameters, options, threadId)
+    );
+    
+    if (result.isErr()) {
+      return err(this.convertToToolError(result.error, toolName, tool.type, parameters));
     }
+    
+    return ok(result.value);
   }
 
   /**
    * 批量执行工具
    * @param executions 执行任务数组
    * @param threadId 线程ID（可选，用于有状态工具）
-   * @returns 执行结果数组
+   * @returns Result<ToolExecutionResult[], ToolError>
    */
   async executeBatch(
     executions: Array<{
@@ -184,13 +181,24 @@ class ToolService {
       options?: ToolExecutionOptions;
     }>,
     threadId?: string
-  ): Promise<ToolExecutionResult[]> {
+  ): Promise<Result<ToolExecutionResult[], ToolError>> {
     // 并行执行所有工具
-    return Promise.all(
+    const results = await Promise.all(
       executions.map(exec =>
         this.execute(exec.toolName, exec.parameters, exec.options, threadId)
       )
     );
+    
+    // 检查是否有错误
+    for (const result of results) {
+      if (result.isErr()) {
+        return result; // 返回第一个错误
+      }
+    }
+    
+    // 全部成功，返回结果数组
+    const successResults = results as Array<{ isOk(): true; value: ToolExecutionResult }>;
+    return ok(successResults.map(r => r.value));
   }
 
   /**
@@ -243,6 +251,36 @@ class ToolService {
     const tool = this.getTool(toolName);
     const updatedTool = { ...tool, ...updates };
     this.registry.register(updatedTool);
+  }
+  /**
+   * 转换错误为ToolError
+   *
+   * @param error 原始错误
+   * @param toolName 工具名称
+   * @param toolType 工具类型
+   * @param parameters 工具参数
+   * @returns ToolError
+   */
+  private convertToToolError(
+    error: unknown,
+    toolName: string,
+    toolType: string,
+    parameters: Record<string, any>
+  ): ToolError {
+    // 如果已经是ToolError，直接返回
+    if (error instanceof ToolError) {
+      return error;
+    }
+    
+    const message = error instanceof Error ? error.message : String(error);
+    
+    return new ToolError(
+      `Tool execution failed: ${message}`,
+      toolName,
+      toolType,
+      { parameters },
+      error instanceof Error ? error : undefined
+    );
   }
 }
 

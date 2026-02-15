@@ -8,7 +8,7 @@ import type { Thread } from '@modular-agent/types';
 import type { Condition, EvaluationContext } from '@modular-agent/types';
 import { ExecutionError, NotFoundError } from '@modular-agent/types';
 import { conditionEvaluator } from '@modular-agent/common-utils';
-import { now } from '@modular-agent/common-utils';
+import { now, getErrorMessage, getErrorOrUndefined } from '@modular-agent/common-utils';
 
 /**
  * 循环状态
@@ -84,7 +84,7 @@ function evaluateBreakCondition(breakCondition: Condition, thread: Thread): bool
     return conditionEvaluator.evaluate(breakCondition, context);
   } catch (error) {
     throw new ExecutionError(
-      `Failed to evaluate break condition: ${error instanceof Error ? error.message : String(error)}`,
+      `Failed to evaluate break condition: ${getErrorMessage(error)}`,
       thread.currentNodeId,
       thread.workflowId,
       {
@@ -93,7 +93,7 @@ function evaluateBreakCondition(breakCondition: Condition, thread: Thread): bool
         input: thread.input,
         output: thread.output
       },
-      error instanceof Error ? error : undefined
+      getErrorOrUndefined(error)
     );
   }
 }

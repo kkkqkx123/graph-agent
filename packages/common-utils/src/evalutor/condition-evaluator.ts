@@ -4,13 +4,16 @@
  */
 
 import type { Condition, EvaluationContext } from '@modular-agent/types';
+import { RuntimeValidationError } from '@modular-agent/types';
 import { ExpressionEvaluator } from './expression-parser';
+import { getGlobalLogger } from '../logger/logger';
 
 /**
  * 条件评估器实现
  */
 export class ConditionEvaluator {
   private expressionEvaluator: ExpressionEvaluator;
+  private logger = getGlobalLogger().child('ConditionEvaluator', { pkg: 'common-utils' });
 
   constructor() {
     this.expressionEvaluator = new ExpressionEvaluator();
@@ -23,18 +26,29 @@ export class ConditionEvaluator {
    * @returns 条件是否满足
    */
   evaluate(condition: Condition, context: EvaluationContext): boolean {
-    try {
-      // 必须提供 expression 字段
-      if (!condition.expression) {
-        console.error('Condition must have an expression field');
-        return false;
-      }
+    // 必须提供 expression 字段
+    if (!condition.expression) {
+      throw new RuntimeValidationError(
+        'Condition must have an expression field',
+        { operation: 'condition_evaluation', context: { condition } }
+      );
+    }
 
+    try {
       return this.expressionEvaluator.evaluate(condition.expression, context);
     } catch (error) {
-      // 评估失败返回false，不影响主流程
-      console.error(`Failed to evaluate condition: ${condition.expression}`, error);
-      return false;
+      // 区分语法错误和运行时评估失败
+      if (error instanceof RuntimeValidationError) {
+        // 语法/解析错误：重新抛出
+        throw error;
+      } else {
+        // 运行时评估失败：记录日志并返回 false
+        this.logger.warn(
+          `Condition evaluation failed: ${condition.expression}`,
+          { expression: condition.expression, error: error instanceof Error ? error.message : String(error) }
+        );
+        return false;
+      }
     }
   }
 }

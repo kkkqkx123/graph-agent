@@ -26,7 +26,7 @@ describe('route-handler', () => {
       variableScopes: {
         global: {},
         thread: {},
-        subgraph: [],
+        local: [],
         loop: []
       },
       input: {},
@@ -383,7 +383,8 @@ describe('route-handler', () => {
         config: {
           routes: [
             {
-              condition: { expression: 'invalid.syntax.error' },
+              // 使用不存在的变量，会导致运行时评估失败但不会抛出异常
+              condition: { expression: 'nonExistentVariable > 100' },
               targetNodeId: 'invalid-node',
               priority: 10
             },
@@ -467,7 +468,7 @@ describe('route-handler', () => {
       mockThread.variableScopes = {
         global: {},
         thread: {},
-        subgraph: [],
+        local: [],
         loop: []
       };
 

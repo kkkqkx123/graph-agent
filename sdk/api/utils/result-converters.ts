@@ -6,7 +6,7 @@
 import type { Result } from '@modular-agent/types';
 import type { ExecutionResult } from '../types/execution-result';
 import { success, failure, isSuccess } from '../types/execution-result';
-import { ok, err } from '@modular-agent/common-utils';
+import { ok, err, getErrorMessage } from '@modular-agent/common-utils';
 import { SDKError, ExecutionError as SDKExecutionError, ValidationError } from '@modular-agent/types';
 
 /**
@@ -27,7 +27,7 @@ export function resultToExecutionResult<T, E>(
     const error = result.unwrapOrElse(err => err);
     return failure(
       new SDKExecutionError(
-        error instanceof Error ? error.message : String(error),
+        getErrorMessage(error),
         undefined,
         undefined,
         { originalError: error }

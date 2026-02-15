@@ -12,6 +12,7 @@
 import type { WorkflowConfigFile } from './types';
 import { ConfigurationError } from '@modular-agent/types';
 import { globalInstanceManager } from '../../index';
+import { isError } from '@modular-agent/common-utils';
 
 /**
  * 获取 TOML 解析器实例
@@ -46,7 +47,7 @@ export function parseToml(content: string): WorkflowConfigFile {
     if (error instanceof ConfigurationError) {
       throw error;
     }
-    if (error instanceof Error) {
+    if (isError(error)) {
       throw new ConfigurationError(
         `TOML解析失败: ${error.message}`,
         undefined,

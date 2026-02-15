@@ -5,6 +5,7 @@
 
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import { ValidationError, RuntimeValidationError } from '@modular-agent/types';
+import { getErrorMessage } from '@modular-agent/common-utils';
 
 /**
  * 创建成功结果
@@ -38,7 +39,7 @@ function createFailureResult(
     success: false,
     action,
     executionTime,
-    error: error instanceof Error ? error.message : String(error),
+    error: getErrorMessage(error),
 
   };
 }

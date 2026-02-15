@@ -17,6 +17,7 @@ import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types
 import type { ExecuteTriggeredSubgraphActionConfig } from '@modular-agent/types';
 import { NotFoundError, ValidationError, RuntimeValidationError, ThreadContextNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
 import { ExecutionContext } from '../../context/execution-context';
+import { getErrorMessage } from '@modular-agent/common-utils';
 import {
   executeSingleTriggeredSubgraph,
   type TriggeredSubgraphTask,
@@ -57,7 +58,7 @@ function createFailureResult(
     success: false,
     action,
     executionTime,
-    error: error instanceof Error ? error.message : String(error),
+    error: getErrorMessage(error),
   };
 }
 

@@ -23,8 +23,9 @@ import { now } from '@modular-agent/common-utils';
 import type { ConversationManager } from '../managers/conversation-manager';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils';
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils';
-import { ThreadInterruptedException } from '@modular-agent/types';
+import { ThreadInterruptedException, SystemExecutionError, ToolError } from '@modular-agent/types';
 import { MessageBuilder } from '../../messages/message-builder';
+import type { ToolExecutionResult as ServiceToolExecutionResult } from '@modular-agent/types';
 
 /**
  * 工具执行结果
@@ -192,11 +193,15 @@ export class ToolCallExecutor {
             this.checkpointDependencies
           );
         } catch (error) {
-          console.error(
-            `Failed to create checkpoint before tool "${toolCall.name}":`,
-            error
+          // 抛出系统执行错误，由 ErrorService 统一处理
+          throw new SystemExecutionError(
+            `Failed to create checkpoint before tool "${toolCall.name}"`,
+            'ToolCallExecutor',
+            'executeToolCall',
+            undefined,
+            undefined,
+            { toolName: toolCall.name, originalError: error instanceof Error ? error : new Error(String(error)) }
           );
-          // 检查点创建失败不应影响工具执行
         }
       }
     }
@@ -214,95 +219,26 @@ export class ToolCallExecutor {
       });
     }
 
-    try {
-      // 调用 ToolService 执行工具
-      const result = await this.toolService.execute(
-        toolCall.name,
-        JSON.parse(toolCall.arguments),
-        {
-          timeout: 30000,
-          retries: 0,
-          retryDelay: 1000,
-          signal: options?.abortSignal // 传递 AbortSignal
-        }
-      );
-
-      const executionTime = Date.now() - startTime;
-
-      // 构建工具结果消息
-      const toolMessage = {
-        role: MessageRole.TOOL,
-        content: result.success
-          ? (typeof result.result === 'string' ? result.result : JSON.stringify(result.result))
-          : (result.error || 'Tool execution failed'),
-        toolCallId: toolCall.id
-      };
-      conversationState.addMessage(toolMessage);
-
-      // 触发消息添加事件
-      if (this.eventManager) {
-        await safeEmit(this.eventManager, {
-          type: EventType.MESSAGE_ADDED,
-          timestamp: now(),
-          workflowId: '',
-          threadId: threadId || '',
-          nodeId,
-          role: toolMessage.role,
-          content: toolMessage.content,
-          toolCalls: undefined // tool message doesn't have toolCalls
-        });
+    // 调用 ToolService 执行工具
+    const result = await this.toolService.execute(
+      toolCall.name,
+      JSON.parse(toolCall.arguments),
+      {
+        timeout: 30000,
+        retries: 0,
+        retryDelay: 1000,
+        signal: options?.abortSignal // 传递 AbortSignal
       }
+    );
 
-      // 工具调用后创建检查点（如果配置了）
-      if (toolConfig?.createCheckpoint && this.checkpointDependencies && threadId) {
-        const checkpointConfig = toolConfig.createCheckpoint;
-        if (checkpointConfig === 'after' || checkpointConfig === 'both') {
-          try {
-            await createCheckpoint(
-              {
-                threadId,
-                toolName: toolCall.name,
-                description: toolConfig.checkpointDescriptionTemplate || `After tool: ${toolCall.name}`
-              },
-              this.checkpointDependencies
-            );
-          } catch (error) {
-            console.error(
-              `Failed to create checkpoint after tool "${toolCall.name}":`,
-              error
-            );
-            // 检查点创建失败不应影响工具执行
-          }
-        }
-      }
+    const executionTime = Date.now() - startTime;
 
-      // 触发工具调用完成事件
-      if (this.eventManager) {
-        await safeEmit(this.eventManager, {
-          type: EventType.TOOL_CALL_COMPLETED,
-          timestamp: now(),
-          workflowId: '',
-          threadId: threadId || '',
-          nodeId: nodeId || '',
-          toolName: toolCall.name,
-          toolResult: result.result,
-          executionTime
-        });
-      }
-
-      return {
-        toolCallId: toolCall.id,
-        toolName: toolCall.name,
-        success: true,
-        result: result.result,
-        executionTime
-      };
-    } catch (error) {
-      const executionTime = Date.now() - startTime;
-      const errorMessage = error instanceof Error ? error.message : String(error);
+    if (result.isErr()) {
+      const error = result.error;
+      const errorMessage = error.message;
 
       // 处理 AbortError，转换为 ThreadInterruptedException
-      if (error instanceof Error && error.name === 'AbortError') {
+      if (error.cause?.name === 'AbortError') {
         const reason = options?.abortSignal?.reason;
         if (reason instanceof ThreadInterruptedException) {
           throw reason; // 直接重新抛出
@@ -310,7 +246,7 @@ export class ToolCallExecutor {
         // 如果是其他 AbortError，转换为 ThreadInterruptedException
         throw new ThreadInterruptedException(
           'Tool execution aborted',
-          'STOP', // 默认为 STOP
+          'STOP',
           threadId || '',
           nodeId || ''
         );
@@ -334,7 +270,7 @@ export class ToolCallExecutor {
           nodeId,
           role: toolMessage.role,
           content: toolMessage.content,
-          toolCalls: undefined // tool message doesn't have toolCalls
+          toolCalls: undefined
         });
       }
 
@@ -359,5 +295,81 @@ export class ToolCallExecutor {
         executionTime
       };
     }
+
+    // 成功执行
+    const serviceResult = result.value;
+
+    // 构建工具结果消息
+    const toolMessage = {
+      role: MessageRole.TOOL,
+      content: serviceResult.success
+        ? (typeof serviceResult.result === 'string' ? serviceResult.result : JSON.stringify(serviceResult.result))
+        : (serviceResult.error || 'Tool execution failed'),
+      toolCallId: toolCall.id
+    };
+    conversationState.addMessage(toolMessage);
+
+    // 触发消息添加事件
+    if (this.eventManager) {
+      await safeEmit(this.eventManager, {
+        type: EventType.MESSAGE_ADDED,
+        timestamp: now(),
+        workflowId: '',
+        threadId: threadId || '',
+        nodeId,
+        role: toolMessage.role,
+        content: toolMessage.content,
+        toolCalls: undefined
+      });
+    }
+
+    // 工具调用后创建检查点（如果配置了）
+    if (toolConfig?.createCheckpoint && this.checkpointDependencies && threadId) {
+      const checkpointConfig = toolConfig.createCheckpoint;
+      if (checkpointConfig === 'after' || checkpointConfig === 'both') {
+        try {
+          await createCheckpoint(
+            {
+              threadId,
+              toolName: toolCall.name,
+              description: toolConfig.checkpointDescriptionTemplate || `After tool: ${toolCall.name}`
+            },
+            this.checkpointDependencies
+          );
+        } catch (error) {
+          // 抛出系统执行错误，由 ErrorService 统一处理
+          throw new SystemExecutionError(
+            `Failed to create checkpoint after tool "${toolCall.name}"`,
+            'ToolCallExecutor',
+            'executeToolCall',
+            undefined,
+            undefined,
+            { toolName: toolCall.name, originalError: error instanceof Error ? error : new Error(String(error)) }
+          );
+        }
+      }
+    }
+
+    // 触发工具调用完成事件
+    if (this.eventManager) {
+      await safeEmit(this.eventManager, {
+        type: EventType.TOOL_CALL_COMPLETED,
+        timestamp: now(),
+        workflowId: '',
+        threadId: threadId || '',
+        nodeId: nodeId || '',
+        toolName: toolCall.name,
+        toolResult: serviceResult.result,
+        executionTime
+      });
+    }
+
+    return {
+      toolCallId: toolCall.id,
+      toolName: toolCall.name,
+      success: true,
+      result: serviceResult.result,
+      executionTime
+    };
   }
 }

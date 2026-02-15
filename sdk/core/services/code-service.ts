@@ -10,6 +10,9 @@ import type { Script, ScriptType, ScriptExecutor, ScriptExecutionOptions, Script
 import type { ThreadContext } from '../execution/context/thread-context';
 import { CodeRegistry } from '../code/code-registry';
 import { CodeExecutionError, ScriptNotFoundError } from '@modular-agent/types';
+import { tryCatchAsync } from '@modular-agent/common-utils';
+import type { Result } from '@modular-agent/types';
+import { ok, err } from '@modular-agent/common-utils';
 
 /**
  * 脚本执行器注册表
@@ -171,26 +174,25 @@ class CodeService {
    * @param scriptName 脚本名称
    * @param options 执行选项（覆盖脚本默认选项）
    * @param threadContext 线程上下文（可选，用于沙箱隔离）
-   * @returns 执行结果
-   * @throws NotFoundError 如果脚本不存在
-   * @throws CodeExecutionError 如果执行失败
+   * @returns Result<ScriptExecutionResult, CodeExecutionError>
    */
   async execute(
     scriptName: string,
     options: Partial<ScriptExecutionOptions> = {},
     threadContext?: ThreadContext
-  ): Promise<ScriptExecutionResult> {
+  ): Promise<Result<ScriptExecutionResult, CodeExecutionError>> {
     // 获取脚本定义
     const script = this.getScript(scriptName);
 
     // 获取对应的执行器
     const executor = this.executorRegistry.get(script.type);
     if (!executor) {
-      throw new CodeExecutionError(
+      return err(new CodeExecutionError(
         `No executor found for script type '${script.type}'`,
         scriptName,
-        script.type
-      );
+        script.type,
+        { options }
+      ));
     }
 
     // 合并执行选项（脚本默认选项 + 传入选项）
@@ -200,27 +202,27 @@ class CodeService {
     };
 
     // 执行脚本
-    try {
-      return await executor.execute(script, executionOptions);
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new CodeExecutionError(
-          `Script execution failed: ${error.message}`,
-          scriptName,
-          script.type,
-          { options: executionOptions },
-          error
-        );
-      }
-      throw error;
+    const result = await tryCatchAsync(
+      executor.execute(script, executionOptions)
+    );
+    
+    if (result.isErr()) {
+      return err(this.convertToCodeExecutionError(
+        result.error,
+        scriptName,
+        script.type,
+        executionOptions
+      ));
     }
+    
+    return ok(result.value);
   }
 
   /**
    * 批量执行脚本
    * @param executions 执行任务数组
    * @param threadContext 线程上下文（可选）
-   * @returns 执行结果数组
+   * @returns Result<ScriptExecutionResult[], CodeExecutionError>
    */
   async executeBatch(
     executions: Array<{
@@ -228,13 +230,24 @@ class CodeService {
       options?: Partial<ScriptExecutionOptions>;
     }>,
     threadContext?: ThreadContext
-  ): Promise<ScriptExecutionResult[]> {
+  ): Promise<Result<ScriptExecutionResult[], CodeExecutionError>> {
     // 并行执行所有脚本
-    return Promise.all(
+    const results = await Promise.all(
       executions.map(exec =>
         this.execute(exec.scriptName, exec.options, threadContext)
       )
     );
+    
+    // 检查是否有错误
+    for (const result of results) {
+      if (result.isErr()) {
+        return result; // 返回第一个错误
+      }
+    }
+    
+    // 全部成功，返回结果数组
+    const successResults = results as Array<{ isOk(): true; value: ScriptExecutionResult }>;
+    return ok(successResults.map(r => r.value));
   }
 
   /**
@@ -315,6 +328,36 @@ class CodeService {
   isScriptEnabled(scriptName: string): boolean {
     const script = this.getScript(scriptName);
     return script.enabled ?? true;
+  }
+  /**
+   * 转换错误为CodeExecutionError
+   *
+   * @param error 原始错误
+   * @param scriptName 脚本名称
+   * @param scriptType 脚本类型
+   * @param options 执行选项
+   * @returns CodeExecutionError
+   */
+  private convertToCodeExecutionError(
+    error: unknown,
+    scriptName: string,
+    scriptType: string,
+    options: ScriptExecutionOptions
+  ): CodeExecutionError {
+    // 如果已经是CodeExecutionError，直接返回
+    if (error instanceof CodeExecutionError) {
+      return error;
+    }
+    
+    const message = error instanceof Error ? error.message : String(error);
+    
+    return new CodeExecutionError(
+      `Script execution failed: ${message}`,
+      scriptName,
+      scriptType,
+      { options },
+      error instanceof Error ? error : undefined
+    );
   }
 }
 

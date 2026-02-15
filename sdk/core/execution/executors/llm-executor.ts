@@ -17,7 +17,7 @@
 import type { LLMMessage, LLMResult } from '@modular-agent/types';
 import { LLMWrapper } from '../../llm/wrapper';
 import { MessageStream } from '@modular-agent/common-utils';
-import { ExecutionError, ThreadInterruptedException } from '@modular-agent/types';
+import { ExecutionError, ThreadInterruptedException, LLMError } from '@modular-agent/types';
 
 /**
  * LLM执行请求数据
@@ -106,75 +106,110 @@ export class LLMExecutor {
 
     let finalResult: LLMResult | null = null;
 
-    try {
-      // 执行LLM调用
-      if (llmRequest.stream) {
-        // 流式调用 - 返回 MessageStream
-        const messageStream = await this.llmWrapper.generateStream(llmRequest);
+    // 执行LLM调用
+    if (llmRequest.stream) {
+      // 流式调用 - 返回 Result<MessageStream, LLMError>
+      const streamResult = await this.llmWrapper.generateStream(llmRequest);
+      
+      if (streamResult.isErr()) {
+        const error = streamResult.error;
         
-        // 消费流，保存最后一个有 finishReason 的 chunk 作为最终结果
-        for await (const event of messageStream) {
-          // event 是 InternalStreamEvent 类型
-          // 我们需要从 MessageStream 中获取最终结果
-          const result = await messageStream.getFinalResult();
-          if (result) {
-            finalResult = result;
+        // 检查是否是 AbortError
+        if (error.cause?.name === 'AbortError') {
+          const reason = options?.abortSignal?.reason;
+          if (reason instanceof ThreadInterruptedException) {
+            throw reason; // 直接重新抛出
           }
+          // 如果是其他 AbortError，转换为 ThreadInterruptedException
+          throw new ThreadInterruptedException(
+            'LLM call aborted',
+            'STOP',
+            options?.threadId || '',
+            options?.nodeId || ''
+          );
         }
         
-        // 如果没有通过事件获取到结果，尝试直接获取
-        if (!finalResult) {
-          finalResult = await messageStream.getFinalResult();
-        }
-      } else {
-        // 非流式调用
-        finalResult = await this.llmWrapper.generate(llmRequest);
-      }
-
-      // 检查结果
-      if (!finalResult) {
+        // 转换为 ExecutionError
         throw new ExecutionError(
-          'No LLM result generated',
+          `LLM call failed: ${error.message}`,
           undefined,
           undefined,
-          { profileId: requestData.profileId }
-        );
-      }
-
-      // 构建返回结果
-      return {
-        content: finalResult.content,
-        usage: finalResult.usage,
-        finishReason: finalResult.finishReason,
-        toolCalls: finalResult.toolCalls?.map(tc => ({
-          id: tc.id,
-          name: tc.function.name,
-          arguments: tc.function.arguments
-        }))
-      };
-    } catch (error) {
-      // 处理 AbortError，转换为 ThreadInterruptedException
-      if (error instanceof Error && error.name === 'AbortError') {
-        const reason = options?.abortSignal?.reason;
-        if (reason instanceof ThreadInterruptedException) {
-          throw reason; // 直接重新抛出
-        }
-        // 如果是其他 AbortError，转换为 ThreadInterruptedException
-        throw new ThreadInterruptedException(
-          'LLM call aborted',
-          'STOP', // 默认为 STOP
-          options?.threadId || '',
-          options?.nodeId || ''
+          { originalError: error, profileId: requestData.profileId },
+          error
         );
       }
       
+      const messageStream = streamResult.value;
+      
+      // 消费流，保存最后一个有 finishReason 的 chunk 作为最终结果
+      for await (const event of messageStream) {
+        // event 是 InternalStreamEvent 类型
+        // 我们需要从 MessageStream 中获取最终结果
+        const result = await messageStream.getFinalResult();
+        if (result) {
+          finalResult = result;
+        }
+      }
+      
+      // 如果没有通过事件获取到结果，尝试直接获取
+      if (!finalResult) {
+        finalResult = await messageStream.getFinalResult();
+      }
+    } else {
+      // 非流式调用 - 返回 Result<LLMResult, LLMError>
+      const result = await this.llmWrapper.generate(llmRequest);
+      
+      if (result.isErr()) {
+        const error = result.error;
+        
+        // 检查是否是 AbortError
+        if (error.cause?.name === 'AbortError') {
+          const reason = options?.abortSignal?.reason;
+          if (reason instanceof ThreadInterruptedException) {
+            throw reason; // 直接重新抛出
+          }
+          // 如果是其他 AbortError，转换为 ThreadInterruptedException
+          throw new ThreadInterruptedException(
+            'LLM call aborted',
+            'STOP',
+            options?.threadId || '',
+            options?.nodeId || ''
+          );
+        }
+        
+        // 转换为 ExecutionError
+        throw new ExecutionError(
+          `LLM call failed: ${error.message}`,
+          undefined,
+          undefined,
+          { originalError: error, profileId: requestData.profileId },
+          error
+        );
+      }
+      
+      finalResult = result.value;
+    }
+
+    // 检查结果
+    if (!finalResult) {
       throw new ExecutionError(
-        `LLM call failed: ${error instanceof Error ? error.message : String(error)}`,
+        'No LLM result generated',
         undefined,
         undefined,
-        { originalError: error, profileId: requestData.profileId },
-        error instanceof Error ? error : undefined
+        { profileId: requestData.profileId }
       );
     }
+
+    // 构建返回结果
+    return {
+      content: finalResult.content,
+      usage: finalResult.usage,
+      finishReason: finalResult.finishReason,
+      toolCalls: finalResult.toolCalls?.map(tc => ({
+        id: tc.id,
+        name: tc.function.name,
+        arguments: tc.function.arguments
+      }))
+    };
   }
 }

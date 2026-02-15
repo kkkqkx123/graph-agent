@@ -1,50 +1,17 @@
 /**
  * Code节点处理函数
  * 负责执行CODE节点，执行脚本代码，支持多种脚本语言
+ * 
+ * 设计原则：
+ * - 仅提供纯执行能力，不包含业务决策逻辑
+ * - 所有验证、安全检查、状态判断由应用层负责
+ * - 记录执行历史供上层使用
  */
 
 import type { Node, CodeNodeConfig } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
-import { ValidationError, RuntimeValidationError } from '@modular-agent/types';
-import { now } from '@modular-agent/common-utils';
+import { now, getErrorMessage } from '@modular-agent/common-utils';
 import { SingletonRegistry } from '../../context/singleton-registry';
-
-/**
- * 检查节点是否可以执行
- */
-function canExecute(thread: Thread, node: Node): boolean {
-  if (thread.status !== 'RUNNING') {
-    return false;
-  }
-  return true;
-}
-
-/**
- * 验证风险等级
- */
-function validateRiskLevel(risk: string, scriptName: string): void {
-  switch (risk) {
-    case 'none':
-      break;
-    case 'low':
-      if (scriptName.includes('..') || scriptName.includes('~')) {
-        throw new RuntimeValidationError('Script path contains invalid characters', { operation: 'handle', field: 'code.security' });
-      }
-      break;
-    case 'medium':
-      const dangerousCommands = ['rm -rf', 'del /f', 'format', 'shutdown'];
-      if (dangerousCommands.some(cmd => scriptName.toLowerCase().includes(cmd))) {
-        throw new RuntimeValidationError('Script contains dangerous commands', { operation: 'handle', field: 'code.security' });
-      }
-      break;
-    case 'high':
-      // 高风险允许所有操作，但记录警告
-      console.warn(`Executing high-risk script: ${scriptName}`);
-      break;
-  }
-}
-
-
 
 /**
  * Code节点处理函数
@@ -52,23 +19,14 @@ function validateRiskLevel(risk: string, scriptName: string): void {
  * @param node 节点定义
  * @param context 处理器上下文（可选）
  * @returns 执行结果
+ * 
+ * 注意：
+ * - 应用层应负责检查 Thread 状态（RUNNING/PAUSED/COMPLETED）
+ * - 应用层应负责实现风险等级策略（通过 middleware 或 interceptor）
+ * - 应用层应负责脚本安全验证（白名单、沙箱配置等）
  */
 export async function codeHandler(thread: Thread, node: Node, context?: any): Promise<any> {
-  // 检查是否可以执行
-  if (!canExecute(thread, node)) {
-    return {
-      nodeId: node.id,
-      nodeType: node.type,
-      status: 'SKIPPED',
-      step: thread.nodeResults.length + 1,
-      executionTime: 0
-    };
-  }
-
   const config = node.config as CodeNodeConfig;
-
-  // 根据风险等级选择执行策略
-  validateRiskLevel(config.risk, config.scriptName);
 
   try {
     // 使用脚本服务执行脚本
@@ -94,7 +52,7 @@ export async function codeHandler(thread: Thread, node: Node, context?: any): Pr
       nodeType: node.type,
       status: 'FAILED',
       timestamp: now(),
-      error: error instanceof Error ? error.message : String(error)
+      error: getErrorMessage(error)
     });
 
     throw error;

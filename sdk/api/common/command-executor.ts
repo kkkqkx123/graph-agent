@@ -7,6 +7,7 @@ import type { Command, CommandValidationResult } from '../types/command';
 import type { ExecutionResult } from '../types/execution-result';
 import { failure } from '../types/execution-result';
 import { SDKError, ExecutionError as SDKExecutionError, ValidationError } from '@modular-agent/types';
+import { isError } from '@modular-agent/common-utils';
 
 /**
  * Command执行器
@@ -44,7 +45,7 @@ export class CommandExecutor {
         sdkError = error;
       }
       // 如果是普通 Error，转换为 SDKExecutionError
-      else if (error instanceof Error) {
+      else if (isError(error)) {
         sdkError = new SDKExecutionError(
           error.message,
           undefined,

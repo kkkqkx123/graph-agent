@@ -14,9 +14,10 @@
 
 import type { ThreadRegistry } from '../../services/thread-registry';
 import { ThreadLifecycleManager } from './thread-lifecycle-manager';
-import type { Thread } from '@modular-agent/types';
 import type { EventManager } from '../../services/event-manager';
 import { EventType } from '@modular-agent/types';
+import { SystemExecutionError } from '@modular-agent/types';
+import { getErrorOrNew } from '@modular-agent/common-utils';
 
 /**
  * ThreadCascadeManager - Thread级联管理器
@@ -56,8 +57,15 @@ export class ThreadCascadeManager {
           cancelledCount++;
         }
       } catch (error) {
-        // 继续取消其他子线程，不中断
-        console.error(`Failed to cancel child thread ${childThreadId}:`, error);
+        // 抛出系统执行错误，由 ErrorService 统一处理
+        throw new SystemExecutionError(
+          `Failed to cancel child thread ${childThreadId}`,
+          'ThreadCascadeManager',
+          'cancelChildThreads',
+          undefined,
+          undefined,
+          { childThreadId, originalError: getErrorOrNew(error) }
+        );
       }
     }
 
