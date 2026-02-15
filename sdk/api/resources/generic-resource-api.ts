@@ -9,7 +9,7 @@
 
 import type { ExecutionResult } from '../types/execution-result';
 import { success, failure } from '../types/execution-result';
-import { SDKError, ExecutionError as SDKExecutionError } from '@modular-agent/types';
+import { SDKError, ExecutionError as SDKExecutionError, ValidationError } from '@modular-agent/types';
 
 /**
  * 通用资源API基类
@@ -125,7 +125,7 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
       const validation = await this.validateResource(resource);
       if (!validation.valid) {
         return failure(
-          new SDKExecutionError(
+          new ValidationError(
             `Validation failed: ${validation.errors.join(', ')}`,
             undefined,
             undefined,
@@ -156,7 +156,7 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
       const validation = await this.validateUpdate(updates);
       if (!validation.valid) {
         return failure(
-          new SDKExecutionError(
+          new ValidationError(
             `Validation failed: ${validation.errors.join(', ')}`,
             undefined,
             undefined,
@@ -285,25 +285,15 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
    * @returns 执行结果
    */
   protected handleError(error: unknown, operation: string, startTime: number): ExecutionResult<any> {
-    let executionError: SDKExecutionError;
+    let sdkError: SDKError;
     
-    // 如果已经是 SDKExecutionError，直接使用
-    if (error instanceof SDKExecutionError) {
-      executionError = error;
-    }
-    // 如果是其他 SDKError，转换为 SDKExecutionError
-    else if (error instanceof SDKError) {
-      executionError = new SDKExecutionError(
-        error.message,
-        undefined,
-        undefined,
-        { ...error.context, operation },
-        error.cause
-      );
+    // 如果已经是 SDKError（包括所有子类），直接使用
+    if (error instanceof SDKError) {
+      sdkError = error;
     }
     // 如果是普通 Error，转换为 SDKExecutionError
     else if (error instanceof Error) {
-      executionError = new SDKExecutionError(
+      sdkError = new SDKExecutionError(
         error.message,
         undefined,
         undefined,
@@ -315,9 +305,9 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
         error
       );
     }
-    // 其他类型，转换为字符串
+    // 其他类型，转换为 SDKExecutionError
     else {
-      executionError = new SDKExecutionError(
+      sdkError = new SDKExecutionError(
         String(error),
         undefined,
         undefined,
@@ -326,7 +316,7 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
     }
     
     // 返回包含详细错误信息的失败结果
-    return failure(executionError, Date.now() - startTime);
+    return failure(sdkError, Date.now() - startTime);
   }
 
 }

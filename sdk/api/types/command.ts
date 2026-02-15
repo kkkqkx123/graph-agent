@@ -139,15 +139,15 @@ export abstract class BaseCommand<T> implements Command<T> {
    * @returns 执行结果
    */
   protected handleError(error: unknown, startTime: number): ExecutionResult<any> {
-    let executionError: SDKExecutionError;
+    let sdkError: SDKError;
     
-    // 如果已经是 SDKExecutionError，直接使用
-    if (error instanceof SDKExecutionError) {
-      executionError = error;
+    // 如果已经是 SDKError（包括所有子类），直接使用
+    if (error instanceof SDKError) {
+      sdkError = error;
     }
     // 如果是普通 Error，转换为 SDKExecutionError
     else if (error instanceof Error) {
-      executionError = new SDKExecutionError(
+      sdkError = new SDKExecutionError(
         error.message,
         undefined,
         undefined,
@@ -158,9 +158,9 @@ export abstract class BaseCommand<T> implements Command<T> {
         error
       );
     }
-    // 其他类型，转换为字符串
+    // 其他类型，转换为 SDKExecutionError
     else {
-      executionError = new SDKExecutionError(
+      sdkError = new SDKExecutionError(
         String(error),
         undefined,
         undefined,
@@ -170,7 +170,7 @@ export abstract class BaseCommand<T> implements Command<T> {
     }
     
     // 返回包含详细错误信息的失败结果
-    return this.failure(executionError, Date.now() - startTime);
+    return this.failure(sdkError, Date.now() - startTime);
   }
 
   /**
@@ -186,7 +186,7 @@ export abstract class BaseCommand<T> implements Command<T> {
   /**
    * 创建失败结果
    */
-  protected failure<T>(error: SDKExecutionError, executionTime: number): ExecutionResult<T> {
+  protected failure<T>(error: SDKError, executionTime: number): ExecutionResult<T> {
     return {
       result: err(error),
       executionTime

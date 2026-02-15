@@ -24,7 +24,7 @@ import { GenericResourceAPI } from '../generic-resource-api';
 import type { ExecutionResult } from '../../types/execution-result';
 import { success, failure } from '../../types/execution-result';
 import type { HumanRelayHandler, HumanRelayRequest, HumanRelayResponse } from '@modular-agent/types';
-import { EventType, ExecutionError as SDKExecutionError } from '@modular-agent/types';
+import { EventType, ExecutionError as SDKExecutionError, ConfigurationError, NotFoundError } from '@modular-agent/types';
 import type {
   HumanRelayRequestedEvent,
   HumanRelayRespondedEvent,
@@ -168,10 +168,9 @@ export class HumanRelayResourceAPI extends GenericResourceAPI<HumanRelayConfig, 
     try {
       if (!this.humanRelayHandler) {
         return failure(
-          new SDKExecutionError(
+          new ConfigurationError(
             'HumanRelayHandler not registered. Please register a handler before handling relay requests.',
-            undefined,
-            undefined,
+            'humanRelayHandler',
             { code: 'HANDLER_NOT_REGISTERED' }
           ),
           Date.now() - startTime
@@ -428,10 +427,10 @@ export class HumanRelayResourceAPI extends GenericResourceAPI<HumanRelayConfig, 
       const config = this.configs.get(id);
       if (!config) {
         return failure(
-          new SDKExecutionError(
+          new NotFoundError(
             `HumanRelayConfig not found: ${id}`,
-            undefined,
-            undefined,
+            'HumanRelayConfig',
+            id,
             { code: 'CONFIG_NOT_FOUND' }
           ),
           Date.now() - startTime

@@ -7,7 +7,7 @@ import type { Result } from '@modular-agent/types';
 import type { ExecutionResult } from '../types/execution-result';
 import { success, failure, isSuccess } from '../types/execution-result';
 import { ok, err } from '@modular-agent/common-utils';
-import { ExecutionError as SDKExecutionError } from '@modular-agent/types';
+import { SDKError, ExecutionError as SDKExecutionError, ValidationError } from '@modular-agent/types';
 
 /**
  * 将 Result 转换为 ExecutionResult
@@ -44,7 +44,7 @@ export function resultToExecutionResult<T, E>(
  */
 export function executionResultToResult<T>(
   executionResult: ExecutionResult<T>
-): Result<T, SDKExecutionError> {
+): Result<T, SDKError> {
   if (isSuccess(executionResult)) {
     return ok(executionResult.result.unwrap());
   } else {
@@ -72,7 +72,7 @@ export function validationErrorsToExecutionResult<T>(
   const executionTime = Date.now() - startTime;
 
   return failure(
-    new SDKExecutionError(
+    new ValidationError(
       'Validation failed',
       undefined,
       undefined,
@@ -95,6 +95,11 @@ export function businessResultToExecutionResult<T>(
   const executionTime = Date.now() - startTime;
 
   if (data instanceof Error) {
+    // 如果已经是 SDKError，直接使用
+    if (data instanceof SDKError) {
+      return failure(data, executionTime);
+    }
+    // 如果是普通 Error，转换为 SDKExecutionError
     return failure(
       new SDKExecutionError(
         data.message,
@@ -128,7 +133,7 @@ export function commandValidationToExecutionResult<T>(
     return success(undefined as T, executionTime);
   } else {
     return failure(
-      new SDKExecutionError(
+      new ValidationError(
         'Command validation failed',
         undefined,
         undefined,

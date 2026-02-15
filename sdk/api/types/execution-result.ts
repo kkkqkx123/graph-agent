@@ -5,7 +5,7 @@
  * 基于 packages/types 的 Result 类型，添加 executionTime 支持
  */
 
-import type { Result, ExecutionError } from '@modular-agent/types';
+import type { Result, SDKError } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 
 /**
@@ -14,7 +14,7 @@ import { ok, err } from '@modular-agent/common-utils';
  */
 export interface ExecutionResult<T> {
   /** 执行结果 */
-  result: Result<T, ExecutionError>;
+  result: Result<T, SDKError>;
   /** 执行时间（毫秒） */
   executionTime: number;
 }
@@ -32,7 +32,7 @@ export function success<T>(data: T, executionTime: number): ExecutionResult<T> {
 /**
  * 创建失败结果
  */
-export function failure<T>(error: ExecutionError, executionTime: number): ExecutionResult<T> {
+export function failure<T>(error: SDKError, executionTime: number): ExecutionResult<T> {
   return {
     result: err(error),
     executionTime
@@ -63,7 +63,7 @@ export function getData<T>(result: ExecutionResult<T>): T | null {
 /**
  * 获取错误信息（如果失败）
  */
-export function getError<T>(result: ExecutionResult<T>): ExecutionError | null {
+export function getError<T>(result: ExecutionResult<T>): SDKError | null {
   return result.result.isErr() ? result.result.error : null;
 }
 

@@ -6,7 +6,7 @@
 import type { Command, CommandValidationResult } from '../types/command';
 import type { ExecutionResult } from '../types/execution-result';
 import { failure } from '../types/execution-result';
-import { SDKError, ExecutionError as SDKExecutionError } from '@modular-agent/types';
+import { SDKError, ExecutionError as SDKExecutionError, ValidationError } from '@modular-agent/types';
 
 /**
  * Command执行器
@@ -23,7 +23,7 @@ export class CommandExecutor {
     const validation: CommandValidationResult = command.validate();
     if (!validation.valid) {
       return failure<T>(
-        new SDKExecutionError(
+        new ValidationError(
           `Validation failed: ${validation.errors.join(', ')}`,
           undefined,
           undefined,
@@ -37,25 +37,15 @@ export class CommandExecutor {
     try {
       return await command.execute();
     } catch (error) {
-      let executionError: SDKExecutionError;
+      let sdkError: SDKError;
       
-      // 如果已经是 SDKExecutionError，直接使用
-      if (error instanceof SDKExecutionError) {
-        executionError = error;
-      }
-      // 如果是其他 SDKError，转换为 SDKExecutionError
-      else if (error instanceof SDKError) {
-        executionError = new SDKExecutionError(
-          error.message,
-          undefined,
-          undefined,
-          error.context,
-          error.cause
-        );
+      // 如果已经是 SDKError（包括所有子类），直接使用
+      if (error instanceof SDKError) {
+        sdkError = error;
       }
       // 如果是普通 Error，转换为 SDKExecutionError
       else if (error instanceof Error) {
-        executionError = new SDKExecutionError(
+        sdkError = new SDKExecutionError(
           error.message,
           undefined,
           undefined,
@@ -66,12 +56,12 @@ export class CommandExecutor {
           error
         );
       }
-      // 其他类型，转换为字符串
+      // 其他类型，转换为 SDKExecutionError
       else {
-        executionError = new SDKExecutionError(String(error));
+        sdkError = new SDKExecutionError(String(error));
       }
       
-      return failure<T>(executionError, 0);
+      return failure<T>(sdkError, 0);
     }
   }
 
