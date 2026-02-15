@@ -68,7 +68,12 @@ import type {
   ConversationStateChangedEvent
 } from './conversation-events';
 
-import type { CheckpointCreatedEvent } from './checkpoint-events';
+import type {
+  CheckpointCreatedEvent,
+  CheckpointRestoredEvent,
+  CheckpointDeletedEvent,
+  CheckpointFailedEvent
+} from './checkpoint-events';
 
 import type {
   SubgraphStartedEvent,
@@ -128,6 +133,9 @@ export type Event =
   | ConversationStateChangedEvent
   | ErrorEvent
   | CheckpointCreatedEvent
+  | CheckpointRestoredEvent
+  | CheckpointDeletedEvent
+  | CheckpointFailedEvent
   | SubgraphStartedEvent
   | SubgraphCompletedEvent
   | TriggeredSubgraphStartedEvent

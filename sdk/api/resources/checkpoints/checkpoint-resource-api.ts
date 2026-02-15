@@ -11,19 +11,22 @@ import { MemoryCheckpointStorage } from '../../../core/storage/memory-checkpoint
 import { CheckpointCoordinator } from '../../../core/execution/coordinators/checkpoint-coordinator';
 import { SingletonRegistry } from '../../../core/execution/context/singleton-registry';
 import { getErrorMessage } from '../../types/execution-result';
+import type { EventManager } from '../../../core/services/event-manager';
 
 /**
  * CheckpointResourceAPI - 检查点资源管理API
  */
 export class CheckpointResourceAPI extends GenericResourceAPI<Checkpoint, string, CheckpointFilter> {
   private stateManager: CheckpointStateManager;
+  private eventManager?: EventManager;
 
-  constructor() {
+  constructor(eventManager?: EventManager) {
     super();
     
     // 创建默认的检查点管理组件
     const storage = new MemoryCheckpointStorage();
-    this.stateManager = new CheckpointStateManager(storage);
+    this.eventManager = eventManager;
+    this.stateManager = new CheckpointStateManager(storage, eventManager);
   }
 
   // ============================================================================
@@ -172,6 +175,22 @@ export class CheckpointResourceAPI extends GenericResourceAPI<Checkpoint, string
     };
 
     const threadContext = await CheckpointCoordinator.restoreFromCheckpoint(checkpointId, dependencies);
+    
+    // 触发检查点恢复事件
+    if (this.eventManager) {
+      const checkpoint = await this.stateManager.get(checkpointId);
+      if (checkpoint) {
+        await this.eventManager.emit({
+          type: 'CHECKPOINT_RESTORED' as any,
+          timestamp: Date.now(),
+          workflowId: checkpoint.workflowId,
+          threadId: threadContext.getThreadId(),
+          checkpointId,
+          description: checkpoint.metadata?.description
+        });
+      }
+    }
+    
     return threadContext.getThreadId();
   }
 

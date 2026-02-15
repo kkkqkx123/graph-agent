@@ -5,10 +5,13 @@
 
 import type { Checkpoint } from '@modular-agent/types';
 import type { CheckpointStorage, CheckpointStorageMetadata, CleanupPolicy, CleanupResult } from '@modular-agent/types';
+import type { EventManager } from '../../services/event-manager';
 import { LifecycleCapable } from './lifecycle-capable';
 import { serializeCheckpoint, deserializeCheckpoint } from '../utils/checkpoint-serializer';
 import { createCleanupStrategy } from '../utils/checkpoint-cleanup-policy';
 import { generateId, now } from '@modular-agent/common-utils';
+import { EventType } from '@modular-agent/types';
+import { safeEmit } from '../utils/event/event-emitter';
 
 /**
  * 从检查点提取存储元数据
@@ -30,13 +33,16 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
   private storage: CheckpointStorage;
   private cleanupPolicy?: CleanupPolicy;
   private checkpointSizes: Map<string, number> = new Map(); // checkpointId -> size in bytes
+  private eventManager?: EventManager;
 
   /**
    * 构造函数
    * @param storage 存储实现
+   * @param eventManager 事件管理器（可选）
    */
-  constructor(storage: CheckpointStorage) {
+  constructor(storage: CheckpointStorage, eventManager?: EventManager) {
     this.storage = storage;
+    this.eventManager = eventManager;
   }
 
   /**
@@ -125,8 +131,7 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
     const checkpointIds = await this.storage.list({ threadId });
 
     for (const checkpointId of checkpointIds) {
-      await this.storage.delete(checkpointId);
-      this.checkpointSizes.delete(checkpointId);
+      await this.delete(checkpointId, 'cleanup');
     }
 
     return checkpointIds.length;
@@ -138,25 +143,48 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
    * @returns 检查点ID
    */
   async create(checkpointData: Checkpoint): Promise<string> {
-    // 使用传入的 checkpointData.id，而不是生成新的 ID
-    const checkpointId = checkpointData.id;
-    const data = serializeCheckpoint(checkpointData);
-    const storageMetadata = extractStorageMetadata(checkpointData);
+    try {
+      // 使用传入的 checkpointData.id，而不是生成新的 ID
+      const checkpointId = checkpointData.id;
+      const data = serializeCheckpoint(checkpointData);
+      const storageMetadata = extractStorageMetadata(checkpointData);
 
-    await this.storage.save(checkpointId, data, storageMetadata);
-    this.checkpointSizes.set(checkpointId, data.length);
+      await this.storage.save(checkpointId, data, storageMetadata);
+      this.checkpointSizes.set(checkpointId, data.length);
 
-    // 执行清理策略（如果配置了）
-    if (this.cleanupPolicy) {
-      try {
-        await this.executeCleanup();
-      } catch (error) {
-        console.error('Error executing cleanup policy:', error);
-        // 清理失败不应影响检查点创建
+      // 触发检查点创建事件
+      await safeEmit(this.eventManager, {
+        type: EventType.CHECKPOINT_CREATED,
+        timestamp: now(),
+        workflowId: checkpointData.workflowId,
+        threadId: checkpointData.threadId,
+        checkpointId,
+        description: checkpointData.metadata?.description
+      });
+
+      // 执行清理策略（如果配置了）
+      if (this.cleanupPolicy) {
+        try {
+          await this.executeCleanup();
+        } catch (error) {
+          console.error('Error executing cleanup policy:', error);
+          // 清理失败不应影响检查点创建
+        }
       }
-    }
 
-    return checkpointId;
+      return checkpointId;
+    } catch (error) {
+      // 触发检查点失败事件
+      await safeEmit(this.eventManager, {
+        type: EventType.CHECKPOINT_FAILED,
+        timestamp: now(),
+        workflowId: checkpointData.workflowId,
+        threadId: checkpointData.threadId,
+        operation: 'create',
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
   }
 
   /**
@@ -184,10 +212,40 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
   /**
    * 删除检查点
    * @param checkpointId 检查点ID
+   * @param reason 删除原因
    */
-  async delete(checkpointId: string): Promise<void> {
-    await this.storage.delete(checkpointId);
-    this.checkpointSizes.delete(checkpointId);
+  async delete(checkpointId: string, reason: 'manual' | 'cleanup' | 'policy' = 'manual'): Promise<void> {
+    try {
+      // 先获取检查点信息（用于触发事件）
+      const checkpoint = await this.get(checkpointId);
+      
+      await this.storage.delete(checkpointId);
+      this.checkpointSizes.delete(checkpointId);
+
+      // 触发检查点删除事件
+      if (checkpoint) {
+        await safeEmit(this.eventManager, {
+          type: EventType.CHECKPOINT_DELETED,
+          timestamp: now(),
+          workflowId: checkpoint.workflowId,
+          threadId: checkpoint.threadId,
+          checkpointId,
+          reason
+        });
+      }
+    } catch (error) {
+      // 触发检查点失败事件
+      await safeEmit(this.eventManager, {
+        type: EventType.CHECKPOINT_FAILED,
+        timestamp: now(),
+        workflowId: '',
+        threadId: '',
+        checkpointId,
+        operation: 'delete',
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
   }
 
   /**

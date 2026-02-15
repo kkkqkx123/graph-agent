@@ -60,6 +60,12 @@ export enum EventType {
   ERROR = 'ERROR',
   /** 检查点创建 */
   CHECKPOINT_CREATED = 'CHECKPOINT_CREATED',
+  /** 检查点恢复 */
+  CHECKPOINT_RESTORED = 'CHECKPOINT_RESTORED',
+  /** 检查点删除 */
+  CHECKPOINT_DELETED = 'CHECKPOINT_DELETED',
+  /** 检查点失败 */
+  CHECKPOINT_FAILED = 'CHECKPOINT_FAILED',
   /** 子图开始 */
   SUBGRAPH_STARTED = 'SUBGRAPH_STARTED',
   /** 子图完成 */

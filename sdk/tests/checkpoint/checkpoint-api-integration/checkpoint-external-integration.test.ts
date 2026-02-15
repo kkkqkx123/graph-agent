@@ -12,8 +12,10 @@ import { CheckpointResourceAPI } from '../../../api/resources/checkpoints/checkp
 import { ThreadRegistry } from '../../../core/services/thread-registry';
 import { WorkflowRegistry } from '../../../core/services/workflow-registry';
 import { SingletonRegistry } from '../../../core/execution/context/singleton-registry';
+import { EventManager } from '../../../core/services/event-manager';
 import type { WorkflowDefinition } from '@modular-agent/types';
-import { NodeType, EdgeType, ThreadStatus, WorkflowType } from '@modular-agent/types';
+import { NodeType, EdgeType, ThreadStatus, WorkflowType, EventType } from '@modular-agent/types';
+import type { CheckpointCreatedEvent, CheckpointDeletedEvent, CheckpointRestoredEvent, CheckpointFailedEvent } from '@modular-agent/types';
 
 // 模拟外部系统
 class MockMonitoringService {
@@ -68,6 +70,7 @@ describe('检查点外部系统集成测试', () => {
   let api: CheckpointResourceAPI;
   let threadRegistry: ThreadRegistry;
   let workflowRegistry: WorkflowRegistry;
+  let eventManager: EventManager;
   let monitoringService: MockMonitoringService;
   let loggingService: MockLoggingService;
   let alertingService: MockAlertingService;
@@ -75,6 +78,7 @@ describe('检查点外部系统集成测试', () => {
   beforeEach(() => {
     threadRegistry = new ThreadRegistry();
     workflowRegistry = new WorkflowRegistry();
+    eventManager = new EventManager();
 
     // 注册全局服务
     SingletonRegistry.register('threadRegistry', threadRegistry);
@@ -85,8 +89,25 @@ describe('检查点外部系统集成测试', () => {
     loggingService = new MockLoggingService();
     alertingService = new MockAlertingService();
 
-    // 创建API
-    api = new CheckpointResourceAPI();
+    // 创建API（传入EventManager）
+    api = new CheckpointResourceAPI(eventManager);
+
+    // 监听事件并记录到监控服务
+    eventManager.on(EventType.CHECKPOINT_CREATED, (event) => {
+      monitoringService.recordEvent(event);
+    });
+
+    eventManager.on(EventType.CHECKPOINT_DELETED, (event: CheckpointDeletedEvent) => {
+      monitoringService.recordEvent(event);
+    });
+
+    eventManager.on(EventType.CHECKPOINT_RESTORED, (event: CheckpointRestoredEvent) => {
+      monitoringService.recordEvent(event);
+    });
+
+    eventManager.on(EventType.CHECKPOINT_FAILED, (event: CheckpointFailedEvent) => {
+      monitoringService.recordEvent(event);
+    });
   });
 
   afterEach(() => {
@@ -164,10 +185,10 @@ describe('检查点外部系统集成测试', () => {
     const { ThreadContext } = await import('../../../core/execution/context/thread-context');
     const { ConversationManager } = await import('../../../core/execution/managers/conversation-manager');
     const { generateId } = await import('@modular-agent/common-utils');
-    const { GraphBuilder } = await import('../../../core/graph/graph-builder');
+    const { processWorkflow } = await import('../../../core/graph/workflow-processor');
 
     const conversationManager = new ConversationManager();
-    const graph = GraphBuilder.build(workflow);
+    const graph = await processWorkflow(workflow, { workflowRegistry });
 
     const thread = {
       id: generateId(),
@@ -183,7 +204,6 @@ describe('检查点外部系统集成测试', () => {
         local: [],
         loop: []
       },
-      variableValues: {},
       input: { testInput: 'value' },
       output: {},
       nodeResults: [],
@@ -197,7 +217,7 @@ describe('检查点外部系统集成测试', () => {
       conversationManager,
       threadRegistry,
       workflowRegistry,
-      {} as any, // eventManager
+      eventManager,
       {} as any, // toolService
       { executeLLMCall: jest.fn() } as any // llmExecutor
     );
@@ -213,30 +233,6 @@ describe('检查点外部系统集成测试', () => {
 
       const threadContext = await createTestThreadContext(threadRegistry, workflowRegistry, workflow);
 
-      // 模拟监控集成
-      const originalCreate = api.createThreadCheckpoint.bind(api);
-      api.createThreadCheckpoint = async (threadId: string, metadata?: any) => {
-        const result = await originalCreate(threadId, metadata);
-        monitoringService.recordEvent({
-         type: 'CHECKPOINT_CREATED',
-         checkpointId: result,
-         threadId: threadId,
-         timestamp: Date.now()
-        });
-        return result;
-      };
-
-      const originalDelete = api.delete.bind(api);
-      api.delete = async (id: string) => {
-        const result = await originalDelete(id);
-        monitoringService.recordEvent({
-          type: 'CHECKPOINT_DELETED',
-          checkpointId: id,
-          timestamp: Date.now()
-        });
-        return result;
-      };
-
       // 创建检查点
       const checkpointId = await api.createThreadCheckpoint(threadContext.getThreadId(), {
         description: 'Monitoring test checkpoint'
@@ -245,7 +241,7 @@ describe('检查点外部系统集成测试', () => {
       // 删除检查点
       await api.delete(checkpointId);
 
-      // 验证监控事件
+      // 验证监控事件（通过EventManager自动触发）
       const events = monitoringService.getEvents();
       expect(events).toHaveLength(2);
 
@@ -253,10 +249,40 @@ describe('检查点外部系统集成测试', () => {
       expect(createEvent).toBeDefined();
       expect(createEvent?.checkpointId).toBe(checkpointId);
       expect(createEvent?.threadId).toBe(threadContext.getThreadId());
+      expect(createEvent?.description).toBe('Monitoring test checkpoint');
 
       const deleteEvent = events.find(e => e.type === 'CHECKPOINT_DELETED');
       expect(deleteEvent).toBeDefined();
       expect(deleteEvent?.checkpointId).toBe(checkpointId);
+      expect(deleteEvent?.reason).toBe('manual');
+    });
+
+    it('应该在检查点恢复时发送监控事件', async () => {
+      const workflow = createTestWorkflow('restore-test', 'Restore Test');
+      workflowRegistry.register(workflow);
+
+      const threadContext = await createTestThreadContext(threadRegistry, workflowRegistry, workflow);
+
+      // 创建检查点
+      const checkpointId = await api.createThreadCheckpoint(threadContext.getThreadId(), {
+        description: 'Restore test checkpoint'
+      });
+
+      // 清空监控事件
+      monitoringService.clear();
+
+      // 从检查点恢复
+      const restoredThreadId = await api.restoreFromCheckpoint(checkpointId);
+
+      // 验证监控事件
+      const events = monitoringService.getEvents();
+      expect(events).toHaveLength(1);
+
+      const restoreEvent = events.find(e => e.type === 'CHECKPOINT_RESTORED');
+      expect(restoreEvent).toBeDefined();
+      expect(restoreEvent?.checkpointId).toBe(checkpointId);
+      expect(restoreEvent?.threadId).toBe(restoredThreadId);
+      expect(restoreEvent?.description).toBe('Restore test checkpoint');
     });
   });
 
@@ -267,48 +293,29 @@ describe('检查点外部系统集成测试', () => {
 
       const threadContext = await createTestThreadContext(threadRegistry, workflowRegistry, workflow);
 
-      // 模拟日志集成
-      const originalCreate = api.createThreadCheckpoint.bind(api);
-      api.createThreadCheckpoint = async (threadId: string, metadata?: any) => {
-        try {
-          const result = await originalCreate(threadId, metadata);
-          loggingService.log('INFO', 'Checkpoint created successfully', {
-            checkpointId: result,
-            threadId: threadId,
-            metadata: metadata
-          });
-          return result;
-        } catch (error) {
-          loggingService.log('ERROR', 'Failed to create checkpoint', {
-            threadId: threadId,
-            error: error instanceof Error ? error.message : String(error)
-          });
-          throw error;
-        }
-      };
+      // 监听事件并记录到日志服务
+      eventManager.on(EventType.CHECKPOINT_CREATED, (event: CheckpointCreatedEvent) => {
+        loggingService.log('INFO', 'Checkpoint created successfully', {
+          checkpointId: event.checkpointId,
+          threadId: event.threadId,
+          description: event.description
+        });
+      });
 
-      const originalGet = api.get.bind(api);
-      api.get = async (id: string) => {
-        try {
-          const result = await originalGet(id);
-          if (result) {
-            loggingService.log('INFO', 'Checkpoint retrieved successfully', {
-              checkpointId: id
-            });
-          } else {
-            loggingService.log('WARN', 'Checkpoint not found', {
-              checkpointId: id
-            });
-          }
-          return result;
-        } catch (error) {
-          loggingService.log('ERROR', 'Failed to retrieve checkpoint', {
-            checkpointId: id,
-            error: error instanceof Error ? error.message : String(error)
-          });
-          throw error;
-        }
-      };
+      eventManager.on(EventType.CHECKPOINT_DELETED, (event: CheckpointDeletedEvent) => {
+        loggingService.log('INFO', 'Checkpoint deleted', {
+          checkpointId: event.checkpointId,
+          reason: event.reason
+        });
+      });
+
+      eventManager.on(EventType.CHECKPOINT_FAILED, (event: CheckpointFailedEvent) => {
+        loggingService.log('ERROR', 'Checkpoint operation failed', {
+          operation: event.operation,
+          error: event.error,
+          checkpointId: event.checkpointId
+        });
+      });
 
       // 创建检查点
       const checkpointId = await api.createThreadCheckpoint(threadContext.getThreadId(), {
@@ -487,31 +494,38 @@ describe('检查点外部系统集成测试', () => {
       // 模拟审计日志
       const auditLogs: any[] = [];
 
-      const originalCreate = api.createThreadCheckpoint.bind(api);
-      api.createThreadCheckpoint = async (threadId: string, metadata?: any) => {
-        const result = await originalCreate(threadId, metadata);
+      // 监听事件并记录到审计日志
+      eventManager.on(EventType.CHECKPOINT_CREATED, (event: CheckpointCreatedEvent) => {
         auditLogs.push({
           eventType: 'CHECKPOINT_CREATED',
-          timestamp: Date.now(),
+          timestamp: event.timestamp,
           userId: 'test-user',
-          threadId: threadId,
-          checkpointId: result,
-          sensitiveDataDetected: false // 简化实现
+          threadId: event.threadId,
+          checkpointId: event.checkpointId,
+          workflowId: event.workflowId,
+          description: event.description
         });
-        return result;
-      };
+      });
 
-      const originalDelete = api.delete.bind(api);
-      api.delete = async (id: string) => {
-        const result = await originalDelete(id);
+      eventManager.on(EventType.CHECKPOINT_DELETED, (event: CheckpointDeletedEvent) => {
         auditLogs.push({
           eventType: 'CHECKPOINT_DELETED',
-          timestamp: Date.now(),
+          timestamp: event.timestamp,
           userId: 'test-user',
-          checkpointId: id
+          checkpointId: event.checkpointId,
+          reason: event.reason
         });
-        return result;
-      };
+      });
+
+      eventManager.on(EventType.CHECKPOINT_RESTORED, (event: CheckpointRestoredEvent) => {
+        auditLogs.push({
+          eventType: 'CHECKPOINT_RESTORED',
+          timestamp: event.timestamp,
+          userId: 'test-user',
+          checkpointId: event.checkpointId,
+          threadId: event.threadId
+        });
+      });
 
       // 创建和删除检查点
       const checkpointId = await api.createThreadCheckpoint(threadContext.getThreadId());
@@ -524,10 +538,12 @@ describe('检查点外部系统集成测试', () => {
       expect(createAudit).toBeDefined();
       expect(createAudit?.threadId).toBe(threadContext.getThreadId());
       expect(createAudit?.checkpointId).toBe(checkpointId);
+      expect(createAudit?.workflowId).toBe(workflow.id);
 
       const deleteAudit = auditLogs.find(log => log.eventType === 'CHECKPOINT_DELETED');
       expect(deleteAudit).toBeDefined();
       expect(deleteAudit?.checkpointId).toBe(checkpointId);
+      expect(deleteAudit?.reason).toBe('manual');
     });
   });
 });
