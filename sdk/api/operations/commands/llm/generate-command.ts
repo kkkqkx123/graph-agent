@@ -20,7 +20,13 @@ export class GenerateCommand extends BaseCommand<LLMResult> {
   protected async executeInternal(): Promise<LLMResult> {
     const llmWrapper = this.dependencies.getLLMWrapper();
     const result = await llmWrapper.generate(this.request);
-    return result;
+    
+    // 处理 Result 类型，提取成功的结果或抛出错误
+    if (result.isErr()) {
+      throw result.error;
+    }
+    
+    return result.value;
   }
 
   validate(): CommandValidationResult {

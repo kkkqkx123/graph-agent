@@ -40,8 +40,13 @@ export class ExecuteScriptCommand extends BaseCommand<ScriptExecutionResult> {
     const result = await this.dependencies.getCodeService().execute(this.scriptName, executionOptions);
     const executionTime = Date.now() - startTime;
 
+    // 处理 Result 类型，提取成功的结果或抛出错误
+    if (result.isErr()) {
+      throw result.error;
+    }
+
     const executionResult: ScriptExecutionResult = {
-      ...result,
+      ...result.value,
       executionTime
     };
 

@@ -25,6 +25,9 @@ export * from './llm';
 // 消息管理模块
 export * from './message';
 
+// 代码安全工具模块
+export * from './code-security';
+
 // 日志系统（选择性导出以避免命名冲突）
 export {
   createLogger,

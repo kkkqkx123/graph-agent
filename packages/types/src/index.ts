@@ -28,6 +28,7 @@ export * from './tool';
 export * from './llm';
 export * from './message';
 export * from './code';
+export * from './code-security';
 export * from './checkpoint';
 export * from './checkpoint-storage';
 export * from './interaction';

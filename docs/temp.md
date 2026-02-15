@@ -24,5 +24,6 @@ triggered子工作流的检查点管理可能多余。分析是否应该改为�
 
 工具提示词如何处理(需要使用context7 mcp，或参考anthropic sdk)
 
-truncate增加基于消息角色+距离控制的逻辑
 
+
+分析当前triggered子工作流的逻辑是否存在问题，是否应该取消单独的triggered子工作流相关节点，分别替换为start、end，运行时才替换节点

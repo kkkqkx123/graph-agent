@@ -4,6 +4,7 @@
  */
 
 import type { ID } from '../../common';
+import { CodeRiskLevel } from '../../code-security';
 
 /**
  * 代码节点配置
@@ -13,8 +14,8 @@ export interface CodeNodeConfig {
   scriptName: string;
   /** 脚本语言(shell/cmd/powershell/python/javascript) */
   scriptType: 'shell' | 'cmd' | 'powershell' | 'python' | 'javascript';
-  /** 风险等级(none/low/medium/high)【应用层中会实现不同的执行策略，例如none不检查，high在沙箱运行】 */
-  risk: 'none' | 'low' | 'medium' | 'high';
+  /** 风险等级【应用层中会实现不同的执行策略，例如none不检查，high在沙箱运行】 */
+  risk: CodeRiskLevel;
   /** 是否为内联代码 */
   inline?: boolean;
 }

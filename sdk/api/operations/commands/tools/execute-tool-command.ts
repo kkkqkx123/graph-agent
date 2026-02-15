@@ -39,9 +39,14 @@ export class ExecuteToolCommand extends BaseCommand<ToolExecutionResult> {
     const result = await this.dependencies.getToolService().execute(this.toolName, this.parameters, executionOptions);
     const executionTime = Date.now() - startTime;
 
+    // 处理 Result 类型，提取成功的结果或抛出错误
+    if (result.isErr()) {
+      throw result.error;
+    }
+
     const executionResult: ToolExecutionResult = {
       success: true,
-      result: result.result,
+      result: result.value.result,
       executionTime,
       retryCount: 0
     };

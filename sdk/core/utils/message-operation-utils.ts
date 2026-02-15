@@ -243,8 +243,9 @@ function executeClearOperation(
   let workingMarkMap = { ...markMap };
   let affectedVisibleIndices: number[] = [];
   
-  const keepSystemMessage = operation.keepSystemMessage ?? true;
-  const keepToolDescription = operation.keepToolDescription ?? false;
+  // CLEAR操作完全清空消息，如需保留特定消息请使用FILTER操作
+  const keepSystemMessage = false;
+  const keepToolDescription = false;
   
   if (visibleOnly) {
     // 只清空可见消息

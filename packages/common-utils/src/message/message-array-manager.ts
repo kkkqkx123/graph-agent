@@ -296,11 +296,8 @@ export class MessageArrayManager {
       description: 'Before CLEAR'
     };
     
-    // 执行清空操作
-    const keepSystemMessage = operation.keepSystemMessage ?? true;
-    const newMessages = keepSystemMessage
-      ? this.state.messages.filter((msg: Message) => msg.role === 'system')
-      : [];
+    // 执行清空操作（完全清空，如需保留特定消息请使用FILTER操作）
+    const newMessages: Message[] = [];
     
     // 创建新批次
     const newBatchIndex = this.state.currentBatchIndex + 1;

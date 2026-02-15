@@ -90,3 +90,11 @@ export {
 } from './variable-accessor';
 
 export { checkWorkflowReferences } from "./workflow-reference-checker";
+
+// Hook创建器工具
+export {
+  createThreadStateCheckHook,
+  createCustomValidationHook,
+  createPermissionCheckHook,
+  createAuditLoggingHook
+} from './hook-creators';

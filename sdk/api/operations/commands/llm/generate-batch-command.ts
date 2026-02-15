@@ -22,7 +22,17 @@ export class GenerateBatchCommand extends BaseCommand<LLMResult[]> {
     const results = await Promise.all(
       this.requests.map(request => llmWrapper.generate(request))
     );
-    return results;
+    
+    // 处理 Result 类型，提取成功的结果或抛出错误
+    const llmResults: LLMResult[] = [];
+    for (const result of results) {
+      if (result.isErr()) {
+        throw result.error;
+      }
+      llmResults.push(result.value);
+    }
+    
+    return llmResults;
   }
 
   validate(): CommandValidationResult {
