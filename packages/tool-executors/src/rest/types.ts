@@ -12,9 +12,6 @@ import type {
   CacheConfig
 } from '@modular-agent/common-utils';
 
-// 重新导出 HTTPMethod 以保持向后兼容
-export type { HTTPMethod };
-
 /**
  * HTTP请求配置
  */

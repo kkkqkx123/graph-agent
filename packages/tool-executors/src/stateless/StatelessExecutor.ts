@@ -9,19 +9,17 @@ import { ToolError } from '@modular-agent/types';
 import { BaseExecutor } from '../core/base/BaseExecutor';
 import { ExecutorType } from '../core/types';
 import { FunctionRegistry } from './registry/FunctionRegistry';
-import type { StatelessExecutorConfig } from './types';
+import type { FunctionRegistryConfig } from './types';
 
 /**
  * 无状态工具执行器
  */
 export class StatelessExecutor extends BaseExecutor {
   private functionRegistry: FunctionRegistry;
-  private config: StatelessExecutorConfig;
 
-  constructor(config: StatelessExecutorConfig = {}) {
+  constructor(config: Partial<FunctionRegistryConfig> = {}) {
     super();
-    this.config = config;
-    this.functionRegistry = new FunctionRegistry(config.registry);
+    this.functionRegistry = new FunctionRegistry(config);
   }
 
   /**

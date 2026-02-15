@@ -31,11 +31,3 @@ export interface FunctionRegistryConfig {
   /** 最大注册函数数 */
   maxFunctions: number;
 }
-
-/**
- * Stateless执行器配置
- */
-export interface StatelessExecutorConfig {
-  /** 函数注册表配置 */
-  registry?: Partial<FunctionRegistryConfig>;
-}

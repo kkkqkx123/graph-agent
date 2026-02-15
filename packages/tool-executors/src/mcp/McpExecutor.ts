@@ -12,29 +12,21 @@ import { SessionPool } from './session/SessionPool';
 import type { McpServerConfig } from './types';
 
 /**
- * MCP执行器配置
- */
-export interface McpExecutorConfig {
-  /** 会话池配置 */
-  sessionPool?: {
-    maxConnections?: number;
-    minConnections?: number;
-    connectionTimeout?: number;
-    idleTimeout?: number;
-    healthCheckInterval?: number;
-  };
-}
-
-/**
  * MCP工具执行器
  */
 export class McpExecutor extends BaseExecutor {
   private sessionPool: SessionPool;
   private serverConfigs: Map<string, McpServerConfig> = new Map();
 
-  constructor(config: McpExecutorConfig = {}) {
+  constructor(config?: {
+    maxConnections?: number;
+    minConnections?: number;
+    connectionTimeout?: number;
+    idleTimeout?: number;
+    healthCheckInterval?: number;
+  }) {
     super();
-    this.sessionPool = new SessionPool(config.sessionPool);
+    this.sessionPool = new SessionPool(config);
   }
 
   /**

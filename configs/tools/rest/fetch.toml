@@ -2,7 +2,7 @@
 name = "fetch"
 tool_type = "rest"
 description = "A tool for fetching web page content from URLs and optionally extracting it as markdown, supporting URL fetching with content type handling and robots.txt compliance"
-function_path = "src.domain.tools.rest.fetch:fetch_url"
+function_path = "path"
 enabled = true
 timeout = 30
 

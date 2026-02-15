@@ -28,7 +28,6 @@ export type {
 // REST执行器
 export { RestExecutor } from './rest/RestExecutor';
 export type {
-  HTTPMethod as HttpMethod,
   HttpRequestConfig,
   HttpResponse,
   RequestInterceptor,
@@ -41,9 +40,6 @@ export type {
 // Stateful执行器
 export { StatefulExecutor } from './stateful/StatefulExecutor';
 export type {
-  ThreadContextProvider
-} from './stateful/StatefulExecutor';
-export type {
   StatefulExecutorConfig
 } from './stateful/types';
 
@@ -52,6 +48,5 @@ export { StatelessExecutor } from './stateless/StatelessExecutor';
 export { FunctionRegistry } from './stateless/registry/FunctionRegistry';
 export type {
   FunctionRegistryItem,
-  FunctionRegistryConfig,
-  StatelessExecutorConfig
+  FunctionRegistryConfig
 } from './stateless/types';
