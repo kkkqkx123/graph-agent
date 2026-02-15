@@ -38,7 +38,7 @@ class GlobalInstanceManager {
    */
   getTomlParser(): any {
     const key = 'toml_parser';
-    
+
     // 如果已经初始化失败，直接抛出错误
     if (this.initFailed.has(key)) {
       throw new ConfigurationError(
@@ -74,7 +74,7 @@ class GlobalInstanceManager {
    */
   getTokenEncoder(): any {
     const key = 'token_encoder';
-    
+
     // 如果已经初始化失败，返回 null
     if (this.initFailed.has(key)) {
       return null;
@@ -139,3 +139,4 @@ export const globalInstanceManager = new GlobalInstanceManager();
 
 // Re-export all API layer content
 export * from './api';
+

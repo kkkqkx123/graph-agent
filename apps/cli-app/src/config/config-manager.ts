@@ -9,7 +9,7 @@
  * - 支持配置继承和注册表模式
  */
 
-import { 
+import {
   ConfigFormat,
   parseWorkflow,
   parseNodeTemplate,

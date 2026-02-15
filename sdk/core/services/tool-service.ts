@@ -17,7 +17,7 @@ import { ToolRegistry } from '../tools/tool-registry';
 import type { IToolExecutor } from '@modular-agent/types';
 import type { ToolExecutionOptions, ToolExecutionResult } from '@modular-agent/types';
 import { StatelessExecutor } from '@modular-agent/tool-executors';
-import { StatefulExecutor, type ThreadContextProvider } from '@modular-agent/tool-executors';
+import { StatefulExecutor } from '@modular-agent/tool-executors';
 import { RestExecutor } from '@modular-agent/tool-executors';
 import { McpExecutor } from '@modular-agent/tool-executors';
 
@@ -27,11 +27,9 @@ import { McpExecutor } from '@modular-agent/tool-executors';
 class ToolService {
   private registry: ToolRegistry;
   private executors: Map<string, IToolExecutor> = new Map();
-  private threadContextProvider: ThreadContextProvider;
 
-  constructor(threadContextProvider: ThreadContextProvider) {
+  constructor() {
     this.registry = new ToolRegistry();
-    this.threadContextProvider = threadContextProvider;
     this.initializeExecutors();
   }
 
@@ -41,7 +39,7 @@ class ToolService {
   private initializeExecutors(): void {
     // 直接使用packages中的实现
     this.executors.set(ToolType.STATELESS, new StatelessExecutor());
-    this.executors.set(ToolType.STATEFUL, new StatefulExecutor(this.threadContextProvider));
+    this.executors.set(ToolType.STATEFUL, new StatefulExecutor());
     this.executors.set(ToolType.REST, new RestExecutor());
     this.executors.set(ToolType.MCP, new McpExecutor());
   }
@@ -253,7 +251,11 @@ class ToolService {
 }
 
 /**
- * 导出ToolService类
- * 使用时需要提供 ThreadContextProvider
+ * 创建全局单例实例
  */
-export { ToolService };
+const toolService = new ToolService();
+
+/**
+ * 导出ToolService类和单例实例
+ */
+export { ToolService, toolService };

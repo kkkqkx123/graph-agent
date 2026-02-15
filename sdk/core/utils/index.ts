@@ -13,3 +13,6 @@ export * from './batch-management-utils';
 
 // 消息操作工具
 export * from './message-operation-utils';
+
+// 工具描述工具
+export { getToolSchemas, getToolDescriptionText } from './tool-description';

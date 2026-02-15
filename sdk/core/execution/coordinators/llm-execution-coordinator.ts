@@ -32,6 +32,7 @@ import { CheckpointCoordinator } from './checkpoint-coordinator';
 import type { ExecutionContext } from '../context/execution-context';
 import { globalMessageStorage } from '../../services/global-message-storage';
 import type { InterruptionDetector } from '../managers/interruption-detector';
+import { getToolSchemas } from '../../utils/tool-description';
 
 /**
  * LLM 执行参数
@@ -246,10 +247,14 @@ export class LLMExecutionCoordinator {
     }
 
     // 如果存在动态工具，合并静态和动态工具
-    let availableTools = tools;
+    let availableToolSchemas = tools;
     if (dynamicTools?.toolIds) {
       const workflowTools = tools ? new Set(tools.map((t: any) => t.name || t.id)) : new Set();
-      availableTools = this.getAvailableTools(workflowTools, dynamicTools);
+      const availableToolIds = this.getAvailableToolIds(workflowTools, dynamicTools);
+      const availableTools = availableToolIds
+        .map(id => this.toolService.getTool(id))
+        .filter(Boolean);
+      availableToolSchemas = getToolSchemas(availableTools);
     }
 
     // 执行 LLM 调用前再次检查中断
@@ -271,7 +276,7 @@ export class LLMExecutionCoordinator {
         prompt,
         profileId: profileId || 'default',
         parameters: parameters || {},
-        tools: availableTools
+        tools: availableToolSchemas
       },
       { abortSignal }
     );
@@ -596,24 +601,16 @@ export class LLMExecutionCoordinator {
   }
 
   /**
-   * 获取可用工具schema（包含静态和动态工具）
+   * 获取可用工具ID列表
    */
-  private getAvailableTools(workflowTools: Set<string>, dynamicTools?: any): any[] {
+  private getAvailableToolIds(workflowTools: Set<string>, dynamicTools?: any): string[] {
     const allToolIds = new Set(workflowTools);
-
+  
     // 添加动态工具
     if (dynamicTools?.toolIds) {
       dynamicTools.toolIds.forEach((id: string) => allToolIds.add(id));
     }
-
-    return Array.from(allToolIds)
-      .map(id => this.toolService.getTool(id))
-      .filter(Boolean)
-      .filter((tool): tool is NonNullable<typeof tool> => tool != null)
-      .map(tool => ({
-        name: tool.name,
-        description: tool.description,
-        parameters: tool.parameters
-      }));
+  
+    return Array.from(allToolIds);
   }
 }

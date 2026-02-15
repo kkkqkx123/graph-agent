@@ -10,6 +10,7 @@ export interface CommandOptions {
   debug?: boolean;
   output?: 'json' | 'table' | 'plain';
   table?: boolean;
+  params?: string;
 }
 
 /**

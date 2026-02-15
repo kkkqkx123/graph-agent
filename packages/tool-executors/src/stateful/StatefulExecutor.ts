@@ -186,7 +186,7 @@ export class StatefulExecutor extends BaseExecutor {
   /**
    * 清理资源
    */
-  cleanup(): void {
+  async cleanup(): Promise<void> {
     if (this.cleanupTimer) {
       clearInterval(this.cleanupTimer);
       this.cleanupTimer = undefined;
@@ -195,7 +195,10 @@ export class StatefulExecutor extends BaseExecutor {
     for (const [threadId, threadMap] of this.threadInstances.entries()) {
       for (const [toolName, { instance }] of threadMap.entries()) {
         if (typeof instance.cleanup === 'function') {
-          instance.cleanup();
+          const cleanupResult = instance.cleanup();
+          if (cleanupResult instanceof Promise) {
+            await cleanupResult;
+          }
         }
       }
     }

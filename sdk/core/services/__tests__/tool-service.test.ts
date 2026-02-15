@@ -12,7 +12,7 @@ describe('ToolService', () => {
   let mockTool: Tool;
 
   beforeEach(() => {
-    service = new ToolService();
+    service = new ToolService(); // 不再需要参数
     mockTool = {
       id: 'test-tool-1',
       name: 'test-tool',
