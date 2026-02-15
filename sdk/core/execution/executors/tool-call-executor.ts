@@ -25,7 +25,6 @@ import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/che
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils';
 import { ThreadInterruptedException } from '@modular-agent/types';
 import { MessageBuilder } from '../../messages/message-builder';
-import { processToolResult } from '../utils';
 
 /**
  * 工具执行结果
@@ -171,22 +170,12 @@ export class ToolCallExecutor {
 
       const executionTime = Date.now() - startTime;
 
-      // 构建完整的ToolExecutionResult对象
-      const toolExecutionResult = {
-        success: result.success,
-        result: result.result,
-        error: result.error,
-        executionTime: executionTime,
-        retryCount: result.retryCount || 0
-      };
-      
-      // 使用工具结果处理函数处理工具结果
-      const processedContent = processToolResult(toolExecutionResult);
-      
       // 构建工具结果消息
       const toolMessage = {
         role: MessageRole.TOOL,
-        content: processedContent,
+        content: result.success
+          ? (typeof result.result === 'string' ? result.result : JSON.stringify(result.result))
+          : (result.error || 'Tool execution failed'),
         toolCallId: toolCall.id
       };
       conversationState.addMessage(toolMessage);
@@ -268,22 +257,10 @@ export class ToolCallExecutor {
         );
       }
 
-      // 构建错误的ToolExecutionResult对象
-      const errorToolExecutionResult = {
-        success: false,
-        result: undefined,
-        error: errorMessage,
-        executionTime: executionTime,
-        retryCount: 0
-      };
-      
-      // 使用工具结果处理函数处理错误结果
-      const processedErrorContent = processToolResult(errorToolExecutionResult);
-      
       // 构建工具结果消息
       const toolMessage = {
         role: MessageRole.TOOL,
-        content: processedErrorContent,
+        content: errorMessage || 'Tool execution failed',
         toolCallId: toolCall.id
       };
       conversationState.addMessage(toolMessage);
