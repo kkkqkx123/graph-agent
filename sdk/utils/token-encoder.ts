@@ -2,26 +2,20 @@
  * Token编码器工具
  * 基于tiktoken的精确token计数，使用cl100k_base编码器（GPT-4/Claude兼容）
  * 编码失败时降级为字符估算
+ *
+ * 设计原则：
+ * - 使用 SDK 全局实例管理器获取 Token 编码器
+ * - 提供降级策略
+ * - 保持同步接口
  */
 
-let encoder: any = null;
-let initFailed = false;
+import { globalInstanceManager } from '../index';
 
 /**
  * 初始化编码器（延迟初始化）
  */
 function initEncoder(): any {
-  if (encoder) return encoder;
-  if (initFailed) return null;
-
-  try {
-    const tiktoken = require('tiktoken');
-    encoder = tiktoken.getEncoding('cl100k_base');
-    return encoder;
-  } catch (error) {
-    initFailed = true;
-    return null;
-  }
+  return globalInstanceManager.getTokenEncoder();
 }
 
 /**
@@ -64,6 +58,5 @@ export function encodeObject(obj: any): number {
  * 重置编码器（仅用于测试）
  */
 export function resetEncoder(): void {
-  encoder = null;
-  initFailed = false;
+  globalInstanceManager.resetInstance('token_encoder');
 }

@@ -3,7 +3,7 @@
  * 负责解析TOML格式的配置文件
  *
  * 设计原则：
- * - 在模块顶层加载 @iarna/toml 解析库（ES 模块兼容）
+ * - 使用 SDK 全局实例管理器获取 TOML 解析器
  * - 提供清晰的错误信息
  * - 统一的错误处理
  * - 保持同步接口，避免影响现有代码
@@ -11,9 +11,7 @@
 
 import type { WorkflowConfigFile } from './types';
 import { ConfigurationError } from '@modular-agent/types';
-
-// 在模块顶层动态导入并缓存 TOML 解析器
-let tomlParser: any = null;
+import { globalInstanceManager } from '../../index';
 
 /**
  * 获取 TOML 解析器实例
@@ -21,21 +19,7 @@ let tomlParser: any = null;
  * @throws {ConfigurationError} 当未找到 TOML 解析库时抛出
  */
 function getTomlParser(): any {
-  if (tomlParser) {
-    return tomlParser;
-  }
-
-  try {
-    // 使用 require 加载 CommonJS 模块
-    tomlParser = require('@iarna/toml');
-    return tomlParser;
-  } catch (error) {
-    throw new ConfigurationError(
-      '未找到TOML解析库。请确保已安装 @iarna/toml: pnpm install',
-      undefined,
-      { suggestion: 'pnpm install' }
-    );
-  }
+  return globalInstanceManager.getTomlParser();
 }
 
 /**
