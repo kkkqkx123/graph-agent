@@ -80,9 +80,6 @@ export class ExecutionContext {
     const llmExecutor = SingletonRegistry.get<any>('llmExecutor');
     const errorService = SingletonRegistry.get<any>('errorService');
 
-    // 设置 ThreadRegistry 和 WorkflowRegistry 之间的依赖关系
-    threadRegistry.setWorkflowRegistry(workflowRegistry);
-
     // 注册全局单例服务到ComponentRegistry
     this.componentRegistry.register('eventManager', eventManager);
     this.componentRegistry.register('workflowRegistry', workflowRegistry);

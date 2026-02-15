@@ -21,10 +21,7 @@ import type { CodeService } from '../../core/services/code-service';
 import type { NodeTemplateRegistry } from '../../core/services/node-template-registry';
 import type { TriggerTemplateRegistry } from '../../core/services/trigger-template-registry';
 import type { GraphRegistry } from '../../core/services/graph-registry';
-import { codeService } from '../../core/services/code-service';
-import { nodeTemplateRegistry } from '../../core/services/node-template-registry';
-import { triggerTemplateRegistry } from '../../core/services/trigger-template-registry';
-import { graphRegistry } from '../../core/services/graph-registry';
+import { SingletonRegistry } from '../../core/execution/context/singleton-registry';
 
 /**
  * API依赖管理类
@@ -87,28 +84,28 @@ export class APIDependencyManager {
    * 获取代码服务
    */
   getCodeService(): CodeService {
-    return codeService;
+    return SingletonRegistry.getCodeService();
   }
   
   /**
    * 获取节点模板注册表
    */
   getNodeTemplateRegistry(): NodeTemplateRegistry {
-    return nodeTemplateRegistry;
+    return SingletonRegistry.getNodeTemplateRegistry();
   }
   
   /**
    * 获取触发器模板注册表
    */
   getTriggerTemplateRegistry(): TriggerTemplateRegistry {
-    return triggerTemplateRegistry;
+    return SingletonRegistry.getTriggerTemplateRegistry();
   }
   
   /**
    * 获取图注册表
    */
   getGraphRegistry(): GraphRegistry {
-    return graphRegistry;
+    return SingletonRegistry.getGraphRegistry();
   }
   
   /**

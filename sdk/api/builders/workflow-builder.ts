@@ -13,8 +13,7 @@ import type { WorkflowTrigger } from '@modular-agent/types';
 import type { TriggerReference } from '@modular-agent/types';
 import { generateId } from '@modular-agent/common-utils';
 import { now } from '@modular-agent/common-utils';
-import { nodeTemplateRegistry } from '../../core/services/node-template-registry';
-import { triggerTemplateRegistry } from '../../core/services/trigger-template-registry';
+import { SingletonRegistry } from '../../core/execution/context/singleton-registry';
 import { ConfigParser, ConfigFormat } from '../config';
 
 /**
@@ -133,6 +132,7 @@ export class WorkflowBuilder {
     configOverride?: Partial<NodeConfig>,
     nodeName?: string
   ): this {
+    const nodeTemplateRegistry = SingletonRegistry.getNodeTemplateRegistry();
     const template = nodeTemplateRegistry.get(templateName);
     if (!template) {
       throw new Error(`节点模板 '${templateName}' 不存在`);
@@ -436,6 +436,7 @@ export class WorkflowBuilder {
     }
 
     // 验证触发器引用
+    const triggerTemplateRegistry = SingletonRegistry.getTriggerTemplateRegistry();
     for (const trigger of this.triggers) {
       if ('templateName' in trigger) {
         const reference = trigger as TriggerReference;

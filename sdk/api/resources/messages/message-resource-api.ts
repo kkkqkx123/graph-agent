@@ -4,9 +4,10 @@
  */
 
 import { GenericResourceAPI } from '../generic-resource-api';
-import { threadRegistry, type ThreadRegistry } from '../../../core/services/thread-registry';
+import type { ThreadRegistry } from '../../../core/services/thread-registry';
 import type { LLMMessage } from '@modular-agent/types';
 import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types';
+import { SingletonRegistry } from '../../../core/execution/context/singleton-registry';
 
 /**
  * 消息过滤器
@@ -44,7 +45,7 @@ export class MessageResourceAPI extends GenericResourceAPI<LLMMessage, string, M
 
   constructor() {
     super();
-    this.registry = threadRegistry;
+    this.registry = SingletonRegistry.getThreadRegistry();
   }
 
   // ============================================================================

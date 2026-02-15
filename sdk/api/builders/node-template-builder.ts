@@ -7,7 +7,7 @@ import type { NodeTemplate } from '@modular-agent/types';
 import type { NodeType, NodeConfig } from '@modular-agent/types';
 import type { Metadata } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
-import { nodeTemplateRegistry } from '../../core/services/node-template-registry';
+import { SingletonRegistry } from '../../core/execution/context/singleton-registry';
 
 /**
  * NodeTemplateBuilder - 节点模板构建器
@@ -127,6 +127,7 @@ export class NodeTemplateBuilder {
    */
   register(): this {
     const template = this.build();
+    const nodeTemplateRegistry = SingletonRegistry.getNodeTemplateRegistry();
     nodeTemplateRegistry.register(template);
     return this;
   }
@@ -137,6 +138,7 @@ export class NodeTemplateBuilder {
    */
   buildAndRegister(): NodeTemplate {
     const template = this.build();
+    const nodeTemplateRegistry = SingletonRegistry.getNodeTemplateRegistry();
     nodeTemplateRegistry.register(template);
     return template;
   }

@@ -5,7 +5,8 @@
  *
  * 预处理后的图由 GraphRegistry 管理
  *
- * 本模块导出全局单例实例，不导出类定义
+ * 本模块只导出类定义，不导出实例
+ * 实例通过 SingletonRegistry 统一管理
  */
 
 import type {
@@ -19,7 +20,9 @@ import { WorkflowType } from '@modular-agent/types';
 import type { WorkflowReferenceInfo, WorkflowReferenceRelation, WorkflowReferenceType } from '@modular-agent/types';
 import { WorkflowReferenceManager } from '../execution/managers/workflow-reference-manager';
 import { ValidationError, ExecutionError, ConfigurationValidationError, WorkflowNotFoundError } from '@modular-agent/types';
-import { graphRegistry } from './graph-registry';
+import type { GraphRegistry } from './graph-registry';
+import { processWorkflow, type ProcessOptions } from '../graph/workflow-processor';
+import { SingletonRegistry } from '../execution/context/singleton-registry';
 
 /**
  * 工作流版本信息
@@ -33,22 +36,27 @@ export interface WorkflowVersion {
 /**
  * WorkflowRegistry - 工作流注册器
  */
-class WorkflowRegistry {
+export class WorkflowRegistry {
   private workflows: Map<string, WorkflowDefinition> = new Map();
   private workflowRelationships: Map<string, WorkflowRelationship> = new Map();
   private activeWorkflows: Set<string> = new Set();
   private referenceManager: WorkflowReferenceManager;
+  private graphRegistry?: GraphRegistry;
   private maxRecursionDepth: number;
 
   constructor(options: {
     maxRecursionDepth?: number;
-    threadRegistry?: any;
   } = {}) {
     this.maxRecursionDepth = options.maxRecursionDepth ?? 10;
-    this.referenceManager = new WorkflowReferenceManager(this, options.threadRegistry);
-    
-    // 设置 graphRegistry 的 workflowRegistry 引用
-    graphRegistry.setWorkflowRegistry(this);
+    this.referenceManager = new WorkflowReferenceManager(this);
+  }
+
+  /**
+   * 设置GraphRegistry引用
+   * @param graphRegistry GraphRegistry实例
+   */
+  setGraphRegistry(graphRegistry: GraphRegistry): void {
+    this.graphRegistry = graphRegistry;
   }
 
   /**
@@ -164,27 +172,52 @@ class WorkflowRegistry {
     // 保存工作流定义
     this.workflows.set(workflow.id, workflow);
 
-    // 仅预处理无外部依赖的工作流
-    // STANDALONE和TRIGGERED_SUBWORKFLOW类型：立即预处理
-    // DEPENDENT类型：延迟到Thread构建时预处理，以确保所有依赖都已注册
-    if (workflow.type === WorkflowType.STANDALONE || workflow.type === WorkflowType.TRIGGERED_SUBWORKFLOW) {
-      // 注意：这里不 await，因为 register 是同步方法
-      // 预处理会在后台进行，但通常很快完成
-      graphRegistry.preprocessAndStore(workflow).catch(error => {
-        // 抛出验证错误
-        throw new ConfigurationValidationError(
-          `Workflow preprocessing failed: ${error instanceof Error ? error.message : String(error)}`,
-          {
-            configType: 'workflow',
-            configPath: 'workflow.definition',
-            context: {
-              workflowId: workflow.id,
-              operation: 'workflow_preprocessing'
-            }
+    // 预处理工作流（异步，不阻塞注册）
+    this.preprocessWorkflow(workflow).catch(error => {
+      // 抛出验证错误
+      throw new ConfigurationValidationError(
+        `Workflow preprocessing failed: ${error instanceof Error ? error.message : String(error)}`,
+        {
+          configType: 'workflow',
+          configPath: 'workflow.definition',
+          context: {
+            workflowId: workflow.id,
+            operation: 'workflow_preprocessing'
           }
-        );
-      });
+        }
+      );
+    });
+  }
+
+  /**
+   * 预处理工作流
+   * @param workflow 工作流定义
+   * @returns 预处理后的图
+   */
+  private async preprocessWorkflow(workflow: WorkflowDefinition): Promise<void> {
+    if (!this.graphRegistry) {
+      return;
     }
+
+    // 检查是否已经预处理过
+    if (this.graphRegistry.has(workflow.id)) {
+      return;
+    }
+
+    // 调用 processWorkflow 进行预处理
+    const processOptions: ProcessOptions = {
+      workflowRegistry: this,
+      maxRecursionDepth: this.maxRecursionDepth,
+      validate: true,
+      computeTopologicalOrder: true,
+      detectCycles: true,
+      analyzeReachability: true,
+    };
+
+    const processedGraph = await processWorkflow(workflow, processOptions);
+
+    // 缓存处理结果
+    this.graphRegistry.register(processedGraph);
   }
 
   /**
@@ -379,8 +412,8 @@ class WorkflowRegistry {
     this.workflows.clear();
     this.workflowRelationships.clear();
     this.activeWorkflows.clear();
-    // 重新创建引用管理器，不传递 threadRegistry
-    this.referenceManager = new WorkflowReferenceManager(this, null as any);
+    // 重新创建引用管理器
+    this.referenceManager = new WorkflowReferenceManager(this);
   }
 
   /**
@@ -596,16 +629,3 @@ class WorkflowRegistry {
     return relationship?.depth || 0;
   }
 }
-
-/**
- * 全局工作流注册器单例实例
- */
-export const workflowRegistry = new WorkflowRegistry({
-  maxRecursionDepth: 10
-});
-
-/**
- * 导出WorkflowRegistry类供测试使用
- * 注意：生产代码应使用单例 workflowRegistry，此类仅供测试使用
- */
-export { WorkflowRegistry };

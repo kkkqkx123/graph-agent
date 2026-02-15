@@ -1,11 +1,12 @@
 /**
  * 图注册表
  * 管理预处理后的图
+ *
+ * 本模块只导出类定义，不导出实例
+ * 实例通过 SingletonRegistry 统一管理
  */
 
-import type { PreprocessedGraph, ID, WorkflowDefinition } from '@modular-agent/types';
-import { processWorkflow, type ProcessOptions } from '../graph/workflow-processor';
-import { WorkflowNotFoundError } from '@modular-agent/types';
+import type { PreprocessedGraph, ID } from '@modular-agent/types';
 
 /**
  * 图注册表类
@@ -13,24 +14,6 @@ import { WorkflowNotFoundError } from '@modular-agent/types';
  */
 export class GraphRegistry {
   private graphs: Map<ID, PreprocessedGraph> = new Map();
-  private workflowRegistry: any;
-  private maxRecursionDepth: number;
-  
-  constructor(options: {
-    workflowRegistry?: any;
-    maxRecursionDepth?: number;
-  } = {}) {
-    this.workflowRegistry = options.workflowRegistry;
-    this.maxRecursionDepth = options.maxRecursionDepth ?? 10;
-  }
-  
-  /**
-   * 设置工作流注册表
-   * @param workflowRegistry 工作流注册表
-   */
-  setWorkflowRegistry(workflowRegistry: any): void {
-    this.workflowRegistry = workflowRegistry;
-  }
   
   /**
    * 注册预处理后的图
@@ -108,73 +91,4 @@ export class GraphRegistry {
       this.unregister(workflowId);
     }
   }
-  
-  /**
-   * 确保工作流已预处理（统一预处理入口）
-   * @param workflowId 工作流ID
-   * @returns 预处理后的图
-   * @throws WorkflowNotFoundError 如果工作流不存在或预处理失败
-   */
-  async ensureProcessed(workflowId: string): Promise<PreprocessedGraph> {
-    // 检查缓存
-    let processedGraph = this.get(workflowId);
-    if (processedGraph) return processedGraph;
-
-    // 获取原始定义
-    if (!this.workflowRegistry) {
-      throw new WorkflowNotFoundError(
-        'WorkflowRegistry not set in GraphRegistry',
-        workflowId
-      );
-    }
-    
-    const workflow = this.workflowRegistry.get(workflowId);
-    if (!workflow) {
-      throw new WorkflowNotFoundError(
-        `Workflow with ID '${workflowId}' not found`,
-        workflowId
-      );
-    }
-
-    // 预处理（会递归处理所有子工作流）
-    processedGraph = await this.preprocessAndStore(workflow);
-
-    return processedGraph;
-  }
-  
-  /**
-   * 预处理工作流并存储
-   * @param workflow 原始工作流定义
-   * @returns 预处理后的图
-   * @throws WorkflowNotFoundError 如果预处理失败
-   */
-  async preprocessAndStore(workflow: WorkflowDefinition): Promise<PreprocessedGraph> {
-    // 检查是否已经预处理过
-    const existing = this.get(workflow.id);
-    if (existing) {
-      return existing;
-    }
-
-    // 调用 processWorkflow 进行预处理
-    const processOptions: ProcessOptions = {
-      workflowRegistry: this.workflowRegistry,
-      maxRecursionDepth: this.maxRecursionDepth,
-      validate: true,
-      computeTopologicalOrder: true,
-      detectCycles: true,
-      analyzeReachability: true,
-    };
-
-    const processedGraph = await processWorkflow(workflow, processOptions);
-
-    // 缓存处理结果
-    this.register(processedGraph);
-
-    return processedGraph;
-  }
 }
-
-/**
- * 全局单例实例
- */
-export const graphRegistry = new GraphRegistry();

@@ -7,7 +7,7 @@ import type { Node, CodeNodeConfig } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
 import { ValidationError, RuntimeValidationError } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
-import { codeService } from '../../../services/code-service';
+import { SingletonRegistry } from '../../context/singleton-registry';
 
 /**
  * 检查节点是否可以执行
@@ -72,6 +72,7 @@ export async function codeHandler(thread: Thread, node: Node, context?: any): Pr
 
   try {
     // 使用脚本服务执行脚本
+    const codeService = SingletonRegistry.getCodeService();
     const result = await codeService.execute(config.scriptName);
 
     // 记录执行历史

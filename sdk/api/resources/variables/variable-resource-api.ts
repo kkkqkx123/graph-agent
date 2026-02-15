@@ -4,9 +4,10 @@
  */
 
 import { GenericResourceAPI } from '../generic-resource-api';
-import { threadRegistry, type ThreadRegistry } from '../../../core/services/thread-registry';
+import type { ThreadRegistry } from '../../../core/services/thread-registry';
 import type { Thread, VariableFilter } from '@modular-agent/types';
 import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types';
+import { SingletonRegistry } from '../../../core/execution/context/singleton-registry';
 
 // 重新导出 VariableFilter 供外部使用
 export type { VariableFilter };
@@ -35,7 +36,7 @@ export class VariableResourceAPI extends GenericResourceAPI<any, string, Variabl
 
   constructor() {
     super();
-    this.registry = threadRegistry;
+    this.registry = SingletonRegistry.getThreadRegistry();
   }
 
   // ============================================================================

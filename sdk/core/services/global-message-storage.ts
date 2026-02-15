@@ -13,6 +13,9 @@
  * - 线程安全，支持并发访问
  * - 引用计数，自动清理不再使用的消息历史
  * - 批次版本控制，支持不同批次的消息快照
+ *
+ * 本模块只导出类定义，不导出实例
+ * 实例通过 SingletonRegistry 统一管理
  */
 
 import type { LLMMessage } from '@modular-agent/types';
@@ -191,11 +194,6 @@ class GlobalMessageStorage {
 }
 
 /**
- * 全局消息存储单例实例
- */
-export const globalMessageStorage = new GlobalMessageStorage();
-
-/**
- * 导出GlobalMessageStorage类供测试使用
+ * 导出GlobalMessageStorage类
  */
 export { GlobalMessageStorage };

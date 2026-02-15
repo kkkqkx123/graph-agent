@@ -19,14 +19,12 @@ import type { WorkflowTrigger } from '@modular-agent/types';
 import type { TriggerReference } from '@modular-agent/types';
 import { GraphBuilder } from './graph-builder';
 import { GraphValidator } from '../validation/graph-validator';
-import { nodeTemplateRegistry } from '../services/node-template-registry';
-import { triggerTemplateRegistry } from '../services/trigger-template-registry';
 import { WorkflowValidator } from '../validation/workflow-validator';
 import { PreprocessedWorkflowBuilder } from './preprocessed-workflow-builder';
 import { PreprocessedGraphData } from '../entities/preprocessed-graph-data';
 import { now } from '@modular-agent/common-utils';
 import { ConfigurationValidationError, NodeTemplateNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
-import { graphRegistry } from '../services/graph-registry';
+import { SingletonRegistry } from '../execution/context/singleton-registry';
 
 export interface ProcessOptions extends GraphBuildOptions {
   workflowRegistry?: any;
@@ -145,14 +143,16 @@ export async function processWorkflow(
   // 7. 处理触发器引用的工作流
   if (options.workflowRegistry) {
     const triggeredWorkflowIds = extractTriggeredWorkflowIds(expandedTriggers);
+    const graphRegistry = SingletonRegistry.getGraphRegistry();
 
     for (const triggeredWorkflowId of triggeredWorkflowIds) {
-      // 确保触发器引用的工作流已预处理
-      const processedTriggeredWorkflow = await graphRegistry.ensureProcessed(triggeredWorkflowId);
+      // 从 graph-registry 获取已预处理的图
+      // 预处理逻辑已移到 workflow-registry，注册时自动处理
+      const processedTriggeredWorkflow = graphRegistry.get(triggeredWorkflowId);
 
       if (!processedTriggeredWorkflow) {
         throw new WorkflowNotFoundError(
-          `Triggered workflow '${triggeredWorkflowId}' referenced in triggers not found or failed to preprocess`,
+          `Triggered workflow '${triggeredWorkflowId}' referenced in triggers not found or not preprocessed`,
           triggeredWorkflowId
         );
       }
@@ -241,6 +241,7 @@ function expandNodeReferences(nodes: Node[]): Node[] {
       const configOverride = config.configOverride;
 
       // 获取节点模板
+      const nodeTemplateRegistry = SingletonRegistry.getNodeTemplateRegistry();
       const template = nodeTemplateRegistry.get(templateName);
       if (!template) {
         throw new NodeTemplateNotFoundError(
@@ -296,6 +297,7 @@ function expandTriggerReferences(triggers: (WorkflowTrigger | TriggerReference)[
       const reference = trigger as TriggerReference;
 
       // 使用 TriggerTemplateRegistry 的转换方法
+      const triggerTemplateRegistry = SingletonRegistry.getTriggerTemplateRegistry();
       const workflowTrigger = triggerTemplateRegistry.convertToWorkflowTrigger(
         reference.templateName,
         reference.triggerId,

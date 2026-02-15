@@ -9,7 +9,6 @@ import type { Checkpoint, CheckpointMetadata } from '@modular-agent/types';
 import type { CheckpointFilter } from '@modular-agent/types';
 import { MemoryCheckpointStorage } from '../../../core/storage/memory-checkpoint-storage';
 import { CheckpointCoordinator } from '../../../core/execution/coordinators/checkpoint-coordinator';
-import { globalMessageStorage } from '../../../core/services/global-message-storage';
 import { SingletonRegistry } from '../../../core/execution/context/singleton-registry';
 import { getErrorMessage } from '../../types/execution-result';
 
@@ -138,8 +137,9 @@ export class CheckpointResourceAPI extends GenericResourceAPI<Checkpoint, string
   async createThreadCheckpoint(threadId: string, metadata?: CheckpointMetadata): Promise<string> {
     // 从SingletonRegistry获取全局服务
     SingletonRegistry.initialize();
-    const threadRegistry = SingletonRegistry.get<any>('threadRegistry');
-    const workflowRegistry = SingletonRegistry.get<any>('workflowRegistry');
+    const threadRegistry = SingletonRegistry.getThreadRegistry();
+    const workflowRegistry = SingletonRegistry.getWorkflowRegistry();
+    const globalMessageStorage = SingletonRegistry.getGlobalMessageStorage();
 
     const dependencies = {
       threadRegistry,
@@ -160,8 +160,9 @@ export class CheckpointResourceAPI extends GenericResourceAPI<Checkpoint, string
   async restoreFromCheckpoint(checkpointId: string): Promise<string> {
     // 从SingletonRegistry获取全局服务
     SingletonRegistry.initialize();
-    const threadRegistry = SingletonRegistry.get<any>('threadRegistry');
-    const workflowRegistry = SingletonRegistry.get<any>('workflowRegistry');
+    const threadRegistry = SingletonRegistry.getThreadRegistry();
+    const workflowRegistry = SingletonRegistry.getWorkflowRegistry();
+    const globalMessageStorage = SingletonRegistry.getGlobalMessageStorage();
 
     const dependencies = {
       threadRegistry,

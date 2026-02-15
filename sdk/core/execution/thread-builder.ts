@@ -20,7 +20,7 @@ import { ExecutionError, RuntimeValidationError } from '@modular-agent/types';
 import { type WorkflowRegistry } from '../services/workflow-registry';
 import { ExecutionContext } from './context/execution-context';
 import { TriggerStatus } from '@modular-agent/types';
-import { graphRegistry } from '../services/graph-registry';
+import { SingletonRegistry } from './context/singleton-registry';
 
 /**
  * ThreadBuilder - Thread构建器
@@ -54,11 +54,18 @@ export class ThreadBuilder {
    * @returns ThreadContext实例
    */
   async build(workflowId: string, options: ThreadOptions = {}): Promise<ThreadContext> {
-    // 统一使用 ensureProcessed 确保工作流已预处理
-    // 这会自动处理：
-    // 1. 无依赖工作流：已在注册时预处理，直接返回缓存
-    // 2. 有依赖工作流：延迟到此时预处理，确保所有依赖都已注册
-    const preprocessedGraph = await graphRegistry.ensureProcessed(workflowId);
+    // 从 graph-registry 获取已预处理的图
+    // 预处理逻辑已移到 workflow-registry，注册时自动处理
+    const graphRegistry = SingletonRegistry.getGraphRegistry();
+    const preprocessedGraph = graphRegistry.get(workflowId);
+    
+    if (!preprocessedGraph) {
+      throw new ExecutionError(
+        `Workflow '${workflowId}' not found or not preprocessed`,
+        undefined,
+        workflowId
+      );
+    }
 
     // 从PreprocessedGraph构建
     return this.buildFromPreprocessedGraph(preprocessedGraph, options);

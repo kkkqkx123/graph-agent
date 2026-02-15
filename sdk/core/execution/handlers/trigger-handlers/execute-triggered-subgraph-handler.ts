@@ -23,7 +23,7 @@ import {
   type ExecutedSubgraphResult
 } from '../triggered-subgraph-handler';
 import { ThreadExecutor } from '../../thread-executor';
-import { graphRegistry } from '../../../services/graph-registry';
+import { SingletonRegistry } from '../../context/singleton-registry';
 
 /**
  * 创建成功结果
@@ -98,11 +98,13 @@ export async function executeTriggeredSubgraphHandler(
       throw new ThreadContextNotFoundError(`Main thread context not found: ${threadId}`, threadId);
     }
 
-    // 确保triggered子工作流已完整预处理（包括引用展开）
-    const processedTriggeredWorkflow = await graphRegistry.ensureProcessed(triggeredWorkflowId);
+    // 从 graph-registry 获取已预处理的图
+    // 预处理逻辑已移到 workflow-registry，注册时自动处理
+    const graphRegistry = SingletonRegistry.getGraphRegistry();
+    const processedTriggeredWorkflow = graphRegistry.get(triggeredWorkflowId);
 
     if (!processedTriggeredWorkflow) {
-      throw new WorkflowNotFoundError(`Triggered workflow not found: ${triggeredWorkflowId}`, triggeredWorkflowId);
+      throw new WorkflowNotFoundError(`Triggered workflow not found or not preprocessed: ${triggeredWorkflowId}`, triggeredWorkflowId);
     }
 
     // 准备输入数据（仅包含触发事件相关的数据）

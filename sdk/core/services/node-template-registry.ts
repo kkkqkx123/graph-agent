@@ -2,7 +2,8 @@
  * 节点注册表
  * 负责节点模板的注册、查询和管理
  *
- * 本模块导出全局单例实例，不导出类定义
+ * 本模块只导出类定义，不导出实例
+ * 实例通过 SingletonRegistry 统一管理
  */
 
 import type { NodeTemplate, NodeTemplateSummary } from '@modular-agent/types';
@@ -329,11 +330,6 @@ class NodeTemplateRegistry {
 }
 
 /**
- * 全局节点注册表单例实例
- */
-export const nodeTemplateRegistry = new NodeTemplateRegistry();
-
-/**
- * 导出NodeTemplateRegistry类供测试使用
+ * 导出NodeTemplateRegistry类
  */
 export { NodeTemplateRegistry };

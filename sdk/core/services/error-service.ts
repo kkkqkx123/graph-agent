@@ -13,7 +13,8 @@
  * - 异步非阻塞：错误事件触发后立即返回，不等待处理完成
  * - severity 驱动：直接使用 error.severity 确定日志级别
  *
- * 本模块导出全局单例实例，不导出类定义
+ * 本模块只导出类定义，不导出实例
+ * 实例通过 SingletonRegistry 统一管理
  */
 
 import type { EventManager } from './event-manager';
@@ -110,11 +111,7 @@ class ErrorService {
   }
 }
 
-// 创建全局单例实例
-const errorService = new ErrorService(
-  // 延迟获取 EventManager 以避免循环依赖
-  require('./event-manager').eventManager
-);
-
-// 导出单例实例
-export { errorService };
+/**
+ * 导出ErrorService类
+ */
+export { ErrorService };

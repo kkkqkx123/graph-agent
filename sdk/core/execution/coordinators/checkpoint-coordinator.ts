@@ -15,7 +15,7 @@ import { VariableStateManager } from '../managers/variable-state-manager';
 import { ThreadContext } from '../context/thread-context';
 import { ExecutionContext } from '../context/execution-context';
 import { generateId, now } from '@modular-agent/common-utils';
-import { graphRegistry } from '../../services/graph-registry';
+import { SingletonRegistry } from '../context/singleton-registry';
 
 /**
  * 检查点依赖项
@@ -142,7 +142,8 @@ export class CheckpointCoordinator {
 
     // 步骤3：从 GraphRegistry 获取 PreprocessedGraph
     // PreprocessedGraph 包含完整的预处理后的图结构
-    const processedWorkflow = await graphRegistry.ensureProcessed(checkpoint.workflowId);
+    const graphRegistry = SingletonRegistry.getGraphRegistry();
+    const processedWorkflow = graphRegistry.get(checkpoint.workflowId);
     if (!processedWorkflow) {
       throw new WorkflowNotFoundError(`Processed workflow not found`, checkpoint.workflowId);
     }

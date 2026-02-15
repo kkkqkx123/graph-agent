@@ -5,7 +5,8 @@
  *
  * 注意：内部事件机制已移除，改用直接方法调用
  *
- * 本模块导出全局单例实例，不导出类定义
+ * 本模块只导出类定义，不导出实例
+ * 实例通过 SingletonRegistry 统一管理
  */
 
 import type { BaseEvent, EventType, EventListener } from '@modular-agent/types';
@@ -380,11 +381,6 @@ class EventManager {
 }
 
 /**
- * 全局事件管理器单例实例
- */
-export const eventManager = new EventManager();
-
-/**
- * 导出EventManager类供测试使用
+ * 导出EventManager类
  */
 export { EventManager };

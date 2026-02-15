@@ -20,7 +20,7 @@
 
 import type { Thread, ThreadStatus, ThreadResult } from '@modular-agent/types';
 import type { EventManager } from '../../services/event-manager';
-import { globalMessageStorage } from '../../services/global-message-storage';
+import { SingletonRegistry } from '../context/singleton-registry';
 import { validateTransition } from '../utils/thread-state-validator';
 import {
   buildThreadStartedEvent,
@@ -145,6 +145,7 @@ export class ThreadLifecycleManager {
         thread.endTime = now();
       }
       // 清理全局消息存储中的消息历史
+      const globalMessageStorage = SingletonRegistry.getGlobalMessageStorage();
       globalMessageStorage.removeReference(thread.id);
       // 触发THREAD_COMPLETED事件
       const completedEvent = buildThreadCompletedEvent(thread, result);
@@ -162,6 +163,7 @@ export class ThreadLifecycleManager {
     thread.endTime = now();
 
     // 清理全局消息存储中的消息历史
+    const globalMessageStorage = SingletonRegistry.getGlobalMessageStorage();
     globalMessageStorage.removeReference(thread.id);
 
     // 触发THREAD_COMPLETED事件
@@ -196,6 +198,7 @@ export class ThreadLifecycleManager {
     thread.errors.push(error.message);
 
     // 清理全局消息存储中的消息历史
+    const globalMessageStorage = SingletonRegistry.getGlobalMessageStorage();
     globalMessageStorage.removeReference(thread.id);
 
     // 触发THREAD_FAILED事件
@@ -232,6 +235,7 @@ export class ThreadLifecycleManager {
     thread.endTime = now();
 
     // 清理全局消息存储中的消息历史
+    const globalMessageStorage = SingletonRegistry.getGlobalMessageStorage();
     globalMessageStorage.removeReference(thread.id);
 
     // 触发THREAD_CANCELLED事件

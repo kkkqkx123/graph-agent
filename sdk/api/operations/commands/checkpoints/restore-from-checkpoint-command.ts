@@ -5,7 +5,7 @@
 import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
 import { CheckpointCoordinator } from '../../../../core/execution/coordinators/checkpoint-coordinator';
 import type { Thread } from '@modular-agent/types';
-import { globalMessageStorage } from '../../../../core/services/global-message-storage';
+import { SingletonRegistry } from '../../../../core/execution/context/singleton-registry';
 import type { APIDependencyManager } from '../../../core/sdk-dependencies';
 
 /**
@@ -61,7 +61,7 @@ export class RestoreFromCheckpointCommand extends BaseCommand<Thread> {
       threadRegistry: this.dependencies.getThreadRegistry(),
       checkpointStateManager: this.dependencies.getCheckpointStateManager(),
       workflowRegistry: this.dependencies.getWorkflowRegistry(),
-      globalMessageStorage
+      globalMessageStorage: SingletonRegistry.getGlobalMessageStorage()
     };
 
     const threadContext = await CheckpointCoordinator.restoreFromCheckpoint(

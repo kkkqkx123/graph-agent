@@ -30,7 +30,7 @@ import { ExecutionError, ThreadInterruptedException } from '@modular-agent/types
 import { generateId } from '@modular-agent/common-utils';
 import { CheckpointCoordinator } from './checkpoint-coordinator';
 import type { ExecutionContext } from '../context/execution-context';
-import { globalMessageStorage } from '../../services/global-message-storage';
+import { SingletonRegistry } from '../context/singleton-registry';
 import type { InterruptionDetector } from '../managers/interruption-detector';
 import { getToolSchemas } from '../../utils/tool-description';
 
@@ -496,7 +496,7 @@ export class LLMExecutionCoordinator {
           threadRegistry: this.executionContext.getThreadRegistry(),
           checkpointStateManager: this.executionContext.getCheckpointStateManager(),
           workflowRegistry: this.executionContext.getWorkflowRegistry(),
-          globalMessageStorage: globalMessageStorage
+          globalMessageStorage: SingletonRegistry.getGlobalMessageStorage()
         };
         checkpointId = await CheckpointCoordinator.createCheckpoint(threadId, dependencies, {
           description: 'Waiting for tool approval',

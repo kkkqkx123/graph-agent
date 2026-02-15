@@ -2,12 +2,8 @@
  * 工具服务
  * 提供统一的工具执行接口
  *
- * 本模块导出全局单例实例，不导出类定义
- *
- * 如果需要测试隔离，使用以下模式：
- * - 创建 Mock 类实现该接口
- * - 使用 type { ToolService } 获取类型
- * - 通过依赖注入传入 Mock
+ * 本模块只导出类定义，不导出实例
+ * 实例通过 SingletonRegistry 统一管理
  */
 
 import type { Tool } from '@modular-agent/types';
@@ -251,11 +247,6 @@ class ToolService {
 }
 
 /**
- * 创建全局单例实例
+ * 导出ToolService类
  */
-const toolService = new ToolService();
-
-/**
- * 导出ToolService类和单例实例
- */
-export { ToolService, toolService };
+export { ToolService };

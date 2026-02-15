@@ -18,7 +18,7 @@ import { GraphData } from '../entities/graph-data';
 import { GraphValidator } from '../validation/graph-validator';
 import { generateSubgraphNamespace, generateNamespacedNodeId, generateNamespacedEdgeId, generateId } from '@modular-agent/common-utils';
 import { SUBGRAPH_METADATA_KEYS } from '@modular-agent/types';
-import { graphRegistry } from '../services/graph-registry';
+import { SingletonRegistry } from '../execution/context/singleton-registry';
 
 /**
  * 图构建器类
@@ -219,7 +219,8 @@ export class GraphBuilder {
       const subworkflowId = subgraphConfig.subgraphId;
 
       // 确保子工作流已完整预处理（包括引用展开和嵌套子工作流处理）
-      let processedSubworkflow = workflowRegistry.getProcessed(subworkflowId);
+      const graphRegistry = SingletonRegistry.getGraphRegistry();
+      let processedSubworkflow = graphRegistry.get(subworkflowId);
 
       if (!processedSubworkflow) {
         // 如果子工作流未预处理，先预处理它
@@ -230,9 +231,8 @@ export class GraphBuilder {
         }
 
         // 预处理子工作流（会递归处理其所有引用和嵌套子工作流）
-        await graphRegistry.preprocessAndStore(subworkflow);
-
-        // 重新获取预处理后的子工作流
+        // 注意：预处理逻辑已移到 workflow-registry，这里只是获取已预处理的图
+        // 如果图不存在，说明预处理失败或未完成
         processedSubworkflow = graphRegistry.get(subworkflowId);
         if (!processedSubworkflow) {
           errors.push(`Failed to preprocess subworkflow (${subworkflowId}) for SUBGRAPH node (${subgraphNode.id})`);
@@ -246,8 +246,8 @@ export class GraphBuilder {
       // 生成命名空间
       const namespace = generateSubgraphNamespace(subworkflowId, subgraphNode.id);
 
-      // 使用预处理后的子工作流图
-      const subgraph = processedSubworkflow.graph as GraphData;
+      // 使用预处理后的子工作流图（PreprocessedGraph 本身就是 Graph）
+      const subgraph = processedSubworkflow;
 
       // 合并子工作流图
       const mergeOptions: SubgraphMergeOptions & {
@@ -302,14 +302,14 @@ export class GraphBuilder {
   /**
    * 合并子工作流图到主图
    * @param mainGraph 主图
-   * @param subgraph 子工作流图
+   * @param subgraph 子工作流图（PreprocessedGraph extends Graph）
    * @param subgraphNodeId SUBGRAPH节点ID
    * @param options 合并选项
    * @returns 合并结果
    */
   private static mergeGraph(
     mainGraph: GraphData,
-    subgraph: GraphData,
+    subgraph: any, // PreprocessedGraph extends Graph，可以接受
     subgraphNodeId: ID,
     options: SubgraphMergeOptions & {
       subworkflowId: ID;

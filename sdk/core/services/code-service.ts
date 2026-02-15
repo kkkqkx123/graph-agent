@@ -2,12 +2,8 @@
  * 脚本服务
  * 提供统一的脚本执行接口
  *
- * 本模块导出全局单例实例，不导出类定义
- *
- * 如果需要测试隔离，使用以下模式：
- * - 创建 Mock 类实现该接口
- * - 使用 type { CodeService } 获取类型
- * - 通过依赖注入传入 Mock
+ * 本模块只导出类定义，不导出实例
+ * 实例通过 SingletonRegistry 统一管理
  */
 
 import type { Script, ScriptType, ScriptExecutor, ScriptExecutionOptions, ScriptExecutionResult } from '@modular-agent/types';
@@ -323,13 +319,6 @@ class CodeService {
 }
 
 /**
- * 全局脚本服务单例
- * 用于管理所有脚本的注册、查询和执行
- */
-export const codeService = new CodeService();
-
-/**
- * 导出CodeService类供测试使用
- * 注意：生产代码应使用单例 codeService，此类仅供测试使用
+ * 导出CodeService类
  */
 export { CodeService };

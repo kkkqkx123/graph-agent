@@ -377,10 +377,11 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
    * @returns 处理后的工作流定义
    */
   async preprocessAndStoreWorkflow(workflow: any): Promise<any> {
-    const processed = await this.dependencies.getGraphRegistry().preprocessAndStore(workflow);
-    // 更新缓存
-    // 缓存更新逻辑（如果需要缓存，可以在这里实现）
-    return processed;
+    // 预处理逻辑已移到 workflow-registry，这里直接注册工作流
+    // workflow-registry 会自动处理预处理
+    this.dependencies.getWorkflowRegistry().register(workflow);
+    // 返回预处理后的图
+    return this.dependencies.getGraphRegistry().get(workflow.id);
   }
 
   /**
@@ -390,7 +391,8 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
    */
   async getWorkflowGraph(workflowId: string): Promise<any | null> {
     try {
-      const processed = await this.dependencies.getGraphRegistry().ensureProcessed(workflowId);
+      // 直接从 graph-registry 获取预处理后的图
+      const processed = this.dependencies.getGraphRegistry().get(workflowId);
       // PreprocessedGraph 本身就是 Graph，不需要 .graph 属性
       return processed || null;
     } catch {

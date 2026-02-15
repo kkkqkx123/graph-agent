@@ -4,10 +4,11 @@
  */
 
 import { GenericResourceAPI } from '../generic-resource-api';
-import { threadRegistry, type ThreadRegistry } from '../../../core/services/thread-registry';
+import type { ThreadRegistry } from '../../../core/services/thread-registry';
 import { TriggerStatus } from '@modular-agent/types';
 import type { Trigger } from '@modular-agent/types';
 import { NotFoundError, ThreadContextNotFoundError, TriggerFilter } from '@modular-agent/types';
+import { SingletonRegistry } from '../../../core/execution/context/singleton-registry';
 
 /**
  * TriggerResourceAPI - 触发器资源管理API
@@ -17,7 +18,7 @@ export class TriggerResourceAPI extends GenericResourceAPI<Trigger, string, Trig
 
   constructor() {
     super();
-    this.registry = threadRegistry;
+    this.registry = SingletonRegistry.getThreadRegistry();
   }
 
   // ============================================================================

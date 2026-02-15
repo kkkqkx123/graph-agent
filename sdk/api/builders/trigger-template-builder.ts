@@ -7,7 +7,7 @@ import type { TriggerTemplate } from '@modular-agent/types';
 import type { TriggerCondition, TriggerAction } from '@modular-agent/types';
 import type { Metadata } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
-import { triggerTemplateRegistry } from '../../core/services/trigger-template-registry';
+import { SingletonRegistry } from '../../core/execution/context/singleton-registry';
 
 /**
  * TriggerTemplateBuilder - 触发器模板构建器
@@ -156,6 +156,7 @@ export class TriggerTemplateBuilder {
    */
   register(): this {
     const template = this.build();
+    const triggerTemplateRegistry = SingletonRegistry.getTriggerTemplateRegistry();
     triggerTemplateRegistry.register(template);
     return this;
   }
@@ -166,6 +167,7 @@ export class TriggerTemplateBuilder {
    */
   buildAndRegister(): TriggerTemplate {
     const template = this.build();
+    const triggerTemplateRegistry = SingletonRegistry.getTriggerTemplateRegistry();
     triggerTemplateRegistry.register(template);
     return template;
   }

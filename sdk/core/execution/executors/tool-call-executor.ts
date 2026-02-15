@@ -25,7 +25,7 @@ import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/che
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils';
 import { ThreadInterruptedException } from '@modular-agent/types';
 import { MessageBuilder } from '../../messages/message-builder';
-import { ToolResultProcessor } from '../processors/tool-result-processor';
+import { processToolResult } from '../utils';
 
 /**
  * 工具执行结果
@@ -180,8 +180,8 @@ export class ToolCallExecutor {
         retryCount: result.retryCount || 0
       };
       
-      // 使用ToolResultProcessor处理工具结果
-      const processedContent = ToolResultProcessor.processResult(toolExecutionResult);
+      // 使用工具结果处理函数处理工具结果
+      const processedContent = processToolResult(toolExecutionResult);
       
       // 构建工具结果消息
       const toolMessage = {
@@ -277,8 +277,8 @@ export class ToolCallExecutor {
         retryCount: 0
       };
       
-      // 使用ToolResultProcessor处理错误结果
-      const processedErrorContent = ToolResultProcessor.processResult(errorToolExecutionResult);
+      // 使用工具结果处理函数处理错误结果
+      const processedErrorContent = processToolResult(errorToolExecutionResult);
       
       // 构建工具结果消息
       const toolMessage = {

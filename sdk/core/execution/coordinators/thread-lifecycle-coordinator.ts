@@ -27,7 +27,7 @@ import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager';
 import { ThreadCascadeManager } from '../managers/thread-cascade-manager';
 import { ExecutionContext } from '../context/execution-context';
 import { now } from '@modular-agent/common-utils';
-import { globalMessageStorage } from '../../services/global-message-storage';
+import { SingletonRegistry } from '../context/singleton-registry';
 import {
   buildThreadCompletedEvent,
   buildThreadFailedEvent,
@@ -226,6 +226,7 @@ export class ThreadLifecycleCoordinator {
     // 如果是终止状态，设置结束时间并清理
     if ([ThreadStatus.COMPLETED, ThreadStatus.FAILED, ThreadStatus.CANCELLED, ThreadStatus.TIMEOUT].includes(status)) {
       threadContext.setEndTime(now());
+      const globalMessageStorage = SingletonRegistry.getGlobalMessageStorage();
       globalMessageStorage.removeReference(threadId);
 
       // 触发相应的终止事件
@@ -274,6 +275,7 @@ export class ThreadLifecycleCoordinator {
     threadContext.setEndTime(now());
 
     // 清理全局消息存储
+    const globalMessageStorage = SingletonRegistry.getGlobalMessageStorage();
     globalMessageStorage.removeReference(threadId);
 
     // 触发取消事件

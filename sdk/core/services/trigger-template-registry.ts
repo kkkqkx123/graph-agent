@@ -2,7 +2,8 @@
  * 触发器模板注册表
  * 负责触发器模板的注册、查询和管理
  *
- * 本模块导出全局单例实例，不导出类定义
+ * 本模块只导出类定义，不导出实例
+ * 实例通过 SingletonRegistry 统一管理
  */
 
 import type {
@@ -372,12 +373,6 @@ class TriggerTemplateRegistry {
 }
 
 /**
- * 全局触发器模板注册表单例实例
- */
-export const triggerTemplateRegistry = new TriggerTemplateRegistry();
-
-/**
- * 导出TriggerTemplateRegistry类供测试使用
- * 注意：生产代码应使用单例 triggerTemplateRegistry，此类仅供测试使用
+ * 导出TriggerTemplateRegistry类
  */
 export { TriggerTemplateRegistry };
