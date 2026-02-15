@@ -2,12 +2,13 @@
  * MessageStream 单元测试
  */
 
-import { MessageStream } from '../message-stream';
+import { MessageStream } from '@modular-agent/common-utils';
 import {
   MessageStreamEventType,
   type MessageStreamTextEvent
-} from '../message-stream-events';
+} from '@modular-agent/common-utils';
 import type { LLMMessage, LLMResult } from '@modular-agent/types';
+import { MessageRole } from '@modular-agent/types';
 
 describe('MessageStream', () => {
   let stream: MessageStream;
@@ -47,7 +48,7 @@ describe('MessageStream', () => {
         type: 'message_start',
         data: {
           message: {
-            role: 'assistant',
+            role: MessageRole.ASSISTANT,
             content: []
           }
         }
@@ -86,7 +87,7 @@ describe('MessageStream', () => {
         type: 'message_start',
         data: {
           message: {
-            role: 'assistant',
+            role: MessageRole.ASSISTANT,
             content: []
           }
         }
@@ -124,7 +125,7 @@ describe('MessageStream', () => {
         type: 'message_start',
         data: {
           message: {
-            role: 'assistant',
+            role: MessageRole.ASSISTANT,
             content: []
           }
         }
@@ -183,7 +184,7 @@ describe('MessageStream', () => {
           type: 'message_start',
           data: {
             message: {
-              role: 'assistant',
+              role: MessageRole.ASSISTANT,
               content: []
             }
           }
@@ -218,7 +219,7 @@ describe('MessageStream', () => {
   describe('finalMessage', () => {
     it('应该在有消息时返回最终消息', () => {
       const message: LLMMessage = {
-        role: 'assistant',
+        role: MessageRole.ASSISTANT,
         content: 'Final message'
       };
 
@@ -233,7 +234,7 @@ describe('MessageStream', () => {
   describe('finalText', () => {
     it('应该返回字符串内容', () => {
       const message: LLMMessage = {
-        role: 'assistant',
+        role: MessageRole.ASSISTANT,
         content: 'Hello, world!'
       };
 
@@ -243,7 +244,7 @@ describe('MessageStream', () => {
 
     it('应该从数组内容中提取文本', () => {
       const message: LLMMessage = {
-        role: 'assistant',
+        role: MessageRole.ASSISTANT,
         content: [
           { type: 'text', text: 'Hello' },
           { type: 'text', text: ', world!' }
@@ -263,7 +264,7 @@ describe('MessageStream', () => {
 
     it('应该在无文本内容时返回空字符串', () => {
       const message: LLMMessage = {
-        role: 'assistant',
+        role: MessageRole.ASSISTANT,
         content: []
       };
 
@@ -286,7 +287,7 @@ describe('MessageStream', () => {
         model: 'gpt-4',
         content: 'Test',
         message: {
-          role: 'assistant',
+          role: MessageRole.ASSISTANT,
           content: 'Test'
         },
         finishReason: 'stop',
@@ -358,7 +359,7 @@ describe('MessageStream', () => {
         type: 'message_start',
         data: {
           message: {
-            role: 'assistant',
+            role: MessageRole.ASSISTANT,
             content: ''
           }
         }
@@ -367,7 +368,7 @@ describe('MessageStream', () => {
       const snapshot = stream.accumulateMessage(event);
 
       expect(snapshot).toBeDefined();
-      expect(snapshot?.role).toBe('assistant');
+      expect(snapshot?.role).toBe(MessageRole.ASSISTANT);
     });
 
     it('应该在message_start已存在时抛出错误', () => {
@@ -375,7 +376,7 @@ describe('MessageStream', () => {
         type: 'message_start',
         data: {
           message: {
-            role: 'assistant',
+            role: MessageRole.ASSISTANT,
             content: ''
           }
         }
@@ -392,7 +393,7 @@ describe('MessageStream', () => {
         type: 'message_start',
         data: {
           message: {
-            role: 'assistant',
+            role: MessageRole.ASSISTANT,
             content: []
           }
         }
@@ -433,7 +434,7 @@ describe('MessageStream', () => {
         type: 'message_start',
         data: {
           message: {
-            role: 'assistant',
+            role: MessageRole.ASSISTANT,
             content: 'Test'
           }
         }
@@ -455,7 +456,7 @@ describe('MessageStream', () => {
         type: 'message_start',
         data: {
           message: {
-            role: 'assistant',
+            role: MessageRole.ASSISTANT,
             content: []
           }
         }
@@ -515,7 +516,7 @@ describe('MessageStream', () => {
         model: 'gpt-4',
         content: 'Test',
         message: {
-          role: 'assistant',
+          role: MessageRole.ASSISTANT,
           content: 'Test'
         },
         finishReason: 'stop',
@@ -562,7 +563,7 @@ describe('MessageStream', () => {
   describe('getReceivedMessages', () => {
     it('应该返回接收的消息副本', () => {
       const message: LLMMessage = {
-        role: 'assistant',
+        role: MessageRole.ASSISTANT,
         content: 'Test'
       };
 
@@ -573,7 +574,7 @@ describe('MessageStream', () => {
       expect(messages[0]).toEqual(message);
 
       // 修改返回的数组不应影响内部状态
-      messages.push({ role: 'user', content: 'Another' } as LLMMessage);
+      messages.push({ role: MessageRole.USER, content: 'Another' } as LLMMessage);
       expect(stream.getReceivedMessages()).toHaveLength(1);
     });
   });

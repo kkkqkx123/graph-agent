@@ -16,7 +16,13 @@ import {
   MessageStreamFinalMessageEvent,
   MessageStreamErrorEvent,
   MessageStreamAbortEvent,
-  MessageStreamEndEvent
+  MessageStreamEndEvent,
+  MessageStreamCitationEvent,
+  MessageStreamThinkingEvent,
+  MessageStreamSignatureEvent,
+  MessageStreamInputJsonEvent,
+  MessageStreamContentBlockStartEvent,
+  MessageStreamContentBlockStopEvent
 } from './message-stream-events';
 
 /**
@@ -85,6 +91,9 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
       this.endPromiseResolve = resolve;
       this.endPromiseReject = reject;
     });
+    
+    // 避免未处理的 Promise 拒绝错误
+    this.endPromise.catch(() => {});
   }
 
   /**
@@ -220,7 +229,17 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
    * 中止流
    */
   abort(): void {
+    if (this.aborted || this.ended) {
+      return;
+    }
+    
     this.controller.abort();
+    
+    // 触发中止事件
+    this.emit(MessageStreamEventType.ABORT, {
+      type: MessageStreamEventType.ABORT,
+      reason: 'Stream aborted by user'
+    } as MessageStreamAbortEvent);
   }
 
   /**
@@ -377,6 +396,13 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
           type: event.data.content_block.type,
           ...event.data.content_block
         });
+        
+        // 触发内容块开始事件
+        this.emit(MessageStreamEventType.CONTENT_BLOCK_START, {
+          type: MessageStreamEventType.CONTENT_BLOCK_START,
+          index: this.currentMessageSnapshot.content.length - 1,
+          contentBlock: event.data.content_block
+        } as MessageStreamContentBlockStartEvent);
         break;
 
       case 'content_block_delta':
@@ -400,16 +426,64 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
               snapshot: this.currentTextSnapshot
             } as MessageStreamTextEvent);
           }
+        } else if (event.data.delta.type === 'citations_delta') {
+          // 处理引用增量
+          if (lastBlock.type === 'text') {
+            const textBlock = lastBlock as any;
+            if (!textBlock.citations) {
+              textBlock.citations = [];
+            }
+            textBlock.citations.push(event.data.delta.citation);
+            
+            // 触发引用事件
+            this.emit(MessageStreamEventType.CITATION, {
+              type: MessageStreamEventType.CITATION,
+              citation: event.data.delta.citation,
+              citationsSnapshot: textBlock.citations
+            } as MessageStreamCitationEvent);
+          }
         } else if (event.data.delta.type === 'input_json_delta') {
-          if (lastBlock.type === 'tool_use' && lastBlock.tool_use) {
+          if (lastBlock.type === 'tool_use') {
             // 如果 input 已经是对象，说明 API 已经提供了完整的 input，不需要追加
             // 只有当 input 是字符串或 undefined 时才追加 JSON 片段
-            if (typeof lastBlock.tool_use.input !== 'object') {
-              const currentInput = typeof lastBlock.tool_use.input === 'string'
-                ? lastBlock.tool_use.input
+            if (typeof (lastBlock as any).input !== 'object') {
+              const currentInput = typeof (lastBlock as any).input === 'string'
+                ? (lastBlock as any).input
                 : '';
-              lastBlock.tool_use.input = currentInput + event.data.delta.partial_json;
+              (lastBlock as any).input = currentInput + event.data.delta.partial_json;
             }
+            
+            // 触发输入 JSON 事件
+            this.emit(MessageStreamEventType.INPUT_JSON, {
+              type: MessageStreamEventType.INPUT_JSON,
+              partialJson: event.data.delta.partial_json,
+              jsonSnapshot: (lastBlock as any).input
+            } as MessageStreamInputJsonEvent);
+          }
+        } else if (event.data.delta.type === 'thinking_delta') {
+          // 处理思考增量
+          if ((lastBlock as any).type === 'thinking') {
+            const thinkingBlock = lastBlock as any;
+            thinkingBlock.thinking += event.data.delta.thinking;
+            
+            // 触发思考事件
+            this.emit(MessageStreamEventType.THINKING, {
+              type: MessageStreamEventType.THINKING,
+              thinkingDelta: event.data.delta.thinking,
+              thinkingSnapshot: thinkingBlock.thinking
+            } as MessageStreamThinkingEvent);
+          }
+        } else if (event.data.delta.type === 'signature_delta') {
+          // 处理签名
+          if ((lastBlock as any).type === 'thinking') {
+            const thinkingBlock = lastBlock as any;
+            thinkingBlock.signature = event.data.delta.signature;
+            
+            // 触发签名事件
+            this.emit(MessageStreamEventType.SIGNATURE, {
+              type: MessageStreamEventType.SIGNATURE,
+              signature: event.data.delta.signature
+            } as MessageStreamSignatureEvent);
           }
         }
         break;
@@ -418,15 +492,34 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
         // 尝试将 tool_use 的 input 从字符串解析为对象
         if (this.currentMessageSnapshot && Array.isArray(this.currentMessageSnapshot.content)) {
           const lastBlock = this.currentMessageSnapshot.content[this.currentMessageSnapshot.content.length - 1];
-          if (lastBlock && lastBlock.type === 'tool_use' && lastBlock.tool_use) {
-            if (typeof lastBlock.tool_use.input === 'string') {
+          if (lastBlock && lastBlock.type === 'tool_use') {
+            if (typeof (lastBlock as any).input === 'string') {
               try {
-                lastBlock.tool_use.input = JSON.parse(lastBlock.tool_use.input);
+                (lastBlock as any).input = JSON.parse((lastBlock as any).input);
               } catch (e) {
                 // 如果解析失败，保持为字符串
                 console.warn('Failed to parse tool_use.input as JSON:', e);
               }
             }
+          }
+        }
+        
+        // 触发内容块停止事件
+        if (this.currentMessageSnapshot && Array.isArray(this.currentMessageSnapshot.content)) {
+          const lastBlock = this.currentMessageSnapshot.content[this.currentMessageSnapshot.content.length - 1];
+          
+          this.emit(MessageStreamEventType.CONTENT_BLOCK_STOP, {
+            type: MessageStreamEventType.CONTENT_BLOCK_STOP,
+            index: this.currentMessageSnapshot.content.length - 1
+          } as MessageStreamContentBlockStopEvent);
+          
+          // 如果是工具调用块，触发工具调用事件
+          if (lastBlock && lastBlock.type === 'tool_use') {
+            this.emit(MessageStreamEventType.TOOL_CALL, {
+              type: MessageStreamEventType.TOOL_CALL,
+              toolCall: lastBlock,
+              snapshot: this.currentMessageSnapshot
+            } as MessageStreamToolCallEvent);
           }
         }
         break;
@@ -437,6 +530,12 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
           this.receivedMessages.push(message);
           this.currentMessageSnapshot = null;
           this.currentTextSnapshot = '';
+          
+          // 触发消息事件
+          this.emit(MessageStreamEventType.MESSAGE, {
+            type: MessageStreamEventType.MESSAGE,
+            message
+          } as MessageStreamMessageEvent);
         }
         return message;
 

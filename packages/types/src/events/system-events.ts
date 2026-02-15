@@ -54,3 +54,25 @@ export interface VariableChangedEvent extends BaseEvent {
   /** 变量作用域 */
   variableScope: string;
 }
+
+/**
+ * LLM 流式中止事件类型
+ */
+export interface LLMStreamAbortedEvent extends BaseEvent {
+  type: EventType.LLM_STREAM_ABORTED;
+  /** 节点ID（可选） */
+  nodeId?: ID;
+  /** 中止原因 */
+  reason: string;
+}
+
+/**
+ * LLM 流式错误事件类型
+ */
+export interface LLMStreamErrorEvent extends BaseEvent {
+  type: EventType.LLM_STREAM_ERROR;
+  /** 节点ID（可选） */
+  nodeId?: ID;
+  /** 错误信息 */
+  error: string;
+}

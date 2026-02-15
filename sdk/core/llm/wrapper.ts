@@ -11,9 +11,11 @@ import type {
   LLMProfile
 } from '@modular-agent/types';
 import { ProfileManager } from './profile-manager';
-import { ClientFactory } from '@modular-agent/common-utils';
+import { ClientFactory, MessageStream } from '@modular-agent/common-utils';
 import { ConfigurationError, LLMError } from '@modular-agent/types';
-import { now, diffTimestamp } from '@modular-agent/common-utils';
+import { now, diffTimestamp, generateId } from '@modular-agent/common-utils';
+import type { EventManager } from '../services/event-manager';
+import { MessageStreamBridge, MessageStreamBridgeContext } from './message-stream-bridge';
 
 /**
  * LLM包装器类
@@ -24,10 +26,19 @@ import { now, diffTimestamp } from '@modular-agent/common-utils';
 export class LLMWrapper {
   private profileManager: ProfileManager;
   private clientFactory: ClientFactory;
+  private eventManager?: EventManager;
 
   constructor() {
     this.profileManager = new ProfileManager();
     this.clientFactory = new ClientFactory();
+  }
+
+  /**
+   * 设置事件管理器
+   * @param eventManager 事件管理器
+   */
+  setEventManager(eventManager: EventManager): void {
+    this.eventManager = eventManager;
   }
 
   /**
@@ -62,9 +73,9 @@ export class LLMWrapper {
    * 流式生成
    *
    * @param request LLM请求
-   * @returns LLM响应结果流
+   * @returns MessageStream
    */
-  async *generateStream(request: LLMRequest): AsyncIterable<LLMResult> {
+  async generateStream(request: LLMRequest): Promise<MessageStream> {
     const profile = this.getProfile(request.profileId);
     if (!profile) {
       throw new ConfigurationError(
@@ -76,14 +87,43 @@ export class LLMWrapper {
     
     const client = this.clientFactory.createClient(profile);
     const startTime = now();
+    
+    // 创建 MessageStream
+    const stream = new MessageStream();
+    
+    // 创建事件桥接器
+    let bridge: MessageStreamBridge | undefined;
+    if (this.eventManager) {
+      bridge = new MessageStreamBridge(stream, this.eventManager, {
+        threadId: (request as any).threadId,
+        nodeId: (request as any).nodeId,
+        workflowId: (request as any).workflowId
+      });
+    }
 
     try {
+      stream.setRequestId(generateId());
+      
+      // 执行流式调用
       for await (const chunk of client.generateStream(request)) {
         chunk.duration = diffTimestamp(startTime, now());
-        yield chunk;
+        
+        if (chunk.finishReason) {
+          stream.setFinalResult(chunk);
+        }
       }
+      
+      return stream;
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        stream.abort(); // 触发 ABORT 事件，桥接器会转换为 SDK 事件
+      }
       throw this.handleError(error, profile);
+    } finally {
+      // 清理桥接器
+      if (bridge) {
+        bridge.destroy();
+      }
     }
   }
 

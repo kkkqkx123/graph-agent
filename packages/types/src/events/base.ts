@@ -87,7 +87,11 @@ export enum EventType {
   /** HumanRelay 处理完成 */
   HUMAN_RELAY_PROCESSED = 'HUMAN_RELAY_PROCESSED',
   /** HumanRelay 失败 */
-  HUMAN_RELAY_FAILED = 'HUMAN_RELAY_FAILED'
+  HUMAN_RELAY_FAILED = 'HUMAN_RELAY_FAILED',
+  /** LLM 流式中止 */
+  LLM_STREAM_ABORTED = 'LLM_STREAM_ABORTED',
+  /** LLM 流式错误 */
+  LLM_STREAM_ERROR = 'LLM_STREAM_ERROR'
 }
 
 /**

@@ -1,11 +1,11 @@
 /**
  * LLM执行器
  * 提供无状态的LLM调用方法
- * 
+ *
  * 核心职责：
  * 1. 执行LLM调用（非流式和流式）
  * 2. 委托给 sdk/core/llm 模块的 LLMWrapper
- * 
+ *
  * 设计原则：
  * - 无状态设计，不持有任何状态
  * - 所有状态通过参数传入
@@ -16,6 +16,7 @@
 
 import type { LLMMessage, LLMResult } from '@modular-agent/types';
 import { LLMWrapper } from '../../llm/wrapper';
+import { MessageStream } from '@modular-agent/common-utils';
 import { ExecutionError, ThreadInterruptedException } from '@modular-agent/types';
 
 /**
@@ -108,13 +109,22 @@ export class LLMExecutor {
     try {
       // 执行LLM调用
       if (llmRequest.stream) {
-        // 流式调用
-        // Token 统计已在客户端层（BaseLLMClient）累积
-        for await (const chunk of this.llmWrapper.generateStream(llmRequest)) {
-          // 保存最后一个有 finishReason 的 chunk 作为最终结果
-          if (chunk.finishReason) {
-            finalResult = chunk;
+        // 流式调用 - 返回 MessageStream
+        const messageStream = await this.llmWrapper.generateStream(llmRequest);
+        
+        // 消费流，保存最后一个有 finishReason 的 chunk 作为最终结果
+        for await (const event of messageStream) {
+          // event 是 InternalStreamEvent 类型
+          // 我们需要从 MessageStream 中获取最终结果
+          const result = await messageStream.getFinalResult();
+          if (result) {
+            finalResult = result;
           }
+        }
+        
+        // 如果没有通过事件获取到结果，尝试直接获取
+        if (!finalResult) {
+          finalResult = await messageStream.getFinalResult();
         }
       } else {
         // 非流式调用

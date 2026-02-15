@@ -93,7 +93,9 @@ import type {
   TokenLimitExceededEvent,
   TokenUsageWarningEvent,
   ErrorEvent,
-  VariableChangedEvent
+  VariableChangedEvent,
+  LLMStreamAbortedEvent,
+  LLMStreamErrorEvent
 } from './system-events';
 
 /**
@@ -139,4 +141,6 @@ export type Event =
   | HumanRelayRequestedEvent
   | HumanRelayRespondedEvent
   | HumanRelayProcessedEvent
-  | HumanRelayFailedEvent;
+  | HumanRelayFailedEvent
+  | LLMStreamAbortedEvent
+  | LLMStreamErrorEvent;
