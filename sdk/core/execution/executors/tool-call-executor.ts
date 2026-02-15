@@ -71,25 +71,84 @@ export class ToolCallExecutor {
     nodeId?: string,
     options?: { abortSignal?: AbortSignal }
   ): Promise<ToolExecutionResult[]> {
-    const results: ToolExecutionResult[] = [];
+    // 检查中断信号
+    if (options?.abortSignal?.aborted) {
+      throw options.abortSignal.reason || new ThreadInterruptedException('Tool execution aborted', 'STOP');
+    }
 
-    for (const toolCall of toolCalls) {
-      // 检查中断信号
-      if (options?.abortSignal?.aborted) {
-        throw options.abortSignal.reason || new ThreadInterruptedException('Tool execution aborted', 'STOP');
-      }
-
-      const result = await this.executeSingleToolCall(
+    // 使用 Promise.allSettled 并行执行所有工具调用
+    // 即使部分工具调用失败，其他工具调用也能继续执行
+    const executionPromises = toolCalls.map(toolCall =>
+      this.executeSingleToolCall(
         toolCall,
         conversationState,
         threadId,
         nodeId,
         options
-      );
-      results.push(result);
-    }
+      )
+    );
 
-    return results;
+    const settledResults = await Promise.allSettled(executionPromises);
+
+    // 转换结果为统一的 ToolExecutionResult[] 格式
+    return settledResults.map((result, index) => {
+      if (result.status === 'fulfilled') {
+        return result.value;
+      } else {
+        // 处理 rejected 的情况
+        const toolCall = toolCalls[index];
+        if (!toolCall) {
+          throw new Error(`Tool call at index ${index} is undefined`);
+        }
+        
+        const error = result.reason;
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const executionTime = 0;
+
+        // 构建失败的工具结果消息
+        const toolMessage = {
+          role: MessageRole.TOOL,
+          content: errorMessage || 'Tool execution failed',
+          toolCallId: toolCall.id
+        };
+        conversationState.addMessage(toolMessage);
+
+        // 触发消息添加事件
+        if (this.eventManager) {
+          safeEmit(this.eventManager, {
+            type: EventType.MESSAGE_ADDED,
+            timestamp: now(),
+            workflowId: '',
+            threadId: threadId || '',
+            nodeId,
+            role: toolMessage.role,
+            content: toolMessage.content,
+            toolCalls: undefined
+          });
+        }
+
+        // 触发工具调用失败事件
+        if (this.eventManager) {
+          safeEmit(this.eventManager, {
+            type: EventType.TOOL_CALL_FAILED,
+            timestamp: now(),
+            workflowId: '',
+            threadId: threadId || '',
+            nodeId: nodeId || '',
+            toolName: toolCall.name,
+            error: errorMessage
+          });
+        }
+
+        return {
+          toolCallId: toolCall.id,
+          toolName: toolCall.name,
+          success: false,
+          error: errorMessage,
+          executionTime
+        };
+      }
+    });
   }
 
   /**
