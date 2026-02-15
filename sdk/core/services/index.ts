@@ -26,5 +26,5 @@ export { triggerTemplateRegistry, type TriggerTemplateRegistry } from './trigger
 // 全局消息存储单例
 export { globalMessageStorage, type GlobalMessageStorage } from './global-message-storage';
 
-// 工具服务
-export { toolService } from '../services/tool-service';
+// 工具服务（需要手动初始化）
+export { ToolService } from './tool-service';

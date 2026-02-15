@@ -14,14 +14,14 @@ export interface IToolExecutor {
    * @param tool 工具定义
    * @param parameters 工具参数
    * @param options 执行选项
-   * @param threadContext 线程上下文（可选）
+   * @param threadId 线程ID（可选，用于有状态工具的线程隔离）
    * @returns 执行结果
    */
   execute(
     tool: Tool,
     parameters: Record<string, any>,
     options?: ToolExecutionOptions,
-    threadContext?: any
+    threadId?: string
   ): Promise<ToolExecutionResult>;
 
   /**

@@ -41,13 +41,13 @@ export class McpExecutor extends BaseExecutor {
    * 执行MCP工具的具体实现
    * @param tool 工具定义
    * @param parameters 工具参数
-   * @param threadContext 线程上下文（可选，MCP工具不使用）
+   * @param threadId 线程ID（可选，MCP工具不使用）
    * @returns 执行结果
    */
   protected async doExecute(
     tool: Tool,
     parameters: Record<string, any>,
-    threadContext?: any
+    threadId?: string
   ): Promise<any> {
     // 从config中获取MCP配置
     const config = tool.config as McpToolConfig;

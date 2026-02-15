@@ -21,7 +21,7 @@ import { SDKError, ErrorContext, ErrorSeverity } from '@modular-agent/types';
 import { EventType } from '@modular-agent/types';
 import type { ErrorEvent } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
-import { logger } from '../logger';
+import { logger } from '../../index';
 
 /**
  * ErrorService - 错误处理服务类

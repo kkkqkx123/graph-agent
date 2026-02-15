@@ -34,14 +34,14 @@ export abstract class BaseExecutor implements IToolExecutor {
    * @param tool 工具定义
    * @param parameters 工具参数
    * @param options 执行选项
-   * @param threadContext 线程上下文（可选）
+   * @param threadId 线程ID（可选，用于有状态工具的线程隔离）
    * @returns 标准化的执行结果
    */
   async execute(
     tool: Tool,
     parameters: Record<string, any>,
     options: ToolExecutionOptions = {},
-    threadContext?: any
+    threadId?: string
   ): Promise<ToolExecutionResult> {
     const startTime = now();
     const {
@@ -69,7 +69,7 @@ export abstract class BaseExecutor implements IToolExecutor {
       try {
         // 执行工具（带超时）
         const result = await this.timeoutController.executeWithTimeout(
-          () => this.doExecute(tool, parameters, threadContext),
+          () => this.doExecute(tool, parameters, threadId),
           timeout
         );
 
@@ -126,13 +126,13 @@ export abstract class BaseExecutor implements IToolExecutor {
    * 执行工具的具体实现（由子类实现）
    * @param tool 工具定义
    * @param parameters 工具参数
-   * @param threadContext 线程上下文（可选）
+   * @param threadId 线程ID（可选，用于有状态工具的线程隔离）
    * @returns 执行结果
    */
   protected abstract doExecute(
     tool: Tool,
     parameters: Record<string, any>,
-    threadContext?: any
+    threadId?: string
   ): Promise<any>;
 
   /**

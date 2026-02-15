@@ -1,6 +1,6 @@
 /**
  * 有状态工具执行器
- * 执行应用层提供的有状态工具，通过实例池管理工具实例，支持生命周期管理和健康检查
+ * 执行应用层提供的有状态工具，通过 ThreadContext 管理工具实例，支持线程隔离
  */
 
 import type { Tool } from '@modular-agent/types';
@@ -8,40 +8,61 @@ import type { StatefulToolConfig } from '@modular-agent/types';
 import { ToolError } from '@modular-agent/types';
 import { BaseExecutor } from '../core/base/BaseExecutor';
 import { ExecutorType } from '../core/types';
-import { InstancePool } from './pool/InstancePool';
 import type { StatefulExecutorConfig } from './types';
+
+/**
+ * ThreadContext 提供器接口
+ * 用于通过 threadId 获取 ThreadContext
+ */
+export interface ThreadContextProvider {
+  /**
+   * 获取 ThreadContext
+   * @param threadId 线程ID
+   * @returns ThreadContext 实例，如果不存在则返回 undefined
+   */
+  getThreadContext(threadId: string): any | undefined;
+}
 
 /**
  * 有状态工具执行器
  */
 export class StatefulExecutor extends BaseExecutor {
-  private instancePool: InstancePool;
-  private config: StatefulExecutorConfig;
+  private threadContextProvider: ThreadContextProvider;
 
-  constructor(config: StatefulExecutorConfig = {}) {
+  constructor(threadContextProvider: ThreadContextProvider) {
     super();
-    this.config = config;
-    this.instancePool = new InstancePool(config.instancePool);
+    this.threadContextProvider = threadContextProvider;
   }
 
   /**
    * 执行有状态工具的具体实现
    * @param tool 工具定义
    * @param parameters 工具参数
-   * @param threadContext 线程上下文（必需）
+   * @param threadId 线程ID（必需，用于线程隔离）
    * @returns 执行结果
    */
   protected async doExecute(
     tool: Tool,
     parameters: Record<string, any>,
-    threadContext?: any
+    threadId?: string
   ): Promise<any> {
-    if (!threadContext) {
+    if (!threadId) {
       throw new ToolError(
-        `ThreadContext is required for stateful tool '${tool.name}'`,
+        `ThreadId is required for stateful tool '${tool.name}'`,
         tool.name,
         'STATEFUL',
-        { threadContextRequired: true }
+        { threadIdRequired: true }
+      );
+    }
+
+    // 获取 ThreadContext
+    const threadContext = this.threadContextProvider.getThreadContext(threadId);
+    if (!threadContext) {
+      throw new ToolError(
+        `ThreadContext not found for threadId: ${threadId}`,
+        tool.name,
+        'STATEFUL',
+        { threadId }
       );
     }
 
@@ -66,13 +87,13 @@ export class StatefulExecutor extends BaseExecutor {
     }
 
     try {
-      // 注册工厂函数（如果尚未注册）
-      this.instancePool.registerFactory(tool.name, config.factory);
+      // 在 ThreadContext 中注册工厂函数
+      threadContext.registerStatefulTool(tool.name, config.factory);
 
-      // 获取工具实例（从实例池）
-      const instance = await this.instancePool.getInstance(tool.name);
+      // 从 ThreadContext 获取工具实例（懒加载）
+      const instance = threadContext.getStatefulTool(tool.name);
 
-      // 调用实例的execute方法
+      // 调用实例的 execute 方法
       if (typeof instance.execute !== 'function') {
         throw new ToolError(
           `Tool instance for '${tool.name}' does not have an execute method`,
@@ -86,7 +107,7 @@ export class StatefulExecutor extends BaseExecutor {
       
       return {
         result,
-        instanceInfo: this.instancePool.getInstanceInfo(tool.name)
+        threadId
       };
     } catch (error) {
       if (error instanceof ToolError) {
@@ -96,52 +117,10 @@ export class StatefulExecutor extends BaseExecutor {
         `Stateful tool execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
         tool.name,
         'STATEFUL',
-        { parameters },
+        { parameters, threadId },
         error instanceof Error ? error : undefined
       );
     }
-  }
-
-  /**
-   * 注册工厂函数
-   */
-  registerFactory(toolName: string, factory: any): void {
-    this.instancePool.registerFactory(toolName, factory);
-  }
-
-  /**
-   * 获取实例信息
-   */
-  getInstanceInfo(toolName: string): any | null {
-    return this.instancePool.getInstanceInfo(toolName);
-  }
-
-  /**
-   * 获取所有实例信息
-   */
-  getAllInstanceInfo(): Map<string, any> {
-    return this.instancePool.getAllInstanceInfo();
-  }
-
-  /**
-   * 获取实例数
-   */
-  getInstanceCount(): number {
-    return this.instancePool.getInstanceCount();
-  }
-
-  /**
-   * 释放指定工具的实例
-   */
-  async releaseInstance(toolName: string): Promise<void> {
-    await this.instancePool.releaseInstance(toolName);
-  }
-
-  /**
-   * 清理所有实例
-   */
-  async cleanup(): Promise<void> {
-    await this.instancePool.destroy();
   }
 
   /**

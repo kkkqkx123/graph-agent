@@ -40,11 +40,10 @@ export type {
 
 // Stateful执行器
 export { StatefulExecutor } from './stateful/StatefulExecutor';
-export { InstancePool } from './stateful/pool/InstancePool';
 export type {
-  ToolInstanceFactory,
-  InstancePoolConfig,
-  InstanceInfo,
+  ThreadContextProvider
+} from './stateful/StatefulExecutor';
+export type {
   StatefulExecutorConfig
 } from './stateful/types';
 

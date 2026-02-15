@@ -11,14 +11,13 @@
  */
 
 import type { Tool } from '@modular-agent/types';
-import type { ThreadContext } from '../execution/context/thread-context';
 import { ToolType } from '@modular-agent/types';
 import { NotFoundError, ToolError, ToolNotFoundError } from '@modular-agent/types';
 import { ToolRegistry } from '../tools/tool-registry';
 import type { IToolExecutor } from '@modular-agent/types';
 import type { ToolExecutionOptions, ToolExecutionResult } from '@modular-agent/types';
 import { StatelessExecutor } from '@modular-agent/tool-executors';
-import { StatefulExecutor } from '@modular-agent/tool-executors';
+import { StatefulExecutor, type ThreadContextProvider } from '@modular-agent/tool-executors';
 import { RestExecutor } from '@modular-agent/tool-executors';
 import { McpExecutor } from '@modular-agent/tool-executors';
 
@@ -28,9 +27,11 @@ import { McpExecutor } from '@modular-agent/tool-executors';
 class ToolService {
   private registry: ToolRegistry;
   private executors: Map<string, IToolExecutor> = new Map();
+  private threadContextProvider: ThreadContextProvider;
 
-  constructor() {
+  constructor(threadContextProvider: ThreadContextProvider) {
     this.registry = new ToolRegistry();
+    this.threadContextProvider = threadContextProvider;
     this.initializeExecutors();
   }
 
@@ -40,7 +41,7 @@ class ToolService {
   private initializeExecutors(): void {
     // 直接使用packages中的实现
     this.executors.set(ToolType.STATELESS, new StatelessExecutor());
-    this.executors.set(ToolType.STATEFUL, new StatefulExecutor());
+    this.executors.set(ToolType.STATEFUL, new StatefulExecutor(this.threadContextProvider));
     this.executors.set(ToolType.REST, new RestExecutor());
     this.executors.set(ToolType.MCP, new McpExecutor());
   }
@@ -135,7 +136,7 @@ class ToolService {
    * @param toolName 工具名称
    * @param parameters 工具参数
    * @param options 执行选项
-   * @param threadContext 线程上下文（可选，用于有状态工具）
+   * @param threadId 线程ID（可选，用于有状态工具）
    * @returns 执行结果
    * @throws NotFoundError 如果工具不存在
    * @throws ToolError 如果执行失败
@@ -144,7 +145,7 @@ class ToolService {
     toolName: string,
     parameters: Record<string, any>,
     options: ToolExecutionOptions = {},
-    threadContext?: ThreadContext
+    threadId?: string
   ): Promise<ToolExecutionResult> {
     // 获取工具定义
     const tool = this.getTool(toolName);
@@ -161,7 +162,7 @@ class ToolService {
 
     // 直接调用执行器（执行器已内置验证、重试、超时功能）
     try {
-      return await executor.execute(tool, parameters, options, threadContext);
+      return await executor.execute(tool, parameters, options, threadId);
     } catch (error) {
       if (error instanceof Error) {
         throw new ToolError(
@@ -179,7 +180,7 @@ class ToolService {
   /**
    * 批量执行工具
    * @param executions 执行任务数组
-   * @param threadContext 线程上下文（可选）
+   * @param threadId 线程ID（可选，用于有状态工具）
    * @returns 执行结果数组
    */
   async executeBatch(
@@ -188,12 +189,12 @@ class ToolService {
       parameters: Record<string, any>;
       options?: ToolExecutionOptions;
     }>,
-    threadContext?: ThreadContext
+    threadId?: string
   ): Promise<ToolExecutionResult[]> {
     // 并行执行所有工具
     return Promise.all(
       executions.map(exec =>
-        this.execute(exec.toolName, exec.parameters, exec.options, threadContext)
+        this.execute(exec.toolName, exec.parameters, exec.options, threadId)
       )
     );
   }
@@ -252,13 +253,7 @@ class ToolService {
 }
 
 /**
- * 全局工具服务单例
- * 用于管理所有工具的注册、查询和执行
- */
-export const toolService = new ToolService();
-
-/**
- * 导出ToolService类供测试使用
- * 注意：生产代码应使用单例 toolService，此类仅供测试使用
+ * 导出ToolService类
+ * 使用时需要提供 ThreadContextProvider
  */
 export { ToolService };
