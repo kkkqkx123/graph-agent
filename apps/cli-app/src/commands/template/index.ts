@@ -36,6 +36,45 @@ export function createTemplateCommands(): Command {
       }
     });
 
+  // 批量注册节点模板命令
+  templateCmd
+    .command('register-nodes-batch <directory>')
+    .description('从目录批量注册节点模板')
+    .option('-r, --recursive', '递归加载子目录')
+    .option('-p, --pattern <pattern>', '文件模式 (正则表达式)')
+    .action(async (directory, options: {
+      recursive?: boolean;
+      pattern?: string;
+    }) => {
+      try {
+        logger.info(`正在批量注册节点模板: ${directory}`);
+        
+        // 解析文件模式
+        const filePattern = options.pattern
+          ? new RegExp(options.pattern)
+          : undefined;
+        
+        const adapter = new TemplateAdapter();
+        const result = await adapter.registerNodeTemplatesFromDirectory({
+          configDir: directory,
+          recursive: options.recursive,
+          filePattern
+        });
+        
+        // 显示结果
+        console.log(`\n成功注册 ${result.success.length} 个节点模板`);
+        if (result.failures.length > 0) {
+          console.log(`\n失败 ${result.failures.length} 个文件:`);
+          result.failures.forEach(failure => {
+            console.log(`  - ${failure.filePath}: ${failure.error}`);
+          });
+        }
+      } catch (error) {
+        logger.error(`批量注册节点模板失败: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    });
+
   // 注册触发器模板命令
   templateCmd
     .command('register-trigger <file>')
@@ -51,6 +90,45 @@ export function createTemplateCommands(): Command {
         console.log(formatWorkflow(template, { verbose: options.verbose }));
       } catch (error) {
         logger.error(`注册触发器模板失败: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    });
+
+  // 批量注册触发器模板命令
+  templateCmd
+    .command('register-triggers-batch <directory>')
+    .description('从目录批量注册触发器模板')
+    .option('-r, --recursive', '递归加载子目录')
+    .option('-p, --pattern <pattern>', '文件模式 (正则表达式)')
+    .action(async (directory, options: {
+      recursive?: boolean;
+      pattern?: string;
+    }) => {
+      try {
+        logger.info(`正在批量注册触发器模板: ${directory}`);
+        
+        // 解析文件模式
+        const filePattern = options.pattern
+          ? new RegExp(options.pattern)
+          : undefined;
+        
+        const adapter = new TemplateAdapter();
+        const result = await adapter.registerTriggerTemplatesFromDirectory({
+          configDir: directory,
+          recursive: options.recursive,
+          filePattern
+        });
+        
+        // 显示结果
+        console.log(`\n成功注册 ${result.success.length} 个触发器模板`);
+        if (result.failures.length > 0) {
+          console.log(`\n失败 ${result.failures.length} 个文件:`);
+          result.failures.forEach(failure => {
+            console.log(`  - ${failure.filePath}: ${failure.error}`);
+          });
+        }
+      } catch (error) {
+        logger.error(`批量注册触发器模板失败: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     });

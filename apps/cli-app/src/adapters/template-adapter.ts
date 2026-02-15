@@ -4,48 +4,132 @@
  */
 
 import { BaseAdapter } from './base-adapter';
-import { readFile } from 'fs/promises';
 import { resolve } from 'path';
-import { parseJson, parseToml } from '@modular-agent/sdk';
+import { ConfigManager, type ConfigLoadOptions } from '../config/config-manager';
 
 /**
  * 模板适配器
  */
 export class TemplateAdapter extends BaseAdapter {
+  private configManager: ConfigManager;
+
+  constructor(configManager?: ConfigManager) {
+    super();
+    this.configManager = configManager || new ConfigManager();
+  }
+
   /**
    * 从文件注册节点模板
+   * @param filePath 配置文件路径
+   * @returns 节点模板定义
    */
   async registerNodeTemplateFromFile(filePath: string): Promise<any> {
     return this.executeWithErrorHandling(async () => {
+      // 使用 ConfigManager 加载配置
       const fullPath = resolve(process.cwd(), filePath);
-      const content = await readFile(fullPath, 'utf-8');
-
-      const template = this.parseTemplateFile(content, fullPath);
-
+      const template = await this.configManager.loadNodeTemplate(fullPath);
+      
       const api = this.sdk.nodeTemplates;
       await api.create(template);
-
+      
       this.logger.success(`节点模板已注册: ${template.id}`);
       return template;
     }, '注册节点模板');
   }
 
   /**
+   * 从目录批量注册节点模板
+   * @param options 加载选项
+   * @returns 注册结果
+   */
+  async registerNodeTemplatesFromDirectory(
+    options: ConfigLoadOptions = {}
+  ): Promise<{
+    success: any[];
+    failures: Array<{ filePath: string; error: string }>;
+  }> {
+    return this.executeWithErrorHandling(async () => {
+      // 使用 ConfigManager 批量加载配置
+      const result = await this.configManager.loadNodeTemplates(options);
+      
+      const success: any[] = [];
+      const failures = result.failures;
+
+      // 注册成功加载的模板
+      const api = this.sdk.nodeTemplates;
+      for (const template of result.configs) {
+        try {
+          await api.create(template);
+          success.push(template);
+          this.logger.success(`节点模板已注册: ${template.id}`);
+        } catch (error) {
+          failures.push({
+            filePath: template.id,
+            error: error instanceof Error ? error.message : String(error)
+          });
+          this.logger.error(`注册节点模板失败: ${template.id}`);
+        }
+      }
+
+      return { success, failures };
+    }, '批量注册节点模板');
+  }
+
+  /**
    * 从文件注册触发器模板
+   * @param filePath 配置文件路径
+   * @returns 触发器模板定义
    */
   async registerTriggerTemplateFromFile(filePath: string): Promise<any> {
     return this.executeWithErrorHandling(async () => {
+      // 使用 ConfigManager 加载配置
       const fullPath = resolve(process.cwd(), filePath);
-      const content = await readFile(fullPath, 'utf-8');
-
-      const template = this.parseTemplateFile(content, fullPath);
-
+      const template = await this.configManager.loadTriggerTemplate(fullPath);
+      
       const api = this.sdk.triggerTemplates;
       await api.create(template);
-
+      
       this.logger.success(`触发器模板已注册: ${template.id}`);
       return template;
     }, '注册触发器模板');
+  }
+
+  /**
+   * 从目录批量注册触发器模板
+   * @param options 加载选项
+   * @returns 注册结果
+   */
+  async registerTriggerTemplatesFromDirectory(
+    options: ConfigLoadOptions = {}
+  ): Promise<{
+    success: any[];
+    failures: Array<{ filePath: string; error: string }>;
+  }> {
+    return this.executeWithErrorHandling(async () => {
+      // 使用 ConfigManager 批量加载配置
+      const result = await this.configManager.loadTriggerTemplates(options);
+      
+      const success: any[] = [];
+      const failures = result.failures;
+
+      // 注册成功加载的模板
+      const api = this.sdk.triggerTemplates;
+      for (const template of result.configs) {
+        try {
+          await api.create(template);
+          success.push(template);
+          this.logger.success(`触发器模板已注册: ${template.id}`);
+        } catch (error) {
+          failures.push({
+            filePath: template.id,
+            error: error instanceof Error ? error.message : String(error)
+          });
+          this.logger.error(`注册触发器模板失败: ${template.id}`);
+        }
+      }
+
+      return { success, failures };
+    }, '批量注册触发器模板');
   }
 
   /**
@@ -153,27 +237,4 @@ export class TemplateAdapter extends BaseAdapter {
     }, '删除触发器模板');
   }
 
-  /**
-   * 解析模板文件
-   */
-  private parseTemplateFile(content: string, filePath: string): any {
-    const ext = filePath.split('.').pop()?.toLowerCase();
-
-    try {
-      switch (ext) {
-        case 'json':
-          return parseJson(content);
-        case 'toml':
-          return parseToml(content);
-        default:
-          if (content.trim().startsWith('{')) {
-            return parseJson(content);
-          } else {
-            return parseToml(content);
-          }
-      }
-    } catch (error) {
-      throw new Error(`解析模板文件失败: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
 }

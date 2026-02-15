@@ -1,6 +1,6 @@
 # Sequential Thinking Tool Configuration
 name = "sequentialthinking"
-tool_type = "native"
+tool_type = "stateful"
 description = """
 A tool for structured problem-solving through sequential thinking steps.
 This tool helps analyze problems through a linear thinking process.
@@ -16,7 +16,7 @@ Key features:
 - Simple linear progression of thoughts
 - Basic thought tracking
 """
-function_path = "src.domain.tools.native.sequentialthinking:sequentialthinking"
+function_path = "path"
 enabled = true
 timeout = 30
 

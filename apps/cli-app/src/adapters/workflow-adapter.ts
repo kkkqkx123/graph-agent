@@ -3,10 +3,9 @@
  * 封装工作流相关的 SDK API 调用
  */
 
-import { readFile } from 'fs/promises';
 import { resolve } from 'path';
-import { parseJson, parseToml } from '@modular-agent/sdk';
 import { createLogger } from '../utils/logger';
+import { ConfigManager, type ConfigLoadOptions } from '../config/config-manager';
 
 const logger = createLogger();
 
@@ -14,24 +13,80 @@ const logger = createLogger();
  * 工作流适配器
  */
 export class WorkflowAdapter {
+  private configManager: ConfigManager;
+
+  constructor(configManager?: ConfigManager) {
+    this.configManager = configManager || new ConfigManager();
+  }
+
   /**
    * 从文件注册工作流
+   * @param filePath 配置文件路径
+   * @param parameters 运行时参数（用于模板替换）
+   * @returns 工作流定义
    */
-  async registerFromFile(filePath: string): Promise<any> {
+  async registerFromFile(
+    filePath: string,
+    parameters?: Record<string, any>
+  ): Promise<any> {
     try {
       const { sdk } = await import('@modular-agent/sdk');
+      
+      // 使用 ConfigManager 加载配置
       const fullPath = resolve(process.cwd(), filePath);
-      const content = await readFile(fullPath, 'utf-8');
-
-      const workflow = this.parseWorkflowFile(content, fullPath);
-
+      const workflow = await this.configManager.loadWorkflow(fullPath, parameters);
+      
+      // 注册到 SDK
       const api = sdk.workflows;
       await api.create(workflow);
-
+      
       logger.success(`工作流已注册: ${workflow.id}`);
       return workflow;
     } catch (error) {
       logger.error(`注册工作流失败: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
+  }
+
+  /**
+   * 从目录批量注册工作流
+   * @param options 加载选项
+   * @returns 注册结果
+   */
+  async registerFromDirectory(
+    options: ConfigLoadOptions = {}
+  ): Promise<{
+    success: any[];
+    failures: Array<{ filePath: string; error: string }>;
+  }> {
+    try {
+      const { sdk } = await import('@modular-agent/sdk');
+      
+      // 使用 ConfigManager 批量加载配置
+      const result = await this.configManager.loadWorkflows(options);
+      
+      const success: any[] = [];
+      const failures = result.failures;
+
+      // 注册成功加载的工作流
+      const api = sdk.workflows;
+      for (const workflow of result.configs) {
+        try {
+          await api.create(workflow);
+          success.push(workflow);
+          logger.success(`工作流已注册: ${workflow.id}`);
+        } catch (error) {
+          failures.push({
+            filePath: workflow.id,
+            error: error instanceof Error ? error.message : String(error)
+          });
+          logger.error(`注册工作流失败: ${workflow.id}`);
+        }
+      }
+
+      return { success, failures };
+    } catch (error) {
+      logger.error(`批量注册工作流失败: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
   }
@@ -101,27 +156,4 @@ export class WorkflowAdapter {
     }
   }
 
-  /**
-   * 解析工作流文件
-   */
-  private parseWorkflowFile(content: string, filePath: string): any {
-    const ext = filePath.split('.').pop()?.toLowerCase();
-
-    try {
-      switch (ext) {
-        case 'json':
-          return parseJson(content);
-        case 'toml':
-          return parseToml(content);
-        default:
-          if (content.trim().startsWith('{')) {
-            return parseJson(content);
-          } else {
-            return parseToml(content);
-          }
-      }
-    } catch (error) {
-      throw new Error(`解析工作流文件失败: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
 }

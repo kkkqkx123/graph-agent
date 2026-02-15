@@ -29,8 +29,7 @@
         "agent",
         "workflow",
         "llm",
-        "sdk",
-        "typescript"
+        "sdk"
     ],
     "author": "Modular Agent Framework Team",
     "license": "MIT",
@@ -39,7 +38,8 @@
         "@modular-agent/common-utils": "workspace:*",
         "@modular-agent/tool-executors": "workspace:*",
         "tiktoken": "^1.0.22",
-        "zod": "^4.3.6"
+        "zod": "^4.3.6",
+        "@iarna/toml": "^2.2.5"
     },
     "devDependencies": {},
     "engines": {

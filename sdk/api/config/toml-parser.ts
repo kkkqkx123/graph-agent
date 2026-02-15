@@ -1,33 +1,40 @@
 /**
  * TOML解析器
  * 负责解析TOML格式的配置文件
+ *
+ * 设计原则：
+ * - 在模块顶层加载 @iarna/toml 解析库（ES 模块兼容）
+ * - 提供清晰的错误信息
+ * - 统一的错误处理
+ * - 保持同步接口，避免影响现有代码
  */
 
 import type { WorkflowConfigFile } from './types';
 import { ConfigurationError } from '@modular-agent/types';
 
+// 在模块顶层动态导入并缓存 TOML 解析器
+let tomlParser: any = null;
+
 /**
- * 获取TOML解析器实例
- * @returns TOML解析器
- * @throws {ConfigurationError} 当未找到TOML解析库时抛出
+ * 获取 TOML 解析器实例
+ * @returns TOML 解析器
+ * @throws {ConfigurationError} 当未找到 TOML 解析库时抛出
  */
 function getTomlParser(): any {
+  if (tomlParser) {
+    return tomlParser;
+  }
+
   try {
-    // 尝试使用 @iarna/toml
-    const toml = require('@iarna/toml');
-    return toml;
+    // 使用 require 加载 CommonJS 模块
+    tomlParser = require('@iarna/toml');
+    return tomlParser;
   } catch (error) {
-    try {
-      // 尝试使用 toml
-      const toml = require('toml');
-      return toml;
-    } catch (error2) {
-      throw new ConfigurationError(
-        '未找到TOML解析库。请安装 @iarna/toml 或 toml: pnpm add @iarna/toml',
-        undefined,
-        { suggestion: 'pnpm add @iarna/toml' }
-      );
-    }
+    throw new ConfigurationError(
+      '未找到TOML解析库。请确保已安装 @iarna/toml: pnpm install',
+      undefined,
+      { suggestion: 'pnpm install' }
+    );
   }
 }
 
@@ -39,8 +46,6 @@ function getTomlParser(): any {
  */
 export function parseToml(content: string): WorkflowConfigFile {
   try {
-    // 使用动态导入来支持TOML解析
-    // 如果项目中没有安装TOML解析库，这里会抛出错误
     const toml = getTomlParser();
     const parsed = toml.parse(content);
 
