@@ -10,7 +10,8 @@ import type { Result } from '@modular-agent/types';
 import { Observable, create, type Observer } from '../utils/observable';
 import { ExecuteThreadCommand } from '../operations/commands/execution/execute-thread-command';
 import { isSuccess } from '../types/execution-result';
-import { ExecutionError } from '@modular-agent/types';
+import { ExecutionError as SDKExecutionError } from '@modular-agent/types';
+import { APIDependencyManager } from '../core/sdk-dependencies';
 import type {
   ExecutionEvent,
   StartEvent,
@@ -30,9 +31,11 @@ export class ExecutionBuilder {
   private onProgressCallbacks: Array<(progress: any) => void> = [];
   private onErrorCallbacks: Array<(error: any) => void> = [];
   private abortController?: AbortController;
+  private readonly dependencies: APIDependencyManager;
 
   constructor() {
     // 不再依赖ThreadExecutorAPI，改为使用Command模式
+    this.dependencies = new APIDependencyManager();
   }
 
   /**
@@ -130,15 +133,15 @@ export class ExecutionBuilder {
       const command = new ExecuteThreadCommand({
         workflowId: this.workflowId,
         options: this.options
-      });
+      }, this.dependencies);
 
       const executionResult = await command.execute();
 
       // 处理ExecutionResult类型
-      if (isSuccess(executionResult)) {
-        return ok(executionResult.data);
+      if (executionResult.result.isOk()) {
+        return ok(executionResult.result.unwrap());
       } else {
-        return err(new Error(executionResult.error.message || '执行失败'));
+        return err(new Error(executionResult.result.unwrapOrElse(e => e.message) || '执行失败'));
       }
     } catch (error) {
       // 触发错误回调
@@ -147,7 +150,7 @@ export class ExecutionBuilder {
           callback(error);
         } catch (callbackError) {
           // 抛出错误，由调用方决定如何处理
-          throw new ExecutionError(
+          throw new SDKExecutionError(
             'Error callback execution failed',
             undefined,
             this.workflowId,
@@ -314,15 +317,15 @@ export class ExecutionBuilder {
     const command = new ExecuteThreadCommand({
       workflowId: this.workflowId!,
       options: this.options
-    });
+    }, this.dependencies);
 
     const executionResult = await command.execute();
 
     // 处理ExecutionResult类型
-    if (isSuccess(executionResult)) {
-      return ok(executionResult.data);
+    if (executionResult.result.isOk()) {
+      return ok(executionResult.result.unwrap());
     } else {
-      return err(new Error(executionResult.error.message || '执行失败'));
+      return err(new Error(executionResult.result.unwrapOrElse(e => e.message) || '执行失败'));
     }
   }
 

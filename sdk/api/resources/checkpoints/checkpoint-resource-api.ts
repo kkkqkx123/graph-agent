@@ -10,7 +10,7 @@ import type { CheckpointFilter } from '@modular-agent/types';
 import { MemoryCheckpointStorage } from '../../../core/storage/memory-checkpoint-storage';
 import { CheckpointCoordinator } from '../../../core/execution/coordinators/checkpoint-coordinator';
 import { SingletonRegistry } from '../../../core/execution/context/singleton-registry';
-import { getErrorMessage } from '../../types/execution-result';
+import { getErrorMessage, isSuccess, getData } from '../../types/execution-result';
 import type { EventManager } from '../../../core/services/event-manager';
 
 /**
@@ -201,10 +201,11 @@ export class CheckpointResourceAPI extends GenericResourceAPI<Checkpoint, string
    */
   async getThreadCheckpoints(threadId: string): Promise<Checkpoint[]> {
     const result = await this.getAll({ threadId });
-    if (!result.success) {
+    if (!isSuccess(result)) {
       throw new Error(getErrorMessage(result) || 'Failed to get thread checkpoints');
     }
-    return result.data;
+    const checkpoints = getData(result);
+    return checkpoints || [];
   }
 
   /**
@@ -233,10 +234,10 @@ export class CheckpointResourceAPI extends GenericResourceAPI<Checkpoint, string
     byWorkflow: Record<string, number>;
   }> {
     const result = await this.getAll();
-    if (!result.success) {
+    if (!isSuccess(result)) {
       throw new Error(getErrorMessage(result) || 'Failed to get checkpoint statistics');
     }
-    const checkpoints = result.data;
+    const checkpoints = getData(result) || [];
     
     const byThread: Record<string, number> = {};
     const byWorkflow: Record<string, number> = {};

@@ -4,22 +4,24 @@
  */
 
 import type { Node, NodeConfig, NodeType } from '@modular-agent/types';
-import { generateId, now } from '@modular-agent/common-utils';
+import { generateId } from '@modular-agent/common-utils';
 import { SingletonRegistry } from '../../core/execution/context/singleton-registry';
+import { BaseBuilder } from './base-builder';
 
 /**
  * NodeBuilder - 节点构建器
  */
-export class NodeBuilder {
-  private node: Partial<Node> = {};
+export class NodeBuilder extends BaseBuilder<Node> {
+  private _id: string;
+  private _type?: NodeType;
+  private _name?: string;
   private _config: NodeConfig = {};
+  private _outgoingEdgeIds: string[] = [];
+  private _incomingEdgeIds: string[] = [];
 
   private constructor(id?: string) {
-    this.node = {
-      id: id || generateId(),
-      outgoingEdgeIds: [],
-      incomingEdgeIds: []
-    };
+    super();
+    this._id = id || generateId();
   }
 
   /**
@@ -37,7 +39,8 @@ export class NodeBuilder {
    * @returns this
    */
   type(type: NodeType): this {
-    this.node.type = type;
+    this._type = type;
+    this.updateTimestamp();
     return this;
   }
 
@@ -47,7 +50,8 @@ export class NodeBuilder {
    * @returns this
    */
   name(name: string): this {
-    this.node.name = name;
+    this._name = name;
+    this.updateTimestamp();
     return this;
   }
 
@@ -58,6 +62,7 @@ export class NodeBuilder {
    */
   config(config: NodeConfig): this {
     this._config = config;
+    this.updateTimestamp();
     return this;
   }
 
@@ -68,6 +73,7 @@ export class NodeBuilder {
    */
   mergeConfig(partialConfig: Partial<NodeConfig>): this {
     this._config = { ...this._config, ...partialConfig };
+    this.updateTimestamp();
     return this;
   }
 
@@ -84,9 +90,10 @@ export class NodeBuilder {
       throw new Error(`节点模板 '${templateName}' 不存在`);
     }
 
-    this.node.type = template.type;
-    this.node.name = template.name;
+    this._type = template.type;
+    this._name = template.name;
     this._config = configOverride ? { ...template.config, ...configOverride } : template.config;
+    this.updateTimestamp();
     return this;
   }
 
@@ -96,23 +103,23 @@ export class NodeBuilder {
    */
   build(): Node {
     // 验证必需字段
-    if (!this.node.id) {
+    if (!this._id) {
       throw new Error('节点ID不能为空');
     }
-    if (!this.node.type) {
+    if (!this._type) {
       throw new Error('节点类型不能为空');
     }
-    if (!this.node.name) {
-      this.node.name = this.node.id;
+    if (!this._name) {
+      this._name = this._id;
     }
 
     return {
-      id: this.node.id,
-      type: this.node.type,
-      name: this.node.name,
+      id: this._id,
+      type: this._type,
+      name: this._name,
       config: this._config,
-      outgoingEdgeIds: this.node.outgoingEdgeIds || [],
-      incomingEdgeIds: this.node.incomingEdgeIds || []
+      outgoingEdgeIds: this._outgoingEdgeIds,
+      incomingEdgeIds: this._incomingEdgeIds
     };
   }
 
@@ -124,7 +131,7 @@ export class NodeBuilder {
    * @returns this
    */
   start(id: string = 'start'): this {
-    this.node.id = id;
+    this._id = id;
     return this.type('start' as NodeType).name('Start');
   }
 
@@ -134,7 +141,7 @@ export class NodeBuilder {
    * @returns this
    */
   end(id: string = 'end'): this {
-    this.node.id = id;
+    this._id = id;
     return this.type('end' as NodeType).name('End');
   }
 

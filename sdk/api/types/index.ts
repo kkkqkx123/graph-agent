@@ -4,11 +4,7 @@
  */
 
 // Command模式相关类型
-export type {
-  ExecutionResult,
-  ExecutionSuccess,
-  ExecutionFailure
-} from './execution-result';
+export type { ExecutionResult } from './execution-result';
 export {
   success,
   failure,

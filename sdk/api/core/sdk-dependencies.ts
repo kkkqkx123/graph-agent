@@ -114,4 +114,20 @@ export class APIDependencyManager {
   getExecutionContext(): ExecutionContext {
     return this.executionContext;
   }
+  
+  /**
+   * 获取线程生命周期协调器
+   */
+  getThreadLifecycleCoordinator(): import('../../core/execution/coordinators/thread-lifecycle-coordinator').ThreadLifecycleCoordinator {
+    const { ThreadLifecycleCoordinator } = require('../../core/execution/coordinators/thread-lifecycle-coordinator');
+    return new ThreadLifecycleCoordinator(this.executionContext);
+  }
+  
+  /**
+   * 获取 LLM 包装器
+   */
+  getLLMWrapper(): import('../../core/llm/wrapper').LLMWrapper {
+    const { LLMWrapper } = require('../../core/llm/wrapper');
+    return new LLMWrapper(this.executionContext);
+  }
 }

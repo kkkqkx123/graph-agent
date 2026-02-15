@@ -23,7 +23,7 @@ import { GenericResourceAPI } from '../generic-resource-api';
 import type { ExecutionResult } from '../../types/execution-result';
 import { success, failure } from '../../types/execution-result';
 import type { UserInteractionHandler, UserInteractionRequest } from '@modular-agent/types';
-import { EventType } from '@modular-agent/types';
+import { EventType, ExecutionError as SDKExecutionError } from '@modular-agent/types';
 import type {
   UserInteractionRequestedEvent,
   UserInteractionRespondedEvent,
@@ -161,10 +161,12 @@ export class UserInteractionResourceAPI extends GenericResourceAPI<UserInteracti
     try {
       if (!this.userInteractionHandler) {
         return failure(
-          {
-            message: 'UserInteractionHandler not registered. Please register a handler before handling interactions.',
-            code: 'HANDLER_NOT_REGISTERED'
-          },
+          new SDKExecutionError(
+            'UserInteractionHandler not registered. Please register a handler before handling interactions.',
+            undefined,
+            undefined,
+            { code: 'HANDLER_NOT_REGISTERED' }
+          ),
           Date.now() - startTime
         );
       }

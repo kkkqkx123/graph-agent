@@ -5,24 +5,21 @@
 
 import type { NodeTemplate } from '@modular-agent/types';
 import type { NodeType, NodeConfig } from '@modular-agent/types';
-import type { Metadata } from '@modular-agent/types';
-import { now } from '@modular-agent/common-utils';
+import { TemplateBuilder } from './template-builder';
 import { SingletonRegistry } from '../../core/execution/context/singleton-registry';
 
 /**
  * NodeTemplateBuilder - 节点模板构建器
  */
-export class NodeTemplateBuilder {
-  private template: Partial<NodeTemplate> = {};
+export class NodeTemplateBuilder extends TemplateBuilder<NodeTemplate> {
+  private _name: string;
+  private _type: NodeType;
+  private _config: NodeConfig = {} as NodeConfig;
 
   private constructor(name: string, type: NodeType) {
-    this.template = {
-      name,
-      type,
-      config: {} as NodeConfig,
-      createdAt: now(),
-      updatedAt: now()
-    };
+    super();
+    this._name = name;
+    this._type = type;
   }
 
   /**
@@ -36,61 +33,13 @@ export class NodeTemplateBuilder {
   }
 
   /**
-   * 设置模板描述
-   * @param description 描述
-   * @returns this
-   */
-  description(description: string): this {
-    this.template.description = description;
-    return this;
-  }
-
-  /**
    * 设置节点配置
    * @param config 节点配置
    * @returns this
    */
   config(config: NodeConfig): this {
-    this.template.config = config;
-    return this;
-  }
-
-  /**
-   * 设置元数据
-   * @param metadata 元数据
-   * @returns this
-   */
-  metadata(metadata: Metadata): this {
-    this.template.metadata = metadata;
-    return this;
-  }
-
-  /**
-   * 设置分类
-   * @param category 分类
-   * @returns this
-   */
-  category(category: string): this {
-    if (!this.template.metadata) {
-      this.template.metadata = {};
-    }
-    this.template.metadata['category'] = category;
-    return this;
-  }
-
-  /**
-   * 添加标签
-   * @param tags 标签数组
-   * @returns this
-   */
-  tags(...tags: string[]): this {
-    if (!this.template.metadata) {
-      this.template.metadata = {};
-    }
-    if (!this.template.metadata['tags']) {
-      this.template.metadata['tags'] = [];
-    }
-    this.template.metadata['tags'].push(...tags);
+    this._config = config;
+    this.updateTimestamp();
     return this;
   }
 
@@ -100,46 +49,21 @@ export class NodeTemplateBuilder {
    * @returns this
    */
   mergeConfig(partialConfig: Partial<NodeConfig>): this {
-    if (!this.template.config) {
-      this.template.config = {} as NodeConfig;
+    if (!this._config) {
+      this._config = {} as NodeConfig;
     }
-    this.template.config = { ...this.template.config, ...partialConfig };
+    this._config = { ...this._config, ...partialConfig };
+    this.updateTimestamp();
     return this;
   }
 
   /**
-   * 添加或更新元数据项
-   * @param key 元数据键
-   * @param value 元数据值
-   * @returns this
+   * 注册模板到节点模板注册表
+   * @param template 节点模板
    */
-  addMetadata(key: string, value: any): this {
-    if (!this.template.metadata) {
-      this.template.metadata = {};
-    }
-    this.template.metadata[key] = value;
-    return this;
-  }
-
-  /**
-   * 移除元数据项
-   * @param key 元数据键
-   * @returns this
-   */
-  removeMetadata(key: string): this {
-    if (this.template.metadata) {
-      delete this.template.metadata[key];
-    }
-    return this;
-  }
-
-  /**
-   * 清空所有元数据
-   * @returns this
-   */
-  clearMetadata(): this {
-    this.template.metadata = {};
-    return this;
+  protected registerTemplate(template: NodeTemplate): void {
+    const nodeTemplateRegistry = SingletonRegistry.getNodeTemplateRegistry();
+    nodeTemplateRegistry.register(template);
   }
 
   /**
@@ -148,46 +72,24 @@ export class NodeTemplateBuilder {
    */
   build(): NodeTemplate {
     // 验证必需字段
-    if (!this.template.name) {
+    if (!this._name) {
       throw new Error('模板名称不能为空');
     }
-    if (!this.template.type) {
+    if (!this._type) {
       throw new Error('节点类型不能为空');
     }
-    if (!this.template.config) {
+    if (!this._config) {
       throw new Error('节点配置不能为空');
     }
 
     return {
-      name: this.template.name,
-      type: this.template.type,
-      config: this.template.config,
-      description: this.template.description,
-      metadata: this.template.metadata,
-      createdAt: this.template.createdAt || now(),
-      updatedAt: now()
+      name: this._name,
+      type: this._type,
+      config: this._config,
+      description: this._description,
+      metadata: this._metadata,
+      createdAt: this.getCreatedAt(),
+      updatedAt: this.getUpdatedAt()
     };
-  }
-
-  /**
-   * 注册模板到全局注册表
-   * @returns this
-   */
-  register(): this {
-    const template = this.build();
-    const nodeTemplateRegistry = SingletonRegistry.getNodeTemplateRegistry();
-    nodeTemplateRegistry.register(template);
-    return this;
-  }
-
-  /**
-   * 构建并注册模板
-   * @returns 节点模板
-   */
-  buildAndRegister(): NodeTemplate {
-    const template = this.build();
-    const nodeTemplateRegistry = SingletonRegistry.getNodeTemplateRegistry();
-    nodeTemplateRegistry.register(template);
-    return template;
   }
 }

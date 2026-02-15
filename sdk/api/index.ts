@@ -147,29 +147,6 @@ export {
 } from './operations/commands/triggers/disable-trigger-command';
 export type { DisableTriggerParams } from './operations/commands/triggers/disable-trigger-command';
 
-// ============================================================================
-// Query类 - 监控API (Monitoring APIs) - 纯查询操作
-// ============================================================================
-
-// Messages Queries (已迁移到MessageResourceAPI)
-// 使用MessageResourceAPI.getThreadMessages(), .getRecentMessages(), .searchMessages(), .getMessageStats()
-
-// Events Queries (已迁移到EventResourceAPI)
-// 使用EventResourceAPI.getEvents(), .getEventStats()
-
-// State Queries (已迁移到VariableResourceAPI)
-// 使用VariableResourceAPI.getThreadVariables(), .getThreadVariable(), .hasThreadVariable(), .getThreadVariableDefinitions()
-
-// Checkpoints Queries (已迁移到CheckpointResourceAPI)
-// 使用CheckpointResourceAPI.getAll(), .getThreadCheckpoints()
-
-// Triggers Queries (已迁移到TriggerResourceAPI)
-// 使用TriggerResourceAPI.getThreadTriggers(), .getThreadTrigger()
-
-// ============================================================================
-// Subscription类 - 事件订阅API (Event Subscription APIs)
-// ============================================================================
-
 export {
   OnEventSubscription
 } from './operations/subscriptions/events/on-event-subscription';
@@ -204,8 +181,7 @@ export {
 // ============================================================================
 // 构建器
 // ============================================================================
-export { WorkflowBuilder, ExecutionBuilder, WorkflowComposer, sequential, parallel } from './builders';
-export { merge as mergeWorkflows } from './builders';
+export { WorkflowBuilder, ExecutionBuilder } from './builders';
 export { NodeTemplateBuilder } from './builders/node-template-builder';
 export { TriggerTemplateBuilder } from './builders/trigger-template-builder';
 export type {
@@ -217,15 +193,6 @@ export type {
   ProgressEvent,
   NodeExecutedEvent
 } from './types/execution-events';
-export type {
-  WorkflowCompositionConfig,
-  WorkflowCompositionItem,
-  WorkflowCompositionResult,
-  CompositionEvent,
-  CompositionStartEvent,
-  CompositionCompleteEvent,
-  CompositionErrorEvent
-} from './builders/workflow-composer';
 
 // ============================================================================
 // 工具函数

@@ -10,6 +10,7 @@ import type {
   TriggerTemplateFilter
 } from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api';
+import { isSuccess, getData } from '../../types/execution-result';
 import type { APIDependencyManager } from '../../core/sdk-dependencies';
 
 
@@ -111,11 +112,12 @@ export class TriggerTemplateRegistryAPI extends GenericResourceAPI<TriggerTempla
    */
   async getTemplateSummaries(filter?: TriggerTemplateFilter): Promise<TriggerTemplateSummary[]> {
     const result = await this.getAll(filter);
-    if (!result.success) {
+    if (!isSuccess(result)) {
       return [];
     }
 
-    return result.data.map((template: TriggerTemplate) => {
+    const templates = getData(result) || [];
+    return templates.map((template: TriggerTemplate) => {
       const summary: TriggerTemplateSummary = {
         name: template.name,
         description: template.description,

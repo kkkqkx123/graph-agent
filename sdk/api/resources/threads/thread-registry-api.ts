@@ -7,7 +7,7 @@
 import type { ThreadRegistry } from '../../../core/services/thread-registry';
 import type { Thread, ThreadResult, ThreadStatus, ThreadFilter, ThreadSummary } from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api';
-import { getErrorMessage } from '../../types/execution-result';
+import { getErrorMessage, isSuccess, getData } from '../../types/execution-result';
 import type { APIDependencyManager } from '../../core/sdk-dependencies';
 import { SingletonRegistry } from '../../../core/execution/context/singleton-registry';
 
@@ -118,10 +118,10 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
    */
   async getThreadSummaries(filter?: ThreadFilter): Promise<ThreadSummary[]> {
     const result = await this.getAll(filter);
-    if (!result.success) {
+    if (!isSuccess(result)) {
       throw new Error(getErrorMessage(result) || 'Failed to get thread summaries');
     }
-    const threads = result.data;
+    const threads = getData(result) || [];
 
     return threads.map((thread: Thread) => ({
       id: thread.id,
@@ -144,10 +144,10 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
    */
   async getThreadStatus(threadId: string): Promise<ThreadStatus | null> {
     const result = await this.get(threadId);
-    if (!result.success) {
+    if (!isSuccess(result)) {
       throw new Error(getErrorMessage(result) || 'Failed to get thread status');
     }
-    const thread = result.data;
+    const thread = getData(result);
     if (!thread) {
       return null;
     }
@@ -161,10 +161,10 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
    */
   async getThreadResult(threadId: string): Promise<ThreadResult | null> {
     const result = await this.get(threadId);
-    if (!result.success) {
+    if (!isSuccess(result)) {
       throw new Error(getErrorMessage(result) || 'Failed to get thread result');
     }
-    const thread = result.data;
+    const thread = getData(result);
     if (!thread) {
       return null;
     }
@@ -200,10 +200,10 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
     byWorkflow: Record<string, number>;
   }> {
     const result = await this.getAll();
-    if (!result.success) {
+    if (!isSuccess(result)) {
       throw new Error(getErrorMessage(result) || 'Failed to get thread statistics');
     }
-    const threads = result.data;
+    const threads = getData(result) || [];
     const byStatus: Record<ThreadStatus, number> = {
       CREATED: 0,
       RUNNING: 0,

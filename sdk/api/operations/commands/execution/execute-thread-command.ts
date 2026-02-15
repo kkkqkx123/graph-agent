@@ -20,8 +20,7 @@
 
 import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
 import type { ThreadResult, ThreadOptions } from '@modular-agent/types';
-import { ThreadLifecycleCoordinator } from '../../../../core/execution/coordinators/thread-lifecycle-coordinator';
-import { ExecutionContext } from '../../../../core/execution/context/execution-context';
+import { APIDependencyManager } from '../../../core/sdk-dependencies';
 
 /**
  * 执行线程命令参数
@@ -52,14 +51,14 @@ export interface ExecuteThreadParams {
 export class ExecuteThreadCommand extends BaseCommand<ThreadResult> {
   constructor(
     private readonly params: ExecuteThreadParams,
-    private readonly executionContext?: ExecutionContext
+    private readonly dependencies: APIDependencyManager
   ) {
     super();
   }
 
   protected async executeInternal(): Promise<ThreadResult> {
-    // 创建 ThreadLifecycleCoordinator
-    const lifecycleCoordinator = new ThreadLifecycleCoordinator(this.executionContext);
+    // 通过 APIDependencyManager 获取 ThreadLifecycleCoordinator
+    const lifecycleCoordinator = this.dependencies.getThreadLifecycleCoordinator();
     
     // 执行线程（委托给 ThreadLifecycleCoordinator）
     const result = await lifecycleCoordinator.execute(

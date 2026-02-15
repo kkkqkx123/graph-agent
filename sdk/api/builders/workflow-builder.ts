@@ -12,31 +12,28 @@ import type { Condition } from '@modular-agent/types';
 import type { WorkflowTrigger } from '@modular-agent/types';
 import type { TriggerReference } from '@modular-agent/types';
 import { generateId } from '@modular-agent/common-utils';
-import { now } from '@modular-agent/common-utils';
 import { SingletonRegistry } from '../../core/execution/context/singleton-registry';
 import { ConfigParser, ConfigFormat } from '../config';
 import { NodeBuilder } from './node-builder';
+import { BaseBuilder } from './base-builder';
 
 /**
  * WorkflowBuilder - 声明式工作流构建器
  */
-export class WorkflowBuilder {
-  private workflow: Partial<WorkflowDefinition>;
+export class WorkflowBuilder extends BaseBuilder<WorkflowDefinition> {
+  private _id: string;
+  private _name: string;
+  private _version: string = '1.0.0';
+  private _config?: WorkflowConfig;
   private nodes: Map<string, Node> = new Map();
   private edges: Edge[] = [];
   private variables: WorkflowVariable[] = [];
   private triggers: (WorkflowTrigger | TriggerReference)[] = [];
 
   private constructor(id: string) {
-    this.workflow = {
-      id,
-      name: id,
-      version: '1.0.0',
-      createdAt: now(),
-      updatedAt: now(),
-      nodes: [],
-      edges: []
-    };
+    super();
+    this._id = id;
+    this._name = id;
   }
 
   /**
@@ -54,17 +51,8 @@ export class WorkflowBuilder {
    * @returns this
    */
   name(name: string): this {
-    this.workflow.name = name;
-    return this;
-  }
-
-  /**
-   * 设置工作流描述
-   * @param description 工作流描述
-   * @returns this
-   */
-  description(description: string): this {
-    this.workflow.description = description;
+    this._name = name;
+    this.updateTimestamp();
     return this;
   }
 
@@ -74,7 +62,8 @@ export class WorkflowBuilder {
    * @returns this
    */
   version(version: string): this {
-    this.workflow.version = version;
+    this._version = version;
+    this.updateTimestamp();
     return this;
   }
 
@@ -84,7 +73,8 @@ export class WorkflowBuilder {
    * @returns this
    */
   config(config: WorkflowConfig): this {
-    this.workflow.config = config;
+    this._config = config;
+    this.updateTimestamp();
     return this;
   }
 
@@ -93,8 +83,8 @@ export class WorkflowBuilder {
    * @param metadata 工作流元数据
    * @returns this
    */
-  metadata(metadata: WorkflowMetadata): this {
-    this.workflow.metadata = metadata;
+  override metadata(metadata: WorkflowMetadata): this {
+    super.metadata(metadata);
     return this;
   }
 
@@ -115,6 +105,7 @@ export class WorkflowBuilder {
     }
     const node = nodeBuilder.build();
     this.nodes.set(id, node);
+    this.updateTimestamp();
     return this;
   }
 
@@ -126,6 +117,7 @@ export class WorkflowBuilder {
   addNodeWithBuilder(nodeBuilder: NodeBuilder): this {
     const node = nodeBuilder.build();
     this.nodes.set(node.id, node);
+    this.updateTimestamp();
     return this;
   }
 
@@ -292,6 +284,7 @@ export class WorkflowBuilder {
       condition: edgeCondition
     };
     this.edges.push(edge);
+    this.updateTimestamp();
     return this;
   }
 
@@ -319,6 +312,7 @@ export class WorkflowBuilder {
       ...options
     };
     this.variables.push(variable);
+    this.updateTimestamp();
     return this;
   }
 
@@ -329,6 +323,7 @@ export class WorkflowBuilder {
    */
   addTrigger(trigger: WorkflowTrigger): this {
     this.triggers.push(trigger);
+    this.updateTimestamp();
     return this;
   }
 
@@ -358,6 +353,7 @@ export class WorkflowBuilder {
       configOverride
     };
     this.triggers.push(reference);
+    this.updateTimestamp();
     return this;
   }
 
@@ -374,12 +370,18 @@ export class WorkflowBuilder {
 
     // 构建完整的工作流定义
     const workflow: WorkflowDefinition = {
-      ...this.workflow,
+      id: this._id,
+      name: this._name,
+      version: this._version,
+      description: this._description,
+      config: this._config,
+      metadata: this._metadata,
       nodes: Array.from(this.nodes.values()),
       edges: this.edges,
       variables: this.variables.length > 0 ? this.variables : undefined,
       triggers: this.triggers.length > 0 ? this.triggers : undefined,
-      updatedAt: now()
+      createdAt: this.getCreatedAt(),
+      updatedAt: this.getUpdatedAt()
     } as WorkflowDefinition;
 
     return workflow;
@@ -480,7 +482,13 @@ export class WorkflowBuilder {
 
     const builder = new WorkflowBuilder(workflowDef.id);
     // 填充builder的内部状态
-    Object.assign(builder.workflow, workflowDef);
+    builder._name = workflowDef.name;
+    builder._version = workflowDef.version;
+    builder._description = workflowDef.description;
+    builder._config = workflowDef.config;
+    builder._metadata = workflowDef.metadata || {};
+    builder._createdAt = workflowDef.createdAt;
+    builder._updatedAt = workflowDef.updatedAt;
 
     // 重建节点和边的映射
     for (const node of workflowDef.nodes) {
@@ -512,7 +520,13 @@ export class WorkflowBuilder {
 
     const builder = new WorkflowBuilder(workflowDef.id);
     // 填充builder的内部状态
-    Object.assign(builder.workflow, workflowDef);
+    builder._name = workflowDef.name;
+    builder._version = workflowDef.version;
+    builder._description = workflowDef.description;
+    builder._config = workflowDef.config;
+    builder._metadata = workflowDef.metadata || {};
+    builder._createdAt = workflowDef.createdAt;
+    builder._updatedAt = workflowDef.updatedAt;
 
     // 重建节点和边的映射
     for (const node of workflowDef.nodes) {

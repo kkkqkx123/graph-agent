@@ -4,9 +4,10 @@
  */
 
 import type { Result } from '@modular-agent/types';
-import type { ExecutionResult, ExecutionError } from '../types/execution-result';
-import { success, failure, isSuccess, isFailure } from '../types/execution-result';
+import type { ExecutionResult } from '../types/execution-result';
+import { success, failure, isSuccess } from '../types/execution-result';
 import { ok, err } from '@modular-agent/common-utils';
+import { ExecutionError as SDKExecutionError } from '@modular-agent/types';
 
 /**
  * 将 Result 转换为 ExecutionResult
@@ -24,12 +25,15 @@ export function resultToExecutionResult<T, E>(
     return success(result.unwrap(), executionTime);
   } else {
     const error = result.unwrapOrElse(err => err);
-    return failure({
-      message: error instanceof Error ? error.message : String(error),
-      code: 'BUSINESS_ERROR',
-      details: { originalError: error },
-      timestamp: Date.now()
-    }, executionTime);
+    return failure(
+      new SDKExecutionError(
+        error instanceof Error ? error.message : String(error),
+        undefined,
+        undefined,
+        { originalError: error }
+      ),
+      executionTime
+    );
   }
 }
 
@@ -40,11 +44,18 @@ export function resultToExecutionResult<T, E>(
  */
 export function executionResultToResult<T>(
   executionResult: ExecutionResult<T>
-): Result<T, ExecutionError> {
+): Result<T, SDKExecutionError> {
   if (isSuccess(executionResult)) {
-    return ok(executionResult.data);
+    return ok(executionResult.result.unwrap());
   } else {
-    return err(executionResult.error);
+    // 使用 match 方法来正确处理类型
+    return executionResult.result.match({
+      ok: () => {
+        // 这个分支永远不会执行，因为前面已经检查了 isSuccess
+        throw new Error('Unexpected ok branch in error case');
+      },
+      err: (error) => err(error)
+    });
   }
 }
 
@@ -60,12 +71,15 @@ export function validationErrorsToExecutionResult<T>(
 ): ExecutionResult<T> {
   const executionTime = Date.now() - startTime;
 
-  return failure({
-    message: 'Validation failed',
-    code: 'VALIDATION_ERROR',
-    details: { errors },
-    timestamp: Date.now()
-  }, executionTime);
+  return failure(
+    new SDKExecutionError(
+      'Validation failed',
+      undefined,
+      undefined,
+      { errors }
+    ),
+    executionTime
+  );
 }
 
 /**
@@ -81,12 +95,16 @@ export function businessResultToExecutionResult<T>(
   const executionTime = Date.now() - startTime;
 
   if (data instanceof Error) {
-    return failure({
-      message: data.message,
-      code: 'BUSINESS_ERROR',
-      details: { originalError: data },
-      timestamp: Date.now()
-    }, executionTime);
+    return failure(
+      new SDKExecutionError(
+        data.message,
+        undefined,
+        undefined,
+        { originalError: data },
+        data
+      ),
+      executionTime
+    );
   } else {
     return success(data, executionTime);
   }
@@ -109,11 +127,14 @@ export function commandValidationToExecutionResult<T>(
   if (isValid) {
     return success(undefined as T, executionTime);
   } else {
-    return failure({
-      message: 'Command validation failed',
-      code: 'VALIDATION_ERROR',
-      details: { errors },
-      timestamp: Date.now()
-    }, executionTime);
+    return failure(
+      new SDKExecutionError(
+        'Command validation failed',
+        undefined,
+        undefined,
+        { errors }
+      ),
+      executionTime
+    );
   }
 }

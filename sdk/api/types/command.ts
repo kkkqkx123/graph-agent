@@ -4,7 +4,9 @@
  */
 
 import type { ExecutionResult } from './execution-result';
-import { SDKError } from '@modular-agent/types';
+import { SDKError, ExecutionError as SDKExecutionError } from '@modular-agent/types';
+import { CommandValidator } from '../utils/command-validator';
+import { ok, err } from '@modular-agent/common-utils';
 
 /**
  * 命令元数据
@@ -105,7 +107,12 @@ export abstract class BaseCommand<T> implements Command<T> {
    * 撤销命令（默认不支持）
    */
   async undo(): Promise<ExecutionResult<void>> {
-    throw new Error(`Command ${this.getMetadata().name} does not support undo`);
+    const startTime = Date.now();
+    try {
+      throw new Error(`Command ${this.getMetadata().name} does not support undo`);
+    } catch (error) {
+      return this.handleError(error, startTime);
+    }
   }
 
   /**
@@ -132,21 +139,38 @@ export abstract class BaseCommand<T> implements Command<T> {
    * @returns 执行结果
    */
   protected handleError(error: unknown, startTime: number): ExecutionResult<any> {
-    // 直接使用SDKError，不做任何转换
-    const sdkError = error instanceof SDKError ? error : new Error(String(error));
+    let executionError: SDKExecutionError;
+    
+    // 如果已经是 SDKExecutionError，直接使用
+    if (error instanceof SDKExecutionError) {
+      executionError = error;
+    }
+    // 如果是普通 Error，转换为 SDKExecutionError
+    else if (error instanceof Error) {
+      executionError = new SDKExecutionError(
+        error.message,
+        undefined,
+        undefined,
+        {
+          originalError: error.name,
+          stack: error.stack
+        },
+        error
+      );
+    }
+    // 其他类型，转换为字符串
+    else {
+      executionError = new SDKExecutionError(
+        String(error),
+        undefined,
+        undefined,
+        undefined,
+        undefined
+      );
+    }
     
     // 返回包含详细错误信息的失败结果
-    return this.failure({
-      message: sdkError.message,
-      code: sdkError instanceof SDKError ? sdkError.constructor.name : 'UNKNOWN_ERROR',
-      details: sdkError instanceof SDKError ? sdkError.context : undefined,
-      timestamp: Date.now(),
-      cause: sdkError.cause ? {
-        name: (sdkError.cause as Error).name,
-        message: (sdkError.cause as Error).message,
-        stack: (sdkError.cause as Error).stack
-      } : undefined
-    }, Date.now() - startTime);
+    return this.failure(executionError, Date.now() - startTime);
   }
 
   /**
@@ -154,8 +178,7 @@ export abstract class BaseCommand<T> implements Command<T> {
    */
   protected success<T>(data: T, executionTime: number): ExecutionResult<T> {
     return {
-      success: true,
-      data,
+      result: ok(data),
       executionTime
     };
   }
@@ -163,12 +186,19 @@ export abstract class BaseCommand<T> implements Command<T> {
   /**
    * 创建失败结果
    */
-  protected failure<T>(error: any, executionTime: number): ExecutionResult<T> {
+  protected failure<T>(error: SDKExecutionError, executionTime: number): ExecutionResult<T> {
     return {
-      success: false,
-      error,
+      result: err(error),
       executionTime
     };
+  }
+
+  /**
+   * 获取验证器实例
+   * @returns CommandValidator 实例
+   */
+  protected createValidator(): CommandValidator {
+    return new CommandValidator();
   }
 }
 

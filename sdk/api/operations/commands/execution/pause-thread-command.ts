@@ -3,7 +3,7 @@
  */
 
 import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
-import { ThreadLifecycleCoordinator } from '../../../../core/execution/coordinators/thread-lifecycle-coordinator';
+import { APIDependencyManager } from '../../../core/sdk-dependencies';
 
 /**
  * 暂停线程命令
@@ -11,13 +11,14 @@ import { ThreadLifecycleCoordinator } from '../../../../core/execution/coordinat
 export class PauseThreadCommand extends BaseCommand<void> {
   constructor(
     private readonly threadId: string,
-    private readonly lifecycleCoordinator: ThreadLifecycleCoordinator,
+    private readonly dependencies: APIDependencyManager
   ) {
     super();
   }
 
   protected async executeInternal(): Promise<void> {
-    await this.lifecycleCoordinator.pauseThread(this.threadId);
+    const lifecycleCoordinator = this.dependencies.getThreadLifecycleCoordinator();
+    await lifecycleCoordinator.pauseThread(this.threadId);
   }
 
   validate(): CommandValidationResult {

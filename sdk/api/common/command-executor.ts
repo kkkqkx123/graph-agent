@@ -6,7 +6,7 @@
 import type { Command, CommandValidationResult } from '../types/command';
 import type { ExecutionResult } from '../types/execution-result';
 import { failure } from '../types/execution-result';
-import { SDKError } from '@modular-agent/types';
+import { SDKError, ExecutionError as SDKExecutionError } from '@modular-agent/types';
 
 /**
  * Command执行器
@@ -23,10 +23,12 @@ export class CommandExecutor {
     const validation: CommandValidationResult = command.validate();
     if (!validation.valid) {
       return failure<T>(
-        {
-          message: `Validation failed: ${validation.errors.join(', ')}`,
-          code: 'VALIDATION_ERROR'
-        },
+        new SDKExecutionError(
+          `Validation failed: ${validation.errors.join(', ')}`,
+          undefined,
+          undefined,
+          { errors: validation.errors }
+        ),
         0
       );
     }
@@ -35,20 +37,41 @@ export class CommandExecutor {
     try {
       return await command.execute();
     } catch (error) {
-      // 直接使用SDKError，不做任何转换
-      const sdkError = error instanceof SDKError ? error : new Error(String(error));
+      let executionError: SDKExecutionError;
       
-      return failure<T>({
-        message: sdkError.message,
-        code: sdkError instanceof SDKError ? sdkError.constructor.name : 'UNKNOWN_ERROR',
-        details: sdkError instanceof SDKError ? sdkError.context : undefined,
-        timestamp: Date.now(),
-        cause: sdkError.cause ? {
-          name: (sdkError.cause as Error).name,
-          message: (sdkError.cause as Error).message,
-          stack: (sdkError.cause as Error).stack
-        } : undefined
-      }, 0);
+      // 如果已经是 SDKExecutionError，直接使用
+      if (error instanceof SDKExecutionError) {
+        executionError = error;
+      }
+      // 如果是其他 SDKError，转换为 SDKExecutionError
+      else if (error instanceof SDKError) {
+        executionError = new SDKExecutionError(
+          error.message,
+          undefined,
+          undefined,
+          error.context,
+          error.cause
+        );
+      }
+      // 如果是普通 Error，转换为 SDKExecutionError
+      else if (error instanceof Error) {
+        executionError = new SDKExecutionError(
+          error.message,
+          undefined,
+          undefined,
+          {
+            originalError: error.name,
+            stack: error.stack
+          },
+          error
+        );
+      }
+      // 其他类型，转换为字符串
+      else {
+        executionError = new SDKExecutionError(String(error));
+      }
+      
+      return failure<T>(executionError, 0);
     }
   }
 

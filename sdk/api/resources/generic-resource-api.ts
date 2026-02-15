@@ -9,7 +9,7 @@
 
 import type { ExecutionResult } from '../types/execution-result';
 import { success, failure } from '../types/execution-result';
-import { SDKError } from '@modular-agent/types';
+import { SDKError, ExecutionError as SDKExecutionError } from '@modular-agent/types';
 
 /**
  * 通用资源API基类
@@ -125,10 +125,12 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
       const validation = await this.validateResource(resource);
       if (!validation.valid) {
         return failure(
-          {
-            message: `Validation failed: ${validation.errors.join(', ')}`,
-            code: 'VALIDATION_ERROR'
-          },
+          new SDKExecutionError(
+            `Validation failed: ${validation.errors.join(', ')}`,
+            undefined,
+            undefined,
+            { errors: validation.errors }
+          ),
           Date.now() - startTime
         );
       }
@@ -154,10 +156,12 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
       const validation = await this.validateUpdate(updates);
       if (!validation.valid) {
         return failure(
-          {
-            message: `Validation failed: ${validation.errors.join(', ')}`,
-            code: 'VALIDATION_ERROR'
-          },
+          new SDKExecutionError(
+            `Validation failed: ${validation.errors.join(', ')}`,
+            undefined,
+            undefined,
+            { errors: validation.errors }
+          ),
           Date.now() - startTime
         );
       }
@@ -281,21 +285,48 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
    * @returns 执行结果
    */
   protected handleError(error: unknown, operation: string, startTime: number): ExecutionResult<any> {
-    // 直接使用SDKError，不做任何转换
-    const sdkError = error instanceof SDKError ? error : new Error(String(error));
+    let executionError: SDKExecutionError;
+    
+    // 如果已经是 SDKExecutionError，直接使用
+    if (error instanceof SDKExecutionError) {
+      executionError = error;
+    }
+    // 如果是其他 SDKError，转换为 SDKExecutionError
+    else if (error instanceof SDKError) {
+      executionError = new SDKExecutionError(
+        error.message,
+        undefined,
+        undefined,
+        { ...error.context, operation },
+        error.cause
+      );
+    }
+    // 如果是普通 Error，转换为 SDKExecutionError
+    else if (error instanceof Error) {
+      executionError = new SDKExecutionError(
+        error.message,
+        undefined,
+        undefined,
+        {
+          operation,
+          originalError: error.name,
+          stack: error.stack
+        },
+        error
+      );
+    }
+    // 其他类型，转换为字符串
+    else {
+      executionError = new SDKExecutionError(
+        String(error),
+        undefined,
+        undefined,
+        { operation }
+      );
+    }
     
     // 返回包含详细错误信息的失败结果
-    return failure({
-      message: sdkError.message,
-      code: sdkError instanceof SDKError ? sdkError.constructor.name : 'UNKNOWN_ERROR',
-      details: sdkError instanceof SDKError ? sdkError.context : undefined,
-      timestamp: Date.now(),
-      cause: sdkError.cause ? {
-        name: (sdkError.cause as Error).name,
-        message: (sdkError.cause as Error).message,
-        stack: (sdkError.cause as Error).stack
-      } : undefined
-    }, Date.now() - startTime);
+    return failure(executionError, Date.now() - startTime);
   }
 
 }

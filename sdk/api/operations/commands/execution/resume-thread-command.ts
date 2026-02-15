@@ -4,7 +4,7 @@
 
 import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
 import type { ThreadResult } from '@modular-agent/types';
-import { ThreadLifecycleCoordinator } from '../../../../core/execution/coordinators/thread-lifecycle-coordinator';
+import { APIDependencyManager } from '../../../core/sdk-dependencies';
 
 /**
  * 恢复线程命令
@@ -12,13 +12,14 @@ import { ThreadLifecycleCoordinator } from '../../../../core/execution/coordinat
 export class ResumeThreadCommand extends BaseCommand<ThreadResult> {
   constructor(
     private readonly threadId: string,
-    private readonly lifecycleCoordinator: ThreadLifecycleCoordinator,
+    private readonly dependencies: APIDependencyManager
   ) {
     super();
   }
 
   protected async executeInternal(): Promise<ThreadResult> {
-    const result = await this.lifecycleCoordinator.resumeThread(this.threadId);
+    const lifecycleCoordinator = this.dependencies.getThreadLifecycleCoordinator();
+    const result = await lifecycleCoordinator.resumeThread(this.threadId);
     return result;
   }
 

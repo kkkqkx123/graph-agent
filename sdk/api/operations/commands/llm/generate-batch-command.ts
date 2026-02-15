@@ -4,7 +4,7 @@
 
 import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
 import type { LLMRequest, LLMResult } from '@modular-agent/types';
-import { LLMWrapper } from '../../../../core/llm/wrapper';
+import { APIDependencyManager } from '../../../core/sdk-dependencies';
 
 /**
  * LLM批量生成命令
@@ -12,14 +12,15 @@ import { LLMWrapper } from '../../../../core/llm/wrapper';
 export class GenerateBatchCommand extends BaseCommand<LLMResult[]> {
   constructor(
     private readonly requests: LLMRequest[],
-    private readonly llmWrapper: LLMWrapper,
+    private readonly dependencies: APIDependencyManager
   ) {
     super();
   }
 
   protected async executeInternal(): Promise<LLMResult[]> {
+    const llmWrapper = this.dependencies.getLLMWrapper();
     const results = await Promise.all(
-      this.requests.map(request => this.llmWrapper.generate(request))
+      this.requests.map(request => llmWrapper.generate(request))
     );
     return results;
   }

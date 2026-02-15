@@ -6,9 +6,9 @@
 
 import { ProfileManager } from '../../../core/llm/profile-manager';
 import type { LLMProfile, LLMProvider } from '@modular-agent/types';
-import { ValidationError, NotFoundError, SDKError, ConfigurationValidationError, NodeTemplateNotFoundError } from '@modular-agent/types';
+import { ValidationError, NotFoundError, ConfigurationValidationError, NodeTemplateNotFoundError } from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api';
-import { getErrorMessage } from '../../types/execution-result';
+import { getErrorMessage, isSuccess, getData } from '../../types/execution-result';
 import type { APIDependencyManager } from '../../core/sdk-dependencies';
 
 /**
@@ -255,12 +255,13 @@ export class LLMProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string
       }
 
       const result = await this.create(profile);
-      if (!result.success) {
+      if (!isSuccess(result)) {
+        const error = getErrorMessage(result);
         throw new ConfigurationValidationError(
-          `Failed to import profile: ${result.error}`,
+          `Failed to import profile: ${error}`,
           {
             configType: 'llm',
-            context: { importError: result.error }
+            context: { importError: error }
           }
         );
       }
@@ -327,10 +328,11 @@ export class LLMProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string
    */
   async exportAllProfiles(): Promise<string> {
     const result = await this.getAll();
-    if (!result.success) {
+    if (!isSuccess(result)) {
       throw new Error(getErrorMessage(result) || 'Failed to get profiles for export');
     }
-    const exportData = result.data.map((profile: LLMProfile) => ({
+    const profiles = getData(result) || [];
+    const exportData = profiles.map((profile: LLMProfile) => ({
       ...profile,
       apiKey: '***HIDDEN***'
     }));
@@ -371,9 +373,10 @@ export class LLMProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string
     };
 
     const result = await this.create(profile);
-    if (!result.success) {
+    if (!isSuccess(result)) {
+      const error = getErrorMessage(result);
       throw new ConfigurationValidationError(
-        `Failed to create profile from template: ${result.error}`,
+        `Failed to create profile from template: ${error}`,
         {
           configType: 'llm',
           configPath: 'profile'
