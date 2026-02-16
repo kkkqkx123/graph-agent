@@ -13,6 +13,8 @@ import type { ToolConfig } from './tool-config';
 export interface Tool {
   /** 工具唯一标识符 */
   id: ID;
+  /** 工具名称 */
+  name: string;
   /** 工具类型 */
   type: ToolType;
   /** 工具描述 */

@@ -8,7 +8,7 @@
  * - 直接使用 error.severity 确定日志级别
  */
 
-import { errorService } from '../error-service';
+import { ErrorService } from '../error-service';
 import { ValidationError, ExecutionError, ToolError, NotFoundError, SDKError, ErrorSeverity } from '@modular-agent/types';
 import { EventManager } from '../event-manager';
 import type { ErrorEvent } from '@modular-agent/types';
@@ -17,6 +17,7 @@ import type { ErrorEvent } from '@modular-agent/types';
 jest.mock('../event-manager');
 
 describe('ErrorService', () => {
+  let errorService: ErrorService;
   let mockEventManager: jest.Mocked<EventManager>;
 
   beforeEach(() => {
@@ -35,6 +36,9 @@ describe('ErrorService', () => {
       stopPropagation: jest.fn(),
       isPropagationStopped: jest.fn()
     } as any;
+
+    // 创建 ErrorService 实例
+    errorService = new ErrorService(mockEventManager);
   });
 
   describe('handleError', () => {

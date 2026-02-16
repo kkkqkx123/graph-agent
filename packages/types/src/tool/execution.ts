@@ -13,6 +13,8 @@ export interface ToolCall {
   id: ID;
   /** 工具ID */
   toolId: ID;
+  /** 工具名称 */
+  toolName?: string;
   /** 工具参数 */
   parameters: Record<string, any>;
   /** 调用结果 */

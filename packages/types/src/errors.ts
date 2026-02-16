@@ -42,6 +42,8 @@ export interface ErrorContext {
   operation?: string;
   /** 工具ID */
   toolId?: ID;
+  /** 工具名称 */
+  toolName?: string;
   /** 工具类型 */
   toolType?: string;
   /** 字段名称 */

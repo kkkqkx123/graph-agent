@@ -112,6 +112,9 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
       if (filter.ids && !filter.ids.some(id => tool.id.includes(id))) {
         return false;
       }
+      if (filter.name && !tool.name.includes(filter.name)) {
+        return false;
+      }
       if (filter.type && tool.type !== filter.type) {
         return false;
       }

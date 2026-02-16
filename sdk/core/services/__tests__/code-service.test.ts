@@ -398,8 +398,10 @@ describe('CodeService', () => {
       expect(mockExecutor.execute).toHaveBeenCalledWith(script, {
         timeout: 3000 // 选项被覆盖
       });
-      expect(result.success).toBe(true);
-      expect(result.stdout).toBe('Hello World');
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        expect(result.value.stdout).toBe('Hello World');
+      }
     });
 
     it('应该抛出 NotFoundError 当脚本不存在', async () => {
@@ -497,11 +499,14 @@ describe('CodeService', () => {
         { scriptName: 'script-2', options: { timeout: 2000 } }
       ];
 
-      const results = await codeService.executeBatch(executions);
+      const result = await codeService.executeBatch(executions);
 
-      expect(results).toHaveLength(2);
-      expect(results[0]!.stdout).toBe('Result 1');
-      expect(results[1]!.stdout).toBe('Result 2');
+      expect(result.isOk()).toBe(true);
+      if (result.isOk()) {
+        expect(result.value).toHaveLength(2);
+        expect(result.value[0]!.stdout).toBe('Result 1');
+        expect(result.value[1]!.stdout).toBe('Result 2');
+      }
       expect(mockExecutor.execute).toHaveBeenCalledTimes(2);
     });
 

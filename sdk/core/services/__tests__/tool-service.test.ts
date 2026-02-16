@@ -15,6 +15,7 @@ describe('ToolService', () => {
     service = new ToolService(); // 不再需要参数
     mockTool = {
       id: 'test-tool-1',
+      name: 'test-tool',
       type: ToolType.STATELESS,
       description: 'Test tool',
       parameters: {
@@ -128,6 +129,7 @@ describe('ToolService', () => {
     it('should execute stateless tool', async () => {
       const statelessTool: Tool = {
         id: 'test-stateless',
+        name: 'test-stateless',
         type: ToolType.STATELESS,
         description: 'Stateless tool',
         parameters: {
@@ -165,6 +167,7 @@ describe('ToolService', () => {
     it('should handle execution errors for stateless tool', async () => {
       const statelessTool: Tool = {
         id: 'error-tool',
+        name: 'error-tool',
         type: ToolType.STATELESS,
         description: 'Tool that throws error',
         parameters: {
@@ -194,6 +197,7 @@ describe('ToolService', () => {
     it('should execute multiple tools in parallel', async () => {
       const statelessTool: Tool = {
         id: 'test-batch',
+        name: 'test-batch',
         type: ToolType.STATELESS,
         description: 'Stateless tool for batch testing',
         parameters: {

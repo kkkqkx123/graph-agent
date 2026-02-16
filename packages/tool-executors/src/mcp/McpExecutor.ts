@@ -48,9 +48,9 @@ export class McpExecutor extends BaseExecutor {
 
     if (!serverName) {
       throw new ConfigurationError(
-        `Tool '${tool.id}' does not have a serverName in config`,
+        `Tool '${tool.name}' does not have a serverName in config`,
         'serverName',
-        { toolId: tool.id, config }
+        { toolId: tool.id, toolName: tool.name, config }
       );
     }
 

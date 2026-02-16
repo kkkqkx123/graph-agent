@@ -316,7 +316,8 @@ export function buildToolCallStartedEvent(
   threadContext: any,
   nodeId: string,
   toolId: ID,
-  toolArguments: string
+  toolName?: string,
+  toolArguments?: string
 ): ToolCallStartedEvent {
   return {
     type: EventType.TOOL_CALL_STARTED,
@@ -325,7 +326,8 @@ export function buildToolCallStartedEvent(
     threadId: threadContext.getThreadId(),
     nodeId,
     toolId,
-    toolArguments
+    toolName,
+    toolArguments: toolArguments || ''
   };
 }
 
@@ -336,8 +338,9 @@ export function buildToolCallCompletedEvent(
   threadContext: any,
   nodeId: string,
   toolId: ID,
-  toolResult: any,
-  executionTime: number
+  toolName?: string,
+  toolResult?: any,
+  executionTime?: number
 ): ToolCallCompletedEvent {
   return {
     type: EventType.TOOL_CALL_COMPLETED,
@@ -346,8 +349,9 @@ export function buildToolCallCompletedEvent(
     threadId: threadContext.getThreadId(),
     nodeId,
     toolId,
+    toolName,
     toolResult,
-    executionTime
+    executionTime: executionTime || 0
   };
 }
 
@@ -358,7 +362,8 @@ export function buildToolCallFailedEvent(
   threadContext: any,
   nodeId: string,
   toolId: ID,
-  error: Error
+  toolName?: string,
+  error?: Error
 ): ToolCallFailedEvent {
   return {
     type: EventType.TOOL_CALL_FAILED,
@@ -367,7 +372,8 @@ export function buildToolCallFailedEvent(
     threadId: threadContext.getThreadId(),
     nodeId,
     toolId,
-    error: error.message
+    toolName,
+    error: error?.message || 'Unknown error'
   };
 }
 

@@ -4,6 +4,7 @@
 
 import { GlobalMessageStorage } from '../global-message-storage';
 import type { LLMMessage } from '@modular-agent/types';
+import { MessageRole } from '@modular-agent/types';
 
 describe('GlobalMessageStorage', () => {
   let storage: GlobalMessageStorage;
@@ -22,8 +23,8 @@ describe('GlobalMessageStorage', () => {
     it('应该成功存储消息历史', () => {
       const threadId = 'thread-1';
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello' },
-        { role: 'assistant', content: 'Hi there!' }
+        { role: MessageRole.USER, content: 'Hello' },
+        { role: MessageRole.ASSISTANT, content: 'Hi there!' }
       ];
 
       storage.storeMessages(threadId, messages);
@@ -35,13 +36,13 @@ describe('GlobalMessageStorage', () => {
     it('应该深度复制消息数组', () => {
       const threadId = 'thread-1';
       const originalMessages: LLMMessage[] = [
-        { role: 'user', content: 'Hello' }
+        { role: MessageRole.USER, content: 'Hello' }
       ];
 
       storage.storeMessages(threadId, originalMessages);
 
       // 修改原始数组不应该影响存储的消息
-      originalMessages.push({ role: 'assistant', content: 'Hi' });
+      originalMessages.push({ role: MessageRole.ASSISTANT, content: 'Hi' });
 
       const storedMessages = storage.getMessages(threadId);
       expect(storedMessages).toHaveLength(1);
@@ -53,11 +54,11 @@ describe('GlobalMessageStorage', () => {
     it('应该覆盖已存在的消息历史', () => {
       const threadId = 'thread-1';
       const messages1: LLMMessage[] = [
-        { role: 'user', content: 'First message' }
+        { role: MessageRole.USER, content: 'First message' }
       ];
       const messages2: LLMMessage[] = [
-        { role: 'user', content: 'Second message' },
-        { role: 'assistant', content: 'Response' }
+        { role: MessageRole.USER, content: 'Second message' },
+        { role: MessageRole.ASSISTANT, content: 'Response' }
       ];
 
       storage.storeMessages(threadId, messages1);
@@ -72,8 +73,8 @@ describe('GlobalMessageStorage', () => {
     it('应该返回消息数组的副本', () => {
       const threadId = 'thread-1';
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello' },
-        { role: 'assistant', content: 'Hi there!' }
+        { role: MessageRole.USER, content: 'Hello' },
+        { role: MessageRole.ASSISTANT, content: 'Hi there!' }
       ];
 
       storage.storeMessages(threadId, messages);
@@ -81,7 +82,7 @@ describe('GlobalMessageStorage', () => {
       const storedMessages = storage.getMessages(threadId);
       
       // 修改返回的数组不应该影响存储的消息
-      storedMessages!.push({ role: 'user', content: 'New message' });
+      storedMessages!.push({ role: MessageRole.USER, content: 'New message' });
 
       const originalMessages = storage.getMessages(threadId);
       expect(originalMessages).toHaveLength(2);
@@ -94,7 +95,7 @@ describe('GlobalMessageStorage', () => {
     it('应该深度复制消息对象', () => {
       const threadId = 'thread-1';
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello', thinking: 'Thinking...' }
+        { role: MessageRole.USER, content: 'Hello', thinking: 'Thinking...' }
       ];
 
       storage.storeMessages(threadId, messages);
@@ -144,7 +145,7 @@ describe('GlobalMessageStorage', () => {
     it('应该减少引用计数', () => {
       const threadId = 'thread-1';
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello' }
+        { role: MessageRole.USER, content: 'Hello' }
       ];
 
       storage.storeMessages(threadId, messages);
@@ -163,7 +164,7 @@ describe('GlobalMessageStorage', () => {
     it('应该自动清理不再使用的消息历史', () => {
       const threadId = 'thread-1';
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello' }
+        { role: MessageRole.USER, content: 'Hello' }
       ];
 
       storage.storeMessages(threadId, messages);
@@ -185,7 +186,7 @@ describe('GlobalMessageStorage', () => {
     it('应该完全清理线程的所有数据', () => {
       const threadId = 'thread-1';
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello' }
+        { role: MessageRole.USER, content: 'Hello' }
       ];
 
       storage.storeMessages(threadId, messages);
@@ -211,8 +212,8 @@ describe('GlobalMessageStorage', () => {
       const threadId = 'thread-1';
       const batchId = 1;
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello' },
-        { role: 'assistant', content: 'Hi!' }
+        { role: MessageRole.USER, content: 'Hello' },
+        { role: MessageRole.ASSISTANT, content: 'Hi!' }
       ];
 
       storage.saveBatchSnapshot(threadId, batchId, messages);
@@ -225,13 +226,13 @@ describe('GlobalMessageStorage', () => {
       const threadId = 'thread-1';
       const batchId = 1;
       const originalMessages: LLMMessage[] = [
-        { role: 'user', content: 'Hello' }
+        { role: MessageRole.USER, content: 'Hello' }
       ];
 
       storage.saveBatchSnapshot(threadId, batchId, originalMessages);
 
       // 修改原始数组不应该影响快照
-      originalMessages.push({ role: 'assistant', content: 'Hi' });
+      originalMessages.push({ role: MessageRole.ASSISTANT, content: 'Hi' });
 
       const snapshot = storage.getBatchSnapshot(threadId, batchId);
       expect(snapshot).toHaveLength(1);
@@ -244,10 +245,10 @@ describe('GlobalMessageStorage', () => {
     it('应该支持同一线程的多个批次快照', () => {
       const threadId = 'thread-1';
       const messages1: LLMMessage[] = [
-        { role: 'user', content: 'Batch 1' }
+        { role: MessageRole.USER, content: 'Batch 1' }
       ];
       const messages2: LLMMessage[] = [
-        { role: 'user', content: 'Batch 2' }
+        { role: MessageRole.USER, content: 'Batch 2' }
       ];
 
       storage.saveBatchSnapshot(threadId, 1, messages1);
@@ -260,10 +261,10 @@ describe('GlobalMessageStorage', () => {
     it('应该覆盖同一批次的现有快照', () => {
       const threadId = 'thread-1';
       const messages1: LLMMessage[] = [
-        { role: 'user', content: 'First' }
+        { role: MessageRole.USER, content: 'First' }
       ];
       const messages2: LLMMessage[] = [
-        { role: 'user', content: 'Second' }
+        { role: MessageRole.USER, content: 'Second' }
       ];
 
       storage.saveBatchSnapshot(threadId, 1, messages1);
@@ -278,7 +279,7 @@ describe('GlobalMessageStorage', () => {
       const threadId = 'thread-1';
       const batchId = 1;
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello' }
+        { role: MessageRole.USER, content: 'Hello' }
       ];
 
       storage.saveBatchSnapshot(threadId, batchId, messages);
@@ -286,7 +287,7 @@ describe('GlobalMessageStorage', () => {
       const snapshot = storage.getBatchSnapshot(threadId, batchId);
       
       // 修改返回的数组不应该影响存储的快照
-      snapshot!.push({ role: 'assistant', content: 'Hi' });
+      snapshot!.push({ role: MessageRole.ASSISTANT, content: 'Hi' });
 
       const originalSnapshot = storage.getBatchSnapshot(threadId, batchId);
       expect(originalSnapshot).toHaveLength(1);
@@ -301,7 +302,7 @@ describe('GlobalMessageStorage', () => {
       const threadId = 'thread-1';
       const batchId = 1;
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello', thinking: 'Thinking...' }
+        { role: MessageRole.USER, content: 'Hello', thinking: 'Thinking...' }
       ];
 
       storage.saveBatchSnapshot(threadId, batchId, messages);
@@ -327,10 +328,10 @@ describe('GlobalMessageStorage', () => {
       const threadId = 'thread-1';
       
       // 创建多个批次快照
-      storage.saveBatchSnapshot(threadId, 1, [{ role: 'user', content: 'Batch 1' }]);
-      storage.saveBatchSnapshot(threadId, 2, [{ role: 'user', content: 'Batch 2' }]);
-      storage.saveBatchSnapshot(threadId, 3, [{ role: 'user', content: 'Batch 3' }]);
-      storage.saveBatchSnapshot(threadId, 4, [{ role: 'user', content: 'Batch 4' }]);
+      storage.saveBatchSnapshot(threadId, 1, [{ role: MessageRole.USER, content: 'Batch 1' }]);
+      storage.saveBatchSnapshot(threadId, 2, [{ role: MessageRole.USER, content: 'Batch 2' }]);
+      storage.saveBatchSnapshot(threadId, 3, [{ role: MessageRole.USER, content: 'Batch 3' }]);
+      storage.saveBatchSnapshot(threadId, 4, [{ role: MessageRole.USER, content: 'Batch 4' }]);
 
       // 清理批次2之后的快照
       storage.cleanupBatchSnapshotsAfter(threadId, 2);
@@ -359,7 +360,7 @@ describe('GlobalMessageStorage', () => {
       const threadId1 = 'thread-1';
       const threadId2 = 'thread-2';
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello' }
+        { role: MessageRole.USER, content: 'Hello' }
       ];
 
       // 设置多个线程的数据
@@ -383,11 +384,11 @@ describe('GlobalMessageStorage', () => {
       const threadId1 = 'thread-1';
       const threadId2 = 'thread-2';
       const messages1: LLMMessage[] = [
-        { role: 'user', content: 'Message 1' },
-        { role: 'assistant', content: 'Response 1' }
+        { role: MessageRole.USER, content: 'Message 1' },
+        { role: MessageRole.ASSISTANT, content: 'Response 1' }
       ];
       const messages2: LLMMessage[] = [
-        { role: 'user', content: 'Message 2' }
+        { role: MessageRole.USER, content: 'Message 2' }
       ];
 
       // 设置测试数据
@@ -432,7 +433,7 @@ describe('GlobalMessageStorage', () => {
     it('应该正确处理复杂的引用计数场景', () => {
       const threadId = 'thread-1';
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello' }
+        { role: MessageRole.USER, content: 'Hello' }
       ];
 
       // 初始状态
@@ -461,10 +462,10 @@ describe('GlobalMessageStorage', () => {
       const threadId1 = 'thread-1';
       const threadId2 = 'thread-2';
       const messages1: LLMMessage[] = [
-        { role: 'user', content: 'Thread 1' }
+        { role: MessageRole.USER, content: 'Thread 1' }
       ];
       const messages2: LLMMessage[] = [
-        { role: 'user', content: 'Thread 2' }
+        { role: MessageRole.USER, content: 'Thread 2' }
       ];
 
       storage.storeMessages(threadId1, messages1);
@@ -485,11 +486,11 @@ describe('GlobalMessageStorage', () => {
       const threadId = 'thread-1';
       const complexMessages: LLMMessage[] = [
         {
-          role: 'user',
+          role: MessageRole.USER,
           content: '请帮我查询天气'
         },
         {
-          role: 'assistant',
+          role: MessageRole.ASSISTANT,
           content: '',
           toolCalls: [
             {
@@ -503,7 +504,7 @@ describe('GlobalMessageStorage', () => {
           ]
         },
         {
-          role: 'tool',
+          role: MessageRole.TOOL,
           content: '{"temperature": 25, "condition": "sunny"}',
           toolCallId: 'call-1'
         }
@@ -524,7 +525,7 @@ describe('GlobalMessageStorage', () => {
       const threadId = 'thread-1';
       const messages: LLMMessage[] = [
         {
-          role: 'assistant',
+          role: MessageRole.ASSISTANT,
           content: '好的，我来帮你',
           thinking: '用户需要帮助，我应该提供友好的回应'
         }

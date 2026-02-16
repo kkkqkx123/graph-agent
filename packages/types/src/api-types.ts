@@ -100,6 +100,8 @@ export interface ThreadFilter {
 export interface ToolFilter {
   /** 工具ID列表 */
   ids?: ID[];
+  /** 工具名称（支持模糊搜索） */
+  name?: string;
   /** 工具类型 */
   type?: ToolType;
   /** 分类 */
@@ -134,6 +136,8 @@ export interface ToolOptions {
 export interface ToolTestResult {
   /** 工具ID */
   toolId: ID;
+  /** 工具名称 */
+  toolName?: string;
   /** 测试是否成功 */
   success: boolean;
   /** 测试结果 */
