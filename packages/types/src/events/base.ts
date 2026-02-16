@@ -54,6 +54,8 @@ export enum EventType {
   TOOL_CALL_COMPLETED = 'TOOL_CALL_COMPLETED',
   /** 工具调用失败 */
   TOOL_CALL_FAILED = 'TOOL_CALL_FAILED',
+  /** 工具添加 */
+  TOOL_ADDED = 'TOOL_ADDED',
   /** 对话状态变更 */
   CONVERSATION_STATE_CHANGED = 'CONVERSATION_STATE_CHANGED',
   /** 错误事件 */

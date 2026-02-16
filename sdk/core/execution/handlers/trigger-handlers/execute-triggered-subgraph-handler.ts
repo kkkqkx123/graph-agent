@@ -5,7 +5,8 @@
  * 职责：
  * - 触发子工作流执行
  * - 传递触发事件相关的输入数据
- * - 等待子工作流完成（如果配置了waitForCompletion）
+ * - 支持同步和异步执行模式
+ * - 使用任务队列和线程池管理执行
  *
  * 注意：
  * - 数据传递（变量、对话历史）由节点处理器处理
@@ -18,20 +19,14 @@ import type { ExecuteTriggeredSubgraphActionConfig } from '@modular-agent/types'
 import { RuntimeValidationError, ThreadContextNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
 import { ExecutionContext } from '../../context/execution-context';
 import { getErrorMessage } from '@modular-agent/common-utils';
-import {
-  executeSingleTriggeredSubgraph,
-  type TriggeredSubgraphTask,
-  type SubgraphContextFactory,
-  type SubgraphExecutor
-} from '../triggered-subgraph-handler';
-import { ThreadExecutor } from '../../thread-executor';
-import { ThreadBuilder } from '../../thread-builder';
+import { TriggeredSubworkflowManager } from '../../managers/triggered-subworkflow-manager';
+import type { TriggeredSubgraphTask } from '../../types/task.types';
 import { SingletonRegistry } from '../../context/singleton-registry';
 
 /**
- * 创建成功结果
+ * 创建成功结果（同步执行）
  */
-function createSuccessResult(
+function createSyncSuccessResult(
   triggerId: string,
   action: TriggerAction,
   data: any,
@@ -42,7 +37,43 @@ function createSuccessResult(
     success: true,
     action,
     executionTime,
-    result: data,
+    result: {
+      message: `Triggered subgraph execution completed: ${data.triggeredWorkflowId}`,
+      triggeredWorkflowId: data.triggeredWorkflowId,
+      input: data.input,
+      output: data.output,
+      waitForCompletion: true,
+      executed: true,
+      completed: true,
+      executionTime: data.executionTime,
+    },
+  };
+}
+
+/**
+ * 创建成功结果（异步执行）
+ */
+function createAsyncSuccessResult(
+  triggerId: string,
+  action: TriggerAction,
+  data: any,
+  executionTime: number
+): TriggerExecutionResult {
+  return {
+    triggerId,
+    success: true,
+    action,
+    executionTime,
+    result: {
+      message: `Triggered subgraph submitted: ${data.triggeredWorkflowId}`,
+      triggeredWorkflowId: data.triggeredWorkflowId,
+      taskId: data.taskId,
+      status: data.status,
+      waitForCompletion: false,
+      executed: true,
+      completed: false,
+      executionTime: data.executionTime,
+    },
   };
 }
 
@@ -82,6 +113,8 @@ export async function executeTriggeredSubgraphHandler(
   try {
     const parameters = action.parameters as ExecuteTriggeredSubgraphActionConfig;
     const { triggeredWorkflowId, waitForCompletion = true } = parameters;
+    const timeout = (parameters as any).timeout;
+    const recordHistory = (parameters as any).recordHistory;
 
     if (!triggeredWorkflowId) {
       throw new RuntimeValidationError('Missing required parameter: triggeredWorkflowId', { operation: 'handle', field: 'triggeredWorkflowId' });
@@ -102,7 +135,6 @@ export async function executeTriggeredSubgraphHandler(
     }
 
     // 从 graph-registry 获取已预处理的图
-    // 预处理逻辑已移到 workflow-registry，注册时自动处理
     const graphRegistry = SingletonRegistry.getGraphRegistry();
     const processedTriggeredWorkflow = graphRegistry.get(triggeredWorkflowId);
 
@@ -111,63 +143,70 @@ export async function executeTriggeredSubgraphHandler(
     }
 
     // 准备输入数据（仅包含触发事件相关的数据）
-     // 数据传递（变量、对话历史）由节点处理器处理
-     const input: Record<string, any> = {
-       triggerId,
-       output: mainThreadContext.getOutput(),
-       input: mainThreadContext.getInput()
-     };
+    const input: Record<string, any> = {
+      triggerId,
+      output: mainThreadContext.getOutput(),
+      input: mainThreadContext.getInput()
+    };
 
-     // 创建子工作流上下文工厂（用ThreadBuilder实现）
-     const contextFactory: SubgraphContextFactory = {
-       buildSubgraphContext: async (subgraphId, inputData, metadata) => {
-         return await new ThreadBuilder(context.getWorkflowRegistry(), context).build(subgraphId, {
-           input: inputData
-         });
-       }
-     };
-     
-     // 创建子工作流执行器
-     const subgraphExecutor: SubgraphExecutor = new ThreadExecutor(context);
+    // 创建 TriggeredSubworkflowManager
+    const manager = new TriggeredSubworkflowManager(context, {
+      minExecutors: 1,
+      maxExecutors: 10,
+      idleTimeout: 30000,
+      maxQueueSize: 100,
+      taskRetentionTime: 60 * 60 * 1000,
+      defaultTimeout: timeout || 30000
+    });
 
-     // 创建触发子工作流任务
-     const task: TriggeredSubgraphTask = {
-       subgraphId: triggeredWorkflowId,
-       input,
-       triggerId,
-       mainThreadContext,
-       config: {
-         waitForCompletion,
-         timeout: 30000,
-         recordHistory: true,
-       }
-     };
+    // 创建触发子工作流任务
+    const task: TriggeredSubgraphTask = {
+      subgraphId: triggeredWorkflowId,
+      input,
+      triggerId,
+      mainThreadContext,
+      config: {
+        waitForCompletion,
+        timeout,
+        recordHistory,
+      }
+    };
 
-     // 执行触发子工作流（使用函数式API）
-     const result = await executeSingleTriggeredSubgraph(
-       task,
-       contextFactory,
-       subgraphExecutor,
-       context.getEventManager()
-     );
+    // 执行触发子工作流
+    const result = await manager.executeTriggeredSubgraph(task);
 
     const executionTime = Date.now() - startTime;
 
-    return createSuccessResult(
-      triggerId,
-      action,
-      {
-        message: `Triggered subgraph execution completed: ${triggeredWorkflowId}`,
-        triggeredWorkflowId,
-        input,
-        output: result.subgraphContext.getOutput(),
-        waitForCompletion,
-        executed: true,
-        completed: true,
-        executionTime: result.executionTime,
-      },
-      executionTime
-    );
+    // 根据执行模式返回不同的结果
+    if (waitForCompletion) {
+      // 同步执行
+      const syncResult = result as any; // ExecutedSubgraphResult
+      return createSyncSuccessResult(
+        triggerId,
+        action,
+        {
+          triggeredWorkflowId,
+          input,
+          output: syncResult.subgraphContext.getOutput(),
+          executionTime: syncResult.executionTime,
+        },
+        executionTime
+      );
+    } else {
+      // 异步执行
+      const asyncResult = result as any; // TaskSubmissionResult
+      return createAsyncSuccessResult(
+        triggerId,
+        action,
+        {
+          triggeredWorkflowId,
+          taskId: asyncResult.taskId,
+          status: asyncResult.status,
+          executionTime: asyncResult.submitTime - startTime,
+        },
+        executionTime
+      );
+    }
   } catch (error) {
     const executionTime = Date.now() - startTime;
     return createFailureResult(triggerId, action, error, executionTime);

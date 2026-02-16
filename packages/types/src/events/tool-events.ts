@@ -51,3 +51,20 @@ export interface ToolCallFailedEvent extends BaseEvent {
   /** 错误信息 */
   error: string;
 }
+
+/**
+ * 工具添加事件类型
+ */
+export interface ToolAddedEvent extends BaseEvent {
+  type: EventType.TOOL_ADDED;
+  /** 节点ID */
+  nodeId: ID;
+  /** 工具ID列表 */
+  toolIds: ID[];
+  /** 作用域 */
+  scope: 'THREAD' | 'WORKFLOW';
+  /** 成功添加的工具数量 */
+  addedCount: number;
+  /** 被跳过的工具数量 */
+  skippedCount: number;
+}

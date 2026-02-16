@@ -60,7 +60,8 @@ import type {
 import type {
   ToolCallStartedEvent,
   ToolCallCompletedEvent,
-  ToolCallFailedEvent
+  ToolCallFailedEvent,
+  ToolAddedEvent
 } from './tool-events';
 
 import type {
@@ -130,6 +131,7 @@ export type Event =
   | ToolCallStartedEvent
   | ToolCallCompletedEvent
   | ToolCallFailedEvent
+  | ToolAddedEvent
   | ConversationStateChangedEvent
   | ErrorEvent
   | CheckpointCreatedEvent

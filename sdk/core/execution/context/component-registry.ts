@@ -9,6 +9,7 @@ import type { EventManager } from '../../services/event-manager';
 import { CheckpointStateManager } from '../managers/checkpoint-state-manager';
 import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager';
 import { ThreadLifecycleCoordinator } from '../coordinators/thread-lifecycle-coordinator';
+import { ToolContextManager } from '../managers/tool-context-manager';
 
 /**
  * 组件映射类型，确保类型安全
@@ -20,6 +21,7 @@ export interface ComponentMap {
   checkpointStateManager: CheckpointStateManager;
   lifecycleManager: ThreadLifecycleManager;
   lifecycleCoordinator: ThreadLifecycleCoordinator;
+  toolContextManager: ToolContextManager;
   toolService: any;
   llmExecutor: any;
   humanRelayHandler: any;
