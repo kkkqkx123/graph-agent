@@ -40,13 +40,3 @@ export interface LLMNodeConfig {
     descriptionTemplate?: string;
   };
 }
-
-/**
- * 工具节点配置
- */
-export interface ToolNodeConfig {
-  /** 工具ID或名称 */
-  toolId: string;
-  /** 工具参数 */
-  parameters?: Record<string, any>;
-}
