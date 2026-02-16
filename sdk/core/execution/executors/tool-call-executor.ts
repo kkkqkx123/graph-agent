@@ -14,6 +14,7 @@
  * - 统一的错误处理
  */
 
+import { isAbortError } from '@modular-agent/common-utils';
 import type { ToolService } from '../../services/tool-service';
 import type { EventManager } from '../../services/event-manager';
 import type { Tool, ID } from '@modular-agent/types';
@@ -25,7 +26,6 @@ import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/che
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils';
 import { ThreadInterruptedException, SystemExecutionError, ToolError } from '@modular-agent/types';
 import { MessageBuilder } from '../../messages/message-builder';
-import type { ToolExecutionResult as ServiceToolExecutionResult } from '@modular-agent/types';
 
 /**
  * 工具执行结果
@@ -106,12 +106,16 @@ export class ToolCallExecutor {
         const errorMessage = error instanceof Error ? error.message : String(error);
         const executionTime = 0;
 
-        // 构建失败的工具结果消息
-        const toolMessage = {
-          role: MessageRole.TOOL,
-          content: errorMessage || 'Tool execution failed',
-          toolCallId: toolCall.id
-        };
+        // 使用 MessageBuilder 构建失败的工具结果消息
+        const toolMessage = MessageBuilder.buildToolMessage(
+          toolCall.id,
+          {
+            success: false,
+            error: errorMessage || 'Tool execution failed',
+            executionTime: 0,
+            retryCount: 0
+          }
+        );
         conversationState.addMessage(toolMessage);
 
         // 触发消息添加事件
@@ -123,7 +127,7 @@ export class ToolCallExecutor {
             threadId: threadId || '',
             nodeId,
             role: toolMessage.role,
-            content: toolMessage.content,
+            content: typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
             toolCalls: undefined
           });
         }
@@ -242,8 +246,8 @@ export class ToolCallExecutor {
       const errorMessage = error.message;
 
       // 处理 AbortError，转换为 ThreadInterruptedException
-      if (error.cause?.name === 'AbortError') {
-        const reason = options?.abortSignal?.reason;
+      if (isAbortError(error)) {
+        const reason = error.cause || options?.abortSignal?.reason;
         if (reason instanceof ThreadInterruptedException) {
           throw reason; // 直接重新抛出
         }
@@ -256,12 +260,16 @@ export class ToolCallExecutor {
         );
       }
 
-      // 构建工具结果消息
-      const toolMessage = {
-        role: MessageRole.TOOL,
-        content: errorMessage || 'Tool execution failed',
-        toolCallId: toolCall.id
-      };
+      // 使用 MessageBuilder 构建失败的工具结果消息
+      const toolMessage = MessageBuilder.buildToolMessage(
+        toolCall.id,
+        {
+          success: false,
+          error: errorMessage || 'Tool execution failed',
+          executionTime,
+          retryCount: 0
+        }
+      );
       conversationState.addMessage(toolMessage);
 
       // 触发消息添加事件
@@ -273,7 +281,7 @@ export class ToolCallExecutor {
           threadId: threadId || '',
           nodeId,
           role: toolMessage.role,
-          content: toolMessage.content,
+          content: typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
           toolCalls: undefined
         });
       }
@@ -303,14 +311,17 @@ export class ToolCallExecutor {
     // 成功执行
     const serviceResult = result.value;
 
-    // 构建工具结果消息
-    const toolMessage = {
-      role: MessageRole.TOOL,
-      content: serviceResult.success
-        ? (typeof serviceResult.result === 'string' ? serviceResult.result : JSON.stringify(serviceResult.result))
-        : (serviceResult.error || 'Tool execution failed'),
-      toolCallId: toolCall.id
-    };
+    // 使用 MessageBuilder 构建成功的工具结果消息
+    const toolMessage = MessageBuilder.buildToolMessage(
+      toolCall.id,
+      {
+        success: serviceResult.success,
+        result: serviceResult.result,
+        error: serviceResult.error,
+        executionTime,
+        retryCount: 0
+      }
+    );
     conversationState.addMessage(toolMessage);
 
     // 触发消息添加事件
@@ -322,7 +333,7 @@ export class ToolCallExecutor {
         threadId: threadId || '',
         nodeId,
         role: toolMessage.role,
-        content: toolMessage.content,
+        content: typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
         toolCalls: undefined
       });
     }

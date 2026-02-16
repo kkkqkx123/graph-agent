@@ -4,6 +4,7 @@
  */
 
 import { TimeoutError } from '@modular-agent/types';
+import { createAbortError } from '@modular-agent/common-utils';
 
 /**
  * 超时控制器
@@ -42,9 +43,7 @@ export class TimeoutController {
     if (signal) {
       abortPromise = new Promise<never>((_, reject) => {
         const onAbort = () => {
-          const error = new Error('Tool execution aborted');
-          error.name = 'AbortError';
-          reject(error);
+          reject(createAbortError('Tool execution aborted', signal));
         };
 
         if (signal.aborted) {

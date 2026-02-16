@@ -364,6 +364,33 @@ export class ThreadInterruptedException extends SDKError {
 }
 
 /**
+ * AbortError - 操作中止错误
+ *
+ * 说明：
+ * 1. 当AbortSignal被触发时抛出
+ * 2. 这是一个控制流异常，不是真正的错误
+ * 3. 包含原始的中断原因（ThreadInterruptedException）
+ *
+ * 使用场景：
+ * - TimeoutController检测到AbortSignal时抛出
+ * - HTTP请求被中止时抛出
+ * - LLM调用被中止时抛出
+ * - 工具执行被中止时抛出
+ */
+export class AbortError extends Error {
+  public override readonly name = 'AbortError';
+  
+  constructor(
+    message: string,
+    public override readonly cause?: ThreadInterruptedException
+  ) {
+    super(message);
+    // 保持正确的原型链
+    Object.setPrototypeOf(this, AbortError.prototype);
+  }
+}
+
+/**
  * 脚本执行错误类型
  */
 export class CodeExecutionError extends SDKError {

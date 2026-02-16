@@ -3,6 +3,8 @@
  * 提供统一的错误处理能力，减少重复的类型检查代码
  */
 
+import { AbortError } from '@modular-agent/types';
+
 /**
  * 提取错误消息
  * @param error 错误对象
@@ -83,4 +85,36 @@ export function getErrorOrUndefined(error: unknown): Error | undefined {
  */
 export function getErrorOrNew(error: unknown): Error {
   return error instanceof Error ? error : new Error(String(error));
+}
+
+/**
+ * 创建AbortError
+ * @param message 错误消息
+ * @param signal AbortSignal（可选）
+ * @returns AbortError实例
+ */
+export function createAbortError(
+  message: string,
+  signal?: AbortSignal
+): AbortError {
+  const cause = signal?.reason as any;
+  return new AbortError(message, cause);
+}
+
+/**
+ * 检查是否是AbortError（支持嵌套检查）
+ * @param error 错误对象
+ * @returns 是否是AbortError
+ */
+export function isAbortError(error: unknown): error is AbortError {
+  if (error instanceof AbortError) {
+    return true;
+  }
+  
+  // 检查嵌套的cause
+  if (error instanceof Error && error.cause instanceof AbortError) {
+    return true;
+  }
+  
+  return false;
 }

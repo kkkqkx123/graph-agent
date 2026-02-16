@@ -29,6 +29,7 @@ import {
 import { executeWithRetry, type RetryConfig } from './retry-handler';
 import { CircuitBreaker } from './circuit-breaker';
 import { RateLimiter } from './rate-limiter';
+import { isAbortError } from '../error/error-utils';
 
 /**
  * HTTP客户端
@@ -263,7 +264,7 @@ export class HttpClient {
       clearTimeout(timeoutId);
       const duration = Date.now() - startTime;
 
-      if (error instanceof Error && error.name === 'AbortError') {
+      if (isAbortError(error)) {
         this.log('error',
           `[HTTP] ${method} ${url} timeout after ${duration}ms`,
           { timeout }

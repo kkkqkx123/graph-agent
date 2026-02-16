@@ -14,6 +14,7 @@
  * - 不处理工具调用，工具调用由 LLMCoordinator 协调
  */
 
+import { isAbortError } from '@modular-agent/common-utils';
 import type { LLMMessage, LLMResult } from '@modular-agent/types';
 import { LLMWrapper } from '../../llm/wrapper';
 import { MessageStream } from '@modular-agent/common-utils';
@@ -115,8 +116,8 @@ export class LLMExecutor {
         const error = streamResult.error;
         
         // 检查是否是 AbortError
-        if (error.cause?.name === 'AbortError') {
-          const reason = options?.abortSignal?.reason;
+        if (isAbortError(error)) {
+          const reason = error.cause || options?.abortSignal?.reason;
           if (reason instanceof ThreadInterruptedException) {
             throw reason; // 直接重新抛出
           }
@@ -163,8 +164,8 @@ export class LLMExecutor {
         const error = result.error;
         
         // 检查是否是 AbortError
-        if (error.cause?.name === 'AbortError') {
-          const reason = options?.abortSignal?.reason;
+        if (isAbortError(error)) {
+          const reason = error.cause || options?.abortSignal?.reason;
           if (reason instanceof ThreadInterruptedException) {
             throw reason; // 直接重新抛出
           }
