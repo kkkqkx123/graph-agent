@@ -20,11 +20,14 @@ export class TimeoutController {
    */
   async executeWithTimeout<T>(
     fn: () => Promise<T>,
-    timeout?: number
+    timeout?: number,
+    signal?: AbortSignal
   ): Promise<T> {
     const actualTimeout = timeout ?? this.defaultTimeout;
     let timeoutId: NodeJS.Timeout | undefined;
+    let abortListener: (() => void) | undefined;
 
+    // 创建超时Promise
     const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = setTimeout(() => {
         reject(new TimeoutError(
@@ -34,11 +37,41 @@ export class TimeoutController {
       }, actualTimeout);
     });
 
+    // 创建中止Promise
+    let abortPromise: Promise<never> | undefined;
+    if (signal) {
+      abortPromise = new Promise<never>((_, reject) => {
+        const onAbort = () => {
+          const error = new Error('Tool execution aborted');
+          error.name = 'AbortError';
+          reject(error);
+        };
+
+        if (signal.aborted) {
+          onAbort();
+        } else {
+          abortListener = () => {
+            onAbort();
+          };
+          signal.addEventListener('abort', abortListener);
+        }
+      });
+    }
+
     try {
-      return await Promise.race([fn(), timeoutPromise]);
+      // 竞争执行、超时和中止
+      const promises: Array<Promise<T | never>> = [fn(), timeoutPromise];
+      if (abortPromise) {
+        promises.push(abortPromise);
+      }
+      return await Promise.race(promises);
     } finally {
+      // 清理资源
       if (timeoutId) {
         clearTimeout(timeoutId);
+      }
+      if (abortListener && signal) {
+        signal.removeEventListener('abort', abortListener);
       }
     }
   }

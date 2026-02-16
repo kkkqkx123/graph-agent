@@ -5,10 +5,12 @@
 
 import { ThreadCascadeManager } from '../thread-cascade-manager';
 import { ThreadLifecycleManager } from '../thread-lifecycle-manager';
-import { threadRegistry } from '../../../services/thread-registry';
-import { eventManager } from '../../../services/event-manager';
-import { workflowRegistry } from '../../../services/workflow-registry';
-import { toolService } from '../../../services/tool-service';
+import { TaskRegistry } from '../../../services/task-registry';
+import { ThreadRegistry } from '../../../services/thread-registry';
+import { EventManager } from '../../../services/event-manager';
+import { WorkflowRegistry } from '../../../services/workflow-registry';
+import { ToolService } from '../../../services/tool-service';
+import { SingletonRegistry } from '../../context/singleton-registry';
 import { ThreadStatus, ThreadType } from '@modular-agent/types';
 import { generateId, now } from '@modular-agent/common-utils';
 import type { Thread, ThreadResult } from '@modular-agent/types';
@@ -25,8 +27,14 @@ describe('ThreadCascadeManager', () => {
   let childThread2: Thread;
 
   beforeEach(() => {
+    SingletonRegistry.reset();
+    SingletonRegistry.initialize();
+    
+    const eventManager = SingletonRegistry.getEventManager();
     lifecycleManager = new ThreadLifecycleManager(eventManager);
-    cascadeManager = new ThreadCascadeManager(threadRegistry, lifecycleManager, eventManager);
+    const taskRegistry = SingletonRegistry.getTaskRegistry();
+    const threadRegistry = SingletonRegistry.getThreadRegistry();
+    cascadeManager = new ThreadCascadeManager(threadRegistry, lifecycleManager, eventManager, taskRegistry);
 
     // 创建父线程
     parentThread = createMockThread('parent-thread');
@@ -68,10 +76,8 @@ describe('ThreadCascadeManager', () => {
   });
 
   afterEach(() => {
-    // 清理registry
-    threadRegistry.clear();
-    // 清理事件监听器
-    eventManager.clear();
+    // 清理SingletonRegistry
+    SingletonRegistry.reset();
   });
 
   describe('cascadeCancel', () => {
@@ -308,7 +314,29 @@ function createMockThread(id: string): Thread {
     workflowVersion: '1.0.0',
     status: ThreadStatus.CREATED,
     currentNodeId: 'node1',
-    graph: {} as Graph,
+    graph: {
+      nodes: new Map(),
+      edges: new Map(),
+      adjacencyList: new Map(),
+      reverseAdjacencyList: new Map(),
+      endNodeIds: new Set(),
+      getNode: () => undefined,
+      getEdge: () => undefined,
+      getOutgoingNeighbors: () => new Set(),
+      getIncomingNeighbors: () => new Set(),
+      getOutgoingEdges: () => [],
+      getIncomingEdges: () => [],
+      getEdgeBetween: () => undefined,
+      hasNode: () => false,
+      hasEdge: () => false,
+      hasEdgeBetween: () => false,
+      getAllNodeIds: () => [],
+      getAllEdgeIds: () => [],
+      getNodeCount: () => 0,
+      getEdgeCount: () => 0,
+      getSourceNodes: () => [],
+      getSinkNodes: () => []
+    } as any,
     variables: [],
     variableScopes: {
       global: {},
@@ -328,6 +356,7 @@ function createMockThread(id: string): Thread {
 
 // 辅助函数：创建模拟ThreadContext
 function createMockThreadContext(thread: Thread): ThreadContext {
+  const eventManager = SingletonRegistry.getEventManager();
   const conversationManager = new ConversationManager({
     tokenLimit: 4000,
     eventManager: eventManager,
@@ -337,6 +366,10 @@ function createMockThreadContext(thread: Thread): ThreadContext {
 
   // 获取LLMExecutor实例
   const llmExecutor = LLMExecutor.getInstance();
+  
+  const threadRegistry = SingletonRegistry.getThreadRegistry();
+  const workflowRegistry = SingletonRegistry.getWorkflowRegistry();
+  const toolService = SingletonRegistry.getToolService();
 
   return new ThreadContext(
     thread,

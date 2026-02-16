@@ -167,7 +167,8 @@ export type { OffEventParams } from './operations/subscriptions/events/off-event
 // ============================================================================
 export { WorkflowValidator as WorkflowValidatorAPI } from '../core/validation';
 export { CodeConfigValidator as CodeConfigValidatorAPI } from '../core/validation';
-export { ToolConfigValidator as ToolConfigValidatorAPI } from '../core/validation';
+export { StaticValidator as StaticValidatorAPI } from '../core/validation';
+export { RuntimeValidator as RuntimeValidatorAPI } from '../core/validation';
 export { validateHook as validateHookAPI, validateHooks as validateHooksAPI } from '../core/validation';
 export {
   validateTriggerCondition as validateTriggerConditionAPI,

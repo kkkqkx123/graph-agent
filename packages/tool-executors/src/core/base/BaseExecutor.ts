@@ -67,10 +67,11 @@ export abstract class BaseExecutor implements IToolExecutor {
 
     for (let i = 0; i <= retries; i++) {
       try {
-        // 执行工具（带超时）
+        // 执行工具（带超时和中止信号）
         const result = await this.timeoutController.executeWithTimeout(
           () => this.doExecute(tool, parameters, threadId),
-          timeout
+          timeout,
+          options.signal
         );
 
         const executionTime = diffTimestamp(startTime, now());

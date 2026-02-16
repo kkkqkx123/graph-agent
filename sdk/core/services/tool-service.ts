@@ -8,9 +8,9 @@
 
 import type { Tool } from '@modular-agent/types';
 import { ToolType } from '@modular-agent/types';
-import { ToolError, ToolNotFoundError } from '@modular-agent/types';
+import { ToolError, ToolNotFoundError, RuntimeValidationError } from '@modular-agent/types';
 import { ToolRegistry } from '../tools/tool-registry';
-import type { IToolExecutor } from '@modular-agent/types';
+import type { IToolExecutor } from '@modular-agent/tool-executors';
 import type { ToolExecutionOptions, ToolExecutionResult } from '@modular-agent/types';
 import { StatelessExecutor } from '@modular-agent/tool-executors';
 import { StatefulExecutor } from '@modular-agent/tool-executors';
@@ -19,6 +19,8 @@ import { McpExecutor } from '@modular-agent/tool-executors';
 import { tryCatchAsync } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
+import { StaticValidator } from '../validation/tool-static-validator';
+import { RuntimeValidator } from '../validation/tool-runtime-validator';
 
 /**
  * 工具服务类
@@ -26,9 +28,13 @@ import { ok, err } from '@modular-agent/common-utils';
 class ToolService {
   private registry: ToolRegistry;
   private executors: Map<string, IToolExecutor> = new Map();
+  private staticValidator: StaticValidator;
+  private runtimeValidator: RuntimeValidator;
 
   constructor() {
     this.registry = new ToolRegistry();
+    this.staticValidator = new StaticValidator();
+    this.runtimeValidator = new RuntimeValidator();
     this.initializeExecutors();
   }
 
@@ -48,6 +54,11 @@ class ToolService {
    * @param tool 工具定义
    */
   registerTool(tool: Tool): void {
+    // 静态验证工具定义
+    const result = this.staticValidator.validateTool(tool);
+    if (result.isErr()) {
+      throw result.error[0];
+    }
     this.registry.register(tool);
   }
 
@@ -156,7 +167,29 @@ class ToolService {
       ));
     }
 
-    // 直接调用执行器（执行器已内置验证、重试、超时功能）
+    // 运行时验证参数
+    try {
+      this.runtimeValidator.validate(tool, parameters);
+    } catch (error) {
+      if (error instanceof RuntimeValidationError) {
+        return err(new ToolError(
+          error.message,
+          toolId,
+          tool.type,
+          { parameters },
+          error
+        ));
+      }
+      return err(new ToolError(
+        'Parameter validation failed',
+        toolId,
+        tool.type,
+        { parameters },
+        error instanceof Error ? error : undefined
+      ));
+    }
+
+    // 调用执行器
     const result = await tryCatchAsync(
       executor.execute(tool, parameters, options, threadId)
     );
@@ -202,7 +235,7 @@ class ToolService {
   }
 
   /**
-   * 验证工具参数
+   * 验证工具参数（运行时验证）
    * @param toolId 工具ID
    * @param parameters 工具参数
    * @returns 验证结果
@@ -213,19 +246,17 @@ class ToolService {
   ): { valid: boolean; errors: string[] } {
     try {
       const tool = this.getTool(toolId);
-      const executor = this.executors.get(tool.type);
 
-      if (!executor) {
+      // 使用运行时验证器
+      try {
+        this.runtimeValidator.validate(tool, parameters);
+        return { valid: true, errors: [] };
+      } catch (error) {
         return {
           valid: false,
-          errors: [`No executor found for tool type '${tool.type}'`]
+          errors: [error instanceof Error ? error.message : 'Unknown validation error']
         };
       }
-
-      // 使用执行器的验证方法
-      // 注意：这里需要访问protected方法，实际使用时可能需要调整
-      // 暂时返回成功，具体验证在执行时进行
-      return { valid: true, errors: [] };
     } catch (error) {
       return {
         valid: false,
@@ -239,6 +270,28 @@ class ToolService {
    */
   clear(): void {
     this.registry.clear();
+  }
+
+  /**
+   * 清理指定线程的所有有状态工具实例
+   * @param threadId 线程ID
+   */
+  cleanupThread(threadId: string): void {
+    const statefulExecutor = this.executors.get(ToolType.STATEFUL);
+    if (statefulExecutor && typeof (statefulExecutor as any).cleanupThread === 'function') {
+      (statefulExecutor as any).cleanupThread(threadId);
+    }
+  }
+
+  /**
+   * 清理所有执行器的资源
+   */
+  async cleanupAll(): Promise<void> {
+    for (const executor of this.executors.values()) {
+      if (typeof executor.cleanup === 'function') {
+        await executor.cleanup();
+      }
+    }
   }
 
   /**

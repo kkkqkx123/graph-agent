@@ -4,15 +4,16 @@
  * 由于仅被tool-service使用，不需要特意改造为单例模式
  */
 
-import type { Tool, StatelessToolConfig, StatefulToolConfig, McpToolConfig } from '@modular-agent/types';
-import { ToolType } from '@modular-agent/types';
+import type { Tool } from '@modular-agent/types';
 import { ConfigurationValidationError, ToolNotFoundError } from '@modular-agent/types';
+import { StaticValidator } from '../validation/tool-static-validator';
 
 /**
  * 工具注册表类
  */
 export class ToolRegistry {
   private tools: Map<string, Tool> = new Map(); // 以ID为主键的存储
+  private validator: StaticValidator = new StaticValidator();
 
   /**
    * 注册工具定义
@@ -127,166 +128,16 @@ export class ToolRegistry {
 
   /**
    * 验证工具定义
+   * 使用StaticValidator进行统一验证
    * @param tool 工具定义
    * @returns 是否有效
    * @throws ValidationError 如果工具定义无效
    */
   validate(tool: Tool): boolean {
-    // 验证必需字段
-    if (!tool.id || typeof tool.id !== 'string') {
-      throw new ConfigurationValidationError(
-        'Tool id is required and must be a string',
-        {
-          configType: 'tool',
-          field: 'id',
-          value: tool.id
-        }
-      );
+    const result = this.validator.validateTool(tool);
+    if (result.isErr()) {
+      throw result.error[0];
     }
-
-    if (!tool.type || typeof tool.type !== 'string') {
-      throw new ConfigurationValidationError(
-        'Tool type is required and must be a string',
-        {
-          configType: 'tool',
-          field: 'type',
-          value: tool.type
-        }
-      );
-    }
-
-    if (!tool.description || typeof tool.description !== 'string') {
-      throw new ConfigurationValidationError(
-        'Tool description is required and must be a string',
-        {
-          configType: 'tool',
-          field: 'description',
-          value: tool.description
-        }
-      );
-    }
-
-    // 验证参数schema
-    if (!tool.parameters) {
-      throw new ConfigurationValidationError(
-        'Tool parameters schema is required',
-        {
-          configType: 'tool',
-          field: 'parameters',
-          value: tool.parameters
-        }
-      );
-    }
-
-    if (!tool.parameters.properties || typeof tool.parameters.properties !== 'object') {
-      throw new ConfigurationValidationError(
-        'Tool parameters properties is required and must be an object',
-        {
-          configType: 'tool',
-          field: 'parameters.properties',
-          value: tool.parameters.properties
-        }
-      );
-    }
-
-    if (!Array.isArray(tool.parameters.required)) {
-      throw new ConfigurationValidationError(
-        'Tool parameters required is required and must be an array',
-        {
-          configType: 'tool',
-          field: 'parameters.required',
-          value: tool.parameters.required
-        }
-      );
-    }
-
-    // 验证required参数是否在properties中定义
-    for (const requiredParam of tool.parameters.required) {
-      if (!(requiredParam in tool.parameters.properties)) {
-        throw new ConfigurationValidationError(
-          `Required parameter '${requiredParam}' is not defined in properties`,
-          {
-            configType: 'tool',
-            field: 'parameters.required',
-            value: requiredParam
-          }
-        );
-      }
-    }
-
-    // 验证config字段（根据工具类型）
-    if (tool.config) {
-      switch (tool.type) {
-        case ToolType.STATELESS: {
-          const config = tool.config as StatelessToolConfig;
-          if (!config.execute || typeof config.execute !== 'function') {
-            throw new ConfigurationValidationError(
-              'STATELESS tool must have an execute function in config',
-              {
-                configType: 'tool',
-                field: 'config.execute',
-                context: { toolType: tool.type }
-              }
-            );
-          }
-          break;
-        }
-
-        case ToolType.STATEFUL: {
-          const config = tool.config as StatefulToolConfig;
-          if (!config.factory || typeof config.factory.create !== 'function') {
-            throw new ConfigurationValidationError(
-              'STATEFUL tool must have a factory with create function in config',
-              {
-                configType: 'tool',
-                field: 'config.factory',
-                context: { toolType: tool.type }
-              }
-            );
-          }
-          break;
-        }
-
-        case ToolType.REST:
-          // REST工具的config是可选的，不需要强制验证
-          break;
-
-        case ToolType.MCP: {
-          const config = tool.config as McpToolConfig;
-          if (!config.serverName || typeof config.serverName !== 'string') {
-            throw new ConfigurationValidationError(
-              'MCP tool must have a serverName in config',
-              {
-                configType: 'tool',
-                field: 'config.serverName',
-                value: config.serverName
-              }
-            );
-          }
-          break;
-        }
-
-        default:
-          throw new ConfigurationValidationError(
-            `Unknown tool type: ${tool.type}`,
-            {
-              configType: 'tool',
-              field: 'type',
-              value: tool.type
-            }
-          );
-      }
-    } else if (tool.type === ToolType.STATELESS || tool.type === ToolType.STATEFUL || tool.type === ToolType.MCP) {
-      throw new ConfigurationValidationError(
-        `${tool.type} tool must have a config`,
-        {
-          configType: 'tool',
-          field: 'config',
-          value: tool.config
-        }
-      );
-    }
-
     return true;
   }
 

@@ -219,16 +219,20 @@ export class ToolCallExecutor {
       });
     }
 
+    // 构建执行选项，支持从工具配置中读取
+    const executionOptions: any = {
+      timeout: (toolConfig?.config as any)?.timeout || 30000,
+      retries: (toolConfig?.config as any)?.maxRetries || 0,
+      retryDelay: (toolConfig?.config as any)?.retryDelay || 1000,
+      signal: options?.abortSignal // 传递 AbortSignal
+    };
+
     // 调用 ToolService 执行工具
     const result = await this.toolService.execute(
       toolCall.name,
       JSON.parse(toolCall.arguments),
-      {
-        timeout: 30000,
-        retries: 0,
-        retryDelay: 1000,
-        signal: options?.abortSignal // 传递 AbortSignal
-      }
+      executionOptions,
+      threadId
     );
 
     const executionTime = Date.now() - startTime;

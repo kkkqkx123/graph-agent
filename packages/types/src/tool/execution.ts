@@ -58,24 +58,3 @@ export interface ToolExecutionResult {
   /** 重试次数 */
   retryCount: number;
 }
-
-/**
- * 工具执行器接口
- * 所有工具执行器都必须实现此接口
- */
-export interface IToolExecutor {
-  /**
-   * 执行工具
-   * @param tool 工具定义
-   * @param parameters 工具参数
-   * @param options 执行选项
-   * @param threadContext 线程上下文（可选）
-   * @returns 标准化的执行结果
-   */
-  execute(
-    tool: Tool,
-    parameters: Record<string, any>,
-    options?: ToolExecutionOptions,
-    threadContext?: any
-  ): Promise<ToolExecutionResult>;
-}

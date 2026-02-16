@@ -77,6 +77,7 @@ export class ExecutionContext {
     const eventManager = SingletonRegistry.get<EventManager>('eventManager');
     const workflowRegistry = SingletonRegistry.get<WorkflowRegistry>('workflowRegistry');
     const threadRegistry = SingletonRegistry.get<ThreadRegistry>('threadRegistry');
+    const taskRegistry = SingletonRegistry.get<any>('taskRegistry');
     const toolService = SingletonRegistry.get<any>('toolService');
     const llmExecutor = SingletonRegistry.get<any>('llmExecutor');
     const errorService = SingletonRegistry.get<any>('errorService');
@@ -85,6 +86,7 @@ export class ExecutionContext {
     this.componentRegistry.register('eventManager', eventManager);
     this.componentRegistry.register('workflowRegistry', workflowRegistry);
     this.componentRegistry.register('threadRegistry', threadRegistry);
+    this.componentRegistry.register('taskRegistry', taskRegistry);
     this.componentRegistry.register('toolService', toolService);
     this.componentRegistry.register('llmExecutor', llmExecutor);
     this.componentRegistry.register('errorService', errorService);
@@ -101,8 +103,8 @@ export class ExecutionContext {
     const lifecycleManager = new ThreadLifecycleManager(eventManager);
     this.componentRegistry.register('lifecycleManager', lifecycleManager);
 
-    // 5. ThreadCascadeManager 依赖 ThreadRegistry、ThreadLifecycleManager 和 EventManager
-    const cascadeManager = new ThreadCascadeManager(threadRegistry, lifecycleManager, eventManager);
+    // 5. ThreadCascadeManager 依赖 ThreadRegistry、ThreadLifecycleManager、EventManager 和 TaskRegistry
+    const cascadeManager = new ThreadCascadeManager(threadRegistry, lifecycleManager, eventManager, taskRegistry);
     this.componentRegistry.register('cascadeManager', cascadeManager);
 
     // 6. ToolContextManager - 工具上下文管理器

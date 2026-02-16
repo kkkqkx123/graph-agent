@@ -25,14 +25,6 @@ export interface IToolExecutor {
   ): Promise<ToolExecutionResult>;
 
   /**
-   * 验证工具参数
-   * @param tool 工具定义
-   * @param parameters 工具参数
-   * @throws ValidationError 如果参数验证失败
-   */
-  validateParameters(tool: Tool, parameters: Record<string, any>): void;
-
-  /**
    * 清理资源
    * @returns Promise
    */

@@ -28,7 +28,7 @@ import type {
 import type { BaseEvent, NodeCustomEvent } from '@modular-agent/types';
 import type { ID } from '@modular-agent/types';
 import { getTriggerHandler } from '../handlers/trigger-handlers';
-import { ValidationError, ExecutionError, ConfigurationValidationError, RuntimeValidationError, SystemExecutionError } from '@modular-agent/types';
+import { ExecutionError, ConfigurationValidationError, RuntimeValidationError, SystemExecutionError } from '@modular-agent/types';
 import { EventType } from '@modular-agent/types';
 import { now, getErrorOrNew } from '@modular-agent/common-utils';
 import type { ThreadRegistry } from '../../services/thread-registry';
