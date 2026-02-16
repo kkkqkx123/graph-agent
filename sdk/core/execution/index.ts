@@ -44,9 +44,6 @@ export * from './handlers/hook-handlers';
 // Hook创建器工具
 export * from './utils/hook-creators';
 
-// 接口定义
-export * from './interfaces';
-
 // 节点处理函数
 export * from './handlers/node-handlers';
 

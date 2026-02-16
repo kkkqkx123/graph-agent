@@ -74,29 +74,3 @@ export interface CodeSecurityPolicy {
   /** 是否允许动态脚本 */
   allowDynamicScripts?: boolean;
 }
-
-/**
- * 审计事件
- */
-export interface AuditEvent {
-  /** 事件类型 */
-  eventType: string;
-  /** 时间戳 */
-  timestamp: Date;
-  /** 线程ID */
-  threadId: string;
-  /** 节点ID */
-  nodeId: string;
-  /** 节点名称 */
-  nodeName?: string;
-  /** 节点类型 */
-  nodeType?: string;
-  /** 用户ID */
-  userId?: string;
-  /** 脚本名称 */
-  scriptName?: string;
-  /** 风险等级 */
-  riskLevel?: CodeRiskLevel;
-  /** 额外数据 */
-  data?: Record<string, any>;
-}
