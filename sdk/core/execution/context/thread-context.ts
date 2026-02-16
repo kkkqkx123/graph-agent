@@ -384,13 +384,9 @@ export class ThreadContext implements LifecycleCapable {
    * @param result 节点执行结果
    */
   addNodeResult(result: any): void {
-    // 委托给执行状态管理器处理子工作流结果
-    this.executionState.addSubgraphExecutionResult(result);
-
-    // 如果不在子工作流中，添加到主工作流历史记录
-    if (!this.executionState.isExecutingSubgraph()) {
-      this.thread.nodeResults.push(result);
-    }
+    // 直接添加到主工作流历史记录
+    // 注意：triggered子工作流的执行结果由TriggeredSubworkflowManager管理
+    this.thread.nodeResults.push(result);
   }
 
   /**
@@ -711,24 +707,32 @@ export class ThreadContext implements LifecycleCapable {
   /**
    * 开始执行触发子工作流
    * @param workflowId 子工作流ID
+   * @deprecated 此方法已废弃，请使用TriggeredSubworkflowManager管理triggered子工作流
    */
   startTriggeredSubgraphExecution(workflowId: string): void {
-    this.executionState.startTriggeredSubgraphExecution(workflowId);
+    // 此方法已废弃，保留用于向后兼容
+    // 实际的triggered子工作流管理由TriggeredSubworkflowManager负责
+    console.warn('startTriggeredSubgraphExecution is deprecated. Use TriggeredSubworkflowManager instead.');
   }
 
   /**
    * 结束执行触发子工作流
+   * @deprecated 此方法已废弃，请使用TriggeredSubworkflowManager管理triggered子工作流
    */
   endTriggeredSubgraphExecution(): void {
-    this.executionState.endTriggeredSubgraphExecution();
+    // 此方法已废弃，保留用于向后兼容
+    console.warn('endTriggeredSubgraphExecution is deprecated. Use TriggeredSubworkflowManager instead.');
   }
 
   /**
    * 检查是否正在执行触发子工作流
    * @returns 是否正在执行
+   * @deprecated 此方法已废弃，请使用TriggeredSubworkflowManager管理triggered子工作流
    */
   isExecutingSubgraph(): boolean {
-    return this.executionState.isExecutingSubgraph();
+    // 此方法已废弃，保留用于向后兼容
+    console.warn('isExecutingSubgraph is deprecated. Use TriggeredSubworkflowManager instead.');
+    return false;
   }
 
   // ========== Thread类型和关系管理方法 ==========

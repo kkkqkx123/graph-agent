@@ -15,14 +15,13 @@
  * - 节点执行细节（由 NodeExecutionCoordinator 负责）
  * - 错误处理（由 ErrorHandler 负责）
  * - 子图处理（由 SubgraphHandler 负责）
- * - 触发子工作流处理（由触发子工作流函数负责）
+ * - 触发子工作流处理（由 TriggeredSubworkflowManager 负责）
  * - 触发器管理（由 ThreadBuilder 在创建 ThreadContext 时处理）
  */
 
 import type { ThreadResult } from '@modular-agent/types';
 import type { Node } from '@modular-agent/types';
 import type { NodeExecutionResult } from '@modular-agent/types';
-import type { ID } from '@modular-agent/types';
 import { ThreadContext } from './context/thread-context';
 import type { EventManager } from '../services/event-manager';
 import type { WorkflowRegistry } from '../services/workflow-registry';
@@ -31,11 +30,6 @@ import { ThreadStatus } from '@modular-agent/types';
 import { now, diffTimestamp } from '@modular-agent/common-utils';
 import { NodeExecutionCoordinator } from './coordinators/node-execution-coordinator';
 import { handleNodeFailure, handleExecutionError } from './handlers/error-handler';
-import {
-  executeSingleTriggeredSubgraph,
-  type TriggeredSubgraphTask,
-  type SubgraphContextFactory
-} from './handlers/triggered-subgraph-handler';
 import { LLMExecutionCoordinator } from './coordinators/llm-execution-coordinator';
 import { ThreadBuilder } from './thread-builder';
 import { ExecutionContext } from './context/execution-context';
@@ -46,10 +40,8 @@ import { InterruptionDetector, InterruptionDetectorImpl } from './managers/inter
  *
  * 专注于执行单个 ThreadContext，不负责线程的创建、注册和管理
  * 通过协调器模式委托具体职责给专门的组件
- *
- * 实现SubgraphContextFactory接口，为触发子工作流函数提供子工作流上下文创建能力
  */
-export class ThreadExecutor implements SubgraphContextFactory {
+export class ThreadExecutor {
   private nodeExecutionCoordinator: NodeExecutionCoordinator;
   private llmExecutionCoordinator: LLMExecutionCoordinator;
   private eventManager: EventManager;
@@ -57,16 +49,6 @@ export class ThreadExecutor implements SubgraphContextFactory {
   private workflowRegistry: WorkflowRegistry;
   private executionContext: ExecutionContext;
   private interruptionDetector: InterruptionDetector;
-
-  /**
-   * 触发子工作流任务队列
-   */
-  private triggeredSubgraphQueue: TriggeredSubgraphTask[] = [];
-
-  /**
-   * 是否正在执行触发子工作流
-   */
-  private isExecutingTriggeredSubgraph: boolean = false;
 
   constructor(executionContext?: ExecutionContext) {
     // 设置执行上下文
@@ -286,103 +268,4 @@ export class ThreadExecutor implements SubgraphContextFactory {
     return this.eventManager;
   }
 
-  /**
-   * 执行触发子工作流
-   * @param task 触发子工作流任务
-   */
-  public async executeTriggeredSubgraph(task: TriggeredSubgraphTask): Promise<void> {
-    this.triggeredSubgraphQueue.push(task);
-
-    // 如果配置为等待完成，立即执行
-    if (task.config?.waitForCompletion) {
-      await this.processTriggeredSubgraphs(task.mainThreadContext);
-    }
-  }
-
-  /**
-   * 处理触发子工作流队列
-   * @param mainThreadContext 主工作流线程上下文
-   * @returns 是否处理了任务
-   */
-  public async processTriggeredSubgraphs(
-    mainThreadContext: ThreadContext
-  ): Promise<boolean> {
-    if (this.triggeredSubgraphQueue.length === 0 || this.isExecutingTriggeredSubgraph) {
-      return false;
-    }
-
-    const task = this.triggeredSubgraphQueue.shift()!;
-    await this.executeSingleTriggeredSubgraph(mainThreadContext, task);
-    return true;
-  }
-
-  /**
-   * 执行单个触发子工作流
-   * @param mainThreadContext 主工作流线程上下文
-   * @param task 触发子工作流任务
-   */
-  private async executeSingleTriggeredSubgraph(
-    mainThreadContext: ThreadContext,
-    task: TriggeredSubgraphTask
-  ): Promise<void> {
-    this.isExecutingTriggeredSubgraph = true;
-
-    try {
-      // 注意：executeSingleTriggeredSubgraph 现在返回执行结果
-      // 这里我们只关心异步执行的完成，结果由事件系统通知
-      await executeSingleTriggeredSubgraph(
-        task,
-        this,
-        this,
-        this.eventManager
-      );
-    } finally {
-      this.isExecutingTriggeredSubgraph = false;
-    }
-  }
-
-  /**
-   * 检查是否有待处理的触发子工作流任务
-   * @returns 是否有待处理的任务
-   */
-  public hasPendingTriggeredSubgraphs(): boolean {
-    return this.triggeredSubgraphQueue.length > 0;
-  }
-
-  /**
-   * 获取待处理触发子工作流任务数量
-   * @returns 待处理任务数量
-   */
-  public getPendingTriggeredSubgraphCount(): number {
-    return this.triggeredSubgraphQueue.length;
-  }
-
-  /**
-   * 检查是否正在执行触发子工作流
-   * @returns 是否正在执行
-   */
-  public isExecutingTriggeredSubgraphNow(): boolean {
-    return this.isExecutingTriggeredSubgraph;
-  }
-
-  /**
-   * 实现SubgraphContextFactory接口
-   * 构建子工作流上下文
-   * @param subgraphId 子工作流ID
-   * @param input 输入数据
-   * @param metadata 元数据
-   * @returns 子工作流上下文
-   */
-  async buildSubgraphContext(
-    subgraphId: ID,
-    input: Record<string, any>,
-    metadata: any
-  ): Promise<ThreadContext> {
-    // 使用ThreadBuilder构建子工作流上下文
-    const subgraphContext = await this.threadBuilder.build(subgraphId, {
-      input
-    });
-
-    return subgraphContext;
-  }
 }

@@ -6,16 +6,13 @@ import { executeTriggeredSubgraphHandler } from '../execute-triggered-subgraph-h
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import { TriggerActionType } from '@modular-agent/types';
 import { ExecutionContext } from '../../../context/execution-context';
-import { executeSingleTriggeredSubgraph } from '../../triggered-subgraph-handler';
+import { TriggeredSubworkflowManager } from '../../../managers/triggered-subworkflow-manager';
 
 // Mock dependencies
 jest.mock('../../../context/execution-context');
-jest.mock('../../triggered-subgraph-handler', () => ({
-  executeSingleTriggeredSubgraph: jest.fn()
-}));
-jest.mock('../../../thread-executor', () => ({
-  ThreadExecutor: jest.fn()
-}));
+jest.mock('../../../managers/triggered-subworkflow-manager');
+jest.mock('../../../thread-executor');
+jest.mock('../../../thread-builder');
 
 describe('execute-triggered-subgraph-handler', () => {
   let mockAction: TriggerAction;
@@ -85,19 +82,27 @@ describe('execute-triggered-subgraph-handler', () => {
         emit: jest.fn().mockResolvedValue(undefined)
       };
 
-      // Mock triggered subgraph execution
+      // Mock TriggeredSubworkflowManager
       const mockSubgraphContext = {
         getOutput: jest.fn().mockReturnValue({ subgraphOutput: 'result' })
       };
-      (executeSingleTriggeredSubgraph as jest.Mock).mockResolvedValue({
-        subgraphContext: mockSubgraphContext,
-        executionTime: 1500
-      });
+      const mockThreadResult = {
+        status: 'COMPLETED',
+        output: { subgraphOutput: 'result' }
+      };
+      
+      (TriggeredSubworkflowManager as jest.Mock).mockImplementation(() => ({
+        executeTriggeredSubgraph: jest.fn().mockResolvedValue({
+          subgraphContext: mockSubgraphContext,
+          threadResult: mockThreadResult,
+          executionTime: 1500
+        })
+      }));
 
       // Mock ThreadExecutor
       const { ThreadExecutor } = await import('../../../thread-executor');
       const mockThreadExecutor = {
-        // ThreadExecutor实例作为SubgraphContextFactory和SubgraphExecutor
+        executeThread: jest.fn().mockResolvedValue(mockThreadResult)
       };
       (ThreadExecutor as jest.Mock).mockReturnValue(mockThreadExecutor);
 
@@ -130,8 +135,16 @@ describe('execute-triggered-subgraph-handler', () => {
       });
       expect(result.executionTime).toBeGreaterThanOrEqual(0);
 
-      // 验证子工作流执行被调用
-      expect(executeSingleTriggeredSubgraph).toHaveBeenCalledWith(
+      // 验证TriggeredSubworkflowManager被创建
+      expect(TriggeredSubworkflowManager).toHaveBeenCalledWith(
+        expect.any(Object), // ThreadBuilder
+        expect.any(Object), // ThreadExecutor
+        mockEventManager
+      );
+      
+      // 验证executeTriggeredSubgraph被调用
+      const managerInstance = (TriggeredSubworkflowManager as jest.Mock).mock.results[0].value;
+      expect(managerInstance.executeTriggeredSubgraph).toHaveBeenCalledWith(
         expect.objectContaining({
           subgraphId: triggeredWorkflowId,
           input: {
@@ -146,10 +159,7 @@ describe('execute-triggered-subgraph-handler', () => {
             timeout: 30000,
             recordHistory: true
           }
-        }),
-        mockThreadExecutor, // 作为SubgraphContextFactory
-        mockThreadExecutor, // 作为SubgraphExecutor
-        mockEventManager
+        })
       );
     });
 
@@ -172,10 +182,13 @@ describe('execute-triggered-subgraph-handler', () => {
         get: jest.fn().mockReturnValue({ id: triggeredWorkflowId })
       };
 
-      (executeSingleTriggeredSubgraph as jest.Mock).mockResolvedValue({
-        subgraphContext: { getOutput: jest.fn().mockReturnValue({}) },
-        executionTime: 1000
-      });
+      (TriggeredSubworkflowManager as jest.Mock).mockImplementation(() => ({
+        executeTriggeredSubgraph: jest.fn().mockResolvedValue({
+          subgraphContext: { getOutput: jest.fn().mockReturnValue({}) },
+          threadResult: { status: 'COMPLETED' },
+          executionTime: 1000
+        })
+      }));
 
       const { ThreadExecutor } = await import('../../../thread-executor');
       (ThreadExecutor as jest.Mock).mockReturnValue({});
@@ -213,10 +226,13 @@ describe('execute-triggered-subgraph-handler', () => {
         get: jest.fn().mockReturnValue({ id: triggeredWorkflowId })
       };
 
-      (executeSingleTriggeredSubgraph as jest.Mock).mockResolvedValue({
-        subgraphContext: { getOutput: jest.fn().mockReturnValue({}) },
-        executionTime: 1000
-      });
+      (TriggeredSubworkflowManager as jest.Mock).mockImplementation(() => ({
+        executeTriggeredSubgraph: jest.fn().mockResolvedValue({
+          subgraphContext: { getOutput: jest.fn().mockReturnValue({}) },
+          threadResult: { status: 'COMPLETED' },
+          executionTime: 1000
+        })
+      }));
 
       const { ThreadExecutor } = await import('../../../thread-executor');
       (ThreadExecutor as jest.Mock).mockReturnValue({});
@@ -227,7 +243,8 @@ describe('execute-triggered-subgraph-handler', () => {
 
       await executeTriggeredSubgraphHandler(mockAction, triggerId, mockExecutionContext);
 
-      const lastCall = (executeSingleTriggeredSubgraph as jest.Mock).mock.calls[0];
+      const managerInstance = (TriggeredSubworkflowManager as jest.Mock).mock.results[0].value;
+      const lastCall = managerInstance.executeTriggeredSubgraph.mock.calls[0];
       expect(lastCall[0].config.waitForCompletion).toBe(true);
     });
   });
@@ -342,10 +359,13 @@ describe('execute-triggered-subgraph-handler', () => {
         get: jest.fn().mockReturnValue({ id: triggeredWorkflowId })
       };
 
-      (executeSingleTriggeredSubgraph as jest.Mock).mockResolvedValue({
-        subgraphContext: { getOutput: jest.fn().mockReturnValue({}) },
-        executionTime: 1000
-      });
+      (TriggeredSubworkflowManager as jest.Mock).mockImplementation(() => ({
+        executeTriggeredSubgraph: jest.fn().mockResolvedValue({
+          subgraphContext: { getOutput: jest.fn().mockReturnValue({}) },
+          threadResult: { status: 'COMPLETED' },
+          executionTime: 1000
+        })
+      }));
 
       const { ThreadExecutor } = await import('../../../thread-executor');
       (ThreadExecutor as jest.Mock).mockReturnValue({});
@@ -356,7 +376,8 @@ describe('execute-triggered-subgraph-handler', () => {
 
       await executeTriggeredSubgraphHandler(mockAction, triggerId, mockExecutionContext);
 
-      const lastCall = (executeSingleTriggeredSubgraph as jest.Mock).mock.calls[0];
+      const managerInstance = (TriggeredSubworkflowManager as jest.Mock).mock.results[0].value;
+      const lastCall = managerInstance.executeTriggeredSubgraph.mock.calls[0];
       expect(lastCall[0].input).toEqual({
         triggerId,
         output: { output1: 'outputValue1' },
@@ -381,10 +402,13 @@ describe('execute-triggered-subgraph-handler', () => {
         get: jest.fn().mockReturnValue({ id: triggeredWorkflowId })
       };
 
-      (executeSingleTriggeredSubgraph as jest.Mock).mockResolvedValue({
-        subgraphContext: { getOutput: jest.fn().mockReturnValue({}) },
-        executionTime: 1000
-      });
+      (TriggeredSubworkflowManager as jest.Mock).mockImplementation(() => ({
+        executeTriggeredSubgraph: jest.fn().mockResolvedValue({
+          subgraphContext: { getOutput: jest.fn().mockReturnValue({}) },
+          threadResult: { status: 'COMPLETED' },
+          executionTime: 1000
+        })
+      }));
 
       const { ThreadExecutor } = await import('../../../thread-executor');
       (ThreadExecutor as jest.Mock).mockReturnValue({});
@@ -395,7 +419,8 @@ describe('execute-triggered-subgraph-handler', () => {
 
       await executeTriggeredSubgraphHandler(mockAction, triggerId, mockExecutionContext);
 
-      const lastCall = (executeSingleTriggeredSubgraph as jest.Mock).mock.calls[0];
+      const managerInstance = (TriggeredSubworkflowManager as jest.Mock).mock.results[0].value;
+      const lastCall = managerInstance.executeTriggeredSubgraph.mock.calls[0];
       expect(lastCall[0].input).toEqual({
         triggerId,
         output: {},
@@ -422,7 +447,9 @@ describe('execute-triggered-subgraph-handler', () => {
         get: jest.fn().mockReturnValue({ id: triggeredWorkflowId })
       };
 
-      (executeSingleTriggeredSubgraph as jest.Mock).mockRejectedValue(new Error('Subgraph execution failed'));
+      (TriggeredSubworkflowManager as jest.Mock).mockImplementation(() => ({
+        executeTriggeredSubgraph: jest.fn().mockRejectedValue(new Error('Subgraph execution failed'))
+      }));
 
       const { ThreadExecutor } = await import('../../../thread-executor');
       (ThreadExecutor as jest.Mock).mockReturnValue({});
@@ -468,10 +495,13 @@ describe('execute-triggered-subgraph-handler', () => {
         get: jest.fn().mockReturnValue({ id: triggeredWorkflowId })
       };
 
-      (executeSingleTriggeredSubgraph as jest.Mock).mockResolvedValue({
-        subgraphContext: { getOutput: jest.fn().mockReturnValue({}) },
-        executionTime: 1000
-      });
+      (TriggeredSubworkflowManager as jest.Mock).mockImplementation(() => ({
+        executeTriggeredSubgraph: jest.fn().mockResolvedValue({
+          subgraphContext: { getOutput: jest.fn().mockReturnValue({}) },
+          threadResult: { status: 'COMPLETED' },
+          executionTime: 1000
+        })
+      }));
 
       const { ThreadExecutor } = await import('../../../thread-executor');
       (ThreadExecutor as jest.Mock).mockReturnValue({});
@@ -502,13 +532,16 @@ describe('execute-triggered-subgraph-handler', () => {
         get: jest.fn().mockReturnValue({ id: triggeredWorkflowId })
       };
 
-      (executeSingleTriggeredSubgraph as jest.Mock).mockImplementation(async () => {
-        await new Promise(resolve => setTimeout(resolve, 20));
-        return {
-          subgraphContext: { getOutput: jest.fn().mockReturnValue({}) },
-          executionTime: 20
-        };
-      });
+      (TriggeredSubworkflowManager as jest.Mock).mockImplementation(() => ({
+        executeTriggeredSubgraph: jest.fn().mockImplementation(async () => {
+          await new Promise(resolve => setTimeout(resolve, 20));
+          return {
+            subgraphContext: { getOutput: jest.fn().mockReturnValue({}) },
+            threadResult: { status: 'COMPLETED' },
+            executionTime: 20
+          };
+        })
+      }));
 
       const { ThreadExecutor } = await import('../../../thread-executor');
       (ThreadExecutor as jest.Mock).mockReturnValue({});
@@ -553,10 +586,13 @@ describe('execute-triggered-subgraph-handler', () => {
           get: jest.fn().mockReturnValue({ id: testWorkflowId })
         };
 
-        (executeSingleTriggeredSubgraph as jest.Mock).mockResolvedValue({
-          subgraphContext: { getOutput: jest.fn().mockReturnValue({}) },
-          executionTime: 1000
-        });
+        (TriggeredSubworkflowManager as jest.Mock).mockImplementation(() => ({
+          executeTriggeredSubgraph: jest.fn().mockResolvedValue({
+            subgraphContext: { getOutput: jest.fn().mockReturnValue({}) },
+            threadResult: { status: 'COMPLETED' },
+            executionTime: 1000
+          })
+        }));
 
         const { ThreadExecutor } = await import('../../../thread-executor');
         (ThreadExecutor as jest.Mock).mockReturnValue({});
@@ -601,10 +637,13 @@ describe('execute-triggered-subgraph-handler', () => {
           get: jest.fn().mockReturnValue({ id: triggeredWorkflowId })
         };
 
-        (executeSingleTriggeredSubgraph as jest.Mock).mockResolvedValue({
-          subgraphContext: { getOutput: jest.fn().mockReturnValue({}) },
-          executionTime: 1000
-        });
+        (TriggeredSubworkflowManager as jest.Mock).mockImplementation(() => ({
+          executeTriggeredSubgraph: jest.fn().mockResolvedValue({
+            subgraphContext: { getOutput: jest.fn().mockReturnValue({}) },
+            threadResult: { status: 'COMPLETED' },
+            executionTime: 1000
+          })
+        }));
 
         const { ThreadExecutor } = await import('../../../thread-executor');
         (ThreadExecutor as jest.Mock).mockReturnValue({});

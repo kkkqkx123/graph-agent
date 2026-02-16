@@ -15,15 +15,12 @@
 
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import type { ExecuteTriggeredSubgraphActionConfig } from '@modular-agent/types';
-import { NotFoundError, ValidationError, RuntimeValidationError, ThreadContextNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
+import { RuntimeValidationError, ThreadContextNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
 import { ExecutionContext } from '../../context/execution-context';
 import { getErrorMessage } from '@modular-agent/common-utils';
-import {
-  executeSingleTriggeredSubgraph,
-  type TriggeredSubgraphTask,
-  type ExecutedSubgraphResult
-} from '../triggered-subgraph-handler';
+import { TriggeredSubworkflowManager, type TriggeredSubgraphTask } from '../../managers/triggered-subworkflow-manager';
 import { ThreadExecutor } from '../../thread-executor';
+import { ThreadBuilder } from '../../thread-builder';
 import { SingletonRegistry } from '../../context/singleton-registry';
 
 /**
@@ -116,8 +113,18 @@ export async function executeTriggeredSubgraphHandler(
       input: mainThreadContext.getInput()
     };
 
-    // 创建 ThreadExecutor 实例（作为 SubgraphContextFactory 和 SubgraphExecutor）
+    // 创建 ThreadBuilder 实例（作为 SubgraphContextFactory）
+    const threadBuilder = new ThreadBuilder(context.getWorkflowRegistry(), context);
+    
+    // 创建 ThreadExecutor 实例（作为 SubgraphExecutor）
     const threadExecutor = new ThreadExecutor(context);
+    
+    // 创建 TriggeredSubworkflowManager
+    const manager = new TriggeredSubworkflowManager(
+      threadBuilder,  // 作为 SubgraphContextFactory
+      threadExecutor, // 作为 SubgraphExecutor
+      context.getEventManager()
+    );
 
     // 创建触发子工作流任务
     const task: TriggeredSubgraphTask = {
@@ -133,12 +140,7 @@ export async function executeTriggeredSubgraphHandler(
     };
 
     // 执行触发子工作流
-    const result = await executeSingleTriggeredSubgraph(
-      task,
-      threadExecutor, // 作为 SubgraphContextFactory
-      threadExecutor, // 作为 SubgraphExecutor
-      context.getEventManager()
-    );
+    const result = await manager.executeTriggeredSubgraph(task);
 
     const executionTime = Date.now() - startTime;
 
