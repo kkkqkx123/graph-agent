@@ -14,7 +14,8 @@
 
 import { ThreadExecutor } from '../thread-executor';
 import { ExecutionContext } from '../context/execution-context';
-import { WorkerStatus, type ExecutorWrapper, type PoolStats, type SubworkflowManagerConfig } from '../types/task.types';
+import { WorkerStatus, type ExecutorWrapper, type PoolStats } from '../types/task.types';
+import { type SubworkflowManagerConfig } from '../types/triggered-subgraph.types';
 
 /**
  * ThreadPoolManager - 线程池管理器

@@ -30,7 +30,7 @@ import {
   type ExecutedSubgraphResult,
   type TaskSubmissionResult,
   type SubworkflowManagerConfig
-} from '../types/task.types';
+} from '../types/triggered-subgraph.types';
 
 /**
  * TriggeredSubworkflowManager - 触发子工作流管理器

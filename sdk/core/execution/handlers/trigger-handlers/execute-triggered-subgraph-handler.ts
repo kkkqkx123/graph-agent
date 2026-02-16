@@ -20,7 +20,7 @@ import { RuntimeValidationError, ThreadContextNotFoundError, WorkflowNotFoundErr
 import { ExecutionContext } from '../../context/execution-context';
 import { getErrorMessage } from '@modular-agent/common-utils';
 import { TriggeredSubworkflowManager } from '../../managers/triggered-subworkflow-manager';
-import type { TriggeredSubgraphTask } from '../../types/task.types';
+import type { TriggeredSubgraphTask } from '../../types/triggered-subgraph.types';
 import { SingletonRegistry } from '../../context/singleton-registry';
 
 /**

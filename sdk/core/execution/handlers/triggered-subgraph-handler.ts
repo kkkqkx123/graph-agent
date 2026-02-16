@@ -22,6 +22,7 @@ import { EventType } from '@modular-agent/types';
 import type { ThreadResult } from '@modular-agent/types';
 import { now, getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
 import { createSubgraphMetadata } from './subgraph-handler';
+import type { TriggeredSubgraphTask, ExecutedSubgraphResult } from '../types/triggered-subgraph.types';
 
 /**
  * 子工作流执行器接口
@@ -36,37 +37,6 @@ export interface SubgraphExecutor {
  */
 export interface SubgraphContextFactory {
   buildSubgraphContext(subgraphId: ID, input: Record<string, any>, metadata: any): Promise<ThreadContext>;
-}
-
-/**
- * 触发子工作流任务接口
- */
-export interface TriggeredSubgraphTask {
-  /** 子工作流ID */
-  subgraphId: ID;
-  /** 输入数据 */
-  input: Record<string, any>;
-  /** 触发器ID */
-  triggerId: string;
-  /** 主工作流线程上下文 */
-  mainThreadContext: ThreadContext;
-  /** 配置选项 */
-  config?: {
-    /**
-     * 是否等待子工作流完成
-     *
-     * 行为差异:
-     * - true: 同步执行（默认），调用者会阻塞直到子工作流完成
-     *        返回的 TriggerExecutionResult 包含子工作流的实际执行结果
-     * - false: 异步执行，调用者立即返回，子工作流在后台执行
-     *         返回的 TriggerExecutionResult 只表示任务已提交
-     *         实际执行结果通过 TRIGGERED_SUBGRAPH_COMPLETED 或 TRIGGERED_SUBGRAPH_FAILED 事件通知
-     */
-    waitForCompletion?: boolean;
-    timeout?: number;
-    recordHistory?: boolean;
-    metadata?: any;
-  };
 }
 
 /**
@@ -164,18 +134,6 @@ export async function emitSubgraphFailedEvent(
     executionTime,
     timestamp: now()
   });
-}
-
-/**
- * 执行单个触发子工作流的返回结果
- */
-export interface ExecutedSubgraphResult {
-  /** 子工作流上下文 */
-  subgraphContext: ThreadContext;
-  /** 执行结果 */
-  threadResult: ThreadResult;
-  /** 执行时间（毫秒） */
-  executionTime: number;
 }
 
 /**

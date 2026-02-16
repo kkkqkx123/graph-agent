@@ -20,7 +20,8 @@ import type { EventManager } from '../../services/event-manager';
 import { EventType } from '@modular-agent/types';
 import type { ThreadContext } from '../context/thread-context';
 import type { ThreadResult } from '@modular-agent/types';
-import { TaskStatus, type QueueTask, type ExecutedSubgraphResult, type TaskSubmissionResult } from '../types/task.types';
+import { TaskStatus } from '../types/task.types';
+import { type QueueTask, type ExecutedSubgraphResult, type TaskSubmissionResult } from '../types/triggered-subgraph.types';
 import { now, getErrorMessage } from '@modular-agent/common-utils';
 
 /**

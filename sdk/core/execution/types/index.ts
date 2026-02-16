@@ -5,16 +5,19 @@
 export {
   TaskStatus,
   WorkerStatus,
-  type TriggeredSubgraphTask,
-  type ExecutedSubgraphResult,
-  type TaskSubmissionResult,
   type TaskInfo,
   type QueueStats,
   type PoolStats,
-  type SubworkflowManagerConfig,
-  type QueueTask,
   type ExecutorWrapper
 } from './task.types';
+
+export {
+  type TriggeredSubgraphTask,
+  type ExecutedSubgraphResult,
+  type TaskSubmissionResult,
+  type QueueTask,
+  type SubworkflowManagerConfig
+} from './triggered-subgraph.types';
 
 export {
   type DynamicThreadInfo,

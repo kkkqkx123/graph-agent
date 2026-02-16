@@ -17,9 +17,11 @@
 
 import type { TriggerStatus, TriggerRuntimeState } from '@modular-agent/types';
 import type { ID } from '@modular-agent/types';
-import { ValidationError, ExecutionError, NotFoundError, RuntimeValidationError } from '@modular-agent/types';
+import { ExecutionError, NotFoundError, RuntimeValidationError } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
 import type { LifecycleCapable } from './lifecycle-capable';
+
+export type { TriggerRuntimeState };
 
 /**
  * TriggerStateManager - 触发器状态管理器
