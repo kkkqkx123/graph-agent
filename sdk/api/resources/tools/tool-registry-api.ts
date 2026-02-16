@@ -34,7 +34,7 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
 
   /**
    * 获取单个工具
-   * @param id 工具名称
+   * @param id 工具ID
    * @returns 工具定义，如果不存在则返回null
    */
   protected async getResource(id: string): Promise<Tool | null> {
@@ -88,7 +88,7 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
 
   /**
    * 删除工具
-   * @param id 工具名称
+   * @param id 工具ID
    */
   protected async deleteResource(id: string): Promise<void> {
     this.dependencies.getToolService().unregisterTool(id);
@@ -110,9 +110,6 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
   protected applyFilter(tools: Tool[], filter: ToolFilter): Tool[] {
     return tools.filter(tool => {
       if (filter.ids && !filter.ids.some(id => tool.id.includes(id))) {
-        return false;
-      }
-      if (filter.name && !tool.name.includes(filter.name)) {
         return false;
       }
       if (filter.type && tool.type !== filter.type) {
@@ -145,7 +142,7 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
     const errors: string[] = [];
 
     // 使用简化验证工具验证必需字段
-    const requiredResult = validateRequiredFields(tool, ['name', 'type', 'description'], 'tool');
+    const requiredResult = validateRequiredFields(tool, ['id', 'type', 'description'], 'tool');
     if (requiredResult.isErr()) {
       errors.push(...requiredResult.unwrapOrElse(err => err.map(error => error.message)));
     }
@@ -156,11 +153,11 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
       errors.push(...objectResult.unwrapOrElse(err => err.map(error => error.message)));
     }
 
-    // 验证名称长度
-    if (tool.name) {
-      const nameResult = validateStringLength(tool.name, '工具名称', 1, 100);
-      if (nameResult.isErr()) {
-        errors.push(...nameResult.unwrapOrElse(err => err.map(error => error.message)));
+    // 验证ID长度
+    if (tool.id) {
+      const idResult = validateStringLength(tool.id, '工具ID', 1, 100);
+      if (idResult.isErr()) {
+        errors.push(...idResult.unwrapOrElse(err => err.map(error => error.message)));
       }
     }
 
@@ -189,15 +186,15 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
 
   /**
    * 验证工具参数
-   * @param toolName 工具名称
+   * @param toolId 工具ID
    * @param parameters 工具参数
    * @returns 验证结果
    */
   async validateToolParameters(
-    toolName: string,
+    toolId: string,
     parameters: Record<string, any>
   ): Promise<{ valid: boolean; errors: string[] }> {
-    return this.dependencies.getToolService().validateParameters(toolName, parameters);
+    return this.dependencies.getToolService().validateParameters(toolId, parameters);
   }
 
   /**

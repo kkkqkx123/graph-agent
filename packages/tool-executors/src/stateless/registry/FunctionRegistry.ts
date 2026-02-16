@@ -4,6 +4,7 @@
  */
 
 import type { FunctionRegistryItem, FunctionRegistryConfig } from '../types';
+import type { ID } from '@modular-agent/types';
 import { ToolError } from '@modular-agent/types';
 
 /**
@@ -25,7 +26,7 @@ export class FunctionRegistry {
    * 注册函数
    */
   register(
-    toolName: string,
+    toolId: ID,
     execute: (parameters: any) => Promise<any>,
     version?: string,
     description?: string
@@ -34,23 +35,23 @@ export class FunctionRegistry {
     if (this.functions.size >= this.config.maxFunctions) {
       throw new ToolError(
         `Maximum functions (${this.config.maxFunctions}) reached`,
-        toolName,
+        toolId,
         'STATELESS',
         { currentFunctions: this.functions.size }
       );
     }
 
     // 检查是否已存在
-    if (this.functions.has(toolName)) {
+    if (this.functions.has(toolId)) {
       if (this.config.enableVersionControl) {
         // 如果启用版本控制，允许覆盖
-        console.warn(`Function '${toolName}' already registered, overwriting...`);
+        console.warn(`Function '${toolId}' already registered, overwriting...`);
       } else {
         throw new ToolError(
-          `Function '${toolName}' is already registered`,
-          toolName,
+          `Function '${toolId}' is already registered`,
+          toolId,
           'STATELESS',
-          { toolName }
+          { toolId }
         );
       }
     }
@@ -64,42 +65,42 @@ export class FunctionRegistry {
       callCount: 0
     };
 
-    this.functions.set(toolName, item);
+    this.functions.set(toolId, item);
   }
 
   /**
    * 获取函数
    */
-  get(toolName: string): FunctionRegistryItem | null {
-    return this.functions.get(toolName) || null;
+  get(toolId: ID): FunctionRegistryItem | null {
+    return this.functions.get(toolId) || null;
   }
 
   /**
    * 检查函数是否存在
    */
-  has(toolName: string): boolean {
-    return this.functions.has(toolName);
+  has(toolId: ID): boolean {
+    return this.functions.has(toolId);
   }
 
   /**
    * 注销函数
    */
-  unregister(toolName: string): boolean {
-    return this.functions.delete(toolName);
+  unregister(toolId: ID): boolean {
+    return this.functions.delete(toolId);
   }
 
   /**
    * 执行函数
    */
-  async execute(toolName: string, parameters: any): Promise<any> {
-    const item = this.functions.get(toolName);
+  async execute(toolId: ID, parameters: any): Promise<any> {
+    const item = this.functions.get(toolId);
     
     if (!item) {
       throw new ToolError(
-        `Function '${toolName}' is not registered`,
-        toolName,
+        `Function '${toolId}' is not registered`,
+        toolId,
         'STATELESS',
-        { toolName }
+        { toolId }
       );
     }
 
@@ -116,7 +117,7 @@ export class FunctionRegistry {
     } catch (error) {
       throw new ToolError(
         `Function execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        toolName,
+        toolId,
         'STATELESS',
         { parameters },
         error instanceof Error ? error : undefined
@@ -141,12 +142,12 @@ export class FunctionRegistry {
   /**
    * 获取函数统计信息
    */
-  getFunctionStats(toolName: string): {
+  getFunctionStats(toolId: ID): {
     callCount: number;
     lastCalledAt?: Date;
     registeredAt: Date;
   } | null {
-    const item = this.functions.get(toolName);
+    const item = this.functions.get(toolId);
     if (!item) {
       return null;
     }
@@ -180,8 +181,8 @@ export class FunctionRegistry {
     version?: string;
     description?: string;
   }>): void {
-    for (const [toolName, func] of Object.entries(functions)) {
-      this.register(toolName, func.execute, func.version, func.description);
+    for (const [toolId, func] of Object.entries(functions)) {
+      this.register(toolId, func.execute, func.version, func.description);
     }
   }
 }

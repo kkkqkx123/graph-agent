@@ -23,7 +23,7 @@ export interface ThreadOptions {
   /** 节点执行完成回调 */
   onNodeExecuted?: (result: NodeExecutionResult) => void | Promise<void>;
   /** 工具调用回调 */
-  onToolCalled?: (toolName: string, parameters: any) => void | Promise<void>;
+  onToolCalled?: (toolId: ID, parameters: any) => void | Promise<void>;
   /** 错误回调 */
   onError?: (error: any) => void | Promise<void>;
 }

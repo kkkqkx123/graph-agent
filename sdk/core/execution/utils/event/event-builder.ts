@@ -9,7 +9,7 @@
  */
 
 import { now } from '@modular-agent/common-utils';
-import type { Thread, ThreadResult, NodeExecutionResult } from '@modular-agent/types';
+import type { Thread, ThreadResult, ID } from '@modular-agent/types';
 import type {
   ThreadStartedEvent,
   ThreadCompletedEvent,
@@ -315,7 +315,7 @@ export function buildConversationStateChangedEvent(
 export function buildToolCallStartedEvent(
   threadContext: any,
   nodeId: string,
-  toolName: string,
+  toolId: ID,
   toolArguments: string
 ): ToolCallStartedEvent {
   return {
@@ -324,7 +324,7 @@ export function buildToolCallStartedEvent(
     workflowId: threadContext.getWorkflowId(),
     threadId: threadContext.getThreadId(),
     nodeId,
-    toolName,
+    toolId,
     toolArguments
   };
 }
@@ -335,7 +335,7 @@ export function buildToolCallStartedEvent(
 export function buildToolCallCompletedEvent(
   threadContext: any,
   nodeId: string,
-  toolName: string,
+  toolId: ID,
   toolResult: any,
   executionTime: number
 ): ToolCallCompletedEvent {
@@ -345,7 +345,7 @@ export function buildToolCallCompletedEvent(
     workflowId: threadContext.getWorkflowId(),
     threadId: threadContext.getThreadId(),
     nodeId,
-    toolName,
+    toolId,
     toolResult,
     executionTime
   };
@@ -357,7 +357,7 @@ export function buildToolCallCompletedEvent(
 export function buildToolCallFailedEvent(
   threadContext: any,
   nodeId: string,
-  toolName: string,
+  toolId: ID,
   error: Error
 ): ToolCallFailedEvent {
   return {
@@ -366,7 +366,7 @@ export function buildToolCallFailedEvent(
     workflowId: threadContext.getWorkflowId(),
     threadId: threadContext.getThreadId(),
     nodeId,
-    toolName,
+    toolId,
     error: error.message
   };
 }

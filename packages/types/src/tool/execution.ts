@@ -11,8 +11,8 @@ import type { Tool } from './definition';
 export interface ToolCall {
   /** 工具调用ID */
   id: ID;
-  /** 工具名称 */
-  toolName: string;
+  /** 工具ID */
+  toolId: ID;
   /** 工具参数 */
   parameters: Record<string, any>;
   /** 调用结果 */

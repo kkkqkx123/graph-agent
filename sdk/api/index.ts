@@ -205,25 +205,6 @@ export {
 } from '../core/execution/utils/hook-creators';
 
 // ============================================================================
-// 风险管理 - 接口定义
-// ============================================================================
-export {
-  CodeSecurityValidator,
-  DefaultCodeSecurityValidator
-} from '../core/execution/interfaces/code-security-validator';
-
-export {
-  AuditService
-} from '../core/execution/interfaces/audit-service';
-
-export {
-  NodeExecutabilityChecker,
-  DefaultNodeExecutabilityChecker,
-  type ExecutionCheckContext,
-  type ExecutionCheckResult
-} from '../core/execution/interfaces/node-executability-checker';
-
-// ============================================================================
 // 工具函数
 // ============================================================================
 // Result类型 - 从核心层导入

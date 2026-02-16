@@ -13,7 +13,7 @@
  * - 职责分离：将具体执行逻辑委托给专门组件
  */
 
-import type { LLMMessage } from '@modular-agent/types';
+import type { LLMMessage, ID } from '@modular-agent/types';
 import { MessageRole } from '@modular-agent/types';
 import type { WorkflowConfig } from '@modular-agent/types';
 import { ConversationManager } from '../managers/conversation-manager';
@@ -31,7 +31,6 @@ import { CheckpointCoordinator } from './checkpoint-coordinator';
 import type { ExecutionContext } from '../context/execution-context';
 import { SingletonRegistry } from '../context/singleton-registry';
 import type { InterruptionDetector } from '../managers/interruption-detector';
-import { getToolSchemas } from '../../utils/tool-description';
 
 /**
  * LLM 执行参数
@@ -248,12 +247,17 @@ export class LLMExecutionCoordinator {
     // 如果存在动态工具，合并静态和动态工具
     let availableToolSchemas = tools;
     if (dynamicTools?.toolIds) {
-      const workflowTools = tools ? new Set(tools.map((t: any) => t.name || t.id)) : new Set();
+      const workflowTools = tools ? new Set(tools.map((t: any) => t.id)) : new Set();
       const availableToolIds = this.getAvailableToolIds(workflowTools, dynamicTools);
       const availableTools = availableToolIds
         .map(id => this.toolService.getTool(id))
         .filter(Boolean);
-      availableToolSchemas = getToolSchemas(availableTools);
+      // 直接转换为ToolSchema格式（由外部模块负责，符合设计文档）
+      availableToolSchemas = availableTools.map(tool => ({
+        id: tool.id,
+        description: tool.description,
+        parameters: tool.parameters
+      }));
     }
 
     // 执行 LLM 调用前再次检查中断
@@ -442,12 +446,12 @@ export class LLMExecutionCoordinator {
   /**
    * 检查工具是否需要人工审批
    *
-   * @param toolName 工具名称
+   * @param toolId 工具ID
    * @param workflowConfig 工作流配置
    * @returns 是否需要审批
    */
   private requiresHumanApproval(
-    toolName: string,
+    toolId: ID,
     workflowConfig: WorkflowConfig | undefined
   ): boolean {
     // 如果没有配置审批，则不需要审批
@@ -456,7 +460,7 @@ export class LLMExecutionCoordinator {
     }
 
     const autoApproved = workflowConfig.toolApproval.autoApprovedTools || [];
-    return !autoApproved.includes(toolName);
+    return !autoApproved.includes(toolId);
   }
 
   /**
@@ -477,11 +481,11 @@ export class LLMExecutionCoordinator {
     conversationState: ConversationManager
   ): Promise<ToolApprovalData> {
     const interactionId = generateId();
-    const tool = this.toolService.getTool(toolCall.name);
+    const tool = this.toolService.getTool(toolCall.id);
 
     // 创建工具审批请求
     const toolApprovalData: ToolApprovalData = {
-      toolName: toolCall.name,
+      toolId: toolCall.id,
       toolDescription: tool?.description || '',
       toolParameters: JSON.parse(toolCall.arguments),
       approved: false
@@ -531,7 +535,7 @@ export class LLMExecutionCoordinator {
         nodeId,
         interactionId,
         operationType: UserInteractionOperationType.TOOL_APPROVAL,
-        prompt: `是否批准调用工具 "${toolCall.name}"?`,
+        prompt: `是否批准调用工具 "${toolCall.id}"?`,
         timeout: approvalConfig?.approvalTimeout || 0, // 使用配置的超时时间，默认无限等待
         metadata: {
           toolApproval: toolApprovalData

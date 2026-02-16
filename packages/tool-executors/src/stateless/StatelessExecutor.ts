@@ -3,7 +3,7 @@
  * 执行应用层提供的无状态函数工具，通过函数注册表管理函数，支持版本控制和调用统计
  */
 
-import type { Tool } from '@modular-agent/types';
+import type { Tool, ID } from '@modular-agent/types';
 import type { StatelessToolConfig } from '@modular-agent/types';
 import { ToolError } from '@modular-agent/types';
 import { BaseExecutor } from '../core/base/BaseExecutor';
@@ -38,8 +38,8 @@ export class StatelessExecutor extends BaseExecutor {
     const config = tool.config as StatelessToolConfig;
     if (!config || !config.execute) {
       throw new ToolError(
-        `Tool '${tool.name}' does not have an execute function`,
-        tool.name,
+        `Tool '${tool.id}' does not have an execute function`,
+        tool.id,
         'STATELESS',
         { hasConfig: !!config, hasExecute: !!config?.execute }
       );
@@ -47,8 +47,8 @@ export class StatelessExecutor extends BaseExecutor {
 
     if (typeof config.execute !== 'function') {
       throw new ToolError(
-        `Execute for tool '${tool.name}' is not a function`,
-        tool.name,
+        `Execute for tool '${tool.id}' is not a function`,
+        tool.id,
         'STATELESS',
         { executeType: typeof config.execute }
       );
@@ -56,9 +56,9 @@ export class StatelessExecutor extends BaseExecutor {
 
     try {
       // 注册函数（如果尚未注册）
-      if (!this.functionRegistry.has(tool.name)) {
+      if (!this.functionRegistry.has(tool.id)) {
         this.functionRegistry.register(
-          tool.name,
+          tool.id,
           config.execute,
           config.version,
           config.description
@@ -66,11 +66,11 @@ export class StatelessExecutor extends BaseExecutor {
       }
 
       // 执行函数
-      const result = await this.functionRegistry.execute(tool.name, parameters);
+      const result = await this.functionRegistry.execute(tool.id, parameters);
 
       return {
         result,
-        functionStats: this.functionRegistry.getFunctionStats(tool.name)
+        functionStats: this.functionRegistry.getFunctionStats(tool.id)
       };
     } catch (error) {
       if (error instanceof ToolError) {
@@ -78,7 +78,7 @@ export class StatelessExecutor extends BaseExecutor {
       }
       throw new ToolError(
         `Stateless tool execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        tool.name,
+        tool.id,
         'STATELESS',
         { parameters },
         error instanceof Error ? error : undefined
@@ -90,12 +90,12 @@ export class StatelessExecutor extends BaseExecutor {
    * 注册函数
    */
   registerFunction(
-    toolName: string,
+    toolId: ID,
     execute: (parameters: any) => Promise<any>,
     version?: string,
     description?: string
   ): void {
-    this.functionRegistry.register(toolName, execute, version, description);
+    this.functionRegistry.register(toolId, execute, version, description);
   }
 
   /**
@@ -112,15 +112,15 @@ export class StatelessExecutor extends BaseExecutor {
   /**
    * 注销函数
    */
-  unregisterFunction(toolName: string): boolean {
-    return this.functionRegistry.unregister(toolName);
+  unregisterFunction(toolId: ID): boolean {
+    return this.functionRegistry.unregister(toolId);
   }
 
   /**
    * 获取函数信息
    */
-  getFunctionInfo(toolName: string): any | null {
-    return this.functionRegistry.get(toolName);
+  getFunctionInfo(toolId: ID): any | null {
+    return this.functionRegistry.get(toolId);
   }
 
   /**
@@ -133,8 +133,8 @@ export class StatelessExecutor extends BaseExecutor {
   /**
    * 获取函数统计信息
    */
-  getFunctionStats(toolName: string): any | null {
-    return this.functionRegistry.getFunctionStats(toolName);
+  getFunctionStats(toolId: ID): any | null {
+    return this.functionRegistry.getFunctionStats(toolId);
   }
 
   /**

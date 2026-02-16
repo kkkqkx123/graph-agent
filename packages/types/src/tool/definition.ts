@@ -13,8 +13,6 @@ import type { ToolConfig } from './tool-config';
 export interface Tool {
   /** 工具唯一标识符 */
   id: ID;
-  /** 工具名称 */
-  name: string;
   /** 工具类型 */
   type: ToolType;
   /** 工具描述 */
@@ -35,8 +33,8 @@ export interface Tool {
  * LLM工具调用schema类型
  */
 export interface ToolSchema {
-  /** 工具名称 */
-  name: string;
+  /** 工具ID */
+  id: string;
   /** 工具描述 */
   description: string;
   /** 参数schema */

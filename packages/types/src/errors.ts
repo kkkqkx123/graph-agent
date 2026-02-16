@@ -3,6 +3,8 @@
  * 定义SDK的错误类型体系
  */
 
+import type { ID } from './common';
+
 /**
  * 错误严重程度枚举
  */
@@ -38,8 +40,8 @@ export interface ErrorContext {
   nodeId?: string;
   /** 操作名称 */
   operation?: string;
-  /** 工具名称 */
-  toolName?: string;
+  /** 工具ID */
+  toolId?: ID;
   /** 工具类型 */
   toolType?: string;
   /** 字段名称 */
@@ -313,13 +315,13 @@ export class CircuitBreakerOpenError extends SDKError {
 export class ToolError extends SDKError {
   constructor(
     message: string,
-    public readonly toolName?: string,
+    public readonly toolId?: ID,
     public readonly toolType?: string,
     context?: Record<string, any>,
     cause?: Error,
     severity?: ErrorSeverity
   ) {
-    super(message, severity, { ...context, toolName, toolType }, cause);
+    super(message, severity, { ...context, toolId, toolType }, cause);
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
@@ -630,11 +632,11 @@ export class NodeNotFoundError extends NotFoundError {
 export class ToolNotFoundError extends NotFoundError {
   constructor(
     message: string,
-    toolName: string,
+    toolId: ID,
     context?: Record<string, any>,
     severity?: ErrorSeverity
   ) {
-    super(message, 'Tool', toolName, context, severity);
+    super(message, 'Tool', toolId, context, severity);
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {

@@ -19,8 +19,8 @@ export interface CreateCheckpointOptions {
   threadId: ID;
   /** 节点ID（可选） */
   nodeId?: ID;
-  /** 工具名称（可选） */
-  toolName?: string;
+  /** 工具ID（可选） */
+  toolId?: ID;
   /** 检查点描述 */
   description?: string;
   /** 自定义元数据 */
@@ -51,16 +51,16 @@ export async function createCheckpoint(
   options: CreateCheckpointOptions,
   dependencies: CheckpointDependencies
 ): Promise<string> {
-  const { threadId, nodeId, toolName, description, metadata } = options;
+  const { threadId, nodeId, toolId, description, metadata } = options;
 
   // 构建检查点元数据
   const checkpointMetadata: CheckpointMetadata = {
     ...metadata,
-    description: description || `Checkpoint${nodeId ? ` for node ${nodeId}` : toolName ? ` for tool ${toolName}` : ''}`,
+    description: description || `Checkpoint${nodeId ? ` for node ${nodeId}` : toolId ? ` for tool ${toolId}` : ''}`,
     customFields: {
       ...metadata?.customFields,
       nodeId,
-      toolName
+      toolId
     }
   };
 
@@ -126,15 +126,15 @@ export async function createNodeCheckpoint(
  */
 export async function createToolCheckpoint(
   threadId: ID,
-  toolName: string,
+  toolId: ID,
   dependencies: CheckpointDependencies,
   description?: string
 ): Promise<string> {
   return createCheckpoint(
     {
       threadId,
-      toolName,
-      description: description || `Tool checkpoint for tool ${toolName}`
+      toolId,
+      description: description || `Tool checkpoint for tool ${toolId}`
     },
     dependencies
   );

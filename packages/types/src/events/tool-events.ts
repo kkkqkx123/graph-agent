@@ -12,8 +12,8 @@ export interface ToolCallStartedEvent extends BaseEvent {
   type: EventType.TOOL_CALL_STARTED;
   /** 节点ID */
   nodeId: ID;
-  /** 工具名称 */
-  toolName: string;
+  /** 工具ID */
+  toolId: ID;
   /** 工具参数 */
   toolArguments: string;
 }
@@ -25,8 +25,8 @@ export interface ToolCallCompletedEvent extends BaseEvent {
   type: EventType.TOOL_CALL_COMPLETED;
   /** 节点ID */
   nodeId: ID;
-  /** 工具名称 */
-  toolName: string;
+  /** 工具ID */
+  toolId: ID;
   /** 工具结果 */
   toolResult: any;
   /** 执行时间 */
@@ -40,8 +40,8 @@ export interface ToolCallFailedEvent extends BaseEvent {
   type: EventType.TOOL_CALL_FAILED;
   /** 节点ID */
   nodeId: ID;
-  /** 工具名称 */
-  toolName: string;
+  /** 工具ID */
+  toolId: ID;
   /** 错误信息 */
   error: string;
 }

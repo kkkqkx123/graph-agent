@@ -61,24 +61,24 @@ class ToolService {
 
   /**
    * 注销工具
-   * @param toolName 工具名称
+   * @param toolId 工具ID
    */
-  unregisterTool(toolName: string): void {
-    this.registry.remove(toolName);
+  unregisterTool(toolId: string): void {
+    this.registry.remove(toolId);
   }
 
   /**
    * 获取工具定义
-   * @param toolName 工具名称
+   * @param toolId 工具ID
    * @returns 工具定义
    * @throws NotFoundError 如果工具不存在
    */
-  getTool(toolName: string): Tool {
-    const tool = this.registry.get(toolName);
+  getTool(toolId: string): Tool {
+    const tool = this.registry.get(toolId);
     if (!tool) {
       throw new ToolNotFoundError(
-        `Tool '${toolName}' not found`,
-        toolName
+        `Tool with id '${toolId}' not found`,
+        toolId
       );
     }
     return tool;
@@ -121,36 +121,36 @@ class ToolService {
 
   /**
    * 检查工具是否存在
-   * @param toolName 工具名称
+   * @param toolId 工具ID
    * @returns 是否存在
    */
-  hasTool(toolName: string): boolean {
-    return this.registry.has(toolName);
+  hasTool(toolId: string): boolean {
+    return this.registry.has(toolId);
   }
 
   /**
    * 执行工具
-   * @param toolName 工具名称
+   * @param toolId 工具ID
    * @param parameters 工具参数
    * @param options 执行选项
    * @param threadId 线程ID（可选，用于有状态工具）
    * @returns Result<ToolExecutionResult, ToolError>
    */
   async execute(
-    toolName: string,
+    toolId: string,
     parameters: Record<string, any>,
     options: ToolExecutionOptions = {},
     threadId?: string
   ): Promise<Result<ToolExecutionResult, ToolError>> {
     // 获取工具定义
-    const tool = this.getTool(toolName);
+    const tool = this.getTool(toolId);
 
     // 获取对应的执行器
     const executor = this.executors.get(tool.type);
     if (!executor) {
       return err(new ToolError(
         `No executor found for tool type '${tool.type}'`,
-        toolName,
+        toolId,
         tool.type,
         { parameters }
       ));
@@ -162,7 +162,7 @@ class ToolService {
     );
     
     if (result.isErr()) {
-      return err(this.convertToToolError(result.error, toolName, tool.type, parameters));
+      return err(this.convertToToolError(result.error, toolId, tool.type, parameters));
     }
     
     return ok(result.value);
@@ -176,7 +176,7 @@ class ToolService {
    */
   async executeBatch(
     executions: Array<{
-      toolName: string;
+      toolId: string;
       parameters: Record<string, any>;
       options?: ToolExecutionOptions;
     }>,
@@ -185,7 +185,7 @@ class ToolService {
     // 并行执行所有工具
     const results = await Promise.all(
       executions.map(exec =>
-        this.execute(exec.toolName, exec.parameters, exec.options, threadId)
+        this.execute(exec.toolId, exec.parameters, exec.options, threadId)
       )
     );
     
@@ -203,16 +203,16 @@ class ToolService {
 
   /**
    * 验证工具参数
-   * @param toolName 工具名称
+   * @param toolId 工具ID
    * @param parameters 工具参数
    * @returns 验证结果
    */
   validateParameters(
-    toolName: string,
+    toolId: string,
     parameters: Record<string, any>
   ): { valid: boolean; errors: string[] } {
     try {
-      const tool = this.getTool(toolName);
+      const tool = this.getTool(toolId);
       const executor = this.executors.get(tool.type);
 
       if (!executor) {
@@ -243,12 +243,12 @@ class ToolService {
 
   /**
    * 更新工具定义
-   * @param toolName 工具名称
+   * @param toolId 工具ID
    * @param updates 更新内容
    * @throws NotFoundError 如果工具不存在
    */
-  updateTool(toolName: string, updates: Partial<Tool>): void {
-    const tool = this.getTool(toolName);
+  updateTool(toolId: string, updates: Partial<Tool>): void {
+    const tool = this.getTool(toolId);
     const updatedTool = { ...tool, ...updates };
     this.registry.register(updatedTool);
   }
@@ -263,7 +263,7 @@ class ToolService {
    */
   private convertToToolError(
     error: unknown,
-    toolName: string,
+    toolId: string,
     toolType: string,
     parameters: Record<string, any>
   ): ToolError {
@@ -276,7 +276,7 @@ class ToolService {
     
     return new ToolError(
       `Tool execution failed: ${message}`,
-      toolName,
+      toolId,
       toolType,
       { parameters },
       error instanceof Error ? error : undefined

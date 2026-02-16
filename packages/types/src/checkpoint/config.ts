@@ -2,7 +2,7 @@
  * 检查点配置类型定义
  */
 
-import type { Metadata } from '../common';
+import type { Metadata, ID } from '../common';
 
 /**
  * 检查点元数据类型
@@ -44,8 +44,8 @@ export interface CheckpointConfigContext {
   triggerType: CheckpointTriggerType;
   /** 节点ID（可选） */
   nodeId?: string;
-  /** 工具名称（可选） */
-  toolName?: string;
+  /** 工具ID（可选） */
+  toolId?: ID;
 }
 
 /**

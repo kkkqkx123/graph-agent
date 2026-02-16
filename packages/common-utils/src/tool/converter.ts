@@ -54,7 +54,7 @@ export function convertToolsToOpenAIFormat(tools: ToolSchema[]): OpenAITool[] {
   return tools.map(tool => ({
     type: 'function' as const,
     function: {
-      name: tool.name,
+      name: tool.id,
       description: tool.description,
       parameters: tool.parameters
     }
@@ -78,7 +78,7 @@ export function convertToolsToAnthropicFormat(tools: ToolSchema[]): AnthropicToo
   }
 
   return tools.map(tool => ({
-    name: tool.name,
+    name: tool.id,
     description: tool.description,
     input_schema: {
       type: 'object',
@@ -103,7 +103,7 @@ export function convertToolsToGeminiFormat(tools: ToolSchema[]): GeminiTool[] {
 
   return tools.map(tool => ({
     functionDeclarations: [{
-      name: tool.name,
+      name: tool.id,
       description: tool.description,
       parameters: tool.parameters
     }]

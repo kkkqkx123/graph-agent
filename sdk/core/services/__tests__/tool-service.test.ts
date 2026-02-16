@@ -15,7 +15,6 @@ describe('ToolService', () => {
     service = new ToolService(); // 不再需要参数
     mockTool = {
       id: 'test-tool-1',
-      name: 'test-tool',
       type: ToolType.STATELESS,
       description: 'Test tool',
       parameters: {
@@ -36,7 +35,7 @@ describe('ToolService', () => {
   describe('registerTool', () => {
     it('should register a tool', () => {
       service.registerTool(mockTool);
-      expect(service.hasTool('test-tool')).toBe(true);
+      expect(service.hasTool('test-tool-1')).toBe(true);
     });
   });
 
@@ -46,8 +45,7 @@ describe('ToolService', () => {
         mockTool,
         {
           ...mockTool,
-          id: 'test-tool-2',
-          name: 'test-tool-2'
+          id: 'test-tool-2'
         }
       ];
       service.registerTools(tools);
@@ -58,15 +56,15 @@ describe('ToolService', () => {
   describe('unregisterTool', () => {
     it('should unregister a tool', () => {
       service.registerTool(mockTool);
-      service.unregisterTool('test-tool');
-      expect(service.hasTool('test-tool')).toBe(false);
+      service.unregisterTool('test-tool-1');
+      expect(service.hasTool('test-tool-1')).toBe(false);
     });
   });
 
   describe('getTool', () => {
     it('should return tool if exists', () => {
       service.registerTool(mockTool);
-      const tool = service.getTool('test-tool');
+      const tool = service.getTool('test-tool-1');
       expect(tool).toEqual(mockTool);
     });
 
@@ -89,7 +87,6 @@ describe('ToolService', () => {
       service.registerTool({
         ...mockTool,
         id: 'test-tool-2',
-        name: 'test-tool-2',
         type: ToolType.REST
       });
       const statelessTools = service.listToolsByType(ToolType.STATELESS);
@@ -119,7 +116,7 @@ describe('ToolService', () => {
   describe('hasTool', () => {
     it('should return true if tool exists', () => {
       service.registerTool(mockTool);
-      expect(service.hasTool('test-tool')).toBe(true);
+      expect(service.hasTool('test-tool-1')).toBe(true);
     });
 
     it('should return false if tool does not exist', () => {
@@ -131,7 +128,6 @@ describe('ToolService', () => {
     it('should execute stateless tool', async () => {
       const statelessTool: Tool = {
         id: 'test-stateless',
-        name: 'test-stateless',
         type: ToolType.STATELESS,
         description: 'Stateless tool',
         parameters: {
@@ -153,8 +149,8 @@ describe('ToolService', () => {
         input: 'test'
       });
 
-      expect(result.success).toBe(true);
-      expect(result.result).toEqual({
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual({
         input: 'test',
         result: 'processed: test'
       });
@@ -169,7 +165,6 @@ describe('ToolService', () => {
     it('should handle execution errors for stateless tool', async () => {
       const statelessTool: Tool = {
         id: 'error-tool',
-        name: 'error-tool',
         type: ToolType.STATELESS,
         description: 'Tool that throws error',
         parameters: {
@@ -188,8 +183,10 @@ describe('ToolService', () => {
       service.registerTool(statelessTool);
       const result = await service.execute('error-tool', { input: 'test' });
 
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('Stateless tool execution failed: Execution failed');
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.message).toContain('Stateless tool execution failed: Execution failed');
+      }
     });
   });
 
@@ -197,7 +194,6 @@ describe('ToolService', () => {
     it('should execute multiple tools in parallel', async () => {
       const statelessTool: Tool = {
         id: 'test-batch',
-        name: 'test-batch',
         type: ToolType.STATELESS,
         description: 'Stateless tool for batch testing',
         parameters: {
@@ -217,22 +213,24 @@ describe('ToolService', () => {
       service.registerTool(statelessTool);
 
       const results = await service.executeBatch([
-        { toolName: 'test-batch', parameters: { value: 5 } },
-        { toolName: 'test-batch', parameters: { value: 10 } }
+        { toolId: 'test-batch', parameters: { value: 5 } },
+        { toolId: 'test-batch', parameters: { value: 10 } }
       ]);
 
-      expect(results).toHaveLength(2);
-      expect(results[0]?.success).toBe(true);
-      expect(results[1]?.success).toBe(true);
-      expect(results[0]?.result?.result).toBe(10);
-      expect(results[1]?.result?.result).toBe(20);
+      expect(results.isOk()).toBe(true);
+      if (results.isOk()) {
+        const executionResults = results.unwrap();
+        expect(executionResults).toHaveLength(2);
+        expect(executionResults[0].result).toBe(10);
+        expect(executionResults[1].result).toBe(20);
+      }
     });
   });
 
   describe('validateParameters', () => {
     it('should validate parameters successfully', () => {
       service.registerTool(mockTool);
-      const result = service.validateParameters('test-tool', {
+      const result = service.validateParameters('test-tool-1', {
         input: 'test'
       });
       expect(result.valid).toBe(true);

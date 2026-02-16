@@ -3,7 +3,7 @@
  */
 
 import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
-import type { ToolOptions } from '@modular-agent/types';
+import type { ID, ToolOptions } from '@modular-agent/types';
 import type { ToolExecutionResult } from '@modular-agent/types';
 import type { APIDependencyManager } from '../../../core/sdk-dependencies';
 
@@ -12,7 +12,7 @@ import type { APIDependencyManager } from '../../../core/sdk-dependencies';
  */
 export class ExecuteToolCommand extends BaseCommand<ToolExecutionResult> {
   constructor(
-    private readonly toolName: string,
+    private readonly toolId: ID,
     private readonly parameters: Record<string, any>,
     private readonly options: ToolOptions | undefined,
     private readonly dependencies: APIDependencyManager
@@ -30,13 +30,13 @@ export class ExecuteToolCommand extends BaseCommand<ToolExecutionResult> {
     };
 
     // 验证工具参数
-    const validation = this.dependencies.getToolService().validateParameters(this.toolName, this.parameters);
+    const validation = this.dependencies.getToolService().validateParameters(this.toolId, this.parameters);
     if (!validation.valid) {
       throw new Error(`参数验证失败: ${validation.errors.join(', ')}`);
     }
 
     // 执行工具
-    const result = await this.dependencies.getToolService().execute(this.toolName, this.parameters, executionOptions);
+    const result = await this.dependencies.getToolService().execute(this.toolId, this.parameters, executionOptions);
     const executionTime = Date.now() - startTime;
 
     // 处理 Result 类型，提取成功的结果或抛出错误
@@ -57,8 +57,8 @@ export class ExecuteToolCommand extends BaseCommand<ToolExecutionResult> {
   validate(): CommandValidationResult {
     const errors: string[] = [];
 
-    if (!this.toolName || this.toolName.trim().length === 0) {
-      errors.push('工具名称不能为空');
+    if (!this.toolId || this.toolId.trim().length === 0) {
+      errors.push('工具ID不能为空');
     }
 
     if (!this.parameters) {

@@ -92,7 +92,7 @@ export class RestExecutor extends BaseExecutor {
           operation: 'execute',
           field: 'url',
           value: url,
-          context: { toolName: tool.name, parameters }
+          context: { toolId: tool.id, parameters }
         }
       );
     }
@@ -149,7 +149,7 @@ export class RestExecutor extends BaseExecutor {
               operation: 'execute',
               field: 'method',
               value: method,
-              context: { toolName: tool.name }
+              context: { toolId: tool.id }
             }
           );
       }
@@ -176,7 +176,7 @@ export class RestExecutor extends BaseExecutor {
       if (processedError instanceof TimeoutError) {
         throw new ToolError(
           `REST tool execution timeout: ${processedError.message}`,
-          tool.name,
+          tool.id,
           'REST',
           { url, method }
         );
@@ -186,7 +186,7 @@ export class RestExecutor extends BaseExecutor {
         const circuitError = processedError as CircuitBreakerOpenError;
         throw new ToolError(
           `REST tool circuit breaker is open: ${circuitError.message}`,
-          tool.name,
+          tool.id,
           'REST',
           { url, method },
           circuitError
@@ -195,7 +195,7 @@ export class RestExecutor extends BaseExecutor {
 
       throw new ToolError(
         `REST tool execution failed: ${processedError.message}`,
-        tool.name,
+        tool.id,
         'REST',
         { url, method },
         processedError

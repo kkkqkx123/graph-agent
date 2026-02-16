@@ -12,7 +12,7 @@ import { ConfigurationValidationError, ToolNotFoundError } from '@modular-agent/
  * 工具注册表类
  */
 export class ToolRegistry {
-  private tools: Map<string, Tool> = new Map();
+  private tools: Map<string, Tool> = new Map(); // 以ID为主键的存储
 
   /**
    * 注册工具定义
@@ -23,20 +23,20 @@ export class ToolRegistry {
     // 验证工具定义
     this.validate(tool);
 
-    // 检查工具名称是否已存在
-    if (this.tools.has(tool.name)) {
+    // 检查工具ID是否已存在
+    if (this.tools.has(tool.id)) {
       throw new ConfigurationValidationError(
-        `Tool with name '${tool.name}' already exists`,
+        `Tool with id '${tool.id}' already exists`,
         {
           configType: 'tool',
-          field: 'name',
-          value: tool.name
+          field: 'id',
+          value: tool.id
         }
       );
     }
 
-    // 注册工具
-    this.tools.set(tool.name, tool);
+    // 注册工具（只按ID存储）
+    this.tools.set(tool.id, tool);
   }
 
   /**
@@ -51,35 +51,35 @@ export class ToolRegistry {
 
   /**
    * 获取工具定义
-   * @param toolName 工具名称
+   * @param toolId 工具ID
    * @returns 工具定义，如果不存在则返回undefined
    */
-  get(toolName: string): Tool | undefined {
-    return this.tools.get(toolName);
+  get(toolId: string): Tool | undefined {
+    return this.tools.get(toolId);
   }
 
   /**
    * 检查工具是否存在
-   * @param toolName 工具名称
+   * @param toolId 工具ID
    * @returns 是否存在
    */
-  has(toolName: string): boolean {
-    return this.tools.has(toolName);
+  has(toolId: string): boolean {
+    return this.tools.has(toolId);
   }
 
   /**
    * 删除工具定义
-   * @param toolName 工具名称
+   * @param toolId 工具ID
    * @throws NotFoundError 如果工具不存在
    */
-  remove(toolName: string): void {
-    if (!this.tools.has(toolName)) {
+  remove(toolId: string): void {
+    if (!this.tools.has(toolId)) {
       throw new ToolNotFoundError(
-        `Tool '${toolName}' not found`,
-        toolName
+        `Tool with id '${toolId}' not found`,
+        toolId
       );
     }
-    this.tools.delete(toolName);
+    this.tools.delete(toolId);
   }
 
   /**
@@ -133,13 +133,13 @@ export class ToolRegistry {
    */
   validate(tool: Tool): boolean {
     // 验证必需字段
-    if (!tool.name || typeof tool.name !== 'string') {
+    if (!tool.id || typeof tool.id !== 'string') {
       throw new ConfigurationValidationError(
-        'Tool name is required and must be a string',
+        'Tool id is required and must be a string',
         {
           configType: 'tool',
-          field: 'name',
-          value: tool.name
+          field: 'id',
+          value: tool.id
         }
       );
     }
@@ -299,7 +299,7 @@ export class ToolRegistry {
     const lowerQuery = query.toLowerCase();
     return this.list().filter(tool => {
       return (
-        tool.name.toLowerCase().includes(lowerQuery) ||
+        tool.id.toLowerCase().includes(lowerQuery) ||
         tool.description.toLowerCase().includes(lowerQuery) ||
         tool.metadata?.tags?.some(tag => tag.toLowerCase().includes(lowerQuery)) ||
         tool.metadata?.category?.toLowerCase().includes(lowerQuery)

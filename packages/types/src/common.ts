@@ -47,10 +47,10 @@ export interface ThreadContext {
   /**
    * 注册有状态工具工厂
    */
-  registerStatefulTool(toolName: string, factory: any): void;
+  registerStatefulTool(toolId: ID, factory: any): void;
   
   /**
    * 获取有状态工具实例
    */
-  getStatefulTool(toolName: string): any;
+  getStatefulTool(toolId: ID): any;
 }

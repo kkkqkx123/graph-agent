@@ -44,13 +44,13 @@ export class McpExecutor extends BaseExecutor {
     // 从config中获取MCP配置
     const config = tool.config as McpToolConfig;
     const serverName = config?.serverName;
-    const mcpToolName = tool.name;
+    const mcpToolId = tool.id;
 
     if (!serverName) {
       throw new ConfigurationError(
-        `Tool '${tool.name}' does not have a serverName in config`,
+        `Tool '${tool.id}' does not have a serverName in config`,
         'serverName',
-        { toolName: tool.name, config }
+        { toolId: tool.id, config }
       );
     }
 
@@ -62,11 +62,11 @@ export class McpExecutor extends BaseExecutor {
       const transport = await this.sessionPool.getTransport(serverName, serverConfig);
 
       // 调用MCP工具
-      const result = await transport.callTool(mcpToolName, parameters);
+      const result = await transport.callTool(mcpToolId, parameters);
 
       return {
         serverName,
-        toolName: mcpToolName,
+        toolId: mcpToolId,
         result,
         sessionInfo: transport.getSessionInfo()
       };
@@ -77,9 +77,9 @@ export class McpExecutor extends BaseExecutor {
 
       throw new ToolError(
         `MCP tool execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        tool.name,
+        tool.id,
         'MCP',
-        { serverName, mcpToolName },
+        { serverName, mcpToolId },
         error instanceof Error ? error : undefined
       );
     }

@@ -15,7 +15,6 @@ describe('ToolRegistry', () => {
     registry = new ToolRegistry();
     mockTool = {
       id: 'test-tool-1',
-      name: 'test-tool',
       type: ToolType.STATELESS,
       description: 'Test tool',
       parameters: {
@@ -23,6 +22,9 @@ describe('ToolRegistry', () => {
           input: { type: 'string' as const, description: 'Input parameter' }
         },
         required: ['input']
+      },
+      config: {
+        execute: async (params: any) => ({ result: 'test' })
       }
     };
   });
@@ -30,11 +32,11 @@ describe('ToolRegistry', () => {
   describe('register', () => {
     it('should register a valid tool', () => {
       registry.register(mockTool);
-      expect(registry.has('test-tool')).toBe(true);
+      expect(registry.has('test-tool-1')).toBe(true);
     });
 
-    it('should throw ValidationError if tool name is missing', () => {
-      const invalidTool = { ...mockTool, name: '' };
+    it('should throw ValidationError if tool id is missing', () => {
+      const invalidTool = { ...mockTool, id: '' };
       expect(() => registry.register(invalidTool)).toThrow(ValidationError);
     });
 
@@ -66,7 +68,7 @@ describe('ToolRegistry', () => {
       expect(() => registry.register(invalidTool)).toThrow(ValidationError);
     });
 
-    it('should throw ValidationError if tool name already exists', () => {
+    it('should throw ValidationError if tool id already exists', () => {
       registry.register(mockTool);
       expect(() => registry.register(mockTool)).toThrow(ValidationError);
     });
@@ -78,8 +80,7 @@ describe('ToolRegistry', () => {
         mockTool,
         {
           ...mockTool,
-          id: 'test-tool-2',
-          name: 'test-tool-2'
+          id: 'test-tool-2'
         }
       ];
       registry.registerBatch(tools);
@@ -90,7 +91,7 @@ describe('ToolRegistry', () => {
   describe('get', () => {
     it('should return tool if exists', () => {
       registry.register(mockTool);
-      const tool = registry.get('test-tool');
+      const tool = registry.get('test-tool-1');
       expect(tool).toEqual(mockTool);
     });
 
@@ -103,7 +104,7 @@ describe('ToolRegistry', () => {
   describe('has', () => {
     it('should return true if tool exists', () => {
       registry.register(mockTool);
-      expect(registry.has('test-tool')).toBe(true);
+      expect(registry.has('test-tool-1')).toBe(true);
     });
 
     it('should return false if tool does not exist', () => {
@@ -114,8 +115,8 @@ describe('ToolRegistry', () => {
   describe('remove', () => {
     it('should remove tool if exists', () => {
       registry.register(mockTool);
-      registry.remove('test-tool');
-      expect(registry.has('test-tool')).toBe(false);
+      registry.remove('test-tool-1');
+      expect(registry.has('test-tool-1')).toBe(false);
     });
 
     it('should throw NotFoundError if tool does not exist', () => {
@@ -143,8 +144,14 @@ describe('ToolRegistry', () => {
       registry.register({
         ...mockTool,
         id: 'test-tool-2',
-        name: 'test-tool-2',
-        type: ToolType.STATEFUL
+        type: ToolType.STATEFUL,
+        config: {
+          factory: {
+            create: () => ({
+              execute: async (params: any) => ({ result: 'test' })
+            })
+          }
+        }
       });
       const statelessTools = registry.listByType(ToolType.STATELESS);
       expect(statelessTools).toHaveLength(1);
@@ -161,7 +168,6 @@ describe('ToolRegistry', () => {
       registry.register({
         ...mockTool,
         id: 'test-tool-2',
-        name: 'test-tool-2',
         metadata: { category: 'string' }
       });
       const mathTools = registry.listByCategory('math');
@@ -187,7 +193,7 @@ describe('ToolRegistry', () => {
   });
 
   describe('search', () => {
-    it('should search tools by name', () => {
+    it('should search tools by id', () => {
       registry.register(mockTool);
       const results = registry.search('test');
       expect(results).toHaveLength(1);

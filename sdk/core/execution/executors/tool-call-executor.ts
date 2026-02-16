@@ -16,7 +16,7 @@
 
 import type { ToolService } from '../../services/tool-service';
 import type { EventManager } from '../../services/event-manager';
-import type { Tool } from '@modular-agent/types';
+import type { Tool, ID } from '@modular-agent/types';
 import { safeEmit } from '../utils/event/event-emitter';
 import { EventType, MessageRole } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
@@ -33,8 +33,8 @@ import type { ToolExecutionResult as ServiceToolExecutionResult } from '@modular
 export interface ToolExecutionResult {
   /** 工具调用ID */
   toolCallId: string;
-  /** 工具名称 */
-  toolName: string;
+  /** 工具ID */
+  toolId: ID;
   /** 是否成功 */
   success: boolean;
   /** 执行结果 */
@@ -136,14 +136,14 @@ export class ToolCallExecutor {
             workflowId: '',
             threadId: threadId || '',
             nodeId: nodeId || '',
-            toolName: toolCall.name,
+            toolId: toolCall.name,
             error: errorMessage
           });
         }
 
         return {
           toolCallId: toolCall.id,
-          toolName: toolCall.name,
+          toolId: toolCall.name,
           success: false,
           error: errorMessage,
           executionTime
@@ -187,7 +187,7 @@ export class ToolCallExecutor {
           await createCheckpoint(
             {
               threadId,
-              toolName: toolCall.name,
+              toolId: toolCall.name,
               description: toolConfig.checkpointDescriptionTemplate || `Before tool: ${toolCall.name}`
             },
             this.checkpointDependencies
@@ -200,7 +200,7 @@ export class ToolCallExecutor {
             'executeToolCall',
             undefined,
             undefined,
-            { toolName: toolCall.name, originalError: error instanceof Error ? error : new Error(String(error)) }
+            { toolId: toolCall.name, originalError: error instanceof Error ? error : new Error(String(error)) }
           );
         }
       }
@@ -214,7 +214,7 @@ export class ToolCallExecutor {
         workflowId: '',
         threadId: threadId || '',
         nodeId: nodeId || '',
-        toolName: toolCall.name,
+        toolId: toolCall.name,
         toolArguments: toolCall.arguments
       });
     }
@@ -282,14 +282,14 @@ export class ToolCallExecutor {
           workflowId: '',
           threadId: threadId || '',
           nodeId: nodeId || '',
-          toolName: toolCall.name,
+          toolId: toolCall.name,
           error: errorMessage
         });
       }
 
       return {
         toolCallId: toolCall.id,
-        toolName: toolCall.name,
+        toolId: toolCall.name,
         success: false,
         error: errorMessage,
         executionTime
@@ -331,7 +331,7 @@ export class ToolCallExecutor {
           await createCheckpoint(
             {
               threadId,
-              toolName: toolCall.name,
+              toolId: toolCall.name,
               description: toolConfig.checkpointDescriptionTemplate || `After tool: ${toolCall.name}`
             },
             this.checkpointDependencies
@@ -344,7 +344,7 @@ export class ToolCallExecutor {
             'executeToolCall',
             undefined,
             undefined,
-            { toolName: toolCall.name, originalError: error instanceof Error ? error : new Error(String(error)) }
+            { toolId: toolCall.name, originalError: error instanceof Error ? error : new Error(String(error)) }
           );
         }
       }
@@ -358,7 +358,7 @@ export class ToolCallExecutor {
         workflowId: '',
         threadId: threadId || '',
         nodeId: nodeId || '',
-        toolName: toolCall.name,
+        toolId: toolCall.name,
         toolResult: serviceResult.result,
         executionTime
       });
@@ -366,7 +366,7 @@ export class ToolCallExecutor {
 
     return {
       toolCallId: toolCall.id,
-      toolName: toolCall.name,
+      toolId: toolCall.name,
       success: true,
       result: serviceResult.result,
       executionTime

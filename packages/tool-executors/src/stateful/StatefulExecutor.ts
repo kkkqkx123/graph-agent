@@ -49,8 +49,8 @@ export class StatefulExecutor extends BaseExecutor {
   ): Promise<any> {
     if (!threadId) {
       throw new ToolError(
-        `ThreadId is required for stateful tool '${tool.name}'`,
-        tool.name,
+        `ThreadId is required for stateful tool '${tool.id}'`,
+        tool.id,
         'STATEFUL',
         { threadIdRequired: true }
       );
@@ -60,8 +60,8 @@ export class StatefulExecutor extends BaseExecutor {
     const toolConfig = tool.config as StatefulToolConfig;
     if (!toolConfig || !toolConfig.factory) {
       throw new ToolError(
-        `Tool '${tool.name}' does not have a factory function`,
-        tool.name,
+        `Tool '${tool.id}' does not have a factory function`,
+        tool.id,
         'STATEFUL',
         { hasConfig: !!toolConfig, hasFactory: !!toolConfig?.factory }
       );
@@ -69,8 +69,8 @@ export class StatefulExecutor extends BaseExecutor {
 
     if (typeof toolConfig.factory.create !== 'function') {
       throw new ToolError(
-        `Factory for tool '${tool.name}' is not a function`,
-        tool.name,
+        `Factory for tool '${tool.id}' is not a function`,
+        tool.id,
         'STATEFUL',
         { factoryCreateType: typeof toolConfig.factory.create }
       );
@@ -78,13 +78,13 @@ export class StatefulExecutor extends BaseExecutor {
 
     try {
       // 获取或创建工具实例（线程隔离）
-      const instance = this.getOrCreateInstance(threadId!, tool.name, toolConfig.factory);
+      const instance = this.getOrCreateInstance(threadId!, tool.id, toolConfig.factory);
 
       // 调用实例的 execute 方法
       if (typeof instance.execute !== 'function') {
         throw new ToolError(
-          `Tool instance for '${tool.name}' does not have an execute method`,
-          tool.name,
+          `Tool instance for '${tool.id}' does not have an execute method`,
+          tool.id,
           'STATEFUL',
           { instanceType: typeof instance, hasMethods: Object.keys(instance) }
         );
@@ -102,7 +102,7 @@ export class StatefulExecutor extends BaseExecutor {
       }
       throw new ToolError(
         `Stateful tool execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        tool.name,
+        tool.id,
         'STATEFUL',
         { parameters, threadId },
         error instanceof Error ? error : undefined

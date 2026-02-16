@@ -116,8 +116,8 @@ export interface UserInteractionContext {
  * 用于工具审批请求和响应
  */
 export interface ToolApprovalData {
-  /** 工具名称 */
-  toolName: string;
+  /** 工具ID */
+  toolId: ID;
   /** 工具描述 */
   toolDescription: string;
   /** 工具参数 */
