@@ -194,9 +194,6 @@ export async function executeSingleTriggeredSubgraph(
 ): Promise<ExecutedSubgraphResult> {
   const startTime = Date.now();
   
-  // 标记开始执行触发子工作流
-  task.mainThreadContext.startTriggeredSubgraphExecution(task.subgraphId);
-  
   try {
     // 创建子工作流上下文
     const subgraphContext = await createSubgraphContext(task, contextFactory);
@@ -237,8 +234,5 @@ export async function executeSingleTriggeredSubgraph(
     
     // 重新抛出错误，让调用者处理
     throw error;
-  } finally {
-    // 结束触发子工作流执行标记
-    task.mainThreadContext.endTriggeredSubgraphExecution();
   }
 }

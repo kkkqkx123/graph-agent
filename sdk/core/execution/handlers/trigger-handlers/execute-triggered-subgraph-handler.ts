@@ -18,7 +18,12 @@ import type { ExecuteTriggeredSubgraphActionConfig } from '@modular-agent/types'
 import { RuntimeValidationError, ThreadContextNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
 import { ExecutionContext } from '../../context/execution-context';
 import { getErrorMessage } from '@modular-agent/common-utils';
-import { TriggeredSubworkflowManager, type TriggeredSubgraphTask } from '../../managers/triggered-subworkflow-manager';
+import {
+  executeSingleTriggeredSubgraph,
+  type TriggeredSubgraphTask,
+  type SubgraphContextFactory,
+  type SubgraphExecutor
+} from '../triggered-subgraph-handler';
 import { ThreadExecutor } from '../../thread-executor';
 import { ThreadBuilder } from '../../thread-builder';
 import { SingletonRegistry } from '../../context/singleton-registry';
@@ -106,41 +111,45 @@ export async function executeTriggeredSubgraphHandler(
     }
 
     // 准备输入数据（仅包含触发事件相关的数据）
-    // 数据传递（变量、对话历史）由节点处理器处理
-    const input: Record<string, any> = {
-      triggerId,
-      output: mainThreadContext.getOutput(),
-      input: mainThreadContext.getInput()
-    };
+     // 数据传递（变量、对话历史）由节点处理器处理
+     const input: Record<string, any> = {
+       triggerId,
+       output: mainThreadContext.getOutput(),
+       input: mainThreadContext.getInput()
+     };
 
-    // 创建 ThreadBuilder 实例（作为 SubgraphContextFactory）
-    const threadBuilder = new ThreadBuilder(context.getWorkflowRegistry(), context);
-    
-    // 创建 ThreadExecutor 实例（作为 SubgraphExecutor）
-    const threadExecutor = new ThreadExecutor(context);
-    
-    // 创建 TriggeredSubworkflowManager
-    const manager = new TriggeredSubworkflowManager(
-      threadBuilder,  // 作为 SubgraphContextFactory
-      threadExecutor, // 作为 SubgraphExecutor
-      context.getEventManager()
-    );
+     // 创建子工作流上下文工厂（用ThreadBuilder实现）
+     const contextFactory: SubgraphContextFactory = {
+       buildSubgraphContext: async (subgraphId, inputData, metadata) => {
+         return await new ThreadBuilder(context.getWorkflowRegistry(), context).build(subgraphId, {
+           input: inputData
+         });
+       }
+     };
+     
+     // 创建子工作流执行器
+     const subgraphExecutor: SubgraphExecutor = new ThreadExecutor(context);
 
-    // 创建触发子工作流任务
-    const task: TriggeredSubgraphTask = {
-      subgraphId: triggeredWorkflowId,
-      input,
-      triggerId,
-      mainThreadContext,
-      config: {
-        waitForCompletion,
-        timeout: 30000,
-        recordHistory: true,
-      }
-    };
+     // 创建触发子工作流任务
+     const task: TriggeredSubgraphTask = {
+       subgraphId: triggeredWorkflowId,
+       input,
+       triggerId,
+       mainThreadContext,
+       config: {
+         waitForCompletion,
+         timeout: 30000,
+         recordHistory: true,
+       }
+     };
 
-    // 执行触发子工作流
-    const result = await manager.executeTriggeredSubgraph(task);
+     // 执行触发子工作流（使用函数式API）
+     const result = await executeSingleTriggeredSubgraph(
+       task,
+       contextFactory,
+       subgraphExecutor,
+       context.getEventManager()
+     );
 
     const executionTime = Date.now() - startTime;
 
