@@ -144,15 +144,15 @@ describe('callback-utils', () => {
       const callback = jest.fn(() => {
         throw new Error('Test error');
       });
-      const safe = createSafeCallback(callback, 'default');
+      const safe = createSafeCallback(callback, 'DEFAULT');
 
-      expect(safe()).toBe('default');
+      expect(safe()).toBe('DEFAULT');
     });
 
     it('应该在回调无效时返回默认值', () => {
-      const safe = createSafeCallback(null as any, 'default');
+      const safe = createSafeCallback(null as any, 'DEFAULT');
 
-      expect(safe()).toBe('default');
+      expect(safe()).toBe('DEFAULT');
     });
   });
 

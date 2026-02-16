@@ -230,7 +230,7 @@ describe('ThreadContext', () => {
   describe('conversation management', () => {
     it('should add and get conversation messages correctly', () => {
       const message: LLMMessage = {
-        role: 'user',
+        role: 'user' as MessageRole,
         content: 'Hello'
       };
       

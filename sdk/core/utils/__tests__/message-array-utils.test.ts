@@ -11,10 +11,10 @@ describe('MessageArrayUtils', () => {
   // 测试数据
   const mockMessages: LLMMessage[] = [
     { role: 'system', content: 'System message' },
-    { role: 'user', content: 'User message 1' },
-    { role: 'assistant', content: 'Assistant message 1' },
-    { role: 'user', content: 'User message 2' },
-    { role: 'assistant', content: 'Assistant message 2' }
+    { role: 'user' as MessageRole, content: 'User message 1' },
+    { role: 'assistant' as MessageRole, content: 'Assistant message 1' },
+    { role: 'user' as MessageRole, content: 'User message 2' },
+    { role: 'assistant' as MessageRole, content: 'Assistant message 2' }
   ];
 
   describe('truncateMessages', () => {
@@ -54,7 +54,7 @@ describe('MessageArrayUtils', () => {
     });
 
     it('应该按角色过滤后截断', () => {
-      const result = MessageArrayUtils.truncateMessages(mockMessages, { role: 'user', keepFirst: 1 });
+      const result = MessageArrayUtils.truncateMessages(mockMessages, { role: 'user' as MessageRole, keepFirst: 1 });
       expect(result).toHaveLength(1);
       expect(result[0]?.role).toBe('user');
       expect(result[0]?.content).toBe('User message 1');
@@ -83,14 +83,14 @@ describe('MessageArrayUtils', () => {
 
   describe('insertMessages', () => {
     it('应该在末尾插入消息（position=-1）', () => {
-      const newMessage: LLMMessage = { role: 'user', content: 'New message' };
+      const newMessage: LLMMessage = { role: 'user' as MessageRole, content: 'New message' };
       const result = MessageArrayUtils.insertMessages(mockMessages, -1, [newMessage]);
       expect(result).toHaveLength(6);
       expect(result[5]?.content).toBe('New message');
     });
 
     it('应该在指定位置插入消息', () => {
-      const newMessage: LLMMessage = { role: 'user', content: 'New message' };
+      const newMessage: LLMMessage = { role: 'user' as MessageRole, content: 'New message' };
       const result = MessageArrayUtils.insertMessages(mockMessages, 1, [newMessage]);
       expect(result).toHaveLength(6);
       expect(result[1]?.content).toBe('New message');
@@ -99,8 +99,8 @@ describe('MessageArrayUtils', () => {
 
     it('应该插入多条消息', () => {
       const newMessages: LLMMessage[] = [
-        { role: 'user', content: 'New message 1' },
-        { role: 'user', content: 'New message 2' }
+        { role: 'user' as MessageRole, content: 'New message 1' },
+        { role: 'user' as MessageRole, content: 'New message 2' }
       ];
       const result = MessageArrayUtils.insertMessages(mockMessages, 1, newMessages);
       expect(result).toHaveLength(7);
@@ -115,21 +115,21 @@ describe('MessageArrayUtils', () => {
     });
 
     it('应该处理负数索引', () => {
-      const newMessage: LLMMessage = { role: 'user', content: 'New message' };
+      const newMessage: LLMMessage = { role: 'user' as MessageRole, content: 'New message' };
       const result = MessageArrayUtils.insertMessages(mockMessages, -2, [newMessage]);
       expect(result).toHaveLength(6);
       expect(result[4]?.content).toBe('New message');
     });
 
     it('应该处理索引越界（大于数组长度）', () => {
-      const newMessage: LLMMessage = { role: 'user', content: 'New message' };
+      const newMessage: LLMMessage = { role: 'user' as MessageRole, content: 'New message' };
       const result = MessageArrayUtils.insertMessages(mockMessages, 10, [newMessage]);
       expect(result).toHaveLength(6);
       expect(result[5]?.content).toBe('New message');
     });
 
     it('应该处理索引越界（小于0）', () => {
-      const newMessage: LLMMessage = { role: 'user', content: 'New message' };
+      const newMessage: LLMMessage = { role: 'user' as MessageRole, content: 'New message' };
       const result = MessageArrayUtils.insertMessages(mockMessages, -10, [newMessage]);
       expect(result).toHaveLength(6);
       expect(result[0]?.content).toBe('New message');
@@ -138,28 +138,28 @@ describe('MessageArrayUtils', () => {
 
   describe('replaceMessage', () => {
     it('应该替换指定索引的消息', () => {
-      const newMessage: LLMMessage = { role: 'user', content: 'Replaced message' };
+      const newMessage: LLMMessage = { role: 'user' as MessageRole, content: 'Replaced message' };
       const result = MessageArrayUtils.replaceMessage(mockMessages, 1, newMessage);
       expect(result).toHaveLength(5);
       expect(result[1]?.content).toBe('Replaced message');
     });
 
     it('应该处理负数索引', () => {
-      const newMessage: LLMMessage = { role: 'user', content: 'Replaced message' };
+      const newMessage: LLMMessage = { role: 'user' as MessageRole, content: 'Replaced message' };
       const result = MessageArrayUtils.replaceMessage(mockMessages, -1, newMessage);
       expect(result).toHaveLength(5);
       expect(result[4]?.content).toBe('Replaced message');
     });
 
     it('应该在索引越界时抛出异常', () => {
-      const newMessage: LLMMessage = { role: 'user', content: 'Replaced message' };
+      const newMessage: LLMMessage = { role: 'user' as MessageRole, content: 'Replaced message' };
       expect(() => {
         MessageArrayUtils.replaceMessage(mockMessages, 10, newMessage);
       }).toThrow('Index 10 is out of bounds');
     });
 
     it('应该在负数索引越界时抛出异常', () => {
-      const newMessage: LLMMessage = { role: 'user', content: 'Replaced message' };
+      const newMessage: LLMMessage = { role: 'user' as MessageRole, content: 'Replaced message' };
       expect(() => {
         MessageArrayUtils.replaceMessage(mockMessages, -10, newMessage);
       }).toThrow('Index -10 is out of bounds');
@@ -185,8 +185,8 @@ describe('MessageArrayUtils', () => {
 
     it('应该处理没有系统消息的数组', () => {
       const messagesWithoutSystem: LLMMessage[] = [
-        { role: 'user', content: 'User message' },
-        { role: 'assistant', content: 'Assistant message' }
+        { role: 'user' as MessageRole, content: 'User message' },
+        { role: 'assistant' as MessageRole, content: 'Assistant message' }
       ];
       const result = MessageArrayUtils.clearMessages(messagesWithoutSystem, true);
       expect(result).toHaveLength(0);
@@ -253,8 +253,8 @@ describe('MessageArrayUtils', () => {
 
     it('应该处理对象类型的内容', () => {
       const messagesWithObject: LLMMessage[] = [
-        { role: 'user', content: ['Hello', 123] },
-        { role: 'assistant', content: ['World', 456] }
+        { role: 'user' as MessageRole, content: ['Hello', 123] },
+        { role: 'assistant' as MessageRole, content: ['World', 456] }
       ];
       const result = MessageArrayUtils.filterMessagesByContent(messagesWithObject, {
         contains: ['Hello']
@@ -270,9 +270,9 @@ describe('MessageArrayUtils', () => {
 
   describe('mergeMessageArrays', () => {
     it('应该合并多个消息数组', () => {
-      const array1: LLMMessage[] = [{ role: 'user', content: 'Message 1' }];
-      const array2: LLMMessage[] = [{ role: 'assistant', content: 'Message 2' }];
-      const array3: LLMMessage[] = [{ role: 'user', content: 'Message 3' }];
+      const array1: LLMMessage[] = [{ role: 'user' as MessageRole, content: 'Message 1' }];
+      const array2: LLMMessage[] = [{ role: 'assistant' as MessageRole, content: 'Message 2' }];
+      const array3: LLMMessage[] = [{ role: 'user' as MessageRole, content: 'Message 3' }];
       const result = MessageArrayUtils.mergeMessageArrays(array1, array2, array3);
       expect(result).toHaveLength(3);
       expect(result[0]?.content).toBe('Message 1');
@@ -294,10 +294,10 @@ describe('MessageArrayUtils', () => {
   describe('deduplicateMessages', () => {
     it('应该按默认规则去重', () => {
       const duplicateMessages: LLMMessage[] = [
-        { role: 'user', content: 'Hello' },
-        { role: 'user', content: 'Hello' },
-        { role: 'assistant', content: 'World' },
-        { role: 'assistant', content: 'World' }
+        { role: 'user' as MessageRole, content: 'Hello' },
+        { role: 'user' as MessageRole, content: 'Hello' },
+        { role: 'assistant' as MessageRole, content: 'World' },
+        { role: 'assistant' as MessageRole, content: 'World' }
       ];
       const result = MessageArrayUtils.deduplicateMessages(duplicateMessages);
       expect(result).toHaveLength(2);
@@ -307,9 +307,9 @@ describe('MessageArrayUtils', () => {
 
     it('应该使用自定义键函数去重', () => {
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello' },
-        { role: 'user', content: 'Hello' },
-        { role: 'assistant', content: 'Hello' }
+        { role: 'user' as MessageRole, content: 'Hello' },
+        { role: 'user' as MessageRole, content: 'Hello' },
+        { role: 'assistant' as MessageRole, content: 'Hello' }
       ];
       const result = MessageArrayUtils.deduplicateMessages(messages, msg =>
         typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content)
@@ -374,8 +374,8 @@ describe('MessageArrayUtils', () => {
 
     it('应该处理只有一种角色的消息', () => {
       const userMessages: LLMMessage[] = [
-        { role: 'user', content: 'Message 1' },
-        { role: 'user', content: 'Message 2' }
+        { role: 'user' as MessageRole, content: 'Message 1' },
+        { role: 'user' as MessageRole, content: 'Message 2' }
       ];
       const result = MessageArrayUtils.splitMessagesByRole(userMessages);
       expect(result.user).toHaveLength(2);
@@ -407,7 +407,7 @@ describe('MessageArrayUtils', () => {
 
     it('应该检测缺失的内容', () => {
       const invalidMessages: LLMMessage[] = [
-        { role: 'user', content: null as any }
+        { role: 'user' as MessageRole, content: null as any }
       ];
       const result = MessageArrayUtils.validateMessageArray(invalidMessages);
       expect(result.valid).toBe(false);
@@ -430,7 +430,7 @@ describe('MessageArrayUtils', () => {
 
     it('应该深拷贝对象类型的内容', () => {
       const messagesWithObject: LLMMessage[] = [
-        { role: 'user', content: ['Hello', 123] }
+        { role: 'user' as MessageRole, content: ['Hello', 123] }
       ];
       const cloned = MessageArrayUtils.cloneMessages(messagesWithObject);
       expect(cloned[0]?.content).toEqual(messagesWithObject[0]?.content);
@@ -555,7 +555,7 @@ describe('MessageArrayUtils', () => {
 
     it('应该处理对象类型的内容', () => {
       const messagesWithObject: LLMMessage[] = [
-        { role: 'user', content: ['Hello World', 123] }
+        { role: 'user' as MessageRole, content: ['Hello World', 123] }
       ];
       const result = MessageArrayUtils.searchMessages(messagesWithObject, 'Hello');
       expect(result).toHaveLength(1);

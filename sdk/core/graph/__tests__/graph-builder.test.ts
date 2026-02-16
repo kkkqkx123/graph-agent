@@ -57,14 +57,14 @@ function createSimpleWorkflow(): WorkflowDefinition {
         id: 'e1',
         sourceNodeId: 'start',
         targetNodeId: 'llm',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
         label: 'Start to LLM',
       },
       {
         id: 'e2',
         sourceNodeId: 'llm',
         targetNodeId: 'end',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
         label: 'LLM to End',
       },
     ],
@@ -135,13 +135,13 @@ function createBranchWorkflow(): WorkflowDefinition {
         id: 'e1',
         sourceNodeId: 'start',
         targetNodeId: 'route',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
       },
       {
         id: 'e2',
         sourceNodeId: 'route',
         targetNodeId: 'llm1',
-        type: EdgeType.CONDITIONAL,
+        type: 'CONDITIONAL',
         condition: {
           expression: 'variables.condition === "A"',
         },
@@ -151,7 +151,7 @@ function createBranchWorkflow(): WorkflowDefinition {
         id: 'e3',
         sourceNodeId: 'route',
         targetNodeId: 'llm2',
-        type: EdgeType.CONDITIONAL,
+        type: 'CONDITIONAL',
         condition: {
           expression: 'variables.condition === "B"',
         },
@@ -161,13 +161,13 @@ function createBranchWorkflow(): WorkflowDefinition {
         id: 'e4',
         sourceNodeId: 'llm1',
         targetNodeId: 'end',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
       },
       {
         id: 'e5',
         sourceNodeId: 'llm2',
         targetNodeId: 'end',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
       },
     ],
   };
@@ -246,37 +246,37 @@ function createForkJoinWorkflow(): WorkflowDefinition {
         id: 'e1',
         sourceNodeId: 'start',
         targetNodeId: 'fork',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
       },
       {
         id: 'e2',
         sourceNodeId: 'fork',
         targetNodeId: 'llm1',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
       },
       {
         id: 'e3',
         sourceNodeId: 'fork',
         targetNodeId: 'llm2',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
       },
       {
         id: 'e4',
         sourceNodeId: 'llm1',
         targetNodeId: 'join',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
       },
       {
         id: 'e5',
         sourceNodeId: 'llm2',
         targetNodeId: 'join',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
       },
       {
         id: 'e6',
         sourceNodeId: 'join',
         targetNodeId: 'end',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
       },
     ],
   };
@@ -331,13 +331,13 @@ function createSubgraphWorkflow(): WorkflowDefinition {
         id: 'e1',
         sourceNodeId: 'start',
         targetNodeId: 'subgraph',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
       },
       {
         id: 'e2',
         sourceNodeId: 'subgraph',
         targetNodeId: 'end',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
       },
     ],
   };
@@ -389,13 +389,13 @@ function createSubWorkflow(): WorkflowDefinition {
         id: 'subE1',
         sourceNodeId: 'subStart',
         targetNodeId: 'subLLM',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
       },
       {
         id: 'subE2',
         sourceNodeId: 'subLLM',
         targetNodeId: 'subEnd',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
       },
     ],
   };
@@ -442,7 +442,7 @@ describe('GraphBuilder', () => {
       expect(edge1).toBeDefined();
       expect(edge1?.sourceNodeId).toBe('start');
       expect(edge1?.targetNodeId).toBe('llm');
-      expect(edge1?.type).toBe(EdgeType.DEFAULT);
+      expect(edge1?.type).toBe('DEFAULT');
       expect(edge1?.label).toBe('Start to LLM');
 
       const edge2 = graph.getEdge('e2');
@@ -457,13 +457,13 @@ describe('GraphBuilder', () => {
 
       const edge2 = graph.getEdge('e2');
       expect(edge2).toBeDefined();
-      expect(edge2?.type).toBe(EdgeType.CONDITIONAL);
+      expect(edge2?.type).toBe('CONDITIONAL');
       expect(edge2?.originalEdge?.condition).toBeDefined();
       expect(edge2?.weight).toBe(10);
 
       const edge3 = graph.getEdge('e3');
       expect(edge3).toBeDefined();
-      expect(edge3?.type).toBe(EdgeType.CONDITIONAL);
+      expect(edge3?.type).toBe('CONDITIONAL');
       expect(edge3?.weight).toBe(5);
     });
 
@@ -549,19 +549,19 @@ describe('GraphBuilder', () => {
             id: 'e1',
             sourceNodeId: 'start',
             targetNodeId: 'llm',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
           },
           {
             id: 'e2',
             sourceNodeId: 'llm',
             targetNodeId: 'end1',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
           },
           {
             id: 'e3',
             sourceNodeId: 'llm',
             targetNodeId: 'end2',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
           },
         ],
       };
@@ -616,7 +616,7 @@ describe('GraphBuilder', () => {
             id: 'e1',
             sourceNodeId: 'llm',
             targetNodeId: 'end',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
           },
         ],
       };
@@ -727,13 +727,13 @@ describe('GraphBuilder', () => {
             id: 'e1',
             sourceNodeId: 'start',
             targetNodeId: 'subgraph',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
           },
           {
             id: 'e2',
             sourceNodeId: 'subgraph',
             targetNodeId: 'end',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
           },
         ],
       };

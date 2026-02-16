@@ -88,13 +88,13 @@ describe('Thread构建到执行实例创建集成测试', () => {
         id: `${id}-edge-1`,
         sourceNodeId: `${id}-start`,
         targetNodeId: `${id}-process`,
-        type: EdgeType.DEFAULT
+        type: 'DEFAULT'
       },
       {
         id: `${id}-edge-2`,
         sourceNodeId: `${id}-process`,
         targetNodeId: `${id}-end`,
-        type: EdgeType.DEFAULT
+        type: 'DEFAULT'
       }
     ],
     variables: [],
@@ -229,19 +229,19 @@ describe('Thread构建到执行实例创建集成测试', () => {
             id: 'edge-1',
             sourceNodeId: 'node-start',
             targetNodeId: 'node-llm',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-2',
             sourceNodeId: 'node-llm',
             targetNodeId: 'node-code',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-3',
             sourceNodeId: 'node-code',
             targetNodeId: 'node-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -413,7 +413,7 @@ describe('Thread构建到执行实例创建集成测试', () => {
             id: 'edge-1',
             sourceNodeId: 'node-process',
             targetNodeId: 'node-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {},

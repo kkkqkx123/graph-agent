@@ -211,7 +211,7 @@ describe('llm-handler', () => {
     it('应该正确处理HumanRelay provider', async () => {
       const mockHumanRelayResult = {
         message: {
-          role: 'user',
+          role: 'user' as MessageRole,
           content: 'Human input'
         }
       };
@@ -378,7 +378,7 @@ describe('llm-handler', () => {
       const result = await llmHandler(mockThread, mockNode, mockContext);
 
       expect(result.status).toBe('COMPLETED');
-      expect(mockLLMWrapper.getProfile).toHaveBeenCalledWith('default');
+      expect(mockLLMWrapper.getProfile).toHaveBeenCalledWith('DEFAULT');
     });
   });
 

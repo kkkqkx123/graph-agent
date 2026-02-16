@@ -52,7 +52,7 @@ describe('GraphValidator', () => {
     id: string,
     sourceNodeId: string,
     targetNodeId: string,
-    type: EdgeType = EdgeType.DEFAULT
+    type: EdgeType = 'DEFAULT'
   ): GraphEdge {
     return {
       id,

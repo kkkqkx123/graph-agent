@@ -179,7 +179,7 @@ describe('ToolCallExecutor', () => {
 
       // 验证消息添加到对话历史
       expect(mockConversationManager.addMessage).toHaveBeenCalledWith({
-        role: 'tool',
+        role: 'tool' as MessageRole,
         content: JSON.stringify({ data: 'test result' }),
         toolCallId: 'call-1'
       });
@@ -231,7 +231,7 @@ describe('ToolCallExecutor', () => {
           type: 'MESSAGE_ADDED',
           threadId: 'thread-1',
           nodeId: 'node-1',
-          role: 'tool',
+          role: 'tool' as MessageRole,
           content: '"result"',
           toolCalls: undefined
         })
@@ -338,7 +338,7 @@ describe('ToolCallExecutor', () => {
       );
 
       expect(mockConversationManager.addMessage).toHaveBeenCalledWith({
-        role: 'tool',
+        role: 'tool' as MessageRole,
         content: JSON.stringify({ error: 'Tool failed' }),
         toolCallId: 'call-1'
       });
@@ -359,7 +359,7 @@ describe('ToolCallExecutor', () => {
           type: 'MESSAGE_ADDED',
           threadId: 'thread-1',
           nodeId: 'node-1',
-          role: 'tool',
+          role: 'tool' as MessageRole,
           content: JSON.stringify({ error: 'Tool failed' }),
           toolCalls: undefined
         })

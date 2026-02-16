@@ -531,7 +531,7 @@ describe('NodeValidator', () => {
         config: {
           operationType: 'ADD_MESSAGE',
           message: {
-            role: 'user',
+            role: 'user' as MessageRole,
             contentTemplate: '{{input}}'
           },
           prompt: '请输入您的问题：',
@@ -722,7 +722,7 @@ describe('NodeValidator', () => {
           insert: {
             position: 0,
             messages: [
-              { role: 'user', content: 'Hello' }
+              { role: 'user' as MessageRole, content: 'Hello' }
             ]
           }
         },

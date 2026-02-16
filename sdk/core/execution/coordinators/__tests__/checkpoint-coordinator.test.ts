@@ -275,7 +275,7 @@ describe('CheckpointCoordinator', () => {
       // 设置 mock 返回值
       mockThreadRegistry.get.mockReturnValue(mockThreadContext);
       mockConversationManager.getAllMessages.mockReturnValue([
-        { role: 'user', content: 'test message' } as LLMMessage
+        { role: 'user' as MessageRole, content: 'test message' } as LLMMessage
       ]);
       mockConversationManager.getMarkMap.mockReturnValue({
         originalIndices: [],
@@ -490,7 +490,7 @@ describe('CheckpointCoordinator', () => {
       mockCheckpointStateManager.get.mockResolvedValue(mockCheckpoint);
       mockWorkflowRegistry.ensureProcessed.mockResolvedValue(mockProcessedWorkflow);
       mockGlobalMessageStorage.getMessages.mockReturnValue([
-        { role: 'user', content: 'test message' } as LLMMessage
+        { role: 'user' as MessageRole, content: 'test message' } as LLMMessage
       ]);
 
       // Mock ExecutionContext
@@ -568,7 +568,7 @@ describe('CheckpointCoordinator', () => {
       mockCheckpointStateManager.get.mockResolvedValue(mockCheckpoint);
       mockWorkflowRegistry.ensureProcessed.mockResolvedValue(mockProcessedWorkflow);
       mockGlobalMessageStorage.getMessages.mockReturnValue([
-        { role: 'user', content: 'test message' } as LLMMessage
+        { role: 'user' as MessageRole, content: 'test message' } as LLMMessage
       ]);
 
       // Mock ExecutionContext

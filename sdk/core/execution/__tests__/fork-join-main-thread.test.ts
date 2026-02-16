@@ -10,7 +10,7 @@ import { join, ForkConfig } from '../utils/thread-operations';
 import { ThreadOperationCoordinator } from '../coordinators/thread-operation-coordinator';
 import { ConversationManager } from '../managers/conversation-manager';
 import type { Thread, PreprocessedGraph, MessageRole } from '@modular-agent/types';
-import { ThreadStatus, MessageRole as MessageRoleEnum } from '@modular-agent/types';
+import { ThreadStatus } from '@modular-agent/types';
 
 describe('Fork/Join 主线程上下文处理', () => {
   let executionContext: ExecutionContext;
@@ -103,7 +103,7 @@ describe('Fork/Join 主线程上下文处理', () => {
 
       // 在主线程中添加消息
       child1.conversationManager.addMessage({
-        role: MessageRoleEnum.USER,
+        role: 'user',
         content: 'Main thread message'
       });
 
@@ -149,7 +149,7 @@ describe('Fork/Join 主线程上下文处理', () => {
 
       // 在第一个子线程中添加消息
       child1.conversationManager.addMessage({
-        role: MessageRoleEnum.USER,
+        role: 'user',
         content: 'First child message'
       });
 

@@ -87,11 +87,11 @@ describe('CheckpointConfigResolver', () => {
         hookConfig,
         triggerConfig,
         toolConfig,
-        { triggerType: CheckpointTriggerType.NODE_BEFORE_EXECUTE }
+        { triggerType: 'NODE_BEFORE_EXECUTE' }
       );
 
       expect(result.shouldCreate).toBe(false);
-      expect(result.source).toBe(CheckpointConfigSource.DISABLED);
+      expect(result.source).toBe('disabled');
     });
 
     it('应该优先使用Hook配置', () => {
@@ -109,7 +109,7 @@ describe('CheckpointConfigResolver', () => {
 
       expect(result.shouldCreate).toBe(true);
       expect(result.description).toBe('Hook checkpoint');
-      expect(result.source).toBe(CheckpointConfigSource.HOOK);
+      expect(result.source).toBe('hook');
     });
 
     it('应该优先使用Trigger配置', () => {
@@ -127,7 +127,7 @@ describe('CheckpointConfigResolver', () => {
 
       expect(result.shouldCreate).toBe(true);
       expect(result.description).toBe('Trigger checkpoint');
-      expect(result.source).toBe(CheckpointConfigSource.TRIGGER);
+      expect(result.source).toBe('trigger');
     });
 
     it('应该正确处理工具配置 - before', () => {
@@ -140,12 +140,12 @@ describe('CheckpointConfigResolver', () => {
         undefined,
         undefined,
         toolConfig,
-        { triggerType: CheckpointTriggerType.TOOL_BEFORE, toolName: 'test_tool' }
+        { triggerType: 'TOOL_BEFORE', toolName: 'test_tool' }
       );
 
       expect(result.shouldCreate).toBe(true);
       expect(result.description).toBe('Tool {{tool.name}} before');
-      expect(result.source).toBe(CheckpointConfigSource.TOOL);
+      expect(result.source).toBe('tool');
     });
 
     it('应该正确处理工具配置 - after', () => {
@@ -157,11 +157,11 @@ describe('CheckpointConfigResolver', () => {
         undefined,
         undefined,
         toolConfig,
-        { triggerType: CheckpointTriggerType.TOOL_AFTER }
+        { triggerType: 'TOOL_AFTER' }
       );
 
       expect(result.shouldCreate).toBe(true);
-      expect(result.source).toBe(CheckpointConfigSource.TOOL);
+      expect(result.source).toBe('tool');
     });
 
     it('应该正确处理工具配置 - both', () => {
@@ -173,7 +173,7 @@ describe('CheckpointConfigResolver', () => {
         undefined,
         undefined,
         toolConfig,
-        { triggerType: CheckpointTriggerType.TOOL_BEFORE }
+        { triggerType: 'TOOL_BEFORE' }
       );
 
       const resultAfter = resolveCheckpointConfig(
@@ -182,7 +182,7 @@ describe('CheckpointConfigResolver', () => {
         undefined,
         undefined,
         toolConfig,
-        { triggerType: CheckpointTriggerType.TOOL_AFTER }
+        { triggerType: 'TOOL_AFTER' }
       );
 
       expect(resultBefore.shouldCreate).toBe(true);
@@ -198,7 +198,7 @@ describe('CheckpointConfigResolver', () => {
         undefined,
         undefined,
         toolConfig,
-        { triggerType: CheckpointTriggerType.TOOL_BEFORE }
+        { triggerType: 'TOOL_BEFORE' }
       );
 
       expect(result.shouldCreate).toBe(true);
@@ -213,12 +213,12 @@ describe('CheckpointConfigResolver', () => {
         undefined,
         undefined,
         undefined,
-        { triggerType: CheckpointTriggerType.NODE_BEFORE_EXECUTE }
+        { triggerType: 'NODE_BEFORE_EXECUTE' }
       );
 
       expect(result.shouldCreate).toBe(true);
       expect(result.description).toBe('Before node: Test Node');
-      expect(result.source).toBe(CheckpointConfigSource.NODE);
+      expect(result.source).toBe('node');
     });
 
     it('应该优先使用节点配置 - after', () => {
@@ -230,12 +230,12 @@ describe('CheckpointConfigResolver', () => {
         undefined,
         undefined,
         undefined,
-        { triggerType: CheckpointTriggerType.NODE_AFTER_EXECUTE }
+        { triggerType: 'NODE_AFTER_EXECUTE' }
       );
 
       expect(result.shouldCreate).toBe(true);
       expect(result.description).toBe('After node: Test Node');
-      expect(result.source).toBe(CheckpointConfigSource.NODE);
+      expect(result.source).toBe('node');
     });
 
     it('应该使用全局配置作为默认', () => {
@@ -247,12 +247,12 @@ describe('CheckpointConfigResolver', () => {
         undefined,
         undefined,
         undefined,
-        { triggerType: CheckpointTriggerType.NODE_BEFORE_EXECUTE }
+        { triggerType: 'NODE_BEFORE_EXECUTE' }
       );
 
       expect(result.shouldCreate).toBe(true);
       expect(result.description).toBe('Global checkpoint before node');
-      expect(result.source).toBe(CheckpointConfigSource.GLOBAL);
+      expect(result.source).toBe('global');
     });
 
     it('应该默认不创建检查点', () => {
@@ -268,11 +268,11 @@ describe('CheckpointConfigResolver', () => {
         undefined,
         undefined,
         undefined,
-        { triggerType: CheckpointTriggerType.NODE_BEFORE_EXECUTE }
+        { triggerType: 'NODE_BEFORE_EXECUTE' }
       );
 
       expect(result.shouldCreate).toBe(false);
-      expect(result.source).toBe(CheckpointConfigSource.GLOBAL); // checkpointBeforeNode 为 false，source 仍然是 global
+      expect(result.source).toBe('global'); // checkpointBeforeNode 为 false，source 仍然是 global
     });
 
     describe('triggered子工作流检查点配置', () => {
@@ -306,7 +306,7 @@ describe('CheckpointConfigResolver', () => {
       let triggeredWorkflow: WorkflowDefinition;
 
       beforeEach(() => {
-        triggeredWorkflow = createMockWorkflow('TRIGGERED_SUBWORKFLOW');
+        triggeredWorkflow = createMockWorkflow('triggered_subworkflow');
       });
 
       it('应该默认不创建检查点对于triggered子工作流', () => {
@@ -316,12 +316,12 @@ describe('CheckpointConfigResolver', () => {
           hookConfig,
           triggerConfig,
           toolConfig,
-          { triggerType: CheckpointTriggerType.NODE_BEFORE_EXECUTE },
+          { triggerType: 'NODE_BEFORE_EXECUTE' },
           triggeredWorkflow
         );
 
         expect(result.shouldCreate).toBe(false);
-        expect(result.source).toBe(CheckpointConfigSource.TRIGGERED_SUBWORKFLOW);
+        expect(result.source).toBe('triggered_subworkflow');
       });
 
       it('应该不创建检查点即使全局配置启用', () => {
@@ -334,12 +334,12 @@ describe('CheckpointConfigResolver', () => {
           hookConfig,
           triggerConfig,
           toolConfig,
-          { triggerType: CheckpointTriggerType.NODE_BEFORE_EXECUTE },
+          { triggerType: 'NODE_BEFORE_EXECUTE' },
           triggeredWorkflow
         );
 
         expect(result.shouldCreate).toBe(false);
-        expect(result.source).toBe(CheckpointConfigSource.TRIGGERED_SUBWORKFLOW);
+        expect(result.source).toBe('triggered_subworkflow');
       });
 
       it('应该不创建检查点即使节点配置启用', () => {
@@ -351,17 +351,17 @@ describe('CheckpointConfigResolver', () => {
           hookConfig,
           triggerConfig,
           toolConfig,
-          { triggerType: CheckpointTriggerType.NODE_BEFORE_EXECUTE },
+          { triggerType: 'NODE_BEFORE_EXECUTE' },
           triggeredWorkflow
         );
 
         expect(result.shouldCreate).toBe(false);
-        expect(result.source).toBe(CheckpointConfigSource.TRIGGERED_SUBWORKFLOW);
+        expect(result.source).toBe('triggered_subworkflow');
       });
 
       it('应该创建检查点当enableCheckpoints为true时', () => {
         const workflowWithEnabledCheckpoints = createMockProcessedWorkflow(
-          'TRIGGERED_SUBWORKFLOW',
+          'triggered_subworkflow',
           {
             enableCheckpoints: true,
             checkpointConfig: {
@@ -378,17 +378,17 @@ describe('CheckpointConfigResolver', () => {
           hookConfig,
           triggerConfig,
           toolConfig,
-          { triggerType: CheckpointTriggerType.NODE_BEFORE_EXECUTE },
+          { triggerType: 'NODE_BEFORE_EXECUTE' },
           workflowWithEnabledCheckpoints
         );
 
         expect(result.shouldCreate).toBe(true);
-        expect(result.source).toBe(CheckpointConfigSource.GLOBAL);
+        expect(result.source).toBe('global');
       });
 
       it('应该使用triggered子工作流的专用配置', () => {
         const workflowWithCustomConfig = createMockProcessedWorkflow(
-          'TRIGGERED_SUBWORKFLOW',
+          'triggered_subworkflow',
           {
             enableCheckpoints: true,
             checkpointConfig: {
@@ -405,18 +405,18 @@ describe('CheckpointConfigResolver', () => {
           hookConfig,
           triggerConfig,
           toolConfig,
-          { triggerType: CheckpointTriggerType.NODE_AFTER_EXECUTE },
+          { triggerType: 'NODE_AFTER_EXECUTE' },
           workflowWithCustomConfig
         );
 
         expect(result.shouldCreate).toBe(true);
         expect(result.description).toBe('Triggered workflow checkpoint');
-        expect(result.source).toBe(CheckpointConfigSource.GLOBAL);
+        expect(result.source).toBe('global');
       });
 
       it('应该优先使用节点配置当enableCheckpoints为true时', () => {
         const workflowWithEnabledCheckpoints = createMockProcessedWorkflow(
-          'TRIGGERED_SUBWORKFLOW',
+          'triggered_subworkflow',
           {
             enableCheckpoints: true,
             checkpointConfig: {
@@ -435,17 +435,17 @@ describe('CheckpointConfigResolver', () => {
           hookConfig,
           triggerConfig,
           toolConfig,
-          { triggerType: CheckpointTriggerType.NODE_BEFORE_EXECUTE },
+          { triggerType: 'NODE_BEFORE_EXECUTE' },
           workflowWithEnabledCheckpoints
         );
 
         expect(result.shouldCreate).toBe(true);
-        expect(result.source).toBe(CheckpointConfigSource.NODE);
+        expect(result.source).toBe('node');
       });
 
       it('应该优先使用Hook配置当enableCheckpoints为true时', () => {
         const workflowWithEnabledCheckpoints = createMockProcessedWorkflow(
-          'TRIGGERED_SUBWORKFLOW',
+          'triggered_subworkflow',
           {
             enableCheckpoints: true,
             checkpointConfig: {
@@ -471,12 +471,12 @@ describe('CheckpointConfigResolver', () => {
 
         expect(result.shouldCreate).toBe(true);
         expect(result.description).toBe('Hook checkpoint in triggered workflow');
-        expect(result.source).toBe(CheckpointConfigSource.HOOK);
+        expect(result.source).toBe('hook');
       });
 
       it('应该优先使用Trigger配置当enableCheckpoints为true时', () => {
         const workflowWithEnabledCheckpoints = createMockProcessedWorkflow(
-          'TRIGGERED_SUBWORKFLOW',
+          'triggered_subworkflow',
           {
             enableCheckpoints: true,
             checkpointConfig: {
@@ -502,12 +502,12 @@ describe('CheckpointConfigResolver', () => {
 
         expect(result.shouldCreate).toBe(true);
         expect(result.description).toBe('Trigger checkpoint in triggered workflow');
-        expect(result.source).toBe(CheckpointConfigSource.TRIGGER);
+        expect(result.source).toBe('trigger');
       });
 
       it('应该优先使用Tool配置当enableCheckpoints为true时', () => {
         const workflowWithEnabledCheckpoints = createMockProcessedWorkflow(
-          'TRIGGERED_SUBWORKFLOW',
+          'triggered_subworkflow',
           {
             enableCheckpoints: true,
             checkpointConfig: {
@@ -526,12 +526,12 @@ describe('CheckpointConfigResolver', () => {
           hookConfig,
           triggerConfig,
           toolConfig,
-          { triggerType: CheckpointTriggerType.TOOL_BEFORE },
+          { triggerType: 'TOOL_BEFORE' },
           workflowWithEnabledCheckpoints
         );
 
         expect(result.shouldCreate).toBe(true);
-        expect(result.source).toBe(CheckpointConfigSource.TOOL);
+        expect(result.source).toBe('tool');
       });
 
       it('应该正确处理非triggered子工作流', () => {
@@ -545,12 +545,12 @@ describe('CheckpointConfigResolver', () => {
           hookConfig,
           triggerConfig,
           toolConfig,
-          { triggerType: CheckpointTriggerType.NODE_BEFORE_EXECUTE },
+          { triggerType: 'NODE_BEFORE_EXECUTE' },
           standaloneWorkflow
         );
 
         expect(result.shouldCreate).toBe(true);
-        expect(result.source).toBe(CheckpointConfigSource.GLOBAL);
+        expect(result.source).toBe('global');
       });
 
       it('应该正确处理DEPENDENT类型工作流', () => {
@@ -564,12 +564,12 @@ describe('CheckpointConfigResolver', () => {
           hookConfig,
           triggerConfig,
           toolConfig,
-          { triggerType: CheckpointTriggerType.NODE_BEFORE_EXECUTE },
+          { triggerType: 'NODE_BEFORE_EXECUTE' },
           dependentWorkflow
         );
 
         expect(result.shouldCreate).toBe(true);
-        expect(result.source).toBe(CheckpointConfigSource.GLOBAL);
+        expect(result.source).toBe('global');
       });
     });
   });
@@ -620,7 +620,7 @@ describe('CheckpointConfigResolver', () => {
         undefined,
         undefined,
         undefined,
-        { triggerType: CheckpointTriggerType.NODE_BEFORE_EXECUTE }
+        { triggerType: 'NODE_BEFORE_EXECUTE' }
       );
 
       // 当 checkpointBeforeNode 为 false 时，会返回默认描述

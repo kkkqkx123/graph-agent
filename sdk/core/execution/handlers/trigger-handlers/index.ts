@@ -41,7 +41,21 @@ import { executeTriggeredSubgraphHandler } from './execute-triggered-subgraph-ha
  * 注意：触发器动作类型是固定的（TriggerActionType枚举），处理器在模块加载时静态映射
  */
 export const triggerHandlers: Record<TriggerActionType, TriggerHandler> = {
-  [TriggerActionType.STOP_THREAD]: stopThreadHandler,
+  ['start_workflow']: async (action, triggerId) => ({
+    triggerId,
+    success: false,
+    action,
+    executionTime: Date.now(),
+    error: new Error('start_workflow not implemented')
+  }),
+  ['stop_workflow']: async (action, triggerId) => ({
+    triggerId,
+    success: false,
+    action,
+    executionTime: Date.now(),
+    error: new Error('stop_workflow not implemented')
+  }),
+  ['stop_thread']: stopThreadHandler,
   ['pause_thread']: pauseThreadHandler,
   ['resume_thread']: resumeThreadHandler,
   ['skip_node']: skipNodeHandler,

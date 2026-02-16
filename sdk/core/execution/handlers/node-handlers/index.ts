@@ -59,7 +59,7 @@ export const nodeHandlers: Record<NodeType, NodeHandler> = {
   ['CONTEXT_PROCESSOR']: contextProcessorHandler,
   ['LLM']: llmHandler,
   ['ADD_TOOL']: addToolHandler,
-  ['START'_FROM_TRIGGER]: startFromTriggerHandler,
+  ['START_FROM_TRIGGER']: startFromTriggerHandler,
   ['CONTINUE_FROM_TRIGGER']: continueFromTriggerHandler
 } as Record<NodeType, NodeHandler>;
 

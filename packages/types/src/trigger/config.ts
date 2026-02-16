@@ -27,6 +27,8 @@ export type TriggerActionType =
   'start_workflow' |
   /** 停止工作流 */
   'stop_workflow' |
+  /** 停止线程 */
+  'stop_thread' |
   /** 暂停线程 */
   'pause_thread' |
   /** 恢复线程 */

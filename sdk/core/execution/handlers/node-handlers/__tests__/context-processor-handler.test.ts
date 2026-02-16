@@ -151,10 +151,10 @@ describe('context-processor-handler', () => {
     mockContext = {
       conversationManager: new MockConversationManager([
         { role: 'system', content: 'System message' },
-        { role: 'user', content: 'User message 1' },
-        { role: 'assistant', content: 'Assistant message 1' },
-        { role: 'user', content: 'User message 2' },
-        { role: 'assistant', content: 'Assistant message 2' }
+        { role: 'user' as MessageRole, content: 'User message 1' },
+        { role: 'assistant' as MessageRole, content: 'Assistant message 1' },
+        { role: 'user' as MessageRole, content: 'User message 2' },
+        { role: 'assistant' as MessageRole, content: 'Assistant message 2' }
       ])
     };
   });
@@ -314,7 +314,7 @@ describe('context-processor-handler', () => {
         config: {
           operation: 'truncate',
           truncate: {
-            role: 'user',
+            role: 'user' as MessageRole,
             keepLast: 1
           }
         } as ContextProcessorNodeConfig,
@@ -341,7 +341,7 @@ describe('context-processor-handler', () => {
         config: {
           operation: 'truncate',
           truncate: {
-            role: 'assistant',
+            role: 'assistant' as MessageRole,
             keepFirst: 1
           }
         } as ContextProcessorNodeConfig,
@@ -368,7 +368,7 @@ describe('context-processor-handler', () => {
         config: {
           operation: 'truncate',
           truncate: {
-            role: 'user',
+            role: 'user' as MessageRole,
             range: { start: 0, end: 1 }
           }
         } as ContextProcessorNodeConfig,
@@ -390,7 +390,7 @@ describe('context-processor-handler', () => {
 
   describe('插入操作测试', () => {
     it('应该正确处理在末尾插入消息', async () => {
-      const newMessage: LLMMessage = { role: 'user', content: 'New user message' };
+      const newMessage: LLMMessage = { role: 'user' as MessageRole, content: 'New user message' };
       
       mockNode = {
         id: 'context-processor-node-1',
@@ -419,7 +419,7 @@ describe('context-processor-handler', () => {
     });
 
     it('应该正确处理在指定位置插入消息', async () => {
-      const newMessage: LLMMessage = { role: 'user', content: 'Inserted message' };
+      const newMessage: LLMMessage = { role: 'user' as MessageRole, content: 'Inserted message' };
       
       mockNode = {
         id: 'context-processor-node-1',
@@ -468,7 +468,7 @@ describe('context-processor-handler', () => {
 
   describe('替换操作测试', () => {
     it('应该正确替换指定索引的消息', async () => {
-      const newMessage: LLMMessage = { role: 'user', content: 'Replaced message' };
+      const newMessage: LLMMessage = { role: 'user' as MessageRole, content: 'Replaced message' };
       
       mockNode = {
         id: 'context-processor-node-1',
@@ -497,7 +497,7 @@ describe('context-processor-handler', () => {
     });
 
     it('应该在索引超出范围时抛出ExecutionError', async () => {
-      const newMessage: LLMMessage = { role: 'user', content: 'Replaced message' };
+      const newMessage: LLMMessage = { role: 'user' as MessageRole, content: 'Replaced message' };
       
       mockNode = {
         id: 'context-processor-node-1',

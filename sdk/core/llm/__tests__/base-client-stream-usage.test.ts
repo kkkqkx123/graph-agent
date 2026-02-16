@@ -22,7 +22,7 @@ class TestStreamClient extends BaseLLMClient {
       id: 'test-1',
       model: 'test-model',
       content: '',
-      message: { role: 'assistant', content: '' },
+      message: { role: 'assistant' as MessageRole, content: '' },
       usage: {
         promptTokens: 100,
         completionTokens: 0,
@@ -37,7 +37,7 @@ class TestStreamClient extends BaseLLMClient {
       id: 'test-2',
       model: 'test-model',
       content: 'Hello',
-      message: { role: 'assistant', content: 'Hello' },
+      message: { role: 'assistant' as MessageRole, content: 'Hello' },
       finishReason: '',
       duration: 0
     };
@@ -46,7 +46,7 @@ class TestStreamClient extends BaseLLMClient {
       id: 'test-3',
       model: 'test-model',
       content: ' world',
-      message: { role: 'assistant', content: ' world' },
+      message: { role: 'assistant' as MessageRole, content: ' world' },
       finishReason: '',
       duration: 0
     };
@@ -56,7 +56,7 @@ class TestStreamClient extends BaseLLMClient {
       id: 'test-4',
       model: 'test-model',
       content: '',
-      message: { role: 'assistant', content: '' },
+      message: { role: 'assistant' as MessageRole, content: '' },
       usage: {
         promptTokens: 100,
         completionTokens: 10,
@@ -71,7 +71,7 @@ class TestStreamClient extends BaseLLMClient {
       id: 'test-5',
       model: 'test-model',
       content: '!',
-      message: { role: 'assistant', content: '!' },
+      message: { role: 'assistant' as MessageRole, content: '!' },
       finishReason: 'stop',
       duration: 0
     };
@@ -104,7 +104,7 @@ describe('BaseLLMClient 流式响应 Token 统计', () => {
 
   it('应该在流式响应中正确累积 token 统计', async () => {
     const request: LLMRequest = {
-      messages: [{ role: 'user', content: 'Hello' }],
+      messages: [{ role: 'user' as MessageRole, content: 'Hello' }],
       stream: true
     };
 
@@ -148,7 +148,7 @@ describe('BaseLLMClient 流式响应 Token 统计', () => {
           id: 'test-1',
           model: 'test-model',
           content: 'Hello',
-          message: { role: 'assistant', content: 'Hello' },
+          message: { role: 'assistant' as MessageRole, content: 'Hello' },
           finishReason: '',
           duration: 0
         };
@@ -157,7 +157,7 @@ describe('BaseLLMClient 流式响应 Token 统计', () => {
           id: 'test-2',
           model: 'test-model',
           content: ' world',
-          message: { role: 'assistant', content: ' world' },
+          message: { role: 'assistant' as MessageRole, content: ' world' },
           finishReason: 'stop',
           duration: 0
         };
@@ -166,7 +166,7 @@ describe('BaseLLMClient 流式响应 Token 统计', () => {
 
     const noUsageClient = new NoUsageClient(profile);
     const request: LLMRequest = {
-      messages: [{ role: 'user', content: 'Hello' }],
+      messages: [{ role: 'user' as MessageRole, content: 'Hello' }],
       stream: true
     };
 
@@ -192,7 +192,7 @@ describe('BaseLLMClient 流式响应 Token 统计', () => {
           id: 'test-1',
           model: 'test-model',
           content: '',
-          message: { role: 'assistant', content: '' },
+          message: { role: 'assistant' as MessageRole, content: '' },
           usage: {
             promptTokens: 100,
             completionTokens: 5,
@@ -207,7 +207,7 @@ describe('BaseLLMClient 流式响应 Token 统计', () => {
           id: 'test-2',
           model: 'test-model',
           content: 'Hello',
-          message: { role: 'assistant', content: 'Hello' },
+          message: { role: 'assistant' as MessageRole, content: 'Hello' },
           usage: {
             promptTokens: 100,
             completionTokens: 10,
@@ -222,7 +222,7 @@ describe('BaseLLMClient 流式响应 Token 统计', () => {
           id: 'test-3',
           model: 'test-model',
           content: ' world',
-          message: { role: 'assistant', content: ' world' },
+          message: { role: 'assistant' as MessageRole, content: ' world' },
           usage: {
             promptTokens: 100,
             completionTokens: 15,
@@ -237,7 +237,7 @@ describe('BaseLLMClient 流式响应 Token 统计', () => {
           id: 'test-4',
           model: 'test-model',
           content: '!',
-          message: { role: 'assistant', content: '!' },
+          message: { role: 'assistant' as MessageRole, content: '!' },
           finishReason: 'stop',
           duration: 0
         };
@@ -246,7 +246,7 @@ describe('BaseLLMClient 流式响应 Token 统计', () => {
 
     const multiUpdateClient = new MultiUpdateClient(profile);
     const request: LLMRequest = {
-      messages: [{ role: 'user', content: 'Hello' }],
+      messages: [{ role: 'user' as MessageRole, content: 'Hello' }],
       stream: true
     };
 

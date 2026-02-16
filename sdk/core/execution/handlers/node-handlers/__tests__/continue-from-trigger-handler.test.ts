@@ -190,9 +190,9 @@ describe('continue-from-trigger-handler', () => {
 
     it('应该回传最后N条消息（lastN）', async () => {
       const mockMessages = [
-        { role: 'user', content: 'Message 1' },
-        { role: 'assistant', content: 'Message 2' },
-        { role: 'user', content: 'Message 3' }
+        { role: 'user' as MessageRole, content: 'Message 1' },
+        { role: 'assistant' as MessageRole, content: 'Message 2' },
+        { role: 'user' as MessageRole, content: 'Message 3' }
       ];
       mockContext.conversationManager.getRecentMessages.mockReturnValue(mockMessages);
 
@@ -208,14 +208,14 @@ describe('continue-from-trigger-handler', () => {
 
     it('应该回传最后N条指定角色的消息（lastNByRole）', async () => {
       const mockMessages = [
-        { role: 'user', content: 'User message 1' },
-        { role: 'user', content: 'User message 2' }
+        { role: 'user' as MessageRole, content: 'User message 1' },
+        { role: 'user' as MessageRole, content: 'User message 2' }
       ];
       mockContext.conversationManager.getRecentMessagesByRole.mockReturnValue(mockMessages);
 
       (mockNode.config as ContinueFromTriggerNodeConfig).conversationHistoryCallback = {
         lastNByRole: {
-          role: 'user',
+          role: 'user' as MessageRole,
           count: 2
         }
       };
@@ -228,13 +228,13 @@ describe('continue-from-trigger-handler', () => {
 
     it('应该回传指定角色的所有消息（byRole）', async () => {
       const mockMessages = [
-        { role: 'assistant', content: 'Assistant message 1' },
-        { role: 'assistant', content: 'Assistant message 2' }
+        { role: 'assistant' as MessageRole, content: 'Assistant message 1' },
+        { role: 'assistant' as MessageRole, content: 'Assistant message 2' }
       ];
       mockContext.conversationManager.getMessagesByRole.mockReturnValue(mockMessages);
 
       (mockNode.config as ContinueFromTriggerNodeConfig).conversationHistoryCallback = {
-        byRole: 'assistant'
+        byrole: 'assistant' as MessageRole
       };
 
       await continueFromTriggerHandler(mockThread, mockNode, mockContext);
@@ -245,8 +245,8 @@ describe('continue-from-trigger-handler', () => {
 
     it('应该回传指定范围的消息（range）', async () => {
       const mockMessages = [
-        { role: 'user', content: 'Message 1' },
-        { role: 'assistant', content: 'Message 2' }
+        { role: 'user' as MessageRole, content: 'Message 1' },
+        { role: 'assistant' as MessageRole, content: 'Message 2' }
       ];
       mockContext.conversationManager.getMessagesByRange.mockReturnValue(mockMessages);
 
@@ -395,8 +395,8 @@ describe('continue-from-trigger-handler', () => {
   describe('综合场景测试', () => {
     it('应该完整处理包含所有配置的场景', async () => {
       const mockMessages = [
-        { role: 'user', content: 'User message' },
-        { role: 'assistant', content: 'Assistant message' }
+        { role: 'user' as MessageRole, content: 'User message' },
+        { role: 'assistant' as MessageRole, content: 'Assistant message' }
       ];
       mockContext.conversationManager.getRecentMessages.mockReturnValue(mockMessages);
 
@@ -439,8 +439,8 @@ describe('continue-from-trigger-handler', () => {
 
     it('应该同时处理变量回传和对话历史回传', async () => {
       const mockMessages = [
-        { role: 'user', content: 'Message 1' },
-        { role: 'assistant', content: 'Message 2' }
+        { role: 'user' as MessageRole, content: 'Message 1' },
+        { role: 'assistant' as MessageRole, content: 'Message 2' }
       ];
       mockContext.conversationManager.getMessagesByRole.mockReturnValue(mockMessages);
 
@@ -449,7 +449,7 @@ describe('continue-from-trigger-handler', () => {
           includeAll: true
         },
         conversationHistoryCallback: {
-          byRole: 'user'
+          byrole: 'user' as MessageRole
         }
       } as ContinueFromTriggerNodeConfig;
 

@@ -180,13 +180,13 @@ describe('检查点存储适配器兼容性集成测试', () => {
         id: `${id}-edge-1`,
         sourceNodeId: `${id}-start`,
         targetNodeId: `${id}-process`,
-        type: EdgeType.DEFAULT
+        type: 'DEFAULT'
       },
       {
         id: `${id}-edge-2`,
         sourceNodeId: `${id}-process`,
         targetNodeId: `${id}-end`,
-        type: EdgeType.DEFAULT
+        type: 'DEFAULT'
       }
     ],
     variables: [],

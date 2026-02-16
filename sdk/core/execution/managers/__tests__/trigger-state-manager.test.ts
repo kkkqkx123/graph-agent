@@ -23,7 +23,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-1',
         threadId: threadId,
         workflowId: workflowId,
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: Date.now()
       };
@@ -40,7 +40,7 @@ describe('TriggerStateManager', () => {
         triggerId: '',
         threadId: threadId,
         workflowId: workflowId,
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: Date.now()
       };
@@ -53,7 +53,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-1',
         threadId: '',
         workflowId: workflowId,
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: Date.now()
       };
@@ -66,7 +66,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-1',
         threadId: 'thread-2',
         workflowId: workflowId,
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: Date.now()
       };
@@ -79,7 +79,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-1',
         threadId: threadId,
         workflowId: workflowId,
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: Date.now()
       };
@@ -96,7 +96,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-1',
         threadId: threadId,
         workflowId: workflowId,
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: Date.now()
       };
@@ -119,7 +119,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-1',
         threadId: threadId,
         workflowId: workflowId,
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: Date.now()
       };
@@ -129,15 +129,15 @@ describe('TriggerStateManager', () => {
       // 添加小延迟确保时间戳不同
       await new Promise(resolve => setTimeout(resolve, 1));
       
-      stateManager.updateStatus('trigger-1', TriggerStatus.DISABLED);
+      stateManager.updateStatus('trigger-1', 'disabled');
 
       const updatedState = stateManager.getState('trigger-1');
-      expect(updatedState?.status).toBe(TriggerStatus.DISABLED);
+      expect(updatedState?.status).toBe('disabled');
       expect(updatedState?.updatedAt).toBeGreaterThan(state.updatedAt);
     });
 
     it('应该拒绝更新不存在的状态', () => {
-      expect(() => stateManager.updateStatus('non-existent', TriggerStatus.DISABLED))
+      expect(() => stateManager.updateStatus('non-existent', 'disabled'))
         .toThrow('触发器状态 non-existent 不存在');
     });
   });
@@ -148,7 +148,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-1',
         threadId: threadId,
         workflowId: workflowId,
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: Date.now()
       };
@@ -170,7 +170,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-1',
         threadId: threadId,
         workflowId: workflowId,
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: Date.now()
       };
@@ -196,7 +196,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-1',
         threadId: threadId,
         workflowId: workflowId,
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: Date.now()
       };
@@ -205,7 +205,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-2',
         threadId: threadId,
         workflowId: workflowId,
-        status: TriggerStatus.DISABLED,
+        status: 'disabled',
         triggerCount: 5,
         updatedAt: Date.now()
       };
@@ -225,7 +225,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-1',
         threadId: threadId,
         workflowId: workflowId,
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: Date.now()
       };
@@ -234,11 +234,11 @@ describe('TriggerStateManager', () => {
       const snapshot = stateManager.createSnapshot();
 
       // 修改原始状态
-      stateManager.updateStatus('trigger-1', TriggerStatus.DISABLED);
+      stateManager.updateStatus('trigger-1', 'disabled');
 
       // 快照应该不受影响
       const snapshotState = snapshot.get('trigger-1');
-      expect(snapshotState?.status).toBe(TriggerStatus.ENABLED);
+      expect(snapshotState?.status).toBe('enabled');
     });
   });
 
@@ -249,7 +249,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-1',
         threadId: threadId,
         workflowId: workflowId,
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: Date.now()
       });
@@ -257,7 +257,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-2',
         threadId: threadId,
         workflowId: workflowId,
-        status: TriggerStatus.DISABLED,
+        status: 'disabled',
         triggerCount: 5,
         updatedAt: Date.now()
       });
@@ -265,7 +265,7 @@ describe('TriggerStateManager', () => {
       stateManager.restoreFromSnapshot(snapshot);
 
       expect(stateManager.size()).toBe(2);
-      expect(stateManager.getState('trigger-1')?.status).toBe(TriggerStatus.ENABLED);
+      expect(stateManager.getState('trigger-1')?.status).toBe('enabled');
       expect(stateManager.getState('trigger-2')?.triggerCount).toBe(5);
     });
 
@@ -274,7 +274,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-1',
         threadId: threadId,
         workflowId: workflowId,
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: Date.now()
       };
@@ -293,7 +293,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-1',
         threadId: 'thread-2',
         workflowId: workflowId,
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: Date.now()
       });
@@ -308,7 +308,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-1',
         threadId: threadId,
         workflowId: workflowId,
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: Date.now()
       };
@@ -317,7 +317,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-2',
         threadId: threadId,
         workflowId: workflowId,
-        status: TriggerStatus.DISABLED,
+        status: 'disabled',
         triggerCount: 5,
         updatedAt: Date.now()
       };
@@ -337,7 +337,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-1',
         threadId: threadId,
         workflowId: workflowId,
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: Date.now()
       };
@@ -348,12 +348,12 @@ describe('TriggerStateManager', () => {
       // 修改返回的状态
       const retrievedState = allStates.get('trigger-1');
       if (retrievedState) {
-        retrievedState.status = TriggerStatus.DISABLED;
+        retrievedState.status = 'disabled';
       }
 
       // 原始状态应该不受影响
       const originalState = stateManager.getState('trigger-1');
-      expect(originalState?.status).toBe(TriggerStatus.ENABLED);
+      expect(originalState?.status).toBe('enabled');
     });
   });
 
@@ -363,7 +363,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-1',
         threadId: threadId,
         workflowId: workflowId,
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: Date.now()
       };
@@ -384,7 +384,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-1',
         threadId: threadId,
         workflowId: workflowId,
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: Date.now()
       };
@@ -407,7 +407,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-1',
         threadId: threadId,
         workflowId: workflowId,
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: Date.now()
       };
@@ -416,7 +416,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-2',
         threadId: threadId,
         workflowId: workflowId,
-        status: TriggerStatus.DISABLED,
+        status: 'disabled',
         triggerCount: 5,
         updatedAt: Date.now()
       };
@@ -444,7 +444,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-1',
         threadId: threadId,
         workflowId: workflowId,
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: Date.now()
       };
@@ -456,7 +456,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-2',
         threadId: threadId,
         workflowId: workflowId,
-        status: TriggerStatus.DISABLED,
+        status: 'disabled',
         triggerCount: 5,
         updatedAt: Date.now()
       };
@@ -477,7 +477,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-1',
         threadId: 'thread-1',
         workflowId: workflowId,
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: Date.now()
       };
@@ -486,7 +486,7 @@ describe('TriggerStateManager', () => {
         triggerId: 'trigger-1',
         threadId: 'thread-2',
         workflowId: workflowId,
-        status: TriggerStatus.DISABLED,
+        status: 'disabled',
         triggerCount: 5,
         updatedAt: Date.now()
       };
@@ -495,14 +495,14 @@ describe('TriggerStateManager', () => {
       stateManager2.register(state2);
 
       // 两个线程的状态应该独立
-      expect(stateManager1.getState('trigger-1')?.status).toBe(TriggerStatus.ENABLED);
-      expect(stateManager2.getState('trigger-1')?.status).toBe(TriggerStatus.DISABLED);
+      expect(stateManager1.getState('trigger-1')?.status).toBe('enabled');
+      expect(stateManager2.getState('trigger-1')?.status).toBe('disabled');
 
       // 修改一个线程的状态不应该影响另一个线程
-      stateManager1.updateStatus('trigger-1', TriggerStatus.DISABLED);
+      stateManager1.updateStatus('trigger-1', 'disabled');
 
-      expect(stateManager1.getState('trigger-1')?.status).toBe(TriggerStatus.DISABLED);
-      expect(stateManager2.getState('trigger-1')?.status).toBe(TriggerStatus.DISABLED);
+      expect(stateManager1.getState('trigger-1')?.status).toBe('disabled');
+      expect(stateManager2.getState('trigger-1')?.status).toBe('disabled');
     });
   });
 });

@@ -55,7 +55,7 @@ export function validateLLMProfileConfig(config: ConfigFile): Result<LLMProfile,
     errors.push(...validateEnumField(
       profile.provider,
       'LLMProfile.provider',
-      Object.values(LLMProvider)
+      ['OPENAI_CHAT', 'OPENAI_RESPONSE', 'ANTHROPIC', 'GEMINI_NATIVE', 'GEMINI_OPENAI', 'HUMAN_RELAY']
     ));
   }
 

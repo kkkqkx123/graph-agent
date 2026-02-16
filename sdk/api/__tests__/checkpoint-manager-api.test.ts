@@ -62,7 +62,7 @@ describe('CheckpointResourceAPI', () => {
             id: 'edge1',
             sourceNodeId: 'start',
             targetNodeId: 'end',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
             condition: undefined
           }
         ]
@@ -126,7 +126,7 @@ describe('CheckpointResourceAPI', () => {
             id: 'edge1',
             sourceNodeId: 'start',
             targetNodeId: 'end',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
             condition: undefined
           }
         ]
@@ -180,7 +180,7 @@ describe('CheckpointResourceAPI', () => {
             id: 'edge1',
             sourceNodeId: 'start',
             targetNodeId: 'end',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
             condition: undefined
           }
         ]
@@ -231,7 +231,7 @@ describe('CheckpointResourceAPI', () => {
             id: 'edge1',
             sourceNodeId: 'start',
             targetNodeId: 'end',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
             condition: undefined
           }
         ]
@@ -287,7 +287,7 @@ describe('CheckpointResourceAPI', () => {
             id: 'edge1',
             sourceNodeId: 'start',
             targetNodeId: 'end',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
             condition: undefined
           }
         ]
@@ -342,7 +342,7 @@ describe('CheckpointResourceAPI', () => {
             id: 'edge1',
             sourceNodeId: 'start',
             targetNodeId: 'end',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
             condition: undefined
           }
         ]
@@ -393,7 +393,7 @@ describe('CheckpointResourceAPI', () => {
             id: 'edge1',
             sourceNodeId: 'start',
             targetNodeId: 'end',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
             condition: undefined
           }
         ]
@@ -447,7 +447,7 @@ describe('CheckpointResourceAPI', () => {
             id: 'edge1',
             sourceNodeId: 'start',
             targetNodeId: 'end',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
             condition: undefined
           }
         ]

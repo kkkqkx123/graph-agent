@@ -64,7 +64,7 @@ describe('MessageManagerAPI', () => {
           id: 'edge1',
           sourceNodeId: 'start',
           targetNodeId: 'end',
-          type: EdgeType.DEFAULT,
+          type: 'DEFAULT',
           condition: undefined
         }
       ]
@@ -122,8 +122,8 @@ describe('MessageManagerAPI', () => {
     it('应该成功获取消息列表', async () => {
       const messages: LLMMessage[] = [
         { role: 'system', content: 'You are a helpful assistant.' },
-        { role: 'user', content: 'Hello' },
-        { role: 'assistant', content: 'Hi there!' }
+        { role: 'user' as MessageRole, content: 'Hello' },
+        { role: 'assistant' as MessageRole, content: 'Hi there!' }
       ];
 
       const threadId = await createTestThread(messages);
@@ -138,7 +138,7 @@ describe('MessageManagerAPI', () => {
 
     it('应该支持分页查询', async () => {
       const messages: LLMMessage[] = Array.from({ length: 10 }, (_, i) => ({
-        role: 'user',
+        role: 'user' as MessageRole,
         content: `Message ${i}`
       }));
 
@@ -152,9 +152,9 @@ describe('MessageManagerAPI', () => {
 
     it('应该支持倒序排列', async () => {
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'First' },
-        { role: 'user', content: 'Second' },
-        { role: 'user', content: 'Third' }
+        { role: 'user' as MessageRole, content: 'First' },
+        { role: 'user' as MessageRole, content: 'Second' },
+        { role: 'user' as MessageRole, content: 'Third' }
       ];
 
       const threadId = await createTestThread(messages);
@@ -174,7 +174,7 @@ describe('MessageManagerAPI', () => {
     it('应该获取所有消息（包括压缩的）', async () => {
       const messages: LLMMessage[] = [
         { role: 'system', content: 'System message' },
-        { role: 'user', content: 'User message' }
+        { role: 'user' as MessageRole, content: 'User message' }
       ];
 
       const threadId = await createTestThread(messages);
@@ -188,9 +188,9 @@ describe('MessageManagerAPI', () => {
   describe('searchMessages', () => {
     it('应该成功搜索包含关键词的消息', async () => {
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello world' },
-        { role: 'assistant', content: 'Hi there' },
-        { role: 'user', content: 'Goodbye world' }
+        { role: 'user' as MessageRole, content: 'Hello world' },
+        { role: 'assistant' as MessageRole, content: 'Hi there' },
+        { role: 'user' as MessageRole, content: 'Goodbye world' }
       ];
 
       const threadId = await createTestThread(messages);
@@ -204,8 +204,8 @@ describe('MessageManagerAPI', () => {
 
     it('应该不区分大小写搜索', async () => {
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'HELLO' },
-        { role: 'assistant', content: 'hello' }
+        { role: 'user' as MessageRole, content: 'HELLO' },
+        { role: 'assistant' as MessageRole, content: 'hello' }
       ];
 
       const threadId = await createTestThread(messages);
@@ -217,7 +217,7 @@ describe('MessageManagerAPI', () => {
 
     it('应该在没有匹配时返回空数组', async () => {
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello' }
+        { role: 'user' as MessageRole, content: 'Hello' }
       ];
 
       const threadId = await createTestThread(messages);
@@ -232,14 +232,14 @@ describe('MessageManagerAPI', () => {
     it('应该按角色过滤消息', async () => {
       const messages: LLMMessage[] = [
         { role: 'system', content: 'System' },
-        { role: 'user', content: 'User 1' },
-        { role: 'assistant', content: 'Assistant' },
-        { role: 'user', content: 'User 2' }
+        { role: 'user' as MessageRole, content: 'User 1' },
+        { role: 'assistant' as MessageRole, content: 'Assistant' },
+        { role: 'user' as MessageRole, content: 'User 2' }
       ];
 
       const threadId = await createTestThread(messages);
 
-      const result = await api.filterMessages(threadId, { role: 'user' });
+      const result = await api.filterMessages(threadId, { role: 'user' as MessageRole });
 
       expect(result).toHaveLength(2);
       expect(result.every(msg => msg.role === 'user')).toBe(true);
@@ -247,9 +247,9 @@ describe('MessageManagerAPI', () => {
 
     it('应该按关键词过滤消息', async () => {
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello world' },
-        { role: 'user', content: 'Goodbye' },
-        { role: 'user', content: 'Hello again' }
+        { role: 'user' as MessageRole, content: 'Hello world' },
+        { role: 'user' as MessageRole, content: 'Goodbye' },
+        { role: 'user' as MessageRole, content: 'Hello again' }
       ];
 
       const threadId = await createTestThread(messages);
@@ -261,15 +261,15 @@ describe('MessageManagerAPI', () => {
 
     it('应该支持组合过滤条件', async () => {
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello' },
-        { role: 'assistant', content: 'Hello' },
-        { role: 'user', content: 'Goodbye' }
+        { role: 'user' as MessageRole, content: 'Hello' },
+        { role: 'assistant' as MessageRole, content: 'Hello' },
+        { role: 'user' as MessageRole, content: 'Goodbye' }
       ];
 
       const threadId = await createTestThread(messages);
 
       const result = await api.filterMessages(threadId, {
-        role: 'user',
+        role: 'user' as MessageRole,
         keyword: 'Hello'
       });
 
@@ -283,10 +283,10 @@ describe('MessageManagerAPI', () => {
     it('应该正确统计消息数量', async () => {
       const messages: LLMMessage[] = [
         { role: 'system', content: 'System' },
-        { role: 'user', content: 'User 1' },
-        { role: 'user', content: 'User 2' },
-        { role: 'assistant', content: 'Assistant' },
-        { role: 'tool', content: 'Tool result' }
+        { role: 'user' as MessageRole, content: 'User 1' },
+        { role: 'user' as MessageRole, content: 'User 2' },
+        { role: 'assistant' as MessageRole, content: 'Assistant' },
+        { role: 'tool' as MessageRole, content: 'Tool result' }
       ];
 
       const threadId = await createTestThread(messages);
@@ -308,7 +308,7 @@ describe('MessageManagerAPI', () => {
   describe('getTokenUsage', () => {
     it('应该返回Token使用统计', async () => {
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello' }
+        { role: 'user' as MessageRole, content: 'Hello' }
       ];
 
       const threadId = await createTestThread(messages);
@@ -323,7 +323,7 @@ describe('MessageManagerAPI', () => {
 
     it('应该在没有Token使用时返回0', async () => {
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello' }
+        { role: 'user' as MessageRole, content: 'Hello' }
       ];
 
       const threadId = await createTestThread(messages);
@@ -339,8 +339,8 @@ describe('MessageManagerAPI', () => {
   describe('exportMessages', () => {
     it('应该导出JSON格式', async () => {
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello' },
-        { role: 'assistant', content: 'Hi' }
+        { role: 'user' as MessageRole, content: 'Hello' },
+        { role: 'assistant' as MessageRole, content: 'Hi' }
       ];
 
       const threadId = await createTestThread(messages);
@@ -355,8 +355,8 @@ describe('MessageManagerAPI', () => {
 
     it('应该导出CSV格式', async () => {
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello' },
-        { role: 'assistant', content: 'Hi' }
+        { role: 'user' as MessageRole, content: 'Hello' },
+        { role: 'assistant' as MessageRole, content: 'Hi' }
       ];
 
       const threadId = await createTestThread(messages);
@@ -371,7 +371,7 @@ describe('MessageManagerAPI', () => {
 
     it('应该正确转义CSV中的特殊字符', async () => {
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello "world"' }
+        { role: 'user' as MessageRole, content: 'Hello "world"' }
       ];
 
       const threadId = await createTestThread(messages);
@@ -383,7 +383,7 @@ describe('MessageManagerAPI', () => {
 
     it('应该在不支持的格式时抛出错误', async () => {
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello' }
+        { role: 'user' as MessageRole, content: 'Hello' }
       ];
 
       const threadId = await createTestThread(messages);
@@ -396,7 +396,7 @@ describe('MessageManagerAPI', () => {
     it('应该清空所有消息', async () => {
       const messages: LLMMessage[] = [
         { role: 'system', content: 'System' },
-        { role: 'user', content: 'User' }
+        { role: 'user' as MessageRole, content: 'User' }
       ];
 
       const threadId = await createTestThread(messages);
@@ -410,7 +410,7 @@ describe('MessageManagerAPI', () => {
     it('应该保留系统消息', async () => {
       const messages: LLMMessage[] = [
         { role: 'system', content: 'System' },
-        { role: 'user', content: 'User' }
+        { role: 'user' as MessageRole, content: 'User' }
       ];
 
       const threadId = await createTestThread(messages);
@@ -426,7 +426,7 @@ describe('MessageManagerAPI', () => {
   describe('getRecentMessages', () => {
     it('应该获取最近N条消息', async () => {
       const messages: LLMMessage[] = Array.from({ length: 10 }, (_, i) => ({
-        role: 'user',
+        role: 'user' as MessageRole,
         content: `Message ${i}`
       }));
 
@@ -441,8 +441,8 @@ describe('MessageManagerAPI', () => {
 
     it('应该在N大于消息总数时返回所有消息', async () => {
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Message 1' },
-        { role: 'user', content: 'Message 2' }
+        { role: 'user' as MessageRole, content: 'Message 1' },
+        { role: 'user' as MessageRole, content: 'Message 2' }
       ];
 
       const threadId = await createTestThread(messages);
@@ -457,9 +457,9 @@ describe('MessageManagerAPI', () => {
     it('应该按角色获取消息', async () => {
       const messages: LLMMessage[] = [
         { role: 'system', content: 'System' },
-        { role: 'user', content: 'User 1' },
-        { role: 'assistant', content: 'Assistant' },
-        { role: 'user', content: 'User 2' }
+        { role: 'user' as MessageRole, content: 'User 1' },
+        { role: 'assistant' as MessageRole, content: 'Assistant' },
+        { role: 'user' as MessageRole, content: 'User 2' }
       ];
 
       const threadId = await createTestThread(messages);
@@ -474,7 +474,7 @@ describe('MessageManagerAPI', () => {
   describe('getMessagesByRange', () => {
     it('应该获取指定索引范围的消息', async () => {
       const messages: LLMMessage[] = Array.from({ length: 10 }, (_, i) => ({
-        role: 'user',
+        role: 'user' as MessageRole,
         content: `Message ${i}`
       }));
 

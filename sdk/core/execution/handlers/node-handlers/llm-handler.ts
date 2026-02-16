@@ -73,7 +73,7 @@ export async function llmHandler(
     };
 
     // 2. 检查是否为 HumanRelay provider
-    const profile = context.llmWrapper.getProfile(executionData.profileId || 'default');
+    const profile = context.llmWrapper.getProfile(executionData.profileId || 'DEFAULT');
     if (profile?.provider === 'HUMAN_RELAY') {
       return await executeHumanRelayLLMNode(thread, node, executionData, context, startTime);
     }

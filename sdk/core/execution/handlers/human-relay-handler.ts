@@ -244,7 +244,7 @@ export function convertToLLMMessage(
   response: HumanRelayResponse
 ): LLMMessage {
   return {
-    role: 'user',
+    role: 'user' as MessageRole,
     content: response.content
   };
 }

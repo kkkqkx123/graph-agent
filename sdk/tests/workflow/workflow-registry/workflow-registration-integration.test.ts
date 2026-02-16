@@ -79,7 +79,7 @@ describe('Workflow加载与注册集成测试', () => {
         id: `${id}-edge-1`,
         sourceNodeId: `${id}-start`,
         targetNodeId: `${id}-end`,
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
         condition: undefined
       }
     ],
@@ -191,19 +191,19 @@ describe('Workflow加载与注册集成测试', () => {
             id: 'edge-1',
             sourceNodeId: 'node-start',
             targetNodeId: 'node-llm',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-2',
             sourceNodeId: 'node-llm',
             targetNodeId: 'node-code',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-3',
             sourceNodeId: 'node-code',
             targetNodeId: 'node-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -279,7 +279,7 @@ describe('Workflow加载与注册集成测试', () => {
         name: 'webhook-trigger',
         description: 'Webhook trigger template',
         condition: {
-          eventType: 'NODE_COMPLETED' as any,
+          eventtype: 'NODE_COMPLETED' as EventType as any,
           metadata: { source: 'webhook' }
         },
         action: {
@@ -349,13 +349,13 @@ describe('Workflow加载与注册集成测试', () => {
             id: 'edge-1',
             sourceNodeId: 'node-start',
             targetNodeId: 'node-llm',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-2',
             sourceNodeId: 'node-llm',
             targetNodeId: 'node-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -420,7 +420,7 @@ describe('Workflow加载与注册集成测试', () => {
             id: 'edge-1',
             sourceNodeId: 'node-start',
             targetNodeId: 'node-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         triggers: [
@@ -505,13 +505,13 @@ describe('Workflow加载与注册集成测试', () => {
             id: 'sub-edge-1',
             sourceNodeId: 'sub-start',
             targetNodeId: 'node2',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'sub-edge-2',
             sourceNodeId: 'node2',
             targetNodeId: 'sub-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -589,19 +589,19 @@ describe('Workflow加载与注册集成测试', () => {
             id: 'edge-1',
             sourceNodeId: 'start',
             targetNodeId: 'node1',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-2',
             sourceNodeId: 'node1',
             targetNodeId: 'subgraph-node',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-3',
             sourceNodeId: 'subgraph-node',
             targetNodeId: 'end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -692,13 +692,13 @@ describe('Workflow加载与注册集成测试', () => {
             id: 'edge-1',
             sourceNodeId: 'node-start',
             targetNodeId: 'node-invalid',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-2',
             sourceNodeId: 'node-invalid',
             targetNodeId: 'node-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -764,19 +764,19 @@ describe('Workflow加载与注册集成测试', () => {
             id: 'edge-1',
             sourceNodeId: 'node-1',
             targetNodeId: 'node-2',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-2',
             sourceNodeId: 'node-2',
             targetNodeId: 'node-3',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-3',
             sourceNodeId: 'node-3',
             targetNodeId: 'node-1',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -844,13 +844,13 @@ describe('Workflow加载与注册集成测试', () => {
             id: 'edge-1',
             sourceNodeId: 'node-start',
             targetNodeId: 'subgraph-node',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-2',
             sourceNodeId: 'subgraph-node',
             targetNodeId: 'node-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -911,7 +911,7 @@ describe('Workflow加载与注册集成测试', () => {
               id: `sub-edge-${i}`,
               sourceNodeId: `sub-start-${i}`,
               targetNodeId: `sub-end-${i}`,
-              type: EdgeType.DEFAULT
+              type: 'DEFAULT'
             }
           ],
           config: {
@@ -973,13 +973,13 @@ describe('Workflow加载与注册集成测试', () => {
             id: 'parent-edge-1',
             sourceNodeId: 'parent-start',
             targetNodeId: 'subgraph-node',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'parent-edge-2',
             sourceNodeId: 'subgraph-node',
             targetNodeId: 'parent-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -1064,7 +1064,7 @@ describe('Workflow加载与注册集成测试', () => {
             id: 'edge-1',
             sourceNodeId: 'node-start',
             targetNodeId: 'node-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         createdAt: Date.now(),

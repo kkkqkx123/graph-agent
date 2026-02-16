@@ -21,7 +21,7 @@ export class MessageBuilder {
    */
   static buildUserMessage(content: string): LLMMessage {
     return {
-      role: 'user' as 'user',
+      role: 'user' as MessageRole as 'user',
       content
     };
   }
@@ -39,7 +39,7 @@ export class MessageBuilder {
     thinking?: string
   ): LLMMessage {
     const message: LLMMessage = {
-      role: 'assistant' as 'assistant',
+      role: 'assistant' as MessageRole as 'assistant',
       content
     };
 
@@ -69,7 +69,7 @@ export class MessageBuilder {
       : JSON.stringify({ error: result.error });
 
     return {
-      role: 'tool' as 'tool',
+      role: 'tool' as MessageRole as 'tool',
       content,
       toolCallId
     };

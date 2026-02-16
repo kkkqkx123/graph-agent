@@ -53,7 +53,7 @@ describe('MessageStreamEvents', () => {
           data: { delta: { type: 'text_delta', text: 'Hello' } }
         },
         snapshot: {
-          role: 'assistant',
+          role: 'assistant' as MessageRole,
           content: 'Hello'
         }
       };
@@ -114,7 +114,7 @@ describe('MessageStreamEvents', () => {
       };
 
       const message: LLMMessage = {
-        role: 'assistant',
+        role: 'assistant' as MessageRole,
         content: [
           {
             type: 'tool_use',
@@ -140,7 +140,7 @@ describe('MessageStreamEvents', () => {
   describe('MessageStreamMessageEvent', () => {
     it('应该正确创建消息事件', () => {
       const message: LLMMessage = {
-        role: 'assistant',
+        role: 'assistant' as MessageRole,
         content: 'Hello, world!'
       };
 
@@ -155,7 +155,7 @@ describe('MessageStreamEvents', () => {
 
     it('应该支持复杂内容结构', () => {
       const message: LLMMessage = {
-        role: 'assistant',
+        role: 'assistant' as MessageRole,
         content: [
           { type: 'text', text: 'Hello' },
           {
@@ -180,7 +180,7 @@ describe('MessageStreamEvents', () => {
   describe('MessageStreamFinalMessageEvent', () => {
     it('应该正确创建最终消息事件', () => {
       const message: LLMMessage = {
-        role: 'assistant',
+        role: 'assistant' as MessageRole,
         content: 'Final response'
       };
 
@@ -288,26 +288,26 @@ describe('MessageStreamEvents', () => {
         {
           type: MessageStreamEventType.TOOL_CALL,
           toolCall: {},
-          snapshot: { role: 'assistant', content: '' }
+          snapshot: { role: 'assistant' as MessageRole, content: '' }
         },
         {
           type: MessageStreamEventType.MESSAGE,
-          message: { role: 'assistant', content: '' }
+          message: { role: 'assistant' as MessageRole, content: '' }
         },
         {
           type: MessageStreamEventType.FINAL_MESSAGE,
-          message: { role: 'assistant', content: '' },
+          message: { role: 'assistant' as MessageRole, content: '' },
           result: {
             id: 'test-result-id',
             model: 'gpt-4',
             content: '',
-            message: { role: 'assistant', content: '' },
+            message: { role: 'assistant' as MessageRole, content: '' },
             finishReason: 'stop',
             duration: 0,
             usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
           }
         },
-        { type: MessageStream'ERROR', error: new Error('test') },
+        { type: 'error', error: new Error('test') },
         { type: 'abort' },
         { type: MessageStreamEventType.END }
       ];

@@ -49,7 +49,7 @@ describe('ThreadExecutorAPI', () => {
             id: 'edge1',
             sourceNodeId: 'start',
             targetNodeId: 'end',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
             condition: undefined
           }
         ]
@@ -103,7 +103,7 @@ describe('ThreadExecutorAPI', () => {
             id: 'edge1',
             sourceNodeId: 'start',
             targetNodeId: 'end',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
             condition: undefined
           }
         ]
@@ -154,7 +154,7 @@ describe('ThreadExecutorAPI', () => {
             id: 'edge1',
             sourceNodeId: 'start',
             targetNodeId: 'end',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
             condition: undefined
           }
         ]
@@ -198,7 +198,7 @@ describe('ThreadExecutorAPI', () => {
             id: 'edge1',
             sourceNodeId: 'start',
             targetNodeId: 'end',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
             condition: undefined
           }
         ]

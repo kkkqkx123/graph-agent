@@ -163,13 +163,13 @@ describe('检查点自动触发机制集成测试', () => {
           id: `${id}-edge-1`,
           sourceNodeId: `${id}-start`,
           targetNodeId: `${id}-process`,
-          type: EdgeType.DEFAULT
+          type: 'DEFAULT'
         },
         {
           id: `${id}-edge-2`,
           sourceNodeId: `${id}-process`,
           targetNodeId: `${id}-end`,
-          type: EdgeType.DEFAULT
+          type: 'DEFAULT'
         }
       ],
       variables: [],
@@ -318,7 +318,7 @@ describe('检查点自动触发机制集成测试', () => {
         undefined, // hookConfig
         undefined, // triggerConfig
         undefined, // toolConfig
-        { triggerType: CheckpointTriggerType.NODE_AFTER_EXECUTE }
+        { triggerType: 'NODE_AFTER_EXECUTE' }
       );
 
       // 验证节点配置覆盖了全局配置
@@ -360,7 +360,7 @@ describe('检查点自动触发机制集成测试', () => {
         undefined,
         undefined,
         undefined,
-        { triggerType: CheckpointTriggerType.NODE_AFTER_EXECUTE }
+        { triggerType: 'NODE_AFTER_EXECUTE' }
       );
 
       // 验证节点配置启用了检查点

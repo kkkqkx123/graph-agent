@@ -161,7 +161,7 @@ export function buildNodeCompletedEvent(
   executionTime: number
 ): NodeCompletedEvent {
   return {
-    type: 'NODE_COMPLETED',
+    type: 'NODE_COMPLETED' as const,
     threadId: threadContext.getThreadId(),
     workflowId: threadContext.getWorkflowId(),
     nodeId,
@@ -239,7 +239,7 @@ export function buildVariableChangedEvent(
   scope: string
 ): VariableChangedEvent {
   return {
-    type: 'VARIABLE_CHANGED',
+    type: 'VARIABLE_CHANGED' as const,
     timestamp: now(),
     workflowId: threadContext.getWorkflowId(),
     threadId: threadContext.getThreadId(),

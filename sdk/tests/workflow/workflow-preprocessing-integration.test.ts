@@ -64,7 +64,7 @@ describe('Workflow Preprocessing Integration', () => {
             id: 'edge-1',
             sourceNodeId: 'start',
             targetNodeId: 'end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         triggers: [],
@@ -116,7 +116,7 @@ describe('Workflow Preprocessing Integration', () => {
             id: 'sub-edge-1',
             sourceNodeId: 'sub-start',
             targetNodeId: 'sub-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         triggers: [],
@@ -165,13 +165,13 @@ describe('Workflow Preprocessing Integration', () => {
             id: 'edge-1',
             sourceNodeId: 'start',
             targetNodeId: 'subgraph',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-2',
             sourceNodeId: 'subgraph',
             targetNodeId: 'end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         triggers: [],
@@ -198,12 +198,12 @@ describe('Workflow Preprocessing Integration', () => {
         id: 'triggered-workflow',
         name: 'Triggered Workflow',
         version: '1.0.0',
-        type: 'TRIGGERED_SUBWORKFLOW',
+        type: 'triggered_subworkflow',
         description: 'Triggered workflow',
         nodes: [
           {
             id: 'triggered-start',
-            type: 'START'_FROM_TRIGGER,
+            type: 'START_FROM_TRIGGER',
             name: 'Triggered Start',
             config: {},
             outgoingEdgeIds: ['triggered-edge-1'],
@@ -223,7 +223,7 @@ describe('Workflow Preprocessing Integration', () => {
             id: 'triggered-edge-1',
             sourceNodeId: 'triggered-start',
             targetNodeId: 'triggered-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         triggers: [],
@@ -262,7 +262,7 @@ describe('Workflow Preprocessing Integration', () => {
             id: 'edge-1',
             sourceNodeId: 'start',
             targetNodeId: 'end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         triggers: [
@@ -328,7 +328,7 @@ describe('Workflow Preprocessing Integration', () => {
             id: 'edge-1',
             sourceNodeId: 'start',
             targetNodeId: 'end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         triggers: [
@@ -402,13 +402,13 @@ describe('Workflow Preprocessing Integration', () => {
             id: 'edge-1',
             sourceNodeId: 'start',
             targetNodeId: 'subgraph',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-2',
             sourceNodeId: 'subgraph',
             targetNodeId: 'end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         triggers: [],

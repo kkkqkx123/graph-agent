@@ -106,7 +106,7 @@ export class MessageStreamBridge {
       this.abortListener = null;
     }
     if (this.errorListener) {
-      this.messageStream.off(MessageStream'ERROR', this.errorListener);
+      this.messageStream.off('error', this.errorListener);
       this.errorListener = null;
     }
     // 可以在这里移除其他监听器

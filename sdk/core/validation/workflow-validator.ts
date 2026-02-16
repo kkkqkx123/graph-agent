@@ -182,7 +182,7 @@ export class WorkflowValidator {
     const { type, nodes, triggers } = workflow;
 
     // 检查是否包含特殊节点
-    const hasStartFromTrigger = nodes.some(node => node.type === 'START'_FROM_TRIGGER);
+    const hasStartFromTrigger = nodes.some(node => node.type === 'START_FROM_TRIGGER');
     const hasContinueFromTrigger = nodes.some(node => node.type === 'CONTINUE_FROM_TRIGGER');
     const hasSubgraphNode = nodes.some(node => node.type === 'SUBGRAPH');
     
@@ -358,7 +358,7 @@ export class WorkflowValidator {
         startNodes.push(node);
       } else if (node.type === 'END') {
         endNodes.push(node);
-      } else if (node.type === 'START'_FROM_TRIGGER) {
+      } else if (node.type === 'START_FROM_TRIGGER') {
         startFromTriggerNodes.push(node);
       } else if (node.type === 'CONTINUE_FROM_TRIGGER') {
         continueFromTriggerNodes.push(node);

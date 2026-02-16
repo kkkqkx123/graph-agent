@@ -63,7 +63,7 @@ describe('validateAddToolNode', () => {
     it('应该接受GLOBAL作用域', () => {
       const node = createMockNode({
         toolIds: ['tool-1'],
-        scope: 'GLOBAL'
+        scope: 'global'
       });
 
       const result = validateAddToolNode(node);

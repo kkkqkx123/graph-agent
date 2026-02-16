@@ -39,11 +39,11 @@ describe('ToolContextManager', () => {
     });
 
     it('应该成功添加工具到GLOBAL作用域', () => {
-      const addedCount = manager.addTools(threadId, workflowId, ['tool-1', 'tool-2'], 'GLOBAL');
+      const addedCount = manager.addTools(threadId, workflowId, ['tool-1', 'tool-2'], 'global');
 
       expect(addedCount).toBe(2);
 
-      const tools = manager.getTools(threadId, 'GLOBAL');
+      const tools = manager.getTools(threadId, 'global');
       expect(tools).toContain('tool-1');
       expect(tools).toContain('tool-2');
     });
@@ -51,7 +51,7 @@ describe('ToolContextManager', () => {
     it('应该获取所有作用域的工具', () => {
       manager.addTools(threadId, workflowId, ['tool-1'], 'THREAD');
       manager.addTools(threadId, workflowId, ['tool-2'], 'WORKFLOW');
-      manager.addTools(threadId, workflowId, ['tool-3'], 'GLOBAL');
+      manager.addTools(threadId, workflowId, ['tool-3'], 'global');
 
       const allTools = manager.getTools(threadId);
       expect(allTools.size).toBe(3);
@@ -135,7 +135,7 @@ describe('ToolContextManager', () => {
     it('应该从所有作用域移除工具', () => {
       manager.addTools(threadId, workflowId, ['tool-1'], 'THREAD');
       manager.addTools(threadId, workflowId, ['tool-1'], 'WORKFLOW');
-      manager.addTools(threadId, workflowId, ['tool-1'], 'GLOBAL');
+      manager.addTools(threadId, workflowId, ['tool-1'], 'global');
 
       const removedCount = manager.removeTools(threadId, ['tool-1']);
 
@@ -143,7 +143,7 @@ describe('ToolContextManager', () => {
 
       expect(manager.getTools(threadId, 'THREAD')).not.toContain('tool-1');
       expect(manager.getTools(threadId, 'WORKFLOW')).not.toContain('tool-1');
-      expect(manager.getTools(threadId, 'GLOBAL')).not.toContain('tool-1');
+      expect(manager.getTools(threadId, 'global')).not.toContain('tool-1');
     });
   });
 
@@ -162,7 +162,7 @@ describe('ToolContextManager', () => {
     it('应该清空所有作用域的工具', () => {
       manager.addTools(threadId, workflowId, ['tool-1'], 'THREAD');
       manager.addTools(threadId, workflowId, ['tool-2'], 'WORKFLOW');
-      manager.addTools(threadId, workflowId, ['tool-3'], 'GLOBAL');
+      manager.addTools(threadId, workflowId, ['tool-3'], 'global');
 
       const clearedCount = manager.clearTools(threadId);
 

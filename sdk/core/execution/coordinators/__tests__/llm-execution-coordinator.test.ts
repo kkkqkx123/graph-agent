@@ -100,8 +100,8 @@ describe('LLMExecutionCoordinator', () => {
       });
 
       mockConversationManager.getMessages.mockReturnValue([
-        { role: 'user', content: 'Hello, world!' },
-        { role: 'assistant', content: 'Test response' }
+        { role: 'user' as MessageRole, content: 'Hello, world!' },
+        { role: 'assistant' as MessageRole, content: 'Test response' }
       ]);
 
       // 执行测试
@@ -144,8 +144,8 @@ describe('LLMExecutionCoordinator', () => {
 
       // 设置对话管理器返回值
       mockConversationManager.getMessages.mockReturnValue([
-        { role: 'user', content: 'Hello, world!' },
-        { role: 'assistant', content: 'Test response with tools' }
+        { role: 'user' as MessageRole, content: 'Hello, world!' },
+        { role: 'assistant' as MessageRole, content: 'Test response with tools' }
       ]);
 
       // 设置工具调用执行结果
@@ -261,8 +261,8 @@ describe('LLMExecutionCoordinator', () => {
       });
 
       mockConversationManager.getMessages.mockReturnValue([
-        { role: 'user', content: 'Hello, world!' },
-        { role: 'assistant', content: 'Test response' }
+        { role: 'user' as MessageRole, content: 'Hello, world!' },
+        { role: 'assistant' as MessageRole, content: 'Test response' }
       ]);
 
       mockConversationManager.getTokenUsage.mockReturnValue({
@@ -278,7 +278,7 @@ describe('LLMExecutionCoordinator', () => {
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'MESSAGE_ADDED',
-          role: 'user',
+          role: 'user' as MessageRole,
           content: 'Hello, world!'
         })
       );
@@ -286,7 +286,7 @@ describe('LLMExecutionCoordinator', () => {
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'MESSAGE_ADDED',
-          role: 'assistant',
+          role: 'assistant' as MessageRole,
           content: 'Test response'
         })
       );
@@ -317,8 +317,8 @@ describe('LLMExecutionCoordinator', () => {
 
       // 设置对话管理器返回值
       mockConversationManager.getMessages.mockReturnValue([
-        { role: 'user', content: 'Hello, world!' },
-        { role: 'assistant', content: 'Test response' }
+        { role: 'user' as MessageRole, content: 'Hello, world!' },
+        { role: 'assistant' as MessageRole, content: 'Test response' }
       ]);
 
       // 执行测试
@@ -394,8 +394,8 @@ describe('LLMExecutionCoordinator', () => {
       });
 
       mockConversationManager.getMessages.mockReturnValue([
-        { role: 'user', content: 'Execute sensitive operation' },
-        { role: 'assistant', content: 'I need to execute a sensitive operation' }
+        { role: 'user' as MessageRole, content: 'Execute sensitive operation' },
+        { role: 'assistant' as MessageRole, content: 'I need to execute a sensitive operation' }
       ]);
 
       // 使用Jest模拟异步等待 - 虚拟超时
@@ -448,8 +448,8 @@ describe('LLMExecutionCoordinator', () => {
       });
 
       mockConversationManager.getMessages.mockReturnValue([
-        { role: 'user', content: 'Execute sensitive operation' },
-        { role: 'assistant', content: 'I need to execute a sensitive operation' }
+        { role: 'user' as MessageRole, content: 'Execute sensitive operation' },
+        { role: 'assistant' as MessageRole, content: 'I need to execute a sensitive operation' }
       ]);
 
       // 使用Jest模拟异步等待 - 虚拟超时（用户拒绝）
@@ -484,7 +484,7 @@ describe('LLMExecutionCoordinator', () => {
       // 验证拒绝消息被添加到对话
       expect(mockConversationManager.addMessage).toHaveBeenCalledWith(
         expect.objectContaining({
-          role: 'tool',
+          role: 'tool' as MessageRole,
           content: expect.stringContaining('rejected by user approval')
         })
       );
@@ -510,8 +510,8 @@ describe('LLMExecutionCoordinator', () => {
       });
 
       mockConversationManager.getMessages.mockReturnValue([
-        { role: 'user', content: 'Execute sensitive operation' },
-        { role: 'assistant', content: 'I need to execute a sensitive operation' }
+        { role: 'user' as MessageRole, content: 'Execute sensitive operation' },
+        { role: 'assistant' as MessageRole, content: 'I need to execute a sensitive operation' }
       ]);
 
       // 使用Jest模拟异步等待 - 虚拟超时（用户编辑参数）
@@ -574,8 +574,8 @@ describe('LLMExecutionCoordinator', () => {
       });
 
       mockConversationManager.getMessages.mockReturnValue([
-        { role: 'user', content: 'Execute sensitive operation' },
-        { role: 'assistant', content: 'I need to execute a sensitive operation' }
+        { role: 'user' as MessageRole, content: 'Execute sensitive operation' },
+        { role: 'assistant' as MessageRole, content: 'I need to execute a sensitive operation' }
       ]);
 
       // 使用Jest模拟异步等待 - 虚拟超时（用户提供额外指令）
@@ -608,7 +608,7 @@ describe('LLMExecutionCoordinator', () => {
       // 验证用户指令被添加到对话
       expect(mockConversationManager.addMessage).toHaveBeenCalledWith(
         expect.objectContaining({
-          role: 'user',
+          role: 'user' as MessageRole,
           content: 'Please also log the operation'
         })
       );
@@ -639,8 +639,8 @@ describe('LLMExecutionCoordinator', () => {
       });
 
       mockConversationManager.getMessages.mockReturnValue([
-        { role: 'user', content: 'Execute safe operation' },
-        { role: 'assistant', content: 'I need to execute a safe operation' }
+        { role: 'user' as MessageRole, content: 'Execute safe operation' },
+        { role: 'assistant' as MessageRole, content: 'I need to execute a safe operation' }
       ]);
 
       // 执行测试

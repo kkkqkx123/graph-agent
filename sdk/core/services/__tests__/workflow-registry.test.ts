@@ -49,7 +49,7 @@ describe('WorkflowRegistry', () => {
         id: 'edge-1',
         sourceNodeId: 'start-node',
         targetNodeId: 'end-node',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
         condition: undefined
       }
     ],
@@ -412,7 +412,7 @@ describe('WorkflowRegistry', () => {
         id: 'trigger-1',
         name: 'Start Target Workflow',
         condition: {
-          eventType: 'NODE_COMPLETED'
+          eventtype: 'NODE_COMPLETED' as EventType
         },
         action: {
           type: 'start_workflow',
@@ -882,11 +882,11 @@ describe('WorkflowRegistry', () => {
 
   describe('工作流类型相关测试', () => {
     it('应该成功注册TRIGGERED_SUBWORKFLOW类型的工作流', () => {
-      const workflow = createValidWorkflow('triggered-workflow', 'Triggered Workflow', 'TRIGGERED_SUBWORKFLOW');
+      const workflow = createValidWorkflow('triggered-workflow', 'Triggered Workflow', 'triggered_subworkflow');
       workflow.nodes = [
         {
           id: 'node-start',
-          type: 'START'_FROM_TRIGGER,
+          type: 'START_FROM_TRIGGER',
           name: 'Start From Trigger',
           config: {},
           outgoingEdgeIds: ['edge-1'],
@@ -906,7 +906,7 @@ describe('WorkflowRegistry', () => {
           id: 'edge-1',
           sourceNodeId: 'node-start',
           targetNodeId: 'node-continue',
-          type: EdgeType.DEFAULT,
+          type: 'DEFAULT',
           condition: undefined
         }
       ];
@@ -958,14 +958,14 @@ describe('WorkflowRegistry', () => {
           id: 'edge-1',
           sourceNodeId: 'node-start',
           targetNodeId: 'node-subgraph',
-          type: EdgeType.DEFAULT,
+          type: 'DEFAULT',
           condition: undefined
         },
         {
           id: 'edge-2',
           sourceNodeId: 'node-subgraph',
           targetNodeId: 'node-end',
-          type: EdgeType.DEFAULT,
+          type: 'DEFAULT',
           condition: undefined
         }
       ];
@@ -979,7 +979,7 @@ describe('WorkflowRegistry', () => {
       workflow.nodes = [
         {
           id: 'node-start',
-          type: 'START'_FROM_TRIGGER,
+          type: 'START_FROM_TRIGGER',
           name: 'Start From Trigger',
           config: {},
           outgoingEdgeIds: [],
@@ -1004,11 +1004,11 @@ describe('WorkflowRegistry', () => {
 
   describe('triggeredSubworkflowConfig相关测试', () => {
     it('应该接受triggeredSubworkflowConfig配置', () => {
-      const workflow = createValidWorkflow('triggered-workflow', 'Triggered Workflow', 'TRIGGERED_SUBWORKFLOW');
+      const workflow = createValidWorkflow('triggered-workflow', 'Triggered Workflow', 'triggered_subworkflow');
       workflow.nodes = [
         {
           id: 'node-start',
-          type: 'START'_FROM_TRIGGER,
+          type: 'START_FROM_TRIGGER',
           name: 'Start From Trigger',
           config: {},
           outgoingEdgeIds: ['edge-1'],
@@ -1028,7 +1028,7 @@ describe('WorkflowRegistry', () => {
           id: 'edge-1',
           sourceNodeId: 'node-start',
           targetNodeId: 'node-continue',
-          type: EdgeType.DEFAULT,
+          type: 'DEFAULT',
           condition: undefined
         }
       ];
@@ -1043,11 +1043,11 @@ describe('WorkflowRegistry', () => {
     });
 
     it('应该接受enableCheckpoints为true的配置', () => {
-      const workflow = createValidWorkflow('triggered-workflow', 'Triggered Workflow', 'TRIGGERED_SUBWORKFLOW');
+      const workflow = createValidWorkflow('triggered-workflow', 'Triggered Workflow', 'triggered_subworkflow');
       workflow.nodes = [
         {
           id: 'node-start',
-          type: 'START'_FROM_TRIGGER,
+          type: 'START_FROM_TRIGGER',
           name: 'Start From Trigger',
           config: {},
           outgoingEdgeIds: ['edge-1'],
@@ -1067,7 +1067,7 @@ describe('WorkflowRegistry', () => {
           id: 'edge-1',
           sourceNodeId: 'node-start',
           targetNodeId: 'node-continue',
-          type: EdgeType.DEFAULT,
+          type: 'DEFAULT',
           condition: undefined
         }
       ];

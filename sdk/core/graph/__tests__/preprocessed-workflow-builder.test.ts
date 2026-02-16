@@ -56,14 +56,14 @@ function createSimpleWorkflow(): WorkflowDefinition {
         id: 'e1',
         sourceNodeId: 'start',
         targetNodeId: 'llm',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
         label: 'Start to LLM',
       },
       {
         id: 'e2',
         sourceNodeId: 'llm',
         targetNodeId: 'end',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
         label: 'LLM to End',
       },
     ],
@@ -119,13 +119,13 @@ function createSubgraphWorkflow(): WorkflowDefinition {
         id: 'e1',
         sourceNodeId: 'start',
         targetNodeId: 'subgraph',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
       },
       {
         id: 'e2',
         sourceNodeId: 'subgraph',
         targetNodeId: 'end',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
       },
     ],
   };
@@ -177,13 +177,13 @@ function createSubWorkflow(): WorkflowDefinition {
         id: 'subE1',
         sourceNodeId: 'subStart',
         targetNodeId: 'subLLM',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
       },
       {
         id: 'subE2',
         sourceNodeId: 'subLLM',
         targetNodeId: 'subEnd',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
       },
     ],
   };
@@ -422,13 +422,13 @@ describe('PreprocessedWorkflowBuilder', () => {
             id: 'e1',
             sourceNodeId: 'start',
             targetNodeId: 'subgraph',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
           },
           {
             id: 'e2',
             sourceNodeId: 'subgraph',
             targetNodeId: 'end',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
           },
         ],
       };
@@ -510,19 +510,19 @@ describe('PreprocessedWorkflowBuilder', () => {
             id: 'e1',
             sourceNodeId: 'start',
             targetNodeId: 'llm',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
           },
           {
             id: 'e2',
             sourceNodeId: 'llm',
             targetNodeId: 'end1',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
           },
           {
             id: 'e3',
             sourceNodeId: 'llm',
             targetNodeId: 'end2',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
           },
         ],
       };
@@ -582,7 +582,7 @@ describe('PreprocessedWorkflowBuilder', () => {
       expect(edge1?.id).toBe('0');
       expect(edge1?.sourceNodeId).toBe('0');
       expect(edge1?.targetNodeId).toBe('1');
-      expect(edge1?.type).toBe(EdgeType.DEFAULT);
+      expect(edge1?.type).toBe('DEFAULT');
       expect(edge1?.label).toBe('Start to LLM');
       expect(edge1?.originalEdge).toBeDefined();
 

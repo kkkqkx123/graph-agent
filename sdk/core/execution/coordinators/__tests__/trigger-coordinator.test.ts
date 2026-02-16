@@ -66,7 +66,7 @@ describe('TriggerCoordinator', () => {
       id: 'trigger-1',
       name: 'Test Trigger',
       condition: {
-        eventType: 'NODE_COMPLETED'
+        eventtype: 'NODE_COMPLETED' as EventType
       },
       action: {
         type: 'start_workflow',
@@ -228,7 +228,7 @@ describe('TriggerCoordinator', () => {
         triggerId: 'trigger-1',
         threadId: 'thread-1',
         workflowId: 'workflow-1',
-        status: TriggerStatus.DISABLED,
+        status: 'disabled',
         triggerCount: 0,
         updatedAt: now()
       });
@@ -237,7 +237,7 @@ describe('TriggerCoordinator', () => {
       coordinator.enable('trigger-1');
 
       // 验证状态更新
-      expect(mockStateManager.updateStatus).toHaveBeenCalledWith('trigger-1', TriggerStatus.ENABLED);
+      expect(mockStateManager.updateStatus).toHaveBeenCalledWith('trigger-1', 'enabled');
     });
 
     it('应该忽略已启用的触发器', () => {
@@ -247,7 +247,7 @@ describe('TriggerCoordinator', () => {
         triggerId: 'trigger-1',
         threadId: 'thread-1',
         workflowId: 'workflow-1',
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: now()
       });
@@ -278,7 +278,7 @@ describe('TriggerCoordinator', () => {
         triggerId: 'trigger-1',
         threadId: 'thread-1',
         workflowId: 'workflow-1',
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: now()
       });
@@ -287,7 +287,7 @@ describe('TriggerCoordinator', () => {
       coordinator.disable('trigger-1');
 
       // 验证状态更新
-      expect(mockStateManager.updateStatus).toHaveBeenCalledWith('trigger-1', TriggerStatus.DISABLED);
+      expect(mockStateManager.updateStatus).toHaveBeenCalledWith('trigger-1', 'disabled');
     });
 
     it('应该忽略已禁用的触发器', () => {
@@ -297,7 +297,7 @@ describe('TriggerCoordinator', () => {
         triggerId: 'trigger-1',
         threadId: 'thread-1',
         workflowId: 'workflow-1',
-        status: TriggerStatus.DISABLED,
+        status: 'disabled',
         triggerCount: 0,
         updatedAt: now()
       });
@@ -327,7 +327,7 @@ describe('TriggerCoordinator', () => {
         triggerId: 'trigger-1',
         threadId: 'thread-1',
         workflowId: 'workflow-1',
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 5,
         updatedAt: now()
       };
@@ -336,7 +336,7 @@ describe('TriggerCoordinator', () => {
       const mockWorkflowTrigger = {
         id: 'trigger-1',
         name: 'Test Trigger',
-        condition: { eventType: 'NODE_COMPLETED' },
+        condition: { eventtype: 'NODE_COMPLETED' as EventType },
         action: { type: 'start_workflow', parameters: {} },
         maxTriggers: 10
       };
@@ -385,7 +385,7 @@ describe('TriggerCoordinator', () => {
         triggerId: 'trigger-1',
         threadId: 'thread-1',
         workflowId: 'workflow-1',
-        status: TriggerStatus.ENABLED,
+        status: 'enabled',
         triggerCount: 0,
         updatedAt: now()
       });
@@ -420,7 +420,7 @@ describe('TriggerCoordinator', () => {
           triggerId: 'trigger-1',
           threadId: 'thread-1',
           workflowId: 'workflow-1',
-          status: TriggerStatus.ENABLED,
+          status: 'enabled',
           triggerCount: 5,
           updatedAt: now()
         }],
@@ -428,7 +428,7 @@ describe('TriggerCoordinator', () => {
           triggerId: 'trigger-2',
           threadId: 'thread-1',
           workflowId: 'workflow-1',
-          status: TriggerStatus.DISABLED,
+          status: 'disabled',
           triggerCount: 0,
           updatedAt: now()
         }]
@@ -439,14 +439,14 @@ describe('TriggerCoordinator', () => {
         {
           id: 'trigger-1',
           name: 'Trigger 1',
-          condition: { eventType: 'NODE_COMPLETED' },
+          condition: { eventtype: 'NODE_COMPLETED' as EventType },
           action: { type: 'start_workflow', parameters: {} }
         },
         {
           id: 'trigger-2',
           name: 'Trigger 2',
           condition: { eventType: 'NODE_STARTED' },
-          action: { type: TriggerActionType.STOP_THREAD, parameters: {} }
+          action: { type: 'stop_thread', parameters: {} }
         }
       ];
 
@@ -471,9 +471,9 @@ describe('TriggerCoordinator', () => {
       // 验证结果
       expect(result).toHaveLength(2);
       expect(result[0]!.id).toBe('trigger-1');
-      expect(result[0]!.status).toBe(TriggerStatus.ENABLED);
+      expect(result[0]!.status).toBe('enabled');
       expect(result[1]!.id).toBe('trigger-2');
-      expect(result[1]!.status).toBe(TriggerStatus.DISABLED);
+      expect(result[1]!.status).toBe('disabled');
     });
 
     it('应该过滤掉定义不存在的触发器', () => {
@@ -483,7 +483,7 @@ describe('TriggerCoordinator', () => {
           triggerId: 'trigger-1',
           threadId: 'thread-1',
           workflowId: 'workflow-1',
-          status: TriggerStatus.ENABLED,
+          status: 'enabled',
           triggerCount: 5,
           updatedAt: now()
         }],
@@ -491,7 +491,7 @@ describe('TriggerCoordinator', () => {
           triggerId: 'trigger-2',
           threadId: 'thread-1',
           workflowId: 'workflow-1',
-          status: TriggerStatus.ENABLED,
+          status: 'enabled',
           triggerCount: 0,
           updatedAt: now()
         }]
@@ -505,7 +505,7 @@ describe('TriggerCoordinator', () => {
         triggers: [{
           id: 'trigger-1',
           name: 'Trigger 1',
-          condition: { eventType: 'NODE_COMPLETED' },
+          condition: { eventtype: 'NODE_COMPLETED' as EventType },
           action: { type: 'start_workflow', parameters: {} }
         }],
         graph: {} as any,
@@ -540,7 +540,7 @@ describe('TriggerCoordinator', () => {
 
   describe('handleEvent', () => {
     const mockEvent = {
-      type: 'NODE_COMPLETED',
+      type: 'NODE_COMPLETED' as EventType,
       timestamp: now(),
       workflowId: 'workflow-1',
       threadId: 'thread-1',
@@ -554,9 +554,9 @@ describe('TriggerCoordinator', () => {
           id: 'trigger-1',
           name: 'Test Trigger',
           type: TriggerType.EVENT,
-          condition: { eventType: 'NODE_COMPLETED' },
+          condition: { eventtype: 'NODE_COMPLETED' as EventType },
           action: { type: 'start_workflow', parameters: {} },
-          status: TriggerStatus.ENABLED,
+          status: 'enabled',
           triggerCount: 0,
           maxTriggers: 10,
           workflowId: 'workflow-1',
@@ -601,7 +601,7 @@ describe('TriggerCoordinator', () => {
           type: TriggerType.EVENT,
           condition: { eventType: 'NODE_STARTED' }, // 不同的事件类型
           action: { type: 'start_workflow', parameters: {} },
-          status: TriggerStatus.ENABLED,
+          status: 'enabled',
           triggerCount: 0,
           workflowId: 'workflow-1',
           threadId: 'thread-1',
@@ -627,9 +627,9 @@ describe('TriggerCoordinator', () => {
           id: 'trigger-1',
           name: 'Test Trigger',
           type: TriggerType.EVENT,
-          condition: { eventType: 'NODE_COMPLETED' },
+          condition: { eventtype: 'NODE_COMPLETED' as EventType },
           action: { type: 'start_workflow', parameters: {} },
-          status: TriggerStatus.DISABLED, // 禁用状态
+          status: 'disabled', // 禁用状态
           triggerCount: 0,
           workflowId: 'workflow-1',
           threadId: 'thread-1',
@@ -668,7 +668,7 @@ describe('TriggerCoordinator', () => {
             eventName: 'custom.event' // 匹配的事件名称
           },
           action: { type: 'start_workflow', parameters: {} },
-          status: TriggerStatus.ENABLED,
+          status: 'enabled',
           triggerCount: 0,
           workflowId: 'workflow-1',
           threadId: 'thread-1',
@@ -709,7 +709,7 @@ describe('TriggerCoordinator', () => {
             eventName: 'different.event' // 不匹配的事件名称
           },
           action: { type: 'start_workflow', parameters: {} },
-          status: TriggerStatus.ENABLED,
+          status: 'enabled',
           triggerCount: 0,
           workflowId: 'workflow-1',
           threadId: 'thread-1',
@@ -735,9 +735,9 @@ describe('TriggerCoordinator', () => {
           id: 'trigger-1',
           name: 'Test Trigger',
           type: TriggerType.EVENT,
-          condition: { eventType: 'NODE_COMPLETED' },
+          condition: { eventtype: 'NODE_COMPLETED' as EventType },
           action: { type: 'start_workflow', parameters: {} },
-          status: TriggerStatus.ENABLED,
+          status: 'enabled',
           triggerCount: 0,
           maxTriggers: 1, // 一次性触发器
           workflowId: 'workflow-1',
@@ -756,7 +756,7 @@ describe('TriggerCoordinator', () => {
       await coordinator.handleEvent(mockEvent);
 
       // 验证触发器被禁用
-      expect(mockStateManager.updateStatus).toHaveBeenCalledWith('trigger-1', TriggerStatus.DISABLED);
+      expect(mockStateManager.updateStatus).toHaveBeenCalledWith('trigger-1', 'disabled');
     });
 
     it('应该静默处理触发器执行错误', async () => {
@@ -766,9 +766,9 @@ describe('TriggerCoordinator', () => {
           id: 'trigger-1',
           name: 'Test Trigger',
           type: TriggerType.EVENT,
-          condition: { eventType: 'NODE_COMPLETED' },
+          condition: { eventtype: 'NODE_COMPLETED' as EventType },
           action: { type: 'start_workflow', parameters: {} },
-          status: TriggerStatus.ENABLED,
+          status: 'enabled',
           triggerCount: 0,
           workflowId: 'workflow-1',
           threadId: 'thread-1',

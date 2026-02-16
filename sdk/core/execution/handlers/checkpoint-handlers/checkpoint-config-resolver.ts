@@ -64,7 +64,7 @@ export function resolveCheckpointConfig(
     // 默认不创建检查点
     return {
       shouldCreate: false,
-      source: CheckpointConfigSource.TRIGGERED_SUBWORKFLOW
+      source: 'triggered_subworkflow'
     };
   }
   
@@ -98,7 +98,7 @@ function resolveCheckpointConfigInternal(
   if (!globallyEnabled) {
     return {
       shouldCreate: false,
-      source: CheckpointConfigSource.DISABLED
+      source: 'disabled'
     };
   }
 
@@ -107,7 +107,7 @@ function resolveCheckpointConfigInternal(
     return {
       shouldCreate: hookConfig.createCheckpoint,
       description: hookConfig.checkpointDescription,
-      source: CheckpointConfigSource.HOOK
+      source: 'hook'
     };
   }
 
@@ -116,7 +116,7 @@ function resolveCheckpointConfigInternal(
     return {
       shouldCreate: triggerConfig.createCheckpoint,
       description: triggerConfig.checkpointDescription,
-      source: CheckpointConfigSource.TRIGGER
+      source: 'trigger'
     };
   }
 
@@ -126,35 +126,35 @@ function resolveCheckpointConfigInternal(
     let shouldCreate = false;
     
     // 根据触发类型和工具配置决定是否创建
-    if (context.triggerType === CheckpointTriggerType.TOOL_BEFORE) {
+    if (context.triggerType === 'TOOL_BEFORE') {
       shouldCreate = toolCheckpointConfig === true || toolCheckpointConfig === 'before' || toolCheckpointConfig === 'both';
-    } else if (context.triggerType === CheckpointTriggerType.TOOL_AFTER) {
+    } else if (context.triggerType === 'TOOL_AFTER') {
       shouldCreate = toolCheckpointConfig === 'after' || toolCheckpointConfig === 'both';
     }
     
     return {
       shouldCreate,
       description: toolConfig.checkpointDescriptionTemplate,
-      source: CheckpointConfigSource.TOOL
+      source: 'tool'
     };
   }
 
   // 4. 检查节点配置（中优先级）
   if (nodeConfig) {
-    if (context.triggerType === CheckpointTriggerType.NODE_BEFORE_EXECUTE) {
+    if (context.triggerType === 'NODE_BEFORE_EXECUTE') {
       if (nodeConfig.checkpointBeforeExecute !== undefined) {
         return {
           shouldCreate: nodeConfig.checkpointBeforeExecute,
           description: `Before node: ${nodeConfig.name}`,
-          source: CheckpointConfigSource.NODE
+          source: 'node'
         };
       }
-    } else if (context.triggerType === CheckpointTriggerType.NODE_AFTER_EXECUTE) {
+    } else if (context.triggerType === 'NODE_AFTER_EXECUTE') {
       if (nodeConfig.checkpointAfterExecute !== undefined) {
         return {
           shouldCreate: nodeConfig.checkpointAfterExecute,
           description: `After node: ${nodeConfig.name}`,
-          source: CheckpointConfigSource.NODE
+          source: 'node'
         };
       }
     }
@@ -162,20 +162,20 @@ function resolveCheckpointConfigInternal(
 
   // 5. 检查全局配置（最低优先级）
   if (globalConfig) {
-    if (context.triggerType === CheckpointTriggerType.NODE_BEFORE_EXECUTE) {
+    if (context.triggerType === 'NODE_BEFORE_EXECUTE') {
       if (globalConfig.checkpointBeforeNode !== undefined) {
         return {
           shouldCreate: globalConfig.checkpointBeforeNode,
           description: 'Global checkpoint before node',
-          source: CheckpointConfigSource.GLOBAL
+          source: 'global'
         };
       }
-    } else if (context.triggerType === CheckpointTriggerType.NODE_AFTER_EXECUTE) {
+    } else if (context.triggerType === 'NODE_AFTER_EXECUTE') {
       if (globalConfig.checkpointAfterNode !== undefined) {
         return {
           shouldCreate: globalConfig.checkpointAfterNode,
           description: 'Global checkpoint after node',
-          source: CheckpointConfigSource.GLOBAL
+          source: 'global'
         };
       }
     }
@@ -184,7 +184,7 @@ function resolveCheckpointConfigInternal(
   // 默认不创建检查点
   return {
     shouldCreate: false,
-    source: CheckpointConfigSource.DISABLED
+    source: 'disabled'
   };
 }
 

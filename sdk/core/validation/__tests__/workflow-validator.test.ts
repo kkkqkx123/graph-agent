@@ -48,7 +48,7 @@ describe('WorkflowValidator', () => {
          id: 'edge-1',
          sourceNodeId: 'node-start',
          targetNodeId: 'node-end',
-         type: EdgeType.DEFAULT,
+         type: 'DEFAULT',
          condition: undefined
        }
      ]
@@ -185,7 +185,7 @@ describe('WorkflowValidator', () => {
         nodes: [
           {
             id: '',
-            name: 'Node',
+            name: 'node',
             type: 'START',
             config: {},
             incomingEdgeIds: [],
@@ -227,7 +227,7 @@ describe('WorkflowValidator', () => {
         nodes: [
           {
             id: 'node-1',
-            name: 'Node',
+            name: 'node',
             type: '' as any,
             config: {},
             incomingEdgeIds: [],
@@ -248,7 +248,7 @@ describe('WorkflowValidator', () => {
         nodes: [
           {
             id: 'node-1',
-            name: 'Node',
+            name: 'node',
             type: 'LLM',
             config: { profileId: 'profile-1', prompt: 'Hello' },
             incomingEdgeIds: [],
@@ -357,7 +357,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-1',
             name: 'Start',
-            type: 'START'_FROM_TRIGGER,
+            type: 'START_FROM_TRIGGER',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -378,7 +378,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-1',
             name: 'StartFromTrigger',
-            type: 'START'_FROM_TRIGGER,
+            type: 'START_FROM_TRIGGER',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -415,7 +415,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-1',
             name: 'StartFromTrigger',
-            type: 'START'_FROM_TRIGGER,
+            type: 'START_FROM_TRIGGER',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -461,13 +461,13 @@ describe('WorkflowValidator', () => {
             id: 'edge-1',
             sourceNodeId: 'node-1',
             targetNodeId: 'node-2',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-1',
             sourceNodeId: 'node-2',
             targetNodeId: 'node-3',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ]
       };
@@ -486,7 +486,7 @@ describe('WorkflowValidator', () => {
             id: '',
             sourceNodeId: 'node-1',
             targetNodeId: 'node-2',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ]
       };
@@ -505,7 +505,7 @@ describe('WorkflowValidator', () => {
             id: 'edge-1',
             sourceNodeId: '',
             targetNodeId: 'node-2',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ]
       };
@@ -524,7 +524,7 @@ describe('WorkflowValidator', () => {
             id: 'edge-1',
             sourceNodeId: 'node-1',
             targetNodeId: '',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ]
       };
@@ -562,7 +562,7 @@ describe('WorkflowValidator', () => {
             id: 'edge-1',
             sourceNodeId: 'non-existent',
             targetNodeId: 'node-2',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ]
       };
@@ -581,7 +581,7 @@ describe('WorkflowValidator', () => {
             id: 'edge-1',
             sourceNodeId: 'node-1',
             targetNodeId: 'non-existent',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ]
       };
@@ -608,7 +608,7 @@ describe('WorkflowValidator', () => {
             id: 'edge-1',
             sourceNodeId: 'non-existent',
             targetNodeId: 'node-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ]
       };
@@ -627,7 +627,7 @@ describe('WorkflowValidator', () => {
             id: 'edge-1',
             sourceNodeId: 'node-start',
             targetNodeId: 'non-existent',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ]
       };
@@ -797,19 +797,19 @@ describe('WorkflowValidator', () => {
             id: 'edge-1',
             sourceNodeId: 'node-start',
             targetNodeId: 'node-llm',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-2',
             sourceNodeId: 'node-llm',
             targetNodeId: 'node-code',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-3',
             sourceNodeId: 'node-code',
             targetNodeId: 'node-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -830,14 +830,14 @@ describe('WorkflowValidator', () => {
         id: 'triggered-workflow',
         name: 'Triggered Workflow',
         version: '1.0.0',
-        type: 'TRIGGERED_SUBWORKFLOW',
+        type: 'triggered_subworkflow',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         nodes: [
           {
             id: 'node-start',
             name: 'Start From Trigger',
-            type: 'START'_FROM_TRIGGER,
+            type: 'START_FROM_TRIGGER',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: ['edge-1']
@@ -856,7 +856,7 @@ describe('WorkflowValidator', () => {
             id: 'edge-1',
             sourceNodeId: 'node-start',
             targetNodeId: 'node-continue',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
             condition: undefined
           }
         ]
@@ -871,7 +871,7 @@ describe('WorkflowValidator', () => {
         id: 'triggered-workflow',
         name: 'Triggered Workflow',
         version: '1.0.0',
-        type: 'TRIGGERED_SUBWORKFLOW',
+        type: 'triggered_subworkflow',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         nodes: [
@@ -899,14 +899,14 @@ describe('WorkflowValidator', () => {
         id: 'triggered-workflow',
         name: 'Triggered Workflow',
         version: '1.0.0',
-        type: 'TRIGGERED_SUBWORKFLOW',
+        type: 'triggered_subworkflow',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         nodes: [
           {
             id: 'node-start',
             name: 'Start From Trigger',
-            type: 'START'_FROM_TRIGGER,
+            type: 'START_FROM_TRIGGER',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -927,14 +927,14 @@ describe('WorkflowValidator', () => {
         id: 'triggered-workflow',
         name: 'Triggered Workflow',
         version: '1.0.0',
-        type: 'TRIGGERED_SUBWORKFLOW',
+        type: 'triggered_subworkflow',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         nodes: [
           {
             id: 'node-start',
             name: 'Start From Trigger',
-            type: 'START'_FROM_TRIGGER,
+            type: 'START_FROM_TRIGGER',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -971,14 +971,14 @@ describe('WorkflowValidator', () => {
         id: 'triggered-workflow',
         name: 'Triggered Workflow',
         version: '1.0.0',
-        type: 'TRIGGERED_SUBWORKFLOW',
+        type: 'triggered_subworkflow',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         nodes: [
           {
             id: 'node-start',
             name: 'Start From Trigger',
-            type: 'START'_FROM_TRIGGER,
+            type: 'START_FROM_TRIGGER',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -1041,7 +1041,7 @@ describe('WorkflowValidator', () => {
             id: 'edge-1',
             sourceNodeId: 'node-start',
             targetNodeId: 'node-end',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
             condition: undefined
           }
         ]
@@ -1071,7 +1071,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-start-trigger',
             name: 'Start From Trigger',
-            type: 'START'_FROM_TRIGGER,
+            type: 'START_FROM_TRIGGER',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -1226,14 +1226,14 @@ describe('WorkflowValidator', () => {
             id: 'edge-1',
             sourceNodeId: 'node-start',
             targetNodeId: 'node-subgraph',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
             condition: undefined
           },
           {
             id: 'edge-2',
             sourceNodeId: 'node-subgraph',
             targetNodeId: 'node-end',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
             condition: undefined
           }
         ]
@@ -1274,7 +1274,7 @@ describe('WorkflowValidator', () => {
             id: 'edge-1',
             sourceNodeId: 'node-start',
             targetNodeId: 'node-end',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
             condition: undefined
           }
         ],
@@ -1284,7 +1284,7 @@ describe('WorkflowValidator', () => {
             name: 'Execute Triggered Subgraph',
             type: 'event',
             condition: {
-              eventType: 'NODE_COMPLETED'
+              eventtype: 'NODE_COMPLETED' as EventType
             },
             action: {
               type: 'EXECUTE_TRIGGERED_SUBGRAPH',
@@ -1332,7 +1332,7 @@ describe('WorkflowValidator', () => {
             id: 'edge-1',
             sourceNodeId: 'node-start',
             targetNodeId: 'node-end',
-            type: EdgeType.DEFAULT,
+            type: 'DEFAULT',
             condition: undefined
           }
         ],
@@ -1366,7 +1366,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-start-trigger',
             name: 'Start From Trigger',
-            type: 'START'_FROM_TRIGGER,
+            type: 'START_FROM_TRIGGER',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []

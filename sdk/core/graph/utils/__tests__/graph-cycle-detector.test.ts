@@ -27,11 +27,11 @@ function createAcyclicGraph() {
   ];
 
   const edges: GraphEdge[] = [
-    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: EdgeType.DEFAULT },
-    { id: 'e3', sourceNodeId: '2', targetNodeId: '5', type: EdgeType.DEFAULT },
-    { id: 'e4', sourceNodeId: '1', targetNodeId: '4', type: EdgeType.DEFAULT },
-    { id: 'e5', sourceNodeId: '4', targetNodeId: '5', type: EdgeType.DEFAULT },
+    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: 'DEFAULT' },
+    { id: 'e3', sourceNodeId: '2', targetNodeId: '5', type: 'DEFAULT' },
+    { id: 'e4', sourceNodeId: '1', targetNodeId: '4', type: 'DEFAULT' },
+    { id: 'e5', sourceNodeId: '4', targetNodeId: '5', type: 'DEFAULT' },
   ];
 
   for (const node of nodes) {
@@ -64,9 +64,9 @@ function createCyclicGraph() {
   ];
 
   const edges: GraphEdge[] = [
-    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: EdgeType.DEFAULT },
-    { id: 'e3', sourceNodeId: '3', targetNodeId: '1', type: EdgeType.DEFAULT }, // Creates cycle
+    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: 'DEFAULT' },
+    { id: 'e3', sourceNodeId: '3', targetNodeId: '1', type: 'DEFAULT' }, // Creates cycle
   ];
 
   for (const node of nodes) {
@@ -93,7 +93,7 @@ function createSelfLoopGraph() {
   const node: GraphNode = { id: '1', type: 'LLM', name: 'Node 1', workflowId: 'wf1' };
   graph.addNode(node);
 
-  const edge: GraphEdge = { id: 'e1', sourceNodeId: '1', targetNodeId: '1', type: EdgeType.DEFAULT };
+  const edge: GraphEdge = { id: 'e1', sourceNodeId: '1', targetNodeId: '1', type: 'DEFAULT' };
   graph.addEdge(edge);
 
   graph.startNodeId = '1';
@@ -121,11 +121,11 @@ function createComplexCyclicGraph() {
   ];
 
   const edges: GraphEdge[] = [
-    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: EdgeType.DEFAULT },
-    { id: 'e3', sourceNodeId: '3', targetNodeId: '2', type: EdgeType.DEFAULT }, // Creates cycle 2 -> 3 -> 2
-    { id: 'e4', sourceNodeId: '1', targetNodeId: '4', type: EdgeType.DEFAULT },
-    { id: 'e5', sourceNodeId: '4', targetNodeId: '5', type: EdgeType.DEFAULT },
+    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: 'DEFAULT' },
+    { id: 'e3', sourceNodeId: '3', targetNodeId: '2', type: 'DEFAULT' }, // Creates cycle 2 -> 3 -> 2
+    { id: 'e4', sourceNodeId: '1', targetNodeId: '4', type: 'DEFAULT' },
+    { id: 'e5', sourceNodeId: '4', targetNodeId: '5', type: 'DEFAULT' },
   ];
 
   for (const node of nodes) {
@@ -227,13 +227,13 @@ describe('graph-cycle-detector', () => {
       const node2: GraphNode = { id: '2', type: 'LLM', name: 'Node 2', workflowId: 'wf1' };
       graph.addNode(node1);
       graph.addNode(node2);
-      const edge1: GraphEdge = { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT };
+      const edge1: GraphEdge = { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' };
       graph.addEdge(edge1);
 
       // Component 2: 3 -> 3 (cycle)
       const node3: GraphNode = { id: '3', type: 'END', name: 'Node 3', workflowId: 'wf1' };
       graph.addNode(node3);
-      const edge2: GraphEdge = { id: 'e2', sourceNodeId: '3', targetNodeId: '3', type: EdgeType.DEFAULT };
+      const edge2: GraphEdge = { id: 'e2', sourceNodeId: '3', targetNodeId: '3', type: 'DEFAULT' };
       graph.addEdge(edge2);
 
       const result = detectCycles(graph);
@@ -269,9 +269,9 @@ describe('graph-cycle-detector', () => {
       }
 
       const edges: GraphEdge[] = [
-        { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-        { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: EdgeType.DEFAULT },
-        { id: 'e3', sourceNodeId: '3', targetNodeId: '4', type: EdgeType.DEFAULT },
+        { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+        { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: 'DEFAULT' },
+        { id: 'e3', sourceNodeId: '3', targetNodeId: '4', type: 'DEFAULT' },
       ];
 
       for (const edge of edges) {
@@ -298,10 +298,10 @@ describe('graph-cycle-detector', () => {
       }
 
       const edges: GraphEdge[] = [
-        { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-        { id: 'e2', sourceNodeId: '1', targetNodeId: '3', type: EdgeType.DEFAULT },
-        { id: 'e3', sourceNodeId: '2', targetNodeId: '4', type: EdgeType.DEFAULT },
-        { id: 'e4', sourceNodeId: '3', targetNodeId: '4', type: EdgeType.DEFAULT },
+        { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+        { id: 'e2', sourceNodeId: '1', targetNodeId: '3', type: 'DEFAULT' },
+        { id: 'e3', sourceNodeId: '2', targetNodeId: '4', type: 'DEFAULT' },
+        { id: 'e4', sourceNodeId: '3', targetNodeId: '4', type: 'DEFAULT' },
       ];
 
       for (const edge of edges) {

@@ -265,7 +265,7 @@ describe('EventBuilder', () => {
       );
 
       expect(event).toEqual({
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         threadId: 'thread-123',
         workflowId: 'workflow-123',
         nodeId: 'node-1',
@@ -347,7 +347,7 @@ describe('EventBuilder', () => {
       );
 
       expect(event).toEqual({
-        type: 'VARIABLE_CHANGED',
+        type: 'VARIABLE_CHANGED' as EventType,
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',

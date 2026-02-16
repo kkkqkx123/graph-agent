@@ -162,14 +162,14 @@ describe('检查点外部系统集成测试', () => {
         id: `${id}-edge-1`,
         sourceNodeId: `${id}-start`,
         targetNodeId: `${id}-process`,
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
         condition: undefined
       },
       {
         id: `${id}-edge-2`,
         sourceNodeId: `${id}-process`,
         targetNodeId: `${id}-end`,
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
         condition: undefined
       }
     ]

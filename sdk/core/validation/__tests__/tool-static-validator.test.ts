@@ -18,7 +18,7 @@ describe('StaticValidator', () => {
       const validTool = {
         id: 'tool-1',
         name: 'test-tool',
-        type: 'STATELESS',
+        type: 'STATELESS' as const,
         description: 'A test tool',
         parameters: {
           properties: {
@@ -42,7 +42,7 @@ describe('StaticValidator', () => {
       const validTool = {
         id: 'tool-2',
         name: 'test-stateful-tool',
-        type: 'STATEFUL',
+        type: 'STATEFUL' as const,
         description: 'A test stateful tool',
         parameters: {
           properties: {
@@ -70,7 +70,7 @@ describe('StaticValidator', () => {
       const validTool = {
         id: 'tool-3',
         name: 'test-rest-tool',
-        type: 'REST',
+        type: 'REST' as const,
         description: 'A test REST tool',
         parameters: {
           properties: {
@@ -95,7 +95,7 @@ describe('StaticValidator', () => {
       const validTool = {
         id: 'tool-4',
         name: 'test-mcp-tool',
-        type: 'MCP',
+        type: 'MCP' as const,
         description: 'A test MCP tool',
         parameters: {
           properties: {
@@ -120,7 +120,7 @@ describe('StaticValidator', () => {
       const invalidTool = {
         id: 'tool-1',
         // 缺少name字段
-        type: 'STATELESS',
+        type: 'STATELESS' as const,
         description: 'A test tool',
         parameters: {
           properties: {},
@@ -142,7 +142,7 @@ describe('StaticValidator', () => {
       const invalidTool = {
         id: 'tool-1',
         name: 'test-tool',
-        type: 'STATELESS',
+        type: 'STATELESS' as const,
         description: 'A test tool',
         parameters: {
           properties: {},
@@ -164,7 +164,7 @@ describe('StaticValidator', () => {
       const invalidTool = {
         id: 'tool-1',
         name: 'test-tool',
-        type: 'STATELESS',
+        type: 'STATELESS' as const,
         description: 'A test tool',
         parameters: {
           properties: {

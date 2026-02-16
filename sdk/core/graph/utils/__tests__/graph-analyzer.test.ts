@@ -23,9 +23,9 @@ function createStandardGraph() {
   ];
 
   const edges: GraphEdge[] = [
-    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: EdgeType.DEFAULT },
-    { id: 'e3', sourceNodeId: '3', targetNodeId: '4', type: EdgeType.DEFAULT },
+    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: 'DEFAULT' },
+    { id: 'e3', sourceNodeId: '3', targetNodeId: '4', type: 'DEFAULT' },
   ];
 
   for (const node of nodes) {
@@ -82,12 +82,12 @@ function createForkJoinGraph() {
   ];
 
   const edges: GraphEdge[] = [
-    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: EdgeType.DEFAULT },
-    { id: 'e3', sourceNodeId: '2', targetNodeId: '6', type: EdgeType.DEFAULT },
-    { id: 'e4', sourceNodeId: '3', targetNodeId: '4', type: EdgeType.DEFAULT },
-    { id: 'e5', sourceNodeId: '6', targetNodeId: '4', type: EdgeType.DEFAULT },
-    { id: 'e6', sourceNodeId: '4', targetNodeId: '5', type: EdgeType.DEFAULT },
+    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: 'DEFAULT' },
+    { id: 'e3', sourceNodeId: '2', targetNodeId: '6', type: 'DEFAULT' },
+    { id: 'e4', sourceNodeId: '3', targetNodeId: '4', type: 'DEFAULT' },
+    { id: 'e5', sourceNodeId: '6', targetNodeId: '4', type: 'DEFAULT' },
+    { id: 'e6', sourceNodeId: '4', targetNodeId: '5', type: 'DEFAULT' },
   ];
 
   for (const node of nodes) {
@@ -141,10 +141,10 @@ function createUnpairedForkJoinGraph() {
   ];
 
   const edges: GraphEdge[] = [
-    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: EdgeType.DEFAULT },
-    { id: 'e3', sourceNodeId: '3', targetNodeId: '4', type: EdgeType.DEFAULT },
-    { id: 'e4', sourceNodeId: '4', targetNodeId: '5', type: EdgeType.DEFAULT },
+    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: 'DEFAULT' },
+    { id: 'e3', sourceNodeId: '3', targetNodeId: '4', type: 'DEFAULT' },
+    { id: 'e4', sourceNodeId: '4', targetNodeId: '5', type: 'DEFAULT' },
   ];
 
   for (const node of nodes) {
@@ -224,7 +224,7 @@ describe('graph-analyzer', () => {
       const result = analyzeGraph(graph);
 
       expect(result.edgeStats.total).toBe(3);
-      expect(result.edgeStats.byType.get(EdgeType.DEFAULT)).toBe(3);
+      expect(result.edgeStats.byType.get('DEFAULT')).toBe(3);
     });
 
     it('should handle empty graph', () => {
@@ -271,15 +271,15 @@ describe('graph-analyzer', () => {
       ];
 
       const edges: GraphEdge[] = [
-        { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-        { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: EdgeType.DEFAULT },
-        { id: 'e3', sourceNodeId: '3', targetNodeId: '4', type: EdgeType.DEFAULT },
-        { id: 'e4', sourceNodeId: '4', targetNodeId: '5', type: EdgeType.DEFAULT },
+        { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+        { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: 'DEFAULT' },
+        { id: 'e3', sourceNodeId: '3', targetNodeId: '4', type: 'DEFAULT' },
+        { id: 'e4', sourceNodeId: '4', targetNodeId: '5', type: 'DEFAULT' },
         {
           id: 'e5',
           sourceNodeId: '5',
           targetNodeId: '6',
-          type: EdgeType.CONDITIONAL,
+          type: 'CONDITIONAL',
         },
       ];
 
@@ -305,8 +305,8 @@ describe('graph-analyzer', () => {
       expect(result.nodeStats.byType.get('END')).toBe(1);
 
       expect(result.edgeStats.total).toBe(5);
-      expect(result.edgeStats.byType.get(EdgeType.DEFAULT)).toBe(4);
-      expect(result.edgeStats.byType.get(EdgeType.CONDITIONAL)).toBe(1);
+      expect(result.edgeStats.byType.get('DEFAULT')).toBe(4);
+      expect(result.edgeStats.byType.get('CONDITIONAL')).toBe(1);
     });
   });
 
@@ -529,9 +529,9 @@ describe('graph-analyzer', () => {
       }
 
       const edges: GraphEdge[] = [
-        { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-        { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: EdgeType.DEFAULT },
-        { id: 'e3', sourceNodeId: '3', targetNodeId: '1', type: EdgeType.DEFAULT },
+        { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+        { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: 'DEFAULT' },
+        { id: 'e3', sourceNodeId: '3', targetNodeId: '1', type: 'DEFAULT' },
       ];
 
       for (const edge of edges) {

@@ -101,9 +101,9 @@ export class PreprocessedWorkflowBuilder {
       graph.addNode(graphNode);
       
       // 记录START和END节点
-      if (node.type === NodeTypeEnum.START) {
+      if (node.type === 'START') {
         graph.startNodeId = indexId.toString();
-      } else if (node.type === NodeTypeEnum.END) {
+      } else if (node.type === 'END') {
         graph.endNodeIds.add(indexId.toString());
       }
     }
@@ -145,7 +145,7 @@ export class PreprocessedWorkflowBuilder {
     workflow: WorkflowDefinition,
     workflowRegistry: any
   ): Promise<void> {
-    const subgraphNodes = workflow.nodes.filter(n => n.type === NodeTypeEnum.SUBGRAPH);
+    const subgraphNodes = workflow.nodes.filter(n => n.type === 'SUBGRAPH');
     
     for (const subgraphNode of subgraphNodes) {
       const subgraphConfig = subgraphNode.config as any;
@@ -305,7 +305,7 @@ export class PreprocessedWorkflowBuilder {
   ): Promise<SubgraphRelationship[]> {
     const relationships: SubgraphRelationship[] = [];
     
-    const subgraphNodes = workflow.nodes.filter(n => n.type === NodeTypeEnum.SUBGRAPH);
+    const subgraphNodes = workflow.nodes.filter(n => n.type === 'SUBGRAPH');
     
     for (const subgraphNode of subgraphNodes) {
       const subgraphConfig = subgraphNode.config as any;

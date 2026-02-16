@@ -27,12 +27,12 @@ function createTestGraph() {
   ];
 
   const edges: GraphEdge[] = [
-    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: EdgeType.DEFAULT },
-    { id: 'e3', sourceNodeId: '2', targetNodeId: '5', type: EdgeType.DEFAULT },
-    { id: 'e4', sourceNodeId: '1', targetNodeId: '4', type: EdgeType.DEFAULT },
-    { id: 'e5', sourceNodeId: '4', targetNodeId: '5', type: EdgeType.DEFAULT },
-    { id: 'e6', sourceNodeId: '3', targetNodeId: '5', type: EdgeType.DEFAULT },
+    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: 'DEFAULT' },
+    { id: 'e3', sourceNodeId: '2', targetNodeId: '5', type: 'DEFAULT' },
+    { id: 'e4', sourceNodeId: '1', targetNodeId: '4', type: 'DEFAULT' },
+    { id: 'e5', sourceNodeId: '4', targetNodeId: '5', type: 'DEFAULT' },
+    { id: 'e6', sourceNodeId: '3', targetNodeId: '5', type: 'DEFAULT' },
   ];
 
   for (const node of nodes) {
@@ -206,7 +206,7 @@ describe('graph-traversal', () => {
       }
 
       // Only edge 1 -> 2, no edge to 3
-      const edge: GraphEdge = { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT };
+      const edge: GraphEdge = { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' };
       graph.addEdge(edge);
 
       const reachable = getReachableNodes(graph, '1');
@@ -264,7 +264,7 @@ describe('graph-traversal', () => {
       }
 
       // Only edge 1 -> 2, no incoming edges to 3
-      const edge: GraphEdge = { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT };
+      const edge: GraphEdge = { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' };
       graph.addEdge(edge);
 
       const reaching = getNodesReachingTo(graph, '3');
@@ -295,7 +295,7 @@ describe('graph-traversal', () => {
       const node: GraphNode = { id: '1', type: 'LLM', name: 'Node 1', workflowId: 'wf1' };
       graph.addNode(node);
 
-      const edge: GraphEdge = { id: 'e1', sourceNodeId: '1', targetNodeId: '1', type: EdgeType.DEFAULT };
+      const edge: GraphEdge = { id: 'e1', sourceNodeId: '1', targetNodeId: '1', type: 'DEFAULT' };
       graph.addEdge(edge);
 
       const visited: string[] = [];

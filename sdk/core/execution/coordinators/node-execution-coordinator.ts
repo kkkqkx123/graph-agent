@@ -190,7 +190,7 @@ export class NodeExecutionCoordinator {
           undefined,
           undefined,
           {
-            triggerType: CheckpointTriggerType.NODE_BEFORE_EXECUTE,
+            triggerType: 'NODE_BEFORE_EXECUTE',
             nodeId
           }
         );
@@ -261,7 +261,7 @@ export class NodeExecutionCoordinator {
           undefined,
           undefined,
           {
-            triggerType: CheckpointTriggerType.NODE_AFTER_EXECUTE,
+            triggerType: 'NODE_AFTER_EXECUTE',
             nodeId
           }
         );
@@ -293,7 +293,7 @@ export class NodeExecutionCoordinator {
       // 步骤8：触发节点完成事件
       if (nodeResult.status === 'COMPLETED') {
         const nodeCompletedEvent: NodeCompletedEvent = {
-          type: 'NODE_COMPLETED',
+          type: 'NODE_COMPLETED' as const,
           threadId: threadContext.getThreadId(),
           workflowId: threadContext.getWorkflowId(),
           nodeId,

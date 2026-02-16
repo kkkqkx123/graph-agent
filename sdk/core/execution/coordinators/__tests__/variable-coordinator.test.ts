@@ -195,7 +195,7 @@ describe('VariableCoordinator', () => {
     const mockVariableDef = {
       name: 'testVar',
       type: 'string',
-      value: 'default',
+      value: 'DEFAULT',
       scope: 'thread' as VariableScope,
       readonly: false
     };
@@ -217,7 +217,7 @@ describe('VariableCoordinator', () => {
       // 验证事件触发
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: 'VARIABLE_CHANGED',
+          type: 'VARIABLE_CHANGED' as EventType,
           variableName: 'testVar',
           variableValue: 'new-value',
           variableScope: 'thread'

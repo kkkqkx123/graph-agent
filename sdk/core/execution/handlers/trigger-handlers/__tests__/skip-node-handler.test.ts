@@ -95,7 +95,7 @@ describe('skip-node-handler', () => {
 
       // 验证事件被触发
       expect(mockEventManager.emit).toHaveBeenCalledWith({
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: expect.any(Number),
         workflowId: 'workflow-123',
         threadId,
@@ -282,7 +282,7 @@ describe('skip-node-handler', () => {
       await skipNodeHandler(mockAction, triggerId, mockExecutionContext);
 
       expect(mockEventManager.emit).toHaveBeenCalledWith({
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: expect.any(Number),
         workflowId: 'workflow-123',
         threadId,

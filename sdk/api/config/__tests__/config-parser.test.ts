@@ -244,7 +244,7 @@ describe('ConfigTransformer', () => {
         { id: 'end', type: 'END', name: '结束', config: {}, outgoingEdgeIds: [], incomingEdgeIds: [] }
       ],
       edges: [
-        { id: 'edge-1', sourceNodeId: 'start', targetNodeId: 'end', type: EdgeType.DEFAULT }
+        { id: 'edge-1', sourceNodeId: 'start', targetNodeId: 'end', type: 'DEFAULT' }
       ],
       createdAt: 0,
       updatedAt: 0
@@ -267,7 +267,7 @@ describe('ConfigTransformer', () => {
         { id: 'end', type: 'END', name: '结束', config: {}, outgoingEdgeIds: [], incomingEdgeIds: [] }
       ],
       edges: [
-        { id: 'edge-1', sourceNodeId: 'start', targetNodeId: 'end', type: EdgeType.DEFAULT }
+        { id: 'edge-1', sourceNodeId: 'start', targetNodeId: 'end', type: 'DEFAULT' }
       ],
       createdAt: 0,
       updatedAt: 0

@@ -138,7 +138,7 @@ describe('EventManager', () => {
       eventManager.on('NODE_COMPLETED', listener2);
 
       const event = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',
@@ -159,7 +159,7 @@ describe('EventManager', () => {
       eventManager.on('NODE_COMPLETED', listener2);
 
       const event = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -181,7 +181,7 @@ describe('EventManager', () => {
       eventManager.on('NODE_COMPLETED', listener3);
 
       const event = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -214,7 +214,7 @@ describe('EventManager', () => {
       const listener = jest.fn();
 
       const event = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -243,7 +243,7 @@ describe('EventManager', () => {
       eventManager.on('NODE_COMPLETED', listener3, { priority: 2 });
 
       const event = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -264,7 +264,7 @@ describe('EventManager', () => {
       });
 
       const event1 = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',
@@ -272,7 +272,7 @@ describe('EventManager', () => {
       };
 
       const event2 = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',
@@ -297,7 +297,7 @@ describe('EventManager', () => {
       eventManager.on('NODE_COMPLETED', listener, { timeout: 100 });
 
       const event = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -323,7 +323,7 @@ describe('EventManager', () => {
       eventManager.on('NODE_COMPLETED', listener3);
 
       const event = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -344,7 +344,7 @@ describe('EventManager', () => {
       eventManager.on('NODE_COMPLETED', listener);
 
       const event = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -365,7 +365,7 @@ describe('EventManager', () => {
       eventManager.on('NODE_COMPLETED', listener);
 
       const event = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -384,7 +384,7 @@ describe('EventManager', () => {
       eventManager.on('NODE_COMPLETED', listener);
 
       const event = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -403,7 +403,7 @@ describe('EventManager', () => {
       eventManager.once('NODE_COMPLETED', listener);
 
       const event = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -421,7 +421,7 @@ describe('EventManager', () => {
       eventManager.once('NODE_COMPLETED', listener);
 
       const event = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -479,7 +479,7 @@ describe('EventManager', () => {
   describe('waitFor - 等待特定事件触发', () => {
     it('应该解析为事件对象当事件触发时', async () => {
       const event = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',
@@ -504,7 +504,7 @@ describe('EventManager', () => {
 
     it('应该自动注销监听器当事件触发时', async () => {
       const event = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -609,7 +609,7 @@ describe('EventManager', () => {
       });
 
       const event = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',
@@ -632,7 +632,7 @@ describe('EventManager', () => {
       eventManager.once('NODE_COMPLETED', listener2, { priority: 1 });
 
       const event = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -653,7 +653,7 @@ describe('EventManager', () => {
       });
 
       const event1 = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',
@@ -661,7 +661,7 @@ describe('EventManager', () => {
       };
 
       const event2 = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',
@@ -688,7 +688,7 @@ describe('EventManager', () => {
       );
 
       const event = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -719,7 +719,7 @@ describe('EventManager', () => {
 
       // 触发事件
       const event1 = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',
@@ -736,7 +736,7 @@ describe('EventManager', () => {
 
       // 再次触发事件
       const event2 = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',
@@ -760,7 +760,7 @@ describe('EventManager', () => {
       });
 
       const event1 = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -801,7 +801,7 @@ describe('EventManager', () => {
       });
 
       const event1 = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',
@@ -809,7 +809,7 @@ describe('EventManager', () => {
       };
 
       const event2 = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',

@@ -61,7 +61,7 @@ describe('NodeValidator - Subgraph Node Validation', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Start From Trigger',
-        type: 'START'_FROM_TRIGGER,
+        type: 'START_FROM_TRIGGER',
         config: {}, // 空配置
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -75,7 +75,7 @@ describe('NodeValidator - Subgraph Node Validation', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Start From Trigger',
-        type: 'START'_FROM_TRIGGER,
+        type: 'START_FROM_TRIGGER',
         config: {},
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -89,7 +89,7 @@ describe('NodeValidator - Subgraph Node Validation', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Start From Trigger',
-        type: 'START'_FROM_TRIGGER,
+        type: 'START_FROM_TRIGGER',
         config: {
           subgraphId: 'parent-workflow', // 不应该有此配置
           async: false // 不应该有此配置
@@ -182,7 +182,7 @@ describe('NodeValidator - Subgraph Node Validation', () => {
         config: {
           conversationHistoryCallback: {
             lastNByRole: {
-              role: 'user',
+              role: 'user' as MessageRole,
               count: 5
             }
           }
@@ -202,7 +202,7 @@ describe('NodeValidator - Subgraph Node Validation', () => {
         type: 'CONTINUE_FROM_TRIGGER',
         config: {
           conversationHistoryCallback: {
-            byRole: 'assistant'
+            byrole: 'assistant' as MessageRole
           }
         },
         incomingEdgeIds: [],

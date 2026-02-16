@@ -183,7 +183,7 @@ export class ThreadBuilder {
           triggerId: workflowTrigger.id,
           threadId: threadContext.getThreadId(),
           workflowId: preprocessedGraph.workflowId,
-          status: workflowTrigger.enabled !== false ? TriggerStatus.ENABLED : TriggerStatus.DISABLED,
+          status: (workflowTrigger.enabled !== false ? 'enabled' : 'disabled') as 'enabled' | 'disabled',
           triggerCount: 0,
           updatedAt: getCurrentTimestamp()
         };

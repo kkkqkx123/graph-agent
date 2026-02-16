@@ -41,7 +41,7 @@ describe('LLMExecutor', () => {
 
   describe('executeLLMCall - 非流式调用', () => {
     const mockMessages: LLMMessage[] = [
-      { role: 'user', content: 'Hello' }
+      { role: 'user' as MessageRole, content: 'Hello' }
     ];
 
     const mockLLMResult: LLMResult = {
@@ -49,7 +49,7 @@ describe('LLMExecutor', () => {
       model: 'gpt-4',
       content: 'Hi there!',
       message: {
-        role: 'assistant',
+        role: 'assistant' as MessageRole,
         content: 'Hi there!'
       },
       finishReason: 'stop',
@@ -228,7 +228,7 @@ describe('LLMExecutor', () => {
 
   describe('executeLLMCall - 流式调用', () => {
     const mockMessages: LLMMessage[] = [
-      { role: 'user', content: 'Hello' }
+      { role: 'user' as MessageRole, content: 'Hello' }
     ];
 
     it('应该成功执行流式LLM调用', async () => {
@@ -237,7 +237,7 @@ describe('LLMExecutor', () => {
           id: 'test-id',
           model: 'gpt-4',
           content: 'Hi',
-          message: { role: 'assistant', content: 'Hi' },
+          message: { role: 'assistant' as MessageRole, content: 'Hi' },
           finishReason: '',
           duration: 100
         },
@@ -245,7 +245,7 @@ describe('LLMExecutor', () => {
           id: 'test-id',
           model: 'gpt-4',
           content: 'Hi there!',
-          message: { role: 'assistant', content: 'Hi there!' },
+          message: { role: 'assistant' as MessageRole, content: 'Hi there!' },
           finishReason: 'stop',
           duration: 200,
           usage: {
@@ -299,7 +299,7 @@ describe('LLMExecutor', () => {
           id: 'test-id',
           model: 'gpt-4',
           content: 'Hi',
-          message: { role: 'assistant', content: 'Hi' },
+          message: { role: 'assistant' as MessageRole, content: 'Hi' },
           finishReason: '',
           duration: 100
         },
@@ -307,7 +307,7 @@ describe('LLMExecutor', () => {
           id: 'test-id',
           model: 'gpt-4',
           content: 'Hi there',
-          message: { role: 'assistant', content: 'Hi there' },
+          message: { role: 'assistant' as MessageRole, content: 'Hi there' },
           finishReason: 'length',
           duration: 150
         },
@@ -315,7 +315,7 @@ describe('LLMExecutor', () => {
           id: 'test-id',
           model: 'gpt-4',
           content: 'Hi there!',
-          message: { role: 'assistant', content: 'Hi there!' },
+          message: { role: 'assistant' as MessageRole, content: 'Hi there!' },
           finishReason: 'stop',
           duration: 200,
           usage: {
@@ -353,7 +353,7 @@ describe('LLMExecutor', () => {
           id: 'test-id',
           model: 'gpt-4',
           content: 'Hi',
-          message: { role: 'assistant', content: 'Hi' },
+          message: { role: 'assistant' as MessageRole, content: 'Hi' },
           finishReason: '',
           duration: 100
         } as any;
@@ -382,7 +382,7 @@ describe('LLMExecutor', () => {
           id: 'test-id',
           model: 'gpt-4',
           content: 'Hi',
-          message: { role: 'assistant', content: 'Hi' },
+          message: { role: 'assistant' as MessageRole, content: 'Hi' },
           finishReason: '',
           duration: 100
         }
@@ -416,7 +416,7 @@ describe('LLMExecutor', () => {
           id: 'test-id',
           model: 'gpt-4',
           content: '',
-          message: { role: 'assistant', content: '' },
+          message: { role: 'assistant' as MessageRole, content: '' },
           finishReason: 'tool_calls',
           duration: 200,
           toolCalls: [
@@ -461,7 +461,7 @@ describe('LLMExecutor', () => {
 
   describe('错误处理', () => {
     const mockMessages: LLMMessage[] = [
-      { role: 'user', content: 'Hello' }
+      { role: 'user' as MessageRole, content: 'Hello' }
     ];
 
     it('应该正确包装非Error类型的错误', async () => {

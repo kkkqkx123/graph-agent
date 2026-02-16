@@ -192,37 +192,37 @@ describe('复杂工作流结构检查点集成测试', () => {
         id: `${id}-edge-1`,
         sourceNodeId: `${id}-start`,
         targetNodeId: `${id}-fork`,
-        type: EdgeType.DEFAULT
+        type: 'DEFAULT'
       },
       {
         id: `${id}-edge-2`,
         sourceNodeId: `${id}-fork`,
         targetNodeId: `${id}-branch1`,
-        type: EdgeType.DEFAULT
+        type: 'DEFAULT'
       },
       {
         id: `${id}-edge-3`,
         sourceNodeId: `${id}-fork`,
         targetNodeId: `${id}-branch2`,
-        type: EdgeType.DEFAULT
+        type: 'DEFAULT'
       },
       {
         id: `${id}-edge-4`,
         sourceNodeId: `${id}-branch1`,
         targetNodeId: `${id}-join`,
-        type: EdgeType.DEFAULT
+        type: 'DEFAULT'
       },
       {
         id: `${id}-edge-5`,
         sourceNodeId: `${id}-branch2`,
         targetNodeId: `${id}-join`,
-        type: EdgeType.DEFAULT
+        type: 'DEFAULT'
       },
       {
         id: `${id}-edge-6`,
         sourceNodeId: `${id}-join`,
         targetNodeId: `${id}-end`,
-        type: EdgeType.DEFAULT
+        type: 'DEFAULT'
       }
     ],
     variables: [],
@@ -293,13 +293,13 @@ describe('复杂工作流结构检查点集成测试', () => {
         id: `${id}-edge-1`,
         sourceNodeId: `${id}-start`,
         targetNodeId: `${id}-main-process`,
-        type: EdgeType.DEFAULT
+        type: 'DEFAULT'
       },
       {
         id: `${id}-edge-2`,
         sourceNodeId: `${id}-main-process`,
         targetNodeId: `${id}-end`,
-        type: EdgeType.DEFAULT
+        type: 'DEFAULT'
       }
     ],
     variables: [],

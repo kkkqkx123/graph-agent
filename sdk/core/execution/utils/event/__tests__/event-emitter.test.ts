@@ -156,7 +156,7 @@ describe('EventEmitter', () => {
         nodeType: 'LLM'
       } as any;
       const nodeCompletedEvent: Event = {
-        type: 'NODE_COMPLETED',
+        type: 'NODE_COMPLETED' as EventType,
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',

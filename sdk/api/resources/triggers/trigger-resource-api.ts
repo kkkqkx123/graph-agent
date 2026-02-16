@@ -131,7 +131,7 @@ export class TriggerResourceAPI extends GenericResourceAPI<Trigger, string, Trig
     const trigger = triggerManager.get(triggerId);
     
     if (!trigger) {
-      throw new NotFoundError(`Trigger not found: ${triggerId}`, 'Trigger', triggerId);
+      throw new NotFoundError(`Trigger not found: ${triggerId}`, 'trigger', triggerId);
     }
     
     return trigger;
@@ -165,7 +165,7 @@ export class TriggerResourceAPI extends GenericResourceAPI<Trigger, string, Trig
    */
   async isTriggerEnabled(threadId: string, triggerId: string): Promise<boolean> {
     const trigger = await this.getThreadTrigger(threadId, triggerId);
-    return trigger.status === TriggerStatus.ENABLED;
+    return trigger.status === 'enabled';
   }
 
   /**
@@ -189,7 +189,7 @@ export class TriggerResourceAPI extends GenericResourceAPI<Trigger, string, Trig
     };
 
     for (const trigger of triggers) {
-      if (trigger.status === TriggerStatus.ENABLED) {
+      if (trigger.status === 'enabled') {
         stats.enabled++;
       } else {
         stats.disabled++;
@@ -230,7 +230,7 @@ export class TriggerResourceAPI extends GenericResourceAPI<Trigger, string, Trig
       stats.total += triggers.length;
 
       for (const trigger of triggers) {
-        if (trigger.status === TriggerStatus.ENABLED) {
+        if (trigger.status === 'enabled') {
           stats.enabled++;
         } else {
           stats.disabled++;
@@ -273,7 +273,7 @@ export class TriggerResourceAPI extends GenericResourceAPI<Trigger, string, Trig
     return [{
       timestamp: Date.now(),
       result: `Trigger ${triggerId} is ${trigger.status}`,
-      success: trigger.status === TriggerStatus.ENABLED
+      success: trigger.status === 'enabled'
     }];
   }
 

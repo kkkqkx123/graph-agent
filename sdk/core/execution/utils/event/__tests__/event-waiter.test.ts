@@ -377,7 +377,7 @@ describe('EventWaiter', () => {
       // 延迟触发事件
       setTimeout(() => {
         eventManager.emit({
-          type: 'NODE_COMPLETED',
+          type: 'NODE_COMPLETED' as EventType,
           timestamp: Date.now(),
           workflowId: 'test-workflow-id',
           threadId,

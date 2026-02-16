@@ -77,7 +77,7 @@ export function validateNodeByType(node: Node): Result<Node, ConfigurationValida
     case 'SUBGRAPH':
       const { validateSubgraphNode } = require('./subgraph-validator');
       return validateSubgraphNode(node);
-    case 'START'_FROM_TRIGGER:
+    case 'START_FROM_TRIGGER':
       const { validateStartFromTriggerNode } = require('./start-from-trigger-validator');
       return validateStartFromTriggerNode(node);
     case 'CONTINUE_FROM_TRIGGER':

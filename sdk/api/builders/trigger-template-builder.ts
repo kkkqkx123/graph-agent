@@ -130,7 +130,7 @@ export class TriggerTemplateBuilder extends TemplateBuilder<TriggerTemplate> {
    * @returns this
    */
   stopThread(reason?: string, parameters: Record<string, any> = {}): this {
-    return this.withAction(TriggerActionType.STOP_THREAD, {
+    return this.withAction('stop_thread', {
       ...(reason && { reason }),
       ...parameters
     });

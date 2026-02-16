@@ -58,7 +58,7 @@ export class LLMWrapper {
         undefined,
         undefined,
         {
-          profileId: request.profileId || 'default',
+          profileId: request.profileId || 'DEFAULT',
           availableProfiles: this.profileManager.list().map(p => p.id)
         }
       ));
@@ -92,7 +92,7 @@ export class LLMWrapper {
         undefined,
         undefined,
         {
-          profileId: request.profileId || 'default',
+          profileId: request.profileId || 'DEFAULT',
           availableProfiles: this.profileManager.list().map(p => p.id)
         }
       ));
@@ -169,7 +169,7 @@ export class LLMWrapper {
     if (!profile) {
       throw new ConfigurationError(
         'LLM Profile not found',
-        profileId || 'default',
+        profileId || 'DEFAULT',
         { availableProfiles: this.profileManager.list().map(p => p.id) }
       );
     }

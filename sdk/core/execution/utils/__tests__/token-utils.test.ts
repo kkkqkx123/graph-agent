@@ -19,7 +19,7 @@ describe('token-utils', () => {
 
     it('应该正确估算单条字符串消息的 token 数量', () => {
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello, world!' }
+        { role: 'user' as MessageRole, content: 'Hello, world!' }
       ];
       const tokens = estimateTokens(messages);
       // "Hello, world!" 大约 4 个 token + 4 个元数据 token = 8
@@ -30,8 +30,8 @@ describe('token-utils', () => {
     it('应该正确估算多条消息的 token 数量', () => {
       const messages: LLMMessage[] = [
         { role: 'system', content: 'You are a helpful assistant.' },
-        { role: 'user', content: 'Hello!' },
-        { role: 'assistant', content: 'Hi there!' }
+        { role: 'user' as MessageRole, content: 'Hello!' },
+        { role: 'assistant' as MessageRole, content: 'Hi there!' }
       ];
       const tokens = estimateTokens(messages);
       expect(tokens).toBeGreaterThan(0);
@@ -42,7 +42,7 @@ describe('token-utils', () => {
     it('应该正确估算包含 thinking 的消息 token 数量', () => {
       const messages: LLMMessage[] = [
         {
-          role: 'assistant',
+          role: 'assistant' as MessageRole,
           content: 'The answer is 42.',
           thinking: 'Let me think about this problem...'
         }
@@ -56,7 +56,7 @@ describe('token-utils', () => {
     it('应该正确估算包含 toolCalls 的消息 token 数量', () => {
       const messages: LLMMessage[] = [
         {
-          role: 'assistant',
+          role: 'assistant' as MessageRole,
           content: 'I will call a tool.',
           toolCalls: [
             {
@@ -79,7 +79,7 @@ describe('token-utils', () => {
     it('应该正确估算数组类型内容的消息 token 数量', () => {
       const messages: LLMMessage[] = [
         {
-          role: 'user',
+          role: 'user' as MessageRole,
           content: [
             'First part of message',
             'Second part of message',
@@ -97,11 +97,11 @@ describe('token-utils', () => {
       const messages: LLMMessage[] = [
         { role: 'system', content: 'System prompt' },
         {
-          role: 'user',
+          role: 'user' as MessageRole,
           content: ['User message part 1', 'User message part 2']
         },
         {
-          role: 'assistant',
+          role: 'assistant' as MessageRole,
           content: 'Assistant response',
           thinking: 'Thinking process',
           toolCalls: [
@@ -124,7 +124,7 @@ describe('token-utils', () => {
 
     it('应该正确处理空字符串内容', () => {
       const messages: LLMMessage[] = [
-        { role: 'user', content: '' }
+        { role: 'user' as MessageRole, content: '' }
       ];
       const tokens = estimateTokens(messages);
       // 空字符串 + 4 个元数据 token
@@ -133,7 +133,7 @@ describe('token-utils', () => {
 
     it('应该正确处理空数组内容', () => {
       const messages: LLMMessage[] = [
-        { role: 'user', content: [] }
+        { role: 'user' as MessageRole, content: [] }
       ];
       const tokens = estimateTokens(messages);
       // 空数组 + 4 个元数据 token
@@ -142,7 +142,7 @@ describe('token-utils', () => {
 
     it('应该正确处理包含 null 的数组内容', () => {
       const messages: LLMMessage[] = [
-        { role: 'user', content: ['text', null, 'more text'] }
+        { role: 'user' as MessageRole, content: ['text', null, 'more text'] }
       ];
       const tokens = estimateTokens(messages);
       expect(tokens).toBeGreaterThan(0);
@@ -157,7 +157,7 @@ describe('token-utils', () => {
         totalTokens: 150
       };
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello' }
+        { role: 'user' as MessageRole, content: 'Hello' }
       ];
       const tokens = getTokenUsage(usage, messages);
       expect(tokens).toBe(150);
@@ -166,7 +166,7 @@ describe('token-utils', () => {
     it('应该在 usage 为 null 时使用本地估算', () => {
       const usage = null;
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello, world!' }
+        { role: 'user' as MessageRole, content: 'Hello, world!' }
       ];
       const tokens = getTokenUsage(usage, messages);
       expect(tokens).toBeGreaterThan(0);
@@ -176,7 +176,7 @@ describe('token-utils', () => {
     it('应该在 usage 为 null 时使用本地估算', () => {
       const usage = null;
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello, world!' }
+        { role: 'user' as MessageRole, content: 'Hello, world!' }
       ];
       const tokens = getTokenUsage(usage, messages);
       expect(tokens).toBeGreaterThan(0);
@@ -193,7 +193,7 @@ describe('token-utils', () => {
         totalCost: 0.003
       };
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello' }
+        { role: 'user' as MessageRole, content: 'Hello' }
       ];
       const tokens = getTokenUsage(usage, messages);
       expect(tokens).toBe(150);

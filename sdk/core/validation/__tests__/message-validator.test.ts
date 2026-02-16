@@ -28,7 +28,7 @@ describe('MessageValidator', () => {
 
     it('should validate a valid user message with string content', () => {
       const message: LLMMessage = {
-        role: 'user',
+        role: 'user' as MessageRole,
         content: 'Hello, how are you?'
       };
       const result = validator.validateMessage(message);
@@ -38,7 +38,7 @@ describe('MessageValidator', () => {
 
     it('should validate a valid user message with array content', () => {
       const message: LLMMessage = {
-        role: 'user',
+        role: 'user' as MessageRole,
         content: [
           { type: 'text', text: 'Hello' },
           { type: 'image_url', image_url: { url: 'https://example.com/image.png' } }
@@ -51,7 +51,7 @@ describe('MessageValidator', () => {
 
     it('should validate a valid assistant message', () => {
       const message: LLMMessage = {
-        role: 'assistant',
+        role: 'assistant' as MessageRole,
         content: 'I am doing well, thank you!'
       };
       const result = validator.validateMessage(message);
@@ -61,7 +61,7 @@ describe('MessageValidator', () => {
 
     it('should validate a valid assistant message with tool calls', () => {
       const message: LLMMessage = {
-        role: 'assistant',
+        role: 'assistant' as MessageRole,
         content: 'I will call a tool',
         toolCalls: [
           {
@@ -81,7 +81,7 @@ describe('MessageValidator', () => {
 
     it('should validate a valid tool message', () => {
       const message: LLMMessage = {
-        role: 'tool',
+        role: 'tool' as MessageRole,
         content: 'Tool execution result',
         toolCallId: 'call_123'
       };
@@ -115,7 +115,7 @@ describe('MessageValidator', () => {
 
     it('should return errors for message with missing content', () => {
       const message = {
-        role: 'user'
+        role: 'user' as MessageRole
       } as LLMMessage;
       const result = validator.validateMessage(message);
       expect(result.isErr()).toBe(true);
@@ -126,7 +126,7 @@ describe('MessageValidator', () => {
 
     it('should return errors for message with empty string content', () => {
       const message: LLMMessage = {
-        role: 'user',
+        role: 'user' as MessageRole,
         content: '   '
       };
       const result = validator.validateMessage(message);
@@ -138,7 +138,7 @@ describe('MessageValidator', () => {
 
     it('should return errors for message with invalid content type', () => {
        const message: LLMMessage = {
-         role: 'user',
+         role: 'user' as MessageRole,
          content: 123 as any
        };
        const result = validator.validateMessage(message);
@@ -150,7 +150,7 @@ describe('MessageValidator', () => {
 
     it('should return errors for assistant message with invalid tool calls', () => {
       const message: LLMMessage = {
-        role: 'assistant',
+        role: 'assistant' as MessageRole,
         content: 'Hello',
         toolCalls: [
           {
@@ -172,7 +172,7 @@ describe('MessageValidator', () => {
 
     it('should return errors for tool message with missing toolCallId', () => {
       const message: LLMMessage = {
-        role: 'tool',
+        role: 'tool' as MessageRole,
         content: 'Result'
       };
       const result = validator.validateMessage(message);
@@ -184,7 +184,7 @@ describe('MessageValidator', () => {
 
     it('should return errors for tool message with non-string content', () => {
       const message: LLMMessage = {
-        role: 'tool',
+        role: 'tool' as MessageRole,
         content: ['not', 'string'] as any,
         toolCallId: 'call_123'
       };
@@ -534,8 +534,8 @@ describe('MessageValidator', () => {
     it('should validate valid messages array', () => {
       const messages: LLMMessage[] = [
         { role: 'system', content: 'You are helpful' },
-        { role: 'user', content: 'Hello' },
-        { role: 'assistant', content: 'Hi there' }
+        { role: 'user' as MessageRole, content: 'Hello' },
+        { role: 'assistant' as MessageRole, content: 'Hi there' }
       ];
       const result = validator.validateMessages(messages);
       expect(result.isOk()).toBe(true);
@@ -552,7 +552,7 @@ describe('MessageValidator', () => {
 
     it('should return error for invalid message in array', () => {
       const messages = [
-        { role: 'user', content: 'Hello' },
+        { role: 'user' as MessageRole, content: 'Hello' },
         { role: 'invalid' as any, content: 'Test' }
       ];
       const result = validator.validateMessages(messages);
@@ -564,7 +564,7 @@ describe('MessageValidator', () => {
 
     it('should include path prefix for errors in array', () => {
       const messages = [
-        { role: 'user', content: 'Hello' },
+        { role: 'user' as MessageRole, content: 'Hello' },
         { role: 'invalid' as any, content: 'Test' }
       ];
       const result = validator.validateMessages(messages);

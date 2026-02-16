@@ -181,7 +181,7 @@ describe('user-interaction-handler', () => {
         config: {
           operationType: 'ADD_MESSAGE',
           message: {
-            role: 'user',
+            role: 'user' as MessageRole,
             contentTemplate: 'User said: {{input}}'
           },
           prompt: 'Please enter your message',
@@ -197,7 +197,7 @@ describe('user-interaction-handler', () => {
         interactionId: expect.any(String),
         operationType: 'ADD_MESSAGE',
         results: {
-          role: 'user',
+          role: 'user' as MessageRole,
           content: 'User said: user message'
         },
         executionTime: expect.any(Number)
@@ -205,7 +205,7 @@ describe('user-interaction-handler', () => {
 
       // 验证消息已添加到对话管理器
       expect(mockConversationManager.addMessage).toHaveBeenCalledWith({
-        role: 'user',
+        role: 'user' as MessageRole,
         content: 'User said: user message'
       });
     });
@@ -246,7 +246,7 @@ describe('user-interaction-handler', () => {
         config: {
           operationType: 'ADD_MESSAGE',
           message: {
-            role: 'user',
+            role: 'user' as MessageRole,
             contentTemplate: 'User said: {{input}}'
           },
           prompt: 'Please enter your message',
@@ -259,7 +259,7 @@ describe('user-interaction-handler', () => {
       const result = await userInteractionHandler(mockThread, mockNode, mockContext);
 
       expect(result.results).toMatchObject({
-        role: 'user',
+        role: 'user' as MessageRole,
         content: 'User said: user message'
       });
     });

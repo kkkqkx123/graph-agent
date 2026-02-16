@@ -12,7 +12,7 @@ describe('MessageBuilder', () => {
       const message = MessageBuilder.buildUserMessage(content);
       
       expect(message).toEqual({
-        role: 'user',
+        role: 'user' as MessageRole,
         content: 'Hello, world!'
       });
     });
@@ -24,7 +24,7 @@ describe('MessageBuilder', () => {
       const message = MessageBuilder.buildAssistantMessage(content);
       
       expect(message).toEqual({
-        role: 'assistant',
+        role: 'assistant' as MessageRole,
         content: 'Hello, I am an assistant!'
       });
     });
@@ -44,7 +44,7 @@ describe('MessageBuilder', () => {
       const message = MessageBuilder.buildAssistantMessage('Using calculator', toolCalls);
       
       expect(message).toEqual({
-        role: 'assistant',
+        role: 'assistant' as MessageRole,
         content: 'Using calculator',
         toolCalls: toolCalls
       });
@@ -58,7 +58,7 @@ describe('MessageBuilder', () => {
       );
       
       expect(message).toEqual({
-        role: 'assistant',
+        role: 'assistant' as MessageRole,
         content: 'Final answer',
         thinking: 'I need to calculate this first'
       });
@@ -83,7 +83,7 @@ describe('MessageBuilder', () => {
       );
       
       expect(message).toEqual({
-        role: 'assistant',
+        role: 'assistant' as MessageRole,
         content: 'Using calculator',
         toolCalls: toolCalls,
         thinking: 'I need to calculate this first'
@@ -104,7 +104,7 @@ describe('MessageBuilder', () => {
       const message = MessageBuilder.buildToolMessage('tool1', result);
       
       expect(message).toEqual({
-        role: 'tool',
+        role: 'tool' as MessageRole,
         content: '"4"',
         toolCallId: 'tool1'
       });
@@ -122,7 +122,7 @@ describe('MessageBuilder', () => {
       const message = MessageBuilder.buildToolMessage('tool1', result);
       
       expect(message).toEqual({
-        role: 'tool',
+        role: 'tool' as MessageRole,
         content: '{"error":"Division by zero"}',
         toolCallId: 'tool1'
       });

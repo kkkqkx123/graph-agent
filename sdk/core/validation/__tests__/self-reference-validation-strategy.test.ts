@@ -25,7 +25,7 @@ describe('SelfReferenceValidationStrategy', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Start From Trigger',
-        type: 'START'_FROM_TRIGGER,
+        type: 'START_FROM_TRIGGER',
         config: {}, // 空配置
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -72,7 +72,7 @@ describe('SelfReferenceValidationStrategy', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Start From Trigger',
-        type: 'START'_FROM_TRIGGER,
+        type: 'START_FROM_TRIGGER',
         config: {}, // 空配置
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -148,7 +148,7 @@ describe('SelfReferenceValidationStrategy', () => {
         {
           id: 'node-3',
           name: 'Start From Trigger',
-          type: 'START'_FROM_TRIGGER,
+          type: 'START_FROM_TRIGGER',
           config: {}, // 空配置，不再验证自引用
           incomingEdgeIds: [],
           outgoingEdgeIds: []
@@ -177,7 +177,7 @@ describe('SelfReferenceValidationStrategy', () => {
         {
           id: 'node-2',
           name: 'Start From Trigger',
-          type: 'START'_FROM_TRIGGER,
+          type: 'START_FROM_TRIGGER',
           config: {}, // 空配置
           incomingEdgeIds: [],
           outgoingEdgeIds: []

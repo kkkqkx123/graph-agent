@@ -25,11 +25,11 @@ function createStandardGraph() {
   ];
 
   const edges: GraphEdge[] = [
-    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: EdgeType.DEFAULT },
-    { id: 'e3', sourceNodeId: '2', targetNodeId: '4', type: EdgeType.DEFAULT },
-    { id: 'e4', sourceNodeId: '3', targetNodeId: '5', type: EdgeType.DEFAULT },
-    { id: 'e5', sourceNodeId: '4', targetNodeId: '5', type: EdgeType.DEFAULT },
+    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: 'DEFAULT' },
+    { id: 'e3', sourceNodeId: '2', targetNodeId: '4', type: 'DEFAULT' },
+    { id: 'e4', sourceNodeId: '3', targetNodeId: '5', type: 'DEFAULT' },
+    { id: 'e5', sourceNodeId: '4', targetNodeId: '5', type: 'DEFAULT' },
   ];
 
   for (const node of nodes) {
@@ -62,8 +62,8 @@ function createGraphWithUnreachable() {
   ];
 
   const edges: GraphEdge[] = [
-    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-    { id: 'e2', sourceNodeId: '2', targetNodeId: '4', type: EdgeType.DEFAULT },
+    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+    { id: 'e2', sourceNodeId: '2', targetNodeId: '4', type: 'DEFAULT' },
   ];
 
   for (const node of nodes) {
@@ -100,11 +100,11 @@ function createGraphWithDeadEnd() {
   ];
 
   const edges: GraphEdge[] = [
-    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: EdgeType.DEFAULT },
-    { id: 'e3', sourceNodeId: '1', targetNodeId: '4', type: EdgeType.DEFAULT },
-    { id: 'e4', sourceNodeId: '4', targetNodeId: '5', type: EdgeType.DEFAULT },
-    { id: 'e5', sourceNodeId: '2', targetNodeId: '5', type: EdgeType.DEFAULT },
+    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: 'DEFAULT' },
+    { id: 'e3', sourceNodeId: '1', targetNodeId: '4', type: 'DEFAULT' },
+    { id: 'e4', sourceNodeId: '4', targetNodeId: '5', type: 'DEFAULT' },
+    { id: 'e5', sourceNodeId: '2', targetNodeId: '5', type: 'DEFAULT' },
   ];
 
   for (const node of nodes) {
@@ -138,10 +138,10 @@ function createGraphWithMultipleEnds() {
   ];
 
   const edges: GraphEdge[] = [
-    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: EdgeType.DEFAULT },
-    { id: 'e3', sourceNodeId: '1', targetNodeId: '4', type: EdgeType.DEFAULT },
-    { id: 'e4', sourceNodeId: '4', targetNodeId: '5', type: EdgeType.DEFAULT },
+    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: 'DEFAULT' },
+    { id: 'e3', sourceNodeId: '1', targetNodeId: '4', type: 'DEFAULT' },
+    { id: 'e4', sourceNodeId: '4', targetNodeId: '5', type: 'DEFAULT' },
   ];
 
   for (const node of nodes) {
@@ -244,7 +244,7 @@ describe('graph-reachability-analyzer', () => {
         id: 'e1',
         sourceNodeId: '1',
         targetNodeId: '2',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
       };
       graph.addEdge(edge);
       graph.endNodeIds.add('2');
@@ -271,7 +271,7 @@ describe('graph-reachability-analyzer', () => {
         id: 'e1',
         sourceNodeId: '1',
         targetNodeId: '2',
-        type: EdgeType.DEFAULT,
+        type: 'DEFAULT',
       };
       graph.addEdge(edge);
 
@@ -334,11 +334,11 @@ describe('graph-reachability-analyzer', () => {
       }
 
       const edges: GraphEdge[] = [
-        { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-        { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: EdgeType.DEFAULT },
-        { id: 'e3', sourceNodeId: '1', targetNodeId: '4', type: EdgeType.DEFAULT },
-        { id: 'e4', sourceNodeId: '4', targetNodeId: '5', type: EdgeType.DEFAULT },
-        { id: 'e5', sourceNodeId: '2', targetNodeId: '5', type: EdgeType.DEFAULT },
+        { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+        { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: 'DEFAULT' },
+        { id: 'e3', sourceNodeId: '1', targetNodeId: '4', type: 'DEFAULT' },
+        { id: 'e4', sourceNodeId: '4', targetNodeId: '5', type: 'DEFAULT' },
+        { id: 'e5', sourceNodeId: '2', targetNodeId: '5', type: 'DEFAULT' },
       ];
 
       for (const edge of edges) {
@@ -383,11 +383,11 @@ describe('graph-reachability-analyzer', () => {
       }
 
       const edges: GraphEdge[] = [
-        { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-        { id: 'e2', sourceNodeId: '1', targetNodeId: '3', type: EdgeType.DEFAULT },
-        { id: 'e3', sourceNodeId: '2', targetNodeId: '4', type: EdgeType.DEFAULT },
-        { id: 'e4', sourceNodeId: '3', targetNodeId: '4', type: EdgeType.DEFAULT },
-        { id: 'e5', sourceNodeId: '4', targetNodeId: '5', type: EdgeType.DEFAULT },
+        { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+        { id: 'e2', sourceNodeId: '1', targetNodeId: '3', type: 'DEFAULT' },
+        { id: 'e3', sourceNodeId: '2', targetNodeId: '4', type: 'DEFAULT' },
+        { id: 'e4', sourceNodeId: '3', targetNodeId: '4', type: 'DEFAULT' },
+        { id: 'e5', sourceNodeId: '4', targetNodeId: '5', type: 'DEFAULT' },
       ];
 
       for (const edge of edges) {
@@ -420,9 +420,9 @@ describe('graph-reachability-analyzer', () => {
       }
 
       const edges: GraphEdge[] = [
-        { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-        { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: EdgeType.DEFAULT },
-        { id: 'e3', sourceNodeId: '3', targetNodeId: '4', type: EdgeType.DEFAULT },
+        { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+        { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: 'DEFAULT' },
+        { id: 'e3', sourceNodeId: '3', targetNodeId: '4', type: 'DEFAULT' },
       ];
 
       for (const edge of edges) {

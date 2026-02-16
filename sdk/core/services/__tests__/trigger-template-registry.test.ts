@@ -21,7 +21,7 @@ describe('TriggerTemplateRegistry', () => {
         name: 'test-template',
         description: 'Test trigger template',
         condition: {
-          eventType: 'NODE_COMPLETED'
+          eventtype: 'NODE_COMPLETED' as EventType
         },
         action: {
           type: 'send_notification',
@@ -47,7 +47,7 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: 'NODE_COMPLETED'
+          eventtype: 'NODE_COMPLETED' as EventType
         },
         action: {
           type: 'send_notification',
@@ -71,7 +71,7 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: '',
         condition: {
-          eventType: 'NODE_COMPLETED'
+          eventtype: 'NODE_COMPLETED' as EventType
         },
         action: {
           type: 'send_notification',
@@ -107,7 +107,7 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: 'NODE_COMPLETED'
+          eventtype: 'NODE_COMPLETED' as EventType
         },
         action: null as any,
         createdAt: Date.now(),
@@ -145,7 +145,7 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: 'NODE_COMPLETED'
+          eventtype: 'NODE_COMPLETED' as EventType
         },
         action: {
           type: 'INVALID_ACTION' as TriggerActionType,
@@ -170,7 +170,7 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-1',
           condition: {
-            eventType: 'NODE_COMPLETED'
+            eventtype: 'NODE_COMPLETED' as EventType
           },
           action: {
             type: 'send_notification',
@@ -218,7 +218,7 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-1',
           condition: {
-            eventType: 'NODE_COMPLETED'
+            eventtype: 'NODE_COMPLETED' as EventType
           },
           action: {
             type: 'send_notification',
@@ -268,7 +268,7 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: 'NODE_COMPLETED'
+          eventtype: 'NODE_COMPLETED' as EventType
         },
         action: {
           type: 'send_notification',
@@ -297,7 +297,7 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: 'NODE_COMPLETED'
+          eventtype: 'NODE_COMPLETED' as EventType
         },
         action: {
           type: 'send_notification',
@@ -323,7 +323,7 @@ describe('TriggerTemplateRegistry', () => {
         name: 'test-template',
         description: 'Original description',
         condition: {
-          eventType: 'NODE_COMPLETED'
+          eventtype: 'NODE_COMPLETED' as EventType
         },
         action: {
           type: 'send_notification',
@@ -361,7 +361,7 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: 'NODE_COMPLETED'
+          eventtype: 'NODE_COMPLETED' as EventType
         },
         action: {
           type: 'send_notification',
@@ -382,7 +382,7 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: 'NODE_COMPLETED'
+          eventtype: 'NODE_COMPLETED' as EventType
         },
         action: {
           type: 'send_notification',
@@ -411,7 +411,7 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: 'NODE_COMPLETED'
+          eventtype: 'NODE_COMPLETED' as EventType
         },
         action: {
           type: 'send_notification',
@@ -442,7 +442,7 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-1',
           condition: {
-            eventType: 'NODE_COMPLETED'
+            eventtype: 'NODE_COMPLETED' as EventType
           },
           action: {
             type: 'send_notification',
@@ -492,7 +492,7 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-1',
           condition: {
-            eventType: 'NODE_COMPLETED'
+            eventtype: 'NODE_COMPLETED' as EventType
           },
           action: {
             type: 'send_notification',
@@ -534,7 +534,7 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-1',
           condition: {
-            eventType: 'NODE_COMPLETED'
+            eventtype: 'NODE_COMPLETED' as EventType
           },
           action: {
             type: 'send_notification',
@@ -579,7 +579,7 @@ describe('TriggerTemplateRegistry', () => {
         name: 'test-template',
         description: 'Test description',
         condition: {
-          eventType: 'NODE_COMPLETED'
+          eventtype: 'NODE_COMPLETED' as EventType
         },
         action: {
           type: 'send_notification',
@@ -612,7 +612,7 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: 'NODE_COMPLETED'
+          eventtype: 'NODE_COMPLETED' as EventType
         },
         action: {
           type: 'send_notification',
@@ -637,7 +637,7 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-1',
           condition: {
-            eventType: 'NODE_COMPLETED'
+            eventtype: 'NODE_COMPLETED' as EventType
           },
           action: {
             type: 'send_notification',
@@ -675,7 +675,7 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-1',
           condition: {
-            eventType: 'NODE_COMPLETED'
+            eventtype: 'NODE_COMPLETED' as EventType
           },
           action: {
             type: 'send_notification',
@@ -715,7 +715,7 @@ describe('TriggerTemplateRegistry', () => {
           name: 'notification-template',
           description: 'Notification template for testing',
           condition: {
-            eventType: 'NODE_COMPLETED'
+            eventtype: 'NODE_COMPLETED' as EventType
           },
           action: {
             type: 'send_notification',
@@ -752,7 +752,7 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'Notification-Template',
         condition: {
-          eventType: 'NODE_COMPLETED'
+          eventtype: 'NODE_COMPLETED' as EventType
         },
         action: {
           type: 'send_notification',
@@ -774,7 +774,7 @@ describe('TriggerTemplateRegistry', () => {
         name: 'test-template',
         description: 'AI template',
         condition: {
-          eventType: 'NODE_COMPLETED'
+          eventtype: 'NODE_COMPLETED' as EventType
         },
         action: {
           type: 'send_notification',
@@ -806,7 +806,7 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: 'NODE_COMPLETED'
+          eventtype: 'NODE_COMPLETED' as EventType
         },
         action: {
           type: 'send_notification',
@@ -837,7 +837,7 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: 'NODE_COMPLETED'
+          eventtype: 'NODE_COMPLETED' as EventType
         },
         action: {
           type: 'send_notification',
@@ -887,7 +887,7 @@ describe('TriggerTemplateRegistry', () => {
         name: 'test-template',
         description: 'Test template',
         condition: {
-          eventType: 'NODE_COMPLETED',
+          eventtype: 'NODE_COMPLETED' as EventType,
           metadata: { test: 'value' }
         },
         action: {
@@ -927,7 +927,7 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: 'NODE_COMPLETED'
+          eventtype: 'NODE_COMPLETED' as EventType
         },
         action: {
           type: 'send_notification',
@@ -975,7 +975,7 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: 'NODE_COMPLETED'
+          eventtype: 'NODE_COMPLETED' as EventType
         },
         action: {
           type: 'send_notification',
@@ -1003,7 +1003,7 @@ describe('TriggerTemplateRegistry', () => {
         name: 'test-template',
         description: 'Test template',
         condition: {
-          eventType: 'NODE_COMPLETED'
+          eventtype: 'NODE_COMPLETED' as EventType
         },
         action: {
           type: 'send_notification',
@@ -1054,7 +1054,7 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-1',
           condition: {
-            eventType: 'NODE_COMPLETED'
+            eventtype: 'NODE_COMPLETED' as EventType
           },
           action: {
             type: 'send_notification',

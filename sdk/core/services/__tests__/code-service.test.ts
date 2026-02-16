@@ -25,7 +25,7 @@ describe('CodeService', () => {
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: 'SHELL',
+        type: 'SHELL' as const,
         description: '测试脚本',
         content: 'echo "Hello World"',
         options: {},
@@ -43,7 +43,7 @@ describe('CodeService', () => {
         {
           id: 'script-1',
           name: 'script-1',
-          type: 'SHELL',
+          type: 'SHELL' as const,
           description: '脚本1',
           content: 'echo "1"',
           options: {},
@@ -52,7 +52,7 @@ describe('CodeService', () => {
         {
           id: 'script-2',
           name: 'script-2',
-          type: 'POWERSHELL',
+          type: 'POWERSHELL' as const,
           description: '脚本2',
           content: 'Write-Host "2"',
           options: {},
@@ -71,7 +71,7 @@ describe('CodeService', () => {
       const script1 = {
         id: 'script-1',
         name: 'test-script',
-        type: 'SHELL',
+        type: 'SHELL' as const,
         description: '原始脚本',
         content: 'echo "original"',
         options: {},
@@ -81,7 +81,7 @@ describe('CodeService', () => {
       const script2 = {
         id: 'script-2',
         name: 'test-script',
-        type: 'POWERSHELL',
+        type: 'POWERSHELL' as const,
         description: '更新脚本',
         content: 'Write-Host "updated"',
         options: {},
@@ -100,7 +100,7 @@ describe('CodeService', () => {
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: 'SHELL',
+        type: 'SHELL' as const,
         description: '测试脚本',
         content: 'echo "Hello"',
         options: {},
@@ -126,7 +126,7 @@ describe('CodeService', () => {
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: 'SHELL',
+        type: 'SHELL' as const,
         description: '测试脚本',
         content: 'echo "Hello"',
         options: {},
@@ -152,7 +152,7 @@ describe('CodeService', () => {
         {
           id: 'script-1',
           name: 'script-1',
-          type: 'SHELL',
+          type: 'SHELL' as const,
           description: '脚本1',
           content: 'echo "1"',
           options: {},
@@ -161,7 +161,7 @@ describe('CodeService', () => {
         {
           id: 'script-2',
           name: 'script-2',
-          type: 'POWERSHELL',
+          type: 'POWERSHELL' as const,
           description: '脚本2',
           content: 'Write-Host "2"',
           options: {},
@@ -187,7 +187,7 @@ describe('CodeService', () => {
         {
           id: 'script-1',
           name: 'script-1',
-          type: 'SHELL',
+          type: 'SHELL' as const,
           description: 'Shell脚本',
           content: 'echo "shell"',
           options: {},
@@ -196,7 +196,7 @@ describe('CodeService', () => {
         {
           id: 'script-2',
           name: 'script-2',
-          type: 'POWERSHELL',
+          type: 'POWERSHELL' as const,
           description: 'PowerShell脚本',
           content: 'Write-Host "ps"',
           options: {},
@@ -205,7 +205,7 @@ describe('CodeService', () => {
         {
           id: 'script-3',
           name: 'script-3',
-          type: 'SHELL',
+          type: 'SHELL' as const,
           description: '另一个Shell脚本',
           content: 'echo "another"',
           options: {},
@@ -231,7 +231,7 @@ describe('CodeService', () => {
         {
           id: 'script-1',
           name: 'script-1',
-          type: 'SHELL',
+          type: 'SHELL' as const,
           description: '脚本1',
           content: 'echo "1"',
           options: {},
@@ -241,7 +241,7 @@ describe('CodeService', () => {
         {
           id: 'script-2',
           name: 'script-2',
-          type: 'POWERSHELL',
+          type: 'POWERSHELL' as const,
           description: '脚本2',
           content: 'Write-Host "2"',
           options: {},
@@ -251,7 +251,7 @@ describe('CodeService', () => {
         {
           id: 'script-3',
           name: 'script-3',
-          type: 'SHELL',
+          type: 'SHELL' as const,
           description: '脚本3',
           content: 'echo "3"',
           options: {},
@@ -278,7 +278,7 @@ describe('CodeService', () => {
         {
           id: 'script-1',
           name: 'hello-world',
-          type: 'SHELL',
+          type: 'SHELL' as const,
           description: '打印Hello World',
           content: 'echo "Hello World"',
           options: {},
@@ -287,7 +287,7 @@ describe('CodeService', () => {
         {
           id: 'script-2',
           name: 'goodbye-world',
-          type: 'POWERSHELL',
+          type: 'POWERSHELL' as const,
           description: '打印Goodbye World',
           content: 'Write-Host "Goodbye World"',
           options: {},
@@ -296,7 +296,7 @@ describe('CodeService', () => {
         {
           id: 'script-3',
           name: 'test-script',
-          type: 'SHELL',
+          type: 'SHELL' as const,
           description: '测试脚本',
           content: 'echo "test"',
           options: {},
@@ -322,7 +322,7 @@ describe('CodeService', () => {
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: 'SHELL',
+        type: 'SHELL' as const,
         description: '测试脚本',
         content: 'echo "Hello"',
         options: {},
@@ -352,7 +352,7 @@ describe('CodeService', () => {
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: 'SHELL',
+        type: 'SHELL' as const,
         description: '测试脚本',
         content: 'echo "Hello"',
         options: {},
@@ -383,7 +383,7 @@ describe('CodeService', () => {
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: 'SHELL',
+        type: 'SHELL' as const,
         description: '测试脚本',
         content: 'echo "Hello World"',
         options: { timeout: 5000 },
@@ -412,7 +412,7 @@ describe('CodeService', () => {
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: 'SHELL',
+        type: 'SHELL' as const,
         description: '测试脚本',
         content: 'echo "Hello"',
         options: {},
@@ -434,7 +434,7 @@ describe('CodeService', () => {
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: 'SHELL',
+        type: 'SHELL' as const,
         description: '测试脚本',
         content: 'echo "Hello"',
         options: {},
@@ -474,7 +474,7 @@ describe('CodeService', () => {
         {
           id: 'script-1',
           name: 'script-1',
-          type: 'SHELL',
+          type: 'SHELL' as const,
           description: '脚本1',
           content: 'echo "1"',
           options: {},
@@ -483,7 +483,7 @@ describe('CodeService', () => {
         {
           id: 'script-2',
           name: 'script-2',
-          type: 'SHELL',
+          type: 'SHELL' as const,
           description: '脚本2',
           content: 'echo "2"',
           options: {},
@@ -529,7 +529,7 @@ describe('CodeService', () => {
         {
           id: 'script-1',
           name: 'script-1',
-          type: 'SHELL',
+          type: 'SHELL' as const,
           description: '脚本1',
           content: 'echo "1"',
           options: {},
@@ -538,7 +538,7 @@ describe('CodeService', () => {
         {
           id: 'script-2',
           name: 'script-2',
-          type: 'SHELL',
+          type: 'SHELL' as const,
           description: '脚本2',
           content: 'echo "2"',
           options: {},
@@ -569,7 +569,7 @@ describe('CodeService', () => {
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: 'SHELL',
+        type: 'SHELL' as const,
         description: '测试脚本',
         content: 'echo "Hello"',
         options: {},
@@ -590,7 +590,7 @@ describe('CodeService', () => {
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: 'SHELL',
+        type: 'SHELL' as const,
         description: '测试脚本',
         content: 'echo "Hello"',
         options: {},
@@ -619,7 +619,7 @@ describe('CodeService', () => {
         {
           id: 'script-1',
           name: 'script-1',
-          type: 'SHELL',
+          type: 'SHELL' as const,
           description: '脚本1',
           content: 'echo "1"',
           options: {},
@@ -628,7 +628,7 @@ describe('CodeService', () => {
         {
           id: 'script-2',
           name: 'script-2',
-          type: 'POWERSHELL',
+          type: 'POWERSHELL' as const,
           description: '脚本2',
           content: 'Write-Host "2"',
           options: {},
@@ -658,7 +658,7 @@ describe('CodeService', () => {
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: 'SHELL',
+        type: 'SHELL' as const,
         description: '测试脚本',
         content: 'echo "Hello"',
         options: {},
@@ -680,7 +680,7 @@ describe('CodeService', () => {
       const originalScript = {
         id: 'script-1',
         name: 'test-script',
-        type: 'SHELL',
+        type: 'SHELL' as const,
         description: '原始描述',
         content: 'echo "original"',
         options: { timeout: 1000 },

@@ -95,13 +95,13 @@ describe('Workflow到Graph注册集成测试', () => {
         id: `${id}-edge-1`,
         sourceNodeId: `${id}-start`,
         targetNodeId: `${id}-process`,
-        type: EdgeType.DEFAULT
+        type: 'DEFAULT'
       },
       {
         id: `${id}-edge-2`,
         sourceNodeId: `${id}-process`,
         targetNodeId: `${id}-end`,
-        type: EdgeType.DEFAULT
+        type: 'DEFAULT'
       }
     ],
     variables: [],
@@ -224,7 +224,7 @@ describe('Workflow到Graph注册集成测试', () => {
         name: 'webhook-basic-trigger',
         description: 'Basic webhook trigger template',
         condition: {
-          eventType: 'NODE_COMPLETED',
+          eventtype: 'NODE_COMPLETED' as EventType,
           metadata: { source: 'webhook' }
         },
         action: {
@@ -281,13 +281,13 @@ describe('Workflow到Graph注册集成测试', () => {
             id: 'edge-1',
             sourceNodeId: 'node-start',
             targetNodeId: 'node-llm-ref',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-2',
             sourceNodeId: 'node-llm-ref',
             targetNodeId: 'node-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -366,13 +366,13 @@ describe('Workflow到Graph注册集成测试', () => {
             id: 'edge-1',
             sourceNodeId: 'node-start',
             targetNodeId: 'node-invalid',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-2',
             sourceNodeId: 'node-invalid',
             targetNodeId: 'node-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -443,13 +443,13 @@ describe('Workflow到Graph注册集成测试', () => {
             id: 'sub-edge-1',
             sourceNodeId: 'sub-start',
             targetNodeId: 'sub-process',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'sub-edge-2',
             sourceNodeId: 'sub-process',
             targetNodeId: 'sub-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -510,13 +510,13 @@ describe('Workflow到Graph注册集成测试', () => {
             id: 'parent-edge-1',
             sourceNodeId: 'parent-start',
             targetNodeId: 'subgraph-node',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'parent-edge-2',
             sourceNodeId: 'subgraph-node',
             targetNodeId: 'parent-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -599,13 +599,13 @@ describe('Workflow到Graph注册集成测试', () => {
             id: 'edge-1',
             sourceNodeId: 'node-start',
             targetNodeId: 'subgraph-node',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-2',
             sourceNodeId: 'subgraph-node',
             targetNodeId: 'node-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -748,25 +748,25 @@ describe('Workflow到Graph注册集成测试', () => {
             id: 'edge-start',
             sourceNodeId: 'node-start',
             targetNodeId: 'node-1',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-1',
             sourceNodeId: 'node-1',
             targetNodeId: 'node-2',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-2',
             sourceNodeId: 'node-2',
             targetNodeId: 'node-3',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-3',
             sourceNodeId: 'node-3',
             targetNodeId: 'node-1',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -833,7 +833,7 @@ describe('Workflow到Graph注册集成测试', () => {
             id: 'edge-1',
             sourceNodeId: 'node-start',
             targetNodeId: 'node-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -941,37 +941,37 @@ describe('Workflow到Graph注册集成测试', () => {
             id: 'edge-start-fork',
             sourceNodeId: 'node-start',
             targetNodeId: 'node-fork',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-fork-branch1',
             sourceNodeId: 'node-fork',
             targetNodeId: 'node-branch1',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-fork-branch2',
             sourceNodeId: 'node-fork',
             targetNodeId: 'node-branch2',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-branch1-join',
             sourceNodeId: 'node-branch1',
             targetNodeId: 'node-join',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-branch2-join',
             sourceNodeId: 'node-branch2',
             targetNodeId: 'node-join',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-join-end',
             sourceNodeId: 'node-join',
             targetNodeId: 'node-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -1164,67 +1164,67 @@ describe('Workflow到Graph注册集成测试', () => {
             id: 'edge-start-fork1',
             sourceNodeId: 'node-start',
             targetNodeId: 'node-fork1',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-fork1-branch1a',
             sourceNodeId: 'node-fork1',
             targetNodeId: 'node-branch1a',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-fork1-branch1b',
             sourceNodeId: 'node-fork1',
             targetNodeId: 'node-branch1b',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-branch1a-join1',
             sourceNodeId: 'node-branch1a',
             targetNodeId: 'node-join1',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-branch1b-join1',
             sourceNodeId: 'node-branch1b',
             targetNodeId: 'node-join1',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-join1-fork2',
             sourceNodeId: 'node-join1',
             targetNodeId: 'node-fork2',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-fork2-branch2a',
             sourceNodeId: 'node-fork2',
             targetNodeId: 'node-branch2a',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-fork2-branch2b',
             sourceNodeId: 'node-fork2',
             targetNodeId: 'node-branch2b',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-branch2a-join2',
             sourceNodeId: 'node-branch2a',
             targetNodeId: 'node-join2',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-branch2b-join2',
             sourceNodeId: 'node-branch2b',
             targetNodeId: 'node-join2',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-join2-end',
             sourceNodeId: 'node-join2',
             targetNodeId: 'node-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {

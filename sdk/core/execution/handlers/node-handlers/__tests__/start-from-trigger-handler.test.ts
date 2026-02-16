@@ -40,7 +40,7 @@ describe('start-from-trigger-handler', () => {
     mockNode = {
       id: 'start-from-trigger-node-1',
       name: 'Start From Trigger Node',
-      type: 'START'_FROM_TRIGGER,
+      type: 'START_FROM_TRIGGER',
       config: {} as StartFromTriggerNodeConfig,
       incomingEdgeIds: [],
       outgoingEdgeIds: []
@@ -81,7 +81,7 @@ describe('start-from-trigger-handler', () => {
       expect(executionResult).toMatchObject({
         step: 1,
         nodeId: 'start-from-trigger-node-1',
-        nodeType: 'START'_FROM_TRIGGER,
+        nodeType: 'START_FROM_TRIGGER',
         status: 'COMPLETED'
       });
       expect(executionResult.timestamp).toBeDefined();
@@ -170,7 +170,7 @@ describe('start-from-trigger-handler', () => {
       const executionResult = mockThread.nodeResults[0]!;
       expect(executionResult).toMatchObject({
         nodeId: 'start-from-trigger-node-1',
-        nodeType: 'START'_FROM_TRIGGER,
+        nodeType: 'START_FROM_TRIGGER',
         status: 'COMPLETED',
         step: 1
       });
@@ -197,8 +197,8 @@ describe('start-from-trigger-handler', () => {
   describe('对话历史初始化测试', () => {
     it('应该从triggerInput中初始化conversationHistory', async () => {
       const mockMessages = [
-        { role: 'user', content: 'Hello' },
-        { role: 'assistant', content: 'Hi there!' }
+        { role: 'user' as MessageRole, content: 'Hello' },
+        { role: 'assistant' as MessageRole, content: 'Hi there!' }
       ];
 
       mockContext.triggerInput = {
@@ -212,7 +212,7 @@ describe('start-from-trigger-handler', () => {
 
     it('应该在没有conversationManager时不调用addMessages', async () => {
       mockContext.triggerInput = {
-        conversationHistory: [{ role: 'user', content: 'Hello' }]
+        conversationHistory: [{ role: 'user' as MessageRole, content: 'Hello' }]
       };
       mockContext.conversationManager = undefined;
 
@@ -345,8 +345,8 @@ describe('start-from-trigger-handler', () => {
       ];
 
       const mockMessages = [
-        { role: 'user', content: 'Start conversation' },
-        { role: 'assistant', content: 'Conversation started' }
+        { role: 'user' as MessageRole, content: 'Start conversation' },
+        { role: 'assistant' as MessageRole, content: 'Conversation started' }
       ];
 
       mockContext.triggerInput = {
@@ -391,7 +391,7 @@ describe('start-from-trigger-handler', () => {
       expect(mockThread.nodeResults[0]).toMatchObject({
         step: 1,
         nodeId: 'start-from-trigger-node-1',
-        nodeType: 'START'_FROM_TRIGGER,
+        nodeType: 'START_FROM_TRIGGER',
         status: 'COMPLETED'
       });
     });

@@ -19,7 +19,7 @@ describe('stop-thread-handler', () => {
 
   beforeEach(() => {
     mockAction = {
-      type: TriggerActionType.STOP_THREAD,
+      type: 'stop_thread',
       parameters: {
         threadId
       }

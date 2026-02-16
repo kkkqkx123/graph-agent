@@ -97,7 +97,7 @@ describe('addToolHandler', () => {
     });
 
     it('应该成功添加工具到GLOBAL作用域', async () => {
-      mockNode.config.scope = 'GLOBAL';
+      mockNode.config.scope = 'global';
 
       const result = await addToolHandler(mockThread, mockNode, mockContext);
 
@@ -105,7 +105,7 @@ describe('addToolHandler', () => {
       expect(result.addedCount).toBe(2);
 
       // 验证工具已添加到GLOBAL作用域
-      const tools = toolContextManager.getTools(mockThread.id, 'GLOBAL');
+      const tools = toolContextManager.getTools(mockThread.id, 'global');
       expect(tools).toContain('tool-1');
       expect(tools).toContain('tool-2');
     });

@@ -163,7 +163,7 @@ describe('LLMWrapper', () => {
     it('应该抛出错误当Profile不存在时', async () => {
       const request: LLMRequest = {
         messages: [
-          { role: 'user', content: 'Hello' }
+          { role: 'user' as MessageRole, content: 'Hello' }
         ],
         profileId: 'non-existent'
       };
@@ -181,7 +181,7 @@ describe('LLMWrapper', () => {
     it('应该抛出错误当Profile不存在时', async () => {
       const request: LLMRequest = {
         messages: [
-          { role: 'user', content: 'Hello' }
+          { role: 'user' as MessageRole, content: 'Hello' }
         ],
         profileId: 'non-existent'
       };
@@ -223,7 +223,7 @@ describe('LLMWrapper', () => {
       wrapper['clientFactory'].createClient = jest.fn(() => new ErrorClient(testProfile));
 
       const request: LLMRequest = {
-        messages: [{ role: 'user', content: 'Hello' }],
+        messages: [{ role: 'user' as MessageRole, content: 'Hello' }],
         profileId: 'test-profile'
       };
 
@@ -245,7 +245,7 @@ describe('LLMWrapper', () => {
       wrapper['clientFactory'].createClient = jest.fn(() => new ErrorClient(testProfile));
 
       const request: LLMRequest = {
-        messages: [{ role: 'user', content: 'Hello' }],
+        messages: [{ role: 'user' as MessageRole, content: 'Hello' }],
         profileId: 'test-profile'
       };
 

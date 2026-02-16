@@ -13,7 +13,7 @@ class TestLLMClient extends BaseLLMClient {
       model: 'gpt-4',
       content: 'Test response',
       message: {
-        role: 'assistant',
+        role: 'assistant' as MessageRole,
         content: 'Test response'
       },
       finishReason: 'stop',
@@ -32,7 +32,7 @@ class TestLLMClient extends BaseLLMClient {
       model: 'gpt-4',
       content: 'Test',
       message: {
-        role: 'assistant',
+        role: 'assistant' as MessageRole,
         content: 'Test'
       },
       finishReason: '',
@@ -48,7 +48,7 @@ class TestLLMClient extends BaseLLMClient {
       model: 'gpt-4',
       content: 'Test response',
       message: {
-        role: 'assistant',
+        role: 'assistant' as MessageRole,
         content: 'Test response'
       },
       finishReason: 'stop',
@@ -109,7 +109,7 @@ describe('BaseLLMClient', () => {
     it('应该成功执行非流式生成', async () => {
       const request: LLMRequest = {
         messages: [
-          { role: 'user', content: 'Hello' }
+          { role: 'user' as MessageRole, content: 'Hello' }
         ]
       };
 
@@ -123,7 +123,7 @@ describe('BaseLLMClient', () => {
     it('应该正确合并请求参数', async () => {
       const request: LLMRequest = {
         messages: [
-          { role: 'user', content: 'Hello' }
+          { role: 'user' as MessageRole, content: 'Hello' }
         ],
         parameters: {
           temperature: 0.9,
@@ -144,7 +144,7 @@ describe('BaseLLMClient', () => {
 
       const errorClient = new ErrorClient(testProfile);
       const request: LLMRequest = {
-        messages: [{ role: 'user', content: 'Hello' }]
+        messages: [{ role: 'user' as MessageRole, content: 'Hello' }]
       };
 
       // BaseLLMClient 不再处理错误，直接透传
@@ -156,7 +156,7 @@ describe('BaseLLMClient', () => {
     it('应该成功执行流式生成', async () => {
       const request: LLMRequest = {
         messages: [
-          { role: 'user', content: 'Hello' }
+          { role: 'user' as MessageRole, content: 'Hello' }
         ]
       };
 
@@ -173,7 +173,7 @@ describe('BaseLLMClient', () => {
     it('应该累积token统计信息', async () => {
       const request: LLMRequest = {
         messages: [
-          { role: 'user', content: 'Hello' }
+          { role: 'user' as MessageRole, content: 'Hello' }
         ]
       };
 
@@ -197,7 +197,7 @@ describe('BaseLLMClient', () => {
 
       const errorClient = new ErrorStreamClient(testProfile);
       const request: LLMRequest = {
-        messages: [{ role: 'user', content: 'Hello' }]
+        messages: [{ role: 'user' as MessageRole, content: 'Hello' }]
       };
 
       // BaseLLMClient 不再处理错误，直接透传
@@ -214,7 +214,7 @@ describe('BaseLLMClient', () => {
   describe('mergeParameters', () => {
     it('应该正确合并profile和request参数', () => {
       const request: LLMRequest = {
-        messages: [{ role: 'user', content: 'Hello' }],
+        messages: [{ role: 'user' as MessageRole, content: 'Hello' }],
         parameters: {
           temperature: 0.9,
           topP: 0.95
@@ -230,7 +230,7 @@ describe('BaseLLMClient', () => {
 
     it('request参数应该覆盖profile参数', () => {
       const request: LLMRequest = {
-        messages: [{ role: 'user', content: 'Hello' }],
+        messages: [{ role: 'user' as MessageRole, content: 'Hello' }],
         parameters: {
           temperature: 0.9,
           maxTokens: 2000

@@ -128,13 +128,13 @@ describe('检查点清理策略集成测试', () => {
         id: `${id}-edge-1`,
         sourceNodeId: `${id}-start`,
         targetNodeId: `${id}-process`,
-        type: EdgeType.DEFAULT
+        type: 'DEFAULT'
       },
       {
         id: `${id}-edge-2`,
         sourceNodeId: `${id}-process`,
         targetNodeId: `${id}-end`,
-        type: EdgeType.DEFAULT
+        type: 'DEFAULT'
       }
     ],
     variables: [],

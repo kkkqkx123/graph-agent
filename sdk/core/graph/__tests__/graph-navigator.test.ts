@@ -21,8 +21,8 @@ function createLinearGraph(): GraphData {
   ];
 
   const edges: GraphEdge[] = [
-    { id: 'e1', sourceNodeId: 'start', targetNodeId: 'llm', type: EdgeType.DEFAULT },
-    { id: 'e2', sourceNodeId: 'llm', targetNodeId: 'end', type: EdgeType.DEFAULT },
+    { id: 'e1', sourceNodeId: 'start', targetNodeId: 'llm', type: 'DEFAULT' },
+    { id: 'e2', sourceNodeId: 'llm', targetNodeId: 'end', type: 'DEFAULT' },
   ];
 
   for (const node of nodes) {
@@ -62,18 +62,18 @@ function createBranchGraph(): GraphData {
   };
 
   const edges: GraphEdge[] = [
-    { id: 'e1', sourceNodeId: 'start', targetNodeId: 'route', type: EdgeType.DEFAULT },
+    { id: 'e1', sourceNodeId: 'start', targetNodeId: 'route', type: 'DEFAULT' },
     {
       id: 'e2',
       sourceNodeId: 'route',
       targetNodeId: 'llm1',
-      type: EdgeType.CONDITIONAL,
+      type: 'CONDITIONAL',
       weight: 10,
       originalEdge: {
         id: 'e2',
         sourceNodeId: 'route',
         targetNodeId: 'llm1',
-        type: EdgeType.CONDITIONAL,
+        type: 'CONDITIONAL',
         condition: condition1,
       } as any,
     },
@@ -81,18 +81,18 @@ function createBranchGraph(): GraphData {
       id: 'e3',
       sourceNodeId: 'route',
       targetNodeId: 'llm2',
-      type: EdgeType.CONDITIONAL,
+      type: 'CONDITIONAL',
       weight: 5,
       originalEdge: {
         id: 'e3',
         sourceNodeId: 'route',
         targetNodeId: 'llm2',
-        type: EdgeType.CONDITIONAL,
+        type: 'CONDITIONAL',
         condition: condition2,
       } as any,
     },
-    { id: 'e4', sourceNodeId: 'llm1', targetNodeId: 'end', type: EdgeType.DEFAULT },
-    { id: 'e5', sourceNodeId: 'llm2', targetNodeId: 'end', type: EdgeType.DEFAULT },
+    { id: 'e4', sourceNodeId: 'llm1', targetNodeId: 'end', type: 'DEFAULT' },
+    { id: 'e5', sourceNodeId: 'llm2', targetNodeId: 'end', type: 'DEFAULT' },
   ];
 
   for (const node of nodes) {
@@ -125,12 +125,12 @@ function createForkJoinGraph(): GraphData {
   ];
 
   const edges: GraphEdge[] = [
-    { id: 'e1', sourceNodeId: 'start', targetNodeId: 'fork', type: EdgeType.DEFAULT },
-    { id: 'e2', sourceNodeId: 'fork', targetNodeId: 'llm1', type: EdgeType.DEFAULT },
-    { id: 'e3', sourceNodeId: 'fork', targetNodeId: 'llm2', type: EdgeType.DEFAULT },
-    { id: 'e4', sourceNodeId: 'llm1', targetNodeId: 'join', type: EdgeType.DEFAULT },
-    { id: 'e5', sourceNodeId: 'llm2', targetNodeId: 'join', type: EdgeType.DEFAULT },
-    { id: 'e6', sourceNodeId: 'join', targetNodeId: 'end', type: EdgeType.DEFAULT },
+    { id: 'e1', sourceNodeId: 'start', targetNodeId: 'fork', type: 'DEFAULT' },
+    { id: 'e2', sourceNodeId: 'fork', targetNodeId: 'llm1', type: 'DEFAULT' },
+    { id: 'e3', sourceNodeId: 'fork', targetNodeId: 'llm2', type: 'DEFAULT' },
+    { id: 'e4', sourceNodeId: 'llm1', targetNodeId: 'join', type: 'DEFAULT' },
+    { id: 'e5', sourceNodeId: 'llm2', targetNodeId: 'join', type: 'DEFAULT' },
+    { id: 'e6', sourceNodeId: 'join', targetNodeId: 'end', type: 'DEFAULT' },
   ];
 
   for (const node of nodes) {
@@ -162,11 +162,11 @@ function createComplexGraph(): GraphData {
   ];
 
   const edges: GraphEdge[] = [
-    { id: 'e1', sourceNodeId: 'start', targetNodeId: 'llm1', type: EdgeType.DEFAULT },
-    { id: 'e2', sourceNodeId: 'llm1', targetNodeId: 'llm2', type: EdgeType.DEFAULT },
-    { id: 'e3', sourceNodeId: 'llm1', targetNodeId: 'llm3', type: EdgeType.DEFAULT },
-    { id: 'e4', sourceNodeId: 'llm2', targetNodeId: 'end', type: EdgeType.DEFAULT },
-    { id: 'e5', sourceNodeId: 'llm3', targetNodeId: 'end', type: EdgeType.DEFAULT },
+    { id: 'e1', sourceNodeId: 'start', targetNodeId: 'llm1', type: 'DEFAULT' },
+    { id: 'e2', sourceNodeId: 'llm1', targetNodeId: 'llm2', type: 'DEFAULT' },
+    { id: 'e3', sourceNodeId: 'llm1', targetNodeId: 'llm3', type: 'DEFAULT' },
+    { id: 'e4', sourceNodeId: 'llm2', targetNodeId: 'end', type: 'DEFAULT' },
+    { id: 'e5', sourceNodeId: 'llm3', targetNodeId: 'end', type: 'DEFAULT' },
   ];
 
   for (const node of nodes) {
@@ -541,9 +541,9 @@ describe('GraphNavigator', () => {
       ];
 
       const edges: GraphEdge[] = [
-        { id: 'e1', sourceNodeId: 'start', targetNodeId: 'llm', type: EdgeType.DEFAULT },
-        { id: 'e2', sourceNodeId: 'llm', targetNodeId: 'llm', type: EdgeType.DEFAULT }, // Self-loop
-        { id: 'e3', sourceNodeId: 'llm', targetNodeId: 'end', type: EdgeType.DEFAULT },
+        { id: 'e1', sourceNodeId: 'start', targetNodeId: 'llm', type: 'DEFAULT' },
+        { id: 'e2', sourceNodeId: 'llm', targetNodeId: 'llm', type: 'DEFAULT' }, // Self-loop
+        { id: 'e3', sourceNodeId: 'llm', targetNodeId: 'end', type: 'DEFAULT' },
       ];
 
       for (const node of nodes) {

@@ -157,7 +157,7 @@ export async function waitForAnyLifecycleEvent(
   const actualTimeout = timeout === WAIT_FOREVER ? undefined : timeout;
   
   // 使用Promise.race等待任意一个生命周期事件
-  const events = [
+  const events: EventType[] = [
     'THREAD_PAUSED',
     'THREAD_CANCELLED',
     'THREAD_COMPLETED',

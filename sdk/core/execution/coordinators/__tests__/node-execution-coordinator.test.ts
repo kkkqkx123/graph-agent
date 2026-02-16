@@ -120,7 +120,7 @@ describe('NodeExecutionCoordinator', () => {
 
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: 'NODE_COMPLETED',
+          type: 'NODE_COMPLETED' as EventType,
           nodeId: 'node-1',
           output: undefined
         })

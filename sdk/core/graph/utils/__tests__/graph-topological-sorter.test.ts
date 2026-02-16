@@ -27,11 +27,11 @@ function createAcyclicGraph() {
   ];
 
   const edges: GraphEdge[] = [
-    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: EdgeType.DEFAULT },
-    { id: 'e3', sourceNodeId: '2', targetNodeId: '5', type: EdgeType.DEFAULT },
-    { id: 'e4', sourceNodeId: '1', targetNodeId: '4', type: EdgeType.DEFAULT },
-    { id: 'e5', sourceNodeId: '4', targetNodeId: '5', type: EdgeType.DEFAULT },
+    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: 'DEFAULT' },
+    { id: 'e3', sourceNodeId: '2', targetNodeId: '5', type: 'DEFAULT' },
+    { id: 'e4', sourceNodeId: '1', targetNodeId: '4', type: 'DEFAULT' },
+    { id: 'e5', sourceNodeId: '4', targetNodeId: '5', type: 'DEFAULT' },
   ];
 
   for (const node of nodes) {
@@ -64,9 +64,9 @@ function createCyclicGraph() {
   ];
 
   const edges: GraphEdge[] = [
-    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: EdgeType.DEFAULT },
-    { id: 'e3', sourceNodeId: '3', targetNodeId: '1', type: EdgeType.DEFAULT }, // Creates cycle
+    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: 'DEFAULT' },
+    { id: 'e3', sourceNodeId: '3', targetNodeId: '1', type: 'DEFAULT' }, // Creates cycle
   ];
 
   for (const node of nodes) {
@@ -98,9 +98,9 @@ function createLinearGraph() {
   ];
 
   const edges: GraphEdge[] = [
-    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: EdgeType.DEFAULT },
-    { id: 'e3', sourceNodeId: '3', targetNodeId: '4', type: EdgeType.DEFAULT },
+    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+    { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: 'DEFAULT' },
+    { id: 'e3', sourceNodeId: '3', targetNodeId: '4', type: 'DEFAULT' },
   ];
 
   for (const node of nodes) {
@@ -136,12 +136,12 @@ function createDiamondGraph() {
   ];
 
   const edges: GraphEdge[] = [
-    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-    { id: 'e2', sourceNodeId: '1', targetNodeId: '3', type: EdgeType.DEFAULT },
-    { id: 'e3', sourceNodeId: '2', targetNodeId: '4', type: EdgeType.DEFAULT },
-    { id: 'e4', sourceNodeId: '3', targetNodeId: '4', type: EdgeType.DEFAULT },
-    { id: 'e5', sourceNodeId: '2', targetNodeId: '5', type: EdgeType.DEFAULT },
-    { id: 'e6', sourceNodeId: '3', targetNodeId: '5', type: EdgeType.DEFAULT },
+    { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+    { id: 'e2', sourceNodeId: '1', targetNodeId: '3', type: 'DEFAULT' },
+    { id: 'e3', sourceNodeId: '2', targetNodeId: '4', type: 'DEFAULT' },
+    { id: 'e4', sourceNodeId: '3', targetNodeId: '4', type: 'DEFAULT' },
+    { id: 'e5', sourceNodeId: '2', targetNodeId: '5', type: 'DEFAULT' },
+    { id: 'e6', sourceNodeId: '3', targetNodeId: '5', type: 'DEFAULT' },
   ];
 
   for (const node of nodes) {
@@ -266,7 +266,7 @@ describe('graph-topological-sorter', () => {
       }
 
       // Only connect 1 -> 2, 3 is disconnected
-      const edge: GraphEdge = { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT };
+      const edge: GraphEdge = { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' };
       graph.addEdge(edge);
 
       const result = topologicalSort(graph);
@@ -293,9 +293,9 @@ describe('graph-topological-sorter', () => {
       }
 
       const edges: GraphEdge[] = [
-        { id: 'e1', sourceNodeId: '1', targetNodeId: '3', type: EdgeType.DEFAULT },
-        { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: EdgeType.DEFAULT },
-        { id: 'e3', sourceNodeId: '3', targetNodeId: '4', type: EdgeType.DEFAULT },
+        { id: 'e1', sourceNodeId: '1', targetNodeId: '3', type: 'DEFAULT' },
+        { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: 'DEFAULT' },
+        { id: 'e3', sourceNodeId: '3', targetNodeId: '4', type: 'DEFAULT' },
       ];
 
       for (const edge of edges) {
@@ -323,9 +323,9 @@ describe('graph-topological-sorter', () => {
       }
 
       const edges: GraphEdge[] = [
-        { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-        { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: EdgeType.DEFAULT },
-        { id: 'e3', sourceNodeId: '2', targetNodeId: '4', type: EdgeType.DEFAULT },
+        { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+        { id: 'e2', sourceNodeId: '2', targetNodeId: '3', type: 'DEFAULT' },
+        { id: 'e3', sourceNodeId: '2', targetNodeId: '4', type: 'DEFAULT' },
       ];
 
       for (const edge of edges) {
@@ -355,10 +355,10 @@ describe('graph-topological-sorter', () => {
       }
 
       const edges: GraphEdge[] = [
-        { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: EdgeType.DEFAULT },
-        { id: 'e2', sourceNodeId: '1', targetNodeId: '3', type: EdgeType.DEFAULT },
-        { id: 'e3', sourceNodeId: '2', targetNodeId: '4', type: EdgeType.DEFAULT },
-        { id: 'e4', sourceNodeId: '3', targetNodeId: '4', type: EdgeType.DEFAULT },
+        { id: 'e1', sourceNodeId: '1', targetNodeId: '2', type: 'DEFAULT' },
+        { id: 'e2', sourceNodeId: '1', targetNodeId: '3', type: 'DEFAULT' },
+        { id: 'e3', sourceNodeId: '2', targetNodeId: '4', type: 'DEFAULT' },
+        { id: 'e4', sourceNodeId: '3', targetNodeId: '4', type: 'DEFAULT' },
       ];
 
       for (const edge of edges) {
@@ -377,7 +377,7 @@ describe('graph-topological-sorter', () => {
       const node: GraphNode = { id: '1', type: 'LLM', name: 'Node 1', workflowId: 'wf1' };
       graph.addNode(node);
 
-      const edge: GraphEdge = { id: 'e1', sourceNodeId: '1', targetNodeId: '1', type: EdgeType.DEFAULT };
+      const edge: GraphEdge = { id: 'e1', sourceNodeId: '1', targetNodeId: '1', type: 'DEFAULT' };
       graph.addEdge(edge);
 
       const result = topologicalSort(graph);

@@ -365,7 +365,7 @@ export class VariableCoordinator {
 
     try {
       const event = {
-        type: 'VARIABLE_CHANGED',
+        type: 'VARIABLE_CHANGED' as EventType,
         timestamp: now(),
         workflowId: this.workflowId || threadContext.getWorkflowId(),
         threadId: this.threadId || threadContext.getThreadId(),

@@ -37,7 +37,7 @@ describe('触发子工作流集成测试', () => {
       const triggeredWorkflow: WorkflowDefinition = {
         id: 'triggered-workflow-1',
         name: 'Triggered Workflow',
-        type: 'TRIGGERED_SUBWORKFLOW',
+        type: 'triggered_subworkflow',
         version: '1.0.0',
         description: 'A workflow triggered by events',
         variables: [],
@@ -45,7 +45,7 @@ describe('触发子工作流集成测试', () => {
         nodes: [
           {
             id: 'triggered-start',
-            type: 'START'_FROM_TRIGGER,
+            type: 'START_FROM_TRIGGER',
             name: 'Start From Trigger',
             config: {},
             outgoingEdgeIds: ['trig-edge-1'],
@@ -76,13 +76,13 @@ describe('触发子工作流集成测试', () => {
             id: 'trig-edge-1',
             sourceNodeId: 'triggered-start',
             targetNodeId: 'triggered-process',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'trig-edge-2',
             sourceNodeId: 'triggered-process',
             targetNodeId: 'triggered-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -118,7 +118,7 @@ describe('触发子工作流集成测试', () => {
       expect(registry.has('triggered-workflow-1')).toBe(true);
       const registered = registry.get('triggered-workflow-1');
       expect(registered).toBeDefined();
-      expect(registered?.nodes.some((n: any) => n.type === 'START'_FROM_TRIGGER)).toBe(true);
+      expect(registered?.nodes.some((n: any) => n.type === 'START_FROM_TRIGGER')).toBe(true);
       expect(registered?.nodes.some((n: any) => n.type === 'CONTINUE_FROM_TRIGGER')).toBe(true);
 
       // 验证预处理结果
@@ -137,7 +137,7 @@ describe('触发子工作流集成测试', () => {
       const invalidWorkflow: WorkflowDefinition = {
         id: 'triggered-invalid-1',
         name: 'Invalid Triggered Workflow',
-        type: 'TRIGGERED_SUBWORKFLOW',
+        type: 'triggered_subworkflow',
         version: '1.0.0',
         description: 'Triggered workflow with isolated node',
         variables: [],
@@ -145,7 +145,7 @@ describe('触发子工作流集成测试', () => {
         nodes: [
           {
             id: 'triggered-start',
-            type: 'START'_FROM_TRIGGER,
+            type: 'START_FROM_TRIGGER',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -173,7 +173,7 @@ describe('触发子工作流集成测试', () => {
             id: 'edge-1',
             sourceNodeId: 'triggered-start',
             targetNodeId: 'triggered-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -195,7 +195,7 @@ describe('触发子工作流集成测试', () => {
       const invalidWorkflow: WorkflowDefinition = {
         id: 'triggered-with-start',
         name: 'Invalid - Contains START',
-        type: 'TRIGGERED_SUBWORKFLOW',
+        type: 'triggered_subworkflow',
         version: '1.0.0',
         description: 'Triggered workflow with START node',
         variables: [],
@@ -234,13 +234,13 @@ describe('触发子工作流集成测试', () => {
             id: 'edge-1',
             sourceNodeId: 'normal-start',
             targetNodeId: 'process',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-2',
             sourceNodeId: 'process',
             targetNodeId: 'continue',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -259,7 +259,7 @@ describe('触发子工作流集成测试', () => {
       const invalidWorkflow: WorkflowDefinition = {
         id: 'triggered-with-end',
         name: 'Invalid - Contains END',
-        type: 'TRIGGERED_SUBWORKFLOW',
+        type: 'triggered_subworkflow',
         version: '1.0.0',
         description: 'Triggered workflow with END node',
         variables: [],
@@ -267,7 +267,7 @@ describe('触发子工作流集成测试', () => {
         nodes: [
           {
             id: 'start',
-            type: 'START'_FROM_TRIGGER,
+            type: 'START_FROM_TRIGGER',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -298,13 +298,13 @@ describe('触发子工作流集成测试', () => {
             id: 'edge-1',
             sourceNodeId: 'start',
             targetNodeId: 'process',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-2',
             sourceNodeId: 'process',
             targetNodeId: 'normal-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -323,7 +323,7 @@ describe('触发子工作流集成测试', () => {
       const invalidWorkflow: WorkflowDefinition = {
         id: 'triggered-missing-start',
         name: 'Invalid - Missing START_FROM_TRIGGER',
-        type: 'TRIGGERED_SUBWORKFLOW',
+        type: 'triggered_subworkflow',
         version: '1.0.0',
         description: 'Triggered workflow without START_FROM_TRIGGER',
         variables: [],
@@ -354,7 +354,7 @@ describe('触发子工作流集成测试', () => {
             id: 'edge-1',
             sourceNodeId: 'process',
             targetNodeId: 'continue',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -373,7 +373,7 @@ describe('触发子工作流集成测试', () => {
       const invalidWorkflow: WorkflowDefinition = {
         id: 'triggered-missing-end',
         name: 'Invalid - Missing CONTINUE_FROM_TRIGGER',
-        type: 'TRIGGERED_SUBWORKFLOW',
+        type: 'triggered_subworkflow',
         version: '1.0.0',
         description: 'Triggered workflow without CONTINUE_FROM_TRIGGER',
         variables: [],
@@ -381,7 +381,7 @@ describe('触发子工作流集成测试', () => {
         nodes: [
           {
             id: 'start',
-            type: 'START'_FROM_TRIGGER,
+            type: 'START_FROM_TRIGGER',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -404,7 +404,7 @@ describe('触发子工作流集成测试', () => {
             id: 'edge-1',
             sourceNodeId: 'start',
             targetNodeId: 'process',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -423,7 +423,7 @@ describe('触发子工作流集成测试', () => {
       const invalidWorkflow: WorkflowDefinition = {
         id: 'triggered-start-incoming',
         name: 'Invalid - START_FROM_TRIGGER has incoming',
-        type: 'TRIGGERED_SUBWORKFLOW',
+        type: 'triggered_subworkflow',
         version: '1.0.0',
         description: 'Triggered workflow with incoming edges to START',
         variables: [],
@@ -442,7 +442,7 @@ describe('触发子工作流集成测试', () => {
           },
           {
             id: 'start',
-            type: 'START'_FROM_TRIGGER,
+            type: 'START_FROM_TRIGGER',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-2'],
@@ -462,13 +462,13 @@ describe('触发子工作流集成测试', () => {
             id: 'edge-1',
             sourceNodeId: 'before',
             targetNodeId: 'start',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-2',
             sourceNodeId: 'start',
             targetNodeId: 'end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -487,7 +487,7 @@ describe('触发子工作流集成测试', () => {
       const invalidWorkflow: WorkflowDefinition = {
         id: 'triggered-end-outgoing',
         name: 'Invalid - CONTINUE_FROM_TRIGGER has outgoing',
-        type: 'TRIGGERED_SUBWORKFLOW',
+        type: 'triggered_subworkflow',
         version: '1.0.0',
         description: 'Triggered workflow with outgoing edges from END',
         variables: [],
@@ -495,7 +495,7 @@ describe('触发子工作流集成测试', () => {
         nodes: [
           {
             id: 'start',
-            type: 'START'_FROM_TRIGGER,
+            type: 'START_FROM_TRIGGER',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -526,13 +526,13 @@ describe('触发子工作流集成测试', () => {
             id: 'edge-1',
             sourceNodeId: 'start',
             targetNodeId: 'end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'edge-2',
             sourceNodeId: 'end',
             targetNodeId: 'after',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -554,7 +554,7 @@ describe('触发子工作流集成测试', () => {
       const triggeredWorkflow: WorkflowDefinition = {
         id: 'triggered-subwf',
         name: 'Triggered Subworkflow',
-        type: 'TRIGGERED_SUBWORKFLOW',
+        type: 'triggered_subworkflow',
         version: '1.0.0',
         description: 'Triggered workflow',
         variables: [],
@@ -562,7 +562,7 @@ describe('触发子工作流集成测试', () => {
         nodes: [
           {
             id: 'trig-start',
-            type: 'START'_FROM_TRIGGER,
+            type: 'START_FROM_TRIGGER',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['trig-edge-1'],
@@ -593,13 +593,13 @@ describe('触发子工作流集成测试', () => {
             id: 'trig-edge-1',
             sourceNodeId: 'trig-start',
             targetNodeId: 'trig-process',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'trig-edge-2',
             sourceNodeId: 'trig-process',
             targetNodeId: 'trig-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {
@@ -671,13 +671,13 @@ describe('触发子工作流集成测试', () => {
             id: 'parent-edge-1',
             sourceNodeId: 'parent-start',
             targetNodeId: 'parent-process',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           },
           {
             id: 'parent-edge-2',
             sourceNodeId: 'parent-process',
             targetNodeId: 'parent-end',
-            type: EdgeType.DEFAULT
+            type: 'DEFAULT'
           }
         ],
         config: {

@@ -88,7 +88,7 @@ describe('validateTriggerCondition', () => {
 
   it('应该接受复杂的metadata', () => {
     const validCondition = {
-      eventType: 'NODE_COMPLETED',
+      eventtype: 'NODE_COMPLETED' as EventType,
       metadata: {
         nested: {
           array: [1, 2, 3],
@@ -213,7 +213,7 @@ describe('validateExecuteTriggeredSubgraphActionConfig', () => {
         mergeOptions: {
           includeConversationHistory: {
             lastNByRole: {
-              role: 'assistant' as MessageRole,
+              role: 'assistant' as MessageRole as MessageRole,
               count: 3
             }
           }
@@ -229,7 +229,7 @@ describe('validateExecuteTriggeredSubgraphActionConfig', () => {
         triggeredWorkflowId: 'workflow-123',
         mergeOptions: {
           includeConversationHistory: {
-            byRole: 'user' as MessageRole
+            byrole: 'user' as MessageRole as MessageRole
           }
         }
       };
@@ -261,7 +261,7 @@ describe('validateExecuteTriggeredSubgraphActionConfig', () => {
         mergeOptions: {
           includeConversationHistory: {
             rangeByRole: {
-              role: 'assistant' as MessageRole,
+              role: 'assistant' as MessageRole as MessageRole,
               start: 0,
               end: 5
             }
@@ -393,7 +393,7 @@ describe('validateTriggerAction', () => {
 
   it('应该验证只有必填字段的触发动作', () => {
     const minimalAction = {
-      type: TriggerActionType.STOP_THREAD,
+      type: 'stop_thread',
       parameters: {}
     };
 
@@ -515,7 +515,7 @@ describe('validateWorkflowTrigger', () => {
         eventType: 'THREAD_COMPLETED'
       },
       action: {
-        type: TriggerActionType.STOP_THREAD,
+        type: 'stop_thread',
         parameters: {}
       }
     };
@@ -926,7 +926,7 @@ describe('validateTriggers', () => {
           eventType: 'THREAD_COMPLETED'
         },
         action: {
-          type: TriggerActionType.STOP_THREAD,
+          type: 'stop_thread',
           parameters: {}
         }
       }
@@ -993,7 +993,7 @@ describe('validateTriggers', () => {
           eventType: 'THREAD_COMPLETED'
         },
         action: {
-          type: TriggerActionType.STOP_THREAD,
+          type: 'stop_thread',
           parameters: {}
         }
       }
@@ -1023,7 +1023,7 @@ describe('validateTriggers', () => {
           eventType: 'THREAD_COMPLETED'
         },
         action: {
-          type: TriggerActionType.STOP_THREAD,
+          type: 'stop_thread',
           parameters: {}
         }
       },
@@ -1062,7 +1062,7 @@ describe('validateTriggers', () => {
           eventType: 'THREAD_COMPLETED'
         },
         action: {
-          type: TriggerActionType.STOP_THREAD,
+          type: 'stop_thread',
           parameters: {}
         }
       }

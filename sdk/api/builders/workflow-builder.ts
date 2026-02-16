@@ -280,7 +280,7 @@ export class WorkflowBuilder extends BaseBuilder<WorkflowDefinition> {
       id: generateId(),
       sourceNodeId: from,
       targetNodeId: to,
-      type: edgeCondition ? EdgeType.CONDITIONAL : EdgeType.DEFAULT,
+      type: edgeCondition ? 'CONDITIONAL' : 'DEFAULT',
       condition: edgeCondition
     };
     this.edges.push(edge);

@@ -10,8 +10,8 @@ describe('ConversationManager', () => {
   beforeEach(() => {
     mockMessages = [
       { role: 'system', content: 'You are a helpful assistant.' },
-      { role: 'user', content: 'Hello!' },
-      { role: 'assistant', content: 'Hi there! How can I help you?' }
+      { role: 'user' as MessageRole, content: 'Hello!' },
+      { role: 'assistant' as MessageRole, content: 'Hi there! How can I help you?' }
     ];
     
     conversationManager = new ConversationManager();
@@ -37,7 +37,7 @@ describe('ConversationManager', () => {
 
   describe('addMessage', () => {
     it('should add a valid message', () => {
-      const message: LLMMessage = { role: 'user', content: 'Test message' };
+      const message: LLMMessage = { role: 'user' as MessageRole, content: 'Test message' };
       const length = conversationManager.addMessage(message);
       
       expect(length).toBe(1);
@@ -50,7 +50,7 @@ describe('ConversationManager', () => {
       }).toThrow(ValidationError);
       
       expect(() => {
-        conversationManager.addMessage({ role: 'user' } as LLMMessage);
+        conversationManager.addMessage({ role: 'user' as MessageRole } as LLMMessage);
       }).toThrow(ValidationError);
       
       expect(() => {
@@ -59,7 +59,7 @@ describe('ConversationManager', () => {
     });
 
     it('should not mutate original message', () => {
-      const originalMessage: LLMMessage = { role: 'user', content: 'Test' };
+      const originalMessage: LLMMessage = { role: 'user' as MessageRole, content: 'Test' };
       conversationManager.addMessage(originalMessage);
       
       // Modify original message
@@ -143,8 +143,8 @@ describe('ConversationManager', () => {
 
     it('should clear all messages when first message is not system', () => {
       const nonSystemMessages: LLMMessage[] = [
-        { role: 'user', content: 'Hello!' },
-        { role: 'assistant', content: 'Hi!' }
+        { role: 'user' as MessageRole, content: 'Hello!' },
+        { role: 'assistant' as MessageRole, content: 'Hi!' }
       ];
       
       conversationManager.addMessages(...nonSystemMessages);
@@ -228,8 +228,8 @@ describe('ConversationManager', () => {
 
     it('should get recent messages by role', () => {
       // 添加更多用户消息
-      conversationManager.addMessage({ role: 'user', content: 'User message 2' });
-      conversationManager.addMessage({ role: 'user', content: 'User message 3' });
+      conversationManager.addMessage({ role: 'user' as MessageRole, content: 'User message 2' });
+      conversationManager.addMessage({ role: 'user' as MessageRole, content: 'User message 3' });
       
       const recentUserMessages = conversationManager.getRecentMessagesByRole('user', 2);
       expect(recentUserMessages.length).toBe(2);
@@ -239,8 +239,8 @@ describe('ConversationManager', () => {
 
     it('should get messages by role range', () => {
       // 添加更多助手消息
-      conversationManager.addMessage({ role: 'assistant', content: 'Assistant message 2' });
-      conversationManager.addMessage({ role: 'assistant', content: 'Assistant message 3' });
+      conversationManager.addMessage({ role: 'assistant' as MessageRole, content: 'Assistant message 2' });
+      conversationManager.addMessage({ role: 'assistant' as MessageRole, content: 'Assistant message 3' });
       
       const assistantMessages = conversationManager.getMessagesByRoleRange('assistant', 0, 2);
       expect(assistantMessages.length).toBe(2);
@@ -331,7 +331,7 @@ describe('ConversationManager', () => {
       const cloned = conversationManager.clone();
       
       // 修改原始管理器
-      conversationManager.addMessage({ role: 'user', content: 'New message' });
+      conversationManager.addMessage({ role: 'user' as MessageRole, content: 'New message' });
       
       // 克隆的管理器应该不受影响
       expect(conversationManager.getMessageCountByRole('user')).toBe(2);
