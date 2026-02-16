@@ -19,7 +19,7 @@ export * from './subgraph';
 export * from './thread';
 export * from './execution';
 export * from './events';
-export * from './errors';
+export * from './errors/index';
 export * from './trigger';
 export * from './trigger-template';
 
@@ -34,6 +34,7 @@ export * from './checkpoint-storage';
 export * from './interaction';
 export * from './human-relay';
 export * from './result';
+export * from './signal/index';
 export * from './http';
 
 // API类型

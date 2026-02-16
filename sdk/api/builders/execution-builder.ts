@@ -5,11 +5,10 @@
  */
 
 import type { ThreadResult, ThreadOptions } from '@modular-agent/types';
-import { ok, err, getErrorOrNew } from '@modular-agent/common-utils';
+import { ok, err, getErrorOrNew, withAbortSignal } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 import { Observable, create, type Observer } from '../utils/observable';
 import { ExecuteThreadCommand } from '../operations/commands/execution/execute-thread-command';
-import { isSuccess } from '../types/execution-result';
 import { ExecutionError as SDKExecutionError } from '@modular-agent/types';
 import { APIDependencyManager } from '../core/sdk-dependencies';
 import type {
@@ -239,7 +238,7 @@ export class ExecutionBuilder {
         type: 'start',
         timestamp: Date.now(),
         workflowId
-      });
+      } as StartEvent);
 
       // 执行工作流
       const executePromise = this.executeWithSignal(signal);
@@ -261,7 +260,7 @@ export class ExecutionBuilder {
                 steps: result.value.nodeResults.length,
                 nodesExecuted: result.value.nodeResults.length
               }
-            });
+            } as CompleteEvent);
             observer.complete();
           } else {
             if (signal.aborted) {
@@ -272,7 +271,7 @@ export class ExecutionBuilder {
                 workflowId,
                 threadId: threadId || 'unknown',
                 reason: result.error.message
-              });
+              } as CancelledEvent);
               observer.complete();
             } else {
               // 发送错误事件
@@ -282,7 +281,7 @@ export class ExecutionBuilder {
                 workflowId,
                 threadId: threadId || 'unknown',
                 error: result.error
-              });
+              } as ErrorEvent);
               observer.error(result.error);
             }
           }
@@ -308,25 +307,23 @@ export class ExecutionBuilder {
    * @returns Promise<Result<ThreadResult, Error>>
    */
   private async executeWithSignal(signal: AbortSignal): Promise<Result<ThreadResult, Error>> {
-    // 检查是否已取消
-    if (signal.aborted) {
-      return err(new Error('Execution was cancelled'));
-    }
+    // 使用 withAbortSignal 包装执行逻辑
+    return withAbortSignal(async () => {
+      // 使用Command模式执行线程
+      const command = new ExecuteThreadCommand({
+        workflowId: this.workflowId!,
+        options: this.options
+      }, this.dependencies);
 
-    // 使用Command模式执行线程
-    const command = new ExecuteThreadCommand({
-      workflowId: this.workflowId!,
-      options: this.options
-    }, this.dependencies);
+      const executionResult = await command.execute();
 
-    const executionResult = await command.execute();
-
-    // 处理ExecutionResult类型
-    if (executionResult.result.isOk()) {
-      return ok(executionResult.result.unwrap());
-    } else {
-      return err(new Error(executionResult.result.unwrapOrElse(e => e.message) || '执行失败'));
-    }
+      // 处理ExecutionResult类型
+      if (executionResult.result.isOk()) {
+        return ok(executionResult.result.unwrap());
+      } else {
+        return err(new Error(executionResult.result.unwrapOrElse(e => e.message) || '执行失败'));
+      }
+    }, signal);
   }
 
   /**
@@ -358,7 +355,7 @@ export class ExecutionBuilder {
             currentNodeId: progress.currentNodeId || 'unknown',
             currentNodeType: progress.currentNodeType || 'unknown'
           }
-        });
+        } as ProgressEvent);
       };
 
       this.onProgressCallbacks.push(callback);
@@ -397,7 +394,7 @@ export class ExecutionBuilder {
           nodeType: result.nodeType || 'unknown',
           nodeResult: result,
           executionTime: result.executionTime || 0
-        });
+        } as NodeExecutedEvent);
       };
 
       this.options.onNodeExecuted = callback;
@@ -432,7 +429,7 @@ export class ExecutionBuilder {
           workflowId: this.workflowId!,
           threadId: error.threadId || 'unknown',
           error: getErrorOrNew(error)
-        });
+        } as ErrorEvent);
       };
 
       this.onErrorCallbacks.push(callback);

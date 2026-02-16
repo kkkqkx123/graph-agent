@@ -11,7 +11,7 @@ import type {
   LLMProfile
 } from '@modular-agent/types';
 import { ProfileManager } from './profile-manager';
-import { ClientFactory, MessageStream, tryCatchAsync, isAbortError } from '@modular-agent/common-utils';
+import { ClientFactory, MessageStream, tryCatchAsync, isAbortError, getThreadInterruptedException } from '@modular-agent/common-utils';
 import { ConfigurationError, LLMError } from '@modular-agent/types';
 import { now, diffTimestamp, generateId } from '@modular-agent/common-utils';
 import type { EventManager } from '../services/event-manager';
@@ -129,7 +129,16 @@ export class LLMWrapper {
       return ok(stream);
     } catch (error) {
       if (isAbortError(error)) {
-        stream.abort(); // 触发 ABORT 事件，桥接器会转换为 SDK 事件
+        if (request.signal) {
+          const reason = getThreadInterruptedException(request.signal);
+          if (reason) {
+            stream.abort();
+          } else {
+            stream.abort();
+          }
+        } else {
+          stream.abort();
+        }
       }
       return err(this.convertToLLMError(error, profile));
     } finally {

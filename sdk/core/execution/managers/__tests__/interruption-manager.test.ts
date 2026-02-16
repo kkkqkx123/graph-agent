@@ -1,5 +1,6 @@
 import { InterruptionManager } from '../interruption-manager';
 import { ThreadInterruptedException } from '@modular-agent/types';
+import { getThreadInterruptedException } from '@modular-agent/common-utils';
 
 describe('InterruptionManager', () => {
   let interruptionManager: InterruptionManager;
@@ -35,8 +36,8 @@ describe('InterruptionManager', () => {
     it('should abort the signal with ThreadInterruptedException', () => {
       interruptionManager.requestPause();
       
-      expect(interruptionManager.isAborted()).toBe(true);
-      const reason = interruptionManager.getAbortReason();
+      expect(interruptionManager.getAbortSignal().aborted).toBe(true);
+      const reason = getThreadInterruptedException(interruptionManager.getAbortSignal());
       expect(reason).toBeInstanceOf(ThreadInterruptedException);
       expect(reason?.interruptionType).toBe('PAUSE');
       expect(reason?.message).toBe('Thread paused');
@@ -45,7 +46,7 @@ describe('InterruptionManager', () => {
     it('should include threadId and nodeId in abort reason', () => {
       interruptionManager.requestPause();
       
-      const reason = interruptionManager.getAbortReason();
+      const reason = getThreadInterruptedException(interruptionManager.getAbortSignal());
       expect(reason?.threadId).toBe(threadId);
       expect(reason?.nodeId).toBe(nodeId);
     });
@@ -73,8 +74,8 @@ describe('InterruptionManager', () => {
     it('should abort the signal with ThreadInterruptedException', () => {
       interruptionManager.requestStop();
       
-      expect(interruptionManager.isAborted()).toBe(true);
-      const reason = interruptionManager.getAbortReason();
+      expect(interruptionManager.getAbortSignal().aborted).toBe(true);
+      const reason = getThreadInterruptedException(interruptionManager.getAbortSignal());
       expect(reason).toBeInstanceOf(ThreadInterruptedException);
       expect(reason?.interruptionType).toBe('STOP');
       expect(reason?.message).toBe('Thread stopped');
@@ -83,7 +84,7 @@ describe('InterruptionManager', () => {
     it('should include threadId and nodeId in abort reason', () => {
       interruptionManager.requestStop();
       
-      const reason = interruptionManager.getAbortReason();
+      const reason = getThreadInterruptedException(interruptionManager.getAbortSignal());
       expect(reason?.threadId).toBe(threadId);
       expect(reason?.nodeId).toBe(nodeId);
     });
@@ -125,15 +126,15 @@ describe('InterruptionManager', () => {
       interruptionManager.requestStop();
       interruptionManager.resume();
       
-      expect(interruptionManager.isAborted()).toBe(false);
-      expect(interruptionManager.getAbortReason()).toBeUndefined();
+      expect(interruptionManager.getAbortSignal().aborted).toBe(false);
+      expect(getThreadInterruptedException(interruptionManager.getAbortSignal())).toBeUndefined();
     });
 
     it('should be safe to call when not interrupted', () => {
       interruptionManager.resume();
       
       expect(interruptionManager.shouldInterrupt()).toBe(false);
-      expect(interruptionManager.isAborted()).toBe(false);
+      expect(isAborted(interruptionManager.getAbortSignal())).toBe(false);
     });
   });
 
@@ -215,24 +216,24 @@ describe('InterruptionManager', () => {
 
   describe('isAborted', () => {
     it('should return false when not interrupted', () => {
-      expect(interruptionManager.isAborted()).toBe(false);
+      expect(interruptionManager.getAbortSignal().aborted).toBe(false);
     });
 
     it('should return true after pause', () => {
       interruptionManager.requestPause();
-      expect(interruptionManager.isAborted()).toBe(true);
+      expect(interruptionManager.getAbortSignal().aborted).toBe(true);
     });
 
     it('should return true after stop', () => {
       interruptionManager.requestStop();
-      expect(interruptionManager.isAborted()).toBe(true);
+      expect(interruptionManager.getAbortSignal().aborted).toBe(true);
     });
 
     it('should return false after resume', () => {
       interruptionManager.requestPause();
       interruptionManager.resume();
       
-      expect(interruptionManager.isAborted()).toBe(false);
+      expect(isAborted(interruptionManager.getAbortSignal())).toBe(false);
     });
   });
 
@@ -243,7 +244,7 @@ describe('InterruptionManager', () => {
 
     it('should return ThreadInterruptedException with PAUSE type', () => {
       interruptionManager.requestPause();
-      const reason = interruptionManager.getAbortReason();
+      const reason = getThreadInterruptedException(interruptionManager.getAbortSignal());
       
       expect(reason).toBeInstanceOf(ThreadInterruptedException);
       expect(reason?.interruptionType).toBe('PAUSE');
@@ -252,7 +253,7 @@ describe('InterruptionManager', () => {
 
     it('should return ThreadInterruptedException with STOP type', () => {
       interruptionManager.requestStop();
-      const reason = interruptionManager.getAbortReason();
+      const reason = getThreadInterruptedException(interruptionManager.getAbortSignal());
       
       expect(reason).toBeInstanceOf(ThreadInterruptedException);
       expect(reason?.interruptionType).toBe('STOP');
@@ -263,7 +264,7 @@ describe('InterruptionManager', () => {
       interruptionManager.requestPause();
       interruptionManager.resume();
       
-      expect(interruptionManager.getAbortReason()).toBeUndefined();
+      expect(getThreadInterruptedException(interruptionManager.getAbortSignal())).toBeUndefined();
     });
   });
 
@@ -280,7 +281,7 @@ describe('InterruptionManager', () => {
       interruptionManager.updateNodeId(newNodeId);
       interruptionManager.requestPause();
       
-      const reason = interruptionManager.getAbortReason();
+      const reason = getThreadInterruptedException(interruptionManager.getAbortSignal());
       expect(reason?.nodeId).toBe(newNodeId);
     });
   });

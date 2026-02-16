@@ -14,7 +14,7 @@
  * - 统一的错误处理
  */
 
-import { isAbortError } from '@modular-agent/common-utils';
+import { isAbortError, getThreadInterruptedException } from '@modular-agent/common-utils';
 import type { ToolService } from '../../services/tool-service';
 import type { EventManager } from '../../services/event-manager';
 import type { Tool, ID } from '@modular-agent/types';
@@ -73,8 +73,12 @@ export class ToolCallExecutor {
     options?: { abortSignal?: AbortSignal }
   ): Promise<ToolExecutionResult[]> {
     // 检查中断信号
-    if (options?.abortSignal?.aborted) {
-      throw options.abortSignal.reason || new ThreadInterruptedException('Tool execution aborted', 'STOP');
+    if (options?.abortSignal && options.abortSignal.aborted) {
+      const reason = getThreadInterruptedException(options.abortSignal);
+      if (reason) {
+        throw reason;
+      }
+      throw new ThreadInterruptedException('Tool execution aborted', 'STOP');
     }
 
     // 使用 Promise.allSettled 并行执行所有工具调用
@@ -247,11 +251,11 @@ export class ToolCallExecutor {
 
       // 处理 AbortError，转换为 ThreadInterruptedException
       if (isAbortError(error)) {
-        const reason = error.cause || options?.abortSignal?.reason;
-        if (reason instanceof ThreadInterruptedException) {
-          throw reason; // 直接重新抛出
+        const reason = getThreadInterruptedException(options?.abortSignal!);
+        if (reason) {
+          throw reason;
         }
-        // 如果是其他 AbortError，转换为 ThreadInterruptedException
+        // 如果没有获取到 ThreadInterruptedException，创建一个新的
         throw new ThreadInterruptedException(
           'Tool execution aborted',
           'STOP',

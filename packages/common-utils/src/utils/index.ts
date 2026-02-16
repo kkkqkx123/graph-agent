@@ -10,3 +10,5 @@ export { now, timestampFromDate, timestampToDate, timestampToISOString, nowWithT
 export { initialVersion } from "./version-utils";
 export { emptyMetadata, getMetadata, setMetadata, deleteMetadata, hasMetadata, mergeMetadata } from "./metadata-utils";
 export { ok, err, tryCatch, tryCatchAsync, all, any } from "./result-utils";
+
+export * from './signal';

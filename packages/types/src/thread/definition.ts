@@ -8,6 +8,7 @@ import type { ThreadStatus, ThreadType } from './status';
 import type { ForkJoinContext, TriggeredSubworkflowContext } from './context';
 import type { ThreadVariable } from './variables';
 import type { NodeExecutionResult } from './history';
+import type { VariableScopes } from './scopes';
 
 /**
  * 线程定义类型（执行实例）
@@ -29,16 +30,7 @@ export interface Thread {
   /** 变量数组（用于持久化和元数据） */
   variables: ThreadVariable[];
   /** 四级作用域变量存储 */
-  variableScopes: {
-    /** 全局作用域 - 多线程共享 */
-    global: Record<string, any>;
-    /** 线程作用域 - 单线程内部 */
-    thread: Record<string, any>;
-    /** 本地作用域栈 - 支持嵌套 */
-    local: Record<string, any>[];
-    /** 循环作用域栈 - 支持嵌套循环 */
-    loop: Record<string, any>[];
-  };
+  variableScopes: VariableScopes;
   /**
    * 输入数据（作为特殊变量，可通过路径访问）
    *

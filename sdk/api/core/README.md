@@ -117,10 +117,13 @@ const results = await executor.executeBatch(commands, true);
 统一的执行结果类型：
 
 ```typescript
-type ExecutionResult<T> = 
-  | { success: true; data: T; executionTime: number }
-  | { success: false; error: string; executionTime: number };
+interface ExecutionResult<T> {
+  result: Result<T, SDKError>;
+  executionTime: number;
+}
 ```
+
+基于 packages/types 的 Result 类型，添加 executionTime 支持。
 
 ### ExecutionOptions
 

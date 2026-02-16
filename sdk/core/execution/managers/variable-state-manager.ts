@@ -16,24 +16,10 @@
  */
 
 import type { ThreadVariable } from '@modular-agent/types';
-import type { VariableScope } from '@modular-agent/types';
+import type { VariableScope, VariableScopes } from '@modular-agent/types';
 import type { WorkflowVariable } from '@modular-agent/types';
 import { ValidationError, RuntimeValidationError } from '@modular-agent/types';
 import type { LifecycleCapable } from './lifecycle-capable';
-
-/**
- * 变量作用域结构
- */
-export interface VariableScopes {
-  /** 全局作用域 */
-  global: Record<string, any>;
-  /** 线程作用域 */
-  thread: Record<string, any>;
-  /** 本地作用域栈 */
-  local: Record<string, any>[];
-  /** 循环作用域栈 */
-  loop: Record<string, any>[];
-}
 
 /**
  * VariableStateManager - 变量状态管理器
@@ -254,14 +240,14 @@ export class VariableStateManager implements LifecycleCapable<{
    */
   enterLocalScope(): void {
     const newScope: Record<string, any> = {};
-    
+
     // 初始化该作用域的所有local变量
     for (const variable of this.variables) {
       if (variable.scope === 'local') {
         newScope[variable.name] = variable.value;
       }
     }
-    
+
     this.variableScopes.local.push(newScope);
   }
 
@@ -280,14 +266,14 @@ export class VariableStateManager implements LifecycleCapable<{
    */
   enterLoopScope(): void {
     const newScope: Record<string, any> = {};
-    
+
     // 初始化该作用域的所有loop变量
     for (const variable of this.variables) {
       if (variable.scope === 'loop') {
         newScope[variable.name] = variable.value;
       }
     }
-    
+
     this.variableScopes.loop.push(newScope);
   }
 

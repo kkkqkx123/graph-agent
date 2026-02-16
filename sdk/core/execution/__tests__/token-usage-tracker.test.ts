@@ -3,6 +3,7 @@
  */
 
 import { TokenUsageTracker } from '../token-usage-tracker';
+import { MessageRole } from '@modular-agent/types';
 import type { LLMMessage } from '@modular-agent/types';
 
 describe('TokenUsageTracker', () => {
@@ -162,7 +163,7 @@ describe('TokenUsageTracker', () => {
   describe('estimateTokens', () => {
     it('应该正确估算字符串消息的 token 数量', () => {
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello, world!' }
+        { role: MessageRole.USER, content: 'Hello, world!' }
       ];
 
       const estimated = tracker.estimateTokens(messages);
@@ -173,7 +174,7 @@ describe('TokenUsageTracker', () => {
     it('应该正确估算数组消息的 token 数量', () => {
       const messages: LLMMessage[] = [
         {
-          role: 'user',
+          role: MessageRole.USER,
           content: [
             { type: 'text', text: 'Hello' },
             { type: 'text', text: 'World' }
@@ -188,7 +189,7 @@ describe('TokenUsageTracker', () => {
     it('应该正确估算对象消息的 token 数量', () => {
       const messages: LLMMessage[] = [
         {
-          role: 'user',
+          role: MessageRole.USER,
           content: [
             { type: 'image_url', image_url: { url: 'https://example.com/image.png' } }
           ]
@@ -203,7 +204,7 @@ describe('TokenUsageTracker', () => {
   describe('getTokenUsage', () => {
     it('应该优先使用 API 统计', () => {
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello, world!' }
+        { role: MessageRole.USER, content: 'Hello, world!' }
       ];
 
       const usage = {
@@ -221,7 +222,7 @@ describe('TokenUsageTracker', () => {
 
     it('应该在没有 API 统计时使用本地估算', () => {
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello, world!' }
+        { role: MessageRole.USER, content: 'Hello, world!' }
       ];
 
       const tokenUsage = tracker.getTokenUsage(messages);
@@ -232,7 +233,7 @@ describe('TokenUsageTracker', () => {
   describe('isTokenLimitExceeded', () => {
     it('应该正确检测 token 限制是否被超过', () => {
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello, world!' }
+        { role: MessageRole.USER, content: 'Hello, world!' }
       ];
 
       const usage = {
@@ -249,7 +250,7 @@ describe('TokenUsageTracker', () => {
 
     it('应该正确检测 token 限制未被超过', () => {
       const messages: LLMMessage[] = [
-        { role: 'user', content: 'Hello, world!' }
+        { role: MessageRole.USER, content: 'Hello, world!' }
       ];
 
       const usage = {

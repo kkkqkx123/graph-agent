@@ -2,7 +2,7 @@
  * 交互节点配置类型定义
  */
 
-import type { VariableScope } from '../../common';
+import type { VariableScope } from '../../thread/scopes';
 
 /**
  * 用户交互节点配置

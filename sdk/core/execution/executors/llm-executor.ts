@@ -14,10 +14,9 @@
  * - 不处理工具调用，工具调用由 LLMCoordinator 协调
  */
 
-import { isAbortError } from '@modular-agent/common-utils';
+import { abortErrorToResult } from '@modular-agent/common-utils';
 import type { LLMMessage, LLMResult } from '@modular-agent/types';
 import { LLMWrapper } from '../../llm/wrapper';
-import { MessageStream } from '@modular-agent/common-utils';
 import { ExecutionError, ThreadInterruptedException, LLMError } from '@modular-agent/types';
 
 /**
@@ -80,6 +79,45 @@ export class LLMExecutor {
   }
 
   /**
+   * 处理 LLM 调用错误
+   *
+   * 统一处理流式和非流式调用的错误逻辑
+   *
+   * @param error 错误对象
+   * @param profileId LLM profile ID
+   * @param options 执行选项
+   * @throws ThreadInterruptedException 如果是 AbortError
+   * @throws ExecutionError 如果是其他错误
+   */
+  private handleLLMError(
+    error: LLMError,
+    profileId: string,
+    options?: { abortSignal?: AbortSignal, threadId?: string, nodeId?: string }
+  ): never {
+    // 检查是否是 AbortError
+    const abortResult = abortErrorToResult<LLMExecutionResult>(error);
+    if (abortResult.isErr()) {
+      const interruptError = abortResult.error;
+      // 更新中断异常的上下文信息
+      throw new ThreadInterruptedException(
+        interruptError.message,
+        interruptError.interruptionType,
+        options?.threadId || interruptError.threadId,
+        options?.nodeId || interruptError.nodeId
+      );
+    }
+
+    // 转换为 ExecutionError
+    throw new ExecutionError(
+      `LLM call failed: ${error.message}`,
+      options?.nodeId,
+      undefined,
+      { originalError: error, profileId },
+      error
+    );
+  }
+
+  /**
    * 执行单次LLM调用
    *
    * 注意：此方法只执行一次LLM调用，不处理工具调用循环
@@ -111,37 +149,13 @@ export class LLMExecutor {
     if (llmRequest.stream) {
       // 流式调用 - 返回 Result<MessageStream, LLMError>
       const streamResult = await this.llmWrapper.generateStream(llmRequest);
-      
+
       if (streamResult.isErr()) {
-        const error = streamResult.error;
-        
-        // 检查是否是 AbortError
-        if (isAbortError(error)) {
-          const reason = error.cause || options?.abortSignal?.reason;
-          if (reason instanceof ThreadInterruptedException) {
-            throw reason; // 直接重新抛出
-          }
-          // 如果是其他 AbortError，转换为 ThreadInterruptedException
-          throw new ThreadInterruptedException(
-            'LLM call aborted',
-            'STOP',
-            options?.threadId || '',
-            options?.nodeId || ''
-          );
-        }
-        
-        // 转换为 ExecutionError
-        throw new ExecutionError(
-          `LLM call failed: ${error.message}`,
-          undefined,
-          undefined,
-          { originalError: error, profileId: requestData.profileId },
-          error
-        );
+        this.handleLLMError(streamResult.error, requestData.profileId, options);
       }
-      
+
       const messageStream = streamResult.value;
-      
+
       // 消费流，保存最后一个有 finishReason 的 chunk 作为最终结果
       for await (const event of messageStream) {
         // event 是 InternalStreamEvent 类型
@@ -151,7 +165,7 @@ export class LLMExecutor {
           finalResult = result;
         }
       }
-      
+
       // 如果没有通过事件获取到结果，尝试直接获取
       if (!finalResult) {
         finalResult = await messageStream.getFinalResult();
@@ -159,35 +173,11 @@ export class LLMExecutor {
     } else {
       // 非流式调用 - 返回 Result<LLMResult, LLMError>
       const result = await this.llmWrapper.generate(llmRequest);
-      
+
       if (result.isErr()) {
-        const error = result.error;
-        
-        // 检查是否是 AbortError
-        if (isAbortError(error)) {
-          const reason = error.cause || options?.abortSignal?.reason;
-          if (reason instanceof ThreadInterruptedException) {
-            throw reason; // 直接重新抛出
-          }
-          // 如果是其他 AbortError，转换为 ThreadInterruptedException
-          throw new ThreadInterruptedException(
-            'LLM call aborted',
-            'STOP',
-            options?.threadId || '',
-            options?.nodeId || ''
-          );
-        }
-        
-        // 转换为 ExecutionError
-        throw new ExecutionError(
-          `LLM call failed: ${error.message}`,
-          undefined,
-          undefined,
-          { originalError: error, profileId: requestData.profileId },
-          error
-        );
+        this.handleLLMError(result.error, requestData.profileId, options);
       }
-      
+
       finalResult = result.value;
     }
 

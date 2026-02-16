@@ -144,3 +144,41 @@ export function any<T, E>(results: Result<T, E>[]): Result<T, E> {
   }
   return results[0] as any;
 }
+
+/**
+ * 从可能抛出异常的异步函数创建Result，支持Signal
+ *
+ * 说明：
+ * 1. 支持任何扩展了 AbortSignal 的类型（如 ThreadAbortSignal）
+ * 2. 自动捕获异常并转换为 Result
+ * 3. 类型安全，确保传入的 Signal 类型符合要求
+ *
+ * @param fn 可能抛出异常的异步函数，接收Signal参数
+ * @param signal Signal（可选），默认为 AbortSignal
+ * @returns Result实例
+ *
+ * @example
+ * // 使用标准 AbortSignal
+ * const result1 = await tryCatchAsyncWithSignal(
+ *   (signal) => fetch(url, { signal }),
+ *   abortSignal
+ * );
+ *
+ * @example
+ * // 使用 ThreadAbortSignal
+ * const result2 = await tryCatchAsyncWithSignal<unknown, ThreadAbortSignal>(
+ *   (signal) => llmWrapper.generate({ signal }),
+ *   threadAbortSignal
+ * );
+ */
+export async function tryCatchAsyncWithSignal<T, S extends AbortSignal = AbortSignal>(
+  fn: (signal?: S) => Promise<T>,
+  signal?: S
+): Promise<Result<T, Error>> {
+  try {
+    const value = await fn(signal);
+    return ok(value);
+  } catch (error) {
+    return err(error instanceof Error ? error : new Error(String(error)));
+  }
+}

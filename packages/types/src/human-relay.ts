@@ -5,7 +5,8 @@
  * HumanRelay 是一种特殊的 LLM Provider，允许人工介入 LLM 对话流程
  */
 
-import type { ID, Metadata, VariableScope } from './common';
+import type { ID, Metadata } from './common';
+import type { VariableScope } from './thread/scopes';
 import type { LLMMessage } from './message';
 
 /**

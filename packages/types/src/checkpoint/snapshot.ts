@@ -4,7 +4,7 @@
 
 import type { ID } from '../common';
 import { ThreadStatus } from '../thread';
-import type { NodeExecutionResult } from '../thread';
+import type { NodeExecutionResult, VariableScopes } from '../thread';
 import type { TriggerRuntimeState } from '../trigger';
 import type { TokenUsageStats } from '../llm';
 import type { MessageMarkMap } from '../message';
@@ -20,16 +20,7 @@ export interface ThreadStateSnapshot {
   /** 变量数组 */
   variables: any[];
   /** 变量作用域快照（用于恢复运行时状态） */
-  variableScopes: {
-    /** 全局作用域变量值 */
-    global: Record<string, any>;
-    /** 线程作用域变量值 */
-    thread: Record<string, any>;
-    /** 本地作用域变量值栈 */
-    local: Record<string, any>[];
-    /** 循环作用域变量值栈 */
-    loop: Record<string, any>[];
-  };
+  variableScopes: VariableScopes;
   /** 输入数据 */
   input: Record<string, any>;
   /** 输出数据 */

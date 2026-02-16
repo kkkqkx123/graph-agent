@@ -3,7 +3,9 @@
  * 提供统一的错误处理能力，减少重复的类型检查代码
  */
 
-import { AbortError } from '@modular-agent/types';
+import { AbortError, ThreadInterruptedException } from '@modular-agent/types';
+import { err } from '../utils/result-utils';
+import type { Result } from '@modular-agent/types';
 
 /**
  * 提取错误消息
@@ -117,4 +119,39 @@ export function isAbortError(error: unknown): error is AbortError {
   }
   
   return false;
+}
+
+/**
+ * 将 AbortError 转换为包含 ThreadInterruptedException 的 Result
+ *
+ * 说明：
+ * 1. 检查错误是否为 AbortError
+ * 2. 如果是 AbortError，提取 cause 中的 ThreadInterruptedException
+ * 3. 如果没有 ThreadInterruptedException，创建一个新的
+ * 4. 返回包含 ThreadInterruptedException 的 Err Result
+ *
+ * @param error 错误对象
+ * @returns 包含 ThreadInterruptedException 的 Result
+ */
+export function abortErrorToResult<T>(error: unknown): Result<T, ThreadInterruptedException> {
+  if (isAbortError(error)) {
+    const cause = error.cause;
+    if (cause instanceof ThreadInterruptedException) {
+      return err(cause);
+    }
+    // 如果没有获取到 ThreadInterruptedException，创建一个新的
+    return err(new ThreadInterruptedException(
+      'Operation aborted',
+      'STOP',
+      undefined,
+      undefined
+    ));
+  }
+  // 如果不是 AbortError，创建一个通用的 ThreadInterruptedException
+  return err(new ThreadInterruptedException(
+    'Unknown abort error',
+    'STOP',
+    undefined,
+    undefined
+  ));
 }

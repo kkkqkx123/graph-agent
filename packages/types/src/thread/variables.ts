@@ -2,7 +2,8 @@
  * 线程变量类型定义
  */
 
-import type { Metadata, VariableScope } from '../common';
+import type { Metadata } from '../common';
+import type { VariableScope } from './scopes';
 
 /**
  * 线程变量类型

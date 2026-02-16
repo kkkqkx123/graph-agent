@@ -4,6 +4,9 @@
  * Thread包含完整的图结构信息，使其成为自包含的执行单元
  */
 
+// 导出作用域定义
+export * from './scopes';
+
 // 导出线程定义
 export * from './definition';
 

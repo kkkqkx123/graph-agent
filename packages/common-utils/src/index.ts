@@ -11,7 +11,7 @@ export * from './http';
 export * from './utils';
 
 // 错误处理工具
-export * from './error/error-utils';
+export * from './error';
 
 // 表达式求值器
 export * from './evalutor';
