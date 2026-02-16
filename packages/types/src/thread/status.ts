@@ -31,5 +31,7 @@ export enum ThreadType {
   /** FORK/JOIN子线程 */
   FORK_JOIN = 'FORK_JOIN',
   /** Triggered子工作流线程 */
-  TRIGGERED_SUBWORKFLOW = 'TRIGGERED_SUBWORKFLOW'
+  TRIGGERED_SUBWORKFLOW = 'TRIGGERED_SUBWORKFLOW',
+  /** 动态子线程 */
+  DYNAMIC_CHILD = 'DYNAMIC_CHILD'
 }

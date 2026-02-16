@@ -128,7 +128,7 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
       workflowId: thread.workflowId,
       workflowName: '', // TODO: 从工作流注册表获取工作流名称
       status: thread.status,
-      threadType: thread.threadType,
+      threadType: thread.threadType === 'DYNAMIC_CHILD' ? undefined : thread.threadType,
       currentNodeId: thread.currentNodeId,
       startTime: thread.startTime,
       endTime: thread.endTime,
