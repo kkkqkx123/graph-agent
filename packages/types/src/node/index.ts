@@ -36,8 +36,7 @@ import type {
 
 import type {
   CodeNodeConfig,
-  LLMNodeConfig,
-  ToolNodeConfig
+  LLMNodeConfig
 } from './configs/execution-configs';
 
 import type { UserInteractionNodeConfig } from './configs/interaction-configs';
@@ -61,7 +60,6 @@ export type NodeConfig =
   | JoinNodeConfig
   | CodeNodeConfig
   | LLMNodeConfig
-  | ToolNodeConfig
   | UserInteractionNodeConfig
   | RouteNodeConfig
   | ContextProcessorNodeConfig
