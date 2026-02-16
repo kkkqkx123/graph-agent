@@ -32,11 +32,20 @@ export interface LLMNodeConfig {
   parameters?: Record<string, any>;
   /** 单次LLM调用最多返回的工具调用数（默认3，超出时抛出错误） */
   maxToolCallsPerRequest?: number;
-  /** 动态工具配置 */
-  dynamicTools?: {
-    /** 要动态添加的工具ID或名称 */
-    toolIds: string[];
-    /** 工具描述模板（可选） */
-    descriptionTemplate?: string;
-  };
+}
+
+/**
+ * 工具添加节点配置
+ */
+export interface AddToolNodeConfig {
+  /** 要添加的工具ID或名称列表 */
+  toolIds: string[];
+  /** 工具描述模板（可选，用于动态生成工具描述） */
+  descriptionTemplate?: string;
+  /** 工具作用域（可选，默认为THREAD） */
+  scope?: 'THREAD' | 'WORKFLOW' | 'GLOBAL';
+  /** 是否覆盖已存在的工具（默认false） */
+  overwrite?: boolean;
+  /** 工具元数据（可选） */
+  metadata?: Record<string, any>;
 }

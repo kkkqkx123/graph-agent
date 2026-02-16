@@ -137,7 +137,6 @@ describe('llm-handler', () => {
           prompt: 'Test prompt',
           profileId: 'openai-profile',
           parameters: { temperature: 0.7 },
-          dynamicTools: undefined,
           maxToolCallsPerRequest: undefined
         },
         mockContext.conversationManager
@@ -348,50 +347,6 @@ describe('llm-handler', () => {
       expect(mockLLMCoordinator.executeLLM).toHaveBeenCalledWith(
         expect.objectContaining({
           prompt: ''
-        }),
-        expect.any(Object)
-      );
-    });
-
-    it('应该正确处理dynamicTools配置', async () => {
-      const mockLLMResult = {
-        success: true,
-        content: 'Response'
-      };
-
-      (mockLLMCoordinator.executeLLM as jest.Mock).mockResolvedValue(mockLLMResult);
-      (mockLLMWrapper.getProfile as jest.Mock).mockReturnValue({
-        provider: 'OPENAI',
-        model: 'gpt-4'
-      });
-
-      mockNode = {
-        id: 'llm-node-1',
-        name: 'LLM Node',
-        type: NodeType.LLM,
-        config: {
-          prompt: 'Test prompt',
-          profileId: 'openai-profile',
-          dynamicTools: {
-            toolIds: ['tool1', 'tool2'],
-            descriptionTemplate: 'Tool: {{toolName}}'
-          },
-          maxToolCallsPerRequest: 5
-        } as LLMNodeConfig,
-        incomingEdgeIds: [],
-        outgoingEdgeIds: []
-      };
-
-      const result = await llmHandler(mockThread, mockNode, mockContext);
-
-      expect(result.status).toBe('COMPLETED');
-      expect(mockLLMCoordinator.executeLLM).toHaveBeenCalledWith(
-        expect.objectContaining({
-          dynamicTools: {
-            toolIds: ['tool1', 'tool2'],
-            descriptionTemplate: 'Tool: {{toolName}}'
-          },
-          maxToolCallsPerRequest: 5
         }),
         expect.any(Object)
       );

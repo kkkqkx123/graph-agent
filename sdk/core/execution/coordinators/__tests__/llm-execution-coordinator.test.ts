@@ -210,49 +210,6 @@ describe('LLMExecutionCoordinator', () => {
       expect(result.error?.message).toContain('LLM returned 4 tool calls, exceeds limit of 3');
     });
 
-    it('应该处理动态工具', async () => {
-      const paramsWithDynamicTools = {
-        ...mockParams,
-        dynamicTools: {
-          toolIds: ['dynamic-tool-1', 'dynamic-tool-2'],
-          descriptionTemplate: 'Dynamic tool: {name}'
-        }
-      };
-
-      // Mock 工具服务
-      mockToolService.getTool.mockImplementation((id: string) => {
-        if (id === 'tool1') {
-          return { name: 'tool1', description: 'Static tool', parameters: {} };
-        }
-        if (id === 'dynamic-tool-1') {
-          return { name: 'dynamic-tool-1', description: 'Dynamic tool 1', parameters: {} };
-        }
-        if (id === 'dynamic-tool-2') {
-          return { name: 'dynamic-tool-2', description: 'Dynamic tool 2', parameters: {} };
-        }
-        return null;
-      });
-
-      mockLLMExecutor.executeLLMCall.mockResolvedValue({
-        content: 'Test response with dynamic tools',
-        usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
-        toolCalls: []
-      });
-
-      // 执行测试
-      await coordinator.executeLLM(paramsWithDynamicTools, mockConversationManager);
-
-      // 验证工具合并逻辑
-      const callArgs = mockLLMExecutor.executeLLMCall.mock.calls[0];
-      expect(callArgs?.[1].tools).toEqual(
-        expect.arrayContaining([
-          { name: 'tool1', description: 'Static tool', parameters: {} },
-          { name: 'dynamic-tool-1', description: 'Dynamic tool 1', parameters: {} },
-          { name: 'dynamic-tool-2', description: 'Dynamic tool 2', parameters: {} }
-        ])
-      );
-    });
-
     it('应该处理 Token 使用警告', async () => {
       // 设置高 Token 使用量
       mockConversationManager.getTokenUsage.mockReturnValue({
@@ -370,89 +327,6 @@ describe('LLMExecutionCoordinator', () => {
       // 验证结果
       expect(result.success).toBe(true);
       expect(result.content).toBe('Test response');
-    });
-  });
-
-  describe('getAvailableTools', () => {
-    it('应该正确合并静态和动态工具', () => {
-      const workflowTools = new Set(['static-tool-1', 'static-tool-2']);
-      const dynamicTools = {
-        toolIds: ['dynamic-tool-1', 'dynamic-tool-2'],
-        descriptionTemplate: 'Dynamic tool: {name}'
-      };
-
-      // Mock 工具服务
-      mockToolService.getTool.mockImplementation((id: string) => {
-        const tools: Record<string, any> = {
-          'static-tool-1': { name: 'static-tool-1', description: 'Static tool 1', parameters: {} },
-          'static-tool-2': { name: 'static-tool-2', description: 'Static tool 2', parameters: {} },
-          'dynamic-tool-1': { name: 'dynamic-tool-1', description: 'Dynamic tool 1', parameters: {} },
-          'dynamic-tool-2': { name: 'dynamic-tool-2', description: 'Dynamic tool 2', parameters: {} }
-        };
-        return tools[id] || null;
-      });
-
-      // 使用私有方法测试
-      const availableTools = (coordinator as any).getAvailableTools(workflowTools, dynamicTools);
-
-      // 验证结果
-      expect(availableTools).toHaveLength(4);
-      expect(availableTools).toEqual(
-        expect.arrayContaining([
-          { name: 'static-tool-1', description: 'Static tool 1', parameters: {} },
-          { name: 'static-tool-2', description: 'Static tool 2', parameters: {} },
-          { name: 'dynamic-tool-1', description: 'Dynamic tool 1', parameters: {} },
-          { name: 'dynamic-tool-2', description: 'Dynamic tool 2', parameters: {} }
-        ])
-      );
-    });
-
-    it('应该过滤掉不存在的工具', () => {
-      const workflowTools = new Set(['existing-tool', 'non-existent-tool']);
-      const dynamicTools = {
-        toolIds: ['another-existing-tool', 'another-non-existent-tool']
-      };
-
-      // Mock 工具服务 - 只返回存在的工具
-      mockToolService.getTool.mockImplementation((id: string) => {
-        if (id === 'existing-tool' || id === 'another-existing-tool') {
-          return { name: id, description: `${id} description`, parameters: {} };
-        }
-        return null;
-      });
-
-      const availableTools = (coordinator as any).getAvailableTools(workflowTools, dynamicTools);
-
-      // 验证结果 - 只包含存在的工具
-      expect(availableTools).toHaveLength(2);
-      expect(availableTools).toEqual(
-        expect.arrayContaining([
-          { name: 'existing-tool', description: 'existing-tool description', parameters: {} },
-          { name: 'another-existing-tool', description: 'another-existing-tool description', parameters: {} }
-        ])
-      );
-    });
-
-    it('应该在没有动态工具时只返回静态工具', () => {
-      const workflowTools = new Set(['tool1', 'tool2']);
-
-      mockToolService.getTool.mockImplementation((id: string) => {
-        const tools: Record<string, any> = {
-          tool1: { name: 'tool1', description: 'Tool 1', parameters: {} },
-          tool2: { name: 'tool2', description: 'Tool 2', parameters: {} }
-        };
-        return tools[id] || null;
-      });
-
-      const availableTools = (coordinator as any).getAvailableTools(workflowTools);
-
-      expect(availableTools).toHaveLength(2);
-      expect(availableTools).toEqual(
-        expect.arrayContaining([
-          { name: 'tool1', description: 'Tool 1', parameters: {} },
-          { name: 'tool2', description: 'Tool 2', parameters: {} }
-        ])
-      );
     });
   });
 

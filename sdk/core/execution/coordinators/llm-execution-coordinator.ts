@@ -48,13 +48,6 @@ export interface LLMExecutionParams {
   parameters?: Record<string, any>;
   /** 工具列表 */
   tools?: any[];
-  /** 动态工具配置 */
-  dynamicTools?: {
-    /** 要动态添加的工具ID或名称 */
-    toolIds: string[];
-    /** 工具描述模板（可选） */
-    descriptionTemplate?: string;
-  };
   /** 单次LLM调用最多返回的工具调用数（默认3） */
   maxToolCallsPerRequest?: number;
   /** 工作流配置（用于工具审批） */
@@ -182,7 +175,7 @@ export class LLMExecutionCoordinator {
     conversationState: ConversationManager
   ): Promise<string> {
     const {
-      prompt, profileId, parameters, tools, dynamicTools,
+      prompt, profileId, parameters, tools,
       maxToolCallsPerRequest,
       threadId, nodeId
     } = params;
@@ -244,20 +237,26 @@ export class LLMExecutionCoordinator {
       }
     }
 
-    // 如果存在动态工具，合并静态和动态工具
+    // 从工具上下文管理器获取可用工具
     let availableToolSchemas = tools;
-    if (dynamicTools?.toolIds) {
-      const workflowTools = tools ? new Set(tools.map((t: any) => t.id)) : new Set();
-      const availableToolIds = this.getAvailableToolIds(workflowTools, dynamicTools);
-      const availableTools = availableToolIds
-        .map(id => this.toolService.getTool(id))
-        .filter(Boolean);
-      // 直接转换为ToolSchema格式（由外部模块负责，符合设计文档）
-      availableToolSchemas = availableTools.map(tool => ({
-        id: tool.id,
-        description: tool.description,
-        parameters: tool.parameters
-      }));
+    if (this.executionContext) {
+      const toolContextManager = this.executionContext.getToolContextManager();
+      if (toolContextManager) {
+        const availableToolIds = toolContextManager.getTools(threadId);
+        
+        if (availableToolIds.size > 0) {
+          const availableTools = Array.from(availableToolIds)
+            .map((id: string) => this.toolService.getTool(id))
+            .filter(Boolean);
+          
+          // 直接转换为ToolSchema格式（由外部模块负责，符合设计文档）
+          availableToolSchemas = availableTools.map(tool => ({
+            id: tool.id,
+            description: tool.description,
+            parameters: tool.parameters
+          }));
+        }
+      }
     }
 
     // 执行 LLM 调用前再次检查中断
@@ -622,17 +621,4 @@ export class LLMExecutionCoordinator {
     });
   }
 
-  /**
-   * 获取可用工具ID列表
-   */
-  private getAvailableToolIds(workflowTools: Set<string>, dynamicTools?: any): string[] {
-    const allToolIds = new Set(workflowTools);
-  
-    // 添加动态工具
-    if (dynamicTools?.toolIds) {
-      dynamicTools.toolIds.forEach((id: string) => allToolIds.add(id));
-    }
-  
-    return Array.from(allToolIds);
-  }
 }

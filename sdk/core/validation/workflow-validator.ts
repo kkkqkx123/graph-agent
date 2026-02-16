@@ -619,37 +619,6 @@ export class WorkflowValidator {
       }
     }
 
-    // 验证LLM节点的dynamicTools配置
-    for (let i = 0; i < workflow.nodes.length; i++) {
-      const node = workflow.nodes[i];
-      if (node && node.type === NodeType.LLM && node.config) {
-        const llmConfig = node.config as any;
-        if (llmConfig.dynamicTools) {
-          const path = `workflow.nodes[${i}].config.dynamicTools`;
-
-          if (!llmConfig.dynamicTools.toolIds || !Array.isArray(llmConfig.dynamicTools.toolIds)) {
-            errors.push(new ConfigurationValidationError(
-              'dynamicTools.toolIds must be an array of tool IDs',
-              {
-                configType: 'node',
-                configPath: `${path}.toolIds`
-              }
-            ));
-          }
-
-          if (llmConfig.dynamicTools.descriptionTemplate && typeof llmConfig.dynamicTools.descriptionTemplate !== 'string') {
-            errors.push(new ConfigurationValidationError(
-              'dynamicTools.descriptionTemplate must be a string',
-              {
-                configType: 'node',
-                configPath: `${path}.descriptionTemplate`
-              }
-            ));
-          }
-        }
-      }
-    }
-
     return errors;
   }
 }

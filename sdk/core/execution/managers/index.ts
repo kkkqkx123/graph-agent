@@ -12,6 +12,7 @@
  * 包含的管理器：
  * - TriggerStateManager: 触发器状态管理器
  * - VariableStateManager: 变量状态管理器
+ * - ToolContextManager: 工具上下文管理器
  * - InterruptionManager: 中断状态管理器
  * - InterruptionDetector: 中断检测器
  * - LifecycleCapable: 统一的生命周期管理能力接口
@@ -21,6 +22,7 @@
 export { TriggerStateManager } from "./trigger-state-manager";
 export type { TriggerRuntimeState } from '@modular-agent/types';
 export { VariableStateManager } from "./variable-state-manager";
+export { ToolContextManager, type ToolScope, type ToolMetadata, type ToolContext } from "./tool-context-manager";
 export { type LifecycleCapable } from "./lifecycle-capable";
 
 export {

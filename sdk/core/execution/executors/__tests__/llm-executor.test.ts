@@ -203,31 +203,6 @@ describe('LLMExecutor', () => {
         .rejects.toThrow('LLM call failed: API error');
     });
 
-    it('应该正确传递动态工具配置', async () => {
-      mockLLMWrapper.generate.mockResolvedValue(mockLLMResult);
-
-      const requestData = {
-        prompt: 'Hello',
-        profileId: 'test-profile',
-        parameters: {},
-        dynamicTools: {
-          toolIds: ['tool1', 'tool2'],
-          descriptionTemplate: 'Tool: {name}'
-        },
-        stream: false
-      };
-
-      await executor.executeLLMCall(mockMessages, requestData);
-
-      expect(mockLLMWrapper.generate).toHaveBeenCalledWith({
-        profileId: 'test-profile',
-        messages: mockMessages,
-        tools: undefined,
-        parameters: {},
-        stream: false
-      });
-    });
-
     it('应该正确传递maxToolCallsPerRequest参数', async () => {
       mockLLMWrapper.generate.mockResolvedValue(mockLLMResult);
 

@@ -41,6 +41,7 @@ import type { EventManager } from '../../services/event-manager';
 import { CheckpointStateManager } from '../managers/checkpoint-state-manager';
 import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager';
 import { ThreadCascadeManager } from '../managers/thread-cascade-manager';
+import { ToolContextManager } from '../managers/tool-context-manager';
 import { ThreadLifecycleCoordinator } from '../coordinators/thread-lifecycle-coordinator';
 import type { LifecycleCapable } from '../managers/lifecycle-capable';
 import { MemoryCheckpointStorage } from '../../storage/memory-checkpoint-storage';
@@ -104,7 +105,11 @@ export class ExecutionContext {
     const cascadeManager = new ThreadCascadeManager(threadRegistry, lifecycleManager, eventManager);
     this.componentRegistry.register('cascadeManager', cascadeManager);
 
-    // 6. ThreadLifecycleCoordinator 依赖 ExecutionContext
+    // 6. ToolContextManager - 工具上下文管理器
+    const toolContextManager = new ToolContextManager();
+    this.componentRegistry.register('toolContextManager', toolContextManager);
+
+    // 7. ThreadLifecycleCoordinator 依赖 ExecutionContext
     const lifecycleCoordinator = new ThreadLifecycleCoordinator(this);
     this.componentRegistry.register('lifecycleCoordinator', lifecycleCoordinator);
 
@@ -192,6 +197,15 @@ export class ExecutionContext {
   getErrorService(): any {
     this.ensureInitialized();
     return this.componentRegistry.getAny('errorService');
+  }
+
+  /**
+   * 获取 ToolContextManager
+   * @returns ToolContextManager 实例
+   */
+  getToolContextManager(): ToolContextManager {
+    this.ensureInitialized();
+    return this.componentRegistry.get('toolContextManager');
   }
 
   /**

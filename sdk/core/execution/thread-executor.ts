@@ -101,7 +101,9 @@ export class ThreadExecutor implements SubgraphContextFactory {
       undefined,
       undefined,
       this.executionContext.getThreadRegistry(),
-      this.interruptionDetector
+      this.interruptionDetector,
+      this.executionContext.getToolContextManager(),
+      this.executionContext.getToolService()
     );
   }
 

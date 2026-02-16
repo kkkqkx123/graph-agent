@@ -53,7 +53,9 @@ export class NodeExecutionCoordinator {
     private checkpointDependencies?: CheckpointDependencies,
     private globalCheckpointConfig?: any,
     private threadRegistry?: any,
-    private interruptionDetector?: InterruptionDetector
+    private interruptionDetector?: InterruptionDetector,
+    private toolContextManager?: any,
+    private toolService?: any
   ) { }
 
   /**
@@ -430,6 +432,19 @@ export class NodeExecutionCoordinator {
         eventManager: this.eventManager,
         conversationManager: threadContext.getConversationManager(),
         humanRelayHandler: this.humanRelayHandler
+      };
+    } else if (node.type === NodeType.ADD_TOOL) {
+      if (!this.toolContextManager || !this.toolService) {
+        throw new ExecutionError(
+          'ToolContextManager or ToolService is not provided',
+          node.id,
+          threadContext.getWorkflowId()
+        );
+      }
+      handlerContext = {
+        toolContextManager: this.toolContextManager,
+        toolService: this.toolService,
+        eventManager: this.eventManager
       };
     }
 

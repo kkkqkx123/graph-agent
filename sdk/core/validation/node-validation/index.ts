@@ -22,6 +22,7 @@ export { validateContextProcessorNode } from './context-processor-validator';
 export { validateRouteNode } from './route-validator';
 export { validateVariableNode } from './variable-validator';
 export { validateLLMNode } from './llm-validator';
+export { validateAddToolNode } from './add-tool-validator';
 export { validateUserInteractionNode } from './user-interaction-validator';
 export { validateSubgraphNode } from './subgraph-validator';
 export { validateStartFromTriggerNode } from './start-from-trigger-validator';
@@ -67,6 +68,9 @@ export function validateNodeByType(node: Node): Result<Node, ConfigurationValida
     case NodeType.LLM:
       const { validateLLMNode } = require('./llm-validator');
       return validateLLMNode(node);
+    case NodeType.ADD_TOOL:
+      const { validateAddToolNode } = require('./add-tool-validator');
+      return validateAddToolNode(node);
     case NodeType.USER_INTERACTION:
       const { validateUserInteractionNode } = require('./user-interaction-validator');
       return validateUserInteractionNode(node);

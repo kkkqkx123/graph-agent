@@ -68,7 +68,6 @@ export async function llmHandler(
       prompt: config.prompt || '',
       profileId: config.profileId,
       parameters: config.parameters || {},
-      dynamicTools: config.dynamicTools,
       maxToolCallsPerRequest: config.maxToolCallsPerRequest,
       stream: false
     };
@@ -87,7 +86,6 @@ export async function llmHandler(
         prompt: executionData.prompt,
         profileId: executionData.profileId,
         parameters: executionData.parameters,
-        dynamicTools: executionData.dynamicTools,
         maxToolCallsPerRequest: executionData.maxToolCallsPerRequest
       },
       context.conversationManager

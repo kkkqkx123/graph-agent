@@ -26,6 +26,8 @@ export enum NodeType {
   LLM = 'LLM',
   /** 工具节点。通过内部事件通知llm执行器。 */
   TOOL = 'TOOL',
+  /** 工具添加节点。用于动态添加工具到工具上下文。 */
+  ADD_TOOL = 'ADD_TOOL',
   /** 用户交互节点。用于触发展示前端用户交互。仅提供输入、输出渠道，不关心前端实现细节。 */
   USER_INTERACTION = 'USER_INTERACTION',
   /** 路由节点。用于根据条件路由到下一个节点。 */

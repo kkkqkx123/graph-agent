@@ -35,6 +35,7 @@ import { loopEndHandler } from './loop-end-handler';
 import { userInteractionHandler } from './user-interaction-handler';
 import { contextProcessorHandler } from './context-processor-handler';
 import { llmHandler } from './llm-handler';
+import { addToolHandler } from './add-tool-handler';
 import { startFromTriggerHandler } from './start-from-trigger-handler';
 import { continueFromTriggerHandler } from './continue-from-trigger-handler';
 
@@ -57,6 +58,7 @@ export const nodeHandlers: Record<NodeType, NodeHandler> = {
   [NodeType.USER_INTERACTION]: userInteractionHandler,
   [NodeType.CONTEXT_PROCESSOR]: contextProcessorHandler,
   [NodeType.LLM]: llmHandler,
+  [NodeType.ADD_TOOL]: addToolHandler,
   [NodeType.START_FROM_TRIGGER]: startFromTriggerHandler,
   [NodeType.CONTINUE_FROM_TRIGGER]: continueFromTriggerHandler
 } as Record<NodeType, NodeHandler>;
@@ -85,5 +87,6 @@ export { loopEndHandler } from './loop-end-handler';
 export { userInteractionHandler } from './user-interaction-handler';
 export { contextProcessorHandler } from './context-processor-handler';
 export { llmHandler } from './llm-handler';
+export { addToolHandler } from './add-tool-handler';
 export { startFromTriggerHandler } from './start-from-trigger-handler';
 export { continueFromTriggerHandler } from './continue-from-trigger-handler';
