@@ -10,3 +10,4 @@ export * from './human-relay-handler';
 export * from './subgraph-handler';
 export * from './triggered-subgraph-handler';
 export * from './checkpoint-handlers';
+export * from './tool-handlers';

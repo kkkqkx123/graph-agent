@@ -36,7 +36,7 @@ interface SubgraphContext {
  * - 纯状态管理，不包含业务逻辑
  *
  * 注意：
- * - 不再管理triggered子工作流执行状态（由ExecutionStateManager负责）
+ * - 不管理triggered子工作流执行状态（由TaskRegistry和Thread负责）
  */
 export class ExecutionState {
   /**

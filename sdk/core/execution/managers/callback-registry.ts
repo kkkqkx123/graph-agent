@@ -1,28 +1,46 @@
 /**
  * CallbackRegistry - 回调注册表
- * 
+ *
  * 职责：
  * - 管理动态子线程的回调函数
  * - 支持Promise-based回调和事件监听回调
  * - 提供回调的注册、触发和清理功能
- * 
+ *
  * 设计原则：
- * - 有状态多实例，由DynamicThreadManager持有
+ * - 有状态多实例，由Manager持有
  * - 线程安全的回调管理
  * - 支持事件监听器模式
+ * - 支持泛型，适配不同的结果类型
  */
 
-import type { CallbackInfo, DynamicThreadEvent, ExecutedThreadResult } from '../types/dynamic-thread.types';
+import type { CallbackInfo, DynamicThreadEvent } from '../types/dynamic-thread.types';
 import { DynamicThreadEventType } from '../types/dynamic-thread.types';
 
 /**
- * CallbackRegistry - 回调注册表
+ * 回调信息接口（泛型版本）
  */
-export class CallbackRegistry {
+export interface GenericCallbackInfo<T> {
+  /** 线程ID */
+  threadId: string;
+  /** Promise resolve函数 */
+  resolve: (value: T) => void;
+  /** Promise reject函数 */
+  reject: (error: Error) => void;
+  /** 事件监听器数组 */
+  eventListeners: Array<(event: DynamicThreadEvent) => void>;
+  /** 注册时间 */
+  registeredAt: number;
+}
+
+/**
+ * CallbackRegistry - 回调注册表（泛型版本）
+ * @typeparam T 执行结果类型
+ */
+export class CallbackRegistry<T = any> {
   /**
    * 回调映射
    */
-  private callbacks: Map<string, CallbackInfo> = new Map();
+  private callbacks: Map<string, GenericCallbackInfo<T>> = new Map();
 
   /**
    * 注册回调
@@ -33,14 +51,14 @@ export class CallbackRegistry {
    */
   registerCallback(
     threadId: string,
-    resolve: (value: ExecutedThreadResult) => void,
+    resolve: (value: T) => void,
     reject: (error: Error) => void
   ): boolean {
     if (this.callbacks.has(threadId)) {
       return false;
     }
 
-    const callbackInfo: CallbackInfo = {
+    const callbackInfo: GenericCallbackInfo<T> = {
       threadId,
       resolve,
       reject,
@@ -58,7 +76,7 @@ export class CallbackRegistry {
    * @param result 执行结果
    * @returns 是否触发成功
    */
-  triggerCallback(threadId: string, result: ExecutedThreadResult): boolean {
+  triggerCallback(threadId: string, result: T): boolean {
     const callbackInfo = this.callbacks.get(threadId);
     if (!callbackInfo) {
       return false;
@@ -189,7 +207,7 @@ export class CallbackRegistry {
    * @param threadId 线程ID
    * @returns 回调信息
    */
-  getCallback(threadId: string): CallbackInfo | undefined {
+  getCallback(threadId: string): GenericCallbackInfo<T> | undefined {
     return this.callbacks.get(threadId);
   }
 

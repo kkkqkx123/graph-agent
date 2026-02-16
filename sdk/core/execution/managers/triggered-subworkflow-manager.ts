@@ -26,6 +26,7 @@ import { ThreadPoolManager } from './thread-pool-manager';
 import { TaskQueueManager } from './task-queue-manager';
 import { ExecutionContext } from '../context/execution-context';
 import { ThreadBuilder } from '../thread-builder';
+import { CallbackRegistry } from './callback-registry';
 import {
   type TriggeredSubgraphTask,
   type ExecutedSubgraphResult,
@@ -73,6 +74,11 @@ export class TriggeredSubworkflowManager {
   private executionContext: ExecutionContext;
 
   /**
+   * 回调注册表
+   */
+  private callbackRegistry: CallbackRegistry<ExecutedSubgraphResult>;
+
+  /**
    * 构造函数
    * @param executionContext 执行上下文
    * @param config 配置
@@ -95,6 +101,9 @@ export class TriggeredSubworkflowManager {
       this.threadPoolManager,
       this.eventManager
     );
+
+    // 创建回调注册表
+    this.callbackRegistry = new CallbackRegistry<ExecutedSubgraphResult>();
   }
 
   /**
@@ -214,25 +223,91 @@ export class TriggeredSubworkflowManager {
     subgraphContext: ThreadContext,
     timeout: number
   ): TaskSubmissionResult {
-    const result = this.taskQueueManager.submitAsync(subgraphContext, timeout);
+    const threadId = subgraphContext.getThreadId();
 
-    // 异步执行完成后注销父子关系
-    this.taskQueueManager.submitSync(subgraphContext, timeout)
-      .then(() => {
-        this.unregisterParentChildRelationship(subgraphContext);
-        // 清理 TaskRegistry 中的任务记录
-        const taskInfo = this.taskRegistry.getAll().find(
-          t => t.threadContext.getThreadId() === subgraphContext.getThreadId()
-        );
-        if (taskInfo) {
-          this.taskRegistry.delete(taskInfo.id);
-        }
+    // 创建 Promise 并注册回调
+    const promise = new Promise<ExecutedSubgraphResult>((resolve, reject) => {
+      this.callbackRegistry.registerCallback(threadId, resolve, reject);
+    });
+
+    // 提交到任务队列（只提交一次）
+    const submissionResult = this.taskQueueManager.submitAsync(subgraphContext, timeout);
+
+    // 通过 Promise 处理完成和失败
+    promise
+      .then((result) => {
+        this.handleSubgraphCompleted(threadId, result);
       })
-      .catch(() => {
-        this.unregisterParentChildRelationship(subgraphContext);
+      .catch((error) => {
+        this.handleSubgraphFailed(threadId, error);
       });
 
-    return result;
+    return {
+      taskId: submissionResult.taskId,
+      status: submissionResult.status,
+      message: 'Triggered subgraph submitted',
+      submitTime: submissionResult.submitTime
+    };
+  }
+
+  /**
+   * 处理子工作流完成
+   * @param threadId 线程ID
+   * @param result 执行结果
+   */
+  private handleSubgraphCompleted(threadId: string, result: ExecutedSubgraphResult): void {
+    // 触发回调
+    this.callbackRegistry.triggerCallback(threadId, result);
+
+    // 触发完成事件
+    this.emitCompletedEvent(threadId, result);
+
+    // 注销父子关系
+    const subgraphContext = this.threadRegistry.get(threadId);
+    if (subgraphContext) {
+      this.unregisterParentChildRelationship(subgraphContext);
+    }
+
+    // 清理回调
+    this.callbackRegistry.cleanupCallback(threadId);
+
+    // 清理 TaskRegistry 中的任务记录
+    const taskInfo = this.taskRegistry.getAll().find(
+      t => t.threadContext.getThreadId() === threadId
+    );
+    if (taskInfo) {
+      this.taskRegistry.delete(taskInfo.id);
+    }
+  }
+
+  /**
+   * 处理子工作流失败
+   * @param threadId 线程ID
+   * @param error 错误信息
+   */
+  private handleSubgraphFailed(threadId: string, error: Error): void {
+    // 触发错误回调
+    this.callbackRegistry.triggerErrorCallback(threadId, error);
+
+    // 触发失败事件
+    this.emitFailedEvent(threadId, error);
+
+    // 注销父子关系
+    const subgraphContext = this.threadRegistry.get(threadId);
+    if (subgraphContext) {
+      this.unregisterParentChildRelationship(subgraphContext);
+    }
+
+    // 清理回调
+    this.callbackRegistry.cleanupCallback(threadId);
+
+    // 清理 TaskRegistry 中的任务记录
+    const taskInfo = this.taskRegistry.getAll().find(
+      t => t.threadContext.getThreadId() === threadId
+    );
+    if (taskInfo) {
+      this.taskRegistry.delete(taskInfo.id);
+    }
   }
 
   /**
@@ -267,6 +342,51 @@ export class TriggeredSubworkflowManager {
       subgraphId: task.subgraphId,
       triggerId: task.triggerId,
       input: task.input,
+      timestamp: now()
+    });
+  }
+
+  /**
+   * 触发完成事件
+   * @param threadId 线程ID
+   * @param result 执行结果
+   */
+  private async emitCompletedEvent(threadId: string, result: ExecutedSubgraphResult): Promise<void> {
+    const subgraphContext = this.threadRegistry.get(threadId);
+    if (!subgraphContext) {
+      return;
+    }
+
+    await this.eventManager.emit({
+      type: EventType.TRIGGERED_SUBGRAPH_COMPLETED,
+      threadId,
+      workflowId: subgraphContext.getWorkflowId(),
+      subgraphId: subgraphContext.getTriggeredSubworkflowId() || '',
+      triggerId: '',
+      output: subgraphContext.getOutput(),
+      executionTime: result.executionTime,
+      timestamp: now()
+    });
+  }
+
+  /**
+   * 触发失败事件
+   * @param threadId 线程ID
+   * @param error 错误信息
+   */
+  private async emitFailedEvent(threadId: string, error: Error): Promise<void> {
+    const subgraphContext = this.threadRegistry.get(threadId);
+    if (!subgraphContext) {
+      return;
+    }
+
+    await this.eventManager.emit({
+      type: EventType.TRIGGERED_SUBGRAPH_FAILED,
+      threadId,
+      workflowId: subgraphContext.getWorkflowId(),
+      subgraphId: subgraphContext.getTriggeredSubworkflowId() || '',
+      triggerId: '',
+      error: getErrorMessage(error),
       timestamp: now()
     });
   }
@@ -327,6 +447,9 @@ export class TriggeredSubworkflowManager {
    * 关闭管理器
    */
   async shutdown(): Promise<void> {
+    // 清理回调注册表
+    this.callbackRegistry.cleanup();
+
     // 等待所有任务完成
     await this.taskQueueManager.drain();
 

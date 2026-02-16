@@ -41,3 +41,7 @@ export { TaskRegistry } from "./task-registry";
 export { ThreadPoolManager } from "./thread-pool-manager";
 export { TaskQueueManager } from "./task-queue-manager";
 export { TriggeredSubworkflowManager } from "./triggered-subworkflow-manager";
+
+// 动态线程相关
+export { CallbackRegistry, type GenericCallbackInfo } from "./callback-registry";
+export { DynamicThreadManager } from "./dynamic-thread-manager";

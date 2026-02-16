@@ -15,3 +15,14 @@ export {
   type QueueTask,
   type ExecutorWrapper
 } from './task.types';
+
+export {
+  type DynamicThreadInfo,
+  type CallbackInfo,
+  type ExecutedThreadResult,
+  type ThreadSubmissionResult,
+  type DynamicThreadConfig,
+  type DynamicThreadEvent,
+  DynamicThreadEventType,
+  type CreateDynamicThreadRequest
+} from './dynamic-thread.types';

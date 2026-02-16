@@ -6,12 +6,12 @@ import { CallbackRegistry } from '../callback-registry';
 import type { ExecutedThreadResult } from '../../types/dynamic-thread.types';
 
 describe('CallbackRegistry', () => {
-  let callbackRegistry: CallbackRegistry;
+  let callbackRegistry: CallbackRegistry<ExecutedThreadResult>;
   let mockThreadContext: any;
   let mockThreadResult: any;
 
   beforeEach(() => {
-    callbackRegistry = new CallbackRegistry();
+    callbackRegistry = new CallbackRegistry<ExecutedThreadResult>();
     mockThreadContext = {
       getThreadId: jest.fn().mockReturnValue('thread-1'),
       getWorkflowId: jest.fn().mockReturnValue('workflow-1'),

@@ -98,3 +98,20 @@ export {
   createPermissionCheckHook,
   createAuditLoggingHook
 } from './hook-creators';
+
+// 回调工具函数
+export {
+  wrapCallback,
+  createTimeoutPromise,
+  withTimeout,
+  mergeResults,
+  validateCallback,
+  createSafeCallback,
+  executeCallbacks,
+  createRetryCallback,
+  createThrottledCallback,
+  createDebouncedCallback,
+  createOnceCallback,
+  createCachedCallback,
+  cleanupCache
+} from './callback-utils';

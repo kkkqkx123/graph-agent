@@ -79,7 +79,7 @@ export class DynamicThreadManager {
   /**
    * 回调注册表
    */
-  private callbackRegistry: CallbackRegistry;
+  private callbackRegistry: CallbackRegistry<ExecutedThreadResult>;
 
   /**
    * 动态线程映射
@@ -111,7 +111,7 @@ export class DynamicThreadManager {
     );
 
     // 创建回调注册表
-    this.callbackRegistry = new CallbackRegistry();
+    this.callbackRegistry = new CallbackRegistry<ExecutedThreadResult>();
   }
 
   /**
@@ -533,7 +533,7 @@ export class DynamicThreadManager {
    * 获取回调注册表
    * @returns 回调注册表
    */
-  getCallbackRegistry(): CallbackRegistry {
+  getCallbackRegistry(): CallbackRegistry<ExecutedThreadResult> {
     return this.callbackRegistry;
   }
 
