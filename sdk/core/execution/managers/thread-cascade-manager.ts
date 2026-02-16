@@ -15,6 +15,7 @@
 import type { ThreadRegistry } from '../../services/thread-registry';
 import { ThreadLifecycleManager } from './thread-lifecycle-manager';
 import type { EventManager } from '../../services/event-manager';
+import { TaskRegistry } from '../../services/task-registry';
 import { EventType } from '@modular-agent/types';
 import { SystemExecutionError } from '@modular-agent/types';
 import { getErrorOrNew } from '@modular-agent/common-utils';
@@ -30,8 +31,15 @@ export class ThreadCascadeManager {
   ) { }
 
   /**
+   * 获取全局任务注册表
+   */
+  private getTaskRegistry(): TaskRegistry {
+    return TaskRegistry.getInstance();
+  }
+
+  /**
    * 级联取消所有子线程
-   * 
+   *
    * @param parentThreadId 父线程ID
    * @returns 取消的子线程数量
    */
@@ -48,20 +56,32 @@ export class ThreadCascadeManager {
     }
 
     let cancelledCount = 0;
+    const taskRegistry = this.getTaskRegistry();
 
-    // 遍历所有子线程并取消
     for (const childThreadId of childThreadIds) {
       try {
-        const success = await this.cancelChildThread(childThreadId);
-        if (success) {
-          cancelledCount++;
+        // 通过 TaskRegistry 查找并取消任务
+        const taskInfo = taskRegistry.getByThreadId(childThreadId);
+
+        if (taskInfo) {
+          // 通过 TaskRegistry 路由到正确的管理器取消任务
+          const success = await taskRegistry.cancelTask(taskInfo.id);
+          if (success) {
+            cancelledCount++;
+          }
+        } else {
+          // 如果没有找到任务，尝试直接取消线程
+          const success = await this.cancelChildThread(childThreadId);
+          if (success) {
+            cancelledCount++;
+          }
         }
       } catch (error) {
         // 抛出系统执行错误，由 ErrorService 统一处理
         throw new SystemExecutionError(
           `Failed to cancel child thread ${childThreadId}`,
           'ThreadCascadeManager',
-          'cancelChildThreads',
+          'cascadeCancel',
           undefined,
           undefined,
           { childThreadId, originalError: getErrorOrNew(error) }

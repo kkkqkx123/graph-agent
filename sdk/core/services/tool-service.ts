@@ -8,7 +8,7 @@
 
 import type { Tool } from '@modular-agent/types';
 import { ToolType } from '@modular-agent/types';
-import { NotFoundError, ToolError, ToolNotFoundError } from '@modular-agent/types';
+import { ToolError, ToolNotFoundError } from '@modular-agent/types';
 import { ToolRegistry } from '../tools/tool-registry';
 import type { IToolExecutor } from '@modular-agent/types';
 import type { ToolExecutionOptions, ToolExecutionResult } from '@modular-agent/types';
@@ -160,11 +160,11 @@ class ToolService {
     const result = await tryCatchAsync(
       executor.execute(tool, parameters, options, threadId)
     );
-    
+
     if (result.isErr()) {
       return err(this.convertToToolError(result.error, toolId, tool.type, parameters));
     }
-    
+
     return ok(result.value);
   }
 
@@ -188,14 +188,14 @@ class ToolService {
         this.execute(exec.toolId, exec.parameters, exec.options, threadId)
       )
     );
-    
+
     // 检查是否有错误
     for (const result of results) {
       if (result.isErr()) {
         return result; // 返回第一个错误
       }
     }
-    
+
     // 全部成功，返回结果数组
     const successResults = results as Array<{ isOk(): true; value: ToolExecutionResult }>;
     return ok(successResults.map(r => r.value));
@@ -271,9 +271,9 @@ class ToolService {
     if (error instanceof ToolError) {
       return error;
     }
-    
+
     const message = error instanceof Error ? error.message : String(error);
-    
+
     return new ToolError(
       `Tool execution failed: ${message}`,
       toolId,

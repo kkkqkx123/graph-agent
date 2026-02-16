@@ -14,19 +14,17 @@
  * - 提供任务状态查询和取消功能
  */
 
-import type { ID } from '@modular-agent/types';
 import { ThreadContext } from '../context/thread-context';
 import type { EventManager } from '../../services/event-manager';
 import type { ThreadRegistry } from '../../services/thread-registry';
 import { EventType } from '@modular-agent/types';
-import type { ThreadResult } from '@modular-agent/types';
 import { now, getErrorMessage } from '@modular-agent/common-utils';
-import { TaskRegistry } from './task-registry';
+import { TaskRegistry, type TaskManager } from '../../services/task-registry';
 import { ThreadPoolManager } from './thread-pool-manager';
 import { TaskQueueManager } from './task-queue-manager';
 import { ExecutionContext } from '../context/execution-context';
 import { ThreadBuilder } from '../thread-builder';
-import { CallbackRegistry } from './callback-registry';
+import { CallbackManager } from './callback-manager';
 import {
   type TriggeredSubgraphTask,
   type ExecutedSubgraphResult,
@@ -37,9 +35,9 @@ import {
 /**
  * TriggeredSubworkflowManager - 触发子工作流管理器
  */
-export class TriggeredSubworkflowManager {
+export class TriggeredSubworkflowManager implements TaskManager {
   /**
-   * 任务注册表
+   * 全局任务注册表
    */
   private taskRegistry: TaskRegistry;
 
@@ -74,9 +72,9 @@ export class TriggeredSubworkflowManager {
   private executionContext: ExecutionContext;
 
   /**
-   * 回调注册表
+   * 回调管理器
    */
-  private callbackRegistry: CallbackRegistry<ExecutedSubgraphResult>;
+  private callbackManager: CallbackManager<ExecutedSubgraphResult>;
 
   /**
    * 构造函数
@@ -89,8 +87,8 @@ export class TriggeredSubworkflowManager {
     this.threadRegistry = executionContext.getThreadRegistry();
     this.threadBuilder = new ThreadBuilder(executionContext.getWorkflowRegistry(), executionContext);
 
-    // 创建任务注册表
-    this.taskRegistry = new TaskRegistry();
+    // 获取全局任务注册表
+    this.taskRegistry = TaskRegistry.getInstance();
 
     // 创建线程池管理器
     this.threadPoolManager = new ThreadPoolManager(executionContext, config);
@@ -102,8 +100,8 @@ export class TriggeredSubworkflowManager {
       this.eventManager
     );
 
-    // 创建回调注册表
-    this.callbackRegistry = new CallbackRegistry<ExecutedSubgraphResult>();
+    // 创建回调管理器
+    this.callbackManager = new CallbackManager<ExecutedSubgraphResult>();
   }
 
   /**
@@ -182,10 +180,10 @@ export class TriggeredSubworkflowManager {
     const subgraphContext = await this.threadBuilder.build(task.subgraphId, {
       input
     });
-    
+
     // 设置线程类型为 TRIGGERED
     subgraphContext.setThreadType('TRIGGERED');
-    
+
     return subgraphContext;
   }
 
@@ -199,8 +197,11 @@ export class TriggeredSubworkflowManager {
     subgraphContext: ThreadContext,
     timeout: number
   ): Promise<ExecutedSubgraphResult> {
+    // 先注册任务到全局 TaskRegistry
+    const taskId = this.taskRegistry.register(subgraphContext, this, timeout);
+
     try {
-      const result = await this.taskQueueManager.submitSync(subgraphContext, timeout);
+      const result = await this.taskQueueManager.submitSync(taskId, subgraphContext, timeout);
 
       // 注销父子关系
       this.unregisterParentChildRelationship(subgraphContext);
@@ -225,13 +226,16 @@ export class TriggeredSubworkflowManager {
   ): TaskSubmissionResult {
     const threadId = subgraphContext.getThreadId();
 
+    // 先注册任务到全局 TaskRegistry
+    const taskId = this.taskRegistry.register(subgraphContext, this, timeout);
+
     // 创建 Promise 并注册回调
     const promise = new Promise<ExecutedSubgraphResult>((resolve, reject) => {
-      this.callbackRegistry.registerCallback(threadId, resolve, reject);
+      this.callbackManager.registerCallback(threadId, resolve, reject);
     });
 
     // 提交到任务队列（只提交一次）
-    const submissionResult = this.taskQueueManager.submitAsync(subgraphContext, timeout);
+    const submissionResult = this.taskQueueManager.submitAsync(taskId, subgraphContext, timeout);
 
     // 通过 Promise 处理完成和失败
     promise
@@ -257,7 +261,7 @@ export class TriggeredSubworkflowManager {
    */
   private handleSubgraphCompleted(threadId: string, result: ExecutedSubgraphResult): void {
     // 触发回调
-    this.callbackRegistry.triggerCallback(threadId, result);
+    this.callbackManager.triggerCallback(threadId, result);
 
     // 触发完成事件
     this.emitCompletedEvent(threadId, result);
@@ -269,7 +273,7 @@ export class TriggeredSubworkflowManager {
     }
 
     // 清理回调
-    this.callbackRegistry.cleanupCallback(threadId);
+    this.callbackManager.cleanupCallback(threadId);
 
     // 清理 TaskRegistry 中的任务记录
     const taskInfo = this.taskRegistry.getAll().find(
@@ -287,7 +291,7 @@ export class TriggeredSubworkflowManager {
    */
   private handleSubgraphFailed(threadId: string, error: Error): void {
     // 触发错误回调
-    this.callbackRegistry.triggerErrorCallback(threadId, error);
+    this.callbackManager.triggerErrorCallback(threadId, error);
 
     // 触发失败事件
     this.emitFailedEvent(threadId, error);
@@ -299,7 +303,7 @@ export class TriggeredSubworkflowManager {
     }
 
     // 清理回调
-    this.callbackRegistry.cleanupCallback(threadId);
+    this.callbackManager.cleanupCallback(threadId);
 
     // 清理 TaskRegistry 中的任务记录
     const taskInfo = this.taskRegistry.getAll().find(
@@ -392,7 +396,7 @@ export class TriggeredSubworkflowManager {
   }
 
   /**
-   * 查询任务状态
+   * 查询任务状态（实现 TaskManager 接口）
    * @param taskId 任务ID
    * @returns 任务信息
    */
@@ -401,11 +405,11 @@ export class TriggeredSubworkflowManager {
   }
 
   /**
-   * 取消任务
+   * 取消任务（实现 TaskManager 接口）
    * @param taskId 任务ID
    * @returns 是否取消成功
    */
-  cancelTask(taskId: string): boolean {
+  async cancelTask(taskId: string): Promise<boolean> {
     const success = this.taskQueueManager.cancelTask(taskId);
 
     if (success) {
@@ -447,8 +451,8 @@ export class TriggeredSubworkflowManager {
    * 关闭管理器
    */
   async shutdown(): Promise<void> {
-    // 清理回调注册表
-    this.callbackRegistry.cleanup();
+    // 清理回调管理器
+    this.callbackManager.cleanup();
 
     // 等待所有任务完成
     await this.taskQueueManager.drain();

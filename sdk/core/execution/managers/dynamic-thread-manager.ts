@@ -17,14 +17,13 @@
 import type { ThreadContext } from '../context/thread-context';
 import type { EventManager } from '../../services/event-manager';
 import type { ThreadRegistry } from '../../services/thread-registry';
-import type { ThreadResult } from '@modular-agent/types';
 import { now, getErrorMessage } from '@modular-agent/common-utils';
-import { TaskRegistry } from './task-registry';
+import { TaskRegistry, type TaskManager } from '../../services/task-registry';
 import { ThreadPoolManager } from './thread-pool-manager';
 import { TaskQueueManager } from './task-queue-manager';
 import { ExecutionContext } from '../context/execution-context';
 import { ThreadBuilder } from '../thread-builder';
-import { CallbackRegistry } from './callback-registry';
+import { CallbackManager } from './callback-manager';
 import {
   type DynamicThreadInfo,
   type ExecutedThreadResult,
@@ -40,9 +39,9 @@ import { EventType } from '@modular-agent/types';
 /**
  * DynamicThreadManager - 动态线程管理器
  */
-export class DynamicThreadManager {
+export class DynamicThreadManager implements TaskManager {
   /**
-   * 任务注册表
+   * 全局任务注册表
    */
   private taskRegistry: TaskRegistry;
 
@@ -77,9 +76,9 @@ export class DynamicThreadManager {
   private executionContext: ExecutionContext;
 
   /**
-   * 回调注册表
+   * 回调管理器
    */
-  private callbackRegistry: CallbackRegistry<ExecutedThreadResult>;
+  private callbackManager: CallbackManager<ExecutedThreadResult>;
 
   /**
    * 动态线程映射
@@ -97,8 +96,8 @@ export class DynamicThreadManager {
     this.threadRegistry = executionContext.getThreadRegistry();
     this.threadBuilder = new ThreadBuilder(executionContext.getWorkflowRegistry(), executionContext);
 
-    // 创建任务注册表
-    this.taskRegistry = new TaskRegistry();
+    // 获取全局任务注册表
+    this.taskRegistry = TaskRegistry.getInstance();
 
     // 创建线程池管理器
     this.threadPoolManager = new ThreadPoolManager(executionContext, config);
@@ -110,8 +109,8 @@ export class DynamicThreadManager {
       this.eventManager
     );
 
-    // 创建回调注册表
-    this.callbackRegistry = new CallbackRegistry<ExecutedThreadResult>();
+    // 创建回调管理器
+    this.callbackManager = new CallbackManager<ExecutedThreadResult>();
   }
 
   /**
@@ -218,15 +217,18 @@ export class DynamicThreadManager {
   ): Promise<ExecutedThreadResult> {
     const threadId = childThreadContext.getThreadId();
 
+    // 先注册任务到全局 TaskRegistry
+    const taskId = this.taskRegistry.register(childThreadContext, this, timeout);
+
     try {
       // 创建 Promise
       const promise = new Promise<ExecutedThreadResult>((resolve, reject) => {
         // 注册回调
-        this.callbackRegistry.registerCallback(threadId, resolve, reject);
+        this.callbackManager.registerCallback(threadId, resolve, reject);
       });
 
       // 提交到任务队列
-      this.taskQueueManager.submitSync(childThreadContext, timeout);
+      this.taskQueueManager.submitSync(taskId, childThreadContext, timeout);
 
       // 等待完成
       const result = await promise;
@@ -235,7 +237,7 @@ export class DynamicThreadManager {
       this.unregisterParentChildRelationship(childThreadContext);
 
       // 清理回调
-      this.callbackRegistry.cleanupCallback(threadId);
+      this.callbackManager.cleanupCallback(threadId);
 
       return result;
     } catch (error) {
@@ -243,7 +245,7 @@ export class DynamicThreadManager {
       this.unregisterParentChildRelationship(childThreadContext);
 
       // 清理回调
-      this.callbackRegistry.cleanupCallback(threadId);
+      this.callbackManager.cleanupCallback(threadId);
 
       throw error;
     }
@@ -261,14 +263,17 @@ export class DynamicThreadManager {
   ): ThreadSubmissionResult {
     const threadId = childThreadContext.getThreadId();
 
+    // 先注册任务到全局 TaskRegistry
+    const taskId = this.taskRegistry.register(childThreadContext, this, timeout);
+
     // 创建 Promise
     const promise = new Promise<ExecutedThreadResult>((resolve, reject) => {
       // 注册回调
-      this.callbackRegistry.registerCallback(threadId, resolve, reject);
+      this.callbackManager.registerCallback(threadId, resolve, reject);
     });
 
     // 提交到任务队列
-    const submissionResult = this.taskQueueManager.submitAsync(childThreadContext, timeout);
+    const submissionResult = this.taskQueueManager.submitAsync(taskId, childThreadContext, timeout);
 
     // 异步执行完成后处理
     promise
@@ -304,7 +309,7 @@ export class DynamicThreadManager {
     }
 
     // 触发回调
-    this.callbackRegistry.triggerCallback(threadId, result);
+    this.callbackManager.triggerCallback(threadId, result);
 
     // 触发完成事件
     this.emitCompletedEvent(threadId, result);
@@ -316,7 +321,7 @@ export class DynamicThreadManager {
     }
 
     // 清理回调
-    this.callbackRegistry.cleanupCallback(threadId);
+    this.callbackManager.cleanupCallback(threadId);
   }
 
   /**
@@ -334,7 +339,7 @@ export class DynamicThreadManager {
     }
 
     // 触发错误回调
-    this.callbackRegistry.triggerErrorCallback(threadId, error);
+    this.callbackManager.triggerErrorCallback(threadId, error);
 
     // 触发失败事件
     this.emitFailedEvent(threadId, error);
@@ -346,7 +351,25 @@ export class DynamicThreadManager {
     }
 
     // 清理回调
-    this.callbackRegistry.cleanupCallback(threadId);
+    this.callbackManager.cleanupCallback(threadId);
+  }
+
+  /**
+   * 查询任务状态（实现 TaskManager 接口）
+   * @param taskId 任务ID
+   * @returns 任务信息
+   */
+  getTaskStatus(taskId: string) {
+    return this.taskRegistry.get(taskId);
+  }
+
+  /**
+   * 取消任务（实现 TaskManager 接口）
+   * @param taskId 任务ID
+   * @returns 是否取消成功
+   */
+  async cancelTask(taskId: string): Promise<boolean> {
+    return this.cancelDynamicThread(taskId);
   }
 
   /**
@@ -375,7 +398,7 @@ export class DynamicThreadManager {
       }
 
       // 清理回调
-      this.callbackRegistry.cleanupCallback(threadId);
+      this.callbackManager.cleanupCallback(threadId);
     }
 
     return success;
@@ -397,7 +420,7 @@ export class DynamicThreadManager {
    * @returns 是否添加成功
    */
   addEventListener(threadId: string, listener: (event: DynamicThreadEvent) => void): boolean {
-    return this.callbackRegistry.addEventListener(threadId, listener);
+    return this.callbackManager.addEventListener(threadId, listener);
   }
 
   /**
@@ -407,7 +430,7 @@ export class DynamicThreadManager {
    * @returns 是否移除成功
    */
   removeEventListener(threadId: string, listener: (event: DynamicThreadEvent) => void): boolean {
-    return this.callbackRegistry.removeEventListener(threadId, listener);
+    return this.callbackManager.removeEventListener(threadId, listener);
   }
 
   /**
@@ -515,8 +538,8 @@ export class DynamicThreadManager {
    * 关闭管理器
    */
   shutdown(): void {
-    // 清理回调注册表
-    this.callbackRegistry.cleanup();
+    // 清理回调管理器
+    this.callbackManager.cleanup();
 
     // 清理动态线程映射
     this.dynamicThreads.clear();
@@ -530,11 +553,11 @@ export class DynamicThreadManager {
   }
 
   /**
-   * 获取回调注册表
-   * @returns 回调注册表
+   * 获取回调管理器
+   * @returns 回调管理器
    */
-  getCallbackRegistry(): CallbackRegistry<ExecutedThreadResult> {
-    return this.callbackRegistry;
+  getCallbackManager(): CallbackManager<ExecutedThreadResult> {
+    return this.callbackManager;
   }
 
   /**

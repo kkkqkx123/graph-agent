@@ -9,20 +9,18 @@
  *
  * 测试覆盖的调用链：
  * - create-thread-handler → DynamicThreadManager → TaskQueueManager → ThreadPoolManager
- * - CallbackRegistry 回调机制
+ * - CallbackManager 回调机制
  * - 父子线程关系管理
  * - 事件触发机制
  */
 
 import { DynamicThreadManager } from '../managers/dynamic-thread-manager';
-import { CallbackRegistry } from '../managers/callback-registry';
+import { CallbackManager } from '../managers/callback-manager';
 import type { ExecutedThreadResult } from '../types/dynamic-thread.types';
 import { ThreadContext } from '../context/thread-context';
 import { ExecutionContext } from '../context/execution-context';
-import { ThreadType } from '@modular-agent/types';
 import { TaskStatus } from '../types/task.types';
 import type { CreateDynamicThreadRequest } from '../types/dynamic-thread.types';
-import { generateId } from '@modular-agent/common-utils';
 
 // Mock 依赖
 class MockEventManager {
@@ -31,15 +29,15 @@ class MockEventManager {
 
 class MockThreadRegistry {
   private threads: Map<string, ThreadContext> = new Map();
-  
+
   register(threadContext: ThreadContext) {
     this.threads.set(threadContext.getThreadId(), threadContext);
   }
-  
+
   get(threadId: string) {
     return this.threads.get(threadId);
   }
-  
+
   unregister(threadId: string) {
     this.threads.delete(threadId);
   }
@@ -47,11 +45,11 @@ class MockThreadRegistry {
 
 class MockWorkflowRegistry {
   private workflows: Map<string, any> = new Map();
-  
+
   register(workflowId: string, workflow: any) {
     this.workflows.set(workflowId, workflow);
   }
-  
+
   get(workflowId: string) {
     return this.workflows.get(workflowId);
   }
@@ -67,11 +65,11 @@ class MockLLMExecutor {
 
 class MockGraphRegistry {
   private graphs: Map<string, any> = new Map();
-  
+
   register(workflowId: string, graph: any) {
     this.graphs.set(workflowId, graph);
   }
-  
+
   get(workflowId: string) {
     return this.graphs.get(workflowId);
   }
@@ -222,13 +220,13 @@ describe('动态线程创建与回调机制集成测试', () => {
 
   describe('回调机制', () => {
     it('应该正确注册和触发回调', async () => {
-      const callbackRegistry = new CallbackRegistry<ExecutedThreadResult>();
+      const callbackManager = new CallbackManager<ExecutedThreadResult>();
       const threadId = 'test-thread-1';
       const resolve = jest.fn();
       const reject = jest.fn();
 
       // 注册回调
-      const registered = callbackRegistry.registerCallback(threadId, resolve, reject);
+      const registered = callbackManager.registerCallback(threadId, resolve, reject);
       expect(registered).toBe(true);
 
       // 触发回调
@@ -237,27 +235,27 @@ describe('动态线程创建与回调机制集成测试', () => {
         threadResult: {} as any,
         executionTime: 100
       };
-      const triggered = callbackRegistry.triggerCallback(threadId, mockResult);
+      const triggered = callbackManager.triggerCallback(threadId, mockResult);
 
       expect(triggered).toBe(true);
       expect(resolve).toHaveBeenCalledWith(mockResult);
-      expect(callbackRegistry.hasCallback(threadId)).toBe(false);
+      expect(callbackManager.hasCallback(threadId)).toBe(false);
     });
 
     it('应该支持事件监听器', async () => {
-      const callbackRegistry = new CallbackRegistry<ExecutedThreadResult>();
+      const callbackManager = new CallbackManager<ExecutedThreadResult>();
       const threadId = 'test-thread-1';
       const listener = jest.fn();
 
-      callbackRegistry.registerCallback(threadId, jest.fn(), jest.fn());
-      callbackRegistry.addEventListener(threadId, listener);
+      callbackManager.registerCallback(threadId, jest.fn(), jest.fn());
+      callbackManager.addEventListener(threadId, listener);
 
       const mockResult = {
         threadContext: {} as any,
         threadResult: {} as any,
         executionTime: 100
       };
-      callbackRegistry.triggerCallback(threadId, mockResult);
+      callbackManager.triggerCallback(threadId, mockResult);
 
       expect(listener).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -296,14 +294,14 @@ describe('动态线程创建与回调机制集成测试', () => {
     });
 
     it('应该正确触发错误回调', async () => {
-      const callbackRegistry = new CallbackRegistry<ExecutedThreadResult>();
+      const callbackManager = new CallbackManager<ExecutedThreadResult>();
       const threadId = 'test-thread-1';
       const resolve = jest.fn();
       const reject = jest.fn();
       const error = new Error('Test error');
 
-      callbackRegistry.registerCallback(threadId, resolve, reject);
-      callbackRegistry.triggerErrorCallback(threadId, error);
+      callbackManager.registerCallback(threadId, resolve, reject);
+      callbackManager.triggerErrorCallback(threadId, error);
 
       expect(reject).toHaveBeenCalledWith(error);
       expect(resolve).not.toHaveBeenCalled();
@@ -381,19 +379,19 @@ describe('动态线程创建与回调机制集成测试', () => {
 
   describe('清理和关闭', () => {
     it('应该正确清理资源', () => {
-      const callbackRegistry = dynamicThreadManager.getCallbackRegistry();
-      
-      // 注册一些回调
-      callbackRegistry.registerCallback('thread-1', jest.fn(), jest.fn());
-      callbackRegistry.registerCallback('thread-2', jest.fn(), jest.fn());
+      const callbackManager = dynamicThreadManager.getCallbackManager();
 
-      expect(callbackRegistry.size()).toBe(2);
+      // 注册一些回调
+      callbackManager.registerCallback('thread-1', jest.fn(), jest.fn());
+      callbackManager.registerCallback('thread-2', jest.fn(), jest.fn());
+
+      expect(callbackManager.size()).toBe(2);
 
       // 关闭管理器
       dynamicThreadManager.shutdown();
 
       // 验证回调被清理
-      expect(callbackRegistry.size()).toBe(0);
+      expect(callbackManager.size()).toBe(0);
     });
   });
 });

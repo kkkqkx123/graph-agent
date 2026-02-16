@@ -27,6 +27,7 @@ import { GraphRegistry } from '../../services/graph-registry';
 import { GlobalMessageStorage } from '../../services/global-message-storage';
 import { NodeTemplateRegistry } from '../../services/node-template-registry';
 import { TriggerTemplateRegistry } from '../../services/trigger-template-registry';
+import { TaskRegistry } from '../../services/task-registry';
 
 /**
  * 单例注册表
@@ -62,6 +63,9 @@ export class SingletonRegistry {
     }
     if (!this.has('toolService')) {
       this.register('toolService', new ToolService());
+    }
+    if (!this.has('taskRegistry')) {
+      this.register('taskRegistry', TaskRegistry.getInstance());
     }
 
     // 第二层：依赖第一层的服务
@@ -224,5 +228,12 @@ export class SingletonRegistry {
    */
   static getTriggerTemplateRegistry(): TriggerTemplateRegistry {
     return this.get<TriggerTemplateRegistry>('triggerTemplateRegistry');
+  }
+
+  /**
+   * 获取 TaskRegistry 实例
+   */
+  static getTaskRegistry(): TaskRegistry {
+    return this.get<TaskRegistry>('taskRegistry');
   }
 }

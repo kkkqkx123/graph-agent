@@ -37,11 +37,10 @@ export { InterruptionManager, type InterruptionType } from "./interruption-manag
 export { InterruptionDetector, InterruptionDetectorImpl } from "./interruption-detector";
 
 // 任务队列和线程池相关
-export { TaskRegistry } from "./task-registry";
 export { ThreadPoolManager } from "./thread-pool-manager";
 export { TaskQueueManager } from "./task-queue-manager";
 export { TriggeredSubworkflowManager } from "./triggered-subworkflow-manager";
 
 // 动态线程相关
-export { CallbackRegistry, type GenericCallbackInfo } from "./callback-registry";
+export { CallbackManager, type GenericCallbackInfo } from "./callback-manager";
 export { DynamicThreadManager } from "./dynamic-thread-manager";

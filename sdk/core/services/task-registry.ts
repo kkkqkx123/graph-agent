@@ -1,30 +1,59 @@
 /**
- * TaskRegistry - 任务注册表
+ * TaskRegistry - 任务注册表（全局单例服务）
  * 
  * 职责：
  * - 存储和管理所有任务的信息
  * - 跟踪任务状态、执行结果、时间戳等
  * - 提供任务查询和清理功能
+ * - 路由任务操作到正确的管理器
  * 
  * 设计原则：
- * - 有状态多实例，由TriggeredSubworkflowManager持有
+ * - 全局单例，通过 SingletonRegistry 访问
  * - 线程安全的任务信息管理
  * - 支持定期清理过期任务
+ * - 提供管理器路由功能
  */
 
 import { generateId } from '@modular-agent/common-utils';
-import type { ThreadContext } from '../context/thread-context';
+import type { ThreadContext } from '../execution/context/thread-context';
 import type { ThreadResult } from '@modular-agent/types';
-import { TaskStatus, type TaskInfo } from '../types/task.types';
+import { TaskStatus, type TaskInfo } from '../execution/types/task.types';
 
 /**
- * TaskRegistry - 任务注册表
+ * 任务管理器接口
+ * 所有需要管理任务的管理器都必须实现此接口
+ */
+export interface TaskManager {
+  /**
+   * 取消任务
+   * @param taskId 任务ID
+   * @returns 是否取消成功
+   */
+  cancelTask(taskId: string): Promise<boolean>;
+
+  /**
+   * 获取任务状态
+   * @param taskId 任务ID
+   * @returns 任务信息
+   */
+  getTaskStatus(taskId: string): TaskInfo | null;
+}
+
+/**
+ * TaskRegistry - 任务注册表（全局单例）
  */
 export class TaskRegistry {
+  private static instance: TaskRegistry;
+  
   /**
    * 任务映射
    */
   private tasks: Map<string, TaskInfo> = new Map();
+
+  /**
+   * 任务ID到管理器的映射
+   */
+  private taskManagers: Map<string, TaskManager> = new Map();
 
   /**
    * 统计计数器
@@ -36,13 +65,30 @@ export class TaskRegistry {
     timeout: 0
   };
 
+  private constructor() {}
+
+  /**
+   * 获取单例实例
+   */
+  static getInstance(): TaskRegistry {
+    if (!TaskRegistry.instance) {
+      TaskRegistry.instance = new TaskRegistry();
+    }
+    return TaskRegistry.instance;
+  }
+
   /**
    * 注册任务
    * @param threadContext 线程上下文
+   * @param manager 任务管理器
    * @param timeout 超时时间（毫秒）
    * @returns 任务ID
    */
-  register(threadContext: ThreadContext, timeout?: number): string {
+  register(
+    threadContext: ThreadContext, 
+    manager: TaskManager,
+    timeout?: number
+  ): string {
     const taskId = generateId();
     
     const taskInfo: TaskInfo = {
@@ -54,6 +100,7 @@ export class TaskRegistry {
     };
 
     this.tasks.set(taskId, taskInfo);
+    this.taskManagers.set(taskId, manager);
     
     return taskId;
   }
@@ -127,9 +174,30 @@ export class TaskRegistry {
   }
 
   /**
+   * 取消任务（路由到正确的管理器）
+   * @param taskId 任务ID
+   * @returns 是否取消成功
+   */
+  async cancelTask(taskId: string): Promise<boolean> {
+    const manager = this.taskManagers.get(taskId);
+    if (!manager) {
+      return false;
+    }
+
+    const success = await manager.cancelTask(taskId);
+    
+    if (success) {
+      this.updateStatusToCancelled(taskId);
+      this.taskManagers.delete(taskId);
+    }
+
+    return success;
+  }
+
+  /**
    * 获取任务信息
    * @param taskId 任务ID
-   * @returns 任务信息，如果不存在则返回null
+   * @returns 任务信息
    */
   get(taskId: string): TaskInfo | null {
     return this.tasks.get(taskId) || null;
@@ -162,11 +230,21 @@ export class TaskRegistry {
   }
 
   /**
+   * 根据线程ID获取任务
+   * @param threadId 线程ID
+   * @returns 任务信息
+   */
+  getByThreadId(threadId: string): TaskInfo | null {
+    return this.getAll().find(task => task.threadContext.getThreadId() === threadId) || null;
+  }
+
+  /**
    * 删除任务
    * @param taskId 任务ID
    * @returns 是否删除成功
    */
   delete(taskId: string): boolean {
+    this.taskManagers.delete(taskId);
     return this.tasks.delete(taskId);
   }
 
@@ -190,6 +268,7 @@ export class TaskRegistry {
         (now - taskInfo.completeTime) > retentionTime
       ) {
         this.tasks.delete(taskId);
+        this.taskManagers.delete(taskId);
         cleanedCount++;
       }
     }
@@ -220,6 +299,7 @@ export class TaskRegistry {
    */
   clear(): void {
     this.tasks.clear();
+    this.taskManagers.clear();
     this.stats = {
       completed: 0,
       failed: 0,

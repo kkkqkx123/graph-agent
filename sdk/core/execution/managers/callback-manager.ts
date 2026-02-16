@@ -1,5 +1,5 @@
 /**
- * CallbackRegistry - 回调注册表
+ * CallbackManager - 回调管理器
  *
  * 职责：
  * - 管理动态子线程的回调函数
@@ -33,10 +33,10 @@ export interface GenericCallbackInfo<T> {
 }
 
 /**
- * CallbackRegistry - 回调注册表（泛型版本）
+ * CallbackManager - 回调管理器（泛型版本）
  * @typeparam T 执行结果类型
  */
-export class CallbackRegistry<T = any> {
+export class CallbackManager<T = any> {
   /**
    * 回调映射
    */

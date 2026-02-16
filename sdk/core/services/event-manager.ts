@@ -10,7 +10,7 @@
  */
 
 import type { BaseEvent, EventType, EventListener } from '@modular-agent/types';
-import { ValidationError, ExecutionError, RuntimeValidationError } from '@modular-agent/types';
+import { ExecutionError, RuntimeValidationError } from '@modular-agent/types';
 import { now, generateId, getErrorOrNew } from '@modular-agent/common-utils';
 
 /**
@@ -332,16 +332,16 @@ class EventManager {
         if (filter && !filter(event)) {
           return; // 不匹配，继续等待
         }
-        
+
         // 标记为已解决
         resolved = true;
-        
+
         // 清理资源
         if (timeoutId) {
           clearTimeout(timeoutId);
         }
         this.off(eventType, listener);
-        
+
         // 解析Promise
         resolve(event);
       };

@@ -1,17 +1,17 @@
 /**
- * CallbackRegistry 单元测试
+ * CallbackManager 单元测试
  */
 
-import { CallbackRegistry } from '../callback-registry';
+import { CallbackManager } from '../callback-manager';
 import type { ExecutedThreadResult } from '../../types/dynamic-thread.types';
 
-describe('CallbackRegistry', () => {
-  let callbackRegistry: CallbackRegistry<ExecutedThreadResult>;
+describe('CallbackManager', () => {
+  let callbackManager: CallbackManager<ExecutedThreadResult>;
   let mockThreadContext: any;
   let mockThreadResult: any;
 
   beforeEach(() => {
-    callbackRegistry = new CallbackRegistry<ExecutedThreadResult>();
+    callbackManager = new CallbackManager<ExecutedThreadResult>();
     mockThreadContext = {
       getThreadId: jest.fn().mockReturnValue('thread-1'),
       getWorkflowId: jest.fn().mockReturnValue('workflow-1'),
@@ -30,10 +30,10 @@ describe('CallbackRegistry', () => {
       const reject = jest.fn();
       const threadId = 'thread-1';
 
-      const result = callbackRegistry.registerCallback(threadId, resolve, reject);
+      const result = callbackManager.registerCallback(threadId, resolve, reject);
 
       expect(result).toBe(true);
-      expect(callbackRegistry.hasCallback(threadId)).toBe(true);
+      expect(callbackManager.hasCallback(threadId)).toBe(true);
     });
 
     it('不应该重复注册相同线程的回调', () => {
@@ -41,8 +41,8 @@ describe('CallbackRegistry', () => {
       const reject = jest.fn();
       const threadId = 'thread-1';
 
-      const firstResult = callbackRegistry.registerCallback(threadId, resolve, reject);
-      const secondResult = callbackRegistry.registerCallback(threadId, resolve, reject);
+      const firstResult = callbackManager.registerCallback(threadId, resolve, reject);
+      const secondResult = callbackManager.registerCallback(threadId, resolve, reject);
 
       expect(firstResult).toBe(true);
       expect(secondResult).toBe(false);
@@ -54,9 +54,9 @@ describe('CallbackRegistry', () => {
       const threadId = 'thread-1';
       const beforeTime = Date.now();
 
-      callbackRegistry.registerCallback(threadId, resolve, reject);
+      callbackManager.registerCallback(threadId, resolve, reject);
 
-      const callbackInfo = callbackRegistry.getCallback(threadId);
+      const callbackInfo = callbackManager.getCallback(threadId);
       expect(callbackInfo?.registeredAt).toBeGreaterThanOrEqual(beforeTime);
       expect(callbackInfo?.registeredAt).toBeLessThanOrEqual(Date.now());
     });
@@ -73,13 +73,13 @@ describe('CallbackRegistry', () => {
         executionTime: 100
       };
 
-      callbackRegistry.registerCallback(threadId, resolve, reject);
-      const success = callbackRegistry.triggerCallback(threadId, result);
+      callbackManager.registerCallback(threadId, resolve, reject);
+      const success = callbackManager.triggerCallback(threadId, result);
 
       expect(success).toBe(true);
       expect(resolve).toHaveBeenCalledWith(result);
       expect(reject).not.toHaveBeenCalled();
-      expect(callbackRegistry.hasCallback(threadId)).toBe(false);
+      expect(callbackManager.hasCallback(threadId)).toBe(false);
     });
 
     it('应该通知所有事件监听器', async () => {
@@ -94,11 +94,11 @@ describe('CallbackRegistry', () => {
         executionTime: 100
       };
 
-      callbackRegistry.registerCallback(threadId, resolve, reject);
-      callbackRegistry.addEventListener(threadId, listener1);
-      callbackRegistry.addEventListener(threadId, listener2);
+      callbackManager.registerCallback(threadId, resolve, reject);
+      callbackManager.addEventListener(threadId, listener1);
+      callbackManager.addEventListener(threadId, listener2);
 
-      callbackRegistry.triggerCallback(threadId, result);
+      callbackManager.triggerCallback(threadId, result);
 
       expect(listener1).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -123,11 +123,11 @@ describe('CallbackRegistry', () => {
         executionTime: 100
       };
 
-      callbackRegistry.registerCallback(threadId, resolve, reject);
-      callbackRegistry.addEventListener(threadId, listener1);
-      callbackRegistry.addEventListener(threadId, listener2);
+      callbackManager.registerCallback(threadId, resolve, reject);
+      callbackManager.addEventListener(threadId, listener1);
+      callbackManager.addEventListener(threadId, listener2);
 
-      callbackRegistry.triggerCallback(threadId, result);
+      callbackManager.triggerCallback(threadId, result);
 
       expect(listener1).toHaveBeenCalled();
       expect(listener2).toHaveBeenCalled();
@@ -141,7 +141,7 @@ describe('CallbackRegistry', () => {
         executionTime: 100
       };
 
-      const success = callbackRegistry.triggerCallback('non-existent', result);
+      const success = callbackManager.triggerCallback('non-existent', result);
 
       expect(success).toBe(false);
     });
@@ -154,13 +154,13 @@ describe('CallbackRegistry', () => {
       const threadId = 'thread-1';
       const error = new Error('Test error');
 
-      callbackRegistry.registerCallback(threadId, resolve, reject);
-      const success = callbackRegistry.triggerErrorCallback(threadId, error);
+      callbackManager.registerCallback(threadId, resolve, reject);
+      const success = callbackManager.triggerErrorCallback(threadId, error);
 
       expect(success).toBe(true);
       expect(reject).toHaveBeenCalledWith(error);
       expect(resolve).not.toHaveBeenCalled();
-      expect(callbackRegistry.hasCallback(threadId)).toBe(false);
+      expect(callbackManager.hasCallback(threadId)).toBe(false);
     });
 
     it('应该通知所有事件监听器错误事件', async () => {
@@ -170,10 +170,10 @@ describe('CallbackRegistry', () => {
       const listener = jest.fn();
       const error = new Error('Test error');
 
-      callbackRegistry.registerCallback(threadId, resolve, reject);
-      callbackRegistry.addEventListener(threadId, listener);
+      callbackManager.registerCallback(threadId, resolve, reject);
+      callbackManager.addEventListener(threadId, listener);
 
-      callbackRegistry.triggerErrorCallback(threadId, error);
+      callbackManager.triggerErrorCallback(threadId, error);
 
       expect(listener).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -192,15 +192,15 @@ describe('CallbackRegistry', () => {
       const threadId = 'thread-1';
       const listener = jest.fn();
 
-      callbackRegistry.registerCallback(threadId, resolve, reject);
-      const success = callbackRegistry.addEventListener(threadId, listener);
+      callbackManager.registerCallback(threadId, resolve, reject);
+      const success = callbackManager.addEventListener(threadId, listener);
 
       expect(success).toBe(true);
     });
 
     it('应该返回false当回调不存在时', () => {
       const listener = jest.fn();
-      const success = callbackRegistry.addEventListener('non-existent', listener);
+      const success = callbackManager.addEventListener('non-existent', listener);
 
       expect(success).toBe(false);
     });
@@ -213,12 +213,12 @@ describe('CallbackRegistry', () => {
       const listener2 = jest.fn();
       const listener3 = jest.fn();
 
-      callbackRegistry.registerCallback(threadId, resolve, reject);
-      callbackRegistry.addEventListener(threadId, listener1);
-      callbackRegistry.addEventListener(threadId, listener2);
-      callbackRegistry.addEventListener(threadId, listener3);
+      callbackManager.registerCallback(threadId, resolve, reject);
+      callbackManager.addEventListener(threadId, listener1);
+      callbackManager.addEventListener(threadId, listener2);
+      callbackManager.addEventListener(threadId, listener3);
 
-      const callbackInfo = callbackRegistry.getCallback(threadId);
+      const callbackInfo = callbackManager.getCallback(threadId);
       expect(callbackInfo?.eventListeners).toHaveLength(3);
     });
   });
@@ -230,12 +230,12 @@ describe('CallbackRegistry', () => {
       const threadId = 'thread-1';
       const listener = jest.fn();
 
-      callbackRegistry.registerCallback(threadId, resolve, reject);
-      callbackRegistry.addEventListener(threadId, listener);
-      const success = callbackRegistry.removeEventListener(threadId, listener);
+      callbackManager.registerCallback(threadId, resolve, reject);
+      callbackManager.addEventListener(threadId, listener);
+      const success = callbackManager.removeEventListener(threadId, listener);
 
       expect(success).toBe(true);
-      const callbackInfo = callbackRegistry.getCallback(threadId);
+      const callbackInfo = callbackManager.getCallback(threadId);
       expect(callbackInfo?.eventListeners).toHaveLength(0);
     });
 
@@ -245,8 +245,8 @@ describe('CallbackRegistry', () => {
       const threadId = 'thread-1';
       const listener = jest.fn();
 
-      callbackRegistry.registerCallback(threadId, resolve, reject);
-      const success = callbackRegistry.removeEventListener(threadId, listener);
+      callbackManager.registerCallback(threadId, resolve, reject);
+      const success = callbackManager.removeEventListener(threadId, listener);
 
       expect(success).toBe(false);
     });
@@ -258,13 +258,13 @@ describe('CallbackRegistry', () => {
       const reject = jest.fn();
       const threadId = 'thread-1';
 
-      callbackRegistry.registerCallback(threadId, resolve, reject);
+      callbackManager.registerCallback(threadId, resolve, reject);
 
-      expect(callbackRegistry.hasCallback(threadId)).toBe(true);
+      expect(callbackManager.hasCallback(threadId)).toBe(true);
     });
 
     it('应该返回false当回调不存在时', () => {
-      expect(callbackRegistry.hasCallback('non-existent')).toBe(false);
+      expect(callbackManager.hasCallback('non-existent')).toBe(false);
     });
   });
 
@@ -274,8 +274,8 @@ describe('CallbackRegistry', () => {
       const reject = jest.fn();
       const threadId = 'thread-1';
 
-      callbackRegistry.registerCallback(threadId, resolve, reject);
-      const callbackInfo = callbackRegistry.getCallback(threadId);
+      callbackManager.registerCallback(threadId, resolve, reject);
+      const callbackInfo = callbackManager.getCallback(threadId);
 
       expect(callbackInfo).toBeDefined();
       expect(callbackInfo?.threadId).toBe(threadId);
@@ -284,7 +284,7 @@ describe('CallbackRegistry', () => {
     });
 
     it('应该返回undefined当回调不存在时', () => {
-      const callbackInfo = callbackRegistry.getCallback('non-existent');
+      const callbackInfo = callbackManager.getCallback('non-existent');
 
       expect(callbackInfo).toBeUndefined();
     });
@@ -297,14 +297,14 @@ describe('CallbackRegistry', () => {
       const resolve2 = jest.fn();
       const reject2 = jest.fn();
 
-      callbackRegistry.registerCallback('thread-1', resolve1, reject1);
-      callbackRegistry.registerCallback('thread-2', resolve2, reject2);
+      callbackManager.registerCallback('thread-1', resolve1, reject1);
+      callbackManager.registerCallback('thread-2', resolve2, reject2);
 
-      callbackRegistry.cleanup();
+      callbackManager.cleanup();
 
       expect(reject1).toHaveBeenCalled();
       expect(reject2).toHaveBeenCalled();
-      expect(callbackRegistry.size()).toBe(0);
+      expect(callbackManager.size()).toBe(0);
     });
 
     it('应该处理清理时的错误', () => {
@@ -313,11 +313,11 @@ describe('CallbackRegistry', () => {
         throw new Error('Cleanup error');
       });
 
-      callbackRegistry.registerCallback('thread-1', resolve, reject);
+      callbackManager.registerCallback('thread-1', resolve, reject);
 
       // 不应该抛出错误
-      expect(() => callbackRegistry.cleanup()).not.toThrow();
-      expect(callbackRegistry.size()).toBe(0);
+      expect(() => callbackManager.cleanup()).not.toThrow();
+      expect(callbackManager.size()).toBe(0);
     });
   });
 
@@ -328,20 +328,20 @@ describe('CallbackRegistry', () => {
       const resolve2 = jest.fn();
       const reject2 = jest.fn();
 
-      callbackRegistry.registerCallback('thread-1', resolve1, reject1);
-      callbackRegistry.registerCallback('thread-2', resolve2, reject2);
+      callbackManager.registerCallback('thread-1', resolve1, reject1);
+      callbackManager.registerCallback('thread-2', resolve2, reject2);
 
-      const success = callbackRegistry.cleanupCallback('thread-1');
+      const success = callbackManager.cleanupCallback('thread-1');
 
       expect(success).toBe(true);
       expect(reject1).toHaveBeenCalled();
       expect(reject2).not.toHaveBeenCalled();
-      expect(callbackRegistry.hasCallback('thread-1')).toBe(false);
-      expect(callbackRegistry.hasCallback('thread-2')).toBe(true);
+      expect(callbackManager.hasCallback('thread-1')).toBe(false);
+      expect(callbackManager.hasCallback('thread-2')).toBe(true);
     });
 
     it('应该返回false当回调不存在时', () => {
-      const success = callbackRegistry.cleanupCallback('non-existent');
+      const success = callbackManager.cleanupCallback('non-existent');
 
       expect(success).toBe(false);
     });
@@ -349,23 +349,23 @@ describe('CallbackRegistry', () => {
 
   describe('size', () => {
     it('应该返回回调数量', () => {
-      expect(callbackRegistry.size()).toBe(0);
+      expect(callbackManager.size()).toBe(0);
 
-      callbackRegistry.registerCallback('thread-1', jest.fn(), jest.fn());
-      expect(callbackRegistry.size()).toBe(1);
+      callbackManager.registerCallback('thread-1', jest.fn(), jest.fn());
+      expect(callbackManager.size()).toBe(1);
 
-      callbackRegistry.registerCallback('thread-2', jest.fn(), jest.fn());
-      expect(callbackRegistry.size()).toBe(2);
+      callbackManager.registerCallback('thread-2', jest.fn(), jest.fn());
+      expect(callbackManager.size()).toBe(2);
     });
   });
 
   describe('getThreadIds', () => {
     it('应该返回所有线程ID', () => {
-      callbackRegistry.registerCallback('thread-1', jest.fn(), jest.fn());
-      callbackRegistry.registerCallback('thread-2', jest.fn(), jest.fn());
-      callbackRegistry.registerCallback('thread-3', jest.fn(), jest.fn());
+      callbackManager.registerCallback('thread-1', jest.fn(), jest.fn());
+      callbackManager.registerCallback('thread-2', jest.fn(), jest.fn());
+      callbackManager.registerCallback('thread-3', jest.fn(), jest.fn());
 
-      const threadIds = callbackRegistry.getThreadIds();
+      const threadIds = callbackManager.getThreadIds();
 
       expect(threadIds).toHaveLength(3);
       expect(threadIds).toContain('thread-1');
@@ -374,7 +374,7 @@ describe('CallbackRegistry', () => {
     });
 
     it('应该返回空数组当没有回调时', () => {
-      const threadIds = callbackRegistry.getThreadIds();
+      const threadIds = callbackManager.getThreadIds();
 
       expect(threadIds).toEqual([]);
     });

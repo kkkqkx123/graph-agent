@@ -2,27 +2,36 @@
  * TaskRegistry 单元测试
  */
 
-import { TaskRegistry } from '../task-registry';
-import { TaskStatus } from '../../types/task.types';
-import { ThreadContext } from '../../context/thread-context';
+import { TaskRegistry, type TaskManager } from '../task-registry';
+import { TaskStatus } from '../../execution/types/task.types';
+import { ThreadContext } from '../../execution/context/thread-context';
 
 describe('TaskRegistry', () => {
   let taskRegistry: TaskRegistry;
   let mockThreadContext: jest.Mocked<ThreadContext>;
+  let mockManager: jest.Mocked<TaskManager>;
 
   beforeEach(() => {
-    taskRegistry = new TaskRegistry();
+    // 重置单例
+    (TaskRegistry as any).instance = undefined;
+    
+    taskRegistry = TaskRegistry.getInstance();
     mockThreadContext = {
       getThreadId: jest.fn().mockReturnValue('thread-1'),
       getWorkflowId: jest.fn().mockReturnValue('workflow-1'),
       getOutput: jest.fn().mockReturnValue({}),
       getTriggeredSubworkflowId: jest.fn().mockReturnValue('subgraph-1')
     } as any;
+
+    mockManager = {
+      cancelTask: jest.fn().mockResolvedValue(true),
+      getTaskStatus: jest.fn()
+    };
   });
 
   describe('register', () => {
     it('应该成功注册任务并返回任务ID', () => {
-      const taskId = taskRegistry.register(mockThreadContext);
+      const taskId = taskRegistry.register(mockThreadContext, mockManager);
       
       expect(taskId).toBeDefined();
       expect(typeof taskId).toBe('string');
@@ -30,7 +39,7 @@ describe('TaskRegistry', () => {
     });
 
     it('应该设置任务状态为 QUEUED', () => {
-      const taskId = taskRegistry.register(mockThreadContext);
+      const taskId = taskRegistry.register(mockThreadContext, mockManager);
       const taskInfo = taskRegistry.get(taskId);
       
       expect(taskInfo?.status).toBe(TaskStatus.QUEUED);
@@ -38,7 +47,7 @@ describe('TaskRegistry', () => {
 
     it('应该记录提交时间', () => {
       const beforeTime = Date.now();
-      const taskId = taskRegistry.register(mockThreadContext);
+      const taskId = taskRegistry.register(mockThreadContext, mockManager);
       const taskInfo = taskRegistry.get(taskId);
       const afterTime = Date.now();
       
@@ -49,7 +58,7 @@ describe('TaskRegistry', () => {
 
   describe('updateStatusToRunning', () => {
     it('应该更新任务状态为 RUNNING', () => {
-      const taskId = taskRegistry.register(mockThreadContext);
+      const taskId = taskRegistry.register(mockThreadContext, mockManager);
       taskRegistry.updateStatusToRunning(taskId);
       
       const taskInfo = taskRegistry.get(taskId);
@@ -60,7 +69,7 @@ describe('TaskRegistry', () => {
 
   describe('updateStatusToCompleted', () => {
     it('应该更新任务状态为 COMPLETED', () => {
-      const taskId = taskRegistry.register(mockThreadContext);
+      const taskId = taskRegistry.register(mockThreadContext, mockManager);
       const mockResult = { threadId: 'thread-1', output: {}, executionTime: 100 } as any;
       
       taskRegistry.updateStatusToCompleted(taskId, mockResult);
@@ -74,7 +83,7 @@ describe('TaskRegistry', () => {
 
   describe('updateStatusToFailed', () => {
     it('应该更新任务状态为 FAILED', () => {
-      const taskId = taskRegistry.register(mockThreadContext);
+      const taskId = taskRegistry.register(mockThreadContext, mockManager);
       const mockError = new Error('Test error');
       
       taskRegistry.updateStatusToFailed(taskId, mockError);
@@ -88,7 +97,7 @@ describe('TaskRegistry', () => {
 
   describe('updateStatusToCancelled', () => {
     it('应该更新任务状态为 CANCELLED', () => {
-      const taskId = taskRegistry.register(mockThreadContext);
+      const taskId = taskRegistry.register(mockThreadContext, mockManager);
       
       taskRegistry.updateStatusToCancelled(taskId);
       
@@ -100,7 +109,7 @@ describe('TaskRegistry', () => {
 
   describe('updateStatusToTimeout', () => {
     it('应该更新任务状态为 TIMEOUT', () => {
-      const taskId = taskRegistry.register(mockThreadContext);
+      const taskId = taskRegistry.register(mockThreadContext, mockManager);
       
       taskRegistry.updateStatusToTimeout(taskId);
       
@@ -112,7 +121,7 @@ describe('TaskRegistry', () => {
 
   describe('get', () => {
     it('应该返回任务信息', () => {
-      const taskId = taskRegistry.register(mockThreadContext);
+      const taskId = taskRegistry.register(mockThreadContext, mockManager);
       const taskInfo = taskRegistry.get(taskId);
       
       expect(taskInfo).toBeDefined();
@@ -127,7 +136,7 @@ describe('TaskRegistry', () => {
 
   describe('has', () => {
     it('应该检查任务是否存在', () => {
-      const taskId = taskRegistry.register(mockThreadContext);
+      const taskId = taskRegistry.register(mockThreadContext, mockManager);
       
       expect(taskRegistry.has(taskId)).toBe(true);
       expect(taskRegistry.has('non-existent-task')).toBe(false);
@@ -136,8 +145,8 @@ describe('TaskRegistry', () => {
 
   describe('getAll', () => {
     it('应该返回所有任务', () => {
-      const taskId1 = taskRegistry.register(mockThreadContext);
-      const taskId2 = taskRegistry.register(mockThreadContext);
+      const taskId1 = taskRegistry.register(mockThreadContext, mockManager);
+      const taskId2 = taskRegistry.register(mockThreadContext, mockManager);
       
       const allTasks = taskRegistry.getAll();
       
@@ -149,8 +158,8 @@ describe('TaskRegistry', () => {
 
   describe('getByStatus', () => {
     it('应该根据状态返回任务', () => {
-      const taskId1 = taskRegistry.register(mockThreadContext);
-      const taskId2 = taskRegistry.register(mockThreadContext);
+      const taskId1 = taskRegistry.register(mockThreadContext, mockManager);
+      const taskId2 = taskRegistry.register(mockThreadContext, mockManager);
       
       taskRegistry.updateStatusToRunning(taskId1);
       taskRegistry.updateStatusToCompleted(taskId2, {} as any);
@@ -165,9 +174,25 @@ describe('TaskRegistry', () => {
     });
   });
 
+  describe('getByThreadId', () => {
+    it('应该根据线程ID返回任务', () => {
+      const taskId = taskRegistry.register(mockThreadContext, mockManager);
+      
+      const taskInfo = taskRegistry.getByThreadId('thread-1');
+      
+      expect(taskInfo).toBeDefined();
+      expect(taskInfo?.id).toBe(taskId);
+    });
+
+    it('对于不存在的线程ID应该返回 null', () => {
+      const taskInfo = taskRegistry.getByThreadId('non-existent-thread');
+      expect(taskInfo).toBeNull();
+    });
+  });
+
   describe('delete', () => {
     it('应该删除任务', () => {
-      const taskId = taskRegistry.register(mockThreadContext);
+      const taskId = taskRegistry.register(mockThreadContext, mockManager);
       
       expect(taskRegistry.delete(taskId)).toBe(true);
       expect(taskRegistry.has(taskId)).toBe(false);
@@ -178,10 +203,37 @@ describe('TaskRegistry', () => {
     });
   });
 
+  describe('cancelTask', () => {
+    it('应该通过管理器取消任务', async () => {
+      const taskId = taskRegistry.register(mockThreadContext, mockManager);
+      
+      const success = await taskRegistry.cancelTask(taskId);
+      
+      expect(success).toBe(true);
+      expect(mockManager.cancelTask).toHaveBeenCalledWith(taskId);
+      expect(taskRegistry.has(taskId)).toBe(false);
+    });
+
+    it('取消失败时不应该删除任务', async () => {
+      mockManager.cancelTask.mockResolvedValue(false);
+      const taskId = taskRegistry.register(mockThreadContext, mockManager);
+      
+      const success = await taskRegistry.cancelTask(taskId);
+      
+      expect(success).toBe(false);
+      expect(taskRegistry.has(taskId)).toBe(true);
+    });
+
+    it('对于不存在的任务应该返回 false', async () => {
+      const success = await taskRegistry.cancelTask('non-existent-task');
+      expect(success).toBe(false);
+    });
+  });
+
   describe('cleanup', () => {
     it('应该清理过期的已完成任务', () => {
-      const taskId1 = taskRegistry.register(mockThreadContext);
-      const taskId2 = taskRegistry.register(mockThreadContext);
+      const taskId1 = taskRegistry.register(mockThreadContext, mockManager);
+      const taskId2 = taskRegistry.register(mockThreadContext, mockManager);
       
       taskRegistry.updateStatusToCompleted(taskId1, {} as any);
       taskRegistry.updateStatusToCompleted(taskId2, {} as any);
@@ -198,7 +250,7 @@ describe('TaskRegistry', () => {
     });
 
     it('不应该清理运行中的任务', () => {
-      const taskId = taskRegistry.register(mockThreadContext);
+      const taskId = taskRegistry.register(mockThreadContext, mockManager);
       taskRegistry.updateStatusToRunning(taskId);
       
       const cleanedCount = taskRegistry.cleanup();
@@ -210,9 +262,9 @@ describe('TaskRegistry', () => {
 
   describe('getStats', () => {
     it('应该返回正确的统计信息', () => {
-      const taskId1 = taskRegistry.register(mockThreadContext);
-      const taskId2 = taskRegistry.register(mockThreadContext);
-      const taskId3 = taskRegistry.register(mockThreadContext);
+      const taskId1 = taskRegistry.register(mockThreadContext, mockManager);
+      const taskId2 = taskRegistry.register(mockThreadContext, mockManager);
+      const taskId3 = taskRegistry.register(mockThreadContext, mockManager);
       
       taskRegistry.updateStatusToRunning(taskId1);
       taskRegistry.updateStatusToCompleted(taskId2, {} as any);
@@ -230,8 +282,8 @@ describe('TaskRegistry', () => {
 
   describe('clear', () => {
     it('应该清空所有任务', () => {
-      taskRegistry.register(mockThreadContext);
-      taskRegistry.register(mockThreadContext);
+      taskRegistry.register(mockThreadContext, mockManager);
+      taskRegistry.register(mockThreadContext, mockManager);
       
       taskRegistry.clear();
       
@@ -244,11 +296,20 @@ describe('TaskRegistry', () => {
     it('应该返回任务数量', () => {
       expect(taskRegistry.size()).toBe(0);
       
-      taskRegistry.register(mockThreadContext);
+      taskRegistry.register(mockThreadContext, mockManager);
       expect(taskRegistry.size()).toBe(1);
       
-      taskRegistry.register(mockThreadContext);
+      taskRegistry.register(mockThreadContext, mockManager);
       expect(taskRegistry.size()).toBe(2);
+    });
+  });
+
+  describe('getInstance', () => {
+    it('应该返回相同的单例实例', () => {
+      const instance1 = TaskRegistry.getInstance();
+      const instance2 = TaskRegistry.getInstance();
+      
+      expect(instance1).toBe(instance2);
     });
   });
 });

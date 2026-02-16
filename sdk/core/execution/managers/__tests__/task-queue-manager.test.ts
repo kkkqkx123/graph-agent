@@ -3,7 +3,7 @@
  */
 
 import { TaskQueueManager } from '../task-queue-manager';
-import { TaskRegistry } from '../task-registry';
+import { TaskRegistry, type TaskManager } from '../../../services/task-registry';
 import { ThreadPoolManager } from '../thread-pool-manager';
 import { TaskStatus } from '../../types/task.types';
 import { ThreadContext } from '../../context/thread-context';
@@ -16,8 +16,12 @@ describe('TaskQueueManager', () => {
   let mockExecutionContext: jest.Mocked<ExecutionContext>;
   let mockEventManager: any;
   let mockThreadContext: jest.Mocked<ThreadContext>;
+  let mockManager: jest.Mocked<TaskManager>;
 
   beforeEach(() => {
+    // 重置单例
+    (TaskRegistry as any).instance = undefined;
+    
     mockEventManager = {
       emit: jest.fn().mockResolvedValue(undefined)
     };
@@ -40,7 +44,12 @@ describe('TaskQueueManager', () => {
       getTriggeredSubworkflowId: jest.fn().mockReturnValue('subgraph-1')
     } as any;
 
-    taskRegistry = new TaskRegistry();
+    mockManager = {
+      cancelTask: jest.fn().mockResolvedValue(true),
+      getTaskStatus: jest.fn()
+    };
+
+    taskRegistry = TaskRegistry.getInstance();
     threadPoolManager = new ThreadPoolManager(mockExecutionContext, {
       minExecutors: 1,
       maxExecutors: 2,
@@ -68,7 +77,9 @@ describe('TaskQueueManager', () => {
       jest.spyOn(threadPoolManager, 'allocateExecutor').mockResolvedValue(mockExecutor as any);
       jest.spyOn(threadPoolManager, 'releaseExecutor').mockImplementation(() => {});
 
-      const result = await taskQueueManager.submitSync(mockThreadContext);
+      // 先注册任务
+      const taskId = taskRegistry.register(mockThreadContext, mockManager);
+      const result = await taskQueueManager.submitSync(taskId, mockThreadContext);
 
       expect(result).toBeDefined();
       expect(result.subgraphContext).toBe(mockThreadContext);
@@ -84,7 +95,8 @@ describe('TaskQueueManager', () => {
       jest.spyOn(threadPoolManager, 'allocateExecutor').mockResolvedValue(mockExecutor as any);
       jest.spyOn(threadPoolManager, 'releaseExecutor').mockImplementation(() => {});
 
-      await expect(taskQueueManager.submitSync(mockThreadContext)).rejects.toThrow('Execution failed');
+      const taskId = taskRegistry.register(mockThreadContext, mockManager);
+      await expect(taskQueueManager.submitSync(taskId, mockThreadContext)).rejects.toThrow('Execution failed');
     });
   });
 
@@ -101,10 +113,11 @@ describe('TaskQueueManager', () => {
       jest.spyOn(threadPoolManager, 'allocateExecutor').mockResolvedValue(mockExecutor as any);
       jest.spyOn(threadPoolManager, 'releaseExecutor').mockImplementation(() => {});
 
-      const result = taskQueueManager.submitAsync(mockThreadContext);
+      const taskId = taskRegistry.register(mockThreadContext, mockManager);
+      const result = taskQueueManager.submitAsync(taskId, mockThreadContext);
 
       expect(result).toBeDefined();
-      expect(result.taskId).toBeDefined();
+      expect(result.taskId).toBe(taskId);
       expect(result.status).toBe(TaskStatus.QUEUED);
       expect(result.message).toBe('Task submitted successfully');
       expect(result.submitTime).toBeGreaterThan(0);
@@ -120,7 +133,8 @@ describe('TaskQueueManager', () => {
 
       jest.spyOn(threadPoolManager, 'allocateExecutor').mockImplementation(() => new Promise(() => {})); // 永不分配
 
-      const result = taskQueueManager.submitAsync(mockThreadContext);
+      const taskId = taskRegistry.register(mockThreadContext, mockManager);
+      const result = taskQueueManager.submitAsync(taskId, mockThreadContext);
       const success = taskQueueManager.cancelTask(result.taskId);
 
       expect(success).toBe(true);
@@ -138,7 +152,8 @@ describe('TaskQueueManager', () => {
       jest.spyOn(threadPoolManager, 'allocateExecutor').mockResolvedValue(mockExecutor as any);
       jest.spyOn(threadPoolManager, 'releaseExecutor').mockImplementation(() => {});
 
-      const result = taskQueueManager.submitAsync(mockThreadContext);
+      const taskId = taskRegistry.register(mockThreadContext, mockManager);
+      const result = taskQueueManager.submitAsync(taskId, mockThreadContext);
       
       // 等待任务开始执行
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -168,7 +183,8 @@ describe('TaskQueueManager', () => {
       jest.spyOn(threadPoolManager, 'releaseExecutor').mockImplementation(() => {});
 
       // 提交一个任务
-      taskQueueManager.submitAsync(mockThreadContext);
+      const taskId = taskRegistry.register(mockThreadContext, mockManager);
+      taskQueueManager.submitAsync(taskId, mockThreadContext);
 
       const stats = taskQueueManager.getQueueStats();
 
@@ -194,7 +210,8 @@ describe('TaskQueueManager', () => {
       jest.spyOn(threadPoolManager, 'releaseExecutor').mockImplementation(() => {});
 
       // 提交一个任务
-      taskQueueManager.submitAsync(mockThreadContext);
+      const taskId = taskRegistry.register(mockThreadContext, mockManager);
+      taskQueueManager.submitAsync(taskId, mockThreadContext);
 
       // 等待队列排空
       await taskQueueManager.drain();
@@ -210,8 +227,10 @@ describe('TaskQueueManager', () => {
       // 提交多个任务但不执行
       jest.spyOn(threadPoolManager, 'allocateExecutor').mockImplementation(() => new Promise(() => {}));
 
-      taskQueueManager.submitAsync(mockThreadContext);
-      taskQueueManager.submitAsync(mockThreadContext);
+      const taskId1 = taskRegistry.register(mockThreadContext, mockManager);
+      const taskId2 = taskRegistry.register(mockThreadContext, mockManager);
+      taskQueueManager.submitAsync(taskId1, mockThreadContext);
+      taskQueueManager.submitAsync(taskId2, mockThreadContext);
 
       taskQueueManager.clear();
 

@@ -14,7 +14,7 @@
  */
 
 import { ThreadExecutor } from '../thread-executor';
-import { TaskRegistry } from './task-registry';
+import { TaskRegistry } from '../../services/task-registry';
 import { ThreadPoolManager } from './thread-pool-manager';
 import type { EventManager } from '../../services/event-manager';
 import { EventType } from '@modular-agent/types';
@@ -75,14 +75,13 @@ export class TaskQueueManager {
 
   /**
    * 提交同步任务
+   * @param taskId 任务ID（已由管理器注册）
    * @param threadContext 线程上下文
    * @param timeout 超时时间（毫秒）
    * @returns 执行结果
    */
-  async submitSync(threadContext: ThreadContext, timeout?: number): Promise<ExecutedSubgraphResult> {
+  async submitSync(taskId: string, threadContext: ThreadContext, timeout?: number): Promise<ExecutedSubgraphResult> {
     return new Promise((resolve, reject) => {
-      const taskId = this.taskRegistry.register(threadContext, timeout);
-      
       const queueTask: QueueTask = {
         taskId,
         threadContext,
@@ -101,13 +100,12 @@ export class TaskQueueManager {
 
   /**
    * 提交异步任务
+   * @param taskId 任务ID（已由管理器注册）
    * @param threadContext 线程上下文
    * @param timeout 超时时间（毫秒）
    * @returns 任务提交结果
    */
-  submitAsync(threadContext: ThreadContext, timeout?: number): TaskSubmissionResult {
-    const taskId = this.taskRegistry.register(threadContext, timeout);
-    
+  submitAsync(taskId: string, threadContext: ThreadContext, timeout?: number): TaskSubmissionResult {
     const queueTask: QueueTask = {
       taskId,
       threadContext,
