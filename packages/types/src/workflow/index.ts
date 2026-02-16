@@ -4,7 +4,7 @@
  */
 
 // 导出枚举类型
-export * from './enums';
+export * from './type';
 
 // 导出工作流定义
 export * from './definition';

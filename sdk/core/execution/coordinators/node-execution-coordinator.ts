@@ -126,11 +126,11 @@ export class NodeExecutionCoordinator {
 
     // 触发相应的事件
     if (type === 'PAUSE') {
-      threadContext.setStatus(ThreadStatus.PAUSED);
+      threadContext.setStatus('PAUSED');
       const pausedEvent = buildThreadPausedEvent(threadContext.thread);
       await emit(this.eventManager, pausedEvent);
     } else if (type === 'STOP') {
-      threadContext.setStatus(ThreadStatus.CANCELLED);
+      threadContext.setStatus('CANCELLED');
       threadContext.setEndTime(now());
       const cancelledEvent = buildThreadCancelledEvent(threadContext.thread, 'user_requested');
       await emit(this.eventManager, cancelledEvent);
@@ -172,7 +172,7 @@ export class NodeExecutionCoordinator {
     try {
       // 步骤1：触发节点开始事件
       const nodeStartedEvent: NodeStartedEvent = {
-        type: EventType.NODE_STARTED,
+        type: 'NODE_STARTED',
         threadId: threadContext.getThreadId(),
         workflowId: threadContext.getWorkflowId(),
         nodeId,
@@ -227,7 +227,7 @@ export class NodeExecutionCoordinator {
             node,
             checkpointDependencies: this.checkpointDependencies
           },
-          HookType.BEFORE_EXECUTE,
+          'BEFORE_EXECUTE',
           (event) => this.eventManager.emit(event)
         );
       }
@@ -247,7 +247,7 @@ export class NodeExecutionCoordinator {
             result: nodeResult,
             checkpointDependencies: this.checkpointDependencies
           },
-          HookType.AFTER_EXECUTE,
+          'AFTER_EXECUTE',
           (event) => this.eventManager.emit(event)
         );
       }
@@ -293,7 +293,7 @@ export class NodeExecutionCoordinator {
       // 步骤8：触发节点完成事件
       if (nodeResult.status === 'COMPLETED') {
         const nodeCompletedEvent: NodeCompletedEvent = {
-          type: EventType.NODE_COMPLETED,
+          type: 'NODE_COMPLETED',
           threadId: threadContext.getThreadId(),
           workflowId: threadContext.getWorkflowId(),
           nodeId,
@@ -304,7 +304,7 @@ export class NodeExecutionCoordinator {
         await this.eventManager.emit(nodeCompletedEvent);
       } else if (nodeResult.status === 'FAILED') {
         const nodeFailedEvent: NodeFailedEvent = {
-          type: EventType.NODE_FAILED,
+          type: 'NODE_FAILED',
           threadId: threadContext.getThreadId(),
           workflowId: threadContext.getWorkflowId(),
           nodeId,
@@ -331,7 +331,7 @@ export class NodeExecutionCoordinator {
       threadContext.addNodeResult(errorResult);
 
       const nodeFailedEvent: NodeFailedEvent = {
-        type: EventType.NODE_FAILED,
+        type: 'NODE_FAILED',
         threadId: threadContext.getThreadId(),
         workflowId: threadContext.getWorkflowId(),
         nodeId,
@@ -364,7 +364,7 @@ export class NodeExecutionCoordinator {
 
       // 触发子图开始事件
       const subgraphStartedEvent: SubgraphStartedEvent = {
-        type: EventType.SUBGRAPH_STARTED,
+        type: 'SUBGRAPH_STARTED',
         threadId: threadContext.getThreadId(),
         workflowId: threadContext.getWorkflowId(),
         subgraphId: graphNode.workflowId,
@@ -381,7 +381,7 @@ export class NodeExecutionCoordinator {
 
         // 触发子图完成事件
         const subgraphCompletedEvent: SubgraphCompletedEvent = {
-          type: EventType.SUBGRAPH_COMPLETED,
+          type: 'SUBGRAPH_COMPLETED',
           threadId: threadContext.getThreadId(),
           workflowId: threadContext.getWorkflowId(),
           subgraphId: subgraphContext.workflowId,
@@ -410,7 +410,7 @@ export class NodeExecutionCoordinator {
 
     // 准备处理器上下文
     let handlerContext = {};
-    if (node.type === NodeType.USER_INTERACTION) {
+    if (node.type === 'USER_INTERACTION') {
       if (!this.userInteractionHandler) {
         throw new ExecutionError(
           'UserInteractionHandler is not provided',
@@ -422,18 +422,18 @@ export class NodeExecutionCoordinator {
         userInteractionHandler: this.userInteractionHandler,
         conversationManager: threadContext.getConversationManager()
       };
-    } else if (node.type === NodeType.CONTEXT_PROCESSOR) {
+    } else if (node.type === 'CONTEXT_PROCESSOR') {
       handlerContext = {
         conversationManager: threadContext.getConversationManager()
       };
-    } else if (node.type === NodeType.LLM) {
+    } else if (node.type === 'LLM') {
       handlerContext = {
         llmCoordinator: this.llmCoordinator,
         eventManager: this.eventManager,
         conversationManager: threadContext.getConversationManager(),
         humanRelayHandler: this.humanRelayHandler
       };
-    } else if (node.type === NodeType.ADD_TOOL) {
+    } else if (node.type === 'ADD_TOOL') {
       if (!this.toolContextManager || !this.toolService) {
         throw new ExecutionError(
           'ToolContextManager or ToolService is not provided',

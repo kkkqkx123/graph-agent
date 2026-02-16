@@ -215,7 +215,7 @@ export class ThreadCascadeManager {
     const eventPromise = new Promise<void>((resolve) => {
       // 监听线程完成事件
       const unregisterCompleted = this.eventManager.on(
-        EventType.THREAD_COMPLETED,
+        'THREAD_COMPLETED',
         (event) => {
           if (event.threadId === childThreadId) {
             unregisterCompleted();
@@ -228,7 +228,7 @@ export class ThreadCascadeManager {
 
       // 监听线程失败事件
       const unregisterFailed = this.eventManager.on(
-        EventType.THREAD_FAILED,
+        'THREAD_FAILED',
         (event) => {
           if (event.threadId === childThreadId) {
             unregisterCompleted();
@@ -241,7 +241,7 @@ export class ThreadCascadeManager {
 
       // 监听线程取消事件
       const unregisterCancelled = this.eventManager.on(
-        EventType.THREAD_CANCELLED,
+        'THREAD_CANCELLED',
         (event) => {
           if (event.threadId === childThreadId) {
             unregisterCompleted();

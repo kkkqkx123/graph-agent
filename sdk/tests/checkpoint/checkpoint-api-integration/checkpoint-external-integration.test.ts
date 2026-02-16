@@ -94,19 +94,19 @@ describe('检查点外部系统集成测试', () => {
     api = new CheckpointResourceAPI(eventManager);
 
     // 监听事件并记录到监控服务
-    eventManager.on(EventType.CHECKPOINT_CREATED, (event) => {
+    eventManager.on('CHECKPOINT_CREATED', (event) => {
       monitoringService.recordEvent(event);
     });
 
-    eventManager.on(EventType.CHECKPOINT_DELETED, (event: CheckpointDeletedEvent) => {
+    eventManager.on('CHECKPOINT_DELETED', (event: CheckpointDeletedEvent) => {
       monitoringService.recordEvent(event);
     });
 
-    eventManager.on(EventType.CHECKPOINT_RESTORED, (event: CheckpointRestoredEvent) => {
+    eventManager.on('CHECKPOINT_RESTORED', (event: CheckpointRestoredEvent) => {
       monitoringService.recordEvent(event);
     });
 
-    eventManager.on(EventType.CHECKPOINT_FAILED, (event: CheckpointFailedEvent) => {
+    eventManager.on('CHECKPOINT_FAILED', (event: CheckpointFailedEvent) => {
       monitoringService.recordEvent(event);
     });
   });
@@ -123,7 +123,7 @@ describe('检查点外部系统集成测试', () => {
   const createTestWorkflow = (id: string, name: string): WorkflowDefinition => ({
     id,
     name,
-    type: WorkflowType.STANDALONE,
+    type: 'STANDALONE',
     version: '1.0.0',
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -131,7 +131,7 @@ describe('检查点外部系统集成测试', () => {
       {
         id: `${id}-start`,
         name: 'Start',
-        type: NodeType.START,
+        type: 'START',
         config: {},
         incomingEdgeIds: [],
         outgoingEdgeIds: [`${id}-edge-1`]
@@ -139,7 +139,7 @@ describe('检查点外部系统集成测试', () => {
       {
         id: `${id}-process`,
         name: 'Process',
-        type: NodeType.CODE,
+        type: 'CODE',
         config: {
           scriptName: 'test-process',
           scriptType: 'javascript',
@@ -151,7 +151,7 @@ describe('检查点外部系统集成测试', () => {
       {
         id: `${id}-end`,
         name: 'End',
-        type: NodeType.END,
+        type: 'END',
         config: {},
         incomingEdgeIds: [`${id}-edge-2`],
         outgoingEdgeIds: []
@@ -195,7 +195,7 @@ describe('检查点外部系统集成测试', () => {
       id: generateId(),
       workflowId: workflow.id,
       workflowVersion: workflow.version,
-      status: ThreadStatus.RUNNING,
+      status: 'RUNNING',
       currentNodeId: `${workflow.id}-process`,
       graph,
       variables: [],
@@ -295,7 +295,7 @@ describe('检查点外部系统集成测试', () => {
       const threadContext = await createTestThreadContext(threadRegistry, workflowRegistry, workflow);
 
       // 监听事件并记录到日志服务
-      eventManager.on(EventType.CHECKPOINT_CREATED, (event: CheckpointCreatedEvent) => {
+      eventManager.on('CHECKPOINT_CREATED', (event: CheckpointCreatedEvent) => {
         loggingService.log('INFO', 'Checkpoint created successfully', {
           checkpointId: event.checkpointId,
           threadId: event.threadId,
@@ -303,14 +303,14 @@ describe('检查点外部系统集成测试', () => {
         });
       });
 
-      eventManager.on(EventType.CHECKPOINT_DELETED, (event: CheckpointDeletedEvent) => {
+      eventManager.on('CHECKPOINT_DELETED', (event: CheckpointDeletedEvent) => {
         loggingService.log('INFO', 'Checkpoint deleted', {
           checkpointId: event.checkpointId,
           reason: event.reason
         });
       });
 
-      eventManager.on(EventType.CHECKPOINT_FAILED, (event: CheckpointFailedEvent) => {
+      eventManager.on('CHECKPOINT_FAILED', (event: CheckpointFailedEvent) => {
         loggingService.log('ERROR', 'Checkpoint operation failed', {
           operation: event.operation,
           error: event.error,
@@ -496,7 +496,7 @@ describe('检查点外部系统集成测试', () => {
       const auditLogs: any[] = [];
 
       // 监听事件并记录到审计日志
-      eventManager.on(EventType.CHECKPOINT_CREATED, (event: CheckpointCreatedEvent) => {
+      eventManager.on('CHECKPOINT_CREATED', (event: CheckpointCreatedEvent) => {
         auditLogs.push({
           eventType: 'CHECKPOINT_CREATED',
           timestamp: event.timestamp,
@@ -508,7 +508,7 @@ describe('检查点外部系统集成测试', () => {
         });
       });
 
-      eventManager.on(EventType.CHECKPOINT_DELETED, (event: CheckpointDeletedEvent) => {
+      eventManager.on('CHECKPOINT_DELETED', (event: CheckpointDeletedEvent) => {
         auditLogs.push({
           eventType: 'CHECKPOINT_DELETED',
           timestamp: event.timestamp,
@@ -518,7 +518,7 @@ describe('检查点外部系统集成测试', () => {
         });
       });
 
-      eventManager.on(EventType.CHECKPOINT_RESTORED, (event: CheckpointRestoredEvent) => {
+      eventManager.on('CHECKPOINT_RESTORED', (event: CheckpointRestoredEvent) => {
         auditLogs.push({
           eventType: 'CHECKPOINT_RESTORED',
           timestamp: event.timestamp,

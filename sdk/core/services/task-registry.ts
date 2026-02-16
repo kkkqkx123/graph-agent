@@ -94,7 +94,7 @@ export class TaskRegistry {
     const taskInfo: TaskInfo = {
       id: taskId,
       threadContext,
-      status: TaskStatus.QUEUED,
+      status: 'QUEUED',
       submitTime: Date.now(),
       timeout
     };
@@ -112,7 +112,7 @@ export class TaskRegistry {
   updateStatusToRunning(taskId: string): void {
     const taskInfo = this.tasks.get(taskId);
     if (taskInfo) {
-      taskInfo.status = TaskStatus.RUNNING;
+      taskInfo.status = 'RUNNING';
       taskInfo.startTime = Date.now();
     }
   }
@@ -125,7 +125,7 @@ export class TaskRegistry {
   updateStatusToCompleted(taskId: string, result: ThreadResult): void {
     const taskInfo = this.tasks.get(taskId);
     if (taskInfo) {
-      taskInfo.status = TaskStatus.COMPLETED;
+      taskInfo.status = 'COMPLETED';
       taskInfo.completeTime = Date.now();
       taskInfo.result = result;
       this.stats.completed++;
@@ -140,7 +140,7 @@ export class TaskRegistry {
   updateStatusToFailed(taskId: string, error: Error): void {
     const taskInfo = this.tasks.get(taskId);
     if (taskInfo) {
-      taskInfo.status = TaskStatus.FAILED;
+      taskInfo.status = 'FAILED';
       taskInfo.completeTime = Date.now();
       taskInfo.error = error;
       this.stats.failed++;
@@ -154,7 +154,7 @@ export class TaskRegistry {
   updateStatusToCancelled(taskId: string): void {
     const taskInfo = this.tasks.get(taskId);
     if (taskInfo) {
-      taskInfo.status = TaskStatus.CANCELLED;
+      taskInfo.status = 'CANCELLED';
       taskInfo.completeTime = Date.now();
       this.stats.cancelled++;
     }
@@ -167,7 +167,7 @@ export class TaskRegistry {
   updateStatusToTimeout(taskId: string): void {
     const taskInfo = this.tasks.get(taskId);
     if (taskInfo) {
-      taskInfo.status = TaskStatus.TIMEOUT;
+      taskInfo.status = 'TIMEOUT';
       taskInfo.completeTime = Date.now();
       this.stats.timeout++;
     }
@@ -260,10 +260,10 @@ export class TaskRegistry {
     for (const [taskId, taskInfo] of this.tasks.entries()) {
       // 只清理已完成、失败、取消或超时的任务
       if (
-        (taskInfo.status === TaskStatus.COMPLETED ||
-         taskInfo.status === TaskStatus.FAILED ||
-         taskInfo.status === TaskStatus.CANCELLED ||
-         taskInfo.status === TaskStatus.TIMEOUT) &&
+        (taskInfo.status === 'COMPLETED' ||
+          taskInfo.status === 'FAILED' ||
+          taskInfo.status === 'CANCELLED' ||
+          taskInfo.status === 'TIMEOUT') &&
         taskInfo.completeTime &&
         (now - taskInfo.completeTime) > retentionTime
       ) {
@@ -285,8 +285,8 @@ export class TaskRegistry {
     
     return {
       total: tasks.length,
-      queued: tasks.filter(t => t.status === TaskStatus.QUEUED).length,
-      running: tasks.filter(t => t.status === TaskStatus.RUNNING).length,
+      queued: tasks.filter(t => t.status === 'QUEUED').length,
+      running: tasks.filter(t => t.status === 'RUNNING').length,
       completed: this.stats.completed,
       failed: this.stats.failed,
       cancelled: this.stats.cancelled,

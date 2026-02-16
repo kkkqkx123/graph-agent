@@ -37,7 +37,7 @@ describe('触发子工作流集成测试', () => {
       const triggeredWorkflow: WorkflowDefinition = {
         id: 'triggered-workflow-1',
         name: 'Triggered Workflow',
-        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
+        type: 'TRIGGERED_SUBWORKFLOW',
         version: '1.0.0',
         description: 'A workflow triggered by events',
         variables: [],
@@ -45,7 +45,7 @@ describe('触发子工作流集成测试', () => {
         nodes: [
           {
             id: 'triggered-start',
-            type: NodeType.START_FROM_TRIGGER,
+            type: 'START'_FROM_TRIGGER,
             name: 'Start From Trigger',
             config: {},
             outgoingEdgeIds: ['trig-edge-1'],
@@ -53,7 +53,7 @@ describe('触发子工作流集成测试', () => {
           },
           {
             id: 'triggered-process',
-            type: NodeType.LLM,
+            type: 'LLM',
             name: 'Triggered Process',
             config: {
               profileId: 'test-profile',
@@ -64,7 +64,7 @@ describe('触发子工作流集成测试', () => {
           },
           {
             id: 'triggered-end',
-            type: NodeType.CONTINUE_FROM_TRIGGER,
+            type: 'CONTINUE_FROM_TRIGGER',
             name: 'Continue From Trigger',
             config: {},
             outgoingEdgeIds: [],
@@ -118,8 +118,8 @@ describe('触发子工作流集成测试', () => {
       expect(registry.has('triggered-workflow-1')).toBe(true);
       const registered = registry.get('triggered-workflow-1');
       expect(registered).toBeDefined();
-      expect(registered?.nodes.some((n: any) => n.type === NodeType.START_FROM_TRIGGER)).toBe(true);
-      expect(registered?.nodes.some((n: any) => n.type === NodeType.CONTINUE_FROM_TRIGGER)).toBe(true);
+      expect(registered?.nodes.some((n: any) => n.type === 'START'_FROM_TRIGGER)).toBe(true);
+      expect(registered?.nodes.some((n: any) => n.type === 'CONTINUE_FROM_TRIGGER')).toBe(true);
 
       // 验证预处理结果
       const processed = registry.getProcessed('triggered-workflow-1');
@@ -137,7 +137,7 @@ describe('触发子工作流集成测试', () => {
       const invalidWorkflow: WorkflowDefinition = {
         id: 'triggered-invalid-1',
         name: 'Invalid Triggered Workflow',
-        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
+        type: 'TRIGGERED_SUBWORKFLOW',
         version: '1.0.0',
         description: 'Triggered workflow with isolated node',
         variables: [],
@@ -145,7 +145,7 @@ describe('触发子工作流集成测试', () => {
         nodes: [
           {
             id: 'triggered-start',
-            type: NodeType.START_FROM_TRIGGER,
+            type: 'START'_FROM_TRIGGER,
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -153,7 +153,7 @@ describe('触发子工作流集成测试', () => {
           },
           {
             id: 'isolated-node',
-            type: NodeType.CODE,
+            type: 'CODE',
             name: 'Isolated',
             config: {},
             outgoingEdgeIds: [],
@@ -161,7 +161,7 @@ describe('触发子工作流集成测试', () => {
           },
           {
             id: 'triggered-end',
-            type: NodeType.CONTINUE_FROM_TRIGGER,
+            type: 'CONTINUE_FROM_TRIGGER',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],
@@ -195,7 +195,7 @@ describe('触发子工作流集成测试', () => {
       const invalidWorkflow: WorkflowDefinition = {
         id: 'triggered-with-start',
         name: 'Invalid - Contains START',
-        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
+        type: 'TRIGGERED_SUBWORKFLOW',
         version: '1.0.0',
         description: 'Triggered workflow with START node',
         variables: [],
@@ -203,7 +203,7 @@ describe('触发子工作流集成测试', () => {
         nodes: [
           {
             id: 'normal-start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -211,7 +211,7 @@ describe('触发子工作流集成测试', () => {
           },
           {
             id: 'process',
-            type: NodeType.LLM,
+            type: 'LLM',
             name: 'Process',
             config: {
               profileId: 'test-profile',
@@ -222,7 +222,7 @@ describe('触发子工作流集成测试', () => {
           },
           {
             id: 'continue',
-            type: NodeType.CONTINUE_FROM_TRIGGER,
+            type: 'CONTINUE_FROM_TRIGGER',
             name: 'Continue',
             config: {},
             outgoingEdgeIds: [],
@@ -259,7 +259,7 @@ describe('触发子工作流集成测试', () => {
       const invalidWorkflow: WorkflowDefinition = {
         id: 'triggered-with-end',
         name: 'Invalid - Contains END',
-        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
+        type: 'TRIGGERED_SUBWORKFLOW',
         version: '1.0.0',
         description: 'Triggered workflow with END node',
         variables: [],
@@ -267,7 +267,7 @@ describe('触发子工作流集成测试', () => {
         nodes: [
           {
             id: 'start',
-            type: NodeType.START_FROM_TRIGGER,
+            type: 'START'_FROM_TRIGGER,
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -275,7 +275,7 @@ describe('触发子工作流集成测试', () => {
           },
           {
             id: 'process',
-            type: NodeType.LLM,
+            type: 'LLM',
             name: 'Process',
             config: {
               profileId: 'test-profile',
@@ -286,7 +286,7 @@ describe('触发子工作流集成测试', () => {
           },
           {
             id: 'normal-end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],
@@ -323,7 +323,7 @@ describe('触发子工作流集成测试', () => {
       const invalidWorkflow: WorkflowDefinition = {
         id: 'triggered-missing-start',
         name: 'Invalid - Missing START_FROM_TRIGGER',
-        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
+        type: 'TRIGGERED_SUBWORKFLOW',
         version: '1.0.0',
         description: 'Triggered workflow without START_FROM_TRIGGER',
         variables: [],
@@ -331,7 +331,7 @@ describe('触发子工作流集成测试', () => {
         nodes: [
           {
             id: 'process',
-            type: NodeType.LLM,
+            type: 'LLM',
             name: 'Process',
             config: {
               profileId: 'test-profile',
@@ -342,7 +342,7 @@ describe('触发子工作流集成测试', () => {
           },
           {
             id: 'continue',
-            type: NodeType.CONTINUE_FROM_TRIGGER,
+            type: 'CONTINUE_FROM_TRIGGER',
             name: 'Continue',
             config: {},
             outgoingEdgeIds: [],
@@ -373,7 +373,7 @@ describe('触发子工作流集成测试', () => {
       const invalidWorkflow: WorkflowDefinition = {
         id: 'triggered-missing-end',
         name: 'Invalid - Missing CONTINUE_FROM_TRIGGER',
-        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
+        type: 'TRIGGERED_SUBWORKFLOW',
         version: '1.0.0',
         description: 'Triggered workflow without CONTINUE_FROM_TRIGGER',
         variables: [],
@@ -381,7 +381,7 @@ describe('触发子工作流集成测试', () => {
         nodes: [
           {
             id: 'start',
-            type: NodeType.START_FROM_TRIGGER,
+            type: 'START'_FROM_TRIGGER,
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -389,7 +389,7 @@ describe('触发子工作流集成测试', () => {
           },
           {
             id: 'process',
-            type: NodeType.LLM,
+            type: 'LLM',
             name: 'Process',
             config: {
               profileId: 'test-profile',
@@ -423,7 +423,7 @@ describe('触发子工作流集成测试', () => {
       const invalidWorkflow: WorkflowDefinition = {
         id: 'triggered-start-incoming',
         name: 'Invalid - START_FROM_TRIGGER has incoming',
-        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
+        type: 'TRIGGERED_SUBWORKFLOW',
         version: '1.0.0',
         description: 'Triggered workflow with incoming edges to START',
         variables: [],
@@ -431,7 +431,7 @@ describe('触发子工作流集成测试', () => {
         nodes: [
           {
             id: 'before',
-            type: NodeType.LLM,
+            type: 'LLM',
             name: 'Before',
             config: {
               profileId: 'test-profile',
@@ -442,7 +442,7 @@ describe('触发子工作流集成测试', () => {
           },
           {
             id: 'start',
-            type: NodeType.START_FROM_TRIGGER,
+            type: 'START'_FROM_TRIGGER,
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-2'],
@@ -450,7 +450,7 @@ describe('触发子工作流集成测试', () => {
           },
           {
             id: 'end',
-            type: NodeType.CONTINUE_FROM_TRIGGER,
+            type: 'CONTINUE_FROM_TRIGGER',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],
@@ -487,7 +487,7 @@ describe('触发子工作流集成测试', () => {
       const invalidWorkflow: WorkflowDefinition = {
         id: 'triggered-end-outgoing',
         name: 'Invalid - CONTINUE_FROM_TRIGGER has outgoing',
-        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
+        type: 'TRIGGERED_SUBWORKFLOW',
         version: '1.0.0',
         description: 'Triggered workflow with outgoing edges from END',
         variables: [],
@@ -495,7 +495,7 @@ describe('触发子工作流集成测试', () => {
         nodes: [
           {
             id: 'start',
-            type: NodeType.START_FROM_TRIGGER,
+            type: 'START'_FROM_TRIGGER,
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -503,7 +503,7 @@ describe('触发子工作流集成测试', () => {
           },
           {
             id: 'end',
-            type: NodeType.CONTINUE_FROM_TRIGGER,
+            type: 'CONTINUE_FROM_TRIGGER',
             name: 'End',
             config: {},
             outgoingEdgeIds: ['edge-2'],
@@ -511,7 +511,7 @@ describe('触发子工作流集成测试', () => {
           },
           {
             id: 'after',
-            type: NodeType.LLM,
+            type: 'LLM',
             name: 'After',
             config: {
               profileId: 'test-profile',
@@ -554,7 +554,7 @@ describe('触发子工作流集成测试', () => {
       const triggeredWorkflow: WorkflowDefinition = {
         id: 'triggered-subwf',
         name: 'Triggered Subworkflow',
-        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
+        type: 'TRIGGERED_SUBWORKFLOW',
         version: '1.0.0',
         description: 'Triggered workflow',
         variables: [],
@@ -562,7 +562,7 @@ describe('触发子工作流集成测试', () => {
         nodes: [
           {
             id: 'trig-start',
-            type: NodeType.START_FROM_TRIGGER,
+            type: 'START'_FROM_TRIGGER,
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['trig-edge-1'],
@@ -570,7 +570,7 @@ describe('触发子工作流集成测试', () => {
           },
           {
             id: 'trig-process',
-            type: NodeType.LLM,
+            type: 'LLM',
             name: 'Process',
             config: {
               profileId: 'test-profile',
@@ -581,7 +581,7 @@ describe('触发子工作流集成测试', () => {
           },
           {
             id: 'trig-end',
-            type: NodeType.CONTINUE_FROM_TRIGGER,
+            type: 'CONTINUE_FROM_TRIGGER',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],
@@ -615,7 +615,7 @@ describe('触发子工作流集成测试', () => {
       const parentWorkflow: WorkflowDefinition = {
         id: 'parent-with-triggered',
         name: 'Parent With Triggered Subworkflow',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         version: '1.0.0',
         description: 'Parent workflow',
         variables: [],
@@ -624,11 +624,11 @@ describe('触发子工作流集成测试', () => {
             id: 'trigger-1',
             name: 'Manual Trigger',
             condition: {
-              eventType: EventType.THREAD_STARTED,
+              eventType: 'THREAD_STARTED',
               metadata: {}
             },
             action: {
-              type: TriggerActionType.EXECUTE_TRIGGERED_SUBGRAPH,
+              type: 'execute_triggered_subgraph',
               parameters: {
                 triggeredWorkflowId: 'triggered-subwf',
                 waitForCompletion: true
@@ -640,7 +640,7 @@ describe('触发子工作流集成测试', () => {
         nodes: [
           {
             id: 'parent-start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['parent-edge-1'],
@@ -648,7 +648,7 @@ describe('触发子工作流集成测试', () => {
           },
           {
             id: 'parent-process',
-            type: NodeType.LLM,
+            type: 'LLM',
             name: 'Process',
             config: {
               profileId: 'test-profile',
@@ -659,7 +659,7 @@ describe('触发子工作流集成测试', () => {
           },
           {
             id: 'parent-end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],
@@ -711,7 +711,7 @@ describe('触发子工作流集成测试', () => {
       expect(parent?.triggers).toBeDefined();
       expect(parent?.triggers).toHaveLength(1);
       const trigger = parent?.triggers?.[0] as any;
-      expect(trigger?.action?.type).toBe(TriggerActionType.EXECUTE_TRIGGERED_SUBGRAPH);
+      expect(trigger?.action?.type).toBe('execute_triggered_subgraph');
       const params = trigger?.action?.parameters;
       expect(params?.triggeredWorkflowId).toBe('triggered-subwf');
 

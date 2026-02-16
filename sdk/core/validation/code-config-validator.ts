@@ -63,7 +63,7 @@ const scriptSchema = z.object({
   id: z.string().min(1, 'Script ID is required'),
   name: z.string().min(1, 'Script name is required'),
   type: z.custom<ScriptType>((val): val is ScriptType =>
-    Object.values(ScriptType).includes(val as ScriptType)
+    ['SHELL', 'CMD', 'POWERSHELL', 'PYTHON', 'JAVASCRIPT'].includes(val as ScriptType)
   ),
   description: z.string().min(1, 'Script description is required'),
   content: z.string().optional(),
@@ -200,15 +200,15 @@ export class CodeConfigValidator {
    */
   private getExpectedExtensions(scriptType: ScriptType): string[] {
     switch (scriptType) {
-      case ScriptType.SHELL:
+      case 'SHELL':
         return ['sh', 'bash'];
-      case ScriptType.CMD:
+      case 'CMD':
         return ['bat', 'cmd'];
-      case ScriptType.POWERSHELL:
+      case 'POWERSHELL':
         return ['ps1'];
-      case ScriptType.PYTHON:
+      case 'PYTHON':
         return ['py'];
-      case ScriptType.JAVASCRIPT:
+      case 'JAVASCRIPT':
         return ['js', 'ts'];
       default:
         return [];
@@ -224,50 +224,50 @@ export class CodeConfigValidator {
   private validateContentCompatibility(scriptType: ScriptType, content: string): Result<void, ConfigurationValidationError[]> {
     // 基本语法检查
     switch (scriptType) {
-      case ScriptType.SHELL:
+      case 'SHELL':
         if (!content.includes('#!/bin/bash') && !content.includes('#!/bin/sh')) {
           return err([new ConfigurationValidationError(
             'Shell script may be missing shebang line',
             {
               configType: 'script',
               field: 'content',
-              severity: ErrorSeverity.WARNING
+              severity: 'warning'
             }
           )]);
         }
         break;
-      case ScriptType.POWERSHELL:
+      case 'POWERSHELL':
         if (!content.includes('#') && !content.includes('Write-Host')) {
           return err([new ConfigurationValidationError(
             'PowerShell script may be missing proper syntax',
             {
               configType: 'script',
               field: 'content',
-              severity: ErrorSeverity.WARNING
+              severity: 'warning'
             }
           )]);
         }
         break;
-      case ScriptType.PYTHON:
+      case 'PYTHON':
         if (!content.includes('def ') && !content.includes('import ')) {
           return err([new ConfigurationValidationError(
             'Python script may be missing proper syntax',
             {
               configType: 'script',
               field: 'content',
-              severity: ErrorSeverity.WARNING
+              severity: 'warning'
             }
           )]);
         }
         break;
-      case ScriptType.JAVASCRIPT:
+      case 'JAVASCRIPT':
         if (!content.includes('function') && !content.includes('const') && !content.includes('let')) {
           return err([new ConfigurationValidationError(
             'JavaScript script may be missing proper syntax',
             {
               configType: 'script',
               field: 'content',
-              severity: ErrorSeverity.WARNING
+              severity: 'warning'
             }
           )]);
         }
@@ -303,7 +303,7 @@ export class CodeConfigValidator {
 
     // 验证脚本类型特定的环境要求
     switch (type) {
-      case ScriptType.PYTHON:
+      case 'PYTHON':
         if (!environment['pythonAvailable']) {
           errors.push(new ConfigurationValidationError(
             'Python interpreter is not available in the execution environment',
@@ -314,7 +314,7 @@ export class CodeConfigValidator {
           ));
         }
         break;
-      case ScriptType.JAVASCRIPT:
+      case 'JAVASCRIPT':
         if (!environment['nodeAvailable']) {
           errors.push(new ConfigurationValidationError(
             'Node.js runtime is not available in the execution environment',
@@ -325,7 +325,7 @@ export class CodeConfigValidator {
           ));
         }
         break;
-      case ScriptType.POWERSHELL:
+      case 'POWERSHELL':
         if (!environment['powershellAvailable']) {
           errors.push(new ConfigurationValidationError(
             'PowerShell is not available in the execution environment',

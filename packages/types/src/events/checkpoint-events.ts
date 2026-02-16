@@ -9,7 +9,7 @@ import type { BaseEvent, EventType } from './base';
  * 检查点创建事件类型
  */
 export interface CheckpointCreatedEvent extends BaseEvent {
-  type: EventType.CHECKPOINT_CREATED;
+  type: 'CHECKPOINT_CREATED';
   /** 检查点ID */
   checkpointId: ID;
   /** 检查点描述 */
@@ -20,7 +20,7 @@ export interface CheckpointCreatedEvent extends BaseEvent {
  * 检查点恢复事件类型
  */
 export interface CheckpointRestoredEvent extends BaseEvent {
-  type: EventType.CHECKPOINT_RESTORED;
+  type: 'CHECKPOINT_RESTORED';
   /** 检查点ID */
   checkpointId: ID;
   /** 恢复的线程ID */
@@ -33,7 +33,7 @@ export interface CheckpointRestoredEvent extends BaseEvent {
  * 检查点删除事件类型
  */
 export interface CheckpointDeletedEvent extends BaseEvent {
-  type: EventType.CHECKPOINT_DELETED;
+  type: 'CHECKPOINT_DELETED';
   /** 检查点ID */
   checkpointId: ID;
   /** 删除原因 */
@@ -44,7 +44,7 @@ export interface CheckpointDeletedEvent extends BaseEvent {
  * 检查点失败事件类型
  */
 export interface CheckpointFailedEvent extends BaseEvent {
-  type: EventType.CHECKPOINT_FAILED;
+  type: 'CHECKPOINT_FAILED';
   /** 检查点ID（如果已生成） */
   checkpointId?: ID;
   /** 失败的操作类型 */

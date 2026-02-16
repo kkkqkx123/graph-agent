@@ -182,21 +182,21 @@ export class WorkflowValidator {
     const { type, nodes, triggers } = workflow;
 
     // 检查是否包含特殊节点
-    const hasStartFromTrigger = nodes.some(node => node.type === NodeType.START_FROM_TRIGGER);
-    const hasContinueFromTrigger = nodes.some(node => node.type === NodeType.CONTINUE_FROM_TRIGGER);
-    const hasSubgraphNode = nodes.some(node => node.type === NodeType.SUBGRAPH);
+    const hasStartFromTrigger = nodes.some(node => node.type === 'START'_FROM_TRIGGER);
+    const hasContinueFromTrigger = nodes.some(node => node.type === 'CONTINUE_FROM_TRIGGER');
+    const hasSubgraphNode = nodes.some(node => node.type === 'SUBGRAPH');
     
     // 检查是否包含EXECUTE_TRIGGERED_SUBGRAPH触发器
     const hasExecuteTriggeredSubgraphTrigger = triggers?.some(trigger => {
       if ('action' in trigger) {
-        return trigger.action.type === TriggerActionType.EXECUTE_TRIGGERED_SUBGRAPH;
+        return trigger.action.type === 'execute_triggered_subgraph';
       }
       return false;
     }) || false;
 
     // 根据声明的类型验证工作流结构
     switch (type) {
-      case WorkflowType.TRIGGERED_SUBWORKFLOW:
+      case 'TRIGGERED_SUBWORKFLOW':
         // 触发子工作流必须包含START_FROM_TRIGGER和CONTINUE_FROM_TRIGGER
         if (!hasStartFromTrigger) {
           errors.push(new ConfigurationValidationError(
@@ -228,7 +228,7 @@ export class WorkflowValidator {
         }
         break;
 
-      case WorkflowType.STANDALONE:
+      case 'STANDALONE':
         // 独立工作流不应包含SUBGRAPH节点或EXECUTE_TRIGGERED_SUBGRAPH触发器
         if (hasSubgraphNode) {
           errors.push(new ConfigurationValidationError(
@@ -250,7 +250,7 @@ export class WorkflowValidator {
         }
         break;
 
-      case WorkflowType.DEPENDENT:
+      case 'DEPENDENT':
         // 依赖工作流必须包含SUBGRAPH节点或EXECUTE_TRIGGERED_SUBGRAPH触发器
         if (!hasSubgraphNode && !hasExecuteTriggeredSubgraphTrigger) {
           errors.push(new ConfigurationValidationError(
@@ -354,13 +354,13 @@ export class WorkflowValidator {
       }
 
       // 统计特殊节点类型
-      if (node.type === NodeType.START) {
+      if (node.type === 'START') {
         startNodes.push(node);
-      } else if (node.type === NodeType.END) {
+      } else if (node.type === 'END') {
         endNodes.push(node);
-      } else if (node.type === NodeType.START_FROM_TRIGGER) {
+      } else if (node.type === 'START'_FROM_TRIGGER) {
         startFromTriggerNodes.push(node);
-      } else if (node.type === NodeType.CONTINUE_FROM_TRIGGER) {
+      } else if (node.type === 'CONTINUE_FROM_TRIGGER') {
         continueFromTriggerNodes.push(node);
       }
     }

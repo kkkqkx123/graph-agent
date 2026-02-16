@@ -28,10 +28,10 @@ describe('APIEventBus', () => {
   describe('事件订阅和发布', () => {
     it('应该订阅和发布事件', async () => {
       const listener = jest.fn();
-      eventBus.on(APIEventType.RESOURCE_CREATED, listener);
+      eventBus.on('RESOURCE_CREATED', listener);
 
       const event: APIEventData = {
-        type: APIEventType.RESOURCE_CREATED,
+        type: 'RESOURCE_CREATED',
         timestamp: Date.now(),
         eventId: 'evt-1',
         resourceType: 'Workflow',
@@ -46,11 +46,11 @@ describe('APIEventBus', () => {
     it('应该支持多个监听器', async () => {
       const listener1 = jest.fn();
       const listener2 = jest.fn();
-      eventBus.on(APIEventType.RESOURCE_CREATED, listener1);
-      eventBus.on(APIEventType.RESOURCE_CREATED, listener2);
+      eventBus.on('RESOURCE_CREATED', listener1);
+      eventBus.on('RESOURCE_CREATED', listener2);
 
       const event: APIEventData = {
-        type: APIEventType.RESOURCE_CREATED,
+        type: 'RESOURCE_CREATED',
         timestamp: Date.now(),
         eventId: 'evt-1'
       };
@@ -63,10 +63,10 @@ describe('APIEventBus', () => {
 
     it('应该支持一次性监听器', async () => {
       const listener = jest.fn();
-      eventBus.once(APIEventType.RESOURCE_CREATED, listener);
+      eventBus.once('RESOURCE_CREATED', listener);
 
       const event: APIEventData = {
-        type: APIEventType.RESOURCE_CREATED,
+        type: 'RESOURCE_CREATED',
         timestamp: Date.now(),
         eventId: 'evt-1'
       };
@@ -101,11 +101,11 @@ describe('APIEventBus', () => {
       });
       const normalListener = jest.fn();
 
-      eventBus.on(APIEventType.RESOURCE_CREATED, errorListener);
-      eventBus.on(APIEventType.RESOURCE_CREATED, normalListener);
+      eventBus.on('RESOURCE_CREATED', errorListener);
+      eventBus.on('RESOURCE_CREATED', normalListener);
 
       const event: APIEventData = {
-        type: APIEventType.RESOURCE_CREATED,
+        type: 'RESOURCE_CREATED',
         timestamp: Date.now(),
         eventId: 'evt-1'
       };
@@ -124,17 +124,17 @@ describe('APIEventBus', () => {
 describe('APIEventBuilder', () => {
   it('应该构建基本事件', () => {
     const event = new APIEventBuilder()
-      .type(APIEventType.RESOURCE_CREATED)
+      .type('RESOURCE_CREATED')
       .build();
 
-    expect(event.type).toBe(APIEventType.RESOURCE_CREATED);
+    expect(event.type).toBe('RESOURCE_CREATED');
     expect(event.timestamp).toBeDefined();
     expect(event.eventId).toBeDefined();
   });
 
   it('应该支持链式调用', () => {
     const event = new APIEventBuilder()
-      .type(APIEventType.RESOURCE_CREATED)
+      .type('RESOURCE_CREATED')
       .resourceType('Workflow')
       .resourceId('wf-123')
       .operation('CREATE')
@@ -150,7 +150,7 @@ describe('APIEventBuilder', () => {
   it('应该设置错误', () => {
     const error = new Error('Test error');
     const event = new APIEventBuilder()
-      .type(APIEventType.ERROR_OCCURRED)
+      .type('ERROR_OCCURRED')
       .error(error)
       .build();
 

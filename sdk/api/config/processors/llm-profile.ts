@@ -16,9 +16,9 @@ import { ok } from '@modular-agent/common-utils';
  * @param config 解析后的配置对象
  * @returns 验证结果
  */
-export function validateLLMProfile(config: ParsedConfig<ConfigType.LLM_PROFILE>): Result<ParsedConfig<ConfigType.LLM_PROFILE>, ValidationError[]> {
+export function validateLLMProfile(config: ParsedConfig<'llm_profile'>): Result<ParsedConfig<'llm_profile'>, ValidationError[]> {
   const result = validateLLMProfileConfig(config.config);
 
   // 使用 andThen 进行类型转换
-  return result.andThen(() => ok(config)) as Result<ParsedConfig<ConfigType.LLM_PROFILE>, ValidationError[]>;
+  return result.andThen(() => ok(config)) as Result<ParsedConfig<'llm_profile'>, ValidationError[]>;
 }

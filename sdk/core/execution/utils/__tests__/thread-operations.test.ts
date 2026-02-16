@@ -78,7 +78,7 @@ describe('ThreadOperations', () => {
         id: 'parent-thread-id',
         workflowId: 'test-workflow',
         workflowVersion: '1.0.0',
-        status: ThreadStatus.RUNNING,
+        status: 'RUNNING',
         currentNodeId: 'node1',
         graph: mockGraph,
         variables: [],
@@ -98,7 +98,7 @@ describe('ThreadOperations', () => {
       executionState: new ExecutionState(),
       getThreadId: jest.fn().mockReturnValue('parent-thread-id'),
       getWorkflowId: jest.fn().mockReturnValue('test-workflow'),
-      getStatus: jest.fn().mockReturnValue(ThreadStatus.RUNNING),
+      getStatus: jest.fn().mockReturnValue('RUNNING'),
       getCurrentNodeId: jest.fn().mockReturnValue('node1'),
       getInput: jest.fn().mockReturnValue({}),
       getOutput: jest.fn().mockReturnValue({}),
@@ -153,7 +153,7 @@ describe('ThreadOperations', () => {
         id: 'child-thread-id',
         workflowId: 'test-workflow',
         workflowVersion: '1.0.0',
-        status: ThreadStatus.RUNNING,
+        status: 'RUNNING',
         currentNodeId: 'node2',
         graph: mockGraph,
         variables: [],
@@ -173,7 +173,7 @@ describe('ThreadOperations', () => {
       executionState: new ExecutionState(),
       getThreadId: jest.fn().mockReturnValue('child-thread-id'),
       getWorkflowId: jest.fn().mockReturnValue('test-workflow'),
-      getStatus: jest.fn().mockReturnValue(ThreadStatus.RUNNING),
+      getStatus: jest.fn().mockReturnValue('RUNNING'),
       getCurrentNodeId: jest.fn().mockReturnValue('node2'),
       getInput: jest.fn().mockReturnValue({}),
       getOutput: jest.fn().mockReturnValue({}),
@@ -302,7 +302,7 @@ describe('ThreadOperations', () => {
         id: 'child1',
         workflowId: 'test-workflow',
         workflowVersion: '1.0.0',
-        status: ThreadStatus.COMPLETED,
+        status: 'COMPLETED',
         currentNodeId: 'node1',
         graph: mockGraph,
         variables: [],
@@ -328,7 +328,7 @@ describe('ThreadOperations', () => {
         executionState: new ExecutionState(),
         getThreadId: jest.fn().mockReturnValue('child1'),
         getWorkflowId: jest.fn().mockReturnValue('test-workflow'),
-        getStatus: jest.fn().mockReturnValue(ThreadStatus.COMPLETED),
+        getStatus: jest.fn().mockReturnValue('COMPLETED'),
         getCurrentNodeId: jest.fn().mockReturnValue('node1'),
         getInput: jest.fn().mockReturnValue({}),
         getOutput: jest.fn().mockReturnValue({ result: 'success' }),
@@ -405,7 +405,7 @@ describe('ThreadOperations', () => {
       // 模拟线程仍在运行
       const runningThread: Thread = {
         ...mockChildThreadContext.thread,
-        status: ThreadStatus.RUNNING
+        status: 'RUNNING'
       };
 
       const mockRunningContext = {
@@ -417,7 +417,7 @@ describe('ThreadOperations', () => {
         executionState: new ExecutionState(),
         getThreadId: jest.fn().mockReturnValue('child1'),
         getWorkflowId: jest.fn().mockReturnValue('test-workflow'),
-        getStatus: jest.fn().mockReturnValue(ThreadStatus.RUNNING),
+        getStatus: jest.fn().mockReturnValue('RUNNING'),
         getCurrentNodeId: jest.fn().mockReturnValue('node1'),
         getInput: jest.fn().mockReturnValue({}),
         getOutput: jest.fn().mockReturnValue({}),
@@ -482,9 +482,9 @@ describe('ThreadOperations', () => {
 
     it('应该根据 ALL_COMPLETED 策略进行合并', async () => {
       const completedThreads: Thread[] = [
-        { ...mockChildThreadContext.thread, id: 'child1', status: ThreadStatus.COMPLETED, output: { data: 'result1' } },
-        { ...mockChildThreadContext.thread, id: 'child2', status: ThreadStatus.COMPLETED, output: { data: 'result2' } },
-        { ...mockChildThreadContext.thread, id: 'child3', status: ThreadStatus.COMPLETED, output: { data: 'result3' } }
+        { ...mockChildThreadContext.thread, id: 'child1', status: 'COMPLETED', output: { data: 'result1' } },
+        { ...mockChildThreadContext.thread, id: 'child2', status: 'COMPLETED', output: { data: 'result2' } },
+        { ...mockChildThreadContext.thread, id: 'child3', status: 'COMPLETED', output: { data: 'result3' } }
       ];
 
       const mockContexts = completedThreads.map(thread => ({
@@ -566,26 +566,26 @@ describe('ThreadOperations', () => {
       const completedThread: Thread = {
         ...mockChildThreadContext.thread,
         id: 'child1',
-        status: ThreadStatus.COMPLETED,
+        status: 'COMPLETED',
         output: { data: 'result1' }
       };
       const runningThread: Thread = {
         ...mockChildThreadContext.thread,
         id: 'child2',
-        status: ThreadStatus.RUNNING,
+        status: 'RUNNING',
         output: {}
       };
       const failedThread: Thread = {
         ...mockChildThreadContext.thread,
         id: 'child3',
-        status: ThreadStatus.FAILED,
+        status: 'FAILED',
         output: {}
       };
 
       const mockContexts = [
-        { ...mockChildThreadContext, thread: completedThread, getThreadId: jest.fn().mockReturnValue('child1'), getStatus: jest.fn().mockReturnValue(ThreadStatus.COMPLETED) } as any,
-        { ...mockChildThreadContext, thread: runningThread, getThreadId: jest.fn().mockReturnValue('child2'), getStatus: jest.fn().mockReturnValue(ThreadStatus.RUNNING) } as any,
-        { ...mockChildThreadContext, thread: failedThread, getThreadId: jest.fn().mockReturnValue('child3'), getStatus: jest.fn().mockReturnValue(ThreadStatus.FAILED) } as any
+        { ...mockChildThreadContext, thread: completedThread, getThreadId: jest.fn().mockReturnValue('child1'), getStatus: jest.fn().mockReturnValue('COMPLETED') } as any,
+        { ...mockChildThreadContext, thread: runningThread, getThreadId: jest.fn().mockReturnValue('child2'), getStatus: jest.fn().mockReturnValue('RUNNING') } as any,
+        { ...mockChildThreadContext, thread: failedThread, getThreadId: jest.fn().mockReturnValue('child3'), getStatus: jest.fn().mockReturnValue('FAILED') } as any
       ];
 
       (mockThreadRegistry.get as jest.Mock)
@@ -609,19 +609,19 @@ describe('ThreadOperations', () => {
       const runningThread: Thread = {
         ...mockChildThreadContext.thread,
         id: 'child1',
-        status: ThreadStatus.RUNNING,
+        status: 'RUNNING',
         output: {}
       };
       const failedThread: Thread = {
         ...mockChildThreadContext.thread,
         id: 'child2',
-        status: ThreadStatus.FAILED,
+        status: 'FAILED',
         output: { error: 'some error' }
       };
 
       const mockContexts = [
-        { ...mockChildThreadContext, thread: runningThread, getThreadId: jest.fn().mockReturnValue('child1'), getStatus: jest.fn().mockReturnValue(ThreadStatus.RUNNING) } as any,
-        { ...mockChildThreadContext, thread: failedThread, getThreadId: jest.fn().mockReturnValue('child2'), getStatus: jest.fn().mockReturnValue(ThreadStatus.FAILED) } as any
+        { ...mockChildThreadContext, thread: runningThread, getThreadId: jest.fn().mockReturnValue('child1'), getStatus: jest.fn().mockReturnValue('RUNNING') } as any,
+        { ...mockChildThreadContext, thread: failedThread, getThreadId: jest.fn().mockReturnValue('child2'), getStatus: jest.fn().mockReturnValue('FAILED') } as any
       ];
 
       (mockThreadRegistry.get as jest.Mock)
@@ -650,7 +650,7 @@ describe('ThreadOperations', () => {
         id: 'thread1',
         workflowId: 'test-workflow',
         workflowVersion: '1.0.0',
-        status: ThreadStatus.COMPLETED,
+        status: 'COMPLETED',
         currentNodeId: 'node1',
         graph: mockGraph,
         variables: [],
@@ -696,7 +696,7 @@ describe('ThreadOperations', () => {
         id: 'thread1',
         workflowId: 'test-workflow',
         workflowVersion: '1.0.0',
-        status: ThreadStatus.COMPLETED,
+        status: 'COMPLETED',
         currentNodeId: 'node1',
         graph: mockGraph,
         variables: [],
@@ -716,7 +716,7 @@ describe('ThreadOperations', () => {
         id: 'thread2',
         workflowId: 'test-workflow',
         workflowVersion: '1.0.0',
-        status: ThreadStatus.FAILED,
+        status: 'FAILED',
         currentNodeId: 'node1',
         graph: mockGraph,
         variables: [],
@@ -760,7 +760,7 @@ describe('ThreadOperations', () => {
         id: 'thread1',
         workflowId: 'test-workflow',
         workflowVersion: '1.0.0',
-        status: ThreadStatus.COMPLETED,
+        status: 'COMPLETED',
         currentNodeId: 'node1',
         graph: mockGraph,
         variables: [],
@@ -804,7 +804,7 @@ describe('ThreadOperations', () => {
           id: 'thread1',
           workflowId: 'test-workflow',
           workflowVersion: '1.0.0',
-          status: ThreadStatus.COMPLETED,
+          status: 'COMPLETED',
           currentNodeId: 'node1',
           graph: mockGraph,
           variables: [],
@@ -824,7 +824,7 @@ describe('ThreadOperations', () => {
           id: 'thread2',
           workflowId: 'test-workflow',
           workflowVersion: '1.0.0',
-          status: ThreadStatus.COMPLETED,
+          status: 'COMPLETED',
           currentNodeId: 'node1',
           graph: mockGraph,
           variables: [],

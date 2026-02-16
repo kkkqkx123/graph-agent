@@ -101,7 +101,7 @@ describe('CheckpointUtils', () => {
 
     mockThreadRegistry.get.mockReturnValue(mockThreadContext);
     mockWorkflowRegistry.get.mockReturnValue({
-      type: WorkflowType.STANDALONE,
+      type: 'STANDALONE',
       id: 'workflow-1',
       name: 'Test Workflow',
       version: '1.0.0',

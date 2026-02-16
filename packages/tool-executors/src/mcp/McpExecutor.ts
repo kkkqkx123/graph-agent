@@ -196,6 +196,6 @@ export class McpExecutor extends BaseExecutor {
    * 获取执行器类型
    */
   getExecutorType(): string {
-    return ExecutorType.MCP;
+    return 'MCP';
   }
 }

@@ -12,7 +12,7 @@ import { now, diffTimestamp } from '@modular-agent/common-utils';
  * 检查节点是否可以执行
  */
 function canExecute(thread: Thread, node: Node): boolean {
-  if (thread.status !== ThreadStatus.RUNNING) {
+  if (thread.status !== 'RUNNING') {
     return false;
   }
 

@@ -60,18 +60,18 @@ describe('检查点恢复生命周期集成测试', () => {
         return { valid: true, errors: [] };
       },
       getSupportedTypes() {
-        return [ScriptType.JAVASCRIPT];
+        return ['JAVASCRIPT'];
       }
     };
 
     // 注册执行器
-    codeService.registerExecutor(ScriptType.JAVASCRIPT, javascriptExecutor);
+    codeService.registerExecutor('JAVASCRIPT', javascriptExecutor);
 
     // 注册测试脚本
     const testProcessScript = {
       id: generateId(),
       name: 'test-process',
-      type: ScriptType.JAVASCRIPT,
+      type: 'JAVASCRIPT',
       content: 'return { processed: true, value: "test-result" };',
       description: 'Test process script for checkpoint testing',
       options: {},
@@ -106,7 +106,7 @@ describe('检查点恢复生命周期集成测试', () => {
     nodes: [
       {
         id: `${id}-start`,
-        type: NodeType.START,
+        type: 'START',
         name: 'Start',
         config: {},
         outgoingEdgeIds: [`${id}-edge-1`],
@@ -114,7 +114,7 @@ describe('检查点恢复生命周期集成测试', () => {
       },
       {
         id: `${id}-process`,
-        type: NodeType.CODE,
+        type: 'CODE',
         name: 'Process',
         config: {
           scriptName: 'test-process',
@@ -126,7 +126,7 @@ describe('检查点恢复生命周期集成测试', () => {
       },
       {
         id: `${id}-end`,
-        type: NodeType.END,
+        type: 'END',
         name: 'End',
         config: {},
         outgoingEdgeIds: [],

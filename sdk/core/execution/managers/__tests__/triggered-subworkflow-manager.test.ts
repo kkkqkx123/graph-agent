@@ -112,12 +112,12 @@ describe('TriggeredSubworkflowManager', () => {
       // 验证事件被触发
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.TRIGGERED_SUBGRAPH_STARTED
+          type: 'TRIGGERED_SUBGRAPH_STARTED'
         })
       );
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.TRIGGERED_SUBGRAPH_COMPLETED
+          type: 'TRIGGERED_SUBGRAPH_COMPLETED'
         })
       );
     });
@@ -138,7 +138,7 @@ describe('TriggeredSubworkflowManager', () => {
       // 验证失败事件被触发
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.TRIGGERED_SUBGRAPH_FAILED,
+          type: 'TRIGGERED_SUBGRAPH_FAILED',
           error: 'Execution failed'
         })
       );
@@ -163,7 +163,7 @@ describe('TriggeredSubworkflowManager', () => {
       // 验证失败事件被触发
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.TRIGGERED_SUBGRAPH_FAILED,
+          type: 'TRIGGERED_SUBGRAPH_FAILED',
           error: 'Context creation failed'
         })
       );
@@ -285,8 +285,8 @@ describe('TriggeredSubworkflowManager', () => {
       const calls = mockEventManager.emit.mock.calls;
       
       // 验证事件顺序
-      expect(calls[0]?.[0]?.type).toBe(EventType.TRIGGERED_SUBGRAPH_STARTED);
-      expect(calls[1]?.[0]?.type).toBe(EventType.TRIGGERED_SUBGRAPH_COMPLETED);
+      expect(calls[0]?.[0]?.type).toBe('TRIGGERED_SUBGRAPH_STARTED');
+      expect(calls[1]?.[0]?.type).toBe('TRIGGERED_SUBGRAPH_COMPLETED');
     });
 
     it('应该在开始事件中包含正确的数据', async () => {
@@ -301,7 +301,7 @@ describe('TriggeredSubworkflowManager', () => {
 
       const startedEvent = mockEventManager.emit.mock.calls[0]?.[0] as any;
       
-      expect(startedEvent.type).toBe(EventType.TRIGGERED_SUBGRAPH_STARTED);
+      expect(startedEvent.type).toBe('TRIGGERED_SUBGRAPH_STARTED');
       expect(startedEvent.threadId).toBe('main-thread-1');
       expect(startedEvent.workflowId).toBe('main-workflow-1');
       expect(startedEvent.subgraphId).toBe('sub-workflow-1');
@@ -324,7 +324,7 @@ describe('TriggeredSubworkflowManager', () => {
 
       const completedEvent = mockEventManager.emit.mock.calls[1]?.[0] as any;
       
-      expect(completedEvent.type).toBe(EventType.TRIGGERED_SUBGRAPH_COMPLETED);
+      expect(completedEvent.type).toBe('TRIGGERED_SUBGRAPH_COMPLETED');
       expect(completedEvent.threadId).toBe('main-thread-1');
       expect(completedEvent.workflowId).toBe('main-workflow-1');
       expect(completedEvent.subgraphId).toBe('sub-workflow-1');

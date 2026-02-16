@@ -7,14 +7,13 @@ import type { ID, Metadata } from './common';
 import type { Condition } from './condition';
 
 /**
- * 边类型枚举
+ * 边类型
  */
-export enum EdgeType {
+export type EdgeType =
   /** 默认边，无条件连接，总是可以通过 */
-  DEFAULT = 'DEFAULT',
+  'DEFAULT' |
   /** 条件边，需要条件评估，满足条件才能通过 */
-  CONDITIONAL = 'CONDITIONAL',
-}
+  'CONDITIONAL';
 
 /**
  * 边条件类型（使用统一的 Condition 类型）

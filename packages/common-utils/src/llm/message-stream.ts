@@ -150,8 +150,8 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
    */
   emitted<T extends MessageStreamEvent>(event: MessageStreamEventType): Promise<T> {
     return new Promise((resolve, reject) => {
-      if (event !== MessageStreamEventType.ERROR) {
-        this.once(MessageStreamEventType.ERROR, (error: MessageStreamErrorEvent) => {
+      if (event !== 'error') {
+        this.once('error', (error: MessageStreamErrorEvent) => {
           reject(error.error);
         });
       }
@@ -236,8 +236,8 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
     this.controller.abort();
     
     // 触发中止事件
-    this.emit(MessageStreamEventType.ABORT, {
-      type: MessageStreamEventType.ABORT,
+    this.emit('abort', {
+      type: 'abort',
       reason: 'Stream aborted by user'
     } as MessageStreamAbortEvent);
   }
@@ -298,7 +298,7 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
     }
 
     // 处理 end 事件
-    if (event === MessageStreamEventType.END) {
+    if (event === 'end') {
       this.ended = true;
       this.endPromiseResolve();
     }
@@ -324,7 +324,7 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
     this.listeners.set(event, persistentListeners);
 
     // 处理 abort 事件
-    if (event === MessageStreamEventType.ABORT) {
+    if (event === 'abort') {
       this.aborted = true;
       if (!this.catchingPromiseCreated && eventListeners.length === 0) {
         // 触发未处理的 Promise 错误
@@ -333,12 +333,12 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
         }, 0);
       }
       this.endPromiseReject(new Error('Stream aborted'));
-      this.emit(MessageStreamEventType.END, {} as MessageStreamEndEvent);
+      this.emit('end', {} as MessageStreamEndEvent);
       return;
     }
 
     // 处理 error 事件
-    if (event === MessageStreamEventType.ERROR) {
+    if (event === 'error') {
       this.errored = true;
       if (!this.catchingPromiseCreated && eventListeners.length === 0) {
         // 触发未处理的 Promise 错误
@@ -347,7 +347,7 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
         }, 0);
       }
       this.endPromiseReject((data as MessageStreamErrorEvent).error);
-      this.emit(MessageStreamEventType.END, {} as MessageStreamEndEvent);
+      this.emit('end', {} as MessageStreamEndEvent);
     }
   }
 
@@ -398,8 +398,8 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
         });
         
         // 触发内容块开始事件
-        this.emit(MessageStreamEventType.CONTENT_BLOCK_START, {
-          type: MessageStreamEventType.CONTENT_BLOCK_START,
+        this.emit('contentBlockStart', {
+          type: 'contentBlockStart',
           index: this.currentMessageSnapshot.content.length - 1,
           contentBlock: event.data.content_block
         } as MessageStreamContentBlockStartEvent);
@@ -420,8 +420,8 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
             lastBlock.text += event.data.delta.text;
             this.currentTextSnapshot += event.data.delta.text;
             // 触发文本增量事件
-            this.emit(MessageStreamEventType.TEXT, {
-              type: MessageStreamEventType.TEXT,
+            this.emit('text', {
+              type: 'text',
               delta: event.data.delta.text,
               snapshot: this.currentTextSnapshot
             } as MessageStreamTextEvent);
@@ -436,8 +436,8 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
             textBlock.citations.push(event.data.delta.citation);
             
             // 触发引用事件
-            this.emit(MessageStreamEventType.CITATION, {
-              type: MessageStreamEventType.CITATION,
+            this.emit('citation', {
+              type: 'citation',
               citation: event.data.delta.citation,
               citationsSnapshot: textBlock.citations
             } as MessageStreamCitationEvent);
@@ -454,8 +454,8 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
             }
             
             // 触发输入 JSON 事件
-            this.emit(MessageStreamEventType.INPUT_JSON, {
-              type: MessageStreamEventType.INPUT_JSON,
+            this.emit('inputJson', {
+              type: 'inputJson',
               partialJson: event.data.delta.partial_json,
               jsonSnapshot: (lastBlock as any).input
             } as MessageStreamInputJsonEvent);
@@ -467,8 +467,8 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
             thinkingBlock.thinking += event.data.delta.thinking;
             
             // 触发思考事件
-            this.emit(MessageStreamEventType.THINKING, {
-              type: MessageStreamEventType.THINKING,
+            this.emit('thinking', {
+              type: 'thinking',
               thinkingDelta: event.data.delta.thinking,
               thinkingSnapshot: thinkingBlock.thinking
             } as MessageStreamThinkingEvent);
@@ -480,8 +480,8 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
             thinkingBlock.signature = event.data.delta.signature;
             
             // 触发签名事件
-            this.emit(MessageStreamEventType.SIGNATURE, {
-              type: MessageStreamEventType.SIGNATURE,
+            this.emit('signature', {
+              type: 'signature',
               signature: event.data.delta.signature
             } as MessageStreamSignatureEvent);
           }
@@ -508,15 +508,15 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
         if (this.currentMessageSnapshot && Array.isArray(this.currentMessageSnapshot.content)) {
           const lastBlock = this.currentMessageSnapshot.content[this.currentMessageSnapshot.content.length - 1];
           
-          this.emit(MessageStreamEventType.CONTENT_BLOCK_STOP, {
-            type: MessageStreamEventType.CONTENT_BLOCK_STOP,
+          this.emit('contentBlockStop', {
+            type: 'contentBlockStop',
             index: this.currentMessageSnapshot.content.length - 1
           } as MessageStreamContentBlockStopEvent);
           
           // 如果是工具调用块，触发工具调用事件
           if (lastBlock && lastBlock.type === 'tool_use') {
-            this.emit(MessageStreamEventType.TOOL_CALL, {
-              type: MessageStreamEventType.TOOL_CALL,
+            this.emit('toolCall', {
+              type: 'toolCall',
               toolCall: lastBlock,
               snapshot: this.currentMessageSnapshot
             } as MessageStreamToolCallEvent);
@@ -532,8 +532,8 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
           this.currentTextSnapshot = '';
           
           // 触发消息事件
-          this.emit(MessageStreamEventType.MESSAGE, {
-            type: MessageStreamEventType.MESSAGE,
+          this.emit('message', {
+            type: 'message',
             message
           } as MessageStreamMessageEvent);
         }
@@ -553,8 +553,8 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
   setFinalResult(result: LLMResult): void {
     this.finalResultValue = result;
     // 触发最终消息事件
-    this.emit(MessageStreamEventType.FINAL_MESSAGE, {
-      type: MessageStreamEventType.FINAL_MESSAGE,
+    this.emit('finalMessage', {
+      type: 'finalMessage',
       message: result.message,
       result
     } as MessageStreamFinalMessageEvent);
@@ -565,7 +565,7 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
    */
   [Symbol.asyncIterator](): AsyncIterator<InternalStreamEvent> {
     // 添加事件监听器
-    this.on(MessageStreamEventType.STREAM_EVENT, (event: MessageStreamStreamEvent) => {
+    this.on('streamEvent', (event: MessageStreamStreamEvent) => {
       const internalEvent: InternalStreamEvent = {
         type: event.event.type,
         data: event.event.data
@@ -578,21 +578,21 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
       }
     });
 
-    this.once(MessageStreamEventType.END, () => {
+    this.once('end', () => {
       while (this.readQueue.length > 0) {
         const reader = this.readQueue.shift()!;
         reader({ type: 'end', data: undefined });
       }
     });
 
-    this.once(MessageStreamEventType.ABORT, () => {
+    this.once('abort', () => {
       while (this.readQueue.length > 0) {
         const reader = this.readQueue.shift()!;
         reader({ type: 'abort', data: undefined });
       }
     });
 
-    this.once(MessageStreamEventType.ERROR, (error: MessageStreamErrorEvent) => {
+    this.once('error', (error: MessageStreamErrorEvent) => {
       while (this.readQueue.length > 0) {
         const reader = this.readQueue.shift()!;
         reader({ type: 'error', data: error });
@@ -638,8 +638,8 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
   setRequestId(requestId: string): void {
     this.requestId = requestId;
     // 触发连接建立事件
-    this.emit(MessageStreamEventType.CONNECT, {
-      type: MessageStreamEventType.CONNECT,
+    this.emit('connect', {
+      type: 'connect',
       requestId
     } as MessageStreamConnectEvent);
   }

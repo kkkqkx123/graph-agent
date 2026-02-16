@@ -25,7 +25,7 @@ describe('Checkpoint 事件系统集成测试', () => {
       const events: CheckpointCreatedEvent[] = [];
 
       // 监听事件
-      eventManager.on(EventType.CHECKPOINT_CREATED, (event: CheckpointCreatedEvent) => {
+      eventManager.on('CHECKPOINT_CREATED', (event: CheckpointCreatedEvent) => {
         events.push(event);
       });
 
@@ -36,7 +36,7 @@ describe('Checkpoint 事件系统集成测试', () => {
         workflowId: 'workflow-1',
         timestamp: Date.now(),
         threadState: {
-          status: ThreadStatus.RUNNING,
+          status: 'RUNNING',
           currentNodeId: 'node-1',
           variables: [],
           variableScopes: {
@@ -83,7 +83,7 @@ describe('Checkpoint 事件系统集成测试', () => {
 
       // 验证事件
       expect(events).toHaveLength(1);
-      expect(events[0]?.type).toBe(EventType.CHECKPOINT_CREATED);
+      expect(events[0]?.type).toBe('CHECKPOINT_CREATED');
       expect(events[0]?.checkpointId).toBe('checkpoint-1');
       expect(events[0]?.threadId).toBe('thread-1');
       expect(events[0]?.workflowId).toBe('workflow-1');
@@ -96,7 +96,7 @@ describe('Checkpoint 事件系统集成测试', () => {
       const events: CheckpointDeletedEvent[] = [];
 
       // 监听事件
-      eventManager.on(EventType.CHECKPOINT_DELETED, (event: CheckpointDeletedEvent) => {
+      eventManager.on('CHECKPOINT_DELETED', (event: CheckpointDeletedEvent) => {
         events.push(event);
       });
 
@@ -107,7 +107,7 @@ describe('Checkpoint 事件系统集成测试', () => {
         workflowId: 'workflow-1',
         timestamp: Date.now(),
         threadState: {
-          status: ThreadStatus.RUNNING,
+          status: 'RUNNING',
           currentNodeId: 'node-1',
           variables: [],
           variableScopes: {
@@ -155,7 +155,7 @@ describe('Checkpoint 事件系统集成测试', () => {
 
       // 验证事件
       expect(events).toHaveLength(1);
-      expect(events[0]?.type).toBe(EventType.CHECKPOINT_DELETED);
+      expect(events[0]?.type).toBe('CHECKPOINT_DELETED');
       expect(events[0]?.checkpointId).toBe('checkpoint-1');
       expect(events[0]?.reason).toBe('manual');
     });
@@ -166,7 +166,7 @@ describe('Checkpoint 事件系统集成测试', () => {
       const events: CheckpointFailedEvent[] = [];
 
       // 监听事件
-      eventManager.on(EventType.CHECKPOINT_FAILED, (event: CheckpointFailedEvent) => {
+      eventManager.on('CHECKPOINT_FAILED', (event: CheckpointFailedEvent) => {
         events.push(event);
       });
 
@@ -184,7 +184,7 @@ describe('Checkpoint 事件系统集成测试', () => {
         workflowId: 'workflow-1',
         timestamp: Date.now(),
         threadState: {
-          status: ThreadStatus.RUNNING,
+          status: 'RUNNING',
           currentNodeId: 'node-1',
           variables: [],
           variableScopes: {
@@ -229,7 +229,7 @@ describe('Checkpoint 事件系统集成测试', () => {
 
       // 验证事件
       expect(events).toHaveLength(1);
-      expect(events[0]?.type).toBe(EventType.CHECKPOINT_FAILED);
+      expect(events[0]?.type).toBe('CHECKPOINT_FAILED');
       expect(events[0]?.operation).toBe('create');
       expect(events[0]?.error).toBe('Storage error');
       // checkpointId 可能为 undefined，因为存储失败时可能还没有生成 ID
@@ -247,7 +247,7 @@ describe('Checkpoint 事件系统集成测试', () => {
         workflowId: 'workflow-1',
         timestamp: Date.now(),
         threadState: {
-          status: ThreadStatus.RUNNING,
+          status: 'RUNNING',
           currentNodeId: 'node-1',
           variables: [],
           variableScopes: {

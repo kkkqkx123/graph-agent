@@ -356,7 +356,7 @@ export class MessageArrayUtils {
       return { valid: false, errors };
     }
 
-    const validRoles: MessageRole[] = [MessageRole.SYSTEM, MessageRole.USER, MessageRole.ASSISTANT, MessageRole.TOOL];
+    const validRoles: MessageRole[] = ['system', 'user', 'assistant', 'tool'];
 
     for (let i = 0; i < messages.length; i++) {
       const msg = messages[i];

@@ -13,7 +13,7 @@ describe('SelfReferenceValidationStrategy', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Subgraph',
-        type: NodeType.SUBGRAPH,
+        type: 'SUBGRAPH',
         config: { subgraphId: 'child-workflow' },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -25,7 +25,7 @@ describe('SelfReferenceValidationStrategy', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Start From Trigger',
-        type: NodeType.START_FROM_TRIGGER,
+        type: 'START'_FROM_TRIGGER,
         config: {}, // 空配置
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -37,7 +37,7 @@ describe('SelfReferenceValidationStrategy', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Code',
-        type: NodeType.CODE,
+        type: 'CODE',
         config: { scriptName: 'test' },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -51,7 +51,7 @@ describe('SelfReferenceValidationStrategy', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Subgraph',
-        type: NodeType.SUBGRAPH,
+        type: 'SUBGRAPH',
         config: { subgraphId: 'workflow-1' },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -72,7 +72,7 @@ describe('SelfReferenceValidationStrategy', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Start From Trigger',
-        type: NodeType.START_FROM_TRIGGER,
+        type: 'START'_FROM_TRIGGER,
         config: {}, // 空配置
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -91,7 +91,7 @@ describe('SelfReferenceValidationStrategy', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Subgraph',
-        type: NodeType.SUBGRAPH,
+        type: 'SUBGRAPH',
         config: { subgraphId: 'child-workflow' },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -110,7 +110,7 @@ describe('SelfReferenceValidationStrategy', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Code',
-        type: NodeType.CODE,
+        type: 'CODE',
         config: { scriptName: 'test' },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -132,7 +132,7 @@ describe('SelfReferenceValidationStrategy', () => {
         {
           id: 'node-1',
           name: 'Subgraph',
-          type: NodeType.SUBGRAPH,
+          type: 'SUBGRAPH',
           config: { subgraphId: 'workflow-1' },
           incomingEdgeIds: [],
           outgoingEdgeIds: []
@@ -140,7 +140,7 @@ describe('SelfReferenceValidationStrategy', () => {
         {
           id: 'node-2',
           name: 'Code',
-          type: NodeType.CODE,
+          type: 'CODE',
           config: { scriptName: 'test' },
           incomingEdgeIds: [],
           outgoingEdgeIds: []
@@ -148,7 +148,7 @@ describe('SelfReferenceValidationStrategy', () => {
         {
           id: 'node-3',
           name: 'Start From Trigger',
-          type: NodeType.START_FROM_TRIGGER,
+          type: 'START'_FROM_TRIGGER,
           config: {}, // 空配置，不再验证自引用
           incomingEdgeIds: [],
           outgoingEdgeIds: []
@@ -169,7 +169,7 @@ describe('SelfReferenceValidationStrategy', () => {
         {
           id: 'node-1',
           name: 'Subgraph',
-          type: NodeType.SUBGRAPH,
+          type: 'SUBGRAPH',
           config: { subgraphId: 'child-workflow' },
           incomingEdgeIds: [],
           outgoingEdgeIds: []
@@ -177,7 +177,7 @@ describe('SelfReferenceValidationStrategy', () => {
         {
           id: 'node-2',
           name: 'Start From Trigger',
-          type: NodeType.START_FROM_TRIGGER,
+          type: 'START'_FROM_TRIGGER,
           config: {}, // 空配置
           incomingEdgeIds: [],
           outgoingEdgeIds: []
@@ -206,7 +206,7 @@ describe('SelfReferenceValidationStrategy', () => {
         {
           id: 'node-1',
           name: 'Subgraph',
-          type: NodeType.SUBGRAPH,
+          type: 'SUBGRAPH',
           config: { subgraphId: 'workflow-1' },
           incomingEdgeIds: [],
           outgoingEdgeIds: []

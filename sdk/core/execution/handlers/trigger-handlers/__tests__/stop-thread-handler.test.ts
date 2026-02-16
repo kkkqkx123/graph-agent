@@ -375,7 +375,7 @@ describe('stop-thread-handler', () => {
 
       // 测试暂停操作（使用相同的协调器）
       const pauseAction = {
-        type: TriggerActionType.PAUSE_THREAD,
+        type: 'pause_thread',
         parameters: { threadId }
       };
 
@@ -387,7 +387,7 @@ describe('stop-thread-handler', () => {
 
       // 测试恢复操作（使用相同的协调器）
       const resumeAction = {
-        type: TriggerActionType.RESUME_THREAD,
+        type: 'resume_thread',
         parameters: { threadId }
       };
 

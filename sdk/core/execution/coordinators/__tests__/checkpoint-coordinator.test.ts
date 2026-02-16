@@ -206,7 +206,7 @@ describe('CheckpointCoordinator', () => {
       id: 'thread-1',
       workflowId: 'workflow-1',
       workflowVersion: '1.0.0',
-      status: ThreadStatus.RUNNING,
+      status: 'RUNNING',
       currentNodeId: 'node-1',
       graph: {} as Graph,
       variables: [],
@@ -440,7 +440,7 @@ describe('CheckpointCoordinator', () => {
         workflowId: 'workflow-1',
         timestamp: Date.now(),
         threadState: {
-          status: ThreadStatus.RUNNING,
+          status: 'RUNNING',
           currentNodeId: 'node-1',
           variables: [],
           variableScopes: {
@@ -660,7 +660,7 @@ describe('CheckpointCoordinator', () => {
         workflowId: 'workflow-1',
         timestamp: Date.now(),
         threadState: {
-          status: ThreadStatus.RUNNING,
+          status: 'RUNNING',
           currentNodeId: 'node-1',
           variables: [],
           variableScopes: {
@@ -705,7 +705,7 @@ describe('CheckpointCoordinator', () => {
         workflowId: 'workflow-1',
         timestamp: Date.now(),
         threadState: {
-          status: ThreadStatus.RUNNING,
+          status: 'RUNNING',
           currentNodeId: 'node-1',
           variables: [],
           variableScopes: {

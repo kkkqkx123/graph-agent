@@ -47,7 +47,7 @@ describe('event-emitter', () => {
       // 验证事件对象的结构
       const emittedEvent = mockEmitEvent.mock.calls[0][0];
       expect(emittedEvent).toEqual({
-        type: EventType.NODE_CUSTOM_EVENT,
+        type: 'NODE_CUSTOM_EVENT',
         timestamp: expect.any(Number),
         workflowId: mockThread.workflowId,
         threadId: mockThread.id,

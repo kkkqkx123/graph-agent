@@ -44,21 +44,21 @@ describe('ThreadCascadeManager', () => {
     childThread2 = createMockThread('child-thread-2');
 
     // 设置父子关系
-    parentThread.threadType = ThreadType.TRIGGERED_SUBWORKFLOW;
+    parentThread.threadType = 'TRIGGERED_SUBWORKFLOW';
     parentThread.triggeredSubworkflowContext = {
       parentThreadId: '', // 根线程无父线程
       childThreadIds: [childThread1.id, childThread2.id],
       triggeredSubworkflowId: generateId()
     };
 
-    childThread1.threadType = ThreadType.TRIGGERED_SUBWORKFLOW;
+    childThread1.threadType = 'TRIGGERED_SUBWORKFLOW';
     childThread1.triggeredSubworkflowContext = {
       parentThreadId: parentThread.id,
       childThreadIds: [],
       triggeredSubworkflowId: generateId()
     };
 
-    childThread2.threadType = ThreadType.TRIGGERED_SUBWORKFLOW;
+    childThread2.threadType = 'TRIGGERED_SUBWORKFLOW';
     childThread2.triggeredSubworkflowContext = {
       parentThreadId: parentThread.id,
       childThreadIds: [],
@@ -82,30 +82,30 @@ describe('ThreadCascadeManager', () => {
 
   describe('cascadeCancel', () => {
     it('应该级联取消所有运行中的子线程', async () => {
-      childThread1.status = ThreadStatus.RUNNING;
-      childThread2.status = ThreadStatus.RUNNING;
+      childThread1.status = 'RUNNING';
+      childThread2.status = 'RUNNING';
 
       const cancelledCount = await cascadeManager.cascadeCancel(parentThread.id);
 
       expect(cancelledCount).toBe(2);
-      expect(childThread1.status).toBe(ThreadStatus.CANCELLED);
-      expect(childThread2.status).toBe(ThreadStatus.CANCELLED);
+      expect(childThread1.status).toBe('CANCELLED');
+      expect(childThread2.status).toBe('CANCELLED');
     });
 
     it('应该只取消运行中或暂停的子线程', async () => {
-      childThread1.status = ThreadStatus.RUNNING;
-      childThread2.status = ThreadStatus.COMPLETED;
+      childThread1.status = 'RUNNING';
+      childThread2.status = 'COMPLETED';
 
       const cancelledCount = await cascadeManager.cascadeCancel(parentThread.id);
 
       expect(cancelledCount).toBe(1);
-      expect(childThread1.status).toBe(ThreadStatus.CANCELLED);
-      expect(childThread2.status).toBe(ThreadStatus.COMPLETED);
+      expect(childThread1.status).toBe('CANCELLED');
+      expect(childThread2.status).toBe('COMPLETED');
     });
 
     it('应该处理子线程取消失败的情况', async () => {
-      childThread1.status = ThreadStatus.RUNNING;
-      childThread2.status = ThreadStatus.RUNNING;
+      childThread1.status = 'RUNNING';
+      childThread2.status = 'RUNNING';
 
       // 模拟一个子线程取消失败
       jest.spyOn(lifecycleManager, 'cancelThread').mockImplementationOnce(
@@ -131,14 +131,14 @@ describe('ThreadCascadeManager', () => {
 
   describe('getChildThreadsStatus', () => {
     it('应该返回所有子线程的状态', () => {
-      childThread1.status = ThreadStatus.RUNNING;
-      childThread2.status = ThreadStatus.PAUSED;
+      childThread1.status = 'RUNNING';
+      childThread2.status = 'PAUSED';
 
       const statusMap = cascadeManager.getChildThreadsStatus(parentThread.id);
 
       expect(statusMap.size).toBe(2);
-      expect(statusMap.get(childThread1.id)).toBe(ThreadStatus.RUNNING);
-      expect(statusMap.get(childThread2.id)).toBe(ThreadStatus.PAUSED);
+      expect(statusMap.get(childThread1.id)).toBe('RUNNING');
+      expect(statusMap.get(childThread2.id)).toBe('PAUSED');
     });
 
     it('应该在没有子线程时返回空Map', () => {
@@ -154,22 +154,22 @@ describe('ThreadCascadeManager', () => {
 
   describe('hasActiveChildThreads', () => {
     it('应该在有运行中的子线程时返回true', () => {
-      childThread1.status = ThreadStatus.RUNNING;
-      childThread2.status = ThreadStatus.COMPLETED;
+      childThread1.status = 'RUNNING';
+      childThread2.status = 'COMPLETED';
 
       expect(cascadeManager.hasActiveChildThreads(parentThread.id)).toBe(true);
     });
 
     it('应该在有暂停的子线程时返回true', () => {
-      childThread1.status = ThreadStatus.PAUSED;
-      childThread2.status = ThreadStatus.COMPLETED;
+      childThread1.status = 'PAUSED';
+      childThread2.status = 'COMPLETED';
 
       expect(cascadeManager.hasActiveChildThreads(parentThread.id)).toBe(true);
     });
 
     it('应该在所有子线程都完成时返回false', () => {
-      childThread1.status = ThreadStatus.COMPLETED;
-      childThread2.status = ThreadStatus.FAILED;
+      childThread1.status = 'COMPLETED';
+      childThread2.status = 'FAILED';
 
       expect(cascadeManager.hasActiveChildThreads(parentThread.id)).toBe(false);
     });
@@ -177,13 +177,13 @@ describe('ThreadCascadeManager', () => {
 
   describe('waitForAllChildrenCompleted', () => {
     it('应该在所有子线程完成时返回true', async () => {
-      childThread1.status = ThreadStatus.RUNNING;
-      childThread2.status = ThreadStatus.RUNNING;
+      childThread1.status = 'RUNNING';
+      childThread2.status = 'RUNNING';
 
       // 模拟子线程在100ms后完成并触发事件
       setTimeout(async () => {
-        childThread1.status = ThreadStatus.COMPLETED;
-        childThread2.status = ThreadStatus.COMPLETED;
+        childThread1.status = 'COMPLETED';
+        childThread2.status = 'COMPLETED';
         // 触发完成事件
         const result1: ThreadResult = {
           threadId: childThread1.id,
@@ -191,7 +191,7 @@ describe('ThreadCascadeManager', () => {
           executionTime: 100,
           nodeResults: [],
           metadata: {
-            status: ThreadStatus.COMPLETED,
+            status: 'COMPLETED',
             startTime: childThread1.startTime,
             endTime: now(),
             executionTime: 100,
@@ -205,7 +205,7 @@ describe('ThreadCascadeManager', () => {
           executionTime: 100,
           nodeResults: [],
           metadata: {
-            status: ThreadStatus.COMPLETED,
+            status: 'COMPLETED',
             startTime: childThread2.startTime,
             endTime: now(),
             executionTime: 100,
@@ -223,8 +223,8 @@ describe('ThreadCascadeManager', () => {
     });
 
     it('应该在超时时返回false', async () => {
-      childThread1.status = ThreadStatus.RUNNING;
-      childThread2.status = ThreadStatus.RUNNING;
+      childThread1.status = 'RUNNING';
+      childThread2.status = 'RUNNING';
 
       const result = await cascadeManager.waitForAllChildrenCompleted(parentThread.id, 100);
 
@@ -232,8 +232,8 @@ describe('ThreadCascadeManager', () => {
     });
 
     it('应该在子线程已经完成时立即返回true', async () => {
-      childThread1.status = ThreadStatus.COMPLETED;
-      childThread2.status = ThreadStatus.COMPLETED;
+      childThread1.status = 'COMPLETED';
+      childThread2.status = 'COMPLETED';
 
       const result = await cascadeManager.waitForAllChildrenCompleted(parentThread.id, 5000);
 
@@ -241,8 +241,8 @@ describe('ThreadCascadeManager', () => {
     });
 
     it('应该在子线程失败时返回true', async () => {
-      childThread1.status = ThreadStatus.RUNNING;
-      childThread2.status = ThreadStatus.RUNNING;
+      childThread1.status = 'RUNNING';
+      childThread2.status = 'RUNNING';
 
       // 模拟子线程失败
       setTimeout(async () => {
@@ -256,8 +256,8 @@ describe('ThreadCascadeManager', () => {
     });
 
     it('应该在子线程取消时返回true', async () => {
-      childThread1.status = ThreadStatus.RUNNING;
-      childThread2.status = ThreadStatus.RUNNING;
+      childThread1.status = 'RUNNING';
+      childThread2.status = 'RUNNING';
 
       // 模拟子线程取消
       setTimeout(async () => {
@@ -312,7 +312,7 @@ function createMockThread(id: string): Thread {
     id,
     workflowId: generateId(),
     workflowVersion: '1.0.0',
-    status: ThreadStatus.CREATED,
+    status: 'CREATED',
     currentNodeId: 'node1',
     graph: {
       nodes: new Map(),

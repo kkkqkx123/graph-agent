@@ -42,7 +42,7 @@ describe('TaskRegistry', () => {
       const taskId = taskRegistry.register(mockThreadContext, mockManager);
       const taskInfo = taskRegistry.get(taskId);
       
-      expect(taskInfo?.status).toBe(TaskStatus.QUEUED);
+      expect(taskInfo?.status).toBe('QUEUED');
     });
 
     it('应该记录提交时间', () => {
@@ -62,7 +62,7 @@ describe('TaskRegistry', () => {
       taskRegistry.updateStatusToRunning(taskId);
       
       const taskInfo = taskRegistry.get(taskId);
-      expect(taskInfo?.status).toBe(TaskStatus.RUNNING);
+      expect(taskInfo?.status).toBe('RUNNING');
       expect(taskInfo?.startTime).toBeDefined();
     });
   });
@@ -75,7 +75,7 @@ describe('TaskRegistry', () => {
       taskRegistry.updateStatusToCompleted(taskId, mockResult);
       
       const taskInfo = taskRegistry.get(taskId);
-      expect(taskInfo?.status).toBe(TaskStatus.COMPLETED);
+      expect(taskInfo?.status).toBe('COMPLETED');
       expect(taskInfo?.result).toBe(mockResult);
       expect(taskInfo?.completeTime).toBeDefined();
     });
@@ -89,7 +89,7 @@ describe('TaskRegistry', () => {
       taskRegistry.updateStatusToFailed(taskId, mockError);
       
       const taskInfo = taskRegistry.get(taskId);
-      expect(taskInfo?.status).toBe(TaskStatus.FAILED);
+      expect(taskInfo?.status).toBe('FAILED');
       expect(taskInfo?.error).toBe(mockError);
       expect(taskInfo?.completeTime).toBeDefined();
     });
@@ -102,7 +102,7 @@ describe('TaskRegistry', () => {
       taskRegistry.updateStatusToCancelled(taskId);
       
       const taskInfo = taskRegistry.get(taskId);
-      expect(taskInfo?.status).toBe(TaskStatus.CANCELLED);
+      expect(taskInfo?.status).toBe('CANCELLED');
       expect(taskInfo?.completeTime).toBeDefined();
     });
   });
@@ -114,7 +114,7 @@ describe('TaskRegistry', () => {
       taskRegistry.updateStatusToTimeout(taskId);
       
       const taskInfo = taskRegistry.get(taskId);
-      expect(taskInfo?.status).toBe(TaskStatus.TIMEOUT);
+      expect(taskInfo?.status).toBe('TIMEOUT');
       expect(taskInfo?.completeTime).toBeDefined();
     });
   });
@@ -164,8 +164,8 @@ describe('TaskRegistry', () => {
       taskRegistry.updateStatusToRunning(taskId1);
       taskRegistry.updateStatusToCompleted(taskId2, {} as any);
       
-      const runningTasks = taskRegistry.getByStatus(TaskStatus.RUNNING);
-      const completedTasks = taskRegistry.getByStatus(TaskStatus.COMPLETED);
+      const runningTasks = taskRegistry.getByStatus('RUNNING');
+      const completedTasks = taskRegistry.getByStatus('COMPLETED');
       
       expect(runningTasks).toHaveLength(1);
       expect(runningTasks[0]?.id).toBe(taskId1);

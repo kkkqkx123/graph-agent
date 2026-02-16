@@ -19,7 +19,7 @@ describe('pause-thread-handler', () => {
 
   beforeEach(() => {
     mockAction = {
-      type: TriggerActionType.PAUSE_THREAD,
+      type: 'pause_thread',
       parameters: {
         threadId
       }

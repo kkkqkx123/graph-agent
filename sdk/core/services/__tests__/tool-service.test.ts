@@ -16,7 +16,7 @@ describe('ToolService', () => {
     mockTool = {
       id: 'test-tool-1',
       name: 'test-tool',
-      type: ToolType.STATELESS,
+      type: 'STATELESS',
       description: 'Test tool',
       parameters: {
         properties: {
@@ -88,9 +88,9 @@ describe('ToolService', () => {
       service.registerTool({
         ...mockTool,
         id: 'test-tool-2',
-        type: ToolType.REST
+        type: 'REST'
       });
-      const statelessTools = service.listToolsByType(ToolType.STATELESS);
+      const statelessTools = service.listToolsByType('STATELESS');
       expect(statelessTools).toHaveLength(1);
     });
   });
@@ -130,7 +130,7 @@ describe('ToolService', () => {
       const statelessTool: Tool = {
         id: 'test-stateless',
         name: 'test-stateless',
-        type: ToolType.STATELESS,
+        type: 'STATELESS',
         description: 'Stateless tool',
         parameters: {
           properties: {
@@ -168,7 +168,7 @@ describe('ToolService', () => {
       const statelessTool: Tool = {
         id: 'error-tool',
         name: 'error-tool',
-        type: ToolType.STATELESS,
+        type: 'STATELESS',
         description: 'Tool that throws error',
         parameters: {
           properties: {
@@ -198,7 +198,7 @@ describe('ToolService', () => {
       const statelessTool: Tool = {
         id: 'test-batch',
         name: 'test-batch',
-        type: ToolType.STATELESS,
+        type: 'STATELESS',
         description: 'Stateless tool for batch testing',
         parameters: {
           properties: {

@@ -17,14 +17,14 @@ import { ok, err } from '@modular-agent/common-utils';
  */
 const triggerConditionSchema = z.object({
   eventType: z.custom<EventType>((val): val is EventType =>
-    Object.values(EventType).includes(val as EventType)
+    ['THREAD_STARTED', 'THREAD_COMPLETED', 'THREAD_FAILED', 'THREAD_PAUSED', 'THREAD_RESUMED', 'THREAD_CANCELLED', 'THREAD_STATE_CHANGED', 'THREAD_FORK_STARTED', 'THREAD_FORK_COMPLETED', 'THREAD_JOIN_STARTED', 'THREAD_JOIN_CONDITION_MET', 'THREAD_COPY_STARTED', 'THREAD_COPY_COMPLETED', 'NODE_STARTED', 'NODE_COMPLETED', 'NODE_FAILED', 'NODE_CUSTOM_EVENT', 'TOKEN_LIMIT_EXCEEDED', 'TOKEN_USAGE_WARNING', 'MESSAGE_ADDED', 'TOOL_CALL_STARTED', 'TOOL_CALL_COMPLETED', 'TOOL_CALL_FAILED', 'TOOL_ADDED', 'CONVERSATION_STATE_CHANGED', 'ERROR', 'CHECKPOINT_CREATED', 'CHECKPOINT_RESTORED', 'CHECKPOINT_DELETED', 'CHECKPOINT_FAILED', 'SUBGRAPH_STARTED', 'SUBGRAPH_COMPLETED', 'TRIGGERED_SUBGRAPH_STARTED', 'TRIGGERED_SUBGRAPH_COMPLETED', 'TRIGGERED_SUBGRAPH_FAILED', 'VARIABLE_CHANGED', 'USER_INTERACTION_REQUESTED', 'USER_INTERACTION_RESPONDED', 'USER_INTERACTION_PROCESSED', 'USER_INTERACTION_FAILED', 'HUMAN_RELAY_REQUESTED', 'HUMAN_RELAY_RESPONDED', 'HUMAN_RELAY_PROCESSED', 'HUMAN_RELAY_FAILED', 'LLM_STREAM_ABORTED', 'LLM_STREAM_ERROR', 'DYNAMIC_THREAD_SUBMITTED', 'DYNAMIC_THREAD_COMPLETED', 'DYNAMIC_THREAD_FAILED', 'DYNAMIC_THREAD_CANCELLED'].includes(val as EventType)
   ),
   eventName: z.string().optional(),
   metadata: z.record(z.string(), z.any()).optional()
 }).refine(
   (data) => {
     // 当 eventType 为 NODE_CUSTOM_EVENT 时，eventName 必填
-    if (data.eventType === EventType.NODE_CUSTOM_EVENT && !data.eventName) {
+    if (data.eventType === 'NODE_CUSTOM_EVENT' && !data.eventName) {
       return false;
     }
     return true;
@@ -99,7 +99,7 @@ const executeTriggeredSubgraphActionConfigSchema = z.object({
  */
 const triggerActionSchema = z.object({
   type: z.custom<TriggerActionType>((val): val is TriggerActionType =>
-    Object.values(TriggerActionType).includes(val as TriggerActionType)
+    ['start_workflow', 'stop_workflow', 'pause_thread', 'resume_thread', 'skip_node', 'set_variable', 'send_notification', 'custom', 'execute_triggered_subgraph'].includes(val as TriggerActionType)
   ),
   parameters: z.record(z.string(), z.any()),
   metadata: z.record(z.string(), z.any()).optional()
@@ -125,14 +125,14 @@ const workflowTriggerSchema = z.object({
 const triggerConfigOverrideSchema = z.object({
   condition: z.object({
     eventType: z.custom<EventType>((val): val is EventType =>
-      Object.values(EventType).includes(val as EventType)
+      ['THREAD_STARTED', 'THREAD_COMPLETED', 'THREAD_FAILED', 'THREAD_PAUSED', 'THREAD_RESUMED', 'THREAD_CANCELLED', 'THREAD_STATE_CHANGED', 'THREAD_FORK_STARTED', 'THREAD_FORK_COMPLETED', 'THREAD_JOIN_STARTED', 'THREAD_JOIN_CONDITION_MET', 'THREAD_COPY_STARTED', 'THREAD_COPY_COMPLETED', 'NODE_STARTED', 'NODE_COMPLETED', 'NODE_FAILED', 'NODE_CUSTOM_EVENT', 'TOKEN_LIMIT_EXCEEDED', 'TOKEN_USAGE_WARNING', 'MESSAGE_ADDED', 'TOOL_CALL_STARTED', 'TOOL_CALL_COMPLETED', 'TOOL_CALL_FAILED', 'TOOL_ADDED', 'CONVERSATION_STATE_CHANGED', 'ERROR', 'CHECKPOINT_CREATED', 'CHECKPOINT_RESTORED', 'CHECKPOINT_DELETED', 'CHECKPOINT_FAILED', 'SUBGRAPH_STARTED', 'SUBGRAPH_COMPLETED', 'TRIGGERED_SUBGRAPH_STARTED', 'TRIGGERED_SUBGRAPH_COMPLETED', 'TRIGGERED_SUBGRAPH_FAILED', 'VARIABLE_CHANGED', 'USER_INTERACTION_REQUESTED', 'USER_INTERACTION_RESPONDED', 'USER_INTERACTION_PROCESSED', 'USER_INTERACTION_FAILED', 'HUMAN_RELAY_REQUESTED', 'HUMAN_RELAY_RESPONDED', 'HUMAN_RELAY_PROCESSED', 'HUMAN_RELAY_FAILED', 'LLM_STREAM_ABORTED', 'LLM_STREAM_ERROR', 'DYNAMIC_THREAD_SUBMITTED', 'DYNAMIC_THREAD_COMPLETED', 'DYNAMIC_THREAD_FAILED', 'DYNAMIC_THREAD_CANCELLED'].includes(val as EventType)
     ).optional(),
     eventName: z.string().optional(),
     metadata: z.record(z.string(), z.any()).optional()
   }).optional(),
   action: z.object({
     type: z.custom<TriggerActionType>((val): val is TriggerActionType =>
-      Object.values(TriggerActionType).includes(val as TriggerActionType)
+      ['start_workflow', 'stop_workflow', 'pause_thread', 'resume_thread', 'skip_node', 'set_variable', 'send_notification', 'custom', 'execute_triggered_subgraph'].includes(val as TriggerActionType)
     ).optional(),
     parameters: z.record(z.string(), z.any()).optional(),
     metadata: z.record(z.string(), z.any()).optional()
@@ -225,7 +225,7 @@ export function validateTriggerAction(action: TriggerAction, path: string = 'act
   }
 
   // 特殊处理：当 action.type 为 EXECUTE_TRIGGERED_SUBGRAPH 时，验证 parameters
-  if (action.type === TriggerActionType.EXECUTE_TRIGGERED_SUBGRAPH) {
+  if (action.type === 'execute_triggered_subgraph') {
     const paramResult = validateExecuteTriggeredSubgraphActionConfig(
       action.parameters as ExecuteTriggeredSubgraphActionConfig,
       `${path}.parameters`

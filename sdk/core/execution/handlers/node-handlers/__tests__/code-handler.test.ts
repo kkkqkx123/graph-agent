@@ -31,7 +31,7 @@ describe('code-handler', () => {
       id: 'thread-1',
       workflowId: 'workflow-1',
       workflowVersion: '1.0.0',
-      status: ThreadStatus.RUNNING,
+      status: 'RUNNING',
       currentNodeId: '',
       graph: {} as any,
       variables: [],
@@ -67,7 +67,7 @@ describe('code-handler', () => {
       mockNode = {
         id: 'code-node-1',
         name: 'Code Node',
-        type: NodeType.CODE,
+        type: 'CODE',
         config: {
           scriptName: 'test-script',
           scriptType: 'javascript',
@@ -88,7 +88,7 @@ describe('code-handler', () => {
       expect(executionResult).toMatchObject({
         step: 1,
         nodeId: 'code-node-1',
-        nodeType: NodeType.CODE,
+        nodeType: 'CODE',
         status: 'COMPLETED'
       });
       expect(executionResult.timestamp).toBeDefined();
@@ -101,7 +101,7 @@ describe('code-handler', () => {
       mockNode = {
         id: 'code-node-1',
         name: 'Code Node',
-        type: NodeType.CODE,
+        type: 'CODE',
         config: {
           scriptName: 'failing-script',
           scriptType: 'javascript',
@@ -121,7 +121,7 @@ describe('code-handler', () => {
       expect(executionResult).toMatchObject({
         step: 1,
         nodeId: 'code-node-1',
-        nodeType: NodeType.CODE,
+        nodeType: 'CODE',
         status: 'FAILED',
         error: 'Script execution failed'
       });
@@ -144,7 +144,7 @@ describe('code-handler', () => {
       mockNode = {
         id: 'code-node-1',
         name: 'Code Node',
-        type: NodeType.CODE,
+        type: 'CODE',
         config: {
           scriptName: 'test-script',
           scriptType: 'javascript',
@@ -172,7 +172,7 @@ describe('code-handler', () => {
       mockNode = {
         id: 'code-node-1',
         name: 'Code Node',
-        type: NodeType.CODE,
+        type: 'CODE',
         config: {
           scriptName: 'test-script',
           scriptType: 'javascript',
@@ -199,7 +199,7 @@ describe('code-handler', () => {
       mockNode = {
         id: 'code-node-1',
         name: 'Code Node',
-        type: NodeType.CODE,
+        type: 'CODE',
         config: {
           scriptName: 'inline-script',
           scriptType: 'javascript',

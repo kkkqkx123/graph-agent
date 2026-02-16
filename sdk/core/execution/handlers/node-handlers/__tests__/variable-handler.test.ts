@@ -19,7 +19,7 @@ describe('variable-handler', () => {
       id: 'thread-1',
       workflowId: 'workflow-1',
       workflowVersion: '1.0.0',
-      status: ThreadStatus.RUNNING,
+      status: 'RUNNING',
       currentNodeId: '',
       graph: {} as any,
       variables: [],
@@ -42,7 +42,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'result',
           expression: '10 + 20',
@@ -79,7 +79,7 @@ describe('variable-handler', () => {
       expect(mockThread.nodeResults[0]).toMatchObject({
         step: 1,
         nodeId: 'variable-node-1',
-        nodeType: NodeType.VARIABLE,
+        nodeType: 'VARIABLE',
         status: 'COMPLETED',
         data: {
           variableName: 'result',
@@ -106,7 +106,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'counter',
           expression: 'counter + 1',
@@ -135,7 +135,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'result',
           expression: '{{baseValue}} * {{multiplier}}',
@@ -159,7 +159,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'result',
           expression: '{{globalValue}} / 2',
@@ -186,7 +186,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'result',
           expression: '{{value}}',
@@ -213,7 +213,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'userName',
           expression: '{{user.name}}',
@@ -235,7 +235,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'result',
           expression: '{{nonExistentVar}} + 1',
@@ -258,7 +258,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'num',
           expression: '"42"',
@@ -279,7 +279,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'num',
           expression: '"not a number"',
@@ -299,7 +299,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'str',
           expression: '123',
@@ -320,7 +320,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'bool',
           expression: '1',
@@ -341,7 +341,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'arr',
           expression: '[1, 2, 3]',
@@ -362,7 +362,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'obj',
           expression: '{ key: "value" }',
@@ -383,7 +383,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'invalid',
           expression: '42',
@@ -405,7 +405,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'globalVar',
           expression: '100',
@@ -426,7 +426,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'threadVar',
           expression: '200',
@@ -449,7 +449,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'subgraphVar',
           expression: '300',
@@ -471,7 +471,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'loopVar',
           expression: '400',
@@ -491,12 +491,12 @@ describe('variable-handler', () => {
   describe('执行条件测试', () => {
     it('应该在非RUNNING状态下跳过执行', async () => {
       const nonRunningStates = [
-        ThreadStatus.CREATED,
-        ThreadStatus.PAUSED,
-        ThreadStatus.COMPLETED,
-        ThreadStatus.FAILED,
-        ThreadStatus.CANCELLED,
-        ThreadStatus.TIMEOUT
+        'CREATED',
+        'PAUSED',
+        'COMPLETED',
+        'FAILED',
+        'CANCELLED',
+        'TIMEOUT'
       ];
 
       for (const status of nonRunningStates) {
@@ -506,7 +506,7 @@ describe('variable-handler', () => {
         mockNode = {
           id: 'variable-node-1',
           name: 'Variable Node',
-          type: NodeType.VARIABLE,
+          type: 'VARIABLE',
           config: {
             variableName: 'result',
             expression: '10 + 20',
@@ -547,7 +547,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'readonlyVar',
           expression: '200',
@@ -570,7 +570,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'result',
           expression: 'invalid syntax here',
@@ -595,7 +595,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'result',
           expression: '({{a}} + {{b}}) * 2 - 5',
@@ -617,7 +617,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'result',
           expression: '',
@@ -637,7 +637,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'result',
           expression: 'null',
@@ -657,7 +657,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'readonlyVar',
           expression: '100',
@@ -680,7 +680,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'result',
           expression: '10',
@@ -705,7 +705,7 @@ describe('variable-handler', () => {
       mockNode = {
         id: 'variable-node-1',
         name: 'Variable Node',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'result',
           expression: '10',

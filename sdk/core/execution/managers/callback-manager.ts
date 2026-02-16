@@ -88,7 +88,7 @@ export class CallbackManager<T = any> {
 
       // 通知所有事件监听器
       const event: DynamicThreadEvent = {
-        type: DynamicThreadEventType.COMPLETED,
+        type: 'DYNAMIC_THREAD_COMPLETED',
         threadId,
         timestamp: Date.now(),
         data: { result }
@@ -131,7 +131,7 @@ export class CallbackManager<T = any> {
 
       // 通知所有事件监听器
       const event: DynamicThreadEvent = {
-        type: DynamicThreadEventType.FAILED,
+        type: 'DYNAMIC_THREAD_FAILED',
         threadId,
         timestamp: Date.now(),
         data: { error }

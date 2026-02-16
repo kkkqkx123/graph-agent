@@ -7,42 +7,25 @@
 import type { LLMMessage, LLMResult } from '@modular-agent/types';
 
 /**
- * 消息流事件类型枚举
+ * 消息流事件类型
  */
-export enum MessageStreamEventType {
-  /** 连接建立 */
-  CONNECT = 'connect',
-  /** 流事件 */
-  STREAM_EVENT = 'streamEvent',
-  /** 文本增量 */
-  TEXT = 'text',
-  /** 工具调用 */
-  TOOL_CALL = 'toolCall',
-  /** 消息 */
-  MESSAGE = 'message',
-  /** 最终消息 */
-  FINAL_MESSAGE = 'finalMessage',
-  /** 错误 */
-  ERROR = 'error',
-  /** 中止 */
-  ABORT = 'abort',
-  /** 结束 */
-  END = 'end',
-  
+export type MessageStreamEventType =
+  | 'connect'           /** 连接建立 */
+  | 'streamEvent'       /** 流事件 */
+  | 'text'              /** 文本增量 */
+  | 'toolCall'          /** 工具调用 */
+  | 'message'           /** 消息 */
+  | 'finalMessage'      /** 最终消息 */
+  | 'error'             /** 错误 */
+  | 'abort'             /** 中止 */
+  | 'end'               /** 结束 */
   // 新增事件类型
-  /** 引用事件 */
-  CITATION = 'citation',
-  /** 思考事件 */
-  THINKING = 'thinking',
-  /** 签名事件 */
-  SIGNATURE = 'signature',
-  /** 输入 JSON 事件 */
-  INPUT_JSON = 'inputJson',
-  /** 内容块开始事件 */
-  CONTENT_BLOCK_START = 'contentBlockStart',
-  /** 内容块停止事件 */
-  CONTENT_BLOCK_STOP = 'contentBlockStop'
-}
+  | 'citation'          /** 引用事件 */
+  | 'thinking'          /** 思考事件 */
+  | 'signature'         /** 签名事件 */
+  | 'inputJson'         /** 输入 JSON 事件 */
+  | 'contentBlockStart' /** 内容块开始事件 */
+  | 'contentBlockStop'; /** 内容块停止事件 */
 
 /**
  * 消息流事件类型
@@ -69,7 +52,7 @@ export type MessageStreamEvent =
  * 消息流连接建立事件
  */
 export interface MessageStreamConnectEvent {
-  type: MessageStreamEventType.CONNECT;
+  type: 'connect';
   requestId: string;
 }
 
@@ -77,7 +60,7 @@ export interface MessageStreamConnectEvent {
  * 消息流事件
  */
 export interface MessageStreamStreamEvent {
-  type: MessageStreamEventType.STREAM_EVENT;
+  type: 'streamEvent';
   event: {
     type: string;
     data: any;
@@ -89,7 +72,7 @@ export interface MessageStreamStreamEvent {
  * 消息流文本增量事件
  */
 export interface MessageStreamTextEvent {
-  type: MessageStreamEventType.TEXT;
+  type: 'text';
   delta: string;
   snapshot: string;
 }
@@ -98,7 +81,7 @@ export interface MessageStreamTextEvent {
  * 消息流工具调用事件
  */
 export interface MessageStreamToolCallEvent {
-  type: MessageStreamEventType.TOOL_CALL;
+  type: 'toolCall';
   toolCall: any;
   snapshot: LLMMessage;
 }
@@ -107,7 +90,7 @@ export interface MessageStreamToolCallEvent {
  * 消息流消息事件
  */
 export interface MessageStreamMessageEvent {
-  type: MessageStreamEventType.MESSAGE;
+  type: 'message';
   message: LLMMessage;
 }
 
@@ -115,7 +98,7 @@ export interface MessageStreamMessageEvent {
  * 消息流最终消息事件
  */
 export interface MessageStreamFinalMessageEvent {
-  type: MessageStreamEventType.FINAL_MESSAGE;
+  type: 'finalMessage';
   message: LLMMessage;
   result: LLMResult;
 }
@@ -124,7 +107,7 @@ export interface MessageStreamFinalMessageEvent {
  * 消息流错误事件
  */
 export interface MessageStreamErrorEvent {
-  type: MessageStreamEventType.ERROR;
+  type: 'error';
   error: Error;
 }
 
@@ -132,7 +115,7 @@ export interface MessageStreamErrorEvent {
  * 消息流中止事件
  */
 export interface MessageStreamAbortEvent {
-  type: MessageStreamEventType.ABORT;
+  type: 'abort';
   reason?: string;
 }
 
@@ -140,7 +123,7 @@ export interface MessageStreamAbortEvent {
  * 消息流结束事件
  */
 export interface MessageStreamEndEvent {
-  type: MessageStreamEventType.END;
+  type: 'end';
 }
 
 /**
@@ -244,7 +227,7 @@ export type TextCitation =
  * 消息流引用事件
  */
 export interface MessageStreamCitationEvent {
-  type: MessageStreamEventType.CITATION;
+  type: 'citation';
   /** 引用信息 */
   citation: TextCitation;
   /** 所有引用的快照 */
@@ -255,7 +238,7 @@ export interface MessageStreamCitationEvent {
  * 消息流思考事件
  */
 export interface MessageStreamThinkingEvent {
-  type: MessageStreamEventType.THINKING;
+  type: 'thinking';
   /** 思考增量 */
   thinkingDelta: string;
   /** 思考快照 */
@@ -266,7 +249,7 @@ export interface MessageStreamThinkingEvent {
  * 消息流签名事件
  */
 export interface MessageStreamSignatureEvent {
-  type: MessageStreamEventType.SIGNATURE;
+  type: 'signature';
   /** 签名 */
   signature: string;
 }
@@ -275,7 +258,7 @@ export interface MessageStreamSignatureEvent {
  * 消息流输入 JSON 事件
  */
 export interface MessageStreamInputJsonEvent {
-  type: MessageStreamEventType.INPUT_JSON;
+  type: 'inputJson';
   /** 部分 JSON */
   partialJson: string;
   /** JSON 快照 */
@@ -286,7 +269,7 @@ export interface MessageStreamInputJsonEvent {
  * 消息流内容块开始事件
  */
 export interface MessageStreamContentBlockStartEvent {
-  type: MessageStreamEventType.CONTENT_BLOCK_START;
+  type: 'contentBlockStart';
   /** 内容块索引 */
   index: number;
   /** 内容块 */
@@ -300,7 +283,7 @@ export interface MessageStreamContentBlockStartEvent {
  * 消息流内容块停止事件
  */
 export interface MessageStreamContentBlockStopEvent {
-  type: MessageStreamEventType.CONTENT_BLOCK_STOP;
+  type: 'contentBlockStop';
   /** 内容块索引 */
   index: number;
 }

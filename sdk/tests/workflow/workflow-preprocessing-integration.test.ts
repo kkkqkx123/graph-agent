@@ -39,12 +39,12 @@ describe('Workflow Preprocessing Integration', () => {
         id: 'simple-workflow',
         name: 'Simple Workflow',
         version: '1.0.0',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         description: 'A simple workflow',
         nodes: [
           {
             id: 'start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -52,7 +52,7 @@ describe('Workflow Preprocessing Integration', () => {
           },
           {
             id: 'end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],
@@ -91,12 +91,12 @@ describe('Workflow Preprocessing Integration', () => {
         id: 'sub-workflow',
         name: 'Sub Workflow',
         version: '1.0.0',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         description: 'Sub workflow',
         nodes: [
           {
             id: 'sub-start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Sub Start',
             config: {},
             outgoingEdgeIds: ['sub-edge-1'],
@@ -104,7 +104,7 @@ describe('Workflow Preprocessing Integration', () => {
           },
           {
             id: 'sub-end',
-            type: NodeType.END,
+            type: 'END',
             name: 'Sub End',
             config: {},
             outgoingEdgeIds: [],
@@ -130,12 +130,12 @@ describe('Workflow Preprocessing Integration', () => {
         id: 'main-workflow',
         name: 'Main Workflow',
         version: '1.0.0',
-        type: WorkflowType.DEPENDENT,
+        type: 'DEPENDENT',
         description: 'Main workflow',
         nodes: [
           {
             id: 'start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -143,7 +143,7 @@ describe('Workflow Preprocessing Integration', () => {
           },
           {
             id: 'subgraph',
-            type: NodeType.SUBGRAPH,
+            type: 'SUBGRAPH',
             name: 'Subgraph',
             config: {
               subgraphId: 'sub-workflow',
@@ -153,7 +153,7 @@ describe('Workflow Preprocessing Integration', () => {
           },
           {
             id: 'end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],
@@ -198,12 +198,12 @@ describe('Workflow Preprocessing Integration', () => {
         id: 'triggered-workflow',
         name: 'Triggered Workflow',
         version: '1.0.0',
-        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
+        type: 'TRIGGERED_SUBWORKFLOW',
         description: 'Triggered workflow',
         nodes: [
           {
             id: 'triggered-start',
-            type: NodeType.START_FROM_TRIGGER,
+            type: 'START'_FROM_TRIGGER,
             name: 'Triggered Start',
             config: {},
             outgoingEdgeIds: ['triggered-edge-1'],
@@ -211,7 +211,7 @@ describe('Workflow Preprocessing Integration', () => {
           },
           {
             id: 'triggered-end',
-            type: NodeType.CONTINUE_FROM_TRIGGER,
+            type: 'CONTINUE_FROM_TRIGGER',
             name: 'Triggered End',
             config: {},
             outgoingEdgeIds: [],
@@ -237,12 +237,12 @@ describe('Workflow Preprocessing Integration', () => {
         id: 'main-workflow',
         name: 'Main Workflow',
         version: '1.0.0',
-        type: WorkflowType.DEPENDENT,
+        type: 'DEPENDENT',
         description: 'Main workflow',
         nodes: [
           {
             id: 'start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -250,7 +250,7 @@ describe('Workflow Preprocessing Integration', () => {
           },
           {
             id: 'end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],
@@ -274,7 +274,7 @@ describe('Workflow Preprocessing Integration', () => {
               eventType: 'ERROR' as any
             },
             action: {
-              type: TriggerActionType.EXECUTE_TRIGGERED_SUBGRAPH,
+              type: 'execute_triggered_subgraph',
               parameters: {
                 triggeredWorkflowId: 'triggered-workflow',
                 waitForCompletion: true
@@ -303,12 +303,12 @@ describe('Workflow Preprocessing Integration', () => {
         id: 'main-workflow',
         name: 'Main Workflow',
         version: '1.0.0',
-        type: WorkflowType.DEPENDENT,
+        type: 'DEPENDENT',
         description: 'Main workflow',
         nodes: [
           {
             id: 'start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -316,7 +316,7 @@ describe('Workflow Preprocessing Integration', () => {
           },
           {
             id: 'end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],
@@ -340,7 +340,7 @@ describe('Workflow Preprocessing Integration', () => {
               eventType: 'ERROR' as any
             },
             action: {
-              type: TriggerActionType.EXECUTE_TRIGGERED_SUBGRAPH,
+              type: 'execute_triggered_subgraph',
               parameters: {
                 triggeredWorkflowId: 'non-existent-workflow',
                 waitForCompletion: true
@@ -367,12 +367,12 @@ describe('Workflow Preprocessing Integration', () => {
         id: 'main-workflow',
         name: 'Main Workflow',
         version: '1.0.0',
-        type: WorkflowType.DEPENDENT,
+        type: 'DEPENDENT',
         description: 'Main workflow',
         nodes: [
           {
             id: 'start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -380,7 +380,7 @@ describe('Workflow Preprocessing Integration', () => {
           },
           {
             id: 'subgraph',
-            type: NodeType.SUBGRAPH,
+            type: 'SUBGRAPH',
             name: 'Subgraph',
             config: {
               subgraphId: 'non-existent-sub-workflow',
@@ -390,7 +390,7 @@ describe('Workflow Preprocessing Integration', () => {
           },
           {
             id: 'end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],

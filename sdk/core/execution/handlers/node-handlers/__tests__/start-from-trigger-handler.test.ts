@@ -19,7 +19,7 @@ describe('start-from-trigger-handler', () => {
       id: 'thread-1',
       workflowId: 'workflow-1',
       workflowVersion: '1.0.0',
-      status: ThreadStatus.CREATED,
+      status: 'CREATED',
       currentNodeId: '',
       graph: {} as any,
       variables: [],
@@ -40,7 +40,7 @@ describe('start-from-trigger-handler', () => {
     mockNode = {
       id: 'start-from-trigger-node-1',
       name: 'Start From Trigger Node',
-      type: NodeType.START_FROM_TRIGGER,
+      type: 'START'_FROM_TRIGGER,
       config: {} as StartFromTriggerNodeConfig,
       incomingEdgeIds: [],
       outgoingEdgeIds: []
@@ -65,7 +65,7 @@ describe('start-from-trigger-handler', () => {
       });
 
       // 验证Thread状态已更新
-      expect(mockThread.status).toBe(ThreadStatus.RUNNING);
+      expect(mockThread.status).toBe('RUNNING');
       expect(mockThread.currentNodeId).toBe('start-from-trigger-node-1');
       expect(mockThread.startTime).toBeGreaterThan(0);
 
@@ -81,7 +81,7 @@ describe('start-from-trigger-handler', () => {
       expect(executionResult).toMatchObject({
         step: 1,
         nodeId: 'start-from-trigger-node-1',
-        nodeType: NodeType.START_FROM_TRIGGER,
+        nodeType: 'START'_FROM_TRIGGER,
         status: 'COMPLETED'
       });
       expect(executionResult.timestamp).toBeDefined();
@@ -170,7 +170,7 @@ describe('start-from-trigger-handler', () => {
       const executionResult = mockThread.nodeResults[0]!;
       expect(executionResult).toMatchObject({
         nodeId: 'start-from-trigger-node-1',
-        nodeType: NodeType.START_FROM_TRIGGER,
+        nodeType: 'START'_FROM_TRIGGER,
         status: 'COMPLETED',
         step: 1
       });
@@ -219,7 +219,7 @@ describe('start-from-trigger-handler', () => {
       await startFromTriggerHandler(mockThread, mockNode, mockContext);
 
       // 不应该抛出错误
-      expect(mockThread.status).toBe(ThreadStatus.RUNNING);
+      expect(mockThread.status).toBe('RUNNING');
     });
 
     it('应该在没有conversationHistory时不调用addMessages', async () => {
@@ -233,31 +233,31 @@ describe('start-from-trigger-handler', () => {
 
   describe('执行条件测试', () => {
     it('应该在CREATED状态下正常执行', async () => {
-      mockThread.status = ThreadStatus.CREATED;
+      mockThread.status = 'CREATED';
 
       const result = await startFromTriggerHandler(mockThread, mockNode, mockContext);
 
       expect(result.message).toBe('Triggered subgraph started');
-      expect(mockThread.status).toBe(ThreadStatus.RUNNING);
+      expect(mockThread.status).toBe('RUNNING');
     });
 
     it('应该在RUNNING状态下正常执行（如果尚未执行过）', async () => {
-      mockThread.status = ThreadStatus.RUNNING;
+      mockThread.status = 'RUNNING';
       mockThread.nodeResults = []; // 确保没有执行过
 
       const result = await startFromTriggerHandler(mockThread, mockNode, mockContext);
 
       expect(result.message).toBe('Triggered subgraph started');
-      expect(mockThread.status).toBe(ThreadStatus.RUNNING); // 状态保持不变
+      expect(mockThread.status).toBe('RUNNING'); // 状态保持不变
     });
 
     it('应该在非CREATED/RUNNING状态下跳过执行', async () => {
       const nonRunnableStates = [
-        ThreadStatus.PAUSED,
-        ThreadStatus.COMPLETED,
-        ThreadStatus.FAILED,
-        ThreadStatus.CANCELLED,
-        ThreadStatus.TIMEOUT
+        'PAUSED',
+        'COMPLETED',
+        'FAILED',
+        'CANCELLED',
+        'TIMEOUT'
       ];
 
       for (const status of nonRunnableStates) {
@@ -305,7 +305,7 @@ describe('start-from-trigger-handler', () => {
       const result = await startFromTriggerHandler(mockThread, mockNode);
 
       expect(result.message).toBe('Triggered subgraph started');
-      expect(mockThread.status).toBe(ThreadStatus.RUNNING);
+      expect(mockThread.status).toBe('RUNNING');
       expect(mockThread.input).toEqual({});
     });
 
@@ -370,7 +370,7 @@ describe('start-from-trigger-handler', () => {
       });
 
       // 验证Thread状态
-      expect(mockThread.status).toBe(ThreadStatus.RUNNING);
+      expect(mockThread.status).toBe('RUNNING');
       expect(mockThread.currentNodeId).toBe('start-from-trigger-node-1');
       expect(mockThread.input).toEqual({
         userId: 'user-123',
@@ -391,7 +391,7 @@ describe('start-from-trigger-handler', () => {
       expect(mockThread.nodeResults[0]).toMatchObject({
         step: 1,
         nodeId: 'start-from-trigger-node-1',
-        nodeType: NodeType.START_FROM_TRIGGER,
+        nodeType: 'START'_FROM_TRIGGER,
         status: 'COMPLETED'
       });
     });

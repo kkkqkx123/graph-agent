@@ -13,7 +13,7 @@ describe('send-notification-handler', () => {
 
   beforeEach(() => {
     mockAction = {
-      type: TriggerActionType.SEND_NOTIFICATION,
+      type: 'send_notification',
       parameters: {
         message: 'Test notification message',
         recipients: ['user1@example.com', 'user2@example.com'],

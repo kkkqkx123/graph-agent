@@ -44,7 +44,7 @@ export function resolveCheckpointConfig(
   workflow?: WorkflowDefinition
 ): CheckpointConfigResult {
   // 特殊处理：如果是triggered子工作流，默认不创建检查点
-  if (workflow && workflow.type === WorkflowType.TRIGGERED_SUBWORKFLOW) {
+  if (workflow && workflow.type === 'TRIGGERED_SUBWORKFLOW') {
     // 检查是否明确启用了检查点
     const triggeredConfig = workflow.triggeredSubworkflowConfig;
     

@@ -38,7 +38,7 @@ const continueFromTriggerNodeConfigSchema = z.object({
  * @returns 验证结果
  */
 export function validateContinueFromTriggerNode(node: Node): Result<Node, ConfigurationValidationError[]> {
-  if (node.type !== NodeType.CONTINUE_FROM_TRIGGER) {
+  if (node.type !== 'CONTINUE_FROM_TRIGGER') {
     return err([new ConfigurationValidationError(`Invalid node type for continue-from-trigger validator: ${node.type}`, {
       configType: 'node',
       configPath: `node.${node.id}`

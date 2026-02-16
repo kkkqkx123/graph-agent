@@ -674,7 +674,7 @@ async function createTestThread(
     id: generateId(),
     workflowId: workflow.id,
     workflowVersion: workflow.version,
-    status: ThreadStatus.RUNNING,
+    status: 'RUNNING',
     currentNodeId: '',
     graph,
     variables: variables,

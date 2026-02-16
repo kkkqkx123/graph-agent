@@ -162,6 +162,6 @@ export class StatelessExecutor extends BaseExecutor {
    * 获取执行器类型
    */
   getExecutorType(): string {
-    return ExecutorType.STATELESS;
+    return 'STATELESS';
   }
 }

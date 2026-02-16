@@ -7,11 +7,10 @@
 /**
  * 熔断器状态
  */
-enum CircuitState {
-  CLOSED = 'CLOSED',
-  OPEN = 'OPEN',
-  HALF_OPEN = 'HALF_OPEN',
-}
+type CircuitState =
+  | 'CLOSED'     /** 关闭状态 */
+  | 'OPEN'       /** 打开状态 */
+  | 'HALF_OPEN'; /** 半开状态 */
 
 /**
  * 熔断器配置
@@ -29,7 +28,7 @@ export interface CircuitBreakerConfig {
  * 熔断器
  */
 export class CircuitBreaker {
-  private state: CircuitState = CircuitState.CLOSED;
+  private state: CircuitState = 'CLOSED';
   private failureCount: number = 0;
   private successCount: number = 0;
   private nextAttempt: number = 0;
@@ -66,10 +65,10 @@ export class CircuitBreaker {
    * 检查熔断器是否打开
    */
   isOpen(): boolean {
-    if (this.state === CircuitState.OPEN) {
+    if (this.state === 'OPEN') {
       // 检查是否可以尝试恢复
       if (Date.now() >= this.nextAttempt) {
-        this.state = CircuitState.HALF_OPEN;
+        this.state = 'HALF_OPEN';
         this.successCount = 0;
         return false;
       }
@@ -89,7 +88,7 @@ export class CircuitBreaker {
    * 重置熔断器
    */
   reset(): void {
-    this.state = CircuitState.CLOSED;
+    this.state = 'CLOSED';
     this.failureCount = 0;
     this.successCount = 0;
     this.nextAttempt = 0;
@@ -101,10 +100,10 @@ export class CircuitBreaker {
   private recordSuccess(): void {
     this.failureCount = 0;
 
-    if (this.state === CircuitState.HALF_OPEN) {
+    if (this.state === 'HALF_OPEN') {
       this.successCount++;
       if (this.successCount >= this.successThreshold) {
-        this.state = CircuitState.CLOSED;
+        this.state = 'CLOSED';
       }
     }
   }
@@ -116,14 +115,14 @@ export class CircuitBreaker {
     this.failureCount++;
 
     // 在HALF_OPEN状态下失败，立即重新打开熔断器
-    if (this.state === CircuitState.HALF_OPEN) {
-      this.state = CircuitState.OPEN;
+    if (this.state === 'HALF_OPEN') {
+      this.state = 'OPEN';
       this.nextAttempt = Date.now() + this.resetTimeout;
       return;
     }
 
     if (this.failureCount >= this.failureThreshold) {
-      this.state = CircuitState.OPEN;
+      this.state = 'OPEN';
       this.nextAttempt = Date.now() + this.resetTimeout;
     }
   }

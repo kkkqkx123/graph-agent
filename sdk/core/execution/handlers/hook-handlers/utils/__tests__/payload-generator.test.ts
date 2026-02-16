@@ -29,7 +29,7 @@ describe('payload-generator', () => {
 
     it('应该使用默认事件数据当没有配置eventPayload', () => {
       const hook: NodeHook = {
-        hookType: HookType.AFTER_EXECUTE,
+        hookType: 'AFTER_EXECUTE',
         eventName: 'test-event',
         enabled: true,
         weight: 0
@@ -55,7 +55,7 @@ describe('payload-generator', () => {
       };
 
       const hook: NodeHook = {
-        hookType: HookType.AFTER_EXECUTE,
+        hookType: 'AFTER_EXECUTE',
         eventName: 'test-event',
         enabled: true,
         weight: 0,
@@ -69,7 +69,7 @@ describe('payload-generator', () => {
 
     it('应该解析eventPayload中的模板变量', () => {
       const hook: NodeHook = {
-        hookType: HookType.AFTER_EXECUTE,
+        hookType: 'AFTER_EXECUTE',
         eventName: 'test-event',
         enabled: true,
         weight: 0,
@@ -100,7 +100,7 @@ describe('payload-generator', () => {
       };
 
       const hook: NodeHook = {
-        hookType: HookType.AFTER_EXECUTE,
+        hookType: 'AFTER_EXECUTE',
         eventName: 'test-event',
         enabled: true,
         weight: 0

@@ -21,7 +21,7 @@ const endNodeConfigSchema = z.object({}).strict();
  * @returns 验证结果
  */
 export function validateEndNode(node: Node): Result<Node, ConfigurationValidationError[]> {
-  if (node.type !== NodeType.END) {
+  if (node.type !== 'END') {
     return err([new ConfigurationValidationError(`Invalid node type for end validator: ${node.type}`, {
       configType: 'node',
       configPath: `node.${node.id}`

@@ -149,7 +149,7 @@ export class DynamicThreadManager implements TaskManager {
     const dynamicThreadInfo: DynamicThreadInfo = {
       id: childThreadId,
       threadContext: childThreadContext,
-      status: TaskStatus.QUEUED,
+      status: 'QUEUED',
       submitTime: Date.now(),
       parentThreadId
     };
@@ -303,7 +303,7 @@ export class DynamicThreadManager implements TaskManager {
     // 更新动态线程映射状态
     const dynamicThreadInfo = this.dynamicThreads.get(threadId);
     if (dynamicThreadInfo) {
-      dynamicThreadInfo.status = TaskStatus.COMPLETED;
+      dynamicThreadInfo.status = 'COMPLETED';
       dynamicThreadInfo.completeTime = Date.now();
       dynamicThreadInfo.result = result.threadResult;
     }
@@ -333,7 +333,7 @@ export class DynamicThreadManager implements TaskManager {
     // 更新动态线程映射状态
     const dynamicThreadInfo = this.dynamicThreads.get(threadId);
     if (dynamicThreadInfo) {
-      dynamicThreadInfo.status = TaskStatus.FAILED;
+      dynamicThreadInfo.status = 'FAILED';
       dynamicThreadInfo.completeTime = Date.now();
       dynamicThreadInfo.error = error;
     }
@@ -384,7 +384,7 @@ export class DynamicThreadManager implements TaskManager {
       // 更新动态线程映射状态
       const dynamicThreadInfo = this.dynamicThreads.get(threadId);
       if (dynamicThreadInfo) {
-        dynamicThreadInfo.status = TaskStatus.CANCELLED;
+        dynamicThreadInfo.status = 'CANCELLED';
         dynamicThreadInfo.completeTime = Date.now();
       }
 
@@ -459,7 +459,7 @@ export class DynamicThreadManager implements TaskManager {
     childThreadContext: ThreadContext
   ): Promise<void> {
     await this.eventManager.emit({
-      type: EventType.DYNAMIC_THREAD_SUBMITTED,
+      type: 'DYNAMIC_THREAD_SUBMITTED',
       threadId: request.mainThreadContext.getThreadId(),
       workflowId: request.mainThreadContext.getWorkflowId(),
       subgraphId: request.workflowId,
@@ -481,7 +481,7 @@ export class DynamicThreadManager implements TaskManager {
     }
 
     await this.eventManager.emit({
-      type: EventType.DYNAMIC_THREAD_COMPLETED,
+      type: 'DYNAMIC_THREAD_COMPLETED',
       threadId,
       workflowId: childThreadContext.getWorkflowId(),
       subgraphId: childThreadContext.getTriggeredSubworkflowId() || '',
@@ -504,7 +504,7 @@ export class DynamicThreadManager implements TaskManager {
     }
 
     await this.eventManager.emit({
-      type: EventType.DYNAMIC_THREAD_FAILED,
+      type: 'DYNAMIC_THREAD_FAILED',
       threadId,
       workflowId: childThreadContext.getWorkflowId(),
       subgraphId: childThreadContext.getTriggeredSubworkflowId() || '',
@@ -525,7 +525,7 @@ export class DynamicThreadManager implements TaskManager {
     }
 
     await this.eventManager.emit({
-      type: EventType.DYNAMIC_THREAD_CANCELLED,
+      type: 'DYNAMIC_THREAD_CANCELLED',
       threadId,
       workflowId: childThreadContext.getWorkflowId(),
       subgraphId: childThreadContext.getTriggeredSubworkflowId() || '',
@@ -546,7 +546,7 @@ export class DynamicThreadManager implements TaskManager {
 
     // 取消所有运行中的线程
     this.dynamicThreads.forEach((dynamicThreadInfo, threadId) => {
-      if (dynamicThreadInfo.status === TaskStatus.RUNNING || dynamicThreadInfo.status === TaskStatus.QUEUED) {
+      if (dynamicThreadInfo.status === 'RUNNING' || dynamicThreadInfo.status === 'QUEUED') {
         this.cancelDynamicThread(threadId);
       }
     });

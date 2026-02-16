@@ -19,7 +19,7 @@ describe('RuntimeValidator', () => {
       const tool = {
         id: 'tool-1',
         name: 'test-tool',
-        type: ToolType.STATELESS,
+        type: 'STATELESS',
         description: 'A test tool',
         parameters: {
           properties: {
@@ -51,7 +51,7 @@ describe('RuntimeValidator', () => {
       const tool = {
         id: 'tool-1',
         name: 'test-tool',
-        type: ToolType.STATELESS,
+        type: 'STATELESS',
         description: 'A test tool',
         parameters: {
           properties: {
@@ -79,7 +79,7 @@ describe('RuntimeValidator', () => {
       const tool = {
         id: 'tool-1',
         name: 'test-tool',
-        type: ToolType.STATELESS,
+        type: 'STATELESS',
         description: 'A test tool',
         parameters: {
           properties: {
@@ -106,7 +106,7 @@ describe('RuntimeValidator', () => {
       const tool = {
         id: 'tool-1',
         name: 'test-tool',
-        type: ToolType.STATELESS,
+        type: 'STATELESS',
         description: 'A test tool',
         parameters: {
           properties: {
@@ -140,7 +140,7 @@ describe('RuntimeValidator', () => {
       const tool = {
         id: 'tool-1',
         name: 'test-tool',
-        type: ToolType.STATELESS,
+        type: 'STATELESS',
         description: 'A test tool',
         parameters: {
           properties: {
@@ -181,7 +181,7 @@ describe('RuntimeValidator', () => {
       const tool = {
         id: 'tool-1',
         name: 'test-tool',
-        type: ToolType.STATELESS,
+        type: 'STATELESS',
         description: 'A test tool',
         parameters: {
           properties: {
@@ -214,7 +214,7 @@ describe('RuntimeValidator', () => {
       const tool = {
         id: 'tool-1',
         name: 'test-tool',
-        type: ToolType.STATELESS,
+        type: 'STATELESS',
         description: 'A test tool',
         parameters: {
           properties: {
@@ -247,7 +247,7 @@ describe('RuntimeValidator', () => {
       const tool = {
         id: 'tool-1',
         name: 'test-tool',
-        type: ToolType.STATELESS,
+        type: 'STATELESS',
         description: 'A test tool',
         parameters: {
           properties: {
@@ -280,7 +280,7 @@ describe('RuntimeValidator', () => {
       const tool = {
         id: 'tool-1',
         name: 'test-tool',
-        type: ToolType.STATELESS,
+        type: 'STATELESS',
         description: 'A test tool',
         parameters: {
           properties: {
@@ -313,7 +313,7 @@ describe('RuntimeValidator', () => {
       const tool = {
         id: 'tool-1',
         name: 'test-tool',
-        type: ToolType.STATELESS,
+        type: 'STATELESS',
         description: 'A test tool',
         parameters: {
           properties: {
@@ -346,7 +346,7 @@ describe('RuntimeValidator', () => {
       const tool = {
         id: 'tool-1',
         name: 'test-tool',
-        type: ToolType.STATELESS,
+        type: 'STATELESS',
         description: 'A test tool',
         parameters: {
           properties: {
@@ -378,7 +378,7 @@ describe('RuntimeValidator', () => {
       const tool = {
         id: 'tool-1',
         name: 'test-tool',
-        type: ToolType.STATELESS,
+        type: 'STATELESS',
         description: 'A test tool',
         parameters: {
           properties: {
@@ -412,7 +412,7 @@ describe('RuntimeValidator', () => {
       const tool = {
         id: 'tool-1',
         name: 'test-tool',
-        type: ToolType.STATELESS,
+        type: 'STATELESS',
         description: 'A test tool',
         parameters: {
           properties: {

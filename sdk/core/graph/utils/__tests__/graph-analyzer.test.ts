@@ -16,10 +16,10 @@ function createStandardGraph() {
   const graph = new GraphData();
 
   const nodes: GraphNode[] = [
-    { id: '1', type: NodeType.START, name: 'Start', workflowId: 'wf1' },
-    { id: '2', type: NodeType.LLM, name: 'Task 2', workflowId: 'wf1' },
-    { id: '3', type: NodeType.LLM, name: 'Task 3', workflowId: 'wf1' },
-    { id: '4', type: NodeType.END, name: 'End', workflowId: 'wf1' },
+    { id: '1', type: 'START', name: 'Start', workflowId: 'wf1' },
+    { id: '2', type: 'LLM', name: 'Task 2', workflowId: 'wf1' },
+    { id: '3', type: 'LLM', name: 'Task 3', workflowId: 'wf1' },
+    { id: '4', type: 'END', name: 'End', workflowId: 'wf1' },
   ];
 
   const edges: GraphEdge[] = [
@@ -51,34 +51,34 @@ function createForkJoinGraph() {
   const graph = new GraphData();
 
   const nodes: GraphNode[] = [
-    { id: '1', type: NodeType.START, name: 'Start', workflowId: 'wf1' },
+    { id: '1', type: 'START', name: 'Start', workflowId: 'wf1' },
     {
       id: '2',
-      type: NodeType.FORK,
+      type: 'FORK',
       name: 'Fork',
       workflowId: 'wf1',
       originalNode: {
         id: '2',
-        type: NodeType.FORK,
+        type: 'FORK',
         name: 'Fork',
         config: { forkId: 'fork1' },
       } as any,
     },
-    { id: '3', type: NodeType.LLM, name: 'Task 3', workflowId: 'wf1' },
+    { id: '3', type: 'LLM', name: 'Task 3', workflowId: 'wf1' },
     {
       id: '4',
-      type: NodeType.JOIN,
+      type: 'JOIN',
       name: 'Join',
       workflowId: 'wf1',
       originalNode: {
         id: '4',
-        type: NodeType.JOIN,
+        type: 'JOIN',
         name: 'Join',
         config: { joinId: 'fork1' },
       } as any,
     },
-    { id: '5', type: NodeType.END, name: 'End', workflowId: 'wf1' },
-    { id: '6', type: NodeType.LLM, name: 'Task 6', workflowId: 'wf1' },
+    { id: '5', type: 'END', name: 'End', workflowId: 'wf1' },
+    { id: '6', type: 'LLM', name: 'Task 6', workflowId: 'wf1' },
   ];
 
   const edges: GraphEdge[] = [
@@ -111,33 +111,33 @@ function createUnpairedForkJoinGraph() {
   const graph = new GraphData();
 
   const nodes: GraphNode[] = [
-    { id: '1', type: NodeType.START, name: 'Start', workflowId: 'wf1' },
+    { id: '1', type: 'START', name: 'Start', workflowId: 'wf1' },
     {
       id: '2',
-      type: NodeType.FORK,
+      type: 'FORK',
       name: 'Fork',
       workflowId: 'wf1',
       originalNode: {
         id: '2',
-        type: NodeType.FORK,
+        type: 'FORK',
         name: 'Fork',
         config: { forkId: 'fork1' },
       } as any,
     },
-    { id: '3', type: NodeType.LLM, name: 'Task 3', workflowId: 'wf1' },
+    { id: '3', type: 'LLM', name: 'Task 3', workflowId: 'wf1' },
     {
       id: '4',
-      type: NodeType.JOIN,
+      type: 'JOIN',
       name: 'Join',
       workflowId: 'wf1',
       originalNode: {
         id: '4',
-        type: NodeType.JOIN,
+        type: 'JOIN',
         name: 'Join',
         config: { joinId: 'fork2' }, // Different joinId - unpaired
       } as any,
     },
-    { id: '5', type: NodeType.END, name: 'End', workflowId: 'wf1' },
+    { id: '5', type: 'END', name: 'End', workflowId: 'wf1' },
   ];
 
   const edges: GraphEdge[] = [
@@ -214,9 +214,9 @@ describe('graph-analyzer', () => {
       const result = analyzeGraph(graph);
 
       expect(result.nodeStats.total).toBe(4);
-      expect(result.nodeStats.byType.get(NodeType.START)).toBe(1);
-      expect(result.nodeStats.byType.get(NodeType.LLM)).toBe(2);
-      expect(result.nodeStats.byType.get(NodeType.END)).toBe(1);
+      expect(result.nodeStats.byType.get('START')).toBe(1);
+      expect(result.nodeStats.byType.get('LLM')).toBe(2);
+      expect(result.nodeStats.byType.get('END')).toBe(1);
     });
 
     it('should calculate correct edge statistics', () => {
@@ -240,34 +240,34 @@ describe('graph-analyzer', () => {
       const graph = new GraphData();
 
       const nodes: GraphNode[] = [
-        { id: '1', type: NodeType.START, name: 'Start', workflowId: 'wf1' },
+        { id: '1', type: 'START', name: 'Start', workflowId: 'wf1' },
         {
           id: '2',
-          type: NodeType.FORK,
+          type: 'FORK',
           name: 'Fork',
           workflowId: 'wf1',
           originalNode: {
             id: '2',
-            type: NodeType.FORK,
+            type: 'FORK',
             name: 'Fork',
             config: { forkId: 'f1' },
           } as any,
         },
-        { id: '3', type: NodeType.LLM, name: 'Task', workflowId: 'wf1' },
+        { id: '3', type: 'LLM', name: 'Task', workflowId: 'wf1' },
         {
           id: '4',
-          type: NodeType.JOIN,
+          type: 'JOIN',
           name: 'Join',
           workflowId: 'wf1',
           originalNode: {
             id: '4',
-            type: NodeType.JOIN,
+            type: 'JOIN',
             name: 'Join',
             config: { joinId: 'f1' },
           } as any,
         },
-        { id: '5', type: NodeType.ROUTE, name: 'Condition', workflowId: 'wf1' },
-        { id: '6', type: NodeType.END, name: 'End', workflowId: 'wf1' },
+        { id: '5', type: 'ROUTE', name: 'Condition', workflowId: 'wf1' },
+        { id: '6', type: 'END', name: 'End', workflowId: 'wf1' },
       ];
 
       const edges: GraphEdge[] = [
@@ -297,12 +297,12 @@ describe('graph-analyzer', () => {
       const result = analyzeGraph(graph);
 
       expect(result.nodeStats.total).toBe(6);
-      expect(result.nodeStats.byType.get(NodeType.START)).toBe(1);
-      expect(result.nodeStats.byType.get(NodeType.FORK)).toBe(1);
-      expect(result.nodeStats.byType.get(NodeType.JOIN)).toBe(1);
-      expect(result.nodeStats.byType.get(NodeType.LLM)).toBe(1);
-      expect(result.nodeStats.byType.get(NodeType.ROUTE)).toBe(1);
-      expect(result.nodeStats.byType.get(NodeType.END)).toBe(1);
+      expect(result.nodeStats.byType.get('START')).toBe(1);
+      expect(result.nodeStats.byType.get('FORK')).toBe(1);
+      expect(result.nodeStats.byType.get('JOIN')).toBe(1);
+      expect(result.nodeStats.byType.get('LLM')).toBe(1);
+      expect(result.nodeStats.byType.get('ROUTE')).toBe(1);
+      expect(result.nodeStats.byType.get('END')).toBe(1);
 
       expect(result.edgeStats.total).toBe(5);
       expect(result.edgeStats.byType.get(EdgeType.DEFAULT)).toBe(4);
@@ -364,58 +364,58 @@ describe('graph-analyzer', () => {
       const graph = new GraphData();
 
       const nodes: GraphNode[] = [
-        { id: '1', type: NodeType.START, name: 'Start', workflowId: 'wf1' },
+        { id: '1', type: 'START', name: 'Start', workflowId: 'wf1' },
         {
           id: '2',
-          type: NodeType.FORK,
+          type: 'FORK',
           name: 'Fork 1',
           workflowId: 'wf1',
           originalNode: {
             id: '2',
-            type: NodeType.FORK,
+            type: 'FORK',
             name: 'Fork 1',
             config: { forkId: 'fork1' },
           } as any,
         },
-        { id: '3', type: NodeType.LLM, name: 'Task 3', workflowId: 'wf1' },
+        { id: '3', type: 'LLM', name: 'Task 3', workflowId: 'wf1' },
         {
           id: '4',
-          type: NodeType.FORK,
+          type: 'FORK',
           name: 'Fork 2',
           workflowId: 'wf1',
           originalNode: {
             id: '4',
-            type: NodeType.FORK,
+            type: 'FORK',
             name: 'Fork 2',
             config: { forkId: 'fork2' },
           } as any,
         },
-        { id: '5', type: NodeType.LLM, name: 'Task 5', workflowId: 'wf1' },
+        { id: '5', type: 'LLM', name: 'Task 5', workflowId: 'wf1' },
         {
           id: '6',
-          type: NodeType.JOIN,
+          type: 'JOIN',
           name: 'Join 1',
           workflowId: 'wf1',
           originalNode: {
             id: '6',
-            type: NodeType.JOIN,
+            type: 'JOIN',
             name: 'Join 1',
             config: { joinId: 'fork1' },
           } as any,
         },
         {
           id: '7',
-          type: NodeType.JOIN,
+          type: 'JOIN',
           name: 'Join 2',
           workflowId: 'wf1',
           originalNode: {
             id: '7',
-            type: NodeType.JOIN,
+            type: 'JOIN',
             name: 'Join 2',
             config: { joinId: 'fork2' },
           } as any,
         },
-        { id: '8', type: NodeType.END, name: 'End', workflowId: 'wf1' },
+        { id: '8', type: 'END', name: 'End', workflowId: 'wf1' },
       ];
 
       for (const node of nodes) {
@@ -434,20 +434,20 @@ describe('graph-analyzer', () => {
       const graph = new GraphData();
 
       const nodes: GraphNode[] = [
-        { id: '1', type: NodeType.START, name: 'Start', workflowId: 'wf1' },
+        { id: '1', type: 'START', name: 'Start', workflowId: 'wf1' },
         {
           id: '2',
-          type: NodeType.FORK,
+          type: 'FORK',
           name: 'Fork',
           workflowId: 'wf1',
           originalNode: {
             id: '2',
-            type: NodeType.FORK,
+            type: 'FORK',
             name: 'Fork',
             config: { forkId: 'fork1' },
           } as any,
         },
-        { id: '3', type: NodeType.END, name: 'End', workflowId: 'wf1' },
+        { id: '3', type: 'END', name: 'End', workflowId: 'wf1' },
       ];
 
       for (const node of nodes) {
@@ -465,20 +465,20 @@ describe('graph-analyzer', () => {
       const graph = new GraphData();
 
       const nodes: GraphNode[] = [
-        { id: '1', type: NodeType.START, name: 'Start', workflowId: 'wf1' },
+        { id: '1', type: 'START', name: 'Start', workflowId: 'wf1' },
         {
           id: '2',
-          type: NodeType.JOIN,
+          type: 'JOIN',
           name: 'Join',
           workflowId: 'wf1',
           originalNode: {
             id: '2',
-            type: NodeType.JOIN,
+            type: 'JOIN',
             name: 'Join',
             config: { joinId: 'fork1' },
           } as any,
         },
-        { id: '3', type: NodeType.END, name: 'End', workflowId: 'wf1' },
+        { id: '3', type: 'END', name: 'End', workflowId: 'wf1' },
       ];
 
       for (const node of nodes) {
@@ -499,7 +499,7 @@ describe('graph-analyzer', () => {
 
       const node: GraphNode = {
         id: '1',
-        type: NodeType.START,
+        type: 'START',
         name: 'Single',
         workflowId: 'wf1',
       };
@@ -519,9 +519,9 @@ describe('graph-analyzer', () => {
       const graph = new GraphData();
 
       const nodes: GraphNode[] = [
-        { id: '1', type: NodeType.START, name: 'Start', workflowId: 'wf1' },
-        { id: '2', type: NodeType.LLM, name: 'Task', workflowId: 'wf1' },
-        { id: '3', type: NodeType.END, name: 'End', workflowId: 'wf1' },
+        { id: '1', type: 'START', name: 'Start', workflowId: 'wf1' },
+        { id: '2', type: 'LLM', name: 'Task', workflowId: 'wf1' },
+        { id: '3', type: 'END', name: 'End', workflowId: 'wf1' },
       ];
 
       for (const node of nodes) {

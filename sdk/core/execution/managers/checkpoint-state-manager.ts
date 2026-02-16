@@ -155,7 +155,7 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
 
       // 触发检查点创建事件
       await safeEmit(this.eventManager, {
-        type: EventType.CHECKPOINT_CREATED,
+        type: 'CHECKPOINT_CREATED',
         timestamp: now(),
         workflowId: checkpointData.workflowId,
         threadId: checkpointData.threadId,
@@ -184,7 +184,7 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
     } catch (error) {
       // 触发检查点失败事件
       await safeEmit(this.eventManager, {
-        type: EventType.CHECKPOINT_FAILED,
+        type: 'CHECKPOINT_FAILED',
         timestamp: now(),
         workflowId: checkpointData.workflowId,
         threadId: checkpointData.threadId,
@@ -233,7 +233,7 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
       // 触发检查点删除事件
       if (checkpoint) {
         await safeEmit(this.eventManager, {
-          type: EventType.CHECKPOINT_DELETED,
+          type: 'CHECKPOINT_DELETED',
           timestamp: now(),
           workflowId: checkpoint.workflowId,
           threadId: checkpoint.threadId,
@@ -244,7 +244,7 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
     } catch (error) {
       // 触发检查点失败事件
       await safeEmit(this.eventManager, {
-        type: EventType.CHECKPOINT_FAILED,
+        type: 'CHECKPOINT_FAILED',
         timestamp: now(),
         workflowId: '',
         threadId: '',

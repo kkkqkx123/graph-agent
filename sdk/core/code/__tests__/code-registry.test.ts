@@ -13,7 +13,7 @@ describe('CodeRegistry', () => {
     registry = new CodeRegistry();
   });
 
-  const createValidScript = (name: string, type: ScriptType = ScriptType.SHELL) => ({
+  const createValidScript = (name: string, type: ScriptType = 'SHELL') => ({
     id: `script-${name}`,
     name,
     type,
@@ -36,7 +36,7 @@ describe('CodeRegistry', () => {
     }
   });
 
-  const createValidScriptWithFilePath = (name: string, type: ScriptType = ScriptType.SHELL) => ({
+  const createValidScriptWithFilePath = (name: string, type: ScriptType = 'SHELL') => ({
     id: `script-${name}`,
     name,
     type,
@@ -309,14 +309,14 @@ describe('CodeRegistry', () => {
   describe('listByType - 按类型列出脚本', () => {
     it('应该返回指定类型的脚本', () => {
       const scripts = [
-        createValidScript('script-1', ScriptType.SHELL),
-        createValidScript('script-2', ScriptType.POWERSHELL),
-        createValidScript('script-3', ScriptType.SHELL)
+        createValidScript('script-1', 'SHELL'),
+        createValidScript('script-2', 'POWERSHELL'),
+        createValidScript('script-3', 'SHELL')
       ];
 
       registry.registerBatch(scripts);
 
-      const shellScripts = registry.listByType(ScriptType.SHELL);
+      const shellScripts = registry.listByType('SHELL');
 
       expect(shellScripts).toHaveLength(2);
       expect(shellScripts.map(s => s.name)).toContain('script-1');
@@ -324,7 +324,7 @@ describe('CodeRegistry', () => {
     });
 
     it('应该返回空数组当没有匹配类型的脚本', () => {
-      const result = registry.listByType(ScriptType.PYTHON);
+      const result = registry.listByType('PYTHON');
 
       expect(result).toEqual([]);
     });
@@ -557,7 +557,7 @@ describe('CodeRegistry', () => {
       expect(searchResults).toHaveLength(1);
 
       // 5. 按类型列出脚本
-      const shellScripts = registry.listByType(ScriptType.SHELL);
+      const shellScripts = registry.listByType('SHELL');
       expect(shellScripts).toHaveLength(1);
 
       // 6. 删除脚本

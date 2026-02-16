@@ -25,7 +25,7 @@ describe('CodeService', () => {
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: ScriptType.SHELL,
+        type: 'SHELL',
         description: '测试脚本',
         content: 'echo "Hello World"',
         options: {},
@@ -43,7 +43,7 @@ describe('CodeService', () => {
         {
           id: 'script-1',
           name: 'script-1',
-          type: ScriptType.SHELL,
+          type: 'SHELL',
           description: '脚本1',
           content: 'echo "1"',
           options: {},
@@ -52,7 +52,7 @@ describe('CodeService', () => {
         {
           id: 'script-2',
           name: 'script-2',
-          type: ScriptType.POWERSHELL,
+          type: 'POWERSHELL',
           description: '脚本2',
           content: 'Write-Host "2"',
           options: {},
@@ -71,7 +71,7 @@ describe('CodeService', () => {
       const script1 = {
         id: 'script-1',
         name: 'test-script',
-        type: ScriptType.SHELL,
+        type: 'SHELL',
         description: '原始脚本',
         content: 'echo "original"',
         options: {},
@@ -81,7 +81,7 @@ describe('CodeService', () => {
       const script2 = {
         id: 'script-2',
         name: 'test-script',
-        type: ScriptType.POWERSHELL,
+        type: 'POWERSHELL',
         description: '更新脚本',
         content: 'Write-Host "updated"',
         options: {},
@@ -100,7 +100,7 @@ describe('CodeService', () => {
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: ScriptType.SHELL,
+        type: 'SHELL',
         description: '测试脚本',
         content: 'echo "Hello"',
         options: {},
@@ -126,7 +126,7 @@ describe('CodeService', () => {
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: ScriptType.SHELL,
+        type: 'SHELL',
         description: '测试脚本',
         content: 'echo "Hello"',
         options: {},
@@ -152,7 +152,7 @@ describe('CodeService', () => {
         {
           id: 'script-1',
           name: 'script-1',
-          type: ScriptType.SHELL,
+          type: 'SHELL',
           description: '脚本1',
           content: 'echo "1"',
           options: {},
@@ -161,7 +161,7 @@ describe('CodeService', () => {
         {
           id: 'script-2',
           name: 'script-2',
-          type: ScriptType.POWERSHELL,
+          type: 'POWERSHELL',
           description: '脚本2',
           content: 'Write-Host "2"',
           options: {},
@@ -187,7 +187,7 @@ describe('CodeService', () => {
         {
           id: 'script-1',
           name: 'script-1',
-          type: ScriptType.SHELL,
+          type: 'SHELL',
           description: 'Shell脚本',
           content: 'echo "shell"',
           options: {},
@@ -196,7 +196,7 @@ describe('CodeService', () => {
         {
           id: 'script-2',
           name: 'script-2',
-          type: ScriptType.POWERSHELL,
+          type: 'POWERSHELL',
           description: 'PowerShell脚本',
           content: 'Write-Host "ps"',
           options: {},
@@ -205,7 +205,7 @@ describe('CodeService', () => {
         {
           id: 'script-3',
           name: 'script-3',
-          type: ScriptType.SHELL,
+          type: 'SHELL',
           description: '另一个Shell脚本',
           content: 'echo "another"',
           options: {},
@@ -214,14 +214,14 @@ describe('CodeService', () => {
       ];
 
       codeService.registerScripts(scripts);
-      const shellScripts = codeService.listScriptsByType(ScriptType.SHELL);
+      const shellScripts = codeService.listScriptsByType('SHELL');
 
       expect(shellScripts).toHaveLength(2);
-      expect(shellScripts.every(s => s.type === ScriptType.SHELL)).toBe(true);
+      expect(shellScripts.every(s => s.type === 'SHELL')).toBe(true);
     });
 
     it('应该返回空数组当没有匹配类型的脚本时', () => {
-      expect(codeService.listScriptsByType(ScriptType.PYTHON)).toEqual([]);
+      expect(codeService.listScriptsByType('PYTHON')).toEqual([]);
     });
   });
 
@@ -231,7 +231,7 @@ describe('CodeService', () => {
         {
           id: 'script-1',
           name: 'script-1',
-          type: ScriptType.SHELL,
+          type: 'SHELL',
           description: '脚本1',
           content: 'echo "1"',
           options: {},
@@ -241,7 +241,7 @@ describe('CodeService', () => {
         {
           id: 'script-2',
           name: 'script-2',
-          type: ScriptType.POWERSHELL,
+          type: 'POWERSHELL',
           description: '脚本2',
           content: 'Write-Host "2"',
           options: {},
@@ -251,7 +251,7 @@ describe('CodeService', () => {
         {
           id: 'script-3',
           name: 'script-3',
-          type: ScriptType.SHELL,
+          type: 'SHELL',
           description: '脚本3',
           content: 'echo "3"',
           options: {},
@@ -278,7 +278,7 @@ describe('CodeService', () => {
         {
           id: 'script-1',
           name: 'hello-world',
-          type: ScriptType.SHELL,
+          type: 'SHELL',
           description: '打印Hello World',
           content: 'echo "Hello World"',
           options: {},
@@ -287,7 +287,7 @@ describe('CodeService', () => {
         {
           id: 'script-2',
           name: 'goodbye-world',
-          type: ScriptType.POWERSHELL,
+          type: 'POWERSHELL',
           description: '打印Goodbye World',
           content: 'Write-Host "Goodbye World"',
           options: {},
@@ -296,7 +296,7 @@ describe('CodeService', () => {
         {
           id: 'script-3',
           name: 'test-script',
-          type: ScriptType.SHELL,
+          type: 'SHELL',
           description: '测试脚本',
           content: 'echo "test"',
           options: {},
@@ -322,7 +322,7 @@ describe('CodeService', () => {
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: ScriptType.SHELL,
+        type: 'SHELL',
         description: '测试脚本',
         content: 'echo "Hello"',
         options: {},
@@ -343,16 +343,16 @@ describe('CodeService', () => {
       const executor = {
         execute: jest.fn(),
         validate: jest.fn().mockReturnValue({ valid: true, errors: [] }),
-        getSupportedTypes: jest.fn().mockReturnValue([ScriptType.SHELL])
+        getSupportedTypes: jest.fn().mockReturnValue(['SHELL'])
       };
 
-      codeService.registerExecutor(ScriptType.SHELL, executor);
+      codeService.registerExecutor('SHELL', executor);
 
       // 无法直接访问内部执行器注册表，通过执行来验证
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: ScriptType.SHELL,
+        type: 'SHELL',
         description: '测试脚本',
         content: 'echo "Hello"',
         options: {},
@@ -370,27 +370,27 @@ describe('CodeService', () => {
         execute: jest.fn().mockResolvedValue({
           success: true,
           scriptName: 'test-script',
-          scriptType: ScriptType.SHELL,
+          scriptType: 'SHELL',
           stdout: 'Hello World',
           stderr: '',
           exitCode: 0,
           executionTime: 100
         }),
         validate: jest.fn().mockReturnValue({ valid: true, errors: [] }),
-        getSupportedTypes: jest.fn().mockReturnValue([ScriptType.SHELL])
+        getSupportedTypes: jest.fn().mockReturnValue(['SHELL'])
       };
 
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: ScriptType.SHELL,
+        type: 'SHELL',
         description: '测试脚本',
         content: 'echo "Hello World"',
         options: { timeout: 5000 },
         enabled: true
       };
 
-      codeService.registerExecutor(ScriptType.SHELL, mockExecutor);
+      codeService.registerExecutor('SHELL', mockExecutor);
       codeService.registerScript(script);
 
       const result = await codeService.execute('test-script', { timeout: 3000 });
@@ -412,7 +412,7 @@ describe('CodeService', () => {
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: ScriptType.SHELL,
+        type: 'SHELL',
         description: '测试脚本',
         content: 'echo "Hello"',
         options: {},
@@ -428,20 +428,20 @@ describe('CodeService', () => {
       const mockExecutor = {
         execute: jest.fn().mockRejectedValue(new Error('Execution failed')),
         validate: jest.fn().mockReturnValue({ valid: true, errors: [] }),
-        getSupportedTypes: jest.fn().mockReturnValue([ScriptType.SHELL])
+        getSupportedTypes: jest.fn().mockReturnValue(['SHELL'])
       };
 
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: ScriptType.SHELL,
+        type: 'SHELL',
         description: '测试脚本',
         content: 'echo "Hello"',
         options: {},
         enabled: true
       };
 
-      codeService.registerExecutor(ScriptType.SHELL, mockExecutor);
+      codeService.registerExecutor('SHELL', mockExecutor);
       codeService.registerScript(script);
 
       await expect(codeService.execute('test-script')).rejects.toThrow(CodeExecutionError);
@@ -455,26 +455,26 @@ describe('CodeService', () => {
           .mockResolvedValueOnce({
             success: true,
             scriptName: 'script-1',
-            scriptType: ScriptType.SHELL,
+            scriptType: 'SHELL',
             stdout: 'Result 1',
             executionTime: 100
           })
           .mockResolvedValueOnce({
             success: true,
             scriptName: 'script-2',
-            scriptType: ScriptType.SHELL,
+            scriptType: 'SHELL',
             stdout: 'Result 2',
             executionTime: 200
           }),
         validate: jest.fn().mockReturnValue({ valid: true, errors: [] }),
-        getSupportedTypes: jest.fn().mockReturnValue([ScriptType.SHELL])
+        getSupportedTypes: jest.fn().mockReturnValue(['SHELL'])
       };
 
       const scripts = [
         {
           id: 'script-1',
           name: 'script-1',
-          type: ScriptType.SHELL,
+          type: 'SHELL',
           description: '脚本1',
           content: 'echo "1"',
           options: {},
@@ -483,7 +483,7 @@ describe('CodeService', () => {
         {
           id: 'script-2',
           name: 'script-2',
-          type: ScriptType.SHELL,
+          type: 'SHELL',
           description: '脚本2',
           content: 'echo "2"',
           options: {},
@@ -491,7 +491,7 @@ describe('CodeService', () => {
         }
       ];
 
-      codeService.registerExecutor(ScriptType.SHELL, mockExecutor);
+      codeService.registerExecutor('SHELL', mockExecutor);
       codeService.registerScripts(scripts);
 
       const executions = [
@@ -516,20 +516,20 @@ describe('CodeService', () => {
           .mockResolvedValueOnce({
             success: true,
             scriptName: 'script-1',
-            scriptType: ScriptType.SHELL,
+            scriptType: 'SHELL',
             stdout: 'Success',
             executionTime: 100
           })
           .mockRejectedValueOnce(new Error('Execution failed')),
         validate: jest.fn().mockReturnValue({ valid: true, errors: [] }),
-        getSupportedTypes: jest.fn().mockReturnValue([ScriptType.SHELL])
+        getSupportedTypes: jest.fn().mockReturnValue(['SHELL'])
       };
 
       const scripts = [
         {
           id: 'script-1',
           name: 'script-1',
-          type: ScriptType.SHELL,
+          type: 'SHELL',
           description: '脚本1',
           content: 'echo "1"',
           options: {},
@@ -538,7 +538,7 @@ describe('CodeService', () => {
         {
           id: 'script-2',
           name: 'script-2',
-          type: ScriptType.SHELL,
+          type: 'SHELL',
           description: '脚本2',
           content: 'echo "2"',
           options: {},
@@ -546,7 +546,7 @@ describe('CodeService', () => {
         }
       ];
 
-      codeService.registerExecutor(ScriptType.SHELL, mockExecutor);
+      codeService.registerExecutor('SHELL', mockExecutor);
       codeService.registerScripts(scripts);
 
       const executions = [
@@ -563,20 +563,20 @@ describe('CodeService', () => {
       const mockExecutor = {
         execute: jest.fn(),
         validate: jest.fn().mockReturnValue({ valid: true, errors: [] }),
-        getSupportedTypes: jest.fn().mockReturnValue([ScriptType.SHELL])
+        getSupportedTypes: jest.fn().mockReturnValue(['SHELL'])
       };
 
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: ScriptType.SHELL,
+        type: 'SHELL',
         description: '测试脚本',
         content: 'echo "Hello"',
         options: {},
         enabled: true
       };
 
-      codeService.registerExecutor(ScriptType.SHELL, mockExecutor);
+      codeService.registerExecutor('SHELL', mockExecutor);
       codeService.registerScript(script);
 
       const result = codeService.validateScript('test-script');
@@ -590,7 +590,7 @@ describe('CodeService', () => {
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: ScriptType.SHELL,
+        type: 'SHELL',
         description: '测试脚本',
         content: 'echo "Hello"',
         options: {},
@@ -602,7 +602,7 @@ describe('CodeService', () => {
       const result = codeService.validateScript('test-script');
 
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain(`No executor found for script type '${ScriptType.SHELL}'`);
+      expect(result.errors).toContain(`No executor found for script type '${'SHELL'}'`);
     });
 
     it('应该返回无效的验证结果当脚本不存在', () => {
@@ -619,7 +619,7 @@ describe('CodeService', () => {
         {
           id: 'script-1',
           name: 'script-1',
-          type: ScriptType.SHELL,
+          type: 'SHELL',
           description: '脚本1',
           content: 'echo "1"',
           options: {},
@@ -628,7 +628,7 @@ describe('CodeService', () => {
         {
           id: 'script-2',
           name: 'script-2',
-          type: ScriptType.POWERSHELL,
+          type: 'POWERSHELL',
           description: '脚本2',
           content: 'Write-Host "2"',
           options: {},
@@ -649,16 +649,16 @@ describe('CodeService', () => {
       const executor = {
         execute: jest.fn(),
         validate: jest.fn().mockReturnValue({ valid: true, errors: [] }),
-        getSupportedTypes: jest.fn().mockReturnValue([ScriptType.SHELL])
+        getSupportedTypes: jest.fn().mockReturnValue(['SHELL'])
       };
 
-      codeService.registerExecutor(ScriptType.SHELL, executor);
+      codeService.registerExecutor('SHELL', executor);
 
       // 通过验证来间接测试执行器是否被清空
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: ScriptType.SHELL,
+        type: 'SHELL',
         description: '测试脚本',
         content: 'echo "Hello"',
         options: {},
@@ -671,7 +671,7 @@ describe('CodeService', () => {
       const result = codeService.validateScript('test-script');
 
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain(`No executor found for script type '${ScriptType.SHELL}'`);
+      expect(result.errors).toContain(`No executor found for script type '${'SHELL'}'`);
     });
   });
 
@@ -680,7 +680,7 @@ describe('CodeService', () => {
       const originalScript = {
         id: 'script-1',
         name: 'test-script',
-        type: ScriptType.SHELL,
+        type: 'SHELL',
         description: '原始描述',
         content: 'echo "original"',
         options: { timeout: 1000 },
@@ -704,7 +704,7 @@ describe('CodeService', () => {
       // 确保其他字段保持不变
       expect(updatedScript.id).toBe('script-1');
       expect(updatedScript.name).toBe('test-script');
-      expect(updatedScript.type).toBe(ScriptType.SHELL);
+      expect(updatedScript.type).toBe('SHELL');
     });
 
     it('应该抛出 NotFoundError 当更新不存在的脚本', () => {

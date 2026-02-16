@@ -57,9 +57,9 @@ describe('ConfigParser', () => {
     }`;
 
     test('应该成功解析有效的JSON配置', () => {
-      const result = parser.parse(validJsonConfig, ConfigFormat.JSON);
+      const result = parser.parse(validJsonConfig, 'json');
 
-      expect(result.format).toBe(ConfigFormat.JSON);
+      expect(result.format).toBe('json');
       expect(result.config.id).toBe('test-workflow');
       expect(result.config.name).toBe('测试工作流');
       expect(result.config.nodes).toHaveLength(2);
@@ -67,7 +67,7 @@ describe('ConfigParser', () => {
     });
 
     test('应该验证配置的有效性', () => {
-      const parsed = parser.parse(validJsonConfig, ConfigFormat.JSON);
+      const parsed = parser.parse(validJsonConfig, 'json');
       const validationResult = parser.validate(parsed);
 
       expect(validationResult.isOk()).toBe(true);
@@ -84,7 +84,7 @@ describe('ConfigParser', () => {
         "updatedAt": 0
       }`;
 
-      const parsed = parser.parse(invalidJsonConfig, ConfigFormat.JSON);
+      const parsed = parser.parse(invalidJsonConfig, 'json');
       const validationResult = parser.validate(parsed);
 
       expect(validationResult.isErr()).toBe(true);
@@ -94,7 +94,7 @@ describe('ConfigParser', () => {
     });
 
     test('应该将配置转换为WorkflowDefinition', () => {
-      const workflowDef = parser.parseAndTransform(validJsonConfig, ConfigFormat.JSON);
+      const workflowDef = parser.parseAndTransform(validJsonConfig, 'json');
 
       expect(workflowDef.id).toBe('test-workflow');
       expect(workflowDef.name).toBe('测试工作流');
@@ -157,12 +157,12 @@ describe('ConfigParser', () => {
 
       const workflowDef = parser.parseAndTransform(
         configWithParams,
-        ConfigFormat.JSON,
+        'json',
         { model: 'gpt-4-turbo' }
       );
 
       const llmNode = workflowDef.nodes[1]!;
-      expect(llmNode.type).toBe(NodeType.LLM);
+      expect(llmNode.type).toBe('LLM');
       expect((llmNode.config as any).profileId).toBe('gpt-4-turbo');
     });
   });
@@ -182,7 +182,7 @@ describe('ConfigParser', () => {
           createdAt: 0,
           updatedAt: 0
         }),
-        ConfigFormat.JSON
+        'json'
       );
 
       expect(workflowDef.id).toBe('test-workflow');
@@ -193,13 +193,13 @@ describe('ConfigParser', () => {
   describe('错误处理', () => {
     test('应该抛出无效JSON的错误', () => {
       expect(() => {
-        parser.parse('invalid json', ConfigFormat.JSON);
+        parser.parse('invalid json', 'json');
       }).toThrow();
     });
 
     test('应该抛出缺少必需字段的错误', () => {
       expect(() => {
-        parser.parse('{"notWorkflow": {}}', ConfigFormat.JSON);
+        parser.parse('{"notWorkflow": {}}', 'json');
       }).toThrow();
     });
   });
@@ -219,7 +219,7 @@ describe('ConfigTransformer', () => {
       name: 'test',
       version: '1.0.0',
       nodes: [
-        { id: 'start', type: NodeType.START, name: '开始', config: {}, outgoingEdgeIds: [], incomingEdgeIds: [] }
+        { id: 'start', type: 'START', name: '开始', config: {}, outgoingEdgeIds: [], incomingEdgeIds: [] }
       ],
       edges: [],
       createdAt: 0,
@@ -240,8 +240,8 @@ describe('ConfigTransformer', () => {
       name: 'test',
       version: '1.0.0',
       nodes: [
-        { id: 'start', type: NodeType.START, name: '开始', config: {}, outgoingEdgeIds: [], incomingEdgeIds: [] },
-        { id: 'end', type: NodeType.END, name: '结束', config: {}, outgoingEdgeIds: [], incomingEdgeIds: [] }
+        { id: 'start', type: 'START', name: '开始', config: {}, outgoingEdgeIds: [], incomingEdgeIds: [] },
+        { id: 'end', type: 'END', name: '结束', config: {}, outgoingEdgeIds: [], incomingEdgeIds: [] }
       ],
       edges: [
         { id: 'edge-1', sourceNodeId: 'start', targetNodeId: 'end', type: EdgeType.DEFAULT }
@@ -263,8 +263,8 @@ describe('ConfigTransformer', () => {
       name: 'test',
       version: '1.0.0',
       nodes: [
-        { id: 'start', type: NodeType.START, name: '开始', config: {}, outgoingEdgeIds: [], incomingEdgeIds: [] },
-        { id: 'end', type: NodeType.END, name: '结束', config: {}, outgoingEdgeIds: [], incomingEdgeIds: [] }
+        { id: 'start', type: 'START', name: '开始', config: {}, outgoingEdgeIds: [], incomingEdgeIds: [] },
+        { id: 'end', type: 'END', name: '结束', config: {}, outgoingEdgeIds: [], incomingEdgeIds: [] }
       ],
       edges: [
         { id: 'edge-1', sourceNodeId: 'start', targetNodeId: 'end', type: EdgeType.DEFAULT }

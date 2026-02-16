@@ -485,7 +485,7 @@ describe('loop-start-handler', () => {
 
   describe('执行条件测试', () => {
     it('应该在thread状态不是RUNNING时跳过执行', async () => {
-      mockThread.status = ThreadStatus.PAUSED;
+      mockThread.status = 'PAUSED';
 
       const result = await loopStartHandler(mockThread, mockNode);
 
@@ -500,7 +500,7 @@ describe('loop-start-handler', () => {
     });
 
     it('应该在thread状态为COMPLETED时跳过执行', async () => {
-      mockThread.status = ThreadStatus.COMPLETED;
+      mockThread.status = 'COMPLETED';
 
       const result = await loopStartHandler(mockThread, mockNode);
 
@@ -508,7 +508,7 @@ describe('loop-start-handler', () => {
     });
 
     it('应该在thread状态为FAILED时跳过执行', async () => {
-      mockThread.status = ThreadStatus.FAILED;
+      mockThread.status = 'FAILED';
 
       const result = await loopStartHandler(mockThread, mockNode);
 

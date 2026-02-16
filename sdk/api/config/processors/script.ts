@@ -16,9 +16,9 @@ import { ok } from '@modular-agent/common-utils';
  * @param config 解析后的配置对象
  * @returns 验证结果
  */
-export function validateScript(config: ParsedConfig<ConfigType.SCRIPT>): Result<ParsedConfig<ConfigType.SCRIPT>, ValidationError[]> {
+export function validateScript(config: ParsedConfig<'script'>): Result<ParsedConfig<'script'>, ValidationError[]> {
   const result = validateScriptConfig(config.config);
 
   // 使用 andThen 进行类型转换
-  return result.andThen(() => ok(config)) as Result<ParsedConfig<ConfigType.SCRIPT>, ValidationError[]>;
+  return result.andThen(() => ok(config)) as Result<ParsedConfig<'script'>, ValidationError[]>;
 }

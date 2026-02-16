@@ -51,7 +51,7 @@ describe('hook-handler', () => {
       };
 
       // node.hooks未定义
-      await executeHook(context, HookType.BEFORE_EXECUTE, mockEmitEvent);
+      await executeHook(context, 'BEFORE_EXECUTE', mockEmitEvent);
 
       expect(mockEmitEvent).not.toHaveBeenCalled();
     });
@@ -67,7 +67,7 @@ describe('hook-handler', () => {
         node: nodeWithEmptyHooks
       };
 
-      await executeHook(context, HookType.BEFORE_EXECUTE, mockEmitEvent);
+      await executeHook(context, 'BEFORE_EXECUTE', mockEmitEvent);
 
       expect(mockEmitEvent).not.toHaveBeenCalled();
     });
@@ -84,13 +84,13 @@ describe('hook-handler', () => {
 
       const hooks: NodeHook[] = [
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'before-event',
           enabled: true,
           weight: 10
         },
         {
-          hookType: HookType.AFTER_EXECUTE,
+          hookType: 'AFTER_EXECUTE',
           eventName: 'after-event',
           enabled: true,
           weight: 5
@@ -107,7 +107,7 @@ describe('hook-handler', () => {
         node: nodeWithHooks
       };
 
-      await executeHook(context, HookType.BEFORE_EXECUTE, mockEmitEvent);
+      await executeHook(context, 'BEFORE_EXECUTE', mockEmitEvent);
 
       // 只有BEFORE_EXECUTE的hook应该被执行
       expect(emitHookEvent).toHaveBeenCalledTimes(1);
@@ -138,19 +138,19 @@ describe('hook-handler', () => {
 
       const hooks: NodeHook[] = [
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'low-priority',
           enabled: true,
           weight: 5
         },
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'high-priority',
           enabled: true,
           weight: 10
         },
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'medium-priority',
           enabled: true,
           weight: 8
@@ -167,7 +167,7 @@ describe('hook-handler', () => {
         node: nodeWithHooks
       };
 
-      await executeHook(context, HookType.BEFORE_EXECUTE, mockEmitEvent);
+      await executeHook(context, 'BEFORE_EXECUTE', mockEmitEvent);
 
       // 验证执行顺序（权重高优先）
       expect(executionOrder[0]).toBe('high-priority');
@@ -187,12 +187,12 @@ describe('hook-handler', () => {
 
       const hooks: NodeHook[] = [
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'enabled-event',
           enabled: true
         },
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'disabled-event',
           enabled: false
         }
@@ -208,7 +208,7 @@ describe('hook-handler', () => {
         node: nodeWithHooks
       };
 
-      await executeHook(context, HookType.BEFORE_EXECUTE, mockEmitEvent);
+      await executeHook(context, 'BEFORE_EXECUTE', mockEmitEvent);
 
       // 只有enabled的hook应该被执行
       expect(emitHookEvent).toHaveBeenCalledTimes(1);
@@ -238,19 +238,19 @@ describe('hook-handler', () => {
 
       const hooks: NodeHook[] = [
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'first-event',
           enabled: true,
           weight: 10
         },
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'failing-event',
           enabled: true,
           weight: 5
         },
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'last-event',
           enabled: true,
           weight: 1
@@ -269,7 +269,7 @@ describe('hook-handler', () => {
 
       // 应该不抛出错误，即使某些hook失败
       await expect(
-        executeHook(context, HookType.BEFORE_EXECUTE, mockEmitEvent)
+        executeHook(context, 'BEFORE_EXECUTE', mockEmitEvent)
       ).resolves.toBeUndefined();
 
       // 验证所有hook都被执行
@@ -295,7 +295,7 @@ describe('hook-handler', () => {
 
       const hooks: NodeHook[] = [
         {
-          hookType: HookType.AFTER_EXECUTE,
+          hookType: 'AFTER_EXECUTE',
           eventName: 'after-event',
           enabled: true
         }
@@ -312,7 +312,7 @@ describe('hook-handler', () => {
         result: mockResult
       };
 
-      await executeHook(context, HookType.AFTER_EXECUTE, mockEmitEvent);
+      await executeHook(context, 'AFTER_EXECUTE', mockEmitEvent);
 
       // 验证buildHookEvaluationContext被调用时context包含result
       expect(buildHookEvaluationContext).toHaveBeenCalledWith(context);
@@ -331,11 +331,11 @@ describe('hook-handler', () => {
 
       const hooks: NodeHook[] = [
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'no-weight-event'
         },
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'with-weight-event',
           weight: 5
         }
@@ -351,7 +351,7 @@ describe('hook-handler', () => {
         node: nodeWithHooks
       };
 
-      await executeHook(context, HookType.BEFORE_EXECUTE, mockEmitEvent);
+      await executeHook(context, 'BEFORE_EXECUTE', mockEmitEvent);
 
       // 应该能正确处理，权重为undefined的hook权重视为0
       expect(emitHookEvent).toHaveBeenCalledTimes(2);
@@ -372,7 +372,7 @@ describe('hook-handler', () => {
 
       const hooks: NodeHook[] = [
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'conditional-event',
           condition: mockCondition,
           enabled: true
@@ -389,7 +389,7 @@ describe('hook-handler', () => {
         node: nodeWithHooks
       };
 
-      await executeHook(context, HookType.BEFORE_EXECUTE, mockEmitEvent);
+      await executeHook(context, 'BEFORE_EXECUTE', mockEmitEvent);
 
       // 验证条件评估器被调用
       expect(conditionEvaluator.evaluate).toHaveBeenCalledWith(
@@ -411,7 +411,7 @@ describe('hook-handler', () => {
 
       const hooks: NodeHook[] = [
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'conditional-event',
           condition: { expression: 'output.result === "success"' },
           enabled: true
@@ -428,7 +428,7 @@ describe('hook-handler', () => {
         node: nodeWithHooks
       };
 
-      await executeHook(context, HookType.BEFORE_EXECUTE, mockEmitEvent);
+      await executeHook(context, 'BEFORE_EXECUTE', mockEmitEvent);
 
       // 条件为false时，不应触发事件
       expect(emitHookEvent).not.toHaveBeenCalled();
@@ -449,13 +449,13 @@ describe('hook-handler', () => {
 
       const hooks: NodeHook[] = [
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'conditional-event',
           condition: { expression: 'invalid expression' },
           enabled: true
         },
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'next-event',
           enabled: true
         }
@@ -473,7 +473,7 @@ describe('hook-handler', () => {
 
       // 应该不抛出错误
       await expect(
-        executeHook(context, HookType.BEFORE_EXECUTE, mockEmitEvent)
+        executeHook(context, 'BEFORE_EXECUTE', mockEmitEvent)
       ).resolves.toBeUndefined();
 
       // 第一个hook因条件评估失败应该被跳过，第二个应该被执行
@@ -502,7 +502,7 @@ describe('hook-handler', () => {
 
       const hooks: NodeHook[] = [
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'custom-handler-event',
           enabled: true,
           eventPayload: {
@@ -522,7 +522,7 @@ describe('hook-handler', () => {
         node: nodeWithHooks
       };
 
-      await executeHook(context, HookType.BEFORE_EXECUTE, mockEmitEvent);
+      await executeHook(context, 'BEFORE_EXECUTE', mockEmitEvent);
 
       // 验证自定义handler被调用
       expect(mockCustomHandler).toHaveBeenCalledWith(
@@ -544,7 +544,7 @@ describe('hook-handler', () => {
 
       const hooks: NodeHook[] = [
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'custom-handler-event',
           enabled: true,
           eventPayload: {
@@ -566,7 +566,7 @@ describe('hook-handler', () => {
 
       // 应该不抛出错误
       await expect(
-        executeHook(context, HookType.BEFORE_EXECUTE, mockEmitEvent)
+        executeHook(context, 'BEFORE_EXECUTE', mockEmitEvent)
       ).resolves.toBeUndefined();
 
       // 事件应该仍然被触发
@@ -588,7 +588,7 @@ describe('hook-handler', () => {
 
       const hooks: NodeHook[] = [
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'failing-handler-event',
           enabled: true,
           eventPayload: {
@@ -609,7 +609,7 @@ describe('hook-handler', () => {
 
       // 应该不抛出错误
       await expect(
-        executeHook(context, HookType.BEFORE_EXECUTE, mockEmitEvent)
+        executeHook(context, 'BEFORE_EXECUTE', mockEmitEvent)
       ).resolves.toBeUndefined();
 
       // 事件应该仍然被触发
@@ -634,13 +634,13 @@ describe('hook-handler', () => {
 
       const hooks: NodeHook[] = [
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'first-event',
           enabled: true,
           weight: 10
         },
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'second-event',
           enabled: true,
           weight: 5
@@ -659,7 +659,7 @@ describe('hook-handler', () => {
 
       // 应该不抛出错误
       await expect(
-        executeHook(context, HookType.BEFORE_EXECUTE, mockEmitEvent)
+        executeHook(context, 'BEFORE_EXECUTE', mockEmitEvent)
       ).resolves.toBeUndefined();
 
       // 两个hook都应该被尝试执行
@@ -680,7 +680,7 @@ describe('hook-handler', () => {
 
       const hooks: NodeHook[] = [
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'event',
           enabled: true
         }
@@ -701,7 +701,7 @@ describe('hook-handler', () => {
 
       // 应该不抛出错误
       await expect(
-        executeHookFresh(context, HookType.BEFORE_EXECUTE, mockEmitEvent)
+        executeHookFresh(context, 'BEFORE_EXECUTE', mockEmitEvent)
       ).resolves.toBeUndefined();
     });
   });
@@ -740,7 +740,7 @@ describe('hook-handler', () => {
 
       const hooks: NodeHook[] = [
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'checkpoint-event',
           enabled: true,
           createCheckpoint: true,
@@ -759,7 +759,7 @@ describe('hook-handler', () => {
         checkpointDependencies: mockCheckpointDependencies
       };
 
-      await executeHook(context, HookType.BEFORE_EXECUTE, mockEmitEvent);
+      await executeHook(context, 'BEFORE_EXECUTE', mockEmitEvent);
 
       // 验证检查点被创建
       expect(createCheckpoint).toHaveBeenCalledWith(
@@ -786,7 +786,7 @@ describe('hook-handler', () => {
 
       const hooks: NodeHook[] = [
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'no-checkpoint-event',
           enabled: true
         }
@@ -802,7 +802,7 @@ describe('hook-handler', () => {
         node: nodeWithHooks
       };
 
-      await executeHook(context, HookType.BEFORE_EXECUTE, mockEmitEvent);
+      await executeHook(context, 'BEFORE_EXECUTE', mockEmitEvent);
 
       // 验证检查点没有被创建
       expect(createCheckpoint).not.toHaveBeenCalled();
@@ -822,7 +822,7 @@ describe('hook-handler', () => {
 
       const hooks: NodeHook[] = [
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'disabled-checkpoint-event',
           enabled: true,
           createCheckpoint: false
@@ -839,7 +839,7 @@ describe('hook-handler', () => {
         node: nodeWithHooks
       };
 
-      await executeHook(context, HookType.BEFORE_EXECUTE, mockEmitEvent);
+      await executeHook(context, 'BEFORE_EXECUTE', mockEmitEvent);
 
       // 验证检查点没有被创建
       expect(createCheckpoint).not.toHaveBeenCalled();
@@ -878,7 +878,7 @@ describe('hook-handler', () => {
 
       const hooks: NodeHook[] = [
         {
-          hookType: HookType.BEFORE_EXECUTE,
+          hookType: 'BEFORE_EXECUTE',
           eventName: 'checkpoint-event',
           enabled: true,
           createCheckpoint: true,
@@ -899,7 +899,7 @@ describe('hook-handler', () => {
 
       // 应该不抛出错误
       await expect(
-        executeHook(context, HookType.BEFORE_EXECUTE, mockEmitEvent)
+        executeHook(context, 'BEFORE_EXECUTE', mockEmitEvent)
       ).resolves.toBeUndefined();
 
       // 验证事件仍然被触发

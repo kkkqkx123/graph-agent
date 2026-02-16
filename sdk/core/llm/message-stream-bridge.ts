@@ -61,7 +61,7 @@ export class MessageStreamBridge {
       if (this.destroyed) return;
       
       safeEmit(this.eventManager, {
-        type: EventType.LLM_STREAM_ABORTED,
+        type: 'LLM_STREAM_ABORTED',
         timestamp: now(),
         workflowId: this.context.workflowId || '',
         threadId: this.context.threadId || '',
@@ -69,14 +69,14 @@ export class MessageStreamBridge {
         reason: event.reason || 'Stream aborted'
       });
     };
-    this.messageStream.on(MessageStreamEventType.ABORT, this.abortListener);
+    this.messageStream.on('abort', this.abortListener);
 
     // 监听 ERROR 事件
     this.errorListener = (event: MessageStreamErrorEvent) => {
       if (this.destroyed) return;
       
       safeEmit(this.eventManager, {
-        type: EventType.LLM_STREAM_ERROR,
+        type: 'LLM_STREAM_ERROR',
         timestamp: now(),
         workflowId: this.context.workflowId || '',
         threadId: this.context.threadId || '',
@@ -84,7 +84,7 @@ export class MessageStreamBridge {
         error: event.error.message
       });
     };
-    this.messageStream.on(MessageStreamEventType.ERROR, this.errorListener);
+    this.messageStream.on('error', this.errorListener);
 
     // 可以在这里添加更多事件监听器
     // 例如：TEXT, TOOL_CALL, MESSAGE 等
@@ -102,11 +102,11 @@ export class MessageStreamBridge {
 
     // 移除所有事件监听器
     if (this.abortListener) {
-      this.messageStream.off(MessageStreamEventType.ABORT, this.abortListener);
+      this.messageStream.off('abort', this.abortListener);
       this.abortListener = null;
     }
     if (this.errorListener) {
-      this.messageStream.off(MessageStreamEventType.ERROR, this.errorListener);
+      this.messageStream.off(MessageStream'ERROR', this.errorListener);
       this.errorListener = null;
     }
     // 可以在这里移除其他监听器

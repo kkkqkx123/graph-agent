@@ -170,10 +170,10 @@ describe('中断功能完整调用链集成测试', () => {
       expect((abortReason as ThreadInterruptedException).threadId).toBe(threadContext.getThreadId());
 
       // 验证线程状态
-      expect(threadContext.getStatus()).toBe(ThreadStatus.PAUSED);
+      expect(threadContext.getStatus()).toBe('PAUSED');
 
       // 验证执行结果
-      expect(result.metadata.status).toBe(ThreadStatus.PAUSED);
+      expect(result.metadata.status).toBe('PAUSED');
       expect(result.threadId).toBe(threadContext.getThreadId());
     });
 
@@ -201,7 +201,7 @@ describe('中断功能完整调用链集成测试', () => {
       // 验证中断状态
       expect(threadContext.getShouldPause()).toBe(true);
       expect(threadContext.getAbortSignal().aborted).toBe(true);
-      expect(result.metadata.status).toBe(ThreadStatus.PAUSED);
+      expect(result.metadata.status).toBe('PAUSED');
     });
 
     it('应该在工具调用过程中检测到暂停并正确处理', async () => {
@@ -225,7 +225,7 @@ describe('中断功能完整调用链集成测试', () => {
 
       expect(threadContext.getShouldPause()).toBe(true);
       expect(threadContext.getAbortSignal().aborted).toBe(true);
-      expect(result.metadata.status).toBe(ThreadStatus.PAUSED);
+      expect(result.metadata.status).toBe('PAUSED');
     });
   });
 
@@ -269,8 +269,8 @@ describe('中断功能完整调用链集成测试', () => {
       expect((abortReason as ThreadInterruptedException).threadId).toBe(threadContext.getThreadId());
 
       // 验证线程状态
-      expect(threadContext.getStatus()).toBe(ThreadStatus.CANCELLED);
-      expect(result.metadata.status).toBe(ThreadStatus.CANCELLED);
+      expect(threadContext.getStatus()).toBe('CANCELLED');
+      expect(result.metadata.status).toBe('CANCELLED');
     });
 
     it('应该在节点执行前检测到停止并正确处理', async () => {
@@ -293,7 +293,7 @@ describe('中断功能完整调用链集成测试', () => {
 
       expect(threadContext.getShouldStop()).toBe(true);
       expect(threadContext.getAbortSignal().aborted).toBe(true);
-      expect(result.metadata.status).toBe(ThreadStatus.CANCELLED);
+      expect(result.metadata.status).toBe('CANCELLED');
     });
   });
 
@@ -324,7 +324,7 @@ describe('中断功能完整调用链集成测试', () => {
       });
 
       const result = await executor.executeThread(threadContext);
-      expect(result.metadata.status).toBe(ThreadStatus.COMPLETED);
+      expect(result.metadata.status).toBe('COMPLETED');
     });
 
     it('应该验证从停止状态恢复', async () => {
@@ -420,7 +420,7 @@ describe('中断功能完整调用链集成测试', () => {
 
       // 验证 AbortSignal 被触发
       expect(threadContext.getAbortSignal().aborted).toBe(true);
-      expect(result.metadata.status).toBe(ThreadStatus.PAUSED);
+      expect(result.metadata.status).toBe('PAUSED');
     });
 
     it('应该验证工具调用中的 AbortSignal 深度中断', async () => {
@@ -467,7 +467,7 @@ describe('中断功能完整调用链集成测试', () => {
 
       // 验证 AbortSignal 被触发
       expect(threadContext.getAbortSignal().aborted).toBe(true);
-      expect(result.metadata.status).toBe(ThreadStatus.CANCELLED);
+      expect(result.metadata.status).toBe('CANCELLED');
     });
 
     it('应该验证 AbortSignal 事件监听器被正确触发', (done) => {
@@ -508,7 +508,7 @@ describe('中断功能完整调用链集成测试', () => {
 
       // 验证异常被正确处理，没有抛出到顶层
       expect(result).toBeDefined();
-      expect(result.metadata.status).toBe(ThreadStatus.PAUSED);
+      expect(result.metadata.status).toBe('PAUSED');
       expect(threadContext.getAbortSignal().aborted).toBe(true);
     });
 
@@ -555,7 +555,7 @@ describe('中断功能完整调用链集成测试', () => {
   describe('状态转换完整调用链', () => {
     it('应该验证从 RUNNING 到 PAUSED 的状态转换', async () => {
       const threadContext = createTestThreadContext('node-1');
-      threadContext.setStatus(ThreadStatus.RUNNING);
+      threadContext.setStatus('RUNNING');
 
       const mockNodeExecutionCoordinator = (executor as any).nodeExecutionCoordinator;
       mockNodeExecutionCoordinator.executeNode.mockImplementationOnce(async () => {
@@ -570,12 +570,12 @@ describe('中断功能完整调用链集成测试', () => {
 
       await executor.executeThread(threadContext);
 
-      expect(threadContext.getStatus()).toBe(ThreadStatus.PAUSED);
+      expect(threadContext.getStatus()).toBe('PAUSED');
     });
 
     it('应该验证从 RUNNING 到 CANCELLED 的状态转换', async () => {
       const threadContext = createTestThreadContext('node-1');
-      threadContext.setStatus(ThreadStatus.RUNNING);
+      threadContext.setStatus('RUNNING');
 
       const mockNodeExecutionCoordinator = (executor as any).nodeExecutionCoordinator;
       mockNodeExecutionCoordinator.executeNode.mockImplementationOnce(async () => {
@@ -590,19 +590,19 @@ describe('中断功能完整调用链集成测试', () => {
 
       await executor.executeThread(threadContext);
 
-      expect(threadContext.getStatus()).toBe(ThreadStatus.CANCELLED);
+      expect(threadContext.getStatus()).toBe('CANCELLED');
     });
 
     it('应该验证从 PAUSED 到 RUNNING 的状态转换', async () => {
       const threadContext = createTestThreadContext('node-1');
-      threadContext.setStatus(ThreadStatus.PAUSED);
+      threadContext.setStatus('PAUSED');
       threadContext.setShouldPause(true);
 
       // 恢复线程
       threadContext.resetInterrupt();
-      threadContext.setStatus(ThreadStatus.RUNNING);
+      threadContext.setStatus('RUNNING');
 
-      expect(threadContext.getStatus()).toBe(ThreadStatus.RUNNING);
+      expect(threadContext.getStatus()).toBe('RUNNING');
       expect(threadContext.getShouldPause()).toBe(false);
     });
   });
@@ -645,12 +645,12 @@ function createTestThreadContext(nodeId: string, threadId?: string): ThreadConte
 
   const testNode = {
     id: nodeId,
-    type: NodeType.START,
+    type: 'START',
     name: 'Start Node',
     workflowId: 'test-workflow',
     originalNode: {
       id: nodeId,
-      type: NodeType.START,
+      type: 'START',
       name: 'Start Node',
       config: {},
       outgoingEdgeIds: [],
@@ -719,7 +719,7 @@ function createTestThreadContext(nodeId: string, threadId?: string): ThreadConte
     id: actualThreadId,
     workflowId: 'test-workflow',
     workflowVersion: '1.0.0',
-    status: ThreadStatus.CREATED,
+    status: 'CREATED',
     currentNodeId: nodeId,
     graph: testGraph,
     variables: [],

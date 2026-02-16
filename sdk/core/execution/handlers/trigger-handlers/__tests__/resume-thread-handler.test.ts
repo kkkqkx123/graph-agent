@@ -19,7 +19,7 @@ describe('resume-thread-handler', () => {
 
   beforeEach(() => {
     mockAction = {
-      type: TriggerActionType.RESUME_THREAD,
+      type: 'resume_thread',
       parameters: {
         threadId
       }
@@ -374,7 +374,7 @@ describe('resume-thread-handler', () => {
 
       // 测试暂停操作（使用相同的协调器）
       const pauseAction = {
-        type: TriggerActionType.PAUSE_THREAD,
+        type: 'pause_thread',
         parameters: { threadId }
       };
 

@@ -130,7 +130,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
       model: data.model,
       content: lastOutput.content?.[0]?.text || '',
       message: {
-        role: MessageRole.ASSISTANT,
+        role: 'assistant',
         content: lastOutput.content?.[0]?.text || '',
         toolCalls: lastOutput.tool_calls ? this.parseToolCalls(lastOutput.tool_calls) : undefined
       },
@@ -162,7 +162,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
       model: data.model,
       content: lastOutput.content?.[0]?.text || '',
       message: {
-        role: MessageRole.ASSISTANT,
+        role: 'assistant',
         content: lastOutput.content?.[0]?.text || '',
         toolCalls: lastOutput.tool_calls ? this.parseToolCalls(lastOutput.tool_calls) : undefined
       },

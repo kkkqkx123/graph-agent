@@ -115,7 +115,7 @@ const contextProcessorNodeConfigSchema = z.object({
  * @returns 验证结果
  */
 export function validateContextProcessorNode(node: Node): Result<Node, ConfigurationValidationError[]> {
-  if (node.type !== NodeType.CONTEXT_PROCESSOR) {
+  if (node.type !== 'CONTEXT_PROCESSOR') {
     return err([new ConfigurationValidationError(`Invalid node type for context processor validator: ${node.type}`, {
       configType: 'node',
       configPath: `node.${node.id}`

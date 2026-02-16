@@ -230,7 +230,7 @@ describe('LLMExecutionCoordinator', () => {
       // 验证 Token 使用警告事件
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.TOKEN_USAGE_WARNING,
+          type: 'TOKEN_USAGE_WARNING',
           tokensUsed: 100000,
           tokenLimit: 100000,
           usagePercentage: 100
@@ -277,7 +277,7 @@ describe('LLMExecutionCoordinator', () => {
       // 验证事件触发
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.MESSAGE_ADDED,
+          type: 'MESSAGE_ADDED',
           role: 'user',
           content: 'Hello, world!'
         })
@@ -285,7 +285,7 @@ describe('LLMExecutionCoordinator', () => {
 
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.MESSAGE_ADDED,
+          type: 'MESSAGE_ADDED',
           role: 'assistant',
           content: 'Test response'
         })
@@ -293,7 +293,7 @@ describe('LLMExecutionCoordinator', () => {
 
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.CONVERSATION_STATE_CHANGED,
+          type: 'CONVERSATION_STATE_CHANGED',
           messageCount: 2,
           tokenUsage: 150
         })
@@ -418,8 +418,8 @@ describe('LLMExecutionCoordinator', () => {
       // 验证审批请求事件
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.USER_INTERACTION_REQUESTED,
-          operationType: UserInteractionOperationType.TOOL_APPROVAL,
+          type: 'USER_INTERACTION_REQUESTED',
+          operationType: 'TOOL_APPROVAL',
           prompt: '是否批准调用工具 "sensitive_tool"?'
         })
       );
@@ -472,8 +472,8 @@ describe('LLMExecutionCoordinator', () => {
       // 验证审批请求事件
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.USER_INTERACTION_REQUESTED,
-          operationType: UserInteractionOperationType.TOOL_APPROVAL,
+          type: 'USER_INTERACTION_REQUESTED',
+          operationType: 'TOOL_APPROVAL',
           prompt: '是否批准调用工具 "sensitive_tool"?'
         })
       );
@@ -535,8 +535,8 @@ describe('LLMExecutionCoordinator', () => {
       // 验证审批请求事件
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.USER_INTERACTION_REQUESTED,
-          operationType: UserInteractionOperationType.TOOL_APPROVAL,
+          type: 'USER_INTERACTION_REQUESTED',
+          operationType: 'TOOL_APPROVAL',
           prompt: '是否批准调用工具 "sensitive_tool"?'
         })
       );
@@ -599,8 +599,8 @@ describe('LLMExecutionCoordinator', () => {
       // 验证审批请求事件
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.USER_INTERACTION_REQUESTED,
-          operationType: UserInteractionOperationType.TOOL_APPROVAL,
+          type: 'USER_INTERACTION_REQUESTED',
+          operationType: 'TOOL_APPROVAL',
           prompt: '是否批准调用工具 "sensitive_tool"?'
         })
       );
@@ -650,8 +650,8 @@ describe('LLMExecutionCoordinator', () => {
       expect(mockToolCallExecutor.executeToolCalls).toHaveBeenCalled();
       expect(mockEventManager.emit).not.toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.USER_INTERACTION_REQUESTED,
-          operationType: UserInteractionOperationType.TOOL_APPROVAL
+          type: 'USER_INTERACTION_REQUESTED',
+          operationType: 'TOOL_APPROVAL'
         })
       );
     });

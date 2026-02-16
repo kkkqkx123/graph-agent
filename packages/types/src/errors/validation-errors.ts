@@ -39,7 +39,7 @@ export class ConfigurationValidationError extends ValidationError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.ERROR;
+    return 'error';
   }
 }
 
@@ -75,7 +75,7 @@ export class RuntimeValidationError extends ValidationError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.ERROR;
+    return 'error';
   }
 }
 
@@ -113,6 +113,6 @@ export class SchemaValidationError extends ValidationError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.ERROR;
+    return 'error';
   }
 }

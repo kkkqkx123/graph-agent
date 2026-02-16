@@ -9,7 +9,7 @@ import type { BaseEvent, EventType } from './base';
  * 节点开始事件类型
  */
 export interface NodeStartedEvent extends BaseEvent {
-  type: EventType.NODE_STARTED;
+  type: 'NODE_STARTED';
   /** 节点ID */
   nodeId: ID;
   /** 节点类型 */
@@ -20,7 +20,7 @@ export interface NodeStartedEvent extends BaseEvent {
  * 节点完成事件类型
  */
 export interface NodeCompletedEvent extends BaseEvent {
-  type: EventType.NODE_COMPLETED;
+  type: 'NODE_COMPLETED';
   /** 节点ID */
   nodeId: ID;
   /** 输出数据 */
@@ -33,7 +33,7 @@ export interface NodeCompletedEvent extends BaseEvent {
  * 节点失败事件类型
  */
 export interface NodeFailedEvent extends BaseEvent {
-  type: EventType.NODE_FAILED;
+  type: 'NODE_FAILED';
   /** 节点ID */
   nodeId: ID;
   /** 错误信息 */
@@ -44,7 +44,7 @@ export interface NodeFailedEvent extends BaseEvent {
  * 节点自定义事件类型
  */
 export interface NodeCustomEvent extends BaseEvent {
-  type: EventType.NODE_CUSTOM_EVENT;
+  type: 'NODE_CUSTOM_EVENT';
   /** 节点ID */
   nodeId: ID;
   /** 节点类型 */

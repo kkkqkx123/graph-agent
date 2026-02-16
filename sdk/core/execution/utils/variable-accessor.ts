@@ -33,20 +33,13 @@ import { resolvePath } from '@modular-agent/common-utils';
 /**
  * 变量命名空间
  */
-export enum VariableNamespace {
-  /** 输入数据 */
-  INPUT = 'input',
-  /** 输出数据 */
-  OUTPUT = 'output',
-  /** 全局作用域 */
-  GLOBAL = 'global',
-  /** 线程作用域 */
-  THREAD = 'thread',
-  /** 本地作用域 */
-  LOCAL = 'local',
-  /** 循环作用域 */
-  LOOP = 'loop'
-}
+export type VariableNamespace =
+  | 'input'      /** 输入数据 */
+  | 'output'     /** 输出数据 */
+  | 'global'     /** 全局作用域 */
+  | 'thread'     /** 线程作用域 */
+  | 'local'      /** 本地作用域 */
+  | 'loop';      /** 循环作用域 */
 
 /**
  * VariableAccessor - 统一的变量访问器
@@ -93,22 +86,22 @@ export class VariableAccessor {
 
     // 处理命名空间
     switch (namespace) {
-      case VariableNamespace.INPUT:
+      case 'input':
         return this.getFromInput(remainingPath);
 
-      case VariableNamespace.OUTPUT:
+      case 'output':
         return this.getFromOutput(remainingPath);
 
-      case VariableNamespace.GLOBAL:
+      case 'global':
         return this.getFromScope(remainingPath || path, 'global');
 
-      case VariableNamespace.THREAD:
+      case 'thread':
         return this.getFromScope(remainingPath || path, 'thread');
 
-      case VariableNamespace.LOCAL:
+      case 'local':
         return this.getFromScope(remainingPath || path, 'local');
 
-      case VariableNamespace.LOOP:
+      case 'loop':
         return this.getFromScope(remainingPath || path, 'loop');
 
       default:

@@ -14,7 +14,7 @@ class MockThreadContext {
   constructor(
     public threadId: string,
     public thread: Thread,
-    public status: string = ThreadStatus.CREATED
+    public status: string = 'CREATED'
   ) { }
 
   getThreadId(): string {
@@ -103,7 +103,7 @@ class TestableThreadLifecycleCoordinator {
       id: threadId,
       workflowId: workflowId,
       workflowVersion: '1.0.0',
-      status: ThreadStatus.CREATED,
+      status: 'CREATED',
       currentNodeId: 'node1',
       graph: {} as Graph,
       variables: [],
@@ -151,7 +151,7 @@ describe('ThreadLifecycleCoordinator', () => {
         id: threadId,
         workflowId: generateId(),
         workflowVersion: '1.0.0',
-        status: ThreadStatus.RUNNING,
+        status: 'RUNNING',
         currentNodeId: 'node1',
         graph: {} as Graph,
         variables: [],
@@ -170,7 +170,7 @@ describe('ThreadLifecycleCoordinator', () => {
         shouldStop: false
       };
 
-      const mockThreadContext = new MockThreadContext(threadId, mockThread, ThreadStatus.RUNNING);
+      const mockThreadContext = new MockThreadContext(threadId, mockThread, 'RUNNING');
       mockThreadRegistry.register(mockThreadContext);
 
       await expect(coordinator.pauseThread(threadId)).resolves.not.toThrow();
@@ -192,7 +192,7 @@ describe('ThreadLifecycleCoordinator', () => {
         id: threadId,
         workflowId: generateId(),
         workflowVersion: '1.0.0',
-        status: ThreadStatus.PAUSED,
+        status: 'PAUSED',
         currentNodeId: 'node1',
         graph: {} as Graph,
         variables: [],
@@ -211,7 +211,7 @@ describe('ThreadLifecycleCoordinator', () => {
         shouldStop: false
       };
 
-      const mockThreadContext = new MockThreadContext(threadId, mockThread, ThreadStatus.PAUSED);
+      const mockThreadContext = new MockThreadContext(threadId, mockThread, 'PAUSED');
       mockThreadRegistry.register(mockThreadContext);
 
       const result = await coordinator.resumeThread(threadId);
@@ -235,7 +235,7 @@ describe('ThreadLifecycleCoordinator', () => {
         id: threadId,
         workflowId: generateId(),
         workflowVersion: '1.0.0',
-        status: ThreadStatus.RUNNING,
+        status: 'RUNNING',
         currentNodeId: 'node1',
         graph: {} as Graph,
         variables: [],
@@ -254,7 +254,7 @@ describe('ThreadLifecycleCoordinator', () => {
         shouldStop: false
       };
 
-      const mockThreadContext = new MockThreadContext(threadId, mockThread, ThreadStatus.RUNNING);
+      const mockThreadContext = new MockThreadContext(threadId, mockThread, 'RUNNING');
       mockThreadRegistry.register(mockThreadContext);
 
       await expect(coordinator.stopThread(threadId)).resolves.not.toThrow();
@@ -301,7 +301,7 @@ describe('ThreadLifecycleCoordinator', () => {
         id: threadId,
         workflowId: generateId(),
         workflowVersion: '1.0.0',
-        status: ThreadStatus.COMPLETED, // 已完成状态
+        status: 'COMPLETED', // 已完成状态
         currentNodeId: 'node1',
         graph: {} as Graph,
         variables: [],
@@ -320,7 +320,7 @@ describe('ThreadLifecycleCoordinator', () => {
         shouldStop: false
       };
 
-      const mockThreadContext = new MockThreadContext(threadId, mockThread, ThreadStatus.COMPLETED);
+      const mockThreadContext = new MockThreadContext(threadId, mockThread, 'COMPLETED');
       mockThreadRegistry.register(mockThreadContext);
 
       // 尝试暂停已完成的线程应该不会抛出错误

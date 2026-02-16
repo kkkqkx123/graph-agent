@@ -52,7 +52,7 @@ describe('addToolHandler', () => {
     mockNode = {
       id: 'add-tool-1',
       name: 'Add Tool Node',
-      type: NodeType.ADD_TOOL,
+      type: 'ADD_TOOL',
       config: {
         toolIds: ['tool-1', 'tool-2'],
         scope: 'THREAD',

@@ -92,11 +92,11 @@ describe('Fork/Join 主线程上下文处理', () => {
       // 创建子线程
       const child1 = createMockThreadContext('child-1', executionContext);
       child1.thread.forkJoinContext = { forkId: 'test-fork', forkPathId: 'path-1' };
-      child1.thread.status = ThreadStatus.COMPLETED;
+      child1.thread.status = 'COMPLETED';
 
       const child2 = createMockThreadContext('child-2', executionContext);
       child2.thread.forkJoinContext = { forkId: 'test-fork', forkPathId: 'path-2' };
-      child2.thread.status = ThreadStatus.COMPLETED;
+      child2.thread.status = 'COMPLETED';
 
       executionContext.getThreadRegistry().register(child1);
       executionContext.getThreadRegistry().register(child2);
@@ -138,11 +138,11 @@ describe('Fork/Join 主线程上下文处理', () => {
       // 创建子线程
       const child1 = createMockThreadContext('child-1', executionContext);
       child1.thread.forkJoinContext = { forkId: 'test-fork', forkPathId: 'path-1' };
-      child1.thread.status = ThreadStatus.COMPLETED;
+      child1.thread.status = 'COMPLETED';
 
       const child2 = createMockThreadContext('child-2', executionContext);
       child2.thread.forkJoinContext = { forkId: 'test-fork', forkPathId: 'path-2' };
-      child2.thread.status = ThreadStatus.COMPLETED;
+      child2.thread.status = 'COMPLETED';
 
       executionContext.getThreadRegistry().register(child1);
       executionContext.getThreadRegistry().register(child2);
@@ -183,7 +183,7 @@ describe('Fork/Join 主线程上下文处理', () => {
       // 创建子线程
       const child1 = createMockThreadContext('child-1', executionContext);
       child1.thread.forkJoinContext = { forkId: 'test-fork', forkPathId: 'path-1' };
-      child1.thread.status = ThreadStatus.COMPLETED;
+      child1.thread.status = 'COMPLETED';
 
       executionContext.getThreadRegistry().register(child1);
 
@@ -237,7 +237,7 @@ function createMockThreadContext(threadId: string, context: ExecutionContext): T
     id: threadId,
     workflowId: 'test-workflow',
     workflowVersion: '1.0.0',
-    status: ThreadStatus.RUNNING,
+    status: 'RUNNING',
     currentNodeId: 'node-1',
     graph: createMockGraph(),
     variables: [],

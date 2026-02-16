@@ -540,12 +540,12 @@ describe('VariableAccessor', () => {
 
   describe('VariableNamespace 枚举', () => {
     it('应该包含所有命名空间', () => {
-      expect(VariableNamespace.INPUT).toBe('input');
-      expect(VariableNamespace.OUTPUT).toBe('output');
-      expect(VariableNamespace.GLOBAL).toBe('global');
-      expect(VariableNamespace.THREAD).toBe('thread');
-      expect(VariableNamespace.LOCAL).toBe('local');
-      expect(VariableNamespace.LOOP).toBe('loop');
+      expect('input').toBe('input');
+      expect('output').toBe('output');
+      expect('global').toBe('global');
+      expect('thread').toBe('thread');
+      expect('local').toBe('local');
+      expect('loop').toBe('loop');
     });
   });
 

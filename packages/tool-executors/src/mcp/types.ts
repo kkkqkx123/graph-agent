@@ -40,14 +40,13 @@ export interface McpServerConfig {
 /**
  * MCP会话状态
  */
-export enum McpSessionState {
-  DISCONNECTED = 'DISCONNECTED',
-  CONNECTING = 'CONNECTING',
-  CONNECTED = 'CONNECTED',
-  INITIALIZING = 'INITIALIZING',
-  READY = 'READY',
-  ERROR = 'ERROR'
-}
+export type McpSessionState =
+  | 'DISCONNECTED' /** 已断开连接 */
+  | 'CONNECTING'   /** 连接中 */
+  | 'CONNECTED'    /** 已连接 */
+  | 'INITIALIZING' /** 初始化中 */
+  | 'READY'        /** 就绪 */
+  | 'ERROR';       /** 错误 */
 
 /**
  * MCP会话信息

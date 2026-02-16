@@ -19,7 +19,7 @@ describe('route-handler', () => {
       id: 'thread-1',
       workflowId: 'workflow-1',
       workflowVersion: '1.0.0',
-      status: ThreadStatus.RUNNING,
+      status: 'RUNNING',
       currentNodeId: '',
       graph: {} as any,
       variables: [],
@@ -47,7 +47,7 @@ describe('route-handler', () => {
       mockNode = {
         id: 'route-node-1',
         name: 'Route Node',
-        type: NodeType.ROUTE,
+        type: 'ROUTE',
         config: {
           routes: [
             {
@@ -83,7 +83,7 @@ describe('route-handler', () => {
       mockNode = {
         id: 'route-node-1',
         name: 'Route Node',
-        type: NodeType.ROUTE,
+        type: 'ROUTE',
         config: {
           routes: [
             {
@@ -117,7 +117,7 @@ describe('route-handler', () => {
       mockNode = {
         id: 'route-node-1',
         name: 'Route Node',
-        type: NodeType.ROUTE,
+        type: 'ROUTE',
         config: {
           routes: [
             {
@@ -153,7 +153,7 @@ describe('route-handler', () => {
       mockNode = {
         id: 'route-node-1',
         name: 'Route Node',
-        type: NodeType.ROUTE,
+        type: 'ROUTE',
         config: {
           routes: [
             {
@@ -180,12 +180,12 @@ describe('route-handler', () => {
   describe('执行条件测试', () => {
     it('应该在非RUNNING状态下跳过执行', async () => {
       const nonRunningStates = [
-        ThreadStatus.CREATED,
-        ThreadStatus.PAUSED,
-        ThreadStatus.COMPLETED,
-        ThreadStatus.FAILED,
-        ThreadStatus.CANCELLED,
-        ThreadStatus.TIMEOUT
+        'CREATED',
+        'PAUSED',
+        'COMPLETED',
+        'FAILED',
+        'CANCELLED',
+        'TIMEOUT'
       ];
 
       for (const status of nonRunningStates) {
@@ -195,7 +195,7 @@ describe('route-handler', () => {
         mockNode = {
           id: 'route-node-1',
           name: 'Route Node',
-          type: NodeType.ROUTE,
+          type: 'ROUTE',
           config: {
             routes: [
               {
@@ -223,7 +223,7 @@ describe('route-handler', () => {
     });
 
     it('应该在RUNNING状态下正常执行', async () => {
-      mockThread.status = ThreadStatus.RUNNING;
+      mockThread.status = 'RUNNING';
       mockThread.variableScopes.thread = {
         status: 'success'
       };
@@ -231,7 +231,7 @@ describe('route-handler', () => {
       mockNode = {
         id: 'route-node-1',
         name: 'Route Node',
-        type: NodeType.ROUTE,
+        type: 'ROUTE',
         config: {
           routes: [
             {
@@ -261,7 +261,7 @@ describe('route-handler', () => {
       mockNode = {
         id: 'route-node-1',
         name: 'Route Node',
-        type: NodeType.ROUTE,
+        type: 'ROUTE',
         config: {
           routes: [
             {
@@ -289,7 +289,7 @@ describe('route-handler', () => {
       mockNode = {
         id: 'route-node-1',
         name: 'Route Node',
-        type: NodeType.ROUTE,
+        type: 'ROUTE',
         config: {
           routes: [
             {
@@ -322,7 +322,7 @@ describe('route-handler', () => {
       mockNode = {
         id: 'route-node-1',
         name: 'Route Node',
-        type: NodeType.ROUTE,
+        type: 'ROUTE',
         config: {
           routes: [
             {
@@ -351,7 +351,7 @@ describe('route-handler', () => {
       mockNode = {
         id: 'route-node-1',
         name: 'Route Node',
-        type: NodeType.ROUTE,
+        type: 'ROUTE',
         config: {
           routes: [
             {
@@ -379,7 +379,7 @@ describe('route-handler', () => {
       mockNode = {
         id: 'route-node-1',
         name: 'Route Node',
-        type: NodeType.ROUTE,
+        type: 'ROUTE',
         config: {
           routes: [
             {
@@ -414,7 +414,7 @@ describe('route-handler', () => {
       mockNode = {
         id: 'route-node-1',
         name: 'Route Node',
-        type: NodeType.ROUTE,
+        type: 'ROUTE',
         config: {
           routes: [],
           defaultTargetNodeId: 'default-node'
@@ -439,7 +439,7 @@ describe('route-handler', () => {
       mockNode = {
         id: 'route-node-1',
         name: 'Route Node',
-        type: NodeType.ROUTE,
+        type: 'ROUTE',
         config: {
           routes: [
             {
@@ -475,7 +475,7 @@ describe('route-handler', () => {
       mockNode = {
         id: 'route-node-1',
         name: 'Route Node',
-        type: NodeType.ROUTE,
+        type: 'ROUTE',
         config: {
           routes: [
             {

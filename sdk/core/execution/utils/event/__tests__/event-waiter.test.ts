@@ -32,7 +32,7 @@ describe('EventWaiter', () => {
       // 触发事件
       setTimeout(() => {
         eventManager.emit({
-          type: EventType.THREAD_PAUSED,
+          type: 'THREAD_PAUSED',
           timestamp: Date.now(),
           workflowId: 'test-workflow-id',
           threadId
@@ -62,7 +62,7 @@ describe('EventWaiter', () => {
 
       setTimeout(() => {
         eventManager.emit({
-          type: EventType.THREAD_CANCELLED,
+          type: 'THREAD_CANCELLED',
           timestamp: Date.now(),
           workflowId: 'test-workflow-id',
           threadId,
@@ -82,7 +82,7 @@ describe('EventWaiter', () => {
 
       setTimeout(() => {
         eventManager.emit({
-          type: EventType.THREAD_COMPLETED,
+          type: 'THREAD_COMPLETED',
           timestamp: Date.now(),
           workflowId: 'test-workflow-id',
           threadId,
@@ -103,7 +103,7 @@ describe('EventWaiter', () => {
 
       setTimeout(() => {
         eventManager.emit({
-          type: EventType.THREAD_FAILED,
+          type: 'THREAD_FAILED',
           timestamp: Date.now(),
           workflowId: 'test-workflow-id',
           threadId,
@@ -123,7 +123,7 @@ describe('EventWaiter', () => {
 
       setTimeout(() => {
         eventManager.emit({
-          type: EventType.THREAD_RESUMED,
+          type: 'THREAD_RESUMED',
           timestamp: Date.now(),
           workflowId: 'test-workflow-id',
           threadId
@@ -143,7 +143,7 @@ describe('EventWaiter', () => {
       // 触发THREAD_PAUSED事件
       setTimeout(() => {
         eventManager.emit({
-          type: EventType.THREAD_PAUSED,
+          type: 'THREAD_PAUSED',
           timestamp: Date.now(),
           workflowId: 'test-workflow-id',
           threadId
@@ -161,7 +161,7 @@ describe('EventWaiter', () => {
       // 触发THREAD_CANCELLED事件
       setTimeout(() => {
         eventManager.emit({
-          type: EventType.THREAD_CANCELLED,
+          type: 'THREAD_CANCELLED',
           timestamp: Date.now(),
           workflowId: 'test-workflow-id',
           threadId,
@@ -184,7 +184,7 @@ describe('EventWaiter', () => {
       // 先触发thread-2的事件（应该被忽略）
       setTimeout(() => {
         eventManager.emit({
-          type: EventType.THREAD_PAUSED,
+          type: 'THREAD_PAUSED',
           timestamp: Date.now(),
           workflowId: 'test-workflow-id',
           threadId: threadId2
@@ -194,7 +194,7 @@ describe('EventWaiter', () => {
       // 再触发thread-1的事件（应该被捕获）
       setTimeout(() => {
         eventManager.emit({
-          type: EventType.THREAD_PAUSED,
+          type: 'THREAD_PAUSED',
           timestamp: Date.now(),
           workflowId: 'test-workflow-id',
           threadId: threadId1
@@ -216,7 +216,7 @@ describe('EventWaiter', () => {
       // 触发thread-1的PAUSED事件
       setTimeout(() => {
         eventManager.emit({
-          type: EventType.THREAD_PAUSED,
+          type: 'THREAD_PAUSED',
           timestamp: Date.now(),
           workflowId: 'test-workflow-id',
           threadId: threadId1
@@ -226,7 +226,7 @@ describe('EventWaiter', () => {
       // 触发thread-2的CANCELLED事件
       setTimeout(() => {
         eventManager.emit({
-          type: EventType.THREAD_CANCELLED,
+          type: 'THREAD_CANCELLED',
           timestamp: Date.now(),
           workflowId: 'test-workflow-id',
           threadId: threadId2,
@@ -248,7 +248,7 @@ describe('EventWaiter', () => {
       // 触发thread-2的事件（应该被忽略）
       setTimeout(() => {
         eventManager.emit({
-          type: EventType.THREAD_PAUSED,
+          type: 'THREAD_PAUSED',
           timestamp: Date.now(),
           workflowId: 'test-workflow-id',
           threadId: threadId2
@@ -258,7 +258,7 @@ describe('EventWaiter', () => {
       // 触发thread-1的事件（应该被捕获）
       setTimeout(() => {
         eventManager.emit({
-          type: EventType.THREAD_COMPLETED,
+          type: 'THREAD_COMPLETED',
           timestamp: Date.now(),
           workflowId: 'test-workflow-id',
           threadId: threadId1,
@@ -282,7 +282,7 @@ describe('EventWaiter', () => {
       // 延迟触发事件（超过默认超时时间）
       setTimeout(() => {
         eventManager.emit({
-          type: EventType.THREAD_PAUSED,
+          type: 'THREAD_PAUSED',
           timestamp: Date.now(),
           workflowId: 'test-workflow-id',
           threadId
@@ -302,7 +302,7 @@ describe('EventWaiter', () => {
       // 延迟触发事件
       setTimeout(() => {
         eventManager.emit({
-          type: EventType.THREAD_PAUSED,
+          type: 'THREAD_PAUSED',
           timestamp: Date.now(),
           workflowId: 'test-workflow-id',
           threadId
@@ -324,7 +324,7 @@ describe('EventWaiter', () => {
       // 延迟触发事件
       setTimeout(() => {
         eventManager.emit({
-          type: EventType.THREAD_PAUSED,
+          type: 'THREAD_PAUSED',
           timestamp: Date.now(),
           workflowId: 'test-workflow-id',
           threadId: threadId1
@@ -333,7 +333,7 @@ describe('EventWaiter', () => {
 
       setTimeout(() => {
         eventManager.emit({
-          type: EventType.THREAD_CANCELLED,
+          type: 'THREAD_CANCELLED',
           timestamp: Date.now(),
           workflowId: 'test-workflow-id',
           threadId: threadId2,
@@ -354,7 +354,7 @@ describe('EventWaiter', () => {
       // 延迟触发事件
       setTimeout(() => {
         eventManager.emit({
-          type: EventType.THREAD_COMPLETED,
+          type: 'THREAD_COMPLETED',
           timestamp: Date.now(),
           workflowId: 'test-workflow-id',
           threadId,
@@ -377,7 +377,7 @@ describe('EventWaiter', () => {
       // 延迟触发事件
       setTimeout(() => {
         eventManager.emit({
-          type: EventType.NODE_COMPLETED,
+          type: 'NODE_COMPLETED',
           timestamp: Date.now(),
           workflowId: 'test-workflow-id',
           threadId,

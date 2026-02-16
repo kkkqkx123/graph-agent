@@ -340,7 +340,7 @@ export class TriggeredSubworkflowManager implements TaskManager {
     subgraphContext: ThreadContext
   ): Promise<void> {
     await this.eventManager.emit({
-      type: EventType.TRIGGERED_SUBGRAPH_STARTED,
+      type: 'TRIGGERED_SUBGRAPH_STARTED',
       threadId: task.mainThreadContext.getThreadId(),
       workflowId: task.mainThreadContext.getWorkflowId(),
       subgraphId: task.subgraphId,
@@ -362,7 +362,7 @@ export class TriggeredSubworkflowManager implements TaskManager {
     }
 
     await this.eventManager.emit({
-      type: EventType.TRIGGERED_SUBGRAPH_COMPLETED,
+      type: 'TRIGGERED_SUBGRAPH_COMPLETED',
       threadId,
       workflowId: subgraphContext.getWorkflowId(),
       subgraphId: subgraphContext.getTriggeredSubworkflowId() || '',
@@ -385,7 +385,7 @@ export class TriggeredSubworkflowManager implements TaskManager {
     }
 
     await this.eventManager.emit({
-      type: EventType.TRIGGERED_SUBGRAPH_FAILED,
+      type: 'TRIGGERED_SUBGRAPH_FAILED',
       threadId,
       workflowId: subgraphContext.getWorkflowId(),
       subgraphId: subgraphContext.getTriggeredSubworkflowId() || '',

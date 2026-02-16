@@ -239,7 +239,7 @@ export class ConfigManager {
     options: ConfigLoadOptions = {}
   ): Promise<ConfigLoadResult<any>> {
     const { content, format } = await loadConfigContent(registryPath);
-    const registry = format === ConfigFormat.TOML 
+    const registry = format === 'toml'
       ? await import('@iarna/toml').then(m => m.parse(content))
       : JSON.parse(content);
 
@@ -330,7 +330,7 @@ export class ConfigManager {
       return parseScript(content, format);
     } else {
       // 默认解析为 JSON/TOML
-      return format === ConfigFormat.TOML
+      return format === 'toml'
         ? await import('@iarna/toml').then(m => m.parse(content))
         : JSON.parse(content);
     }

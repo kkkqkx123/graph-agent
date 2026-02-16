@@ -53,13 +53,13 @@ describe('Workflow加载与注册集成测试', () => {
   const createBaseWorkflow = (id: string, name: string): WorkflowDefinition => ({
     id,
     name,
-    type: WorkflowType.STANDALONE,
+    type: 'STANDALONE',
     version: '1.0.0',
     description: 'Test workflow',
     nodes: [
       {
         id: `${id}-start`,
-        type: NodeType.START,
+        type: 'START',
         name: 'Start',
         config: {},
         outgoingEdgeIds: [`${id}-edge-1`],
@@ -67,7 +67,7 @@ describe('Workflow加载与注册集成测试', () => {
       },
       {
         id: `${id}-end`,
-        type: NodeType.END,
+        type: 'END',
         name: 'End',
         config: {},
         outgoingEdgeIds: [],
@@ -140,13 +140,13 @@ describe('Workflow加载与注册集成测试', () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-complex',
         name: 'Complex Workflow',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         version: '1.0.0',
         description: 'Complex workflow with multiple nodes',
         nodes: [
           {
             id: 'node-start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -154,7 +154,7 @@ describe('Workflow加载与注册集成测试', () => {
           },
           {
             id: 'node-llm',
-            type: NodeType.LLM,
+            type: 'LLM',
             name: 'LLM Node',
             config: {
               profileId: 'profile-1',
@@ -165,7 +165,7 @@ describe('Workflow加载与注册集成测试', () => {
           },
           {
             id: 'node-code',
-            type: NodeType.CODE,
+            type: 'CODE',
             name: 'Code Node',
             config: {
               scriptName: 'process',
@@ -179,7 +179,7 @@ describe('Workflow加载与注册集成测试', () => {
           },
           {
             id: 'node-end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],
@@ -262,7 +262,7 @@ describe('Workflow加载与注册集成测试', () => {
       // 注册节点模板
       const llmTemplate: NodeTemplate = {
         name: 'llm-template',
-        type: NodeType.LLM,
+        type: 'LLM',
         description: 'LLM node template',
         config: {
           profileId: 'default-profile',
@@ -283,7 +283,7 @@ describe('Workflow加载与注册集成测试', () => {
           metadata: { source: 'webhook' }
         },
         action: {
-          type: TriggerActionType.SEND_NOTIFICATION,
+          type: 'send_notification',
           parameters: {
             message: 'Webhook received'
           }
@@ -305,7 +305,7 @@ describe('Workflow加载与注册集成测试', () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-template-node',
         name: 'Template Node Workflow',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         version: '1.0.0',
         description: 'Template node workflow',
         variables: [],
@@ -313,7 +313,7 @@ describe('Workflow加载与注册集成测试', () => {
         nodes: [
           {
             id: 'node-start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -321,7 +321,7 @@ describe('Workflow加载与注册集成测试', () => {
           },
           {
             id: 'node-llm',
-            type: NodeType.LLM,
+            type: 'LLM',
             name: 'LLM from Template',
             config: {
               profileId: 'test-profile',
@@ -337,7 +337,7 @@ describe('Workflow加载与注册集成测试', () => {
           },
           {
             id: 'node-end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],
@@ -393,14 +393,14 @@ describe('Workflow加载与注册集成测试', () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-template-trigger',
         name: 'Template Trigger Workflow',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         version: '1.0.0',
         description: 'Template trigger workflow',
         variables: [],
         nodes: [
           {
             id: 'node-start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -408,7 +408,7 @@ describe('Workflow加载与注册集成测试', () => {
           },
           {
             id: 'node-end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],
@@ -466,7 +466,7 @@ describe('Workflow加载与注册集成测试', () => {
       const subworkflow: WorkflowDefinition = {
         id: 'processing-unit',
         name: 'Processing Subworkflow',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         version: '1.0.0',
         description: 'Subworkflow for processing',
         variables: [],
@@ -474,7 +474,7 @@ describe('Workflow加载与注册集成测试', () => {
         nodes: [
           {
             id: 'sub-start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Sub Start',
             config: {},
             outgoingEdgeIds: ['sub-edge-1'],
@@ -482,7 +482,7 @@ describe('Workflow加载与注册集成测试', () => {
           },
           {
             id: 'node2',
-            type: NodeType.LLM,
+            type: 'LLM',
             name: 'Process 2',
             config: {
               profileId: 'test-profile',
@@ -493,7 +493,7 @@ describe('Workflow加载与注册集成测试', () => {
           },
           {
             id: 'sub-end',
-            type: NodeType.END,
+            type: 'END',
             name: 'Sub End',
             config: {},
             outgoingEdgeIds: [],
@@ -538,7 +538,7 @@ describe('Workflow加载与注册集成测试', () => {
       const mainWorkflow: WorkflowDefinition = {
         id: 'workflow-with-subgraph',
         name: 'Main Workflow With Subgraph',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         version: '1.0.0',
         description: 'Main workflow containing subgraph reference',
         variables: [],
@@ -546,7 +546,7 @@ describe('Workflow加载与注册集成测试', () => {
         nodes: [
           {
             id: 'start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -554,7 +554,7 @@ describe('Workflow加载与注册集成测试', () => {
           },
           {
             id: 'node1',
-            type: NodeType.LLM,
+            type: 'LLM',
             name: 'Process 1',
             config: {
               profileId: 'test-profile',
@@ -565,7 +565,7 @@ describe('Workflow加载与注册集成测试', () => {
           },
           {
             id: 'subgraph-node',
-            type: NodeType.SUBGRAPH,
+            type: 'SUBGRAPH',
             name: 'Subgraph Boundary',
             config: {
               // SUBGRAPH节点标记子工作流的边界，并引用注册的子工作流
@@ -577,7 +577,7 @@ describe('Workflow加载与注册集成测试', () => {
           },
           {
             id: 'end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],
@@ -655,12 +655,12 @@ describe('Workflow加载与注册集成测试', () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-invalid-template',
         name: 'Invalid Template Workflow',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         version: '1.0.0',
         nodes: [
           {
             id: 'node-start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -668,7 +668,7 @@ describe('Workflow加载与注册集成测试', () => {
           },
           {
             id: 'node-invalid',
-            type: NodeType.LLM,
+            type: 'LLM',
             name: 'Invalid Node',
             config: {
               templateName: 'non-existent-template',
@@ -680,7 +680,7 @@ describe('Workflow加载与注册集成测试', () => {
           },
           {
             id: 'node-end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],
@@ -731,12 +731,12 @@ describe('Workflow加载与注册集成测试', () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-cycle',
         name: 'Cycle Workflow',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         version: '1.0.0',
         nodes: [
           {
             id: 'node-1',
-            type: NodeType.CODE,
+            type: 'CODE',
             name: 'Node 1',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -744,7 +744,7 @@ describe('Workflow加载与注册集成测试', () => {
           },
           {
             id: 'node-2',
-            type: NodeType.CODE,
+            type: 'CODE',
             name: 'Node 2',
             config: {},
             outgoingEdgeIds: ['edge-2'],
@@ -752,7 +752,7 @@ describe('Workflow加载与注册集成测试', () => {
           },
           {
             id: 'node-3',
-            type: NodeType.CODE,
+            type: 'CODE',
             name: 'Node 3',
             config: {},
             outgoingEdgeIds: ['edge-3'],
@@ -809,12 +809,12 @@ describe('Workflow加载与注册集成测试', () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-invalid-subgraph',
         name: 'Invalid Subgraph Workflow',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         version: '1.0.0',
         nodes: [
           {
             id: 'node-start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -822,7 +822,7 @@ describe('Workflow加载与注册集成测试', () => {
           },
           {
             id: 'subgraph-node',
-            type: NodeType.SUBGRAPH,
+            type: 'SUBGRAPH',
             name: 'Subgraph Node',
             config: {
               subgraphId: 'non-existent-subworkflow',
@@ -832,7 +832,7 @@ describe('Workflow加载与注册集成测试', () => {
           },
           {
             id: 'node-end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],
@@ -886,12 +886,12 @@ describe('Workflow加载与注册集成测试', () => {
         const workflow: WorkflowDefinition = {
           id: `subworkflow-${i}`,
           name: `Subworkflow ${i}`,
-          type: WorkflowType.STANDALONE,
+          type: 'STANDALONE',
           version: '1.0.0',
           nodes: [
             {
               id: `sub-start-${i}`,
-              type: NodeType.START,
+              type: 'START',
               name: 'Start',
               config: {},
               outgoingEdgeIds: [`sub-edge-${i}`],
@@ -899,7 +899,7 @@ describe('Workflow加载与注册集成测试', () => {
             },
             {
               id: `sub-end-${i}`,
-              type: NodeType.END,
+              type: 'END',
               name: 'End',
               config: {},
               outgoingEdgeIds: [],
@@ -938,12 +938,12 @@ describe('Workflow加载与注册集成测试', () => {
       const parentWorkflow: WorkflowDefinition = {
         id: 'parent-workflow-deep',
         name: 'Deep Parent Workflow',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         version: '1.0.0',
         nodes: [
           {
             id: 'parent-start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['parent-edge-1'],
@@ -951,7 +951,7 @@ describe('Workflow加载与注册集成测试', () => {
           },
           {
             id: 'subgraph-node',
-            type: NodeType.SUBGRAPH,
+            type: 'SUBGRAPH',
             name: 'Subgraph Node',
             config: {
               subgraphId: 'subworkflow-0',
@@ -961,7 +961,7 @@ describe('Workflow加载与注册集成测试', () => {
           },
           {
             id: 'parent-end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],
@@ -1008,7 +1008,7 @@ describe('Workflow加载与注册集成测试', () => {
       const invalidWorkflow: WorkflowDefinition = {
         id: 'workflow-invalid',
         name: 'Invalid Workflow',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         version: '1.0.0',
         nodes: [],
         edges: [],
@@ -1031,12 +1031,12 @@ describe('Workflow加载与注册集成测试', () => {
       const workflow: WorkflowDefinition = {
         id: 'workflow-isolated',
         name: 'Isolated Node Workflow',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         version: '1.0.0',
         nodes: [
           {
             id: 'node-start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -1044,7 +1044,7 @@ describe('Workflow加载与注册集成测试', () => {
           },
           {
             id: 'node-isolated',
-            type: NodeType.CODE,
+            type: 'CODE',
             name: 'Isolated',
             config: {},
             outgoingEdgeIds: [],
@@ -1052,7 +1052,7 @@ describe('Workflow加载与注册集成测试', () => {
           },
           {
             id: 'node-end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],

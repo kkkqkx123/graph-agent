@@ -16,10 +16,10 @@ describe('EventManager', () => {
   describe('on - 注册事件监听器', () => {
     it('应该成功注册事件监听器', () => {
       const listener = jest.fn();
-      const unregister = eventManager.on(EventType.NODE_COMPLETED, listener);
+      const unregister = eventManager.on('NODE_COMPLETED', listener);
 
       expect(typeof unregister).toBe('function');
-      expect(eventManager.getListenerCount(EventType.NODE_COMPLETED)).toBe(1);
+      expect(eventManager.getListenerCount('NODE_COMPLETED')).toBe(1);
     });
 
     it('应该抛出错误当事件类型为空', () => {
@@ -31,7 +31,7 @@ describe('EventManager', () => {
 
     it('应该抛出错误当监听器不是函数', () => {
       expect(() => {
-        eventManager.on(EventType.NODE_COMPLETED, null as any);
+        eventManager.on('NODE_COMPLETED', null as any);
       }).toThrow('Listener must be a function');
     });
 
@@ -40,28 +40,28 @@ describe('EventManager', () => {
       const listener2 = jest.fn();
       const listener3 = jest.fn();
 
-      eventManager.on(EventType.NODE_COMPLETED, listener1);
-      eventManager.on(EventType.NODE_COMPLETED, listener2);
-      eventManager.on(EventType.NODE_COMPLETED, listener3);
+      eventManager.on('NODE_COMPLETED', listener1);
+      eventManager.on('NODE_COMPLETED', listener2);
+      eventManager.on('NODE_COMPLETED', listener3);
 
-      expect(eventManager.getListenerCount(EventType.NODE_COMPLETED)).toBe(3);
+      expect(eventManager.getListenerCount('NODE_COMPLETED')).toBe(3);
     });
   });
 
   describe('off - 注销事件监听器', () => {
     it('应该成功注销事件监听器', () => {
       const listener = jest.fn();
-      eventManager.on(EventType.NODE_COMPLETED, listener);
+      eventManager.on('NODE_COMPLETED', listener);
 
-      const result = eventManager.off(EventType.NODE_COMPLETED, listener);
+      const result = eventManager.off('NODE_COMPLETED', listener);
 
       expect(result).toBe(true);
-      expect(eventManager.getListenerCount(EventType.NODE_COMPLETED)).toBe(0);
+      expect(eventManager.getListenerCount('NODE_COMPLETED')).toBe(0);
     });
 
     it('应该返回 false 当监听器不存在', () => {
       const listener = jest.fn();
-      const result = eventManager.off(EventType.NODE_COMPLETED, listener);
+      const result = eventManager.off('NODE_COMPLETED', listener);
 
       expect(result).toBe(false);
     });
@@ -75,7 +75,7 @@ describe('EventManager', () => {
 
     it('应该抛出错误当监听器不是函数', () => {
       expect(() => {
-        eventManager.off(EventType.NODE_COMPLETED, null as any);
+        eventManager.off('NODE_COMPLETED', null as any);
       }).toThrow('Listener must be a function');
     });
 
@@ -84,41 +84,41 @@ describe('EventManager', () => {
       const listener2 = jest.fn();
       const listener3 = jest.fn();
 
-      eventManager.on(EventType.NODE_COMPLETED, listener1);
-      eventManager.on(EventType.NODE_COMPLETED, listener2);
-      eventManager.on(EventType.NODE_COMPLETED, listener3);
+      eventManager.on('NODE_COMPLETED', listener1);
+      eventManager.on('NODE_COMPLETED', listener2);
+      eventManager.on('NODE_COMPLETED', listener3);
 
-      eventManager.off(EventType.NODE_COMPLETED, listener2);
+      eventManager.off('NODE_COMPLETED', listener2);
 
-      expect(eventManager.getListenerCount(EventType.NODE_COMPLETED)).toBe(2);
+      expect(eventManager.getListenerCount('NODE_COMPLETED')).toBe(2);
     });
   });
 
   describe('offById - 通过ID注销事件监听器', () => {
     it('应该成功通过ID注销事件监听器', () => {
       const listener = jest.fn();
-      const unregister = eventManager.on(EventType.NODE_COMPLETED, listener);
+      const unregister = eventManager.on('NODE_COMPLETED', listener);
 
       // 获取监听器ID
-      expect(eventManager.getListenerCount(EventType.NODE_COMPLETED)).toBe(1);
+      expect(eventManager.getListenerCount('NODE_COMPLETED')).toBe(1);
 
       // 由于无法直接获取监听器ID，我们通过创建多个监听器然后通过ID删除来测试
       const listener1 = jest.fn();
       const listener2 = jest.fn();
 
-      eventManager.on(EventType.NODE_COMPLETED, listener1);
-      const unregister2 = eventManager.on(EventType.NODE_COMPLETED, listener2);
+      eventManager.on('NODE_COMPLETED', listener1);
+      const unregister2 = eventManager.on('NODE_COMPLETED', listener2);
 
-      expect(eventManager.getListenerCount(EventType.NODE_COMPLETED)).toBe(3);
+      expect(eventManager.getListenerCount('NODE_COMPLETED')).toBe(3);
     });
 
     it('应该返回 false 当监听器ID不存在', () => {
-      const result = eventManager.offById(EventType.NODE_COMPLETED, 'non-existent-id');
+      const result = eventManager.offById('NODE_COMPLETED', 'non-existent-id');
       expect(result).toBe(false);
     });
 
     it('应该返回 false 当事件类型不存在监听器', () => {
-      const result = eventManager.offById(EventType.NODE_COMPLETED, 'some-id');
+      const result = eventManager.offById('NODE_COMPLETED', 'some-id');
       expect(result).toBe(false);
     });
 
@@ -134,11 +134,11 @@ describe('EventManager', () => {
       const listener1 = jest.fn();
       const listener2 = jest.fn();
 
-      eventManager.on(EventType.NODE_COMPLETED, listener1);
-      eventManager.on(EventType.NODE_COMPLETED, listener2);
+      eventManager.on('NODE_COMPLETED', listener1);
+      eventManager.on('NODE_COMPLETED', listener2);
 
       const event = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',
@@ -155,11 +155,11 @@ describe('EventManager', () => {
       const listener1 = jest.fn().mockResolvedValue('result1');
       const listener2 = jest.fn().mockResolvedValue('result2');
 
-      eventManager.on(EventType.NODE_COMPLETED, listener1);
-      eventManager.on(EventType.NODE_COMPLETED, listener2);
+      eventManager.on('NODE_COMPLETED', listener1);
+      eventManager.on('NODE_COMPLETED', listener2);
 
       const event = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -176,12 +176,12 @@ describe('EventManager', () => {
       const listener2 = jest.fn().mockRejectedValue(new Error('Test error'));
       const listener3 = jest.fn();
 
-      eventManager.on(EventType.NODE_COMPLETED, listener1);
-      eventManager.on(EventType.NODE_COMPLETED, listener2);
-      eventManager.on(EventType.NODE_COMPLETED, listener3);
+      eventManager.on('NODE_COMPLETED', listener1);
+      eventManager.on('NODE_COMPLETED', listener2);
+      eventManager.on('NODE_COMPLETED', listener3);
 
       const event = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -214,7 +214,7 @@ describe('EventManager', () => {
       const listener = jest.fn();
 
       const event = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -238,12 +238,12 @@ describe('EventManager', () => {
       });
 
       // 注册监听器，优先级分别为 1, 3, 2
-      eventManager.on(EventType.NODE_COMPLETED, listener1, { priority: 1 });
-      eventManager.on(EventType.NODE_COMPLETED, listener2, { priority: 3 });
-      eventManager.on(EventType.NODE_COMPLETED, listener3, { priority: 2 });
+      eventManager.on('NODE_COMPLETED', listener1, { priority: 1 });
+      eventManager.on('NODE_COMPLETED', listener2, { priority: 3 });
+      eventManager.on('NODE_COMPLETED', listener3, { priority: 2 });
 
       const event = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -259,12 +259,12 @@ describe('EventManager', () => {
       const listener = jest.fn();
 
       // 只监听 nodeId 为 'node-1' 的事件
-      eventManager.on(EventType.NODE_COMPLETED, listener, {
+      eventManager.on('NODE_COMPLETED', listener, {
         filter: (event: any) => event.metadata?.nodeId === 'node-1'
       });
 
       const event1 = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',
@@ -272,7 +272,7 @@ describe('EventManager', () => {
       };
 
       const event2 = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',
@@ -294,10 +294,10 @@ describe('EventManager', () => {
           })
       );
 
-      eventManager.on(EventType.NODE_COMPLETED, listener, { timeout: 100 });
+      eventManager.on('NODE_COMPLETED', listener, { timeout: 100 });
 
       const event = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -318,12 +318,12 @@ describe('EventManager', () => {
       const listener2 = jest.fn();
       const listener3 = jest.fn();
 
-      eventManager.on(EventType.NODE_COMPLETED, listener1);
-      eventManager.on(EventType.NODE_COMPLETED, listener2);
-      eventManager.on(EventType.NODE_COMPLETED, listener3);
+      eventManager.on('NODE_COMPLETED', listener1);
+      eventManager.on('NODE_COMPLETED', listener2);
+      eventManager.on('NODE_COMPLETED', listener3);
 
       const event = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -341,10 +341,10 @@ describe('EventManager', () => {
         eventManager.stopPropagation(event);
       });
 
-      eventManager.on(EventType.NODE_COMPLETED, listener);
+      eventManager.on('NODE_COMPLETED', listener);
 
       const event = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -362,10 +362,10 @@ describe('EventManager', () => {
         eventManager.stopPropagation(event);
       });
 
-      eventManager.on(EventType.NODE_COMPLETED, listener);
+      eventManager.on('NODE_COMPLETED', listener);
 
       const event = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -381,10 +381,10 @@ describe('EventManager', () => {
     it('应该在传播未被停止时返回 false', async () => {
       const listener = jest.fn();
 
-      eventManager.on(EventType.NODE_COMPLETED, listener);
+      eventManager.on('NODE_COMPLETED', listener);
 
       const event = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -400,10 +400,10 @@ describe('EventManager', () => {
     it('应该只调用一次监听器', async () => {
       const listener = jest.fn();
 
-      eventManager.once(EventType.NODE_COMPLETED, listener);
+      eventManager.once('NODE_COMPLETED', listener);
 
       const event = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -418,10 +418,10 @@ describe('EventManager', () => {
     it('应该自动注销一次性监听器', async () => {
       const listener = jest.fn();
 
-      eventManager.once(EventType.NODE_COMPLETED, listener);
+      eventManager.once('NODE_COMPLETED', listener);
 
       const event = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -429,7 +429,7 @@ describe('EventManager', () => {
 
       await eventManager.emit(event);
 
-      expect(eventManager.getListenerCount(EventType.NODE_COMPLETED)).toBe(0);
+      expect(eventManager.getListenerCount('NODE_COMPLETED')).toBe(0);
     });
 
     it('应该抛出错误当事件类型为空', () => {
@@ -441,7 +441,7 @@ describe('EventManager', () => {
 
     it('应该抛出错误当监听器不是函数', () => {
       expect(() => {
-        eventManager.once(EventType.NODE_COMPLETED, null as any);
+        eventManager.once('NODE_COMPLETED', null as any);
       }).toThrow('Listener must be a function');
     });
   });
@@ -451,14 +451,14 @@ describe('EventManager', () => {
       const listener1 = jest.fn();
       const listener2 = jest.fn();
 
-      eventManager.on(EventType.NODE_COMPLETED, listener1);
-      eventManager.on(EventType.NODE_COMPLETED, listener2);
-      eventManager.on(EventType.NODE_STARTED, jest.fn());
+      eventManager.on('NODE_COMPLETED', listener1);
+      eventManager.on('NODE_COMPLETED', listener2);
+      eventManager.on('NODE_STARTED', jest.fn());
 
-      eventManager.clear(EventType.NODE_COMPLETED);
+      eventManager.clear('NODE_COMPLETED');
 
-      expect(eventManager.getListenerCount(EventType.NODE_COMPLETED)).toBe(0);
-      expect(eventManager.getListenerCount(EventType.NODE_STARTED)).toBe(1);
+      expect(eventManager.getListenerCount('NODE_COMPLETED')).toBe(0);
+      expect(eventManager.getListenerCount('NODE_STARTED')).toBe(1);
     });
 
     it('应该清空所有监听器当不指定事件类型', () => {
@@ -466,9 +466,9 @@ describe('EventManager', () => {
       const listener2 = jest.fn();
       const listener3 = jest.fn();
 
-      eventManager.on(EventType.NODE_COMPLETED, listener1);
-      eventManager.on(EventType.NODE_STARTED, listener2);
-      eventManager.on(EventType.THREAD_STARTED, listener3);
+      eventManager.on('NODE_COMPLETED', listener1);
+      eventManager.on('NODE_STARTED', listener2);
+      eventManager.on('THREAD_STARTED', listener3);
 
       eventManager.clear();
 
@@ -479,14 +479,14 @@ describe('EventManager', () => {
   describe('waitFor - 等待特定事件触发', () => {
     it('应该解析为事件对象当事件触发时', async () => {
       const event = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',
         metadata: { nodeId: 'node-1' }
       };
 
-      const promise = eventManager.waitFor(EventType.NODE_COMPLETED);
+      const promise = eventManager.waitFor('NODE_COMPLETED');
 
       setTimeout(() => {
         eventManager.emit(event);
@@ -497,20 +497,20 @@ describe('EventManager', () => {
     });
 
     it('应该支持超时', async () => {
-      const promise = eventManager.waitFor(EventType.NODE_COMPLETED, 100);
+      const promise = eventManager.waitFor('NODE_COMPLETED', 100);
 
       await expect(promise).rejects.toThrow('Timeout waiting for event NODE_COMPLETED');
     });
 
     it('应该自动注销监听器当事件触发时', async () => {
       const event = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
       };
 
-      const promise = eventManager.waitFor(EventType.NODE_COMPLETED);
+      const promise = eventManager.waitFor('NODE_COMPLETED');
 
       setTimeout(() => {
         eventManager.emit(event);
@@ -521,11 +521,11 @@ describe('EventManager', () => {
       // 等待一小段时间确保监听器被注销
       await new Promise(resolve => setTimeout(resolve, 10));
 
-      expect(eventManager.getListenerCount(EventType.NODE_COMPLETED)).toBe(0);
+      expect(eventManager.getListenerCount('NODE_COMPLETED')).toBe(0);
     });
 
     it('应该自动注销监听器当超时时', async () => {
-      const promise = eventManager.waitFor(EventType.NODE_COMPLETED, 100);
+      const promise = eventManager.waitFor('NODE_COMPLETED', 100);
 
       try {
         await promise;
@@ -533,29 +533,29 @@ describe('EventManager', () => {
         // 预期的超时错误
       }
 
-      expect(eventManager.getListenerCount(EventType.NODE_COMPLETED)).toBe(0);
+      expect(eventManager.getListenerCount('NODE_COMPLETED')).toBe(0);
     });
   });
 
   describe('getListenerCount - 获取监听器数量', () => {
     it('应该返回指定事件的监听器数量', () => {
-      eventManager.on(EventType.NODE_COMPLETED, jest.fn());
-      eventManager.on(EventType.NODE_COMPLETED, jest.fn());
-      eventManager.on(EventType.NODE_STARTED, jest.fn());
+      eventManager.on('NODE_COMPLETED', jest.fn());
+      eventManager.on('NODE_COMPLETED', jest.fn());
+      eventManager.on('NODE_STARTED', jest.fn());
 
-      expect(eventManager.getListenerCount(EventType.NODE_COMPLETED)).toBe(2);
-      expect(eventManager.getListenerCount(EventType.NODE_STARTED)).toBe(1);
+      expect(eventManager.getListenerCount('NODE_COMPLETED')).toBe(2);
+      expect(eventManager.getListenerCount('NODE_STARTED')).toBe(1);
     });
 
     it('应该返回 0 当没有监听器时', () => {
-      expect(eventManager.getListenerCount(EventType.NODE_COMPLETED)).toBe(0);
+      expect(eventManager.getListenerCount('NODE_COMPLETED')).toBe(0);
     });
 
     it('应该返回所有监听器的总数当不指定事件类型', () => {
-      eventManager.on(EventType.NODE_COMPLETED, jest.fn());
-      eventManager.on(EventType.NODE_COMPLETED, jest.fn());
-      eventManager.on(EventType.NODE_STARTED, jest.fn());
-      eventManager.on(EventType.THREAD_STARTED, jest.fn());
+      eventManager.on('NODE_COMPLETED', jest.fn());
+      eventManager.on('NODE_COMPLETED', jest.fn());
+      eventManager.on('NODE_STARTED', jest.fn());
+      eventManager.on('THREAD_STARTED', jest.fn());
 
       expect(eventManager.getListenerCount()).toBe(4);
     });
@@ -564,22 +564,22 @@ describe('EventManager', () => {
   describe('注销函数', () => {
     it('应该成功注销监听器', () => {
       const listener = jest.fn();
-      const unregister = eventManager.on(EventType.NODE_COMPLETED, listener);
+      const unregister = eventManager.on('NODE_COMPLETED', listener);
 
       unregister();
 
-      expect(eventManager.getListenerCount(EventType.NODE_COMPLETED)).toBe(0);
+      expect(eventManager.getListenerCount('NODE_COMPLETED')).toBe(0);
     });
 
     it('应该可以多次调用注销函数', () => {
       const listener = jest.fn();
-      const unregister = eventManager.on(EventType.NODE_COMPLETED, listener);
+      const unregister = eventManager.on('NODE_COMPLETED', listener);
 
       unregister();
       unregister();
       unregister();
 
-      expect(eventManager.getListenerCount(EventType.NODE_COMPLETED)).toBe(0);
+      expect(eventManager.getListenerCount('NODE_COMPLETED')).toBe(0);
     });
   });
 
@@ -587,21 +587,21 @@ describe('EventManager', () => {
     it('应该同时支持优先级排序和过滤器', async () => {
       const callOrder: string[] = [];
 
-      eventManager.on(EventType.NODE_COMPLETED, () => {
+      eventManager.on('NODE_COMPLETED', () => {
         callOrder.push('1');
       }, {
         priority: 1,
         filter: (e: any) => e.metadata?.nodeId === 'node-1'
       });
 
-      eventManager.on(EventType.NODE_COMPLETED, () => {
+      eventManager.on('NODE_COMPLETED', () => {
         callOrder.push('2');
       }, {
         priority: 3,
         filter: (e: any) => e.metadata?.nodeId === 'node-1'
       });
 
-      eventManager.on(EventType.NODE_COMPLETED, () => {
+      eventManager.on('NODE_COMPLETED', () => {
         callOrder.push('3');
       }, {
         priority: 2,
@@ -609,7 +609,7 @@ describe('EventManager', () => {
       });
 
       const event = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',
@@ -628,11 +628,11 @@ describe('EventManager', () => {
       const listener1 = jest.fn();
       const listener2 = jest.fn();
 
-      eventManager.once(EventType.NODE_COMPLETED, listener1, { priority: 2 });
-      eventManager.once(EventType.NODE_COMPLETED, listener2, { priority: 1 });
+      eventManager.once('NODE_COMPLETED', listener1, { priority: 2 });
+      eventManager.once('NODE_COMPLETED', listener2, { priority: 1 });
 
       const event = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -648,12 +648,12 @@ describe('EventManager', () => {
     it('应该支持 once 与过滤器组合', async () => {
       const listener = jest.fn();
 
-      eventManager.once(EventType.NODE_COMPLETED, listener, {
+      eventManager.once('NODE_COMPLETED', listener, {
         filter: (e: any) => e.metadata?.nodeId === 'node-1'
       });
 
       const event1 = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',
@@ -661,7 +661,7 @@ describe('EventManager', () => {
       };
 
       const event2 = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',
@@ -680,7 +680,7 @@ describe('EventManager', () => {
       const callOrder: string[] = [];
 
       eventManager.on(
-        EventType.NODE_COMPLETED,
+        'NODE_COMPLETED',
         () => {
           callOrder.push('normal');
         },
@@ -688,13 +688,13 @@ describe('EventManager', () => {
       );
 
       const event = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
       };
 
-      const promise = eventManager.waitFor(EventType.NODE_COMPLETED);
+      const promise = eventManager.waitFor('NODE_COMPLETED');
 
       setTimeout(() => {
         eventManager.emit(event);
@@ -715,11 +715,11 @@ describe('EventManager', () => {
       };
 
       // 注册监听器
-      const unregister = eventManager.on(EventType.NODE_COMPLETED, listener);
+      const unregister = eventManager.on('NODE_COMPLETED', listener);
 
       // 触发事件
       const event1 = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',
@@ -736,7 +736,7 @@ describe('EventManager', () => {
 
       // 再次触发事件
       const event2 = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',
@@ -752,22 +752,22 @@ describe('EventManager', () => {
       const nodeCompletedEvents: any[] = [];
       const nodeStartedEvents: any[] = [];
 
-      eventManager.on(EventType.NODE_COMPLETED, (event) => {
+      eventManager.on('NODE_COMPLETED', (event) => {
         nodeCompletedEvents.push(event);
       });
-      eventManager.on(EventType.NODE_STARTED, (event) => {
+      eventManager.on('NODE_STARTED', (event) => {
         nodeStartedEvents.push(event);
       });
 
       const event1 = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
       };
 
       const event2 = {
-        type: EventType.NODE_STARTED,
+        type: 'NODE_STARTED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1'
@@ -794,14 +794,14 @@ describe('EventManager', () => {
         events.push({ priority: 'filtered', event });
       });
 
-      eventManager.on(EventType.NODE_COMPLETED, highPriorityListener, { priority: 10 });
-      eventManager.on(EventType.NODE_COMPLETED, normalListener);
-      eventManager.on(EventType.NODE_COMPLETED, filteredListener, {
+      eventManager.on('NODE_COMPLETED', highPriorityListener, { priority: 10 });
+      eventManager.on('NODE_COMPLETED', normalListener);
+      eventManager.on('NODE_COMPLETED', filteredListener, {
         filter: (e: any) => e.metadata?.important === true
       });
 
       const event1 = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',
@@ -809,7 +809,7 @@ describe('EventManager', () => {
       };
 
       const event2 = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: Date.now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',

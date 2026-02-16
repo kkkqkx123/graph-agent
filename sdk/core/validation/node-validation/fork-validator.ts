@@ -37,7 +37,7 @@ const forkNodeConfigSchema = z.object({
  * @returns 验证结果
  */
 export function validateForkNode(node: Node): Result<Node, ConfigurationValidationError[]> {
-  if (node.type !== NodeType.FORK) {
+  if (node.type !== 'FORK') {
     return err([new ConfigurationValidationError(`Invalid node type for fork validator: ${node.type}`, {
       configType: 'node',
       configPath: `node.${node.id}`

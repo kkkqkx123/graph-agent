@@ -57,13 +57,13 @@ describe('Workflow到Graph注册集成测试', () => {
   const createBaseWorkflow = (id: string, name: string): WorkflowDefinition => ({
     id,
     name,
-    type: WorkflowType.STANDALONE,
+    type: 'STANDALONE',
     version: '1.0.0',
     description: 'Test workflow',
     nodes: [
       {
         id: `${id}-start`,
-        type: NodeType.START,
+        type: 'START',
         name: 'Start',
         config: {},
         outgoingEdgeIds: [`${id}-edge-1`],
@@ -71,7 +71,7 @@ describe('Workflow到Graph注册集成测试', () => {
       },
       {
         id: `${id}-process`,
-        type: NodeType.CODE,
+        type: 'CODE',
         name: 'Process',
         config: {
           scriptName: 'process',
@@ -83,7 +83,7 @@ describe('Workflow到Graph注册集成测试', () => {
       },
       {
         id: `${id}-end`,
-        type: NodeType.END,
+        type: 'END',
         name: 'End',
         config: {},
         outgoingEdgeIds: [],
@@ -206,7 +206,7 @@ describe('Workflow到Graph注册集成测试', () => {
       // 注册节点模板
       const llmTemplate = {
         name: 'llm-basic-template',
-        type: NodeType.LLM,
+        type: 'LLM',
         description: 'Basic LLM node template',
         config: {
           profileId: 'default-profile',
@@ -224,11 +224,11 @@ describe('Workflow到Graph注册集成测试', () => {
         name: 'webhook-basic-trigger',
         description: 'Basic webhook trigger template',
         condition: {
-          eventType: EventType.NODE_COMPLETED,
+          eventType: 'NODE_COMPLETED',
           metadata: { source: 'webhook' }
         },
         action: {
-          type: TriggerActionType.START_WORKFLOW,
+          type: 'start_workflow',
           parameters: {
             message: 'Webhook received'
           }
@@ -245,12 +245,12 @@ describe('Workflow到Graph注册集成测试', () => {
         id: 'workflow-template-expand',
         name: 'Template Expand Workflow',
         version: '1.0.0',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         description: 'Workflow with template expansion',
         nodes: [
           {
             id: 'node-start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -258,7 +258,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-llm-ref',
-            type: NodeType.LLM,
+            type: 'LLM',
             name: 'LLM from Template',
             config: {
               profileId: 'default-profile', // 直接提供必需的profileId字段
@@ -269,7 +269,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],
@@ -323,7 +323,7 @@ describe('Workflow到Graph注册集成测试', () => {
       // 验证节点已正确展开
       const llmNode = graph?.getNode('node-llm-ref');
       expect(llmNode).toBeDefined();
-      expect(llmNode?.type).toBe(NodeType.LLM);
+      expect(llmNode?.type).toBe('LLM');
       expect((llmNode?.originalNode?.config as any)?.prompt).toBe('Custom prompt');
     });
 
@@ -332,11 +332,11 @@ describe('Workflow到Graph注册集成测试', () => {
         id: 'workflow-invalid-template-ref', // 使用唯一的ID
         name: 'Invalid Template Workflow',
         version: '1.0.0',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         nodes: [
           {
             id: 'node-start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -344,7 +344,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-invalid',
-            type: NodeType.LLM,
+            type: 'LLM',
             name: 'Invalid Node',
             config: {
               profileId: 'default-profile' // 使用有效的配置通过验证
@@ -354,7 +354,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],
@@ -406,12 +406,12 @@ describe('Workflow到Graph注册集成测试', () => {
         id: 'subworkflow-simple',
         name: 'Simple Subworkflow',
         version: '1.0.0',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         description: 'Simple subworkflow for testing',
         nodes: [
           {
             id: 'sub-start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Sub Start',
             config: {},
             outgoingEdgeIds: ['sub-edge-1'],
@@ -419,7 +419,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'sub-process',
-            type: NodeType.CODE,
+            type: 'CODE',
             name: 'Sub Process',
             config: {
               scriptName: 'sub-process',
@@ -431,7 +431,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'sub-end',
-            type: NodeType.END,
+            type: 'END',
             name: 'Sub End',
             config: {},
             outgoingEdgeIds: [],
@@ -474,12 +474,12 @@ describe('Workflow到Graph注册集成测试', () => {
         id: 'parent-workflow',
         name: 'Parent Workflow',
         version: '1.0.0',
-        type: WorkflowType.DEPENDENT,
+        type: 'DEPENDENT',
         description: 'Parent workflow with subgraph',
         nodes: [
           {
             id: 'parent-start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Parent Start',
             config: {},
             outgoingEdgeIds: ['parent-edge-1'],
@@ -487,7 +487,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'subgraph-node',
-            type: NodeType.SUBGRAPH,
+            type: 'SUBGRAPH',
             name: 'Subgraph Node',
             config: {
               subgraphId: 'subworkflow-simple',
@@ -498,7 +498,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'parent-end',
-            type: NodeType.END,
+            type: 'END',
             name: 'Parent End',
             config: {},
             outgoingEdgeIds: [],
@@ -564,11 +564,11 @@ describe('Workflow到Graph注册集成测试', () => {
         id: `workflow-invalid-subgraph-${Math.random().toString(36).substring(2, 11)}`, // 使用随机字符串确保唯一性
         name: 'Invalid Subgraph Workflow',
         version: '1.0.0',
-        type: WorkflowType.DEPENDENT,
+        type: 'DEPENDENT',
         nodes: [
           {
             id: 'node-start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -576,7 +576,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'subgraph-node',
-            type: NodeType.SUBGRAPH,
+            type: 'SUBGRAPH',
             name: 'Subgraph Node',
             config: {
               subgraphId: 'non-existent-subworkflow',
@@ -587,7 +587,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],
@@ -688,11 +688,11 @@ describe('Workflow到Graph注册集成测试', () => {
         id: `workflow-cycle-${Math.random().toString(36).substring(2, 11)}`, // 使用随机字符串确保唯一性
         name: 'Cycle Workflow',
         version: '1.0.0',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         nodes: [
           {
             id: 'node-start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-start'],
@@ -700,7 +700,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-1',
-            type: NodeType.CODE,
+            type: 'CODE',
             name: 'Node 1',
             config: {
               scriptName: 'script1',
@@ -712,7 +712,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-2',
-            type: NodeType.CODE,
+            type: 'CODE',
             name: 'Node 2',
             config: {
               scriptName: 'script2',
@@ -724,7 +724,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-3',
-            type: NodeType.CODE,
+            type: 'CODE',
             name: 'Node 3',
             config: {
               scriptName: 'script3',
@@ -736,7 +736,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],
@@ -797,11 +797,11 @@ describe('Workflow到Graph注册集成测试', () => {
         id: `workflow-isolated-${Math.random().toString(36).substring(2, 11)}`, // 使用随机字符串确保唯一性
         name: 'Isolated Node Workflow',
         version: '1.0.0',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         nodes: [
           {
             id: 'node-start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -809,7 +809,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-isolated',
-            type: NodeType.CODE,
+            type: 'CODE',
             name: 'Isolated',
             config: {
               scriptName: 'isolated-script',
@@ -821,7 +821,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],
@@ -866,12 +866,12 @@ describe('Workflow到Graph注册集成测试', () => {
         id: 'workflow-fork-dedup',
         name: 'Fork Deduplication Workflow',
         version: '1.0.0',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         description: 'Test fork path ID deduplication',
         nodes: [
           {
             id: 'node-start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-start-fork'],
@@ -879,7 +879,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-fork',
-            type: NodeType.FORK,
+            type: 'FORK',
             name: 'Fork Node',
             config: {
               forkStrategy: 'parallel',
@@ -893,7 +893,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-branch1',
-            type: NodeType.CODE,
+            type: 'CODE',
             name: 'Branch 1',
             config: {
               scriptName: 'branch1',
@@ -905,7 +905,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-branch2',
-            type: NodeType.CODE,
+            type: 'CODE',
             name: 'Branch 2',
             config: {
               scriptName: 'branch2',
@@ -917,7 +917,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-join',
-            type: NodeType.JOIN,
+            type: 'JOIN',
             name: 'Join Node',
             config: {
               forkPathIds: ['path1', 'path2'],
@@ -929,7 +929,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],
@@ -1039,12 +1039,12 @@ describe('Workflow到Graph注册集成测试', () => {
         id: 'workflow-multiple-fork',
         name: 'Multiple Fork Workflow',
         version: '1.0.0',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         description: 'Test multiple fork nodes with different path IDs',
         nodes: [
           {
             id: 'node-start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-start-fork1'],
@@ -1052,7 +1052,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-fork1',
-            type: NodeType.FORK,
+            type: 'FORK',
             name: 'Fork 1',
             config: {
               forkStrategy: 'parallel',
@@ -1066,7 +1066,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-branch1a',
-            type: NodeType.CODE,
+            type: 'CODE',
             name: 'Branch 1A',
             config: {
               scriptName: 'branch1a',
@@ -1078,7 +1078,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-branch1b',
-            type: NodeType.CODE,
+            type: 'CODE',
             name: 'Branch 1B',
             config: {
               scriptName: 'branch1b',
@@ -1090,7 +1090,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-join1',
-            type: NodeType.JOIN,
+            type: 'JOIN',
             name: 'Join 1',
             config: {
               forkPathIds: ['path1', 'path2'],
@@ -1102,7 +1102,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-fork2',
-            type: NodeType.FORK,
+            type: 'FORK',
             name: 'Fork 2',
             config: {
               forkStrategy: 'parallel',
@@ -1116,7 +1116,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-branch2a',
-            type: NodeType.CODE,
+            type: 'CODE',
             name: 'Branch 2A',
             config: {
               scriptName: 'branch2a',
@@ -1128,7 +1128,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-branch2b',
-            type: NodeType.CODE,
+            type: 'CODE',
             name: 'Branch 2B',
             config: {
               scriptName: 'branch2b',
@@ -1140,7 +1140,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-join2',
-            type: NodeType.JOIN,
+            type: 'JOIN',
             name: 'Join 2',
             config: {
               forkPathIds: ['path3', 'path4'],
@@ -1152,7 +1152,7 @@ describe('Workflow到Graph注册集成测试', () => {
           },
           {
             id: 'node-end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],

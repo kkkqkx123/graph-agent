@@ -18,7 +18,7 @@ describe('WorkflowValidator', () => {
     validator = new WorkflowValidator();
   });
 
-  const createValidWorkflow = (type: WorkflowType = WorkflowType.STANDALONE): WorkflowDefinition => ({
+  const createValidWorkflow = (type: WorkflowType = 'STANDALONE'): WorkflowDefinition => ({
     id: 'workflow-1',
     name: 'Test Workflow',
     version: '1.0.0',
@@ -29,7 +29,7 @@ describe('WorkflowValidator', () => {
       {
         id: 'node-start',
         name: 'Start',
-        type: NodeType.START,
+        type: 'START',
         config: {},
         incomingEdgeIds: [],
         outgoingEdgeIds: ['edge-1']
@@ -37,7 +37,7 @@ describe('WorkflowValidator', () => {
       {
         id: 'node-end',
         name: 'End',
-        type: NodeType.END,
+        type: 'END',
         config: {},
         incomingEdgeIds: ['edge-1'],
         outgoingEdgeIds: []
@@ -157,7 +157,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-1',
             name: 'Node 1',
-            type: NodeType.START,
+            type: 'START',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -165,7 +165,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-1',
             name: 'Node 2',
-            type: NodeType.END,
+            type: 'END',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -186,7 +186,7 @@ describe('WorkflowValidator', () => {
           {
             id: '',
             name: 'Node',
-            type: NodeType.START,
+            type: 'START',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -207,7 +207,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-1',
             name: '',
-            type: NodeType.START,
+            type: 'START',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -249,7 +249,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-1',
             name: 'Node',
-            type: NodeType.LLM,
+            type: 'LLM',
             config: { profileId: 'profile-1', prompt: 'Hello' },
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -257,7 +257,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-2',
             name: 'End',
-            type: NodeType.END,
+            type: 'END',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -278,7 +278,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-1',
             name: 'Start 1',
-            type: NodeType.START,
+            type: 'START',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -286,7 +286,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-2',
             name: 'Start 2',
-            type: NodeType.START,
+            type: 'START',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -307,7 +307,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-1',
             name: 'Start',
-            type: NodeType.START,
+            type: 'START',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -315,7 +315,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-2',
             name: 'LLM',
-            type: NodeType.LLM,
+            type: 'LLM',
             config: { profileId: 'profile-1', prompt: 'Hello' },
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -336,7 +336,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-1',
             name: 'Continue',
-            type: NodeType.CONTINUE_FROM_TRIGGER,
+            type: 'CONTINUE_FROM_TRIGGER',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -357,7 +357,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-1',
             name: 'Start',
-            type: NodeType.START_FROM_TRIGGER,
+            type: 'START'_FROM_TRIGGER,
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -378,7 +378,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-1',
             name: 'StartFromTrigger',
-            type: NodeType.START_FROM_TRIGGER,
+            type: 'START'_FROM_TRIGGER,
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -386,7 +386,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-2',
             name: 'ContinueFromTrigger',
-            type: NodeType.CONTINUE_FROM_TRIGGER,
+            type: 'CONTINUE_FROM_TRIGGER',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -394,7 +394,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-3',
             name: 'Start',
-            type: NodeType.START,
+            type: 'START',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -415,7 +415,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-1',
             name: 'StartFromTrigger',
-            type: NodeType.START_FROM_TRIGGER,
+            type: 'START'_FROM_TRIGGER,
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -423,7 +423,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-2',
             name: 'ContinueFromTrigger',
-            type: NodeType.CONTINUE_FROM_TRIGGER,
+            type: 'CONTINUE_FROM_TRIGGER',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -431,7 +431,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-3',
             name: 'End',
-            type: NodeType.END,
+            type: 'END',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -753,7 +753,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-start',
             name: 'Start',
-            type: NodeType.START,
+            type: 'START',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: ['edge-1']
@@ -761,7 +761,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-llm',
             name: 'LLM',
-            type: NodeType.LLM,
+            type: 'LLM',
             config: {
               profileId: 'profile-1',
               prompt: 'Hello'
@@ -772,7 +772,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-code',
             name: 'Code',
-            type: NodeType.CODE,
+            type: 'CODE',
             config: {
               scriptName: 'process',
               scriptType: 'javascript',
@@ -786,7 +786,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-end',
             name: 'End',
-            type: NodeType.END,
+            type: 'END',
             config: {},
             incomingEdgeIds: ['edge-3'],
             outgoingEdgeIds: []
@@ -830,14 +830,14 @@ describe('WorkflowValidator', () => {
         id: 'triggered-workflow',
         name: 'Triggered Workflow',
         version: '1.0.0',
-        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
+        type: 'TRIGGERED_SUBWORKFLOW',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         nodes: [
           {
             id: 'node-start',
             name: 'Start From Trigger',
-            type: NodeType.START_FROM_TRIGGER,
+            type: 'START'_FROM_TRIGGER,
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: ['edge-1']
@@ -845,7 +845,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-continue',
             name: 'Continue From Trigger',
-            type: NodeType.CONTINUE_FROM_TRIGGER,
+            type: 'CONTINUE_FROM_TRIGGER',
             config: {},
             incomingEdgeIds: ['edge-1'],
             outgoingEdgeIds: []
@@ -871,14 +871,14 @@ describe('WorkflowValidator', () => {
         id: 'triggered-workflow',
         name: 'Triggered Workflow',
         version: '1.0.0',
-        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
+        type: 'TRIGGERED_SUBWORKFLOW',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         nodes: [
           {
             id: 'node-continue',
             name: 'Continue From Trigger',
-            type: NodeType.CONTINUE_FROM_TRIGGER,
+            type: 'CONTINUE_FROM_TRIGGER',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -899,14 +899,14 @@ describe('WorkflowValidator', () => {
         id: 'triggered-workflow',
         name: 'Triggered Workflow',
         version: '1.0.0',
-        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
+        type: 'TRIGGERED_SUBWORKFLOW',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         nodes: [
           {
             id: 'node-start',
             name: 'Start From Trigger',
-            type: NodeType.START_FROM_TRIGGER,
+            type: 'START'_FROM_TRIGGER,
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -927,14 +927,14 @@ describe('WorkflowValidator', () => {
         id: 'triggered-workflow',
         name: 'Triggered Workflow',
         version: '1.0.0',
-        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
+        type: 'TRIGGERED_SUBWORKFLOW',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         nodes: [
           {
             id: 'node-start',
             name: 'Start From Trigger',
-            type: NodeType.START_FROM_TRIGGER,
+            type: 'START'_FROM_TRIGGER,
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -942,7 +942,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-continue',
             name: 'Continue From Trigger',
-            type: NodeType.CONTINUE_FROM_TRIGGER,
+            type: 'CONTINUE_FROM_TRIGGER',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -950,7 +950,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-start-regular',
             name: 'Start',
-            type: NodeType.START,
+            type: 'START',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -971,14 +971,14 @@ describe('WorkflowValidator', () => {
         id: 'triggered-workflow',
         name: 'Triggered Workflow',
         version: '1.0.0',
-        type: WorkflowType.TRIGGERED_SUBWORKFLOW,
+        type: 'TRIGGERED_SUBWORKFLOW',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         nodes: [
           {
             id: 'node-start',
             name: 'Start From Trigger',
-            type: NodeType.START_FROM_TRIGGER,
+            type: 'START'_FROM_TRIGGER,
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -986,7 +986,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-continue',
             name: 'Continue From Trigger',
-            type: NodeType.CONTINUE_FROM_TRIGGER,
+            type: 'CONTINUE_FROM_TRIGGER',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -994,7 +994,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-end',
             name: 'End',
-            type: NodeType.END,
+            type: 'END',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -1015,14 +1015,14 @@ describe('WorkflowValidator', () => {
         id: 'standalone-workflow',
         name: 'Standalone Workflow',
         version: '1.0.0',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         nodes: [
           {
             id: 'node-start',
             name: 'Start',
-            type: NodeType.START,
+            type: 'START',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: ['edge-1']
@@ -1030,7 +1030,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-end',
             name: 'End',
-            type: NodeType.END,
+            type: 'END',
             config: {},
             incomingEdgeIds: ['edge-1'],
             outgoingEdgeIds: []
@@ -1056,14 +1056,14 @@ describe('WorkflowValidator', () => {
         id: 'standalone-workflow',
         name: 'Standalone Workflow',
         version: '1.0.0',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         nodes: [
           {
             id: 'node-start',
             name: 'Start',
-            type: NodeType.START,
+            type: 'START',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -1071,7 +1071,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-start-trigger',
             name: 'Start From Trigger',
-            type: NodeType.START_FROM_TRIGGER,
+            type: 'START'_FROM_TRIGGER,
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -1079,7 +1079,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-end',
             name: 'End',
-            type: NodeType.END,
+            type: 'END',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -1100,14 +1100,14 @@ describe('WorkflowValidator', () => {
         id: 'standalone-workflow',
         name: 'Standalone Workflow',
         version: '1.0.0',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         nodes: [
           {
             id: 'node-start',
             name: 'Start',
-            type: NodeType.START,
+            type: 'START',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -1115,7 +1115,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-continue',
             name: 'Continue From Trigger',
-            type: NodeType.CONTINUE_FROM_TRIGGER,
+            type: 'CONTINUE_FROM_TRIGGER',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -1123,7 +1123,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-end',
             name: 'End',
-            type: NodeType.END,
+            type: 'END',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -1144,14 +1144,14 @@ describe('WorkflowValidator', () => {
         id: 'standalone-workflow',
         name: 'Standalone Workflow',
         version: '1.0.0',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         nodes: [
           {
             id: 'node-start',
             name: 'Start',
-            type: NodeType.START,
+            type: 'START',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -1159,7 +1159,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-subgraph',
             name: 'Subgraph',
-            type: NodeType.SUBGRAPH,
+            type: 'SUBGRAPH',
             config: {
               subgraphId: 'sub-workflow'
             },
@@ -1169,7 +1169,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-end',
             name: 'End',
-            type: NodeType.END,
+            type: 'END',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -1190,14 +1190,14 @@ describe('WorkflowValidator', () => {
         id: 'dependent-workflow',
         name: 'Dependent Workflow',
         version: '1.0.0',
-        type: WorkflowType.DEPENDENT,
+        type: 'DEPENDENT',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         nodes: [
           {
             id: 'node-start',
             name: 'Start',
-            type: NodeType.START,
+            type: 'START',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: ['edge-1']
@@ -1205,7 +1205,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-subgraph',
             name: 'Subgraph',
-            type: NodeType.SUBGRAPH,
+            type: 'SUBGRAPH',
             config: {
               subgraphId: 'sub-workflow'
             },
@@ -1215,7 +1215,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-end',
             name: 'End',
-            type: NodeType.END,
+            type: 'END',
             config: {},
             incomingEdgeIds: ['edge-2'],
             outgoingEdgeIds: []
@@ -1248,14 +1248,14 @@ describe('WorkflowValidator', () => {
         id: 'dependent-workflow',
         name: 'Dependent Workflow',
         version: '1.0.0',
-        type: WorkflowType.DEPENDENT,
+        type: 'DEPENDENT',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         nodes: [
           {
             id: 'node-start',
             name: 'Start',
-            type: NodeType.START,
+            type: 'START',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: ['edge-1']
@@ -1263,7 +1263,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-end',
             name: 'End',
-            type: NodeType.END,
+            type: 'END',
             config: {},
             incomingEdgeIds: ['edge-1'],
             outgoingEdgeIds: []
@@ -1306,14 +1306,14 @@ describe('WorkflowValidator', () => {
         id: 'dependent-workflow',
         name: 'Dependent Workflow',
         version: '1.0.0',
-        type: WorkflowType.DEPENDENT,
+        type: 'DEPENDENT',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         nodes: [
           {
             id: 'node-start',
             name: 'Start',
-            type: NodeType.START,
+            type: 'START',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: ['edge-1']
@@ -1321,7 +1321,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-end',
             name: 'End',
-            type: NodeType.END,
+            type: 'END',
             config: {},
             incomingEdgeIds: ['edge-1'],
             outgoingEdgeIds: []
@@ -1351,14 +1351,14 @@ describe('WorkflowValidator', () => {
         id: 'dependent-workflow',
         name: 'Dependent Workflow',
         version: '1.0.0',
-        type: WorkflowType.DEPENDENT,
+        type: 'DEPENDENT',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         nodes: [
           {
             id: 'node-start',
             name: 'Start',
-            type: NodeType.START,
+            type: 'START',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -1366,7 +1366,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-start-trigger',
             name: 'Start From Trigger',
-            type: NodeType.START_FROM_TRIGGER,
+            type: 'START'_FROM_TRIGGER,
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -1374,7 +1374,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-end',
             name: 'End',
-            type: NodeType.END,
+            type: 'END',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -1395,14 +1395,14 @@ describe('WorkflowValidator', () => {
         id: 'dependent-workflow',
         name: 'Dependent Workflow',
         version: '1.0.0',
-        type: WorkflowType.DEPENDENT,
+        type: 'DEPENDENT',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         nodes: [
           {
             id: 'node-start',
             name: 'Start',
-            type: NodeType.START,
+            type: 'START',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -1410,7 +1410,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-continue',
             name: 'Continue From Trigger',
-            type: NodeType.CONTINUE_FROM_TRIGGER,
+            type: 'CONTINUE_FROM_TRIGGER',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
@@ -1418,7 +1418,7 @@ describe('WorkflowValidator', () => {
           {
             id: 'node-end',
             name: 'End',
-            type: NodeType.END,
+            type: 'END',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []

@@ -19,7 +19,7 @@ describe('EventBuilder', () => {
     workflowId: 'workflow-123',
     workflowVersion: '1.0.0',
     input: { test: 'input' },
-    status: ThreadStatus.RUNNING,
+    status: 'RUNNING',
     graph: {
       nodes: new Map(),
       edges: new Map(),
@@ -73,7 +73,7 @@ describe('EventBuilder', () => {
       const event = eventBuilder.buildThreadStartedEvent(mockThread);
 
       expect(event).toEqual({
-        type: EventType.THREAD_STARTED,
+        type: 'THREAD_STARTED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -101,7 +101,7 @@ describe('EventBuilder', () => {
         executionTime: 1500,
         nodeResults: [],
         metadata: {
-          status: ThreadStatus.COMPLETED,
+          status: 'COMPLETED',
           startTime: 1234567890,
           endTime: 1234569390,
           executionTime: 1500,
@@ -113,7 +113,7 @@ describe('EventBuilder', () => {
       const event = eventBuilder.buildThreadCompletedEvent(mockThread, result);
 
       expect(event).toEqual({
-        type: EventType.THREAD_COMPLETED,
+        type: 'THREAD_COMPLETED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -129,7 +129,7 @@ describe('EventBuilder', () => {
         executionTime: 5000,
         nodeResults: [],
         metadata: {
-          status: ThreadStatus.COMPLETED,
+          status: 'COMPLETED',
           startTime: 1234567890,
           endTime: 1234572890,
           executionTime: 5000,
@@ -149,7 +149,7 @@ describe('EventBuilder', () => {
       const event = eventBuilder.buildThreadFailedEvent(mockThread, mockError);
 
       expect(event).toEqual({
-        type: EventType.THREAD_FAILED,
+        type: 'THREAD_FAILED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -170,7 +170,7 @@ describe('EventBuilder', () => {
       const event = eventBuilder.buildThreadPausedEvent(mockThread);
 
       expect(event).toEqual({
-        type: EventType.THREAD_PAUSED,
+        type: 'THREAD_PAUSED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123'
@@ -183,7 +183,7 @@ describe('EventBuilder', () => {
       const event = eventBuilder.buildThreadResumedEvent(mockThread);
 
       expect(event).toEqual({
-        type: EventType.THREAD_RESUMED,
+        type: 'THREAD_RESUMED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123'
@@ -196,7 +196,7 @@ describe('EventBuilder', () => {
       const event = eventBuilder.buildThreadCancelledEvent(mockThread, 'User cancelled');
 
       expect(event).toEqual({
-        type: EventType.THREAD_CANCELLED,
+        type: 'THREAD_CANCELLED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -208,7 +208,7 @@ describe('EventBuilder', () => {
       const event = eventBuilder.buildThreadCancelledEvent(mockThread);
 
       expect(event).toEqual({
-        type: EventType.THREAD_CANCELLED,
+        type: 'THREAD_CANCELLED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -226,7 +226,7 @@ describe('EventBuilder', () => {
       );
 
       expect(event).toEqual({
-        type: EventType.THREAD_STATE_CHANGED,
+        type: 'THREAD_STATE_CHANGED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -245,7 +245,7 @@ describe('EventBuilder', () => {
       );
 
       expect(event).toEqual({
-        type: EventType.NODE_STARTED,
+        type: 'NODE_STARTED',
         threadId: 'thread-123',
         workflowId: 'workflow-123',
         nodeId: 'node-1',
@@ -265,7 +265,7 @@ describe('EventBuilder', () => {
       );
 
       expect(event).toEqual({
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         threadId: 'thread-123',
         workflowId: 'workflow-123',
         nodeId: 'node-1',
@@ -285,7 +285,7 @@ describe('EventBuilder', () => {
       );
 
       expect(event).toEqual({
-        type: EventType.NODE_FAILED,
+        type: 'NODE_FAILED',
         threadId: 'thread-123',
         workflowId: 'workflow-123',
         nodeId: 'node-1',
@@ -305,7 +305,7 @@ describe('EventBuilder', () => {
       );
 
       expect(event).toEqual({
-        type: EventType.SUBGRAPH_STARTED,
+        type: 'SUBGRAPH_STARTED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -326,7 +326,7 @@ describe('EventBuilder', () => {
       );
 
       expect(event).toEqual({
-        type: EventType.SUBGRAPH_COMPLETED,
+        type: 'SUBGRAPH_COMPLETED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -347,7 +347,7 @@ describe('EventBuilder', () => {
       );
 
       expect(event).toEqual({
-        type: EventType.VARIABLE_CHANGED,
+        type: 'VARIABLE_CHANGED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -380,7 +380,7 @@ describe('EventBuilder', () => {
       );
 
       expect(event).toEqual({
-        type: EventType.CONVERSATION_STATE_CHANGED,
+        type: 'CONVERSATION_STATE_CHANGED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -412,7 +412,7 @@ describe('EventBuilder', () => {
       );
 
       expect(event).toEqual({
-        type: EventType.TOOL_CALL_STARTED,
+        type: 'TOOL_CALL_STARTED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -434,7 +434,7 @@ describe('EventBuilder', () => {
       );
 
       expect(event).toEqual({
-        type: EventType.TOOL_CALL_COMPLETED,
+        type: 'TOOL_CALL_COMPLETED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -456,7 +456,7 @@ describe('EventBuilder', () => {
       );
 
       expect(event).toEqual({
-        type: EventType.TOOL_CALL_FAILED,
+        type: 'TOOL_CALL_FAILED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -476,7 +476,7 @@ describe('EventBuilder', () => {
       );
 
       expect(event).toEqual({
-        type: EventType.THREAD_FORK_STARTED,
+        type: 'THREAD_FORK_STARTED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -495,7 +495,7 @@ describe('EventBuilder', () => {
       );
 
       expect(event).toEqual({
-        type: EventType.THREAD_FORK_COMPLETED,
+        type: 'THREAD_FORK_COMPLETED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -515,7 +515,7 @@ describe('EventBuilder', () => {
       );
 
       expect(event).toEqual({
-        type: EventType.THREAD_JOIN_STARTED,
+        type: 'THREAD_JOIN_STARTED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -536,7 +536,7 @@ describe('EventBuilder', () => {
       );
 
       expect(event).toEqual({
-        type: EventType.THREAD_JOIN_CONDITION_MET,
+        type: 'THREAD_JOIN_CONDITION_MET',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -552,7 +552,7 @@ describe('EventBuilder', () => {
       const event = eventBuilder.buildThreadCopyStartedEvent(mockThreadContext);
 
       expect(event).toEqual({
-        type: EventType.THREAD_COPY_STARTED,
+        type: 'THREAD_COPY_STARTED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -569,7 +569,7 @@ describe('EventBuilder', () => {
       );
 
       expect(event).toEqual({
-        type: EventType.THREAD_COPY_COMPLETED,
+        type: 'THREAD_COPY_COMPLETED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -589,7 +589,7 @@ describe('EventBuilder', () => {
       );
 
       expect(event).toEqual({
-        type: EventType.TRIGGERED_SUBGRAPH_STARTED,
+        type: 'TRIGGERED_SUBGRAPH_STARTED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -611,7 +611,7 @@ describe('EventBuilder', () => {
       );
 
       expect(event).toEqual({
-        type: EventType.TRIGGERED_SUBGRAPH_COMPLETED,
+        type: 'TRIGGERED_SUBGRAPH_COMPLETED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -646,7 +646,7 @@ describe('EventBuilder', () => {
       );
 
       expect(event).toEqual({
-        type: EventType.TRIGGERED_SUBGRAPH_FAILED,
+        type: 'TRIGGERED_SUBGRAPH_FAILED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',

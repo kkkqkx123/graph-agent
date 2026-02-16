@@ -30,7 +30,7 @@ describe('ThreadExecutorAPI', () => {
           {
             id: 'start',
             name: 'Start',
-            type: NodeType.START,
+            type: 'START',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: ['edge1']
@@ -38,7 +38,7 @@ describe('ThreadExecutorAPI', () => {
           {
             id: 'end',
             name: 'End',
-            type: NodeType.END,
+            type: 'END',
             config: {},
             incomingEdgeIds: ['edge1'],
             outgoingEdgeIds: []
@@ -84,7 +84,7 @@ describe('ThreadExecutorAPI', () => {
           {
             id: 'start',
             name: 'Start',
-            type: NodeType.START,
+            type: 'START',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: ['edge1']
@@ -92,7 +92,7 @@ describe('ThreadExecutorAPI', () => {
           {
             id: 'end',
             name: 'End',
-            type: NodeType.END,
+            type: 'END',
             config: {},
             incomingEdgeIds: ['edge1'],
             outgoingEdgeIds: []
@@ -135,7 +135,7 @@ describe('ThreadExecutorAPI', () => {
           {
             id: 'start',
             name: 'Start',
-            type: NodeType.START,
+            type: 'START',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: ['edge1']
@@ -143,7 +143,7 @@ describe('ThreadExecutorAPI', () => {
           {
             id: 'end',
             name: 'End',
-            type: NodeType.END,
+            type: 'END',
             config: {},
             incomingEdgeIds: ['edge1'],
             outgoingEdgeIds: []
@@ -179,7 +179,7 @@ describe('ThreadExecutorAPI', () => {
           {
             id: 'start',
             name: 'Start',
-            type: NodeType.START,
+            type: 'START',
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: ['edge1']
@@ -187,7 +187,7 @@ describe('ThreadExecutorAPI', () => {
           {
             id: 'end',
             name: 'End',
-            type: NodeType.END,
+            type: 'END',
             config: {},
             incomingEdgeIds: ['edge1'],
             outgoingEdgeIds: []

@@ -35,52 +35,52 @@ export { validateContinueFromTriggerNode } from './continue-from-trigger-validat
  */
 export function validateNodeByType(node: Node): Result<Node, ConfigurationValidationError[]> {
   switch (node.type) {
-    case NodeType.START:
+    case 'START':
       const { validateStartNode } = require('./start-validator');
       return validateStartNode(node);
-    case NodeType.END:
+    case 'END':
       const { validateEndNode } = require('./end-validator');
       return validateEndNode(node);
-    case NodeType.FORK:
+    case 'FORK':
       const { validateForkNode } = require('./fork-validator');
       return validateForkNode(node);
-    case NodeType.JOIN:
+    case 'JOIN':
       const { validateJoinNode } = require('./join-validator');
       return validateJoinNode(node);
-    case NodeType.LOOP_START:
+    case 'LOOP_START':
       const { validateLoopStartNode } = require('./loop-start-validator');
       return validateLoopStartNode(node);
-    case NodeType.LOOP_END:
+    case 'LOOP_END':
       const { validateLoopEndNode } = require('./loop-end-validator');
       return validateLoopEndNode(node);
-    case NodeType.CODE:
+    case 'CODE':
       const { validateCodeNode } = require('./code-validator');
       return validateCodeNode(node);
-    case NodeType.CONTEXT_PROCESSOR:
+    case 'CONTEXT_PROCESSOR':
       const { validateContextProcessorNode } = require('./context-processor-validator');
       return validateContextProcessorNode(node);
-    case NodeType.ROUTE:
+    case 'ROUTE':
       const { validateRouteNode } = require('./route-validator');
       return validateRouteNode(node);
-    case NodeType.VARIABLE:
+    case 'VARIABLE':
       const { validateVariableNode } = require('./variable-validator');
       return validateVariableNode(node);
-    case NodeType.LLM:
+    case 'LLM':
       const { validateLLMNode } = require('./llm-validator');
       return validateLLMNode(node);
-    case NodeType.ADD_TOOL:
+    case 'ADD_TOOL':
       const { validateAddToolNode } = require('./add-tool-validator');
       return validateAddToolNode(node);
-    case NodeType.USER_INTERACTION:
+    case 'USER_INTERACTION':
       const { validateUserInteractionNode } = require('./user-interaction-validator');
       return validateUserInteractionNode(node);
-    case NodeType.SUBGRAPH:
+    case 'SUBGRAPH':
       const { validateSubgraphNode } = require('./subgraph-validator');
       return validateSubgraphNode(node);
-    case NodeType.START_FROM_TRIGGER:
+    case 'START'_FROM_TRIGGER:
       const { validateStartFromTriggerNode } = require('./start-from-trigger-validator');
       return validateStartFromTriggerNode(node);
-    case NodeType.CONTINUE_FROM_TRIGGER:
+    case 'CONTINUE_FROM_TRIGGER':
       const { validateContinueFromTriggerNode } = require('./continue-from-trigger-validator');
       return validateContinueFromTriggerNode(node);
     default:

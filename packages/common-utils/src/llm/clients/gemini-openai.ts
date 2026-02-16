@@ -153,7 +153,7 @@ export class GeminiOpenAIClient extends BaseLLMClient {
       model: this.profile.model,
       content,
       message: {
-        role: MessageRole.ASSISTANT,
+        role: 'assistant',
         content,
         toolCalls: toolCalls.length > 0 ? toolCalls : undefined
       },
@@ -189,7 +189,7 @@ export class GeminiOpenAIClient extends BaseLLMClient {
       model: this.profile.model,
       content,
       message: {
-        role: MessageRole.ASSISTANT,
+        role: 'assistant',
         content,
         toolCalls: toolCalls.length > 0 ? toolCalls : undefined
       },

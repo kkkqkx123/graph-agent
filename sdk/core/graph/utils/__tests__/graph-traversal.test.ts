@@ -19,11 +19,11 @@ function createTestGraph() {
   const graph = new GraphData();
 
   const nodes: GraphNode[] = [
-    { id: '1', type: NodeType.START, name: 'Node 1', workflowId: 'wf1' },
-    { id: '2', type: NodeType.LLM, name: 'Node 2', workflowId: 'wf1' },
-    { id: '3', type: NodeType.LLM, name: 'Node 3', workflowId: 'wf1' },
-    { id: '4', type: NodeType.LLM, name: 'Node 4', workflowId: 'wf1' },
-    { id: '5', type: NodeType.END, name: 'Node 5', workflowId: 'wf1' },
+    { id: '1', type: 'START', name: 'Node 1', workflowId: 'wf1' },
+    { id: '2', type: 'LLM', name: 'Node 2', workflowId: 'wf1' },
+    { id: '3', type: 'LLM', name: 'Node 3', workflowId: 'wf1' },
+    { id: '4', type: 'LLM', name: 'Node 4', workflowId: 'wf1' },
+    { id: '5', type: 'END', name: 'Node 5', workflowId: 'wf1' },
   ];
 
   const edges: GraphEdge[] = [
@@ -196,9 +196,9 @@ describe('graph-traversal', () => {
     it('should handle disconnected graph', () => {
       const graph = new GraphData();
       const nodes: GraphNode[] = [
-        { id: '1', type: NodeType.START, name: 'Node 1', workflowId: 'wf1' },
-        { id: '2', type: NodeType.LLM, name: 'Node 2', workflowId: 'wf1' },
-        { id: '3', type: NodeType.END, name: 'Node 3', workflowId: 'wf1' },
+        { id: '1', type: 'START', name: 'Node 1', workflowId: 'wf1' },
+        { id: '2', type: 'LLM', name: 'Node 2', workflowId: 'wf1' },
+        { id: '3', type: 'END', name: 'Node 3', workflowId: 'wf1' },
       ];
 
       for (const node of nodes) {
@@ -254,9 +254,9 @@ describe('graph-traversal', () => {
     it('should handle disconnected graph', () => {
       const graph = new GraphData();
       const nodes: GraphNode[] = [
-        { id: '1', type: NodeType.START, name: 'Node 1', workflowId: 'wf1' },
-        { id: '2', type: NodeType.LLM, name: 'Node 2', workflowId: 'wf1' },
-        { id: '3', type: NodeType.END, name: 'Node 3', workflowId: 'wf1' },
+        { id: '1', type: 'START', name: 'Node 1', workflowId: 'wf1' },
+        { id: '2', type: 'LLM', name: 'Node 2', workflowId: 'wf1' },
+        { id: '3', type: 'END', name: 'Node 3', workflowId: 'wf1' },
       ];
 
       for (const node of nodes) {
@@ -292,7 +292,7 @@ describe('graph-traversal', () => {
     it('should handle graph with self-loop', () => {
       const graph = new GraphData();
 
-      const node: GraphNode = { id: '1', type: NodeType.LLM, name: 'Node 1', workflowId: 'wf1' };
+      const node: GraphNode = { id: '1', type: 'LLM', name: 'Node 1', workflowId: 'wf1' };
       graph.addNode(node);
 
       const edge: GraphEdge = { id: 'e1', sourceNodeId: '1', targetNodeId: '1', type: EdgeType.DEFAULT };

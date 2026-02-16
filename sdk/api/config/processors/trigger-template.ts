@@ -16,9 +16,9 @@ import { ok } from '@modular-agent/common-utils';
  * @param config 解析后的配置对象
  * @returns 验证结果
  */
-export function validateTriggerTemplate(config: ParsedConfig<ConfigType.TRIGGER_TEMPLATE>): Result<ParsedConfig<ConfigType.TRIGGER_TEMPLATE>, ValidationError[]> {
+export function validateTriggerTemplate(config: ParsedConfig<'trigger_template'>): Result<ParsedConfig<'trigger_template'>, ValidationError[]> {
   const result = validateTriggerTemplateConfig(config.config);
 
   // 使用 andThen 进行类型转换
-  return result.andThen(() => ok(config)) as Result<ParsedConfig<ConfigType.TRIGGER_TEMPLATE>, ValidationError[]>;
+  return result.andThen(() => ok(config)) as Result<ParsedConfig<'trigger_template'>, ValidationError[]>;
 }

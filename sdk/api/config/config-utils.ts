@@ -18,9 +18,9 @@ export function detectConfigFormat(filePath: string): ConfigFormat {
 
   switch (ext) {
     case '.toml':
-      return ConfigFormat.TOML;
+      return 'toml';
     case '.json':
-      return ConfigFormat.JSON;
+      return 'json';
     default:
       throw new Error(`无法识别的配置文件扩展名: ${ext}`);
   }

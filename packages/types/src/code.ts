@@ -6,20 +6,19 @@
 import type { ID, Metadata } from './common';
 
 /**
- * 脚本类型枚举
+ * 脚本类型
  */
-export enum ScriptType {
+export type ScriptType =
   /** Shell脚本 */
-  SHELL = 'SHELL',
+  'SHELL' |
   /** CMD脚本 */
-  CMD = 'CMD',
+  'CMD' |
   /** PowerShell脚本 */
-  POWERSHELL = 'POWERSHELL',
+  'POWERSHELL' |
   /** Python脚本 */
-  PYTHON = 'PYTHON',
+  'PYTHON' |
   /** JavaScript脚本 */
-  JAVASCRIPT = 'JAVASCRIPT'
-}
+  'JAVASCRIPT';
 
 /**
  * 脚本执行选项

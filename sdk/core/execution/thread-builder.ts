@@ -84,12 +84,12 @@ export class ThreadBuilder {
       throw new RuntimeValidationError('Preprocessed graph must have at least one node', { field: 'graph.nodes' });
     }
 
-    const startNode = Array.from(preprocessedGraph.nodes.values()).find(n => n.type === NodeType.START);
+    const startNode = Array.from(preprocessedGraph.nodes.values()).find(n => n.type === 'START');
     if (!startNode) {
       throw new RuntimeValidationError('Preprocessed graph must have a START node', { field: 'graph.nodes' });
     }
 
-    const endNode = Array.from(preprocessedGraph.nodes.values()).find(n => n.type === NodeType.END);
+    const endNode = Array.from(preprocessedGraph.nodes.values()).find(n => n.type === 'END');
     if (!endNode) {
       throw new RuntimeValidationError('Preprocessed graph must have an END node', { field: 'graph.nodes' });
     }
@@ -256,7 +256,7 @@ export class ThreadBuilder {
       errors: [],
       shouldPause: false,
       shouldStop: false,
-      threadType: ThreadType.TRIGGERED_SUBWORKFLOW,
+      threadType: 'TRIGGERED_SUBWORKFLOW',
       triggeredSubworkflowContext: {
         parentThreadId: sourceThread.id,
         childThreadIds: [],
@@ -330,7 +330,7 @@ export class ThreadBuilder {
       errors: [],
       shouldPause: false,
       shouldStop: false,
-      threadType: ThreadType.FORK_JOIN,
+      threadType: 'FORK_JOIN',
       forkJoinContext: {
         forkId: forkConfig.forkId,
         forkPathId: forkConfig.forkPathId

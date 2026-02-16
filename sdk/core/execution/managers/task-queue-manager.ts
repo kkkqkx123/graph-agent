@@ -123,7 +123,7 @@ export class TaskQueueManager {
 
     return {
       taskId,
-      status: TaskStatus.QUEUED,
+      status: 'QUEUED',
       message: 'Task submitted successfully',
       submitTime: Date.now()
     };
@@ -210,7 +210,7 @@ export class TaskQueueManager {
     
     // 触发完成事件
     await this.eventManager.emit({
-      type: EventType.TRIGGERED_SUBGRAPH_COMPLETED,
+      type: 'TRIGGERED_SUBGRAPH_COMPLETED',
       threadId: queueTask.threadContext.getThreadId(),
       workflowId: queueTask.threadContext.getWorkflowId(),
       subgraphId: queueTask.threadContext.getTriggeredSubworkflowId() || '',
@@ -250,7 +250,7 @@ export class TaskQueueManager {
     
     // 触发失败事件
     await this.eventManager.emit({
-      type: EventType.TRIGGERED_SUBGRAPH_FAILED,
+      type: 'TRIGGERED_SUBGRAPH_FAILED',
       threadId: queueTask.threadContext.getThreadId(),
       workflowId: queueTask.threadContext.getWorkflowId(),
       subgraphId: queueTask.threadContext.getTriggeredSubworkflowId() || '',
@@ -284,7 +284,7 @@ export class TaskQueueManager {
       
       // 触发取消事件（使用 FAILED 事件类型，因为 CANCELLED 事件类型不存在）
       this.eventManager.emit({
-        type: EventType.TRIGGERED_SUBGRAPH_FAILED,
+        type: 'TRIGGERED_SUBGRAPH_FAILED',
         threadId: queueTask.threadContext.getThreadId(),
         workflowId: queueTask.threadContext.getWorkflowId(),
         subgraphId: queueTask.threadContext.getTriggeredSubworkflowId() || '',

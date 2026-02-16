@@ -154,7 +154,7 @@ export class AnthropicClient extends BaseLLMClient {
       model: data.model,
       content,
       message: {
-        role: MessageRole.ASSISTANT,
+        role: 'assistant',
         content,
         toolCalls
       },
@@ -186,7 +186,7 @@ export class AnthropicClient extends BaseLLMClient {
             model: this.profile.model,
             content: data.delta.text,
             message: {
-              role: MessageRole.ASSISTANT,
+              role: 'assistant',
               content: data.delta.text
             },
             finishReason: '',
@@ -211,7 +211,7 @@ export class AnthropicClient extends BaseLLMClient {
             model: this.profile.model,
             content: '',
             message: {
-              role: MessageRole.ASSISTANT,
+              role: 'assistant',
               content: '',
               toolCalls: [toolCall]
             },
@@ -230,7 +230,7 @@ export class AnthropicClient extends BaseLLMClient {
             model: this.profile.model,
             content: '',
             message: {
-              role: MessageRole.ASSISTANT,
+              role: 'assistant',
               content: ''
             },
             usage: {

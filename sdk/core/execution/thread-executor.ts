@@ -199,7 +199,7 @@ export class ThreadExecutor {
    * 完成线程执行
    */
   private completeThread(threadContext: ThreadContext): void {
-    threadContext.setStatus(ThreadStatus.COMPLETED);
+    threadContext.setStatus('COMPLETED');
     threadContext.thread.endTime = now();
   }
 

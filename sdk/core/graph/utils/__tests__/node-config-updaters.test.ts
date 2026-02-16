@@ -39,7 +39,7 @@ describe('节点配置更新器', () => {
     let updater: any;
 
     beforeEach(() => {
-      updater = getNodeConfigUpdater(NodeType.ROUTE);
+      updater = getNodeConfigUpdater('ROUTE');
     });
 
     describe('containsIdReferences', () => {
@@ -122,7 +122,7 @@ describe('节点配置更新器', () => {
     let updater: any;
 
     beforeEach(() => {
-      updater = getNodeConfigUpdater(NodeType.FORK);
+      updater = getNodeConfigUpdater('FORK');
     });
 
     describe('containsIdReferences', () => {
@@ -186,7 +186,7 @@ describe('节点配置更新器', () => {
     let updater: any;
 
     beforeEach(() => {
-      updater = getNodeConfigUpdater(NodeType.JOIN);
+      updater = getNodeConfigUpdater('JOIN');
     });
 
     describe('containsIdReferences', () => {
@@ -256,7 +256,7 @@ describe('节点配置更新器', () => {
     let updater: any;
 
     beforeEach(() => {
-      updater = getNodeConfigUpdater(NodeType.SUBGRAPH);
+      updater = getNodeConfigUpdater('SUBGRAPH');
     });
 
     describe('containsIdReferences', () => {

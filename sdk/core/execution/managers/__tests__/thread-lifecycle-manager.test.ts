@@ -23,7 +23,7 @@ describe('ThreadLifecycleManager', () => {
       id: generateId(),
       workflowId: generateId(),
       workflowVersion: '1.0.0',
-      status: ThreadStatus.CREATED,
+      status: 'CREATED',
       currentNodeId: 'node1',
       graph: {} as Graph,
       variables: [],
@@ -45,54 +45,54 @@ describe('ThreadLifecycleManager', () => {
 
   describe('幂等性测试', () => {
     it('pauseThread应该具有幂等性', async () => {
-      mockThread.status = ThreadStatus.RUNNING;
+      mockThread.status = 'RUNNING';
 
       // 第一次暂停
       await lifecycleManager.pauseThread(mockThread);
-      expect(mockThread.status).toBe(ThreadStatus.PAUSED);
+      expect(mockThread.status).toBe('PAUSED');
 
       // 第二次暂停（应该直接返回，不抛错）
       await expect(lifecycleManager.pauseThread(mockThread)).resolves.not.toThrow();
-      expect(mockThread.status).toBe(ThreadStatus.PAUSED);
+      expect(mockThread.status).toBe('PAUSED');
     });
 
     it('resumeThread应该具有幂等性', async () => {
-      mockThread.status = ThreadStatus.PAUSED;
+      mockThread.status = 'PAUSED';
 
       // 第一次恢复
       await lifecycleManager.resumeThread(mockThread);
-      expect(mockThread.status).toBe(ThreadStatus.RUNNING);
+      expect(mockThread.status).toBe('RUNNING');
 
       // 第二次恢复（应该直接返回，不抛错）
       await expect(lifecycleManager.resumeThread(mockThread)).resolves.not.toThrow();
-      expect(mockThread.status).toBe(ThreadStatus.RUNNING);
+      expect(mockThread.status).toBe('RUNNING');
     });
 
     it('cancelThread应该具有幂等性', async () => {
-      mockThread.status = ThreadStatus.RUNNING;
+      mockThread.status = 'RUNNING';
 
       // 第一次取消
       await lifecycleManager.cancelThread(mockThread, 'test');
-      expect(mockThread.status).toBe(ThreadStatus.CANCELLED);
+      expect(mockThread.status).toBe('CANCELLED');
       expect(mockThread.endTime).toBeDefined();
 
       // 第二次取消（应该直接返回，不抛错）
       await expect(lifecycleManager.cancelThread(mockThread, 'test')).resolves.not.toThrow();
-      expect(mockThread.status).toBe(ThreadStatus.CANCELLED);
+      expect(mockThread.status).toBe('CANCELLED');
     });
   });
 
   describe('状态转换测试', () => {
     it('startThread应该正确转换状态', async () => {
-      mockThread.status = ThreadStatus.CREATED;
+      mockThread.status = 'CREATED';
 
       await lifecycleManager.startThread(mockThread);
 
-      expect(mockThread.status).toBe(ThreadStatus.RUNNING);
+      expect(mockThread.status).toBe('RUNNING');
     });
 
     it('completeThread应该正确转换状态', async () => {
-      mockThread.status = ThreadStatus.RUNNING;
+      mockThread.status = 'RUNNING';
 
       await lifecycleManager.completeThread(mockThread, {
         threadId: mockThread.id,
@@ -100,7 +100,7 @@ describe('ThreadLifecycleManager', () => {
         executionTime: 1000,
         nodeResults: [],
         metadata: {
-          status: ThreadStatus.COMPLETED,
+          status: 'COMPLETED',
           startTime: Date.now(),
           endTime: Date.now(),
           executionTime: 1000,
@@ -109,17 +109,17 @@ describe('ThreadLifecycleManager', () => {
         }
       });
 
-      expect(mockThread.status).toBe(ThreadStatus.COMPLETED);
+      expect(mockThread.status).toBe('COMPLETED');
       expect(mockThread.endTime).toBeDefined();
     });
 
     it('failThread应该正确转换状态', async () => {
-      mockThread.status = ThreadStatus.RUNNING;
+      mockThread.status = 'RUNNING';
       const error = new Error('Test error');
 
       await lifecycleManager.failThread(mockThread, error);
 
-      expect(mockThread.status).toBe(ThreadStatus.FAILED);
+      expect(mockThread.status).toBe('FAILED');
       expect(mockThread.endTime).toBeDefined();
       expect(mockThread.errors).toContain(error.message);
     });
@@ -127,14 +127,14 @@ describe('ThreadLifecycleManager', () => {
 
   describe('事件触发测试', () => {
     it('pauseThread应该触发正确的事件', async () => {
-      mockThread.status = ThreadStatus.RUNNING;
+      mockThread.status = 'RUNNING';
 
       const pausedPromise = new Promise<void>((resolve) => {
-        eventManager.once(EventType.THREAD_PAUSED, () => resolve());
+        eventManager.once('THREAD_PAUSED', () => resolve());
       });
 
       const stateChangedPromise = new Promise<void>((resolve) => {
-        eventManager.once(EventType.THREAD_STATE_CHANGED, () => resolve());
+        eventManager.once('THREAD_STATE_CHANGED', () => resolve());
       });
 
       await lifecycleManager.pauseThread(mockThread);
@@ -143,14 +143,14 @@ describe('ThreadLifecycleManager', () => {
     });
 
     it('resumeThread应该触发正确的事件', async () => {
-      mockThread.status = ThreadStatus.PAUSED;
+      mockThread.status = 'PAUSED';
 
       const resumedPromise = new Promise<void>((resolve) => {
-        eventManager.once(EventType.THREAD_RESUMED, () => resolve());
+        eventManager.once('THREAD_RESUMED', () => resolve());
       });
 
       const stateChangedPromise = new Promise<void>((resolve) => {
-        eventManager.once(EventType.THREAD_STATE_CHANGED, () => resolve());
+        eventManager.once('THREAD_STATE_CHANGED', () => resolve());
       });
 
       await lifecycleManager.resumeThread(mockThread);
@@ -161,7 +161,7 @@ describe('ThreadLifecycleManager', () => {
 
   describe('错误处理测试', () => {
     it('应该拒绝非法的状态转换', async () => {
-      mockThread.status = ThreadStatus.COMPLETED;
+      mockThread.status = 'COMPLETED';
 
       await expect(lifecycleManager.pauseThread(mockThread)).rejects.toThrow();
     });

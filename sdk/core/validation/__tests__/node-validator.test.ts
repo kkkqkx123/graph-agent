@@ -19,7 +19,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Start',
-        type: NodeType.START,
+        type: 'START',
         config: {},
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -33,7 +33,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-2',
         name: 'End',
-        type: NodeType.END,
+        type: 'END',
         config: {},
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -46,7 +46,7 @@ describe('NodeValidator', () => {
     it('should return error for node without id', () => {
       const node = {
         name: 'Test',
-        type: NodeType.START
+        type: 'START'
       } as Node;
       const result = validator.validateNode(node);
       expect(result.isErr()).toBe(true);
@@ -58,7 +58,7 @@ describe('NodeValidator', () => {
     it('should return error for node without name', () => {
       const node = {
         id: 'node-1',
-        type: NodeType.START
+        type: 'START'
       } as Node;
       const result = validator.validateNode(node);
       expect(result.isErr()).toBe(true);
@@ -85,7 +85,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Variable',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'myVar',
           variableType: 'string',
@@ -103,7 +103,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Variable',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableType: 'string',
           expression: 'input.value'
@@ -122,7 +122,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Variable',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'myVar',
           expression: 'input.value'
@@ -141,7 +141,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Variable',
-        type: NodeType.VARIABLE,
+        type: 'VARIABLE',
         config: {
           variableName: 'myVar',
           variableType: 'string'
@@ -162,7 +162,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Fork',
-        type: NodeType.FORK,
+        type: 'FORK',
         config: {
           forkPaths: [
             { pathId: 'path-1', childNodeId: 'child-1' },
@@ -182,7 +182,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Fork',
-        type: NodeType.FORK,
+        type: 'FORK',
         config: {
           forkStrategy: 'serial'
         },
@@ -200,7 +200,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Fork',
-        type: NodeType.FORK,
+        type: 'FORK',
         config: {
           forkPaths: [
             { pathId: 'path-1', childNodeId: 'child-1' }
@@ -220,7 +220,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Fork',
-        type: NodeType.FORK,
+        type: 'FORK',
         config: {
           forkPaths: [
             { pathId: 'path-1', childNodeId: 'child-1' },
@@ -244,7 +244,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Join',
-        type: NodeType.JOIN,
+        type: 'JOIN',
         config: {
           forkPathIds: ['path-1', 'path-2'],
           joinStrategy: 'ALL_COMPLETED',
@@ -262,7 +262,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Join',
-        type: NodeType.JOIN,
+        type: 'JOIN',
         config: {
           forkPathIds: ['path-1', 'path-2'],
           joinStrategy: 'SUCCESS_COUNT_THRESHOLD',
@@ -281,7 +281,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Join',
-        type: NodeType.JOIN,
+        type: 'JOIN',
         config: {
           joinStrategy: 'ALL_COMPLETED',
           mainPathId: 'path-1'
@@ -300,7 +300,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Join',
-        type: NodeType.JOIN,
+        type: 'JOIN',
         config: {
           forkPathIds: ['path-1'],
           mainPathId: 'path-1'
@@ -319,7 +319,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Join',
-        type: NodeType.JOIN,
+        type: 'JOIN',
         config: {
           forkPathIds: ['path-1'],
           joinStrategy: 'SUCCESS_COUNT_THRESHOLD',
@@ -341,7 +341,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Code',
-        type: NodeType.CODE,
+        type: 'CODE',
         config: {
           scriptName: 'myScript',
           scriptType: 'javascript',
@@ -362,7 +362,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Code',
-        type: NodeType.CODE,
+        type: 'CODE',
         config: {
           scriptType: 'javascript',
           risk: 'low',
@@ -384,7 +384,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Code',
-        type: NodeType.CODE,
+        type: 'CODE',
         config: {
           scriptName: 'myScript',
           risk: 'low',
@@ -406,7 +406,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Code',
-        type: NodeType.CODE,
+        type: 'CODE',
         config: {
           scriptName: 'myScript',
           scriptType: 'javascript',
@@ -428,7 +428,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Code',
-        type: NodeType.CODE,
+        type: 'CODE',
         config: {
           scriptName: 'myScript',
           scriptType: 'javascript',
@@ -448,7 +448,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Code',
-        type: NodeType.CODE,
+        type: 'CODE',
         config: {
           scriptName: 'myScript',
           scriptType: 'javascript',
@@ -470,7 +470,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'LLM',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: {
           profileId: 'profile-1'
         },
@@ -486,7 +486,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'LLM',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: {} as any,
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -504,7 +504,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'UserInteraction',
-        type: NodeType.USER_INTERACTION,
+        type: 'USER_INTERACTION',
         config: {
           operationType: 'UPDATE_VARIABLES',
           variables: [{
@@ -527,7 +527,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-2',
         name: 'UserInteraction',
-        type: NodeType.USER_INTERACTION,
+        type: 'USER_INTERACTION',
         config: {
           operationType: 'ADD_MESSAGE',
           message: {
@@ -549,7 +549,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'UserInteraction',
-        type: NodeType.USER_INTERACTION,
+        type: 'USER_INTERACTION',
         config: {} as any,
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -565,7 +565,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'UserInteraction',
-        type: NodeType.USER_INTERACTION,
+        type: 'USER_INTERACTION',
         config: {
           operationType: 'UPDATE_VARIABLES',
           prompt: '是否批准？'
@@ -581,7 +581,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'UserInteraction',
-        type: NodeType.USER_INTERACTION,
+        type: 'USER_INTERACTION',
         config: {
           operationType: 'ADD_MESSAGE',
           prompt: '请输入您的问题：'
@@ -597,7 +597,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'UserInteraction',
-        type: NodeType.USER_INTERACTION,
+        type: 'USER_INTERACTION',
         config: {
           operationType: 'UPDATE_VARIABLES',
           variables: [{
@@ -622,7 +622,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Route',
-        type: NodeType.ROUTE,
+        type: 'ROUTE',
         config: {
           routes: [
             { condition: { expression: 'input.value > 10' }, targetNodeId: 'node-2' },
@@ -641,7 +641,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Route',
-        type: NodeType.ROUTE,
+        type: 'ROUTE',
         config: {
           routes: []
         } as any,
@@ -659,7 +659,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Route',
-        type: NodeType.ROUTE,
+        type: 'ROUTE',
         config: {
           routes: [{ targetNodeId: 'node-2' } as any]
         },
@@ -677,7 +677,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Route',
-        type: NodeType.ROUTE,
+        type: 'ROUTE',
         config: {
           routes: [{ condition: { expression: 'input.value > 10' } } as any]
         },
@@ -697,7 +697,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'ContextProcessor',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'truncate',
           truncate: {
@@ -716,7 +716,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'ContextProcessor',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'insert',
           insert: {
@@ -738,7 +738,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'ContextProcessor',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {} as any,
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -754,7 +754,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'ContextProcessor',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'truncate'
         } as any,
@@ -771,7 +771,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'LoopStart',
-        type: NodeType.LOOP_START,
+        type: 'LOOP_START',
         config: {
           loopId: 'loop-1',
           dataSource: {
@@ -792,7 +792,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'LoopStart',
-        type: NodeType.LOOP_START,
+        type: 'LOOP_START',
         config: {
           loopId: 'loop-1',
           maxIterations: 10
@@ -809,7 +809,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'LoopStart',
-        type: NodeType.LOOP_START,
+        type: 'LOOP_START',
         config: {
           dataSource: {
             iterable: 'items',
@@ -831,7 +831,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'LoopStart',
-        type: NodeType.LOOP_START,
+        type: 'LOOP_START',
         config: {
           loopId: 'loop-1',
           dataSource: {
@@ -853,7 +853,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'LoopStart',
-        type: NodeType.LOOP_START,
+        type: 'LOOP_START',
         config: {
           loopId: 'loop-1',
           dataSource: {
@@ -878,7 +878,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-2',
         name: 'LoopEnd',
-        type: NodeType.LOOP_END,
+        type: 'LOOP_END',
         config: {
           loopId: 'loop-1',
           breakCondition: { type: 'condition', expression: 'item.done' },
@@ -896,7 +896,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-2',
         name: 'LoopEnd',
-        type: NodeType.LOOP_END,
+        type: 'LOOP_END',
         config: {
           loopId: 'loop-1',
           loopStartNodeId: 'node-1'
@@ -913,7 +913,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-2',
         name: 'LoopEnd',
-        type: NodeType.LOOP_END,
+        type: 'LOOP_END',
         config: {
           breakCondition: { type: 'condition', expression: 'item.done' },
           loopStartNodeId: 'node-1'
@@ -934,7 +934,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Subgraph',
-        type: NodeType.SUBGRAPH,
+        type: 'SUBGRAPH',
         config: {
           subgraphId: 'subgraph-1',
           async: false
@@ -951,7 +951,7 @@ describe('NodeValidator', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Subgraph',
-        type: NodeType.SUBGRAPH,
+        type: 'SUBGRAPH',
         config: {
           async: false
         } as any,

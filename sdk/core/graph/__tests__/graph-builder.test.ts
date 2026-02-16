@@ -17,13 +17,13 @@ function createSimpleWorkflow(): WorkflowDefinition {
     name: 'Simple Workflow',
     description: 'A simple workflow',
     version: '1.0.0',
-    type: WorkflowType.STANDALONE,
+    type: 'STANDALONE',
     createdAt: Date.now(),
     updatedAt: Date.now(),
     nodes: [
       {
         id: 'start',
-        type: NodeType.START,
+        type: 'START',
         name: 'Start',
         description: 'Start node',
         config: {} as any,
@@ -32,7 +32,7 @@ function createSimpleWorkflow(): WorkflowDefinition {
       },
       {
         id: 'llm',
-        type: NodeType.LLM,
+        type: 'LLM',
         name: 'LLM',
         description: 'LLM node',
         config: {
@@ -44,7 +44,7 @@ function createSimpleWorkflow(): WorkflowDefinition {
       },
       {
         id: 'end',
-        type: NodeType.END,
+        type: 'END',
         name: 'End',
         description: 'End node',
         config: {} as any,
@@ -80,13 +80,13 @@ function createBranchWorkflow(): WorkflowDefinition {
     name: 'Branch Workflow',
     description: 'A workflow with branches',
     version: '1.0.0',
-    type: WorkflowType.STANDALONE,
+    type: 'STANDALONE',
     createdAt: Date.now(),
     updatedAt: Date.now(),
     nodes: [
       {
         id: 'start',
-        type: NodeType.START,
+        type: 'START',
         name: 'Start',
         description: 'Start node',
         config: {} as any,
@@ -95,7 +95,7 @@ function createBranchWorkflow(): WorkflowDefinition {
       },
       {
         id: 'route',
-        type: NodeType.ROUTE,
+        type: 'ROUTE',
         name: 'Route',
         description: 'Route node',
         config: {} as any,
@@ -104,7 +104,7 @@ function createBranchWorkflow(): WorkflowDefinition {
       },
       {
         id: 'llm1',
-        type: NodeType.LLM,
+        type: 'LLM',
         name: 'LLM1',
         description: 'LLM node 1',
         config: { profileId: 'profile1' } as any,
@@ -113,7 +113,7 @@ function createBranchWorkflow(): WorkflowDefinition {
       },
       {
         id: 'llm2',
-        type: NodeType.LLM,
+        type: 'LLM',
         name: 'LLM2',
         description: 'LLM node 2',
         config: { profileId: 'profile2' } as any,
@@ -122,7 +122,7 @@ function createBranchWorkflow(): WorkflowDefinition {
       },
       {
         id: 'end',
-        type: NodeType.END,
+        type: 'END',
         name: 'End',
         description: 'End node',
         config: {} as any,
@@ -182,13 +182,13 @@ function createForkJoinWorkflow(): WorkflowDefinition {
     name: 'Fork/Join Workflow',
     description: 'A workflow with fork/join',
     version: '1.0.0',
-    type: WorkflowType.STANDALONE,
+    type: 'STANDALONE',
     createdAt: Date.now(),
     updatedAt: Date.now(),
     nodes: [
       {
         id: 'start',
-        type: NodeType.START,
+        type: 'START',
         name: 'Start',
         description: 'Start node',
         config: {} as any,
@@ -197,7 +197,7 @@ function createForkJoinWorkflow(): WorkflowDefinition {
       },
       {
         id: 'fork',
-        type: NodeType.FORK,
+        type: 'FORK',
         name: 'Fork',
         description: 'Fork node',
         config: { forkId: 'fork1', forkStrategy: 'parallel' } as any,
@@ -206,7 +206,7 @@ function createForkJoinWorkflow(): WorkflowDefinition {
       },
       {
         id: 'llm1',
-        type: NodeType.LLM,
+        type: 'LLM',
         name: 'LLM1',
         description: 'LLM node 1',
         config: { profileId: 'profile1' } as any,
@@ -215,7 +215,7 @@ function createForkJoinWorkflow(): WorkflowDefinition {
       },
       {
         id: 'llm2',
-        type: NodeType.LLM,
+        type: 'LLM',
         name: 'LLM2',
         description: 'LLM node 2',
         config: { profileId: 'profile2' } as any,
@@ -224,7 +224,7 @@ function createForkJoinWorkflow(): WorkflowDefinition {
       },
       {
         id: 'join',
-        type: NodeType.JOIN,
+        type: 'JOIN',
         name: 'Join',
         description: 'Join node',
         config: { joinId: 'fork1', joinStrategy: 'ALL_COMPLETED' } as any,
@@ -233,7 +233,7 @@ function createForkJoinWorkflow(): WorkflowDefinition {
       },
       {
         id: 'end',
-        type: NodeType.END,
+        type: 'END',
         name: 'End',
         description: 'End node',
         config: {} as any,
@@ -291,13 +291,13 @@ function createSubgraphWorkflow(): WorkflowDefinition {
     name: 'Subgraph Workflow',
     description: 'A workflow with subgraph',
     version: '1.0.0',
-    type: WorkflowType.DEPENDENT,
+    type: 'DEPENDENT',
     createdAt: Date.now(),
     updatedAt: Date.now(),
     nodes: [
       {
         id: 'start',
-        type: NodeType.START,
+        type: 'START',
         name: 'Start',
         description: 'Start node',
         config: {} as any,
@@ -306,7 +306,7 @@ function createSubgraphWorkflow(): WorkflowDefinition {
       },
       {
         id: 'subgraph',
-        type: NodeType.SUBGRAPH,
+        type: 'SUBGRAPH',
         name: 'Subgraph',
         description: 'Subgraph node',
         config: {
@@ -318,7 +318,7 @@ function createSubgraphWorkflow(): WorkflowDefinition {
       },
       {
         id: 'end',
-        type: NodeType.END,
+        type: 'END',
         name: 'End',
         description: 'End node',
         config: {} as any,
@@ -352,13 +352,13 @@ function createSubWorkflow(): WorkflowDefinition {
     name: 'Sub Workflow',
     description: 'A sub workflow',
     version: '1.0.0',
-    type: WorkflowType.STANDALONE,
+    type: 'STANDALONE',
     createdAt: Date.now(),
     updatedAt: Date.now(),
     nodes: [
       {
         id: 'subStart',
-        type: NodeType.START,
+        type: 'START',
         name: 'Sub Start',
         description: 'Sub start node',
         config: {} as any,
@@ -367,7 +367,7 @@ function createSubWorkflow(): WorkflowDefinition {
       },
       {
         id: 'subLLM',
-        type: NodeType.LLM,
+        type: 'LLM',
         name: 'Sub LLM',
         description: 'Sub LLM node',
         config: { profileId: 'profile1' } as any,
@@ -376,7 +376,7 @@ function createSubWorkflow(): WorkflowDefinition {
       },
       {
         id: 'subEnd',
-        type: NodeType.END,
+        type: 'END',
         name: 'Sub End',
         description: 'Sub end node',
         config: {} as any,
@@ -420,18 +420,18 @@ describe('GraphBuilder', () => {
 
       const startNode = graph.getNode('start');
       expect(startNode).toBeDefined();
-      expect(startNode?.type).toBe(NodeType.START);
+      expect(startNode?.type).toBe('START');
       expect(startNode?.name).toBe('Start');
       expect(startNode?.workflowId).toBe('wf1');
 
       const llmNode = graph.getNode('llm');
       expect(llmNode).toBeDefined();
-      expect(llmNode?.type).toBe(NodeType.LLM);
+      expect(llmNode?.type).toBe('LLM');
       expect(llmNode?.originalNode).toBeDefined();
 
       const endNode = graph.getNode('end');
       expect(endNode).toBeDefined();
-      expect(endNode?.type).toBe(NodeType.END);
+      expect(endNode?.type).toBe('END');
     });
 
     it('should create correct graph edges', () => {
@@ -473,11 +473,11 @@ describe('GraphBuilder', () => {
 
       const forkNode = graph.getNode('fork');
       expect(forkNode).toBeDefined();
-      expect(forkNode?.type).toBe(NodeType.FORK);
+      expect(forkNode?.type).toBe('FORK');
 
       const joinNode = graph.getNode('join');
       expect(joinNode).toBeDefined();
-      expect(joinNode?.type).toBe(NodeType.JOIN);
+      expect(joinNode?.type).toBe('JOIN');
     });
 
     it('should handle empty workflow', () => {
@@ -486,7 +486,7 @@ describe('GraphBuilder', () => {
          name: 'Empty Workflow',
          description: 'Empty',
          version: '1.0.0',
-         type: WorkflowType.STANDALONE,
+         type: 'STANDALONE',
          createdAt: Date.now(),
          updatedAt: Date.now(),
          nodes: [],
@@ -507,13 +507,13 @@ describe('GraphBuilder', () => {
          name: 'Multiple Ends',
          description: 'Test',
          version: '1.0.0',
-         type: WorkflowType.STANDALONE,
+         type: 'STANDALONE',
          createdAt: Date.now(),
          updatedAt: Date.now(),
          nodes: [
           {
             id: 'start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {} as any,
             outgoingEdgeIds: ['e1'],
@@ -521,7 +521,7 @@ describe('GraphBuilder', () => {
           },
           {
             id: 'llm',
-            type: NodeType.LLM,
+            type: 'LLM',
             name: 'LLM',
             config: { profileId: 'profile1' } as any,
             outgoingEdgeIds: ['e2', 'e3'],
@@ -529,7 +529,7 @@ describe('GraphBuilder', () => {
           },
           {
             id: 'end1',
-            type: NodeType.END,
+            type: 'END',
             name: 'End 1',
             config: {} as any,
             outgoingEdgeIds: [],
@@ -537,7 +537,7 @@ describe('GraphBuilder', () => {
           },
           {
             id: 'end2',
-            type: NodeType.END,
+            type: 'END',
             name: 'End 2',
             config: {} as any,
             outgoingEdgeIds: [],
@@ -590,13 +590,13 @@ describe('GraphBuilder', () => {
          name: 'Invalid Workflow',
          description: 'No start node',
          version: '1.0.0',
-         type: WorkflowType.STANDALONE,
+         type: 'STANDALONE',
          createdAt: Date.now(),
          updatedAt: Date.now(),
          nodes: [
           {
             id: 'llm',
-            type: NodeType.LLM,
+            type: 'LLM',
             name: 'LLM',
             config: { profileId: 'profile1' } as any,
             outgoingEdgeIds: ['e1'],
@@ -604,7 +604,7 @@ describe('GraphBuilder', () => {
           },
           {
             id: 'end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {} as any,
             outgoingEdgeIds: [],
@@ -690,13 +690,13 @@ describe('GraphBuilder', () => {
          name: 'Invalid Subgraph',
          description: 'Test',
          version: '1.0.0',
-         type: WorkflowType.DEPENDENT,
+         type: 'DEPENDENT',
          createdAt: Date.now(),
          updatedAt: Date.now(),
          nodes: [
           {
             id: 'start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {} as any,
             outgoingEdgeIds: ['e1'],
@@ -704,7 +704,7 @@ describe('GraphBuilder', () => {
           },
           {
             id: 'subgraph',
-            type: NodeType.SUBGRAPH,
+            type: 'SUBGRAPH',
             name: 'Subgraph',
             config: {
               subgraphId: '',
@@ -715,7 +715,7 @@ describe('GraphBuilder', () => {
           },
           {
             id: 'end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {} as any,
             outgoingEdgeIds: [],

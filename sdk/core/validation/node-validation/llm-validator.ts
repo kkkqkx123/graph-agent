@@ -26,7 +26,7 @@ const llmNodeConfigSchema = z.object({
  * @returns 验证结果
  */
 export function validateLLMNode(node: Node): Result<Node, ConfigurationValidationError[]> {
-  if (node.type !== NodeType.LLM) {
+  if (node.type !== 'LLM') {
     return err([new ConfigurationValidationError(`Invalid node type for LLM validator: ${node.type}`, {
       configType: 'node',
       configPath: `node.${node.id}`

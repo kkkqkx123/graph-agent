@@ -96,7 +96,7 @@ const toolCallSchema: z.ZodType<LLMToolCall> = z.object({
  * 消息schema
  */
 const messageSchema: z.ZodType<LLMMessage> = z.object({
-  role: z.nativeEnum(MessageRole),
+  role: z.enum(['system', 'user', 'assistant', 'tool']),
   content: messageContentSchema,
   toolCalls: z.array(toolCallSchema).optional(),
   toolCallId: z.string().min(1, 'Tool call ID cannot be empty').optional().refine((val) => val === undefined || val.trim().length > 0, 'Tool call ID cannot be empty')
@@ -137,7 +137,7 @@ export class MessageValidator {
     if (!role) {
       return err([new SchemaValidationError('Message role is required', { field: 'role' })]);
     }
-    const roleSchema = z.nativeEnum(MessageRole);
+    const roleSchema = z.enum(['system', 'user', 'assistant', 'tool']);
     const result = roleSchema.safeParse(role);
     if (result.success) {
       return ok(role);

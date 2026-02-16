@@ -12,7 +12,7 @@ jest.setTimeout(1000);
 
 describe('EventEmitter', () => {
   const mockEvent: Event = {
-    type: EventType.THREAD_STARTED,
+    type: 'THREAD_STARTED',
     timestamp: 1234567890,
     workflowId: 'workflow-123',
     threadId: 'thread-123',
@@ -87,7 +87,7 @@ describe('EventEmitter', () => {
   describe('emitBatch', () => {
     it('应该按顺序触发多个事件', async () => {
       const nodeStartedEvent: Event = {
-        type: EventType.NODE_STARTED,
+        type: 'NODE_STARTED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -106,7 +106,7 @@ describe('EventEmitter', () => {
 
     it('应该在其中一个事件失败时继续处理其他事件', async () => {
       const nodeStartedEvent: Event = {
-        type: EventType.NODE_STARTED,
+        type: 'NODE_STARTED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -148,7 +148,7 @@ describe('EventEmitter', () => {
   describe('emitBatchParallel', () => {
     it('应该并行触发多个事件', async () => {
       const nodeStartedEvent: Event = {
-        type: EventType.NODE_STARTED,
+        type: 'NODE_STARTED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -156,7 +156,7 @@ describe('EventEmitter', () => {
         nodeType: 'LLM'
       } as any;
       const nodeCompletedEvent: Event = {
-        type: EventType.NODE_COMPLETED,
+        type: 'NODE_COMPLETED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -178,7 +178,7 @@ describe('EventEmitter', () => {
 
     it('应该在某个事件失败时继续处理其他事件', async () => {
       const nodeStartedEvent: Event = {
-        type: EventType.NODE_STARTED,
+        type: 'NODE_STARTED',
         timestamp: 1234567890,
         workflowId: 'workflow-123',
         threadId: 'thread-123',
@@ -354,13 +354,13 @@ describe('EventEmitter', () => {
       await eventEmitter.emitAndWaitForCallback(
         mockEventManager,
         mockEvent,
-        EventType.THREAD_COMPLETED,
+        'THREAD_COMPLETED',
         1000
       );
 
       expect(mockEventManager.emit).toHaveBeenCalledWith(mockEvent);
       expect(mockEventManager.waitFor).toHaveBeenCalledWith(
-        EventType.THREAD_COMPLETED,
+        'THREAD_COMPLETED',
         1000
       );
     });
@@ -370,7 +370,7 @@ describe('EventEmitter', () => {
         eventEmitter.emitAndWaitForCallback(
           undefined,
           mockEvent,
-          EventType.THREAD_COMPLETED
+          'THREAD_COMPLETED'
         )
       ).rejects.toThrow('EventManager is not available');
     });
@@ -382,11 +382,11 @@ describe('EventEmitter', () => {
       await eventEmitter.emitAndWaitForCallback(
         mockEventManager,
         mockEvent,
-        EventType.THREAD_COMPLETED
+        'THREAD_COMPLETED'
       );
 
       expect(mockEventManager.waitFor).toHaveBeenCalledWith(
-        EventType.THREAD_COMPLETED,
+        'THREAD_COMPLETED',
         30000
       );
     });
@@ -401,7 +401,7 @@ describe('EventEmitter', () => {
         eventEmitter.emitAndWaitForCallback(
           mockEventManager,
           mockEvent,
-          EventType.THREAD_COMPLETED,
+          'THREAD_COMPLETED',
           1000
         )
       ).rejects.toThrow('Timeout waiting for callback');
@@ -414,7 +414,7 @@ describe('EventEmitter', () => {
         eventEmitter.emitAndWaitForCallback(
           mockEventManager,
           mockEvent,
-          EventType.THREAD_COMPLETED
+          'THREAD_COMPLETED'
         )
       ).rejects.toThrow('Emit failed');
 

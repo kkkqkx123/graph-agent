@@ -10,7 +10,7 @@ describe('validateHook', () => {
 
   it('应该验证有效的Hook配置', () => {
     const validHook = {
-      hookType: HookType.BEFORE_EXECUTE,
+      hookType: 'BEFORE_EXECUTE',
       eventName: 'test-event',
       enabled: true,
       weight: 10,
@@ -24,7 +24,7 @@ describe('validateHook', () => {
 
   it('应该验证只有必填字段的Hook配置', () => {
     const minimalHook = {
-      hookType: HookType.AFTER_EXECUTE,
+      hookType: 'AFTER_EXECUTE',
       eventName: 'test-event'
     };
 
@@ -34,7 +34,7 @@ describe('validateHook', () => {
 
   it('应该拒绝缺少eventName的Hook', () => {
     const invalidHook = {
-      hookType: HookType.BEFORE_EXECUTE,
+      hookType: 'BEFORE_EXECUTE',
       eventName: ''
     };
 
@@ -61,7 +61,7 @@ describe('validateHook', () => {
 
   it('应该接受BEFORE_EXECUTE类型的Hook', () => {
     const hook = {
-      hookType: HookType.BEFORE_EXECUTE,
+      hookType: 'BEFORE_EXECUTE',
       eventName: 'before-event'
     };
 
@@ -71,7 +71,7 @@ describe('validateHook', () => {
 
   it('应该接受AFTER_EXECUTE类型的Hook', () => {
     const hook = {
-      hookType: HookType.AFTER_EXECUTE,
+      hookType: 'AFTER_EXECUTE',
       eventName: 'after-event'
     };
 
@@ -81,7 +81,7 @@ describe('validateHook', () => {
 
   it('应该接受enabled为false的Hook', () => {
     const hook = {
-      hookType: HookType.BEFORE_EXECUTE,
+      hookType: 'BEFORE_EXECUTE',
       eventName: 'test-event',
       enabled: false
     };
@@ -92,7 +92,7 @@ describe('validateHook', () => {
 
   it('应该接受负数weight', () => {
     const hook = {
-      hookType: HookType.BEFORE_EXECUTE,
+      hookType: 'BEFORE_EXECUTE',
       eventName: 'test-event',
       weight: -5
     };
@@ -103,7 +103,7 @@ describe('validateHook', () => {
 
   it('应该接受零weight', () => {
     const hook = {
-      hookType: HookType.BEFORE_EXECUTE,
+      hookType: 'BEFORE_EXECUTE',
       eventName: 'test-event',
       weight: 0
     };
@@ -114,7 +114,7 @@ describe('validateHook', () => {
 
   it('应该接受空condition', () => {
     const hook = {
-      hookType: HookType.BEFORE_EXECUTE,
+      hookType: 'BEFORE_EXECUTE',
       eventName: 'test-event'
     };
 
@@ -124,7 +124,7 @@ describe('validateHook', () => {
 
   it('应该接受空对象eventPayload', () => {
     const hook = {
-      hookType: HookType.BEFORE_EXECUTE,
+      hookType: 'BEFORE_EXECUTE',
       eventName: 'test-event',
       eventPayload: {}
     };
@@ -135,7 +135,7 @@ describe('validateHook', () => {
 
   it('应该接受复杂eventPayload', () => {
     const hook = {
-      hookType: HookType.BEFORE_EXECUTE,
+      hookType: 'BEFORE_EXECUTE',
       eventName: 'test-event',
       eventPayload: {
         nested: {
@@ -153,7 +153,7 @@ describe('validateHook', () => {
 
   it('应该在错误消息中包含正确的字段路径', () => {
     const invalidHook = {
-      hookType: HookType.BEFORE_EXECUTE,
+      hookType: 'BEFORE_EXECUTE',
       eventName: ''
     };
 
@@ -172,11 +172,11 @@ describe('validateHooks', () => {
   it('应该验证有效的Hook数组', () => {
     const validHooks = [
       {
-        hookType: HookType.BEFORE_EXECUTE,
+        hookType: 'BEFORE_EXECUTE',
         eventName: 'before-event'
       },
       {
-        hookType: HookType.AFTER_EXECUTE,
+        hookType: 'AFTER_EXECUTE',
         eventName: 'after-event',
         enabled: true,
         weight: 5
@@ -231,12 +231,12 @@ describe('validateHooks', () => {
   it('应该跳过数组中的null元素', () => {
     const hooksWithNull = [
       {
-        hookType: HookType.BEFORE_EXECUTE,
+        hookType: 'BEFORE_EXECUTE',
         eventName: 'valid-event'
       },
       null as any,
       {
-        hookType: HookType.AFTER_EXECUTE,
+        hookType: 'AFTER_EXECUTE',
         eventName: 'another-event'
       }
     ];
@@ -248,12 +248,12 @@ describe('validateHooks', () => {
   it('应该跳过数组中的undefined元素', () => {
     const hooksWithUndefined = [
       {
-        hookType: HookType.BEFORE_EXECUTE,
+        hookType: 'BEFORE_EXECUTE',
         eventName: 'valid-event'
       },
       undefined as any,
       {
-        hookType: HookType.AFTER_EXECUTE,
+        hookType: 'AFTER_EXECUTE',
         eventName: 'another-event'
       }
     ];
@@ -265,11 +265,11 @@ describe('validateHooks', () => {
   it('应该拒绝数组中包含无效的Hook', () => {
     const invalidHooks = [
       {
-        hookType: HookType.BEFORE_EXECUTE,
+        hookType: 'BEFORE_EXECUTE',
         eventName: 'valid-event'
       },
       {
-        hookType: HookType.AFTER_EXECUTE,
+        hookType: 'AFTER_EXECUTE',
         eventName: '' // 无效：eventName为空
       }
     ];
@@ -284,17 +284,17 @@ describe('validateHooks', () => {
   it('应该验证包含多个Hook的数组', () => {
     const multipleHooks = [
       {
-        hookType: HookType.BEFORE_EXECUTE,
+        hookType: 'BEFORE_EXECUTE',
         eventName: 'event-1',
         weight: 10
       },
       {
-        hookType: HookType.BEFORE_EXECUTE,
+        hookType: 'BEFORE_EXECUTE',
         eventName: 'event-2',
         weight: 5
       },
       {
-        hookType: HookType.AFTER_EXECUTE,
+        hookType: 'AFTER_EXECUTE',
         eventName: 'event-3',
         weight: 15
       }
@@ -307,11 +307,11 @@ describe('validateHooks', () => {
   it('应该在错误消息中包含正确的字段路径', () => {
     const invalidHooks = [
       {
-        hookType: HookType.BEFORE_EXECUTE,
+        hookType: 'BEFORE_EXECUTE',
         eventName: 'valid-event'
       },
       {
-        hookType: HookType.AFTER_EXECUTE,
+        hookType: 'AFTER_EXECUTE',
         eventName: ''
       }
     ];
@@ -327,7 +327,7 @@ describe('validateHooks', () => {
   it('应该接受包含所有可选字段的Hook数组', () => {
     const completeHooks = [
       {
-        hookType: HookType.BEFORE_EXECUTE,
+        hookType: 'BEFORE_EXECUTE',
         eventName: 'complete-event-1',
         enabled: true,
         weight: 100,
@@ -335,7 +335,7 @@ describe('validateHooks', () => {
         eventPayload: { action: 'start', timestamp: Date.now() }
       },
       {
-        hookType: HookType.AFTER_EXECUTE,
+        hookType: 'AFTER_EXECUTE',
         eventName: 'complete-event-2',
         enabled: false,
         weight: -50,

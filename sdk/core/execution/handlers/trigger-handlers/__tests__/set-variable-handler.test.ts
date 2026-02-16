@@ -19,7 +19,7 @@ describe('set-variable-handler', () => {
 
   beforeEach(() => {
     mockAction = {
-      type: TriggerActionType.SET_VARIABLE,
+      type: 'set_variable',
       parameters: {
         threadId,
         variables: {

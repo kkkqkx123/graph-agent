@@ -229,7 +229,7 @@ export class HumanRelayResourceAPI extends GenericResourceAPI<HumanRelayConfig, 
    * @param listener 事件监听器
    */
   onRelayRequested(listener: (event: HumanRelayRequestedEvent) => void): void {
-    this.dependencies.getEventManager().on(EventType.HUMAN_RELAY_REQUESTED, listener);
+    this.dependencies.getEventManager().on('HUMAN_RELAY_REQUESTED', listener);
   }
 
   /**
@@ -237,7 +237,7 @@ export class HumanRelayResourceAPI extends GenericResourceAPI<HumanRelayConfig, 
    * @param listener 事件监听器
    */
   offRelayRequested(listener: (event: HumanRelayRequestedEvent) => void): void {
-    this.dependencies.getEventManager().off(EventType.HUMAN_RELAY_REQUESTED, listener);
+    this.dependencies.getEventManager().off('HUMAN_RELAY_REQUESTED', listener);
   }
 
   /**
@@ -245,7 +245,7 @@ export class HumanRelayResourceAPI extends GenericResourceAPI<HumanRelayConfig, 
    * @param listener 事件监听器
    */
   onRelayResponded(listener: (event: HumanRelayRespondedEvent) => void): void {
-    this.dependencies.getEventManager().on(EventType.HUMAN_RELAY_RESPONDED, listener);
+    this.dependencies.getEventManager().on('HUMAN_RELAY_RESPONDED', listener);
   }
 
   /**
@@ -253,7 +253,7 @@ export class HumanRelayResourceAPI extends GenericResourceAPI<HumanRelayConfig, 
    * @param listener 事件监听器
    */
   offRelayResponded(listener: (event: HumanRelayRespondedEvent) => void): void {
-    this.dependencies.getEventManager().off(EventType.HUMAN_RELAY_RESPONDED, listener);
+    this.dependencies.getEventManager().off('HUMAN_RELAY_RESPONDED', listener);
   }
 
   /**
@@ -261,7 +261,7 @@ export class HumanRelayResourceAPI extends GenericResourceAPI<HumanRelayConfig, 
    * @param listener 事件监听器
    */
   onRelayProcessed(listener: (event: HumanRelayProcessedEvent) => void): void {
-    this.dependencies.getEventManager().on(EventType.HUMAN_RELAY_PROCESSED, listener);
+    this.dependencies.getEventManager().on('HUMAN_RELAY_PROCESSED', listener);
   }
 
   /**
@@ -269,7 +269,7 @@ export class HumanRelayResourceAPI extends GenericResourceAPI<HumanRelayConfig, 
    * @param listener 事件监听器
    */
   offRelayProcessed(listener: (event: HumanRelayProcessedEvent) => void): void {
-    this.dependencies.getEventManager().off(EventType.HUMAN_RELAY_PROCESSED, listener);
+    this.dependencies.getEventManager().off('HUMAN_RELAY_PROCESSED', listener);
   }
 
   /**
@@ -277,7 +277,7 @@ export class HumanRelayResourceAPI extends GenericResourceAPI<HumanRelayConfig, 
    * @param listener 事件监听器
    */
   onRelayFailed(listener: (event: HumanRelayFailedEvent) => void): void {
-    this.dependencies.getEventManager().on(EventType.HUMAN_RELAY_FAILED, listener);
+    this.dependencies.getEventManager().on('HUMAN_RELAY_FAILED', listener);
   }
 
   /**
@@ -285,7 +285,7 @@ export class HumanRelayResourceAPI extends GenericResourceAPI<HumanRelayConfig, 
    * @param listener 事件监听器
    */
   offRelayFailed(listener: (event: HumanRelayFailedEvent) => void): void {
-    this.dependencies.getEventManager().off(EventType.HUMAN_RELAY_FAILED, listener);
+    this.dependencies.getEventManager().off('HUMAN_RELAY_FAILED', listener);
   }
 
   // ============================================================================

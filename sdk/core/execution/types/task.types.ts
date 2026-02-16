@@ -11,34 +11,23 @@ import type { ThreadContext } from '../context/thread-context';
 import type { ThreadResult } from '@modular-agent/types';
 
 /**
- * 任务状态枚举
+ * 任务状态
  */
-export enum TaskStatus {
-  /** 已排队，等待执行 */
-  QUEUED = 'QUEUED',
-  /** 正在执行 */
-  RUNNING = 'RUNNING',
-  /** 执行完成 */
-  COMPLETED = 'COMPLETED',
-  /** 执行失败 */
-  FAILED = 'FAILED',
-  /** 已取消 */
-  CANCELLED = 'CANCELLED',
-  /** 执行超时 */
-  TIMEOUT = 'TIMEOUT'
-}
+export type TaskStatus =
+  | 'QUEUED'      /** 已排队，等待执行 */
+  | 'RUNNING'     /** 正在执行 */
+  | 'COMPLETED'   /** 执行完成 */
+  | 'FAILED'      /** 执行失败 */
+  | 'CANCELLED'   /** 已取消 */
+  | 'TIMEOUT';    /** 执行超时 */
 
 /**
- * 执行器状态枚举
+ * 执行器状态
  */
-export enum WorkerStatus {
-  /** 空闲，可以接受新任务 */
-  IDLE = 'IDLE',
-  /** 忙碌，正在执行任务 */
-  BUSY = 'BUSY',
-  /** 正在关闭 */
-  SHUTTING_DOWN = 'SHUTTING_DOWN'
-}
+export type WorkerStatus =
+  | 'IDLE'           /** 空闲，可以接受新任务 */
+  | 'BUSY'           /** 忙碌，正在执行任务 */
+  | 'SHUTTING_DOWN'; /** 正在关闭 */
 
 /**
  * 任务信息接口

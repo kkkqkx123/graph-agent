@@ -130,7 +130,7 @@ describe('context-processor-handler', () => {
       id: 'thread-1',
       workflowId: 'workflow-1',
       workflowVersion: '1.0.0',
-      status: ThreadStatus.RUNNING,
+      status: 'RUNNING',
       currentNodeId: '',
       graph: {} as any,
       variables: [],
@@ -164,7 +164,7 @@ describe('context-processor-handler', () => {
       mockNode = {
         id: 'context-processor-node-1',
         name: 'Context Processor Node',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'truncate',
           truncate: {
@@ -191,7 +191,7 @@ describe('context-processor-handler', () => {
       mockNode = {
         id: 'context-processor-node-1',
         name: 'Context Processor Node',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'truncate',
           truncate: {
@@ -217,7 +217,7 @@ describe('context-processor-handler', () => {
       mockNode = {
         id: 'context-processor-node-1',
         name: 'Context Processor Node',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'truncate',
           truncate: {
@@ -242,7 +242,7 @@ describe('context-processor-handler', () => {
       mockNode = {
         id: 'context-processor-node-1',
         name: 'Context Processor Node',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'truncate',
           truncate: {
@@ -267,7 +267,7 @@ describe('context-processor-handler', () => {
       mockNode = {
         id: 'context-processor-node-1',
         name: 'Context Processor Node',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'truncate',
           truncate: {
@@ -293,7 +293,7 @@ describe('context-processor-handler', () => {
       mockNode = {
         id: 'context-processor-node-1',
         name: 'Context Processor Node',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'truncate'
         } as ContextProcessorNodeConfig,
@@ -310,7 +310,7 @@ describe('context-processor-handler', () => {
       mockNode = {
         id: 'context-processor-node-1',
         name: 'Context Processor Node',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'truncate',
           truncate: {
@@ -337,7 +337,7 @@ describe('context-processor-handler', () => {
       mockNode = {
         id: 'context-processor-node-1',
         name: 'Context Processor Node',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'truncate',
           truncate: {
@@ -364,7 +364,7 @@ describe('context-processor-handler', () => {
       mockNode = {
         id: 'context-processor-node-1',
         name: 'Context Processor Node',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'truncate',
           truncate: {
@@ -395,7 +395,7 @@ describe('context-processor-handler', () => {
       mockNode = {
         id: 'context-processor-node-1',
         name: 'Context Processor Node',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'insert',
           insert: {
@@ -424,7 +424,7 @@ describe('context-processor-handler', () => {
       mockNode = {
         id: 'context-processor-node-1',
         name: 'Context Processor Node',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'insert',
           insert: {
@@ -452,7 +452,7 @@ describe('context-processor-handler', () => {
       mockNode = {
         id: 'context-processor-node-1',
         name: 'Context Processor Node',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'insert'
         } as ContextProcessorNodeConfig,
@@ -473,7 +473,7 @@ describe('context-processor-handler', () => {
       mockNode = {
         id: 'context-processor-node-1',
         name: 'Context Processor Node',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'replace',
           replace: {
@@ -502,7 +502,7 @@ describe('context-processor-handler', () => {
       mockNode = {
         id: 'context-processor-node-1',
         name: 'Context Processor Node',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'replace',
           replace: {
@@ -523,7 +523,7 @@ describe('context-processor-handler', () => {
       mockNode = {
         id: 'context-processor-node-1',
         name: 'Context Processor Node',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'replace'
         } as ContextProcessorNodeConfig,
@@ -542,7 +542,7 @@ describe('context-processor-handler', () => {
       mockNode = {
         id: 'context-processor-node-1',
         name: 'Context Processor Node',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'clear',
           clear: {
@@ -568,7 +568,7 @@ describe('context-processor-handler', () => {
       mockNode = {
         id: 'context-processor-node-1',
         name: 'Context Processor Node',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'clear',
           clear: {
@@ -595,7 +595,7 @@ describe('context-processor-handler', () => {
       mockNode = {
         id: 'context-processor-node-1',
         name: 'Context Processor Node',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'filter',
           filter: {
@@ -620,7 +620,7 @@ describe('context-processor-handler', () => {
       mockNode = {
         id: 'context-processor-node-1',
         name: 'Context Processor Node',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'filter',
           filter: {
@@ -647,7 +647,7 @@ describe('context-processor-handler', () => {
       mockNode = {
         id: 'context-processor-node-1',
         name: 'Context Processor Node',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'filter',
           filter: {
@@ -673,7 +673,7 @@ describe('context-processor-handler', () => {
       mockNode = {
         id: 'context-processor-node-1',
         name: 'Context Processor Node',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'filter'
         } as ContextProcessorNodeConfig,
@@ -692,7 +692,7 @@ describe('context-processor-handler', () => {
       mockNode = {
         id: 'context-processor-node-1',
         name: 'Context Processor Node',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'unsupported' as any
         } as ContextProcessorNodeConfig,
@@ -709,7 +709,7 @@ describe('context-processor-handler', () => {
       mockNode = {
         id: 'context-processor-node-1',
         name: 'Context Processor Node',
-        type: NodeType.CONTEXT_PROCESSOR,
+        type: 'CONTEXT_PROCESSOR',
         config: {
           operation: 'truncate',
           truncate: {

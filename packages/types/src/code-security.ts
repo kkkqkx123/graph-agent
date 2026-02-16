@@ -4,18 +4,17 @@
  */
 
 /**
- * 代码风险等级枚举
+ * 代码风险等级
  */
-export enum CodeRiskLevel {
+export type CodeRiskLevel =
   /** 无风险 - 不进行任何安全检查 */
-  NONE = 'none',
+  'none' |
   /** 低风险 - 基础路径检查 */
-  LOW = 'low',
+  'low' |
   /** 中风险 - 危险命令检查 */
-  MEDIUM = 'medium',
+  'medium' |
   /** 高风险 - 记录警告日志，应用层应实现沙箱执行等额外安全措施 */
-  HIGH = 'high'
-}
+  'high';
 
 /**
  * 验证结果

@@ -45,7 +45,7 @@ describe('MessageManagerAPI', () => {
         {
           id: 'start',
           name: 'Start',
-          type: NodeType.START,
+          type: 'START',
           config: {},
           incomingEdgeIds: [],
           outgoingEdgeIds: ['edge1']
@@ -53,7 +53,7 @@ describe('MessageManagerAPI', () => {
         {
           id: 'end',
           name: 'End',
-          type: NodeType.END,
+          type: 'END',
           config: {},
           incomingEdgeIds: ['edge1'],
           outgoingEdgeIds: []
@@ -85,7 +85,7 @@ describe('MessageManagerAPI', () => {
       id: threadId,
       workflowId: workflow.id,
       workflowVersion: workflow.version,
-      status: ThreadStatus.RUNNING,
+      status: 'RUNNING',
       currentNodeId: 'start',
       graph,
       variables: [],

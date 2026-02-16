@@ -9,14 +9,13 @@ import type { VariableScope } from './thread/scopes';
 /**
  * 用户交互操作类型
  */
-export enum UserInteractionOperationType {
+export type UserInteractionOperationType =
   /** 更新工作流变量 */
-  UPDATE_VARIABLES = 'UPDATE_VARIABLES',
+  'UPDATE_VARIABLES' |
   /** 添加用户消息到 LLM 对话 */
-  ADD_MESSAGE = 'ADD_MESSAGE',
+  'ADD_MESSAGE' |
   /** 工具调用审批 */
-  TOOL_APPROVAL = 'TOOL_APPROVAL'
-}
+  'TOOL_APPROVAL';
 
 /**
  * 变量更新配置

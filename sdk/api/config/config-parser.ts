@@ -38,7 +38,7 @@ export class ConfigParser implements IConfigParser {
    * @param format 配置格式
    * @returns 解析后的配置对象
    */
-  parse<T extends ConfigType = ConfigType.WORKFLOW>(
+  parse<T extends ConfigType = 'workflow'>(
     content: string,
     format: ConfigFormat,
     configType?: T
@@ -47,10 +47,10 @@ export class ConfigParser implements IConfigParser {
 
     // 根据格式选择解析器
     switch (format) {
-      case ConfigFormat.TOML:
+      case 'toml':
         config = parseToml(content);
         break;
-      case ConfigFormat.JSON:
+      case 'json':
         config = parseJson(content);
         break;
       default:
@@ -61,7 +61,7 @@ export class ConfigParser implements IConfigParser {
     }
 
     return {
-      configType: (configType || ConfigType.WORKFLOW) as T,
+      configType: (configType || 'workflow') as T,
       format,
       config: config as any,
       rawContent: content
@@ -76,16 +76,16 @@ export class ConfigParser implements IConfigParser {
    */
   validate<T extends ConfigType>(config: ParsedConfig<T>) {
     switch (config.configType) {
-      case ConfigType.WORKFLOW:
-        return validateWorkflow(config as ParsedConfig<ConfigType.WORKFLOW>);
-      case ConfigType.NODE_TEMPLATE:
-        return validateNodeTemplate(config as ParsedConfig<ConfigType.NODE_TEMPLATE>);
-      case ConfigType.SCRIPT:
-        return validateScript(config as ParsedConfig<ConfigType.SCRIPT>);
-      case ConfigType.TRIGGER_TEMPLATE:
-        return validateTriggerTemplate(config as ParsedConfig<ConfigType.TRIGGER_TEMPLATE>);
-      case ConfigType.LLM_PROFILE:
-        return validateLLMProfile(config as ParsedConfig<ConfigType.LLM_PROFILE>);
+      case 'workflow':
+        return validateWorkflow(config as ParsedConfig<'workflow'>);
+      case 'node_template':
+        return validateNodeTemplate(config as ParsedConfig<'node_template'>);
+      case 'script':
+        return validateScript(config as ParsedConfig<'script'>);
+      case 'trigger_template':
+        return validateTriggerTemplate(config as ParsedConfig<'trigger_template'>);
+      case 'llm_profile':
+        return validateLLMProfile(config as ParsedConfig<'llm_profile'>);
       default:
         throw new ConfigurationError(
           `未找到配置类型 ${config.configType} 的处理器`,
@@ -139,7 +139,7 @@ export class ConfigParser implements IConfigParser {
     const { transformWorkflow } = require('./processors/workflow');
     
     // 解析配置
-    const parsedConfig = this.parse(content, format, ConfigType.WORKFLOW);
+    const parsedConfig = this.parse(content, format, 'workflow');
     
     // 转换为WorkflowDefinition
     return transformWorkflow(parsedConfig, parameters);

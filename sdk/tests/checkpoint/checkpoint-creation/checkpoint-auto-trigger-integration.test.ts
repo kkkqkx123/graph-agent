@@ -70,17 +70,17 @@ describe('检查点自动触发机制集成测试', () => {
         }
       },
       getSupportedTypes() {
-        return [ScriptType.JAVASCRIPT];
+        return ['JAVASCRIPT'];
       }
     };
 
-    codeService.registerExecutor(ScriptType.JAVASCRIPT, javascriptExecutor);
+    codeService.registerExecutor('JAVASCRIPT', javascriptExecutor);
 
     if (!codeService.hasScript('test-process')) {
       codeService.registerScript({
         id: generateId(),
         name: 'test-process',
-        type: ScriptType.JAVASCRIPT,
+        type: 'JAVASCRIPT',
         description: 'Test script for auto-trigger checkpoint',
         content: '({ result: "process completed" })',
         options: { timeout: 5000 }
@@ -118,7 +118,7 @@ describe('检查点自动触发机制集成测试', () => {
     const nodes: Node[] = [
       {
         id: `${id}-start`,
-        type: NodeType.START,
+        type: 'START',
         name: 'Start',
         config: {},
         outgoingEdgeIds: [`${id}-edge-1`],
@@ -126,7 +126,7 @@ describe('检查点自动触发机制集成测试', () => {
       },
       {
         id: `${id}-process`,
-        type: NodeType.CODE,
+        type: 'CODE',
         name: 'Process',
         config: {
           scriptName: 'test-process',
@@ -138,7 +138,7 @@ describe('检查点自动触发机制集成测试', () => {
       },
       {
         id: `${id}-end`,
-        type: NodeType.END,
+        type: 'END',
         name: 'End',
         config: {},
         outgoingEdgeIds: [],
@@ -154,7 +154,7 @@ describe('检查点自动触发机制集成测试', () => {
     return {
       id,
       name,
-      type: WorkflowType.STANDALONE,
+      type: 'STANDALONE',
       version: '1.0.0',
       description: 'Workflow with checkpoint configuration',
       nodes,
@@ -399,7 +399,7 @@ describe('检查点自动触发机制集成测试', () => {
       const { resolveCheckpointConfig } = await import('../../../core/execution/handlers/checkpoint-handlers/checkpoint-config-resolver');
       const nodeConfig = workflow.nodes.find(n => n.id === `${workflowId}-process`);
       const hookConfig = {
-        hookType: HookType.BEFORE_EXECUTE,
+        hookType: 'BEFORE_EXECUTE',
         eventName: 'test_event',
         createCheckpoint: false, // Hook 配置禁用检查点
         checkpointDescription: 'Hook checkpoint'
@@ -447,7 +447,7 @@ describe('检查点自动触发机制集成测试', () => {
       const { resolveCheckpointConfig } = await import('../../../core/execution/handlers/checkpoint-handlers/checkpoint-config-resolver');
       const nodeConfig = workflow.nodes.find(n => n.id === `${workflowId}-process`);
       const hookConfig = {
-        hookType: HookType.AFTER_EXECUTE,
+        hookType: 'AFTER_EXECUTE',
         eventName: 'test_event',
         createCheckpoint: true, // Hook 配置启用检查点
         checkpointDescription: 'Hook enabled checkpoint'

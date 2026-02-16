@@ -101,7 +101,7 @@ export class ThreadPoolManager {
     const wrapper: ExecutorWrapper = {
       executorId,
       executor,
-      status: WorkerStatus.IDLE,
+      status: 'IDLE',
       lastUsedTime: Date.now()
     };
 
@@ -129,7 +129,7 @@ export class ThreadPoolManager {
       }
 
       // 更新状态
-      wrapper.status = WorkerStatus.BUSY;
+      wrapper.status = 'BUSY';
       wrapper.lastUsedTime = Date.now();
       this.busyExecutors.add(executorId);
 
@@ -142,7 +142,7 @@ export class ThreadPoolManager {
       this.allExecutors.set(wrapper.executorId, wrapper);
       
       // 更新状态
-      wrapper.status = WorkerStatus.BUSY;
+      wrapper.status = 'BUSY';
       wrapper.lastUsedTime = Date.now();
       this.busyExecutors.add(wrapper.executorId);
 
@@ -186,7 +186,7 @@ export class ThreadPoolManager {
     // 检查是否有等待的 Promise
     if (this.waitingPromises.length > 0) {
       const waiting = this.waitingPromises.shift()!;
-      wrapper.status = WorkerStatus.BUSY;
+      wrapper.status = 'BUSY';
       wrapper.lastUsedTime = Date.now();
       this.busyExecutors.add(executorId);
       waiting.resolve(wrapper.executor);
@@ -194,7 +194,7 @@ export class ThreadPoolManager {
     }
 
     // 加入空闲队列
-    wrapper.status = WorkerStatus.IDLE;
+    wrapper.status = 'IDLE';
     wrapper.lastUsedTime = Date.now();
     this.idleExecutors.push(executorId);
 

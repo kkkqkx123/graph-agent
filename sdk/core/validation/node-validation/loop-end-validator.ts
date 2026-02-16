@@ -28,7 +28,7 @@ const loopEndNodeConfigSchema = z.object({
  * @returns 验证结果
  */
 export function validateLoopEndNode(node: Node): Result<Node, ConfigurationValidationError[]> {
-  if (node.type !== NodeType.LOOP_END) {
+  if (node.type !== 'LOOP_END') {
     return err([new ConfigurationValidationError(`Invalid node type for loop end validator: ${node.type}`, {
       configType: 'node',
       configPath: `node.${node.id}`

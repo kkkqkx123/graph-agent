@@ -15,9 +15,9 @@ function createLinearGraph(): GraphData {
   const graph = new GraphData();
 
   const nodes: GraphNode[] = [
-    { id: 'start', type: NodeType.START, name: 'Start', workflowId: 'wf1' },
-    { id: 'llm', type: NodeType.LLM, name: 'LLM', workflowId: 'wf1' },
-    { id: 'end', type: NodeType.END, name: 'End', workflowId: 'wf1' },
+    { id: 'start', type: 'START', name: 'Start', workflowId: 'wf1' },
+    { id: 'llm', type: 'LLM', name: 'LLM', workflowId: 'wf1' },
+    { id: 'end', type: 'END', name: 'End', workflowId: 'wf1' },
   ];
 
   const edges: GraphEdge[] = [
@@ -46,11 +46,11 @@ function createBranchGraph(): GraphData {
   const graph = new GraphData();
 
   const nodes: GraphNode[] = [
-    { id: 'start', type: NodeType.START, name: 'Start', workflowId: 'wf1' },
-    { id: 'route', type: NodeType.ROUTE, name: 'Route', workflowId: 'wf1' },
-    { id: 'llm1', type: NodeType.LLM, name: 'LLM1', workflowId: 'wf1' },
-    { id: 'llm2', type: NodeType.LLM, name: 'LLM2', workflowId: 'wf1' },
-    { id: 'end', type: NodeType.END, name: 'End', workflowId: 'wf1' },
+    { id: 'start', type: 'START', name: 'Start', workflowId: 'wf1' },
+    { id: 'route', type: 'ROUTE', name: 'Route', workflowId: 'wf1' },
+    { id: 'llm1', type: 'LLM', name: 'LLM1', workflowId: 'wf1' },
+    { id: 'llm2', type: 'LLM', name: 'LLM2', workflowId: 'wf1' },
+    { id: 'end', type: 'END', name: 'End', workflowId: 'wf1' },
   ];
 
   const condition1: Condition = {
@@ -116,12 +116,12 @@ function createForkJoinGraph(): GraphData {
   const graph = new GraphData();
 
   const nodes: GraphNode[] = [
-    { id: 'start', type: NodeType.START, name: 'Start', workflowId: 'wf1' },
-    { id: 'fork', type: NodeType.FORK, name: 'Fork', workflowId: 'wf1' },
-    { id: 'llm1', type: NodeType.LLM, name: 'LLM1', workflowId: 'wf1' },
-    { id: 'llm2', type: NodeType.LLM, name: 'LLM2', workflowId: 'wf1' },
-    { id: 'join', type: NodeType.JOIN, name: 'Join', workflowId: 'wf1' },
-    { id: 'end', type: NodeType.END, name: 'End', workflowId: 'wf1' },
+    { id: 'start', type: 'START', name: 'Start', workflowId: 'wf1' },
+    { id: 'fork', type: 'FORK', name: 'Fork', workflowId: 'wf1' },
+    { id: 'llm1', type: 'LLM', name: 'LLM1', workflowId: 'wf1' },
+    { id: 'llm2', type: 'LLM', name: 'LLM2', workflowId: 'wf1' },
+    { id: 'join', type: 'JOIN', name: 'Join', workflowId: 'wf1' },
+    { id: 'end', type: 'END', name: 'End', workflowId: 'wf1' },
   ];
 
   const edges: GraphEdge[] = [
@@ -154,11 +154,11 @@ function createComplexGraph(): GraphData {
   const graph = new GraphData();
 
   const nodes: GraphNode[] = [
-    { id: 'start', type: NodeType.START, name: 'Start', workflowId: 'wf1' },
-    { id: 'llm1', type: NodeType.LLM, name: 'LLM1', workflowId: 'wf1' },
-    { id: 'llm2', type: NodeType.LLM, name: 'LLM2', workflowId: 'wf1' },
-    { id: 'llm3', type: NodeType.LLM, name: 'LLM3', workflowId: 'wf1' },
-    { id: 'end', type: NodeType.END, name: 'End', workflowId: 'wf1' },
+    { id: 'start', type: 'START', name: 'Start', workflowId: 'wf1' },
+    { id: 'llm1', type: 'LLM', name: 'LLM1', workflowId: 'wf1' },
+    { id: 'llm2', type: 'LLM', name: 'LLM2', workflowId: 'wf1' },
+    { id: 'llm3', type: 'LLM', name: 'LLM3', workflowId: 'wf1' },
+    { id: 'end', type: 'END', name: 'End', workflowId: 'wf1' },
   ];
 
   const edges: GraphEdge[] = [
@@ -346,7 +346,7 @@ describe('GraphNavigator', () => {
       const result = navigator.selectNextNodeWithContext(
         'route',
         mockThread,
-        NodeType.ROUTE,
+        'ROUTE',
         lastNodeResult
       );
 
@@ -371,7 +371,7 @@ describe('GraphNavigator', () => {
       const result = navigator.selectNextNodeWithContext(
         'route',
         mockThread,
-        NodeType.ROUTE,
+        'ROUTE',
         undefined
       );
 
@@ -396,7 +396,7 @@ describe('GraphNavigator', () => {
       const result = navigator.selectNextNodeWithContext(
         'end',
         mockThread,
-        NodeType.END
+        'END'
       );
 
       expect(result).toBeNull();
@@ -420,7 +420,7 @@ describe('GraphNavigator', () => {
       const result = navigator.selectNextNodeWithContext(
         'start',
         mockThread,
-        NodeType.START
+        'START'
       );
 
       expect(result).toBe('llm');
@@ -535,9 +535,9 @@ describe('GraphNavigator', () => {
       const graph = new GraphData();
 
       const nodes: GraphNode[] = [
-        { id: 'start', type: NodeType.START, name: 'Start', workflowId: 'wf1' },
-        { id: 'llm', type: NodeType.LLM, name: 'LLM', workflowId: 'wf1' },
-        { id: 'end', type: NodeType.END, name: 'End', workflowId: 'wf1' },
+        { id: 'start', type: 'START', name: 'Start', workflowId: 'wf1' },
+        { id: 'llm', type: 'LLM', name: 'LLM', workflowId: 'wf1' },
+        { id: 'end', type: 'END', name: 'End', workflowId: 'wf1' },
       ];
 
       const edges: GraphEdge[] = [

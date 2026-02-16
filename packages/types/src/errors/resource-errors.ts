@@ -22,7 +22,7 @@ export class WorkflowNotFoundError extends NotFoundError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.WARNING;
+    return 'warning';
   }
 }
 
@@ -43,7 +43,7 @@ export class NodeNotFoundError extends NotFoundError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.WARNING;
+    return 'warning';
   }
 }
 
@@ -64,7 +64,7 @@ export class ToolNotFoundError extends NotFoundError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.WARNING;
+    return 'warning';
   }
 }
 
@@ -85,7 +85,7 @@ export class ScriptNotFoundError extends NotFoundError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.WARNING;
+    return 'warning';
   }
 }
 
@@ -106,7 +106,7 @@ export class ThreadContextNotFoundError extends NotFoundError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.WARNING;
+    return 'warning';
   }
 }
 
@@ -127,7 +127,7 @@ export class CheckpointNotFoundError extends NotFoundError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.WARNING;
+    return 'warning';
   }
 }
 
@@ -148,7 +148,7 @@ export class TriggerTemplateNotFoundError extends NotFoundError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.WARNING;
+    return 'warning';
   }
 }
 
@@ -169,6 +169,6 @@ export class NodeTemplateNotFoundError extends NotFoundError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.WARNING;
+    return 'warning';
   }
 }

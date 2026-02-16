@@ -85,7 +85,7 @@ describe('NodeExecutionCoordinator', () => {
   describe('executeNode', () => {
     const mockNode = {
       id: 'node-1',
-      type: NodeType.LLM,
+      type: 'LLM',
       name: 'Test Node',
       config: {},
       outgoingEdgeIds: [],
@@ -107,20 +107,20 @@ describe('NodeExecutionCoordinator', () => {
       // 验证结果
       expect(result.status).toBe('COMPLETED');
       expect(result.nodeId).toBe('node-1');
-      expect(result.nodeType).toBe(NodeType.LLM);
+      expect(result.nodeType).toBe('LLM');
 
       // 验证事件触发
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.NODE_STARTED,
+          type: 'NODE_STARTED',
           nodeId: 'node-1',
-          nodeType: NodeType.LLM
+          nodeType: 'LLM'
         })
       );
 
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.NODE_COMPLETED,
+          type: 'NODE_COMPLETED',
           nodeId: 'node-1',
           output: undefined
         })
@@ -146,7 +146,7 @@ describe('NodeExecutionCoordinator', () => {
       // 验证失败事件触发
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.NODE_FAILED,
+          type: 'NODE_FAILED',
           nodeId: 'node-1',
           error: expect.any(Error)
         })
@@ -158,12 +158,12 @@ describe('NodeExecutionCoordinator', () => {
         ...mockNode,
         hooks: [
           {
-            hookType: HookType.BEFORE_EXECUTE,
+            hookType: 'BEFORE_EXECUTE',
             eventName: 'before_execute_log',
             eventPayload: { message: 'Before execution' }
           },
           {
-            hookType: HookType.AFTER_EXECUTE,
+            hookType: 'AFTER_EXECUTE',
             eventName: 'after_execute_log',
             eventPayload: { message: 'After execution' }
           }
@@ -249,7 +249,7 @@ describe('NodeExecutionCoordinator', () => {
       // 验证子图开始事件
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.SUBGRAPH_STARTED,
+          type: 'SUBGRAPH_STARTED',
           subgraphId: 'subgraph-1',
           parentWorkflowId: 'workflow-1',
           input: { input: 'test' }
@@ -259,9 +259,9 @@ describe('NodeExecutionCoordinator', () => {
 
     it('应该处理不同类型的节点', async () => {
       const nodeTypes = [
-        NodeType.LLM,
-        NodeType.USER_INTERACTION,
-        NodeType.CONTEXT_PROCESSOR
+        'LLM',
+        'USER_INTERACTION',
+        'CONTEXT_PROCESSOR'
       ];
 
       for (const nodeType of nodeTypes) {
@@ -285,7 +285,7 @@ describe('NodeExecutionCoordinator', () => {
         // 验证节点类型正确传递
         expect(mockEventManager.emit).toHaveBeenCalledWith(
           expect.objectContaining({
-            type: EventType.NODE_STARTED,
+            type: 'NODE_STARTED',
             nodeType: nodeType
           })
         );
@@ -295,7 +295,7 @@ describe('NodeExecutionCoordinator', () => {
     it('应该处理用户交互节点缺少处理程序的情况', async () => {
       const userInteractionNode = {
         ...mockNode,
-        type: NodeType.USER_INTERACTION
+        type: 'USER_INTERACTION'
       };
 
       // 创建没有用户交互处理程序的协调器
@@ -369,7 +369,7 @@ describe('NodeExecutionCoordinator', () => {
       // 验证子图开始事件
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.SUBGRAPH_STARTED,
+          type: 'SUBGRAPH_STARTED',
           subgraphId: 'subgraph-1',
           parentWorkflowId: 'workflow-1',
           input: { input: 'test' }
@@ -403,7 +403,7 @@ describe('NodeExecutionCoordinator', () => {
       // 验证子图完成事件
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.SUBGRAPH_COMPLETED,
+          type: 'SUBGRAPH_COMPLETED',
           subgraphId: 'subgraph-1',
           output: { output: 'result' },
           executionTime: expect.any(Number)
@@ -436,20 +436,20 @@ describe('NodeExecutionCoordinator', () => {
     it('应该为不同类型的节点提供正确的上下文', async () => {
       const nodeTypes = [
         {
-          type: NodeType.USER_INTERACTION,
+          type: 'USER_INTERACTION',
           expectedContext: {
             userInteractionHandler: mockUserInteractionHandler,
             conversationManager: expect.any(Object)
           }
         },
         {
-          type: NodeType.CONTEXT_PROCESSOR,
+          type: 'CONTEXT_PROCESSOR',
           expectedContext: {
             conversationManager: expect.any(Object)
           }
         },
         {
-          type: NodeType.LLM,
+          type: 'LLM',
           expectedContext: {
             llmCoordinator: mockLLMCoordinator,
             eventManager: mockEventManager,
@@ -526,7 +526,7 @@ describe('NodeExecutionCoordinator', () => {
     it('应该正确处理节点执行结果', async () => {
       const node = {
         id: 'node-1',
-        type: NodeType.LLM,
+        type: 'LLM',
         name: 'Test Node',
         config: {},
         outgoingEdgeIds: [],
@@ -546,7 +546,7 @@ describe('NodeExecutionCoordinator', () => {
 
       // 验证结果结构
       expect(result.nodeId).toBe('node-1');
-      expect(result.nodeType).toBe(NodeType.LLM);
+      expect(result.nodeType).toBe('LLM');
       expect(result.status).toBe('COMPLETED');
       expect(result.step).toBe(1);
       expect(result.startTime).toBeDefined();

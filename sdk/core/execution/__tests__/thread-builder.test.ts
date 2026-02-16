@@ -141,7 +141,7 @@ describe('ThreadBuilder', () => {
         nodes: [
           {
             id: 'start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start Node',
             config: {},
             outgoingEdgeIds: [],
@@ -149,7 +149,7 @@ describe('ThreadBuilder', () => {
           },
           {
             id: 'end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End Node',
             config: {},
             outgoingEdgeIds: [],
@@ -171,14 +171,14 @@ describe('ThreadBuilder', () => {
       graph.endNodeIds.add('end');
       graph.addNode({
         id: 'start',
-        type: NodeType.START,
+        type: 'START',
         name: 'Start Node',
         workflowId: workflowId,
         originalNode: workflow.nodes[0]
       });
       graph.addNode({
         id: 'end',
-        type: NodeType.END,
+        type: 'END',
         name: 'End Node',
         workflowId: workflowId,
         originalNode: workflow.nodes[1]
@@ -282,7 +282,7 @@ describe('ThreadBuilder', () => {
         nodes: [
           {
             id: 'end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End Node',
             config: {},
             outgoingEdgeIds: [],
@@ -357,7 +357,7 @@ describe('ThreadBuilder', () => {
         nodes: [
           {
             id: 'start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start Node',
             config: {},
             outgoingEdgeIds: [],
@@ -378,7 +378,7 @@ describe('ThreadBuilder', () => {
       graph.startNodeId = 'start';
       graph.addNode({
         id: 'start',
-        type: NodeType.START,
+        type: 'START',
         name: 'Start Node',
         workflowId: workflowId,
         originalNode: workflow.nodes[0]

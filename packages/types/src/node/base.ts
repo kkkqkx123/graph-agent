@@ -5,62 +5,60 @@
 import type { ID, Metadata } from '../common';
 
 /**
- * 节点类型枚举
+ * 节点类型
  */
-export enum NodeType {
+export type NodeType =
   /** 开始节点。作为工作流开始标志，必须唯一。入度必须为0。 */
-  START = 'START',
+  'START' |
   /** 结束节点。作为工作流结束标志，必须唯一。出度必须为0。 */
-  END = 'END',
+  'END' |
   /** 变量操作节点。主要用途是更改工作流变量的值，为边条件评估提供数据。 */
-  VARIABLE = 'VARIABLE',
+  'VARIABLE' |
   /** 分叉节点。用于控制thread的fork操作。 */
-  FORK = 'FORK',
+  'FORK' |
   /** 连接节点。用于控制thread的join操作。 */
-  JOIN = 'JOIN',
+  'JOIN' |
   /** 子图节点。用于链接到子工作流。在workflow处理阶段由merge自动把该节点替换为子工作流，以子工作流的start节点连接。 */
-  SUBGRAPH = 'SUBGRAPH',
+  'SUBGRAPH' |
   /** 代码节点。用于执行脚本(脚本用于执行可执行文件或代码)。 */
-  CODE = 'CODE',
+  'CODE' |
   /** LLM节点。用于执行LLM api调用。不添加提示词，提示词操作有上下文处理节点负责。 */
-  LLM = 'LLM',
+  'LLM' |
   /** 工具节点。通过内部事件通知llm执行器。 */
-  TOOL = 'TOOL',
+  'TOOL' |
   /** 工具添加节点。用于动态添加工具到工具上下文。 */
-  ADD_TOOL = 'ADD_TOOL',
+  'ADD_TOOL' |
   /** 用户交互节点。用于触发展示前端用户交互。仅提供输入、输出渠道，不关心前端实现细节。 */
-  USER_INTERACTION = 'USER_INTERACTION',
+  'USER_INTERACTION' |
   /** 路由节点。用于根据条件路由到下一个节点。 */
-  ROUTE = 'ROUTE',
+  'ROUTE' |
   /** 上下文处理器节点。用于对提示词上下文(消息数组)进行处理。 */
-  CONTEXT_PROCESSOR = 'CONTEXT_PROCESSOR',
+  'CONTEXT_PROCESSOR' |
   /** 循环开始节点。标记循环开始，设置循环变量。循环变量可以被VARIABLE节点修改。不关心条件以外的退出条件 */
-  LOOP_START = 'LOOP_START',
+  'LOOP_START' |
   /** 循环结束节点。标记循环结束。让循环次数变量自增，并根据循环次数是否达到 */
-  LOOP_END = 'LOOP_END',
+  'LOOP_END' |
   /** 从触发器开始的节点。标识由触发器启动的孤立子工作流的起始点。无特殊配置，与START节点类似。 */
-  START_FROM_TRIGGER = 'START_FROM_TRIGGER',
+  'START_FROM_TRIGGER' |
   /** 从触发器继续的节点。用于在子工作流执行完成后恢复到主工作流的执行位置。无特殊配置，类似END节点。 */
-  CONTINUE_FROM_TRIGGER = 'CONTINUE_FROM_TRIGGER'
-}
+  'CONTINUE_FROM_TRIGGER';
 
 /**
- * 节点状态枚举（高级功能，用于审计，不承担工作流执行逻辑）
+ * 节点状态（高级功能，用于审计，不承担工作流执行逻辑）
  */
-export enum NodeStatus {
+export type NodeStatus =
   /** 等待执行 */
-  PENDING = 'PENDING',
+  'PENDING' |
   /** 正在执行 */
-  RUNNING = 'RUNNING',
+  'RUNNING' |
   /** 执行完成 */
-  COMPLETED = 'COMPLETED',
+  'COMPLETED' |
   /** 执行失败 */
-  FAILED = 'FAILED',
+  'FAILED' |
   /** 已跳过（执行过程中由图算法标记，是可选的高级功能） */
-  SKIPPED = 'SKIPPED',
+  'SKIPPED' |
   /** 已取消 */
-  CANCELLED = 'CANCELLED'
-}
+  'CANCELLED';
 
 /**
  * 节点定义类型

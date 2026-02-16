@@ -34,11 +34,11 @@ export class ThreadInterruptedException extends SDKError {
     public readonly nodeId?: string,
     context?: Record<string, any>
   ) {
-    super(message, ErrorSeverity.INFO, { ...context, interruptionType, threadId, nodeId });
+    super(message, 'info', { ...context, interruptionType, threadId, nodeId });
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.INFO;
+    return 'info';
   }
 }
 

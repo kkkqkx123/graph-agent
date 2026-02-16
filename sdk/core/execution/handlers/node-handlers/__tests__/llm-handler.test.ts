@@ -51,7 +51,7 @@ describe('llm-handler', () => {
       id: 'thread-1',
       workflowId: 'workflow-1',
       workflowVersion: '1.0.0',
-      status: ThreadStatus.RUNNING,
+      status: 'RUNNING',
       currentNodeId: '',
       graph: {} as any,
       variables: [],
@@ -112,7 +112,7 @@ describe('llm-handler', () => {
       mockNode = {
         id: 'llm-node-1',
         name: 'LLM Node',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: {
           prompt: 'Test prompt',
           profileId: 'openai-profile',
@@ -159,7 +159,7 @@ describe('llm-handler', () => {
       mockNode = {
         id: 'llm-node-1',
         name: 'LLM Node',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: {
           prompt: 'Test prompt',
           profileId: 'openai-profile'
@@ -188,7 +188,7 @@ describe('llm-handler', () => {
       mockNode = {
         id: 'llm-node-1',
         name: 'LLM Node',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: {
           prompt: 'Test prompt',
           profileId: 'openai-profile'
@@ -226,7 +226,7 @@ describe('llm-handler', () => {
       mockNode = {
         id: 'llm-node-1',
         name: 'LLM Node',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: {
           prompt: 'Please provide input',
           profileId: 'human-relay-profile',
@@ -266,7 +266,7 @@ describe('llm-handler', () => {
       mockNode = {
         id: 'llm-node-1',
         name: 'LLM Node',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: {
           prompt: 'Please provide input',
           profileId: 'human-relay-profile'
@@ -298,7 +298,7 @@ describe('llm-handler', () => {
       mockNode = {
         id: 'llm-node-1',
         name: 'LLM Node',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: {
           prompt: 'Please provide input',
           profileId: 'human-relay-profile'
@@ -333,7 +333,7 @@ describe('llm-handler', () => {
       mockNode = {
         id: 'llm-node-1',
         name: 'LLM Node',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: {
           profileId: 'openai-profile'
         } as LLMNodeConfig,
@@ -367,7 +367,7 @@ describe('llm-handler', () => {
       mockNode = {
         id: 'llm-node-1',
         name: 'LLM Node',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: {
           prompt: 'Test prompt'
         } as LLMNodeConfig,
@@ -401,7 +401,7 @@ describe('llm-handler', () => {
       mockNode = {
         id: 'llm-node-1',
         name: 'LLM Node',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: {
           prompt: 'Test prompt',
           profileId: 'openai-profile'

@@ -46,21 +46,21 @@ import { continueFromTriggerHandler } from './continue-from-trigger-handler';
  * 处理器在模块加载时静态映射，不支持运行时扩展
  */
 export const nodeHandlers: Record<NodeType, NodeHandler> = {
-  [NodeType.START]: startHandler,
-  [NodeType.END]: endHandler,
-  [NodeType.VARIABLE]: variableHandler,
-  [NodeType.CODE]: codeHandler,
-  [NodeType.FORK]: forkHandler,
-  [NodeType.JOIN]: joinHandler,
-  [NodeType.ROUTE]: routeHandler,
-  [NodeType.LOOP_START]: loopStartHandler,
-  [NodeType.LOOP_END]: loopEndHandler,
-  [NodeType.USER_INTERACTION]: userInteractionHandler,
-  [NodeType.CONTEXT_PROCESSOR]: contextProcessorHandler,
-  [NodeType.LLM]: llmHandler,
-  [NodeType.ADD_TOOL]: addToolHandler,
-  [NodeType.START_FROM_TRIGGER]: startFromTriggerHandler,
-  [NodeType.CONTINUE_FROM_TRIGGER]: continueFromTriggerHandler
+  ['START']: startHandler,
+  ['END']: endHandler,
+  ['VARIABLE']: variableHandler,
+  ['CODE']: codeHandler,
+  ['FORK']: forkHandler,
+  ['JOIN']: joinHandler,
+  ['ROUTE']: routeHandler,
+  ['LOOP_START']: loopStartHandler,
+  ['LOOP_END']: loopEndHandler,
+  ['USER_INTERACTION']: userInteractionHandler,
+  ['CONTEXT_PROCESSOR']: contextProcessorHandler,
+  ['LLM']: llmHandler,
+  ['ADD_TOOL']: addToolHandler,
+  ['START'_FROM_TRIGGER]: startFromTriggerHandler,
+  ['CONTINUE_FROM_TRIGGER']: continueFromTriggerHandler
 } as Record<NodeType, NodeHandler>;
 
 /**

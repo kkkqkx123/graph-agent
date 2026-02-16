@@ -22,7 +22,7 @@ const startFromTriggerNodeConfigSchema = z.strictObject({});
  * @returns 验证结果
  */
 export function validateStartFromTriggerNode(node: Node): Result<Node, ConfigurationValidationError[]> {
-  if (node.type !== NodeType.START_FROM_TRIGGER) {
+  if (node.type !== 'START'_FROM_TRIGGER) {
     return err([new ConfigurationValidationError(`Invalid node type for start-from-trigger validator: ${node.type}`, {
       configType: 'node',
       configPath: `node.${node.id}`

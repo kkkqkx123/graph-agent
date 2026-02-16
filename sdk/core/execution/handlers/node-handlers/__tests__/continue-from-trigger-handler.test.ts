@@ -20,7 +20,7 @@ describe('continue-from-trigger-handler', () => {
       id: 'thread-1',
       workflowId: 'workflow-1',
       workflowVersion: '1.0.0',
-      status: ThreadStatus.RUNNING,
+      status: 'RUNNING',
       currentNodeId: 'current-node',
       graph: {} as any,
       variables: [
@@ -62,7 +62,7 @@ describe('continue-from-trigger-handler', () => {
     mockNode = {
       id: 'continue-from-trigger-node-1',
       name: 'Continue From Trigger Node',
-      type: NodeType.CONTINUE_FROM_TRIGGER,
+      type: 'CONTINUE_FROM_TRIGGER',
       config: {} as ContinueFromTriggerNodeConfig,
       incomingEdgeIds: [],
       outgoingEdgeIds: []
@@ -84,7 +84,7 @@ describe('continue-from-trigger-handler', () => {
       expect(executionResult).toMatchObject({
         step: 1,
         nodeId: 'continue-from-trigger-node-1',
-        nodeType: NodeType.CONTINUE_FROM_TRIGGER,
+        nodeType: 'CONTINUE_FROM_TRIGGER',
         status: 'COMPLETED'
       });
       expect(executionResult.timestamp).toBeDefined();
@@ -300,7 +300,7 @@ describe('continue-from-trigger-handler', () => {
 
   describe('执行条件测试', () => {
     it('应该在RUNNING状态下正常执行', async () => {
-      mockThread.status = ThreadStatus.RUNNING;
+      mockThread.status = 'RUNNING';
 
       const result = await continueFromTriggerHandler(mockThread, mockNode, mockContext);
 
@@ -309,12 +309,12 @@ describe('continue-from-trigger-handler', () => {
 
     it('应该在非RUNNING状态下跳过执行', async () => {
       const nonRunnableStates = [
-        ThreadStatus.CREATED,
-        ThreadStatus.PAUSED,
-        ThreadStatus.COMPLETED,
-        ThreadStatus.FAILED,
-        ThreadStatus.CANCELLED,
-        ThreadStatus.TIMEOUT
+        'CREATED',
+        'PAUSED',
+        'COMPLETED',
+        'FAILED',
+        'CANCELLED',
+        'TIMEOUT'
       ];
 
       for (const status of nonRunnableStates) {
@@ -432,7 +432,7 @@ describe('continue-from-trigger-handler', () => {
       expect(mockThread.nodeResults[0]).toMatchObject({
         step: 1,
         nodeId: 'continue-from-trigger-node-1',
-        nodeType: NodeType.CONTINUE_FROM_TRIGGER,
+        nodeType: 'CONTINUE_FROM_TRIGGER',
         status: 'COMPLETED'
       });
     });

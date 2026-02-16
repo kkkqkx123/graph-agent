@@ -195,7 +195,7 @@ describe('动态线程创建与回调机制集成测试', () => {
       expect('threadId' in result).toBe(true);
       if ('threadId' in result) {
         expect(result.threadId).toBeDefined();
-        expect(result.status).toBe(TaskStatus.QUEUED);
+        expect(result.status).toBe('QUEUED');
       }
     });
 
@@ -350,7 +350,7 @@ describe('动态线程创建与回调机制集成测试', () => {
         expect(cancelled).toBe(true);
 
         const threadStatus = dynamicThreadManager.getThreadStatus(result.threadId);
-        expect(threadStatus?.status).toBe(TaskStatus.CANCELLED);
+        expect(threadStatus?.status).toBe('CANCELLED');
       }
     });
 

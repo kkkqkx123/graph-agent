@@ -110,22 +110,15 @@ export interface DynamicThreadEvent {
 }
 
 /**
- * 动态线程事件类型枚举
+ * 动态线程事件类型
  */
-export enum DynamicThreadEventType {
-  /** 线程已提交 */
-  SUBMITTED = 'DYNAMIC_THREAD_SUBMITTED',
-  /** 线程已开始 */
-  STARTED = 'DYNAMIC_THREAD_STARTED',
-  /** 线程已完成 */
-  COMPLETED = 'DYNAMIC_THREAD_COMPLETED',
-  /** 线程失败 */
-  FAILED = 'DYNAMIC_THREAD_FAILED',
-  /** 线程已取消 */
-  CANCELLED = 'DYNAMIC_THREAD_CANCELLED',
-  /** 线程超时 */
-  TIMEOUT = 'DYNAMIC_THREAD_TIMEOUT'
-}
+export type DynamicThreadEventType =
+  | 'DYNAMIC_THREAD_SUBMITTED'   /** 线程已提交 */
+  | 'DYNAMIC_THREAD_STARTED'     /** 线程已开始 */
+  | 'DYNAMIC_THREAD_COMPLETED'   /** 线程已完成 */
+  | 'DYNAMIC_THREAD_FAILED'      /** 线程失败 */
+  | 'DYNAMIC_THREAD_CANCELLED'   /** 线程已取消 */
+  | 'DYNAMIC_THREAD_TIMEOUT';    /** 线程超时 */
 
 /**
  * 创建动态线程请求接口

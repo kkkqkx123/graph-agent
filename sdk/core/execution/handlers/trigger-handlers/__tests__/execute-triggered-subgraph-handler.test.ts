@@ -26,7 +26,7 @@ describe('execute-triggered-subgraph-handler', () => {
     jest.clearAllMocks();
 
     mockAction = {
-      type: TriggerActionType.EXECUTE_TRIGGERED_SUBGRAPH,
+      type: 'execute_triggered_subgraph',
       parameters: {
         triggeredWorkflowId,
         waitForCompletion: true

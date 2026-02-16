@@ -20,11 +20,11 @@ import { ok } from '@modular-agent/common-utils';
  * @param config 解析后的配置对象
  * @returns 验证结果
  */
-export function validateWorkflow(config: ParsedConfig<ConfigType.WORKFLOW>): Result<ParsedConfig<ConfigType.WORKFLOW>, ValidationError[]> {
+export function validateWorkflow(config: ParsedConfig<'workflow'>): Result<ParsedConfig<'workflow'>, ValidationError[]> {
   const result = validateWorkflowConfig(config.config);
 
   // 使用 andThen 进行类型转换
-  return result.andThen(() => ok(config)) as Result<ParsedConfig<ConfigType.WORKFLOW>, ValidationError[]>;
+  return result.andThen(() => ok(config)) as Result<ParsedConfig<'workflow'>, ValidationError[]>;
 }
 
 /**
@@ -35,7 +35,7 @@ export function validateWorkflow(config: ParsedConfig<ConfigType.WORKFLOW>): Res
  * @returns 转换后的WorkflowDefinition
  */
 export function transformWorkflow(
-  config: ParsedConfig<ConfigType.WORKFLOW>,
+  config: ParsedConfig<'workflow'>,
   parameters?: Record<string, any>
 ): WorkflowDefinition {
   const transformer = new ConfigTransformer();
@@ -53,13 +53,13 @@ export function exportWorkflow(workflowDef: WorkflowDefinition, format: ConfigFo
   const configFile = transformer.transformFromWorkflow(workflowDef);
 
   switch (format) {
-    case ConfigFormat.JSON:
+    case 'json':
       return stringifyJson(configFile, true);
-    case ConfigFormat.TOML:
+    case 'toml':
       throw new ConfigurationError(
         'TOML格式不支持导出，请使用JSON格式',
         format,
-        { suggestion: '使用 ConfigFormat.JSON 代替' }
+        { suggestion: '使用 json 代替' }
       );
     default:
       throw new ConfigurationError(

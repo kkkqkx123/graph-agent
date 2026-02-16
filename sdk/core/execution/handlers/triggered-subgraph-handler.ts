@@ -72,7 +72,7 @@ export async function emitSubgraphStartedEvent(
   eventManager: EventManager
 ): Promise<void> {
   await eventManager.emit({
-    type: EventType.TRIGGERED_SUBGRAPH_STARTED,
+    type: 'TRIGGERED_SUBGRAPH_STARTED',
     threadId: mainThreadContext.getThreadId(),
     workflowId: mainThreadContext.getWorkflowId(),
     subgraphId: task.subgraphId,
@@ -98,7 +98,7 @@ export async function emitSubgraphCompletedEvent(
   eventManager: EventManager
 ): Promise<void> {
   await eventManager.emit({
-    type: EventType.TRIGGERED_SUBGRAPH_COMPLETED,
+    type: 'TRIGGERED_SUBGRAPH_COMPLETED',
     threadId: mainThreadContext.getThreadId(),
     workflowId: mainThreadContext.getWorkflowId(),
     subgraphId: task.subgraphId,
@@ -125,7 +125,7 @@ export async function emitSubgraphFailedEvent(
   eventManager: EventManager
 ): Promise<void> {
   await eventManager.emit({
-    type: EventType.TRIGGERED_SUBGRAPH_FAILED,
+    type: 'TRIGGERED_SUBGRAPH_FAILED',
     threadId: mainThreadContext.getThreadId(),
     workflowId: mainThreadContext.getWorkflowId(),
     subgraphId: task.subgraphId,

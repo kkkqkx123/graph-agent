@@ -32,7 +32,7 @@ export function validateAddToolNode(
   node: Node,
   toolRegistry?: ToolRegistry
 ): Result<Node, ConfigurationValidationError[]> {
-  if (node.type !== NodeType.ADD_TOOL) {
+  if (node.type !== 'ADD_TOOL') {
     return err([new ConfigurationValidationError(`Invalid node type for ADD_TOOL validator: ${node.type}`, {
       configType: 'node',
       configPath: `node.${node.id}`

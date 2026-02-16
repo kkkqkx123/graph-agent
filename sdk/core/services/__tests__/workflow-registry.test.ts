@@ -20,7 +20,7 @@ describe('WorkflowRegistry', () => {
     });
   });
 
-  const createValidWorkflow = (id: string, name: string, type: WorkflowType = WorkflowType.STANDALONE) => ({
+  const createValidWorkflow = (id: string, name: string, type: WorkflowType = 'STANDALONE') => ({
     id,
     name,
     version: '1.0.0',
@@ -29,7 +29,7 @@ describe('WorkflowRegistry', () => {
     nodes: [
       {
         id: 'start-node',
-        type: NodeType.START,
+        type: 'START',
         name: 'Start',
         config: {},
         outgoingEdgeIds: ['edge-1'],
@@ -37,7 +37,7 @@ describe('WorkflowRegistry', () => {
       },
       {
         id: 'end-node',
-        type: NodeType.END,
+        type: 'END',
         name: 'End',
         config: {},
         outgoingEdgeIds: [],
@@ -415,7 +415,7 @@ describe('WorkflowRegistry', () => {
           eventType: 'NODE_COMPLETED'
         },
         action: {
-          type: TriggerActionType.START_WORKFLOW,
+          type: 'start_workflow',
           parameters: {
             workflowId: 'target-workflow'
           }
@@ -882,11 +882,11 @@ describe('WorkflowRegistry', () => {
 
   describe('工作流类型相关测试', () => {
     it('应该成功注册TRIGGERED_SUBWORKFLOW类型的工作流', () => {
-      const workflow = createValidWorkflow('triggered-workflow', 'Triggered Workflow', WorkflowType.TRIGGERED_SUBWORKFLOW);
+      const workflow = createValidWorkflow('triggered-workflow', 'Triggered Workflow', 'TRIGGERED_SUBWORKFLOW');
       workflow.nodes = [
         {
           id: 'node-start',
-          type: NodeType.START_FROM_TRIGGER,
+          type: 'START'_FROM_TRIGGER,
           name: 'Start From Trigger',
           config: {},
           outgoingEdgeIds: ['edge-1'],
@@ -894,7 +894,7 @@ describe('WorkflowRegistry', () => {
         },
         {
           id: 'node-continue',
-          type: NodeType.CONTINUE_FROM_TRIGGER,
+          type: 'CONTINUE_FROM_TRIGGER',
           name: 'Continue From Trigger',
           config: {},
           outgoingEdgeIds: [],
@@ -916,18 +916,18 @@ describe('WorkflowRegistry', () => {
     });
 
     it('应该成功注册STANDALONE类型的工作流', () => {
-      const workflow = createValidWorkflow('standalone-workflow', 'Standalone Workflow', WorkflowType.STANDALONE);
+      const workflow = createValidWorkflow('standalone-workflow', 'Standalone Workflow', 'STANDALONE');
 
       expect(() => registry.register(workflow)).not.toThrow();
       expect(registry.has('standalone-workflow')).toBe(true);
     });
 
     it('应该成功注册DEPENDENT类型的工作流', () => {
-      const workflow = createValidWorkflow('dependent-workflow', 'Dependent Workflow', WorkflowType.DEPENDENT);
+      const workflow = createValidWorkflow('dependent-workflow', 'Dependent Workflow', 'DEPENDENT');
       workflow.nodes = [
         {
           id: 'node-start',
-          type: NodeType.START,
+          type: 'START',
           name: 'Start',
           config: {},
           outgoingEdgeIds: ['edge-1'],
@@ -935,7 +935,7 @@ describe('WorkflowRegistry', () => {
         },
         {
            id: 'node-subgraph',
-           type: NodeType.SUBGRAPH,
+           type: 'SUBGRAPH',
            name: 'Subgraph',
            config: {
              subgraphId: 'sub-workflow',
@@ -946,7 +946,7 @@ describe('WorkflowRegistry', () => {
          } as any,
         {
           id: 'node-end',
-          type: NodeType.END,
+          type: 'END',
           name: 'End',
           config: {},
           outgoingEdgeIds: [],
@@ -975,11 +975,11 @@ describe('WorkflowRegistry', () => {
     });
 
     it('应该拒绝类型不匹配的工作流', () => {
-      const workflow = createValidWorkflow('invalid-workflow', 'Invalid Workflow', WorkflowType.STANDALONE);
+      const workflow = createValidWorkflow('invalid-workflow', 'Invalid Workflow', 'STANDALONE');
       workflow.nodes = [
         {
           id: 'node-start',
-          type: NodeType.START_FROM_TRIGGER,
+          type: 'START'_FROM_TRIGGER,
           name: 'Start From Trigger',
           config: {},
           outgoingEdgeIds: [],
@@ -993,7 +993,7 @@ describe('WorkflowRegistry', () => {
     });
 
     it('应该拒绝缺少type字段的工作流', () => {
-      const workflow = createValidWorkflow('no-type-workflow', 'No Type Workflow', WorkflowType.STANDALONE);
+      const workflow = createValidWorkflow('no-type-workflow', 'No Type Workflow', 'STANDALONE');
       delete (workflow as any).type;
 
       expect(() => {
@@ -1004,11 +1004,11 @@ describe('WorkflowRegistry', () => {
 
   describe('triggeredSubworkflowConfig相关测试', () => {
     it('应该接受triggeredSubworkflowConfig配置', () => {
-      const workflow = createValidWorkflow('triggered-workflow', 'Triggered Workflow', WorkflowType.TRIGGERED_SUBWORKFLOW);
+      const workflow = createValidWorkflow('triggered-workflow', 'Triggered Workflow', 'TRIGGERED_SUBWORKFLOW');
       workflow.nodes = [
         {
           id: 'node-start',
-          type: NodeType.START_FROM_TRIGGER,
+          type: 'START'_FROM_TRIGGER,
           name: 'Start From Trigger',
           config: {},
           outgoingEdgeIds: ['edge-1'],
@@ -1016,7 +1016,7 @@ describe('WorkflowRegistry', () => {
         },
         {
           id: 'node-continue',
-          type: NodeType.CONTINUE_FROM_TRIGGER,
+          type: 'CONTINUE_FROM_TRIGGER',
           name: 'Continue From Trigger',
           config: {},
           outgoingEdgeIds: [],
@@ -1043,11 +1043,11 @@ describe('WorkflowRegistry', () => {
     });
 
     it('应该接受enableCheckpoints为true的配置', () => {
-      const workflow = createValidWorkflow('triggered-workflow', 'Triggered Workflow', WorkflowType.TRIGGERED_SUBWORKFLOW);
+      const workflow = createValidWorkflow('triggered-workflow', 'Triggered Workflow', 'TRIGGERED_SUBWORKFLOW');
       workflow.nodes = [
         {
           id: 'node-start',
-          type: NodeType.START_FROM_TRIGGER,
+          type: 'START'_FROM_TRIGGER,
           name: 'Start From Trigger',
           config: {},
           outgoingEdgeIds: ['edge-1'],
@@ -1055,7 +1055,7 @@ describe('WorkflowRegistry', () => {
         },
         {
           id: 'node-continue',
-          type: NodeType.CONTINUE_FROM_TRIGGER,
+          type: 'CONTINUE_FROM_TRIGGER',
           name: 'Continue From Trigger',
           config: {},
           outgoingEdgeIds: [],

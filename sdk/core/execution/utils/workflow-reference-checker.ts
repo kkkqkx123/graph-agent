@@ -232,13 +232,13 @@ function isTriggerReferencingWorkflow(
 ): boolean {
   // 处理 WorkflowTrigger 类型
   if (isWorkflowTrigger(trigger)) {
-    if (trigger.action?.type === TriggerActionType.START_WORKFLOW) {
+    if (trigger.action?.type === 'start_workflow') {
       const workflowId = trigger.action.parameters?.['workflowId'];
       return workflowId === targetWorkflowId;
     }
 
     // 处理 ExecuteTriggeredSubgraphActionConfig
-    if (trigger.action?.type === TriggerActionType.EXECUTE_TRIGGERED_SUBGRAPH) {
+    if (trigger.action?.type === 'execute_triggered_subgraph') {
       const triggeredWorkflowId = trigger.action.parameters?.['triggeredWorkflowId'];
       return triggeredWorkflowId === targetWorkflowId;
     }
@@ -246,12 +246,12 @@ function isTriggerReferencingWorkflow(
 
   // 处理 TriggerReference 类型
   if (isTriggerReference(trigger)) {
-    if (trigger.configOverride?.action?.type === TriggerActionType.START_WORKFLOW) {
+    if (trigger.configOverride?.action?.type === 'start_workflow') {
       const workflowId = trigger.configOverride.action.parameters?.['workflowId'];
       return workflowId === targetWorkflowId;
     }
 
-    if (trigger.configOverride?.action?.type === TriggerActionType.EXECUTE_TRIGGERED_SUBGRAPH) {
+    if (trigger.configOverride?.action?.type === 'execute_triggered_subgraph') {
       const triggeredWorkflowId = trigger.configOverride.action.parameters?.['triggeredWorkflowId'];
       return triggeredWorkflowId === targetWorkflowId;
     }

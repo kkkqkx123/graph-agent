@@ -118,7 +118,7 @@ describe('TaskQueueManager', () => {
 
       expect(result).toBeDefined();
       expect(result.taskId).toBe(taskId);
-      expect(result.status).toBe(TaskStatus.QUEUED);
+      expect(result.status).toBe('QUEUED');
       expect(result.message).toBe('Task submitted successfully');
       expect(result.submitTime).toBeGreaterThan(0);
     });

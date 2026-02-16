@@ -82,9 +82,9 @@ class ErrorService {
    */
   private determineLogLevelFromSeverity(severity: ErrorSeverity): 'error' | 'warn' | 'info' {
     switch (severity) {
-      case ErrorSeverity.ERROR: return 'error';
-      case ErrorSeverity.WARNING: return 'warn';
-      case ErrorSeverity.INFO: return 'info';
+      case 'error': return 'error';
+      case 'warning': return 'warn';
+      case 'info': return 'info';
     }
   }
 
@@ -96,7 +96,7 @@ class ErrorService {
     context: ErrorContext
   ): void {
     const errorEvent: ErrorEvent = {
-      type: EventType.ERROR,
+      type: 'ERROR',
       threadId: context.threadId || '',
       workflowId: context.workflowId || '',
       nodeId: context.nodeId,

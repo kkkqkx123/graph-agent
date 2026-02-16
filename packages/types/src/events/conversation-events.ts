@@ -9,7 +9,7 @@ import type { BaseEvent, EventType } from './base';
  * 消息添加事件类型
  */
 export interface MessageAddedEvent extends BaseEvent {
-  type: EventType.MESSAGE_ADDED;
+  type: 'MESSAGE_ADDED';
   /** 节点ID */
   nodeId?: ID;
   /** 消息角色 */
@@ -31,7 +31,7 @@ export interface MessageAddedEvent extends BaseEvent {
  * 对话状态变更事件类型
  */
 export interface ConversationStateChangedEvent extends BaseEvent {
-  type: EventType.CONVERSATION_STATE_CHANGED;
+  type: 'CONVERSATION_STATE_CHANGED';
   /** 节点ID */
   nodeId?: ID;
   /** 消息数量 */

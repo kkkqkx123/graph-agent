@@ -9,7 +9,7 @@ import type { BaseEvent, EventType } from './base';
  * Token 超过限制事件类型
  */
 export interface TokenLimitExceededEvent extends BaseEvent {
-  type: EventType.TOKEN_LIMIT_EXCEEDED;
+  type: 'TOKEN_LIMIT_EXCEEDED';
   /** 当前使用的 Token 数量 */
   tokensUsed: number;
   /** Token 限制阈值 */
@@ -20,7 +20,7 @@ export interface TokenLimitExceededEvent extends BaseEvent {
  * Token 使用警告事件类型
  */
 export interface TokenUsageWarningEvent extends BaseEvent {
-  type: EventType.TOKEN_USAGE_WARNING;
+  type: 'TOKEN_USAGE_WARNING';
   /** 当前使用的 Token 数量 */
   tokensUsed: number;
   /** Token 限制阈值 */
@@ -33,7 +33,7 @@ export interface TokenUsageWarningEvent extends BaseEvent {
  * 错误事件类型
  */
 export interface ErrorEvent extends BaseEvent {
-  type: EventType.ERROR;
+  type: 'ERROR';
   /** 节点ID（可选） */
   nodeId?: ID;
   /** 错误信息 */
@@ -46,7 +46,7 @@ export interface ErrorEvent extends BaseEvent {
  * 变量变更事件类型
  */
 export interface VariableChangedEvent extends BaseEvent {
-  type: EventType.VARIABLE_CHANGED;
+  type: 'VARIABLE_CHANGED';
   /** 变量名称 */
   variableName: string;
   /** 变量值 */
@@ -59,7 +59,7 @@ export interface VariableChangedEvent extends BaseEvent {
  * LLM 流式中止事件类型
  */
 export interface LLMStreamAbortedEvent extends BaseEvent {
-  type: EventType.LLM_STREAM_ABORTED;
+  type: 'LLM_STREAM_ABORTED';
   /** 节点ID（可选） */
   nodeId?: ID;
   /** 中止原因 */
@@ -70,7 +70,7 @@ export interface LLMStreamAbortedEvent extends BaseEvent {
  * LLM 流式错误事件类型
  */
 export interface LLMStreamErrorEvent extends BaseEvent {
-  type: EventType.LLM_STREAM_ERROR;
+  type: 'LLM_STREAM_ERROR';
   /** 节点ID（可选） */
   nodeId?: ID;
   /** 错误信息 */

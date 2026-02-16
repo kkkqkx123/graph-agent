@@ -108,7 +108,7 @@ export async function emitHumanRelayRequestedEvent(
   eventManager: EventManager
 ): Promise<void> {
   await eventManager.emit({
-    type: EventType.HUMAN_RELAY_REQUESTED,
+    type: 'HUMAN_RELAY_REQUESTED',
     timestamp: now(),
     workflowId: task.threadContext.getWorkflowId(),
     threadId: task.threadContext.getThreadId(),
@@ -132,7 +132,7 @@ export async function emitHumanRelayRespondedEvent(
   eventManager: EventManager
 ): Promise<void> {
   await eventManager.emit({
-    type: EventType.HUMAN_RELAY_RESPONDED,
+    type: 'HUMAN_RELAY_RESPONDED',
     timestamp: now(),
     workflowId: task.threadContext.getWorkflowId(),
     threadId: task.threadContext.getThreadId(),
@@ -155,7 +155,7 @@ export async function emitHumanRelayProcessedEvent(
   eventManager: EventManager
 ): Promise<void> {
   await eventManager.emit({
-    type: EventType.HUMAN_RELAY_PROCESSED,
+    type: 'HUMAN_RELAY_PROCESSED',
     timestamp: now(),
     workflowId: task.threadContext.getWorkflowId(),
     threadId: task.threadContext.getThreadId(),
@@ -180,7 +180,7 @@ export async function emitHumanRelayFailedEvent(
   eventManager: EventManager
 ): Promise<void> {
   await eventManager.emit({
-    type: EventType.HUMAN_RELAY_FAILED,
+    type: 'HUMAN_RELAY_FAILED',
     timestamp: now(),
     workflowId: task.threadContext.getWorkflowId(),
     threadId: task.threadContext.getThreadId(),
@@ -244,7 +244,7 @@ export function convertToLLMMessage(
   response: HumanRelayResponse
 ): LLMMessage {
   return {
-    role: MessageRole.USER,
+    role: 'user',
     content: response.content
   };
 }

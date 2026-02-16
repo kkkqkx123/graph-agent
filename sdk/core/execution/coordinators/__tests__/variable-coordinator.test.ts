@@ -217,7 +217,7 @@ describe('VariableCoordinator', () => {
       // 验证事件触发
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.VARIABLE_CHANGED,
+          type: 'VARIABLE_CHANGED',
           variableName: 'testVar',
           variableValue: 'new-value',
           variableScope: 'thread'

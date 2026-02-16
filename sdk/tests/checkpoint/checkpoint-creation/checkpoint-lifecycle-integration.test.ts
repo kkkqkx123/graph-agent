@@ -71,19 +71,19 @@ describe('检查点生命周期集成测试', () => {
         }
       },
       getSupportedTypes() {
-        return [ScriptType.JAVASCRIPT];
+        return ['JAVASCRIPT'];
       }
     };
 
     // 注册 JavaScript 执行器
-    codeService.registerExecutor(ScriptType.JAVASCRIPT, javascriptExecutor);
+    codeService.registerExecutor('JAVASCRIPT', javascriptExecutor);
 
     // 注册测试脚本
     if (!codeService.hasScript('test-process')) {
       codeService.registerScript({
         id: generateId(),
         name: 'test-process',
-        type: ScriptType.JAVASCRIPT,
+        type: 'JAVASCRIPT',
         description: 'Test script for checkpoint integration',
         content: '({ result: "process completed", timestamp: Date.now() })',
         options: { timeout: 5000 }
@@ -118,13 +118,13 @@ describe('检查点生命周期集成测试', () => {
     return {
       id,
       name,
-      type: WorkflowType.STANDALONE,
+      type: 'STANDALONE',
       version: '1.0.0',
       description: 'Simple linear workflow for checkpoint testing',
     nodes: [
       {
         id: `${id}-start`,
-        type: NodeType.START,
+        type: 'START',
         name: 'Start',
         config: {},
         outgoingEdgeIds: [`${id}-edge-1`],
@@ -132,7 +132,7 @@ describe('检查点生命周期集成测试', () => {
       },
       {
         id: `${id}-process`,
-        type: NodeType.CODE,
+        type: 'CODE',
         name: 'Process',
         config: {
           scriptName: 'test-process',
@@ -144,7 +144,7 @@ describe('检查点生命周期集成测试', () => {
       },
       {
         id: `${id}-end`,
-        type: NodeType.END,
+        type: 'END',
         name: 'End',
         config: {},
         outgoingEdgeIds: [],

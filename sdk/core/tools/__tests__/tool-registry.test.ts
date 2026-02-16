@@ -15,7 +15,7 @@ describe('ToolRegistry', () => {
     registry = new ToolRegistry();
     mockTool = {
       id: 'test-tool-1',
-      type: ToolType.STATELESS,
+      type: 'STATELESS',
       description: 'Test tool',
       parameters: {
         properties: {
@@ -144,7 +144,7 @@ describe('ToolRegistry', () => {
       registry.register({
         ...mockTool,
         id: 'test-tool-2',
-        type: ToolType.STATEFUL,
+        type: 'STATEFUL',
         config: {
           factory: {
             create: () => ({
@@ -153,9 +153,9 @@ describe('ToolRegistry', () => {
           }
         }
       });
-      const statelessTools = registry.listByType(ToolType.STATELESS);
+      const statelessTools = registry.listByType('STATELESS');
       expect(statelessTools).toHaveLength(1);
-      expect(statelessTools[0]?.type).toBe(ToolType.STATELESS);
+      expect(statelessTools[0]?.type).toBe('STATELESS');
     });
   });
 

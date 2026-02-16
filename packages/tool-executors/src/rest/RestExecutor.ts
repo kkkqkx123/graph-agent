@@ -285,6 +285,6 @@ export class RestExecutor extends BaseExecutor {
    * 获取执行器类型
    */
   getExecutorType(): string {
-    return ExecutorType.REST;
+    return 'REST';
   }
 }

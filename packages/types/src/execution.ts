@@ -82,21 +82,20 @@ export interface ExecutionContext {
 }
 
 /**
- * 执行状态类型
+ * 执行状态
  */
-export enum ExecutionState {
+export type ExecutionState =
   /** 未开始 */
-  NOT_STARTED = 'NOT_STARTED',
+  'NOT_STARTED' |
   /** 执行中 */
-  RUNNING = 'RUNNING',
+  'RUNNING' |
   /** 已暂停 */
-  PAUSED = 'PAUSED',
+  'PAUSED' |
   /** 已完成 */
-  COMPLETED = 'COMPLETED',
+  'COMPLETED' |
   /** 已失败 */
-  FAILED = 'FAILED',
+  'FAILED' |
   /** 已取消 */
-  CANCELLED = 'CANCELLED',
+  'CANCELLED' |
   /** 超时 */
-  TIMEOUT = 'TIMEOUT'
-}
+  'TIMEOUT';

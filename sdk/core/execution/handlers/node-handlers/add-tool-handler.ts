@@ -99,7 +99,7 @@ export async function addToolHandler(
 
     // 4. 触发工具添加事件
     await context.eventManager.emit({
-      type: EventType.TOOL_ADDED,
+      type: 'TOOL_ADDED',
       timestamp: now(),
       workflowId: thread.workflowId,
       threadId: thread.id,

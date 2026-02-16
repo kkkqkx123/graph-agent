@@ -3,35 +3,33 @@
  */
 
 /**
- * 线程状态枚举
+ * 线程状态
  */
-export enum ThreadStatus {
+export type ThreadStatus =
   /** 已创建 */
-  CREATED = 'CREATED',
+  'CREATED' |
   /** 正在运行 */
-  RUNNING = 'RUNNING',
+  'RUNNING' |
   /** 已暂停 */
-  PAUSED = 'PAUSED',
+  'PAUSED' |
   /** 已完成 */
-  COMPLETED = 'COMPLETED',
+  'COMPLETED' |
   /** 已失败 */
-  FAILED = 'FAILED',
+  'FAILED' |
   /** 已取消 */
-  CANCELLED = 'CANCELLED',
+  'CANCELLED' |
   /** 超时 */
-  TIMEOUT = 'TIMEOUT'
-}
+  'TIMEOUT';
 
 /**
- * 线程类型枚举
+ * 线程类型
  */
-export enum ThreadType {
+export type ThreadType =
   /** 主线程 */
-  MAIN = 'MAIN',
+  'MAIN' |
   /** FORK/JOIN子线程 */
-  FORK_JOIN = 'FORK_JOIN',
+  'FORK_JOIN' |
   /** Triggered子工作流线程 */
-  TRIGGERED_SUBWORKFLOW = 'TRIGGERED_SUBWORKFLOW',
+  'TRIGGERED_SUBWORKFLOW' |
   /** 动态子线程 */
-  DYNAMIC_CHILD = 'DYNAMIC_CHILD'
-}
+  'DYNAMIC_CHILD';

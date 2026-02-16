@@ -47,7 +47,7 @@ import { EventType } from '@modular-agent/types';
  */
 export function buildThreadStartedEvent(thread: Thread): ThreadStartedEvent {
   return {
-    type: EventType.THREAD_STARTED,
+    type: 'THREAD_STARTED',
     timestamp: now(),
     workflowId: thread.workflowId,
     threadId: thread.id,
@@ -60,7 +60,7 @@ export function buildThreadStartedEvent(thread: Thread): ThreadStartedEvent {
  */
 export function buildThreadCompletedEvent(thread: Thread, result: ThreadResult): ThreadCompletedEvent {
   return {
-    type: EventType.THREAD_COMPLETED,
+    type: 'THREAD_COMPLETED',
     timestamp: now(),
     workflowId: thread.workflowId,
     threadId: thread.id,
@@ -74,7 +74,7 @@ export function buildThreadCompletedEvent(thread: Thread, result: ThreadResult):
  */
 export function buildThreadFailedEvent(thread: Thread, error: Error): ThreadFailedEvent {
   return {
-    type: EventType.THREAD_FAILED,
+    type: 'THREAD_FAILED',
     timestamp: now(),
     workflowId: thread.workflowId,
     threadId: thread.id,
@@ -87,7 +87,7 @@ export function buildThreadFailedEvent(thread: Thread, error: Error): ThreadFail
  */
 export function buildThreadPausedEvent(thread: Thread): ThreadPausedEvent {
   return {
-    type: EventType.THREAD_PAUSED,
+    type: 'THREAD_PAUSED',
     timestamp: now(),
     workflowId: thread.workflowId,
     threadId: thread.id
@@ -99,7 +99,7 @@ export function buildThreadPausedEvent(thread: Thread): ThreadPausedEvent {
  */
 export function buildThreadResumedEvent(thread: Thread): ThreadResumedEvent {
   return {
-    type: EventType.THREAD_RESUMED,
+    type: 'THREAD_RESUMED',
     timestamp: now(),
     workflowId: thread.workflowId,
     threadId: thread.id
@@ -111,7 +111,7 @@ export function buildThreadResumedEvent(thread: Thread): ThreadResumedEvent {
  */
 export function buildThreadCancelledEvent(thread: Thread, reason?: string): ThreadCancelledEvent {
   return {
-    type: EventType.THREAD_CANCELLED,
+    type: 'THREAD_CANCELLED',
     timestamp: now(),
     workflowId: thread.workflowId,
     threadId: thread.id,
@@ -128,7 +128,7 @@ export function buildThreadStateChangedEvent(
   newStatus: string
 ): ThreadStateChangedEvent {
   return {
-    type: EventType.THREAD_STATE_CHANGED,
+    type: 'THREAD_STATE_CHANGED',
     timestamp: now(),
     workflowId: thread.workflowId,
     threadId: thread.id,
@@ -142,7 +142,7 @@ export function buildThreadStateChangedEvent(
  */
 export function buildNodeStartedEvent(threadContext: any, nodeId: string, nodeType: string): NodeStartedEvent {
   return {
-    type: EventType.NODE_STARTED,
+    type: 'NODE_STARTED',
     threadId: threadContext.getThreadId(),
     workflowId: threadContext.getWorkflowId(),
     nodeId,
@@ -161,7 +161,7 @@ export function buildNodeCompletedEvent(
   executionTime: number
 ): NodeCompletedEvent {
   return {
-    type: EventType.NODE_COMPLETED,
+    type: 'NODE_COMPLETED',
     threadId: threadContext.getThreadId(),
     workflowId: threadContext.getWorkflowId(),
     nodeId,
@@ -180,7 +180,7 @@ export function buildNodeFailedEvent(
   error: Error
 ): NodeFailedEvent {
   return {
-    type: EventType.NODE_FAILED,
+    type: 'NODE_FAILED',
     threadId: threadContext.getThreadId(),
     workflowId: threadContext.getWorkflowId(),
     nodeId,
@@ -199,7 +199,7 @@ export function buildSubgraphStartedEvent(
   input: Record<string, any>
 ): SubgraphStartedEvent {
   return {
-    type: EventType.SUBGRAPH_STARTED,
+    type: 'SUBGRAPH_STARTED',
     timestamp: now(),
     workflowId: threadContext.getWorkflowId(),
     threadId: threadContext.getThreadId(),
@@ -219,7 +219,7 @@ export function buildSubgraphCompletedEvent(
   executionTime: number
 ): SubgraphCompletedEvent {
   return {
-    type: EventType.SUBGRAPH_COMPLETED,
+    type: 'SUBGRAPH_COMPLETED',
     timestamp: now(),
     workflowId: threadContext.getWorkflowId(),
     threadId: threadContext.getThreadId(),
@@ -239,7 +239,7 @@ export function buildVariableChangedEvent(
   scope: string
 ): VariableChangedEvent {
   return {
-    type: EventType.VARIABLE_CHANGED,
+    type: 'VARIABLE_CHANGED',
     timestamp: now(),
     workflowId: threadContext.getWorkflowId(),
     threadId: threadContext.getThreadId(),
@@ -259,7 +259,7 @@ export function buildMessageAddedEvent(
   content: string
 ): MessageAddedEvent {
   return {
-    type: EventType.MESSAGE_ADDED,
+    type: 'MESSAGE_ADDED',
     timestamp: now(),
     workflowId: threadContext.getWorkflowId(),
     threadId: threadContext.getThreadId(),
@@ -279,7 +279,7 @@ export function buildTokenUsageWarningEvent(
   usagePercentage: number
 ): TokenUsageWarningEvent {
   return {
-    type: EventType.TOKEN_USAGE_WARNING,
+    type: 'TOKEN_USAGE_WARNING',
     timestamp: now(),
     workflowId: threadContext.getWorkflowId(),
     threadId: threadContext.getThreadId(),
@@ -299,7 +299,7 @@ export function buildConversationStateChangedEvent(
   tokenUsage: number
 ): ConversationStateChangedEvent {
   return {
-    type: EventType.CONVERSATION_STATE_CHANGED,
+    type: 'CONVERSATION_STATE_CHANGED',
     timestamp: now(),
     workflowId: threadContext.getWorkflowId(),
     threadId: threadContext.getThreadId(),
@@ -320,7 +320,7 @@ export function buildToolCallStartedEvent(
   toolArguments?: string
 ): ToolCallStartedEvent {
   return {
-    type: EventType.TOOL_CALL_STARTED,
+    type: 'TOOL_CALL_STARTED',
     timestamp: now(),
     workflowId: threadContext.getWorkflowId(),
     threadId: threadContext.getThreadId(),
@@ -343,7 +343,7 @@ export function buildToolCallCompletedEvent(
   executionTime?: number
 ): ToolCallCompletedEvent {
   return {
-    type: EventType.TOOL_CALL_COMPLETED,
+    type: 'TOOL_CALL_COMPLETED',
     timestamp: now(),
     workflowId: threadContext.getWorkflowId(),
     threadId: threadContext.getThreadId(),
@@ -366,7 +366,7 @@ export function buildToolCallFailedEvent(
   error?: Error
 ): ToolCallFailedEvent {
   return {
-    type: EventType.TOOL_CALL_FAILED,
+    type: 'TOOL_CALL_FAILED',
     timestamp: now(),
     workflowId: threadContext.getWorkflowId(),
     threadId: threadContext.getThreadId(),
@@ -385,7 +385,7 @@ export function buildThreadForkStartedEvent(
   forkConfig: any
 ): ThreadForkStartedEvent {
   return {
-    type: EventType.THREAD_FORK_STARTED,
+    type: 'THREAD_FORK_STARTED',
     timestamp: now(),
     workflowId: threadContext.getWorkflowId(),
     threadId: threadContext.getThreadId(),
@@ -402,7 +402,7 @@ export function buildThreadForkCompletedEvent(
   childThreadIds: string[]
 ): ThreadForkCompletedEvent {
   return {
-    type: EventType.THREAD_FORK_COMPLETED,
+    type: 'THREAD_FORK_COMPLETED',
     timestamp: now(),
     workflowId: threadContext.getWorkflowId(),
     threadId: threadContext.getThreadId(),
@@ -420,7 +420,7 @@ export function buildThreadJoinStartedEvent(
   joinStrategy: string
 ): ThreadJoinStartedEvent {
   return {
-    type: EventType.THREAD_JOIN_STARTED,
+    type: 'THREAD_JOIN_STARTED',
     timestamp: now(),
     workflowId: threadContext.getWorkflowId(),
     threadId: threadContext.getThreadId(),
@@ -439,7 +439,7 @@ export function buildThreadJoinConditionMetEvent(
   condition: string
 ): ThreadJoinConditionMetEvent {
   return {
-    type: EventType.THREAD_JOIN_CONDITION_MET,
+    type: 'THREAD_JOIN_CONDITION_MET',
     timestamp: now(),
     workflowId: threadContext.getWorkflowId(),
     threadId: threadContext.getThreadId(),
@@ -456,7 +456,7 @@ export function buildThreadCopyStartedEvent(
   threadContext: any
 ): ThreadCopyStartedEvent {
   return {
-    type: EventType.THREAD_COPY_STARTED,
+    type: 'THREAD_COPY_STARTED',
     timestamp: now(),
     workflowId: threadContext.getWorkflowId(),
     threadId: threadContext.getThreadId(),
@@ -472,7 +472,7 @@ export function buildThreadCopyCompletedEvent(
   copiedThreadId: string
 ): ThreadCopyCompletedEvent {
   return {
-    type: EventType.THREAD_COPY_COMPLETED,
+    type: 'THREAD_COPY_COMPLETED',
     timestamp: now(),
     workflowId: threadContext.getWorkflowId(),
     threadId: threadContext.getThreadId(),
@@ -491,7 +491,7 @@ export function buildTriggeredSubgraphStartedEvent(
   input: Record<string, any>
 ): TriggeredSubgraphStartedEvent {
   return {
-    type: EventType.TRIGGERED_SUBGRAPH_STARTED,
+    type: 'TRIGGERED_SUBGRAPH_STARTED',
     timestamp: now(),
     workflowId: threadContext.getWorkflowId(),
     threadId: threadContext.getThreadId(),
@@ -512,7 +512,7 @@ export function buildTriggeredSubgraphCompletedEvent(
   executionTime: number | undefined
 ): TriggeredSubgraphCompletedEvent {
   return {
-    type: EventType.TRIGGERED_SUBGRAPH_COMPLETED,
+    type: 'TRIGGERED_SUBGRAPH_COMPLETED',
     timestamp: now(),
     workflowId: threadContext.getWorkflowId(),
     threadId: threadContext.getThreadId(),
@@ -533,7 +533,7 @@ export function buildTriggeredSubgraphFailedEvent(
   error: Error
 ): TriggeredSubgraphFailedEvent {
   return {
-    type: EventType.TRIGGERED_SUBGRAPH_FAILED,
+    type: 'TRIGGERED_SUBGRAPH_FAILED',
     timestamp: now(),
     workflowId: threadContext.getWorkflowId(),
     threadId: threadContext.getThreadId(),

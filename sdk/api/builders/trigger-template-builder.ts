@@ -117,7 +117,7 @@ export class TriggerTemplateBuilder extends TemplateBuilder<TriggerTemplate> {
    * @returns this
    */
   startWorkflow(workflowId: string, parameters: Record<string, any> = {}): this {
-    return this.withAction(TriggerActionType.START_WORKFLOW, {
+    return this.withAction('start_workflow', {
       workflowId,
       ...parameters
     });
@@ -144,7 +144,7 @@ export class TriggerTemplateBuilder extends TemplateBuilder<TriggerTemplate> {
    * @returns this
    */
   executeTriggeredSubgraph(triggeredWorkflowId: string, waitForCompletion: boolean = true, parameters: Record<string, any> = {}): this {
-    return this.withAction(TriggerActionType.EXECUTE_TRIGGERED_SUBGRAPH, {
+    return this.withAction('execute_triggered_subgraph', {
       triggeredWorkflowId,
       waitForCompletion,
       ...parameters

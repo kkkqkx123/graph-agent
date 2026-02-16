@@ -9,9 +9,9 @@ describe('ConversationManager', () => {
 
   beforeEach(() => {
     mockMessages = [
-      { role: MessageRole.SYSTEM, content: 'You are a helpful assistant.' },
-      { role: MessageRole.USER, content: 'Hello!' },
-      { role: MessageRole.ASSISTANT, content: 'Hi there! How can I help you?' }
+      { role: 'system', content: 'You are a helpful assistant.' },
+      { role: 'user', content: 'Hello!' },
+      { role: 'assistant', content: 'Hi there! How can I help you?' }
     ];
     
     conversationManager = new ConversationManager();
@@ -37,7 +37,7 @@ describe('ConversationManager', () => {
 
   describe('addMessage', () => {
     it('should add a valid message', () => {
-      const message: LLMMessage = { role: MessageRole.USER, content: 'Test message' };
+      const message: LLMMessage = { role: 'user', content: 'Test message' };
       const length = conversationManager.addMessage(message);
       
       expect(length).toBe(1);
@@ -59,7 +59,7 @@ describe('ConversationManager', () => {
     });
 
     it('should not mutate original message', () => {
-      const originalMessage: LLMMessage = { role: MessageRole.USER, content: 'Test' };
+      const originalMessage: LLMMessage = { role: 'user', content: 'Test' };
       conversationManager.addMessage(originalMessage);
       
       // Modify original message
@@ -143,8 +143,8 @@ describe('ConversationManager', () => {
 
     it('should clear all messages when first message is not system', () => {
       const nonSystemMessages: LLMMessage[] = [
-        { role: MessageRole.USER, content: 'Hello!' },
-        { role: MessageRole.ASSISTANT, content: 'Hi!' }
+        { role: 'user', content: 'Hello!' },
+        { role: 'assistant', content: 'Hi!' }
       ];
       
       conversationManager.addMessages(...nonSystemMessages);
@@ -202,10 +202,10 @@ describe('ConversationManager', () => {
     });
 
     it('should filter messages by role', () => {
-      const userMessages = conversationManager.filterMessagesByRole(MessageRole.USER);
+      const userMessages = conversationManager.filterMessagesByRole('user');
       expect(userMessages).toEqual([mockMessages[1]]);
       
-      const assistantMessages = conversationManager.filterMessagesByRole(MessageRole.ASSISTANT);
+      const assistantMessages = conversationManager.filterMessagesByRole('assistant');
       expect(assistantMessages).toEqual([mockMessages[2]]);
     });
   });
@@ -216,22 +216,22 @@ describe('ConversationManager', () => {
     });
 
     it('should get messages by role', () => {
-      const systemMessages = conversationManager.getMessagesByRole(MessageRole.SYSTEM);
+      const systemMessages = conversationManager.getMessagesByRole('system');
       expect(systemMessages).toEqual([mockMessages[0]]);
       
-      const userMessages = conversationManager.getMessagesByRole(MessageRole.USER);
+      const userMessages = conversationManager.getMessagesByRole('user');
       expect(userMessages).toEqual([mockMessages[1]]);
       
-      const assistantMessages = conversationManager.getMessagesByRole(MessageRole.ASSISTANT);
+      const assistantMessages = conversationManager.getMessagesByRole('assistant');
       expect(assistantMessages).toEqual([mockMessages[2]]);
     });
 
     it('should get recent messages by role', () => {
       // 添加更多用户消息
-      conversationManager.addMessage({ role: MessageRole.USER, content: 'User message 2' });
-      conversationManager.addMessage({ role: MessageRole.USER, content: 'User message 3' });
+      conversationManager.addMessage({ role: 'user', content: 'User message 2' });
+      conversationManager.addMessage({ role: 'user', content: 'User message 3' });
       
-      const recentUserMessages = conversationManager.getRecentMessagesByRole(MessageRole.USER, 2);
+      const recentUserMessages = conversationManager.getRecentMessagesByRole('user', 2);
       expect(recentUserMessages.length).toBe(2);
       expect(recentUserMessages[0]?.content).toBe('User message 2');
       expect(recentUserMessages[1]?.content).toBe('User message 3');
@@ -239,30 +239,30 @@ describe('ConversationManager', () => {
 
     it('should get messages by role range', () => {
       // 添加更多助手消息
-      conversationManager.addMessage({ role: MessageRole.ASSISTANT, content: 'Assistant message 2' });
-      conversationManager.addMessage({ role: MessageRole.ASSISTANT, content: 'Assistant message 3' });
+      conversationManager.addMessage({ role: 'assistant', content: 'Assistant message 2' });
+      conversationManager.addMessage({ role: 'assistant', content: 'Assistant message 3' });
       
-      const assistantMessages = conversationManager.getMessagesByRoleRange(MessageRole.ASSISTANT, 0, 2);
+      const assistantMessages = conversationManager.getMessagesByRoleRange('assistant', 0, 2);
       expect(assistantMessages.length).toBe(2);
       expect(assistantMessages[0]?.content).toBe('Hi there! How can I help you?');
       expect(assistantMessages[1]?.content).toBe('Assistant message 2');
     });
 
     it('should get message count by role', () => {
-      expect(conversationManager.getMessageCountByRole(MessageRole.SYSTEM)).toBe(1);
-      expect(conversationManager.getMessageCountByRole(MessageRole.USER)).toBe(1);
-      expect(conversationManager.getMessageCountByRole(MessageRole.ASSISTANT)).toBe(1);
-      expect(conversationManager.getMessageCountByRole(MessageRole.TOOL)).toBe(0);
+      expect(conversationManager.getMessageCountByRole('system')).toBe(1);
+      expect(conversationManager.getMessageCountByRole('user')).toBe(1);
+      expect(conversationManager.getMessageCountByRole('assistant')).toBe(1);
+      expect(conversationManager.getMessageCountByRole('tool')).toBe(0);
     });
 
     it('should handle empty role queries', () => {
-      const toolMessages = conversationManager.getMessagesByRole(MessageRole.TOOL);
+      const toolMessages = conversationManager.getMessagesByRole('tool');
       expect(toolMessages).toEqual([]);
       
-      const recentToolMessages = conversationManager.getRecentMessagesByRole(MessageRole.TOOL, 5);
+      const recentToolMessages = conversationManager.getRecentMessagesByRole('tool', 5);
       expect(recentToolMessages).toEqual([]);
       
-      expect(conversationManager.getMessageCountByRole(MessageRole.TOOL)).toBe(0);
+      expect(conversationManager.getMessageCountByRole('tool')).toBe(0);
     });
   });
 
@@ -277,9 +277,9 @@ describe('ConversationManager', () => {
       
       conversationManager.removeMessageIndices([1]);
       
-      expect(conversationManager.getMessageCountByRole(MessageRole.USER)).toBe(0);
-      expect(conversationManager.getMessageCountByRole(MessageRole.SYSTEM)).toBe(1);
-      expect(conversationManager.getMessageCountByRole(MessageRole.ASSISTANT)).toBe(1);
+      expect(conversationManager.getMessageCountByRole('user')).toBe(0);
+      expect(conversationManager.getMessageCountByRole('system')).toBe(1);
+      expect(conversationManager.getMessageCountByRole('assistant')).toBe(1);
     });
 
     it('should keep message indices', () => {
@@ -287,9 +287,9 @@ describe('ConversationManager', () => {
       
       conversationManager.keepMessageIndices([0, 2]);
       
-      expect(conversationManager.getMessageCountByRole(MessageRole.SYSTEM)).toBe(1);
-      expect(conversationManager.getMessageCountByRole(MessageRole.USER)).toBe(0);
-      expect(conversationManager.getMessageCountByRole(MessageRole.ASSISTANT)).toBe(1);
+      expect(conversationManager.getMessageCountByRole('system')).toBe(1);
+      expect(conversationManager.getMessageCountByRole('user')).toBe(0);
+      expect(conversationManager.getMessageCountByRole('assistant')).toBe(1);
     });
   });
 
@@ -331,11 +331,11 @@ describe('ConversationManager', () => {
       const cloned = conversationManager.clone();
       
       // 修改原始管理器
-      conversationManager.addMessage({ role: MessageRole.USER, content: 'New message' });
+      conversationManager.addMessage({ role: 'user', content: 'New message' });
       
       // 克隆的管理器应该不受影响
-      expect(conversationManager.getMessageCountByRole(MessageRole.USER)).toBe(2);
-      expect(cloned.getMessageCountByRole(MessageRole.USER)).toBe(1);
+      expect(conversationManager.getMessageCountByRole('user')).toBe(2);
+      expect(cloned.getMessageCountByRole('user')).toBe(1);
     });
   });
 
@@ -374,7 +374,7 @@ describe('ConversationManager', () => {
       
       // Add tool description message
       conversationManager.addMessage({
-        role: MessageRole.SYSTEM,
+        role: 'system',
         content: '可用工具:\n- testTool: Test tool description'
       });
       
@@ -399,7 +399,7 @@ describe('ConversationManager', () => {
       
       const toolMessage = (managerWithOptions as any).getInitialToolDescriptionMessage();
       expect(toolMessage).toBeDefined();
-      expect(toolMessage!.role).toBe(MessageRole.SYSTEM);
+      expect(toolMessage!.role).toBe('system');
       expect(toolMessage!.content).toContain('可用工具:');
     });
 
@@ -423,7 +423,7 @@ describe('ConversationManager', () => {
       
       const messages = managerWithOptions.getAllMessages();
       expect(messages.length).toBe(1);
-      expect(messages[0]?.role).toBe(MessageRole.SYSTEM);
+      expect(messages[0]?.role).toBe('system');
       expect(messages[0]?.content).toContain('可用工具:');
     });
   });

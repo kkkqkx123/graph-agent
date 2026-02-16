@@ -5,14 +5,13 @@
 import type { Condition } from '../condition';
 
 /**
- * Hook类型枚举
+ * Hook类型
  */
-export enum HookType {
+export type HookType =
   /** 节点执行前触发 */
-  BEFORE_EXECUTE = 'BEFORE_EXECUTE',
+  'BEFORE_EXECUTE' |
   /** 节点执行后触发 */
-  AFTER_EXECUTE = 'AFTER_EXECUTE'
-}
+  'AFTER_EXECUTE';
 
 /**
  * 节点Hook配置

@@ -34,7 +34,7 @@ function mapPathId(originalId: ID, idMapping: IdMapping): ID {
  * 处理ROUTE节点配置中的targetNodeId和defaultTargetNodeId
  */
 const routeNodeConfigUpdater: NodeConfigUpdater = {
-  nodeType: NodeType.ROUTE,
+  nodeType: 'ROUTE',
   
   containsIdReferences(config: any): boolean {
     if (!config || !config.routes) {
@@ -83,7 +83,7 @@ const routeNodeConfigUpdater: NodeConfigUpdater = {
  * 处理FORK节点配置中的forkPaths.pathId
  */
 const forkNodeConfigUpdater: NodeConfigUpdater = {
-  nodeType: NodeType.FORK,
+  nodeType: 'FORK',
   
   containsIdReferences(config: any): boolean {
     if (!config || !config.forkPaths) {
@@ -121,7 +121,7 @@ const forkNodeConfigUpdater: NodeConfigUpdater = {
  * 处理JOIN节点配置中的forkPathIds和mainPathId
  */
 const joinNodeConfigUpdater: NodeConfigUpdater = {
-  nodeType: NodeType.JOIN,
+  nodeType: 'JOIN',
   
   containsIdReferences(config: any): boolean {
     if (!config) {
@@ -166,7 +166,7 @@ const joinNodeConfigUpdater: NodeConfigUpdater = {
  * 注意：subgraphId引用的是工作流ID，不是节点ID，不需要映射
  */
 const subgraphNodeConfigUpdater: NodeConfigUpdater = {
-  nodeType: NodeType.SUBGRAPH,
+  nodeType: 'SUBGRAPH',
   
   containsIdReferences(config: any): boolean {
     if (!config || !config.subgraphId) {
@@ -189,10 +189,10 @@ const subgraphNodeConfigUpdater: NodeConfigUpdater = {
  * 节点配置更新器映射表
  */
 const nodeConfigUpdaters: Partial<Record<NodeType, NodeConfigUpdater>> = {
-  [NodeType.ROUTE]: routeNodeConfigUpdater,
-  [NodeType.FORK]: forkNodeConfigUpdater,
-  [NodeType.JOIN]: joinNodeConfigUpdater,
-  [NodeType.SUBGRAPH]: subgraphNodeConfigUpdater
+  ['ROUTE']: routeNodeConfigUpdater,
+  ['FORK']: forkNodeConfigUpdater,
+  ['JOIN']: joinNodeConfigUpdater,
+  ['SUBGRAPH']: subgraphNodeConfigUpdater
 };
 
 /**

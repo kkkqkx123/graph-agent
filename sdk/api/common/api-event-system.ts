@@ -82,7 +82,7 @@ export class APIEventBus {
         // 抛出错误，由调用方决定如何处理
         throw new SDKError(
           'Event listener execution failed',
-          ErrorSeverity.ERROR,
+          'error',
           {
             eventType: event.type,
             operation: 'event_listener'

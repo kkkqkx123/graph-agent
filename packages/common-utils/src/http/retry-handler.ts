@@ -13,49 +13,29 @@ import {
 } from './errors';
 
 /**
- * 不应该重试的 HTTP 状态码枚举
+ * 不应该重试的 HTTP 状态码
  * 这些错误码表示客户端错误或永久性错误，重试无法解决问题
  */
-export enum NonRetryableStatusCode {
-  /** Bad Request - 请求格式错误 */
-  BAD_REQUEST = 400,
-  /** Unauthorized - 认证失败 */
-  UNAUTHORIZED = 401,
-  /** Forbidden - 权限不足 */
-  FORBIDDEN = 403,
-  /** Not Found - 资源不存在 */
-  NOT_FOUND = 404,
-  /** Method Not Allowed - 方法不允许 */
-  METHOD_NOT_ALLOWED = 405,
-  /** Gone - 资源已永久删除 */
-  GONE = 410,
-  /** Length Required - 需要Content-Length */
-  LENGTH_REQUIRED = 411,
-  /** Precondition Failed - 前置条件失败 */
-  PRECONDITION_FAILED = 412,
-  /** Payload Too Large - 请求体过大 */
-  PAYLOAD_TOO_LARGE = 413,
-  /** URI Too Long - URI过长 */
-  URI_TOO_LONG = 414,
-  /** Unsupported Media Type - 不支持的媒体类型 */
-  UNSUPPORTED_MEDIA_TYPE = 415,
-  /** Range Not Satisfiable - 范围不满足 */
-  RANGE_NOT_SATISFIABLE = 416,
-  /** Expectation Failed - 期望失败 */
-  EXPECTATION_FAILED = 417,
-  /** I'm a teapot - 茶壶（RFC 2324） */
-  IM_A_TEAPOT = 418,
-  /** Unprocessable Entity - 无法处理的实体 */
-  UNPROCESSABLE_ENTITY = 422,
-  /** Upgrade Required - 需要升级协议 */
-  UPGRADE_REQUIRED = 426,
-  /** Precondition Required - 需要前置条件 */
-  PRECONDITION_REQUIRED = 428,
-  /** Request Header Fields Too Large - 请求头过大 */
-  REQUEST_HEADER_FIELDS_TOO_LARGE = 431,
-  /** Unavailable For Legal Reasons - 法律原因不可用 */
-  UNAVAILABLE_FOR_LEGAL_REASONS = 451,
-}
+export type NonRetryableStatusCode =
+  | 400  /** Bad Request - 请求格式错误 */
+  | 401  /** Unauthorized - 认证失败 */
+  | 403  /** Forbidden - 权限不足 */
+  | 404  /** Not Found - 资源不存在 */
+  | 405  /** Method Not Allowed - 方法不允许 */
+  | 410  /** Gone - 资源已永久删除 */
+  | 411  /** Length Required - 需要Content-Length */
+  | 412  /** Precondition Failed - 前置条件失败 */
+  | 413  /** Payload Too Large - 请求体过大 */
+  | 414  /** URI Too Long - URI过长 */
+  | 415  /** Unsupported Media Type - 不支持的媒体类型 */
+  | 416  /** Range Not Satisfiable - 范围不满足 */
+  | 417  /** Expectation Failed - 期望失败 */
+  | 418  /** I'm a teapot - 茶壶（RFC 2324） */
+  | 422  /** Unprocessable Entity - 无法处理的实体 */
+  | 426  /** Upgrade Required - 需要升级协议 */
+  | 428  /** Precondition Required - 需要前置条件 */
+  | 431  /** Request Header Fields Too Large - 请求头过大 */
+  | 451; /** Unavailable For Legal Reasons - 法律原因不可用 */
 
 /**
  * 重试处理器配置
@@ -71,11 +51,11 @@ export interface RetryConfig {
 
 /**
  * 不应该重试的 HTTP 状态码集合
- * 从枚举值构建，用于快速查找
+ * 用于快速查找
  */
-const NON_RETRYABLE_STATUS_CODES = new Set<number>(
-  Object.values(NonRetryableStatusCode).filter(value => typeof value === 'number')
-);
+const NON_RETRYABLE_STATUS_CODES = new Set<number>([
+  400, 401, 403, 404, 405, 410, 411, 412, 413, 414, 415, 416, 417, 418, 422, 426, 428, 431, 451
+]);
 
 /**
  * 延迟函数

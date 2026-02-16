@@ -17,11 +17,11 @@ function createStandardGraph() {
   const graph = new GraphData();
 
   const nodes: GraphNode[] = [
-    { id: '1', type: NodeType.START, name: 'Start', workflowId: 'wf1' },
-    { id: '2', type: NodeType.LLM, name: 'Task 2', workflowId: 'wf1' },
-    { id: '3', type: NodeType.LLM, name: 'Task 3', workflowId: 'wf1' },
-    { id: '4', type: NodeType.LLM, name: 'Task 4', workflowId: 'wf1' },
-    { id: '5', type: NodeType.END, name: 'End', workflowId: 'wf1' },
+    { id: '1', type: 'START', name: 'Start', workflowId: 'wf1' },
+    { id: '2', type: 'LLM', name: 'Task 2', workflowId: 'wf1' },
+    { id: '3', type: 'LLM', name: 'Task 3', workflowId: 'wf1' },
+    { id: '4', type: 'LLM', name: 'Task 4', workflowId: 'wf1' },
+    { id: '5', type: 'END', name: 'End', workflowId: 'wf1' },
   ];
 
   const edges: GraphEdge[] = [
@@ -55,10 +55,10 @@ function createGraphWithUnreachable() {
   const graph = new GraphData();
 
   const nodes: GraphNode[] = [
-    { id: '1', type: NodeType.START, name: 'Start', workflowId: 'wf1' },
-    { id: '2', type: NodeType.LLM, name: 'Task 2', workflowId: 'wf1' },
-    { id: '3', type: NodeType.LLM, name: 'Unreachable', workflowId: 'wf1' },
-    { id: '4', type: NodeType.END, name: 'End', workflowId: 'wf1' },
+    { id: '1', type: 'START', name: 'Start', workflowId: 'wf1' },
+    { id: '2', type: 'LLM', name: 'Task 2', workflowId: 'wf1' },
+    { id: '3', type: 'LLM', name: 'Unreachable', workflowId: 'wf1' },
+    { id: '4', type: 'END', name: 'End', workflowId: 'wf1' },
   ];
 
   const edges: GraphEdge[] = [
@@ -92,11 +92,11 @@ function createGraphWithDeadEnd() {
   const graph = new GraphData();
 
   const nodes: GraphNode[] = [
-    { id: '1', type: NodeType.START, name: 'Start', workflowId: 'wf1' },
-    { id: '2', type: NodeType.LLM, name: 'Task 2', workflowId: 'wf1' },
-    { id: '3', type: NodeType.LLM, name: 'Dead End', workflowId: 'wf1' },
-    { id: '4', type: NodeType.LLM, name: 'Task 4', workflowId: 'wf1' },
-    { id: '5', type: NodeType.END, name: 'End', workflowId: 'wf1' },
+    { id: '1', type: 'START', name: 'Start', workflowId: 'wf1' },
+    { id: '2', type: 'LLM', name: 'Task 2', workflowId: 'wf1' },
+    { id: '3', type: 'LLM', name: 'Dead End', workflowId: 'wf1' },
+    { id: '4', type: 'LLM', name: 'Task 4', workflowId: 'wf1' },
+    { id: '5', type: 'END', name: 'End', workflowId: 'wf1' },
   ];
 
   const edges: GraphEdge[] = [
@@ -130,11 +130,11 @@ function createGraphWithMultipleEnds() {
   const graph = new GraphData();
 
   const nodes: GraphNode[] = [
-    { id: '1', type: NodeType.START, name: 'Start', workflowId: 'wf1' },
-    { id: '2', type: NodeType.LLM, name: 'Task 2', workflowId: 'wf1' },
-    { id: '3', type: NodeType.END, name: 'End 1', workflowId: 'wf1' },
-    { id: '4', type: NodeType.LLM, name: 'Task 4', workflowId: 'wf1' },
-    { id: '5', type: NodeType.END, name: 'End 2', workflowId: 'wf1' },
+    { id: '1', type: 'START', name: 'Start', workflowId: 'wf1' },
+    { id: '2', type: 'LLM', name: 'Task 2', workflowId: 'wf1' },
+    { id: '3', type: 'END', name: 'End 1', workflowId: 'wf1' },
+    { id: '4', type: 'LLM', name: 'Task 4', workflowId: 'wf1' },
+    { id: '5', type: 'END', name: 'End 2', workflowId: 'wf1' },
   ];
 
   const edges: GraphEdge[] = [
@@ -232,8 +232,8 @@ describe('graph-reachability-analyzer', () => {
       const graph = new GraphData();
 
       const nodes: GraphNode[] = [
-        { id: '1', type: NodeType.LLM, name: 'Task 1', workflowId: 'wf1' },
-        { id: '2', type: NodeType.END, name: 'End', workflowId: 'wf1' },
+        { id: '1', type: 'LLM', name: 'Task 1', workflowId: 'wf1' },
+        { id: '2', type: 'END', name: 'End', workflowId: 'wf1' },
       ];
 
       for (const node of nodes) {
@@ -259,8 +259,8 @@ describe('graph-reachability-analyzer', () => {
       const graph = new GraphData();
 
       const nodes: GraphNode[] = [
-        { id: '1', type: NodeType.START, name: 'Start', workflowId: 'wf1' },
-        { id: '2', type: NodeType.LLM, name: 'Task', workflowId: 'wf1' },
+        { id: '1', type: 'START', name: 'Start', workflowId: 'wf1' },
+        { id: '2', type: 'LLM', name: 'Task', workflowId: 'wf1' },
       ];
 
       for (const node of nodes) {
@@ -288,7 +288,7 @@ describe('graph-reachability-analyzer', () => {
 
       const node: GraphNode = {
         id: '1',
-        type: NodeType.START,
+        type: 'START',
         name: 'Single',
         workflowId: 'wf1',
       };
@@ -322,11 +322,11 @@ describe('graph-reachability-analyzer', () => {
       const graph = new GraphData();
 
       const nodes: GraphNode[] = [
-        { id: '1', type: NodeType.START, name: 'Start', workflowId: 'wf1' },
-        { id: '2', type: NodeType.LLM, name: 'Task 2', workflowId: 'wf1' },
-        { id: '3', type: NodeType.LLM, name: 'Task 3', workflowId: 'wf1' },
-        { id: '4', type: NodeType.LLM, name: 'Task 4', workflowId: 'wf1' },
-        { id: '5', type: NodeType.END, name: 'End', workflowId: 'wf1' },
+        { id: '1', type: 'START', name: 'Start', workflowId: 'wf1' },
+        { id: '2', type: 'LLM', name: 'Task 2', workflowId: 'wf1' },
+        { id: '3', type: 'LLM', name: 'Task 3', workflowId: 'wf1' },
+        { id: '4', type: 'LLM', name: 'Task 4', workflowId: 'wf1' },
+        { id: '5', type: 'END', name: 'End', workflowId: 'wf1' },
       ];
 
       for (const node of nodes) {
@@ -371,11 +371,11 @@ describe('graph-reachability-analyzer', () => {
       const graph = new GraphData();
 
       const nodes: GraphNode[] = [
-        { id: '1', type: NodeType.START, name: 'Start', workflowId: 'wf1' },
-        { id: '2', type: NodeType.LLM, name: 'Task 2', workflowId: 'wf1' },
-        { id: '3', type: NodeType.LLM, name: 'Task 3', workflowId: 'wf1' },
-        { id: '4', type: NodeType.LLM, name: 'Task 4', workflowId: 'wf1' },
-        { id: '5', type: NodeType.END, name: 'End', workflowId: 'wf1' },
+        { id: '1', type: 'START', name: 'Start', workflowId: 'wf1' },
+        { id: '2', type: 'LLM', name: 'Task 2', workflowId: 'wf1' },
+        { id: '3', type: 'LLM', name: 'Task 3', workflowId: 'wf1' },
+        { id: '4', type: 'LLM', name: 'Task 4', workflowId: 'wf1' },
+        { id: '5', type: 'END', name: 'End', workflowId: 'wf1' },
       ];
 
       for (const node of nodes) {
@@ -409,10 +409,10 @@ describe('graph-reachability-analyzer', () => {
       const graph = new GraphData();
 
       const nodes: GraphNode[] = [
-        { id: '1', type: NodeType.START, name: 'Start', workflowId: 'wf1' },
-        { id: '2', type: NodeType.LLM, name: 'Task 2', workflowId: 'wf1' },
-        { id: '3', type: NodeType.LLM, name: 'Task 3', workflowId: 'wf1' },
-        { id: '4', type: NodeType.END, name: 'End', workflowId: 'wf1' },
+        { id: '1', type: 'START', name: 'Start', workflowId: 'wf1' },
+        { id: '2', type: 'LLM', name: 'Task 2', workflowId: 'wf1' },
+        { id: '3', type: 'LLM', name: 'Task 3', workflowId: 'wf1' },
+        { id: '4', type: 'END', name: 'End', workflowId: 'wf1' },
       ];
 
       for (const node of nodes) {

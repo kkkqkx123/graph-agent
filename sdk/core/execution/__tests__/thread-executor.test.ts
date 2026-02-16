@@ -111,13 +111,13 @@ describe('ThreadExecutor', () => {
       const result = await executor.executeThread(threadContext);
 
       // 验证结果
-      expect(result.metadata.status).toBe(ThreadStatus.COMPLETED);
+      expect(result.metadata.status).toBe('COMPLETED');
       expect(result.threadId).toBe('test-thread');
       expect(result.metadata.errorCount).toBe(0);
       expect(result.executionTime).toBeGreaterThanOrEqual(0);
       
       // 验证线程状态已更新为完成
-      expect(threadContext.thread.status).toBe(ThreadStatus.COMPLETED);
+      expect(threadContext.thread.status).toBe('COMPLETED');
       expect(threadContext.thread.endTime).toBeDefined();
     });
 
@@ -162,8 +162,8 @@ describe('ThreadExecutor', () => {
       const result = await executor.executeThread(threadContext);
 
       // 验证结果
-      expect(result.metadata.status).toBe(ThreadStatus.COMPLETED);
-      expect(threadContext.thread.status).toBe(ThreadStatus.COMPLETED);
+      expect(result.metadata.status).toBe('COMPLETED');
+      expect(threadContext.thread.status).toBe('COMPLETED');
     });
 
     it('应该在节点跳过时继续执行', async () => {
@@ -191,7 +191,7 @@ describe('ThreadExecutor', () => {
       const result = await executor.executeThread(threadContext);
 
       // 验证结果 - 跳过节点后完成应该是成功
-      expect(result.metadata.status).toBe(ThreadStatus.COMPLETED);
+      expect(result.metadata.status).toBe('COMPLETED');
     });
 
     it('应该在执行过程中遇到错误时处理错误', async () => {
@@ -215,7 +215,7 @@ describe('ThreadExecutor', () => {
       const result = await executor.executeThread(threadContext);
 
       // 验证结果 - 应该在没有执行任何节点的情况下返回
-      expect(result.metadata.status).toBe(ThreadStatus.CREATED);
+      expect(result.metadata.status).toBe('CREATED');
       expect(result.nodeResults).toHaveLength(0);
     });
 
@@ -227,7 +227,7 @@ describe('ThreadExecutor', () => {
       const result = await executor.executeThread(threadContext);
 
       // 验证结果 - 应该在没有执行任何节点的情况下返回
-      expect(result.metadata.status).toBe(ThreadStatus.CREATED);
+      expect(result.metadata.status).toBe('CREATED');
       expect(result.nodeResults).toHaveLength(0);
     });
   });
@@ -270,7 +270,7 @@ describe('ThreadExecutor', () => {
     it('应该正确识别END节点', () => {
       const endNode: Node = {
         id: 'end',
-        type: NodeType.END,
+        type: 'END',
         name: 'End Node',
         config: {},
         outgoingEdgeIds: [],
@@ -282,7 +282,7 @@ describe('ThreadExecutor', () => {
     it('应该正确识别非END节点', () => {
       const startNode: Node = {
         id: 'start',
-        type: NodeType.START,
+        type: 'START',
         name: 'Start Node',
         config: {},
         outgoingEdgeIds: [],
@@ -297,7 +297,7 @@ describe('ThreadExecutor', () => {
       const threadContext = createMockThreadContext();
       const currentNode: Node = {
         id: 'start',
-        type: NodeType.START,
+        type: 'START',
         name: 'Start Node',
         config: {},
         outgoingEdgeIds: [],
@@ -328,7 +328,7 @@ describe('ThreadExecutor', () => {
       const threadContext = createMockThreadContext();
       const currentNode: Node = {
         id: 'decision',
-        type: NodeType.ROUTE,
+        type: 'ROUTE',
         name: 'Decision Node',
         config: {},
         outgoingEdgeIds: [],
@@ -366,7 +366,7 @@ describe('ThreadExecutor', () => {
       const threadContext = createMockThreadContext();
       const currentNode: Node = {
         id: 'start',
-        type: NodeType.START,
+        type: 'START',
         name: 'Start Node',
         config: {},
         outgoingEdgeIds: [],
@@ -477,7 +477,7 @@ export function createMockThreadContext(): ThreadContext {
     id: 'test-thread',
     workflowId: 'test-workflow',
     workflowVersion: '1.0.0',
-    status: ThreadStatus.CREATED,
+    status: 'CREATED',
     currentNodeId: 'start',
     variables: [],
     variableScopes: {
@@ -503,7 +503,7 @@ export function createMockThreadContext(): ThreadContext {
   mockNavigator.getGraph().getNode.mockImplementation((nodeId: string) => ({
     originalNode: {
       id: nodeId,
-      type: nodeId === 'end' ? NodeType.END : NodeType.START,
+      type: nodeId === 'end' ? 'END' : 'START',
       name: `${nodeId} Node`,
       config: {},
       outgoingEdgeIds: [],

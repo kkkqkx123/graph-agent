@@ -97,7 +97,7 @@ export async function skipNodeHandler(
     // 触发NODE_COMPLETED事件（状态为SKIPPED）
     const eventManager = context.getEventManager();
     const completedEvent = {
-      type: EventType.NODE_COMPLETED,
+      type: 'NODE_COMPLETED',
       timestamp: Date.now(),
       workflowId: threadContext.getWorkflowId(),
       threadId: threadContext.getThreadId(),

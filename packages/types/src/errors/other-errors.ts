@@ -19,7 +19,7 @@ export class ConfigurationError extends SDKError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.ERROR;
+    return 'error';
   }
 }
 
@@ -37,7 +37,7 @@ export class TimeoutError extends SDKError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.WARNING;
+    return 'warning';
   }
 }
 
@@ -57,7 +57,7 @@ export class ToolError extends SDKError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.WARNING;
+    return 'warning';
   }
 }
 
@@ -77,6 +77,6 @@ export class CodeExecutionError extends SDKError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.ERROR;
+    return 'error';
   }
 }

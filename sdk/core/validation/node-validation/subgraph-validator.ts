@@ -24,7 +24,7 @@ const subgraphNodeConfigSchema = z.object({
  * @returns 验证结果
  */
 export function validateSubgraphNode(node: Node): Result<Node, ConfigurationValidationError[]> {
-  if (node.type !== NodeType.SUBGRAPH) {
+  if (node.type !== 'SUBGRAPH') {
     return err([new ConfigurationValidationError(`Invalid node type for subgraph validator: ${node.type}`, {
       configType: 'node',
       configPath: `node.${node.id}`

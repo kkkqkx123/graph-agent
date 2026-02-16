@@ -17,10 +17,10 @@ import { CodeRiskLevel } from '@modular-agent/types';
  */
 export function getRiskLevelPriority(riskLevel: CodeRiskLevel): number {
   const priorityMap: Record<CodeRiskLevel, number> = {
-    [CodeRiskLevel.NONE]: 0,
-    [CodeRiskLevel.LOW]: 1,
-    [CodeRiskLevel.MEDIUM]: 2,
-    [CodeRiskLevel.HIGH]: 3
+    'none': 0,
+    'low': 1,
+    'medium': 2,
+    'high': 3
   };
   return priorityMap[riskLevel];
 }

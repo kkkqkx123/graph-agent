@@ -9,7 +9,7 @@ import type { BaseEvent, EventType } from './base';
  * 工具调用开始事件类型
  */
 export interface ToolCallStartedEvent extends BaseEvent {
-  type: EventType.TOOL_CALL_STARTED;
+  type: 'TOOL_CALL_STARTED';
   /** 节点ID */
   nodeId: ID;
   /** 工具ID */
@@ -24,7 +24,7 @@ export interface ToolCallStartedEvent extends BaseEvent {
  * 工具调用完成事件类型
  */
 export interface ToolCallCompletedEvent extends BaseEvent {
-  type: EventType.TOOL_CALL_COMPLETED;
+  type: 'TOOL_CALL_COMPLETED';
   /** 节点ID */
   nodeId: ID;
   /** 工具ID */
@@ -41,7 +41,7 @@ export interface ToolCallCompletedEvent extends BaseEvent {
  * 工具调用失败事件类型
  */
 export interface ToolCallFailedEvent extends BaseEvent {
-  type: EventType.TOOL_CALL_FAILED;
+  type: 'TOOL_CALL_FAILED';
   /** 节点ID */
   nodeId: ID;
   /** 工具ID */
@@ -56,7 +56,7 @@ export interface ToolCallFailedEvent extends BaseEvent {
  * 工具添加事件类型
  */
 export interface ToolAddedEvent extends BaseEvent {
-  type: EventType.TOOL_ADDED;
+  type: 'TOOL_ADDED';
   /** 节点ID */
   nodeId: ID;
   /** 工具ID列表 */

@@ -20,7 +20,7 @@ export class StdioTransport extends EventEmitter implements IMcpTransport {
   private sessionId: string | null = null;
   private messageIdCounter = 0;
   private pendingRequests = new Map<number, { resolve: (value: any) => void; reject: (error: any) => void }>();
-  private state: McpSessionState = SessionState.DISCONNECTED;
+  private state: McpSessionState = 'DISCONNECTED';
   private connectedAt: Date | null = null;
   private lastActivityAt: Date | null = null;
   private isDisposed = false;
@@ -40,11 +40,11 @@ export class StdioTransport extends EventEmitter implements IMcpTransport {
       throw new NetworkError('Transport has been disposed');
     }
 
-    if (this.state === SessionState.CONNECTED || this.state === SessionState.READY) {
+    if (this.state === 'CONNECTED' || this.state === 'READY') {
       return true;
     }
 
-    this.state = SessionState.CONNECTING;
+    this.state = 'CONNECTING';
 
     try {
       // 启动MCP服务器进程
@@ -65,13 +65,13 @@ export class StdioTransport extends EventEmitter implements IMcpTransport {
 
       this.process.on('error', (error) => {
         console.error(`MCP Process Error [${this.config.name}]: ${error.message}`);
-        this.state = SessionState.ERROR;
+        this.state = 'ERROR';
         this.emit('error', error);
       });
 
       this.process.on('close', (code) => {
         console.log(`MCP Process closed [${this.config.name}] with code: ${code}`);
-        this.state = SessionState.DISCONNECTED;
+        this.state = 'DISCONNECTED';
         this.emit('close', code);
         
         // 尝试自动重连
@@ -87,14 +87,14 @@ export class StdioTransport extends EventEmitter implements IMcpTransport {
       // 初始化会话
       await this.initialize();
 
-      this.state = SessionState.READY;
+      this.state = 'READY';
       this.connectedAt = new Date();
       this.lastActivityAt = new Date();
       this.reconnectAttempts = 0;
 
       return true;
     } catch (error) {
-      this.state = SessionState.ERROR;
+      this.state = 'ERROR';
       console.error(`Failed to connect to MCP server [${this.config.name}]: ${error}`);
       await this.cleanup();
       return false;
@@ -159,7 +159,7 @@ export class StdioTransport extends EventEmitter implements IMcpTransport {
       throw new NetworkError('Transport has been disposed');
     }
 
-    if (this.state !== SessionState.READY) {
+    if (this.state !== 'READY') {
       throw new NetworkError(`Transport is not ready. Current state: ${this.state}`);
     }
 
@@ -192,7 +192,7 @@ export class StdioTransport extends EventEmitter implements IMcpTransport {
    * 初始化MCP会话
    */
   private async initialize(): Promise<void> {
-    this.state = SessionState.INITIALIZING;
+    this.state = 'INITIALIZING';
 
     // 发送初始化请求
     const result = await this.sendMessage('initialize', {
@@ -215,7 +215,7 @@ export class StdioTransport extends EventEmitter implements IMcpTransport {
    * 列出可用的工具
    */
   async listTools(): Promise<any[]> {
-    if (this.state !== SessionState.READY) {
+    if (this.state !== 'READY') {
       throw new NetworkError('Session is not ready');
     }
 
@@ -232,7 +232,7 @@ export class StdioTransport extends EventEmitter implements IMcpTransport {
    * 调用MCP工具
    */
   async callTool(toolName: string, argumentsMap: Record<string, any>): Promise<any> {
-    if (this.state !== SessionState.READY) {
+    if (this.state !== 'READY') {
       throw new NetworkError('Session is not ready');
     }
 
@@ -248,7 +248,7 @@ export class StdioTransport extends EventEmitter implements IMcpTransport {
    * 断开连接
    */
   async disconnect(): Promise<void> {
-    if (this.state === SessionState.DISCONNECTED) {
+    if (this.state === 'DISCONNECTED') {
       return;
     }
 
@@ -281,7 +281,7 @@ export class StdioTransport extends EventEmitter implements IMcpTransport {
     }
     this.pendingRequests.clear();
 
-    this.state = SessionState.DISCONNECTED;
+    this.state = 'DISCONNECTED';
     this.sessionId = null;
     this.connectedAt = null;
   }
@@ -290,7 +290,7 @@ export class StdioTransport extends EventEmitter implements IMcpTransport {
    * 检查是否已连接
    */
   isConnected(): boolean {
-    return this.state === SessionState.READY;
+    return this.state === 'READY';
   }
 
   /**
@@ -323,7 +323,7 @@ export class StdioTransport extends EventEmitter implements IMcpTransport {
    * 健康检查
    */
   async healthCheck(): Promise<boolean> {
-    if (this.state !== SessionState.READY) {
+    if (this.state !== 'READY') {
       return false;
     }
 

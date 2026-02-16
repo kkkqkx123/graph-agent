@@ -41,14 +41,14 @@ describe('MessageStream', () => {
       const mockListener = jest.fn();
 
       // 通过触发事件来测试监听器
-      stream.on(MessageStreamEventType.TEXT, mockListener);
+      stream.on('text', mockListener);
 
       // 使用 accumulateMessage 来触发 TEXT 事件
       stream.accumulateMessage({
         type: 'message_start',
         data: {
           message: {
-            role: MessageRole.ASSISTANT,
+            role: 'assistant',
             content: []
           }
         }
@@ -79,15 +79,15 @@ describe('MessageStream', () => {
 
     it('应该支持移除事件监听器', () => {
       const mockListener = jest.fn();
-      stream.on(MessageStreamEventType.TEXT, mockListener);
-      stream.off(MessageStreamEventType.TEXT, mockListener);
+      stream.on('text', mockListener);
+      stream.off('text', mockListener);
 
       // 尝试触发事件
       stream.accumulateMessage({
         type: 'message_start',
         data: {
           message: {
-            role: MessageRole.ASSISTANT,
+            role: 'assistant',
             content: []
           }
         }
@@ -118,14 +118,14 @@ describe('MessageStream', () => {
 
     it('应该支持一次性事件监听器', () => {
       const mockListener = jest.fn();
-      stream.once(MessageStreamEventType.TEXT, mockListener);
+      stream.once('text', mockListener);
 
       // 触发事件两次
       stream.accumulateMessage({
         type: 'message_start',
         data: {
           message: {
-            role: MessageRole.ASSISTANT,
+            role: 'assistant',
             content: []
           }
         }
@@ -167,8 +167,8 @@ describe('MessageStream', () => {
     it('应该支持链式调用', () => {
       const mockListener = jest.fn();
       const result = stream
-        .on(MessageStreamEventType.TEXT, mockListener)
-        .off(MessageStreamEventType.TEXT, mockListener);
+        .on('text', mockListener)
+        .off('text', mockListener);
 
       expect(result).toBe(stream);
     });
@@ -176,7 +176,7 @@ describe('MessageStream', () => {
 
   describe('emitted', () => {
     it('应该在事件触发时解析Promise', async () => {
-      const promise = stream.emitted(MessageStreamEventType.TEXT);
+      const promise = stream.emitted('text');
 
       // 延迟触发事件
       setTimeout(() => {
@@ -184,7 +184,7 @@ describe('MessageStream', () => {
           type: 'message_start',
           data: {
             message: {
-              role: MessageRole.ASSISTANT,
+              role: 'assistant',
               content: []
             }
           }
@@ -212,14 +212,14 @@ describe('MessageStream', () => {
       }, 10);
 
       const event = await promise;
-      expect(event.type).toBe(MessageStreamEventType.TEXT);
+      expect(event.type).toBe('text');
     });
   });
 
   describe('finalMessage', () => {
     it('应该在有消息时返回最终消息', () => {
       const message: LLMMessage = {
-        role: MessageRole.ASSISTANT,
+        role: 'assistant',
         content: 'Final message'
       };
 
@@ -234,7 +234,7 @@ describe('MessageStream', () => {
   describe('finalText', () => {
     it('应该返回字符串内容', () => {
       const message: LLMMessage = {
-        role: MessageRole.ASSISTANT,
+        role: 'assistant',
         content: 'Hello, world!'
       };
 
@@ -244,7 +244,7 @@ describe('MessageStream', () => {
 
     it('应该从数组内容中提取文本', () => {
       const message: LLMMessage = {
-        role: MessageRole.ASSISTANT,
+        role: 'assistant',
         content: [
           { type: 'text', text: 'Hello' },
           { type: 'text', text: ', world!' }
@@ -264,7 +264,7 @@ describe('MessageStream', () => {
 
     it('应该在无文本内容时返回空字符串', () => {
       const message: LLMMessage = {
-        role: MessageRole.ASSISTANT,
+        role: 'assistant',
         content: []
       };
 
@@ -287,7 +287,7 @@ describe('MessageStream', () => {
         model: 'gpt-4',
         content: 'Test',
         message: {
-          role: MessageRole.ASSISTANT,
+          role: 'assistant',
           content: 'Test'
         },
         finishReason: 'stop',
@@ -300,7 +300,7 @@ describe('MessageStream', () => {
       };
 
       const mockListener = jest.fn();
-      stream.on(MessageStreamEventType.FINAL_MESSAGE, mockListener);
+      stream.on('finalMessage', mockListener);
 
       stream.setFinalResult(result);
 
@@ -359,7 +359,7 @@ describe('MessageStream', () => {
         type: 'message_start',
         data: {
           message: {
-            role: MessageRole.ASSISTANT,
+            role: 'assistant',
             content: ''
           }
         }
@@ -368,7 +368,7 @@ describe('MessageStream', () => {
       const snapshot = stream.accumulateMessage(event);
 
       expect(snapshot).toBeDefined();
-      expect(snapshot?.role).toBe(MessageRole.ASSISTANT);
+      expect(snapshot?.role).toBe('assistant');
     });
 
     it('应该在message_start已存在时抛出错误', () => {
@@ -376,7 +376,7 @@ describe('MessageStream', () => {
         type: 'message_start',
         data: {
           message: {
-            role: MessageRole.ASSISTANT,
+            role: 'assistant',
             content: ''
           }
         }
@@ -393,7 +393,7 @@ describe('MessageStream', () => {
         type: 'message_start',
         data: {
           message: {
-            role: MessageRole.ASSISTANT,
+            role: 'assistant',
             content: []
           }
         }
@@ -434,7 +434,7 @@ describe('MessageStream', () => {
         type: 'message_start',
         data: {
           message: {
-            role: MessageRole.ASSISTANT,
+            role: 'assistant',
             content: 'Test'
           }
         }
@@ -456,7 +456,7 @@ describe('MessageStream', () => {
         type: 'message_start',
         data: {
           message: {
-            role: MessageRole.ASSISTANT,
+            role: 'assistant',
             content: []
           }
         }
@@ -516,7 +516,7 @@ describe('MessageStream', () => {
         model: 'gpt-4',
         content: 'Test',
         message: {
-          role: MessageRole.ASSISTANT,
+          role: 'assistant',
           content: 'Test'
         },
         finishReason: 'stop',
@@ -529,7 +529,7 @@ describe('MessageStream', () => {
       };
 
       const mockListener = jest.fn();
-      stream.on(MessageStreamEventType.FINAL_MESSAGE, mockListener);
+      stream.on('finalMessage', mockListener);
 
       stream.setFinalResult(result);
 
@@ -551,7 +551,7 @@ describe('MessageStream', () => {
   describe('setRequestId', () => {
     it('应该设置请求ID', () => {
       const mockListener = jest.fn();
-      stream.on(MessageStreamEventType.CONNECT, mockListener);
+      stream.on('connect', mockListener);
 
       stream.setRequestId('test-request-id');
 
@@ -563,7 +563,7 @@ describe('MessageStream', () => {
   describe('getReceivedMessages', () => {
     it('应该返回接收的消息副本', () => {
       const message: LLMMessage = {
-        role: MessageRole.ASSISTANT,
+        role: 'assistant',
         content: 'Test'
       };
 
@@ -574,7 +574,7 @@ describe('MessageStream', () => {
       expect(messages[0]).toEqual(message);
 
       // 修改返回的数组不应影响内部状态
-      messages.push({ role: MessageRole.USER, content: 'Another' } as LLMMessage);
+      messages.push({ role: 'user', content: 'Another' } as LLMMessage);
       expect(stream.getReceivedMessages()).toHaveLength(1);
     });
   });

@@ -12,7 +12,7 @@ describe('validateAddToolNode', () => {
   const createMockNode = (config: any) => ({
     id: 'add-tool-1',
     name: 'Add Tool Node',
-    type: NodeType.ADD_TOOL,
+    type: 'ADD_TOOL',
     config,
     incomingEdgeIds: [],
     outgoingEdgeIds: []
@@ -194,7 +194,7 @@ describe('validateAddToolNode', () => {
       const node = {
         id: 'llm-node-1',
         name: 'LLM Node',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: {
           toolIds: ['tool-1']
         },
@@ -248,7 +248,7 @@ describe('validateAddToolNode', () => {
       toolRegistry.register({
         id: 'tool-1',
         name: 'Tool 1',
-        type: ToolType.STATELESS,
+        type: 'STATELESS',
         description: 'Test tool 1',
         parameters: {
           properties: {},
@@ -261,7 +261,7 @@ describe('validateAddToolNode', () => {
       toolRegistry.register({
         id: 'tool-2',
         name: 'Tool 2',
-        type: ToolType.STATELESS,
+        type: 'STATELESS',
         description: 'Test tool 2',
         parameters: {
           properties: {},

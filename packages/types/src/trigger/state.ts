@@ -5,24 +5,22 @@
 import type { ID, Timestamp } from '../common';
 
 /**
- * 触发器类型枚举
+ * 触发器类型
  */
-export enum TriggerType {
+export type TriggerType =
   /** 事件触发器 - 监听 SDK 现有事件 */
-  EVENT = 'event'
-}
+  'event';
 
 /**
- * 触发器状态枚举
+ * 触发器状态
  */
-export enum TriggerStatus {
+export type TriggerStatus =
   /** 已启用 */
-  ENABLED = 'enabled',
+  'enabled' |
   /** 已禁用 */
-  DISABLED = 'disabled',
+  'disabled' |
   /** 已触发 */
-  TRIGGERED = 'triggered'
-}
+  'triggered';
 
 /**
  * 触发器运行时状态接口

@@ -13,7 +13,7 @@ describe('custom-handler', () => {
 
   beforeEach(() => {
     mockAction = {
-      type: TriggerActionType.CUSTOM,
+      type: 'custom',
       parameters: {
         handler: jest.fn()
       }

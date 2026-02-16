@@ -50,22 +50,22 @@ export class ClientFactory {
    */
   private createClientByProvider(profile: LLMProfile): LLMClient {
     switch (profile.provider) {
-      case LLMProvider.OPENAI_CHAT:
+      case 'OPENAI_CHAT':
         return new OpenAIChatClient(profile);
 
-      case LLMProvider.OPENAI_RESPONSE:
+      case 'OPENAI_RESPONSE':
         return new OpenAIResponseClient(profile);
 
-      case LLMProvider.ANTHROPIC:
+      case 'ANTHROPIC':
         return new AnthropicClient(profile);
 
-      case LLMProvider.GEMINI_NATIVE:
+      case 'GEMINI_NATIVE':
         return new GeminiNativeClient(profile);
 
-      case LLMProvider.GEMINI_OPENAI:
+      case 'GEMINI_OPENAI':
         return new GeminiOpenAIClient(profile);
 
-      case LLMProvider.HUMAN_RELAY:
+      case 'HUMAN_RELAY':
         // TODO: 实现HumanRelayClient
         throw new ConfigurationError(
           `HumanRelayClient 尚未实现`,
@@ -80,7 +80,7 @@ export class ClientFactory {
           {
             provider: profile.provider,
             model: profile.model,
-            supportedProviders: Object.values(LLMProvider)
+            supportedProviders: ['OPENAI_CHAT', 'OPENAI_RESPONSE', 'ANTHROPIC', 'GEMINI_NATIVE', 'GEMINI_OPENAI', 'HUMAN_RELAY']
           }
         );
     }

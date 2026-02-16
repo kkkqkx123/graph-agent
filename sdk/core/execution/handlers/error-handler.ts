@@ -35,7 +35,7 @@ function standardizeErrorWithSeverity(error: Error, context: ErrorContext): SDKE
 
   // 否则根据上下文包装为合适的 SDKError 子类
   // 默认使用 ERROR 级别
-  return new SDKError(error.message, ErrorSeverity.ERROR, context, error);
+  return new SDKError(error.message, 'error', context, error);
 }
 
 /**
@@ -70,8 +70,8 @@ export async function handleNodeFailure(
   await errorService.handleError(standardizedError, context);
 
   // 核心简化：仅当 severity 为 ERROR 时才停止执行
-  if (standardizedError.severity === ErrorSeverity.ERROR) {
-    threadContext.setStatus(ThreadStatus.FAILED);
+  if (standardizedError.severity === 'error') {
+    threadContext.setStatus('FAILED');
     threadContext.thread.endTime = now();
     threadContext.setShouldStop(true);
   }
@@ -105,8 +105,8 @@ export async function handleExecutionError(
   await errorService.handleError(standardizedError, context);
 
   // 核心简化：仅当 severity 为 ERROR 时才停止执行
-  if (standardizedError.severity === ErrorSeverity.ERROR) {
-    threadContext.setStatus(ThreadStatus.FAILED);
+  if (standardizedError.severity === 'error') {
+    threadContext.setStatus('FAILED');
     threadContext.thread.endTime = now();
     threadContext.setShouldStop(true);
   }

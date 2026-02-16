@@ -9,7 +9,7 @@ import type { BaseEvent, EventType } from './base';
  * 用户交互请求事件类型
  */
 export interface UserInteractionRequestedEvent extends BaseEvent {
-  type: EventType.USER_INTERACTION_REQUESTED;
+  type: 'USER_INTERACTION_REQUESTED';
   /** 节点ID */
   nodeId: ID;
   /** 交互ID */
@@ -26,7 +26,7 @@ export interface UserInteractionRequestedEvent extends BaseEvent {
  * 用户交互响应事件类型
  */
 export interface UserInteractionRespondedEvent extends BaseEvent {
-  type: EventType.USER_INTERACTION_RESPONDED;
+  type: 'USER_INTERACTION_RESPONDED';
   /** 交互ID */
   interactionId: ID;
   /** 用户输入数据 */
@@ -37,7 +37,7 @@ export interface UserInteractionRespondedEvent extends BaseEvent {
  * 用户交互处理完成事件类型
  */
 export interface UserInteractionProcessedEvent extends BaseEvent {
-  type: EventType.USER_INTERACTION_PROCESSED;
+  type: 'USER_INTERACTION_PROCESSED';
   /** 交互ID */
   interactionId: ID;
   /** 操作类型 */
@@ -50,7 +50,7 @@ export interface UserInteractionProcessedEvent extends BaseEvent {
  * 用户交互失败事件类型
  */
 export interface UserInteractionFailedEvent extends BaseEvent {
-  type: EventType.USER_INTERACTION_FAILED;
+  type: 'USER_INTERACTION_FAILED';
   /** 交互ID */
   interactionId: ID;
   /** 失败原因 */
@@ -61,7 +61,7 @@ export interface UserInteractionFailedEvent extends BaseEvent {
  * HumanRelay 请求事件类型
  */
 export interface HumanRelayRequestedEvent extends BaseEvent {
-  type: EventType.HUMAN_RELAY_REQUESTED;
+  type: 'HUMAN_RELAY_REQUESTED';
   /** 节点ID */
   nodeId: ID;
   /** 请求ID */
@@ -78,7 +78,7 @@ export interface HumanRelayRequestedEvent extends BaseEvent {
  * HumanRelay 响应事件类型
  */
 export interface HumanRelayRespondedEvent extends BaseEvent {
-  type: EventType.HUMAN_RELAY_RESPONDED;
+  type: 'HUMAN_RELAY_RESPONDED';
   /** 请求ID */
   requestId: ID;
   /** 人工输入内容 */
@@ -89,7 +89,7 @@ export interface HumanRelayRespondedEvent extends BaseEvent {
  * HumanRelay 处理完成事件类型
  */
 export interface HumanRelayProcessedEvent extends BaseEvent {
-  type: EventType.HUMAN_RELAY_PROCESSED;
+  type: 'HUMAN_RELAY_PROCESSED';
   /** 请求ID */
   requestId: ID;
   /** 处理结果 */
@@ -105,7 +105,7 @@ export interface HumanRelayProcessedEvent extends BaseEvent {
  * HumanRelay 失败事件类型
  */
 export interface HumanRelayFailedEvent extends BaseEvent {
-  type: EventType.HUMAN_RELAY_FAILED;
+  type: 'HUMAN_RELAY_FAILED';
   /** 请求ID */
   requestId: ID;
   /** 失败原因 */

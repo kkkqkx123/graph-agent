@@ -15,7 +15,7 @@ class MockThreadContext {
   constructor(
     public threadId: string,
     public thread: Thread,
-    public status: string = ThreadStatus.CREATED
+    public status: string = 'CREATED'
   ) { }
 
   getThreadId(): string {
@@ -71,7 +71,7 @@ class TestableThreadOperationCoordinator {
       id: childThreadId,
       workflowId: parentThreadContext.thread.workflowId,
       workflowVersion: '1.0.0',
-      status: ThreadStatus.CREATED,
+      status: 'CREATED',
       currentNodeId: 'node1',
       graph: {} as Graph,
       variables: [],
@@ -152,7 +152,7 @@ describe('ThreadOperationCoordinator', () => {
         id: parentThreadId,
         workflowId: generateId(),
         workflowVersion: '1.0.0',
-        status: ThreadStatus.RUNNING,
+        status: 'RUNNING',
         currentNodeId: 'node1',
         graph: {} as Graph,
         variables: [],
@@ -171,7 +171,7 @@ describe('ThreadOperationCoordinator', () => {
         shouldStop: false
       };
 
-      const mockThreadContext = new MockThreadContext(parentThreadId, mockThread, ThreadStatus.RUNNING);
+      const mockThreadContext = new MockThreadContext(parentThreadId, mockThread, 'RUNNING');
       mockThreadRegistry.register(mockThreadContext);
 
       const forkConfig: ForkConfig = {
@@ -203,7 +203,7 @@ describe('ThreadOperationCoordinator', () => {
         id: parentThreadId,
         workflowId: generateId(),
         workflowVersion: '1.0.0',
-        status: ThreadStatus.RUNNING,
+        status: 'RUNNING',
         currentNodeId: 'node1',
         graph: {} as Graph,
         variables: [],
@@ -222,7 +222,7 @@ describe('ThreadOperationCoordinator', () => {
         shouldStop: false
       };
 
-      const mockThreadContext = new MockThreadContext(parentThreadId, mockThread, ThreadStatus.RUNNING);
+      const mockThreadContext = new MockThreadContext(parentThreadId, mockThread, 'RUNNING');
       mockThreadRegistry.register(mockThreadContext);
 
       const forkConfig: ForkConfig = {
@@ -243,7 +243,7 @@ describe('ThreadOperationCoordinator', () => {
         id: parentThreadId,
         workflowId: generateId(),
         workflowVersion: '1.0.0',
-        status: ThreadStatus.RUNNING,
+        status: 'RUNNING',
         currentNodeId: 'node1',
         graph: {} as Graph,
         variables: [],
@@ -262,7 +262,7 @@ describe('ThreadOperationCoordinator', () => {
         shouldStop: false
       };
 
-      const mockThreadContext = new MockThreadContext(parentThreadId, mockThread, ThreadStatus.RUNNING);
+      const mockThreadContext = new MockThreadContext(parentThreadId, mockThread, 'RUNNING');
       mockThreadRegistry.register(mockThreadContext);
 
       const result = await coordinator.join(parentThreadId, childThreadIds, 'ALL_COMPLETED', 60, 'main-path-1');
@@ -286,7 +286,7 @@ describe('ThreadOperationCoordinator', () => {
         id: parentThreadId,
         workflowId: generateId(),
         workflowVersion: '1.0.0',
-        status: ThreadStatus.RUNNING,
+        status: 'RUNNING',
         currentNodeId: 'node1',
         graph: {} as Graph,
         variables: [],
@@ -305,7 +305,7 @@ describe('ThreadOperationCoordinator', () => {
         shouldStop: false
       };
 
-      const mockThreadContext = new MockThreadContext(parentThreadId, mockThread, ThreadStatus.RUNNING);
+      const mockThreadContext = new MockThreadContext(parentThreadId, mockThread, 'RUNNING');
       mockThreadRegistry.register(mockThreadContext);
 
       const strategies: Array<'ALL_COMPLETED' | 'ANY_COMPLETED' | 'ALL_FAILED' | 'ANY_FAILED' | 'SUCCESS_COUNT_THRESHOLD'> = [
@@ -328,7 +328,7 @@ describe('ThreadOperationCoordinator', () => {
         id: parentThreadId,
         workflowId: generateId(),
         workflowVersion: '1.0.0',
-        status: ThreadStatus.RUNNING,
+        status: 'RUNNING',
         currentNodeId: 'node1',
         graph: {} as Graph,
         variables: [],
@@ -347,7 +347,7 @@ describe('ThreadOperationCoordinator', () => {
         shouldStop: false
       };
 
-      const mockThreadContext = new MockThreadContext(parentThreadId, mockThread, ThreadStatus.RUNNING);
+      const mockThreadContext = new MockThreadContext(parentThreadId, mockThread, 'RUNNING');
       mockThreadRegistry.register(mockThreadContext);
 
       const result = await coordinator.join(parentThreadId, [], 'ALL_COMPLETED', 60, 'main-path-1');
@@ -362,7 +362,7 @@ describe('ThreadOperationCoordinator', () => {
         id: sourceThreadId,
         workflowId: generateId(),
         workflowVersion: '1.0.0',
-        status: ThreadStatus.RUNNING,
+        status: 'RUNNING',
         currentNodeId: 'node1',
         graph: {} as Graph,
         variables: [],
@@ -381,7 +381,7 @@ describe('ThreadOperationCoordinator', () => {
         shouldStop: false
       };
 
-      const mockThreadContext = new MockThreadContext(sourceThreadId, mockThread, ThreadStatus.RUNNING);
+      const mockThreadContext = new MockThreadContext(sourceThreadId, mockThread, 'RUNNING');
       mockThreadRegistry.register(mockThreadContext);
 
       const result = await coordinator.copy(sourceThreadId);
@@ -410,7 +410,7 @@ describe('ThreadOperationCoordinator', () => {
         id: threadId,
         workflowId: generateId(),
         workflowVersion: '1.0.0',
-        status: ThreadStatus.COMPLETED,
+        status: 'COMPLETED',
         currentNodeId: 'node1',
         graph: {} as Graph,
         variables: [],
@@ -429,7 +429,7 @@ describe('ThreadOperationCoordinator', () => {
         shouldStop: false
       };
 
-      const mockThreadContext = new MockThreadContext(threadId, mockThread, ThreadStatus.COMPLETED);
+      const mockThreadContext = new MockThreadContext(threadId, mockThread, 'COMPLETED');
       mockThreadRegistry.register(mockThreadContext);
 
       // 对于已完成线程的 fork 操作应该不会抛出错误

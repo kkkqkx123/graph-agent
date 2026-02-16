@@ -101,7 +101,7 @@ async function executeSingleHook(
               nodeId: context.node.id,
               operation: 'hook_condition_evaluation'
             },
-            severity: ErrorSeverity.WARNING
+            severity: 'warning'
           }
         );
       }
@@ -134,7 +134,7 @@ async function executeSingleHook(
             operation: 'checkpoint_creation'
           },
           getErrorOrNew(error),
-          ErrorSeverity.WARNING
+          'warning'
         );
       }
     }
@@ -159,7 +159,7 @@ async function executeSingleHook(
             operation: 'custom_handler_execution'
           },
           getErrorOrNew(error),
-          ErrorSeverity.ERROR
+          'error'
         );
       }
     }
@@ -179,7 +179,7 @@ async function executeSingleHook(
         operation: 'hook_execution'
       },
       getErrorOrNew(error),
-      ErrorSeverity.ERROR
+      'error'
     );
   }
 }

@@ -351,7 +351,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
     // 1. 通过 EventManager 发送事件
     if (this.eventManager && this.workflowId && this.threadId) {
       const event: TokenLimitExceededEvent = {
-        type: EventType.TOKEN_LIMIT_EXCEEDED,
+        type: 'TOKEN_LIMIT_EXCEEDED',
         timestamp: Date.now(),
         workflowId: this.workflowId,
         threadId: this.threadId,
@@ -367,7 +367,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
       'tokenLimit',
       this.tokenUsageTracker['tokenLimit'],
       { tokensUsed, tokenLimit: this.tokenUsageTracker['tokenLimit'] },
-      ErrorSeverity.WARNING
+      'warning'
     );
   }
 
@@ -573,7 +573,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
 
     if (toolDescriptions.length > 0) {
       return {
-        role: MessageRole.SYSTEM,
+        role: 'system',
         content: `可用工具:\n${toolDescriptions}`
       };
     }

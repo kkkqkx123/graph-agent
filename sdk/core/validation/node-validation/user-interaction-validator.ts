@@ -65,7 +65,7 @@ const userInteractionNodeConfigSchema = z.object({
  * @returns 验证结果
  */
 export function validateUserInteractionNode(node: Node): Result<Node, ConfigurationValidationError[]> {
-  if (node.type !== NodeType.USER_INTERACTION) {
+  if (node.type !== 'USER_INTERACTION') {
     return err([new ConfigurationValidationError(`Invalid node type for user interaction validator: ${node.type}`, {
       configType: 'node',
       configPath: `node.${node.id}`

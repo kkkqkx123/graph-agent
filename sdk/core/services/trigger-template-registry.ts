@@ -243,7 +243,7 @@ class TriggerTemplateRegistry {
     }
 
     // 验证事件类型是否有效
-    const validEventTypes = Object.values(EventType);
+    const validEventTypes = ['THREAD_STARTED', 'THREAD_COMPLETED', 'THREAD_FAILED', 'THREAD_PAUSED', 'THREAD_RESUMED', 'THREAD_CANCELLED', 'THREAD_STATE_CHANGED', 'THREAD_FORK_STARTED', 'THREAD_FORK_COMPLETED', 'THREAD_JOIN_STARTED', 'THREAD_JOIN_CONDITION_MET', 'THREAD_COPY_STARTED', 'THREAD_COPY_COMPLETED', 'NODE_STARTED', 'NODE_COMPLETED', 'NODE_FAILED', 'NODE_CUSTOM_EVENT', 'TOKEN_LIMIT_EXCEEDED', 'TOKEN_USAGE_WARNING', 'MESSAGE_ADDED', 'TOOL_CALL_STARTED', 'TOOL_CALL_COMPLETED', 'TOOL_CALL_FAILED', 'TOOL_ADDED', 'CONVERSATION_STATE_CHANGED', 'ERROR', 'CHECKPOINT_CREATED', 'CHECKPOINT_RESTORED', 'CHECKPOINT_DELETED', 'CHECKPOINT_FAILED', 'SUBGRAPH_STARTED', 'SUBGRAPH_COMPLETED', 'TRIGGERED_SUBGRAPH_STARTED', 'TRIGGERED_SUBGRAPH_COMPLETED', 'TRIGGERED_SUBGRAPH_FAILED', 'VARIABLE_CHANGED', 'USER_INTERACTION_REQUESTED', 'USER_INTERACTION_RESPONDED', 'USER_INTERACTION_PROCESSED', 'USER_INTERACTION_FAILED', 'HUMAN_RELAY_REQUESTED', 'HUMAN_RELAY_RESPONDED', 'HUMAN_RELAY_PROCESSED', 'HUMAN_RELAY_FAILED', 'LLM_STREAM_ABORTED', 'LLM_STREAM_ERROR', 'DYNAMIC_THREAD_SUBMITTED', 'DYNAMIC_THREAD_COMPLETED', 'DYNAMIC_THREAD_FAILED', 'DYNAMIC_THREAD_CANCELLED'];
     if (!validEventTypes.includes(template.condition.eventType)) {
       throw new ConfigurationValidationError(
         `Invalid event type: ${template.condition.eventType}`,
@@ -266,7 +266,7 @@ class TriggerTemplateRegistry {
     }
 
     // 验证动作类型是否有效
-    const validActionTypes = Object.values(TriggerActionType);
+    const validActionTypes = ['start_workflow', 'stop_workflow', 'pause_thread', 'resume_thread', 'skip_node', 'set_variable', 'send_notification', 'custom', 'execute_triggered_subgraph'];
     if (!validActionTypes.includes(template.action.type)) {
       throw new ConfigurationValidationError(
         `Invalid action type: ${template.action.type}`,

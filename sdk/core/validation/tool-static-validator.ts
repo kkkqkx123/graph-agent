@@ -112,7 +112,7 @@ const toolSchema = z.object({
   id: z.string().min(1, 'Tool ID is required'),
   name: z.string().min(1, 'Tool name is required'),
   type: z.custom<ToolType>((val): val is ToolType =>
-    Object.values(ToolType).includes(val as ToolType)
+    ['STATELESS', 'STATEFUL', 'REST', 'MCP'].includes(val as ToolType)
   ),
   description: z.string().min(1, 'Tool description is required'),
   parameters: toolParametersSchema,
@@ -122,13 +122,13 @@ const toolSchema = z.object({
   (data) => {
     // 根据工具类型验证config字段
     switch (data.type) {
-      case ToolType.STATELESS:
+      case 'STATELESS':
         return statelessToolConfigSchema.safeParse(data.config).success;
-      case ToolType.STATEFUL:
+      case 'STATEFUL':
         return statefulToolConfigSchema.safeParse(data.config).success;
-      case ToolType.MCP:
+      case 'MCP':
         return mcpToolConfigSchema.safeParse(data.config).success;
-      case ToolType.REST:
+      case 'REST':
         // REST工具的config是可选的
         return data.config ? restToolConfigSchema.safeParse(data.config).success : true;
       default:
@@ -202,16 +202,16 @@ export class StaticValidator {
     let result;
 
     switch (toolType) {
-      case ToolType.STATELESS:
+      case 'STATELESS':
         result = statelessToolConfigSchema.safeParse(config);
         break;
-      case ToolType.STATEFUL:
+      case 'STATEFUL':
         result = statefulToolConfigSchema.safeParse(config);
         break;
-      case ToolType.REST:
+      case 'REST':
         result = restToolConfigSchema.safeParse(config);
         break;
-      case ToolType.MCP:
+      case 'MCP':
         result = mcpToolConfigSchema.safeParse(config);
         break;
       default:

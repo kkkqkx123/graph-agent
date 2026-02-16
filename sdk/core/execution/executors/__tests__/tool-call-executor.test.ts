@@ -202,7 +202,7 @@ describe('ToolCallExecutor', () => {
 
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.TOOL_CALL_STARTED,
+          type: 'TOOL_CALL_STARTED',
           threadId: 'thread-1',
           nodeId: 'node-1',
           toolName: 'test_tool',
@@ -228,7 +228,7 @@ describe('ToolCallExecutor', () => {
 
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.MESSAGE_ADDED,
+          type: 'MESSAGE_ADDED',
           threadId: 'thread-1',
           nodeId: 'node-1',
           role: 'tool',
@@ -255,7 +255,7 @@ describe('ToolCallExecutor', () => {
 
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.TOOL_CALL_COMPLETED,
+          type: 'TOOL_CALL_COMPLETED',
           threadId: 'thread-1',
           nodeId: 'node-1',
           toolName: 'test_tool',
@@ -356,7 +356,7 @@ describe('ToolCallExecutor', () => {
 
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.MESSAGE_ADDED,
+          type: 'MESSAGE_ADDED',
           threadId: 'thread-1',
           nodeId: 'node-1',
           role: 'tool',
@@ -378,7 +378,7 @@ describe('ToolCallExecutor', () => {
 
       expect(mockEventManager.emit).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: EventType.TOOL_CALL_FAILED,
+          type: 'TOOL_CALL_FAILED',
           threadId: 'thread-1',
           nodeId: 'node-1',
           toolName: 'test_tool',
@@ -532,9 +532,9 @@ describe('ToolCallExecutor', () => {
       const eventTypes = calls.map((call: any) => call[0].type);
 
       expect(eventTypes).toEqual([
-        EventType.TOOL_CALL_STARTED,
-        EventType.MESSAGE_ADDED,
-        EventType.TOOL_CALL_COMPLETED
+        'TOOL_CALL_STARTED',
+        'MESSAGE_ADDED',
+        'TOOL_CALL_COMPLETED'
       ]);
     });
   });

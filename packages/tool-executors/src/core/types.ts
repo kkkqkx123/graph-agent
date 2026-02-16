@@ -7,12 +7,11 @@ import type { Tool } from '@modular-agent/types';
 /**
  * 执行器类型
  */
-export enum ExecutorType {
-  MCP = 'MCP',
-  REST = 'REST',
-  STATEFUL = 'STATEFUL',
-  STATELESS = 'STATELESS'
-}
+export type ExecutorType =
+  | 'MCP'       /** MCP执行器 */
+  | 'REST'      /** REST执行器 */
+  | 'STATEFUL'  /** 有状态执行器 */
+  | 'STATELESS';/** 无状态执行器 */
 
 /**
  * 执行器配置

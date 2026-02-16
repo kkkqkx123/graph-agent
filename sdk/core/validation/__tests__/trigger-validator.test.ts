@@ -19,7 +19,7 @@ import { MessageRole } from '@modular-agent/types';
 describe('validateTriggerCondition', () => {
   it('应该验证有效的触发条件', () => {
     const validCondition = {
-      eventType: EventType.NODE_STARTED,
+      eventType: 'NODE_STARTED',
       metadata: { key: 'value' }
     };
 
@@ -30,7 +30,7 @@ describe('validateTriggerCondition', () => {
 
   it('应该验证只有必填字段的触发条件', () => {
     const minimalCondition = {
-      eventType: EventType.THREAD_COMPLETED
+      eventType: 'THREAD_COMPLETED'
     };
 
     const result = validateTriggerCondition(minimalCondition);
@@ -52,7 +52,7 @@ describe('validateTriggerCondition', () => {
 
   it('应该拒绝NODE_CUSTOM_EVENT缺少eventName', () => {
     const invalidCondition = {
-      eventType: EventType.NODE_CUSTOM_EVENT
+      eventType: 'NODE_CUSTOM_EVENT'
     };
 
     const result = validateTriggerCondition(invalidCondition);
@@ -67,7 +67,7 @@ describe('validateTriggerCondition', () => {
 
   it('应该接受NODE_CUSTOM_EVENT包含eventName', () => {
     const validCondition = {
-      eventType: EventType.NODE_CUSTOM_EVENT,
+      eventType: 'NODE_CUSTOM_EVENT',
       eventName: 'custom-event-name'
     };
 
@@ -78,7 +78,7 @@ describe('validateTriggerCondition', () => {
 
   it('应该接受非NODE_CUSTOM_EVENT不包含eventName', () => {
     const validCondition = {
-      eventType: EventType.NODE_STARTED
+      eventType: 'NODE_STARTED'
     };
 
     const result = validateTriggerCondition(validCondition);
@@ -88,7 +88,7 @@ describe('validateTriggerCondition', () => {
 
   it('应该接受复杂的metadata', () => {
     const validCondition = {
-      eventType: EventType.NODE_COMPLETED,
+      eventType: 'NODE_COMPLETED',
       metadata: {
         nested: {
           array: [1, 2, 3],
@@ -106,7 +106,7 @@ describe('validateTriggerCondition', () => {
 
   it('应该在错误消息中包含正确的字段路径', () => {
     const invalidCondition = {
-      eventType: EventType.NODE_CUSTOM_EVENT
+      eventType: 'NODE_CUSTOM_EVENT'
     };
 
     const result = validateTriggerCondition(invalidCondition);
@@ -381,7 +381,7 @@ describe('validateExecuteTriggeredSubgraphActionConfig', () => {
 describe('validateTriggerAction', () => {
   it('应该验证有效的触发动作', () => {
     const validAction = {
-      type: TriggerActionType.START_WORKFLOW,
+      type: 'start_workflow',
       parameters: { workflowId: 'workflow-123' },
       metadata: { key: 'value' }
     };
@@ -414,7 +414,7 @@ describe('validateTriggerAction', () => {
 
   it('应该拒绝缺少parameters', () => {
     const invalidAction = {
-      type: TriggerActionType.START_WORKFLOW
+      type: 'start_workflow'
     } as any;
 
     const result = validateTriggerAction(invalidAction);
@@ -423,7 +423,7 @@ describe('validateTriggerAction', () => {
 
   it('应该验证EXECUTE_TRIGGERED_SUBGRAPH动作', () => {
     const validAction = {
-      type: TriggerActionType.EXECUTE_TRIGGERED_SUBGRAPH,
+      type: 'execute_triggered_subgraph',
       parameters: {
         triggeredWorkflowId: 'workflow-123',
         waitForCompletion: true
@@ -437,7 +437,7 @@ describe('validateTriggerAction', () => {
 
   it('应该拒绝EXECUTE_TRIGGERED_SUBGRAPH缺少triggeredWorkflowId', () => {
     const invalidAction = {
-      type: TriggerActionType.EXECUTE_TRIGGERED_SUBGRAPH,
+      type: 'execute_triggered_subgraph',
       parameters: {
         waitForCompletion: true
       }
@@ -449,7 +449,7 @@ describe('validateTriggerAction', () => {
 
   it('应该接受复杂的parameters', () => {
     const validAction = {
-      type: TriggerActionType.SET_VARIABLE,
+      type: 'set_variable',
       parameters: {
         variableName: 'status',
         value: 'completed',
@@ -467,7 +467,7 @@ describe('validateTriggerAction', () => {
 
   it('应该在错误消息中包含正确的字段路径', () => {
     const invalidAction = {
-      type: TriggerActionType.EXECUTE_TRIGGERED_SUBGRAPH,
+      type: 'execute_triggered_subgraph',
       parameters: {
         triggeredWorkflowId: ''
       }
@@ -491,10 +491,10 @@ describe('validateWorkflowTrigger', () => {
       name: 'Test Trigger',
       description: 'A test trigger',
       condition: {
-        eventType: EventType.NODE_STARTED
+        eventType: 'NODE_STARTED'
       },
       action: {
-        type: TriggerActionType.START_WORKFLOW,
+        type: 'start_workflow',
         parameters: { workflowId: 'workflow-123' }
       },
       enabled: true,
@@ -512,7 +512,7 @@ describe('validateWorkflowTrigger', () => {
       id: 'trigger-2',
       name: 'Minimal Trigger',
       condition: {
-        eventType: EventType.THREAD_COMPLETED
+        eventType: 'THREAD_COMPLETED'
       },
       action: {
         type: TriggerActionType.STOP_THREAD,
@@ -529,10 +529,10 @@ describe('validateWorkflowTrigger', () => {
     const invalidTrigger = {
       name: 'Invalid Trigger',
       condition: {
-        eventType: EventType.NODE_STARTED
+        eventType: 'NODE_STARTED'
       },
       action: {
-        type: TriggerActionType.START_WORKFLOW,
+        type: 'start_workflow',
         parameters: {}
       }
     } as any;
@@ -546,10 +546,10 @@ describe('validateWorkflowTrigger', () => {
       id: '',
       name: 'Invalid Trigger',
       condition: {
-        eventType: EventType.NODE_STARTED
+        eventType: 'NODE_STARTED'
       },
       action: {
-        type: TriggerActionType.START_WORKFLOW,
+        type: 'start_workflow',
         parameters: {}
       }
     };
@@ -568,10 +568,10 @@ describe('validateWorkflowTrigger', () => {
     const invalidTrigger = {
       id: 'trigger-3',
       condition: {
-        eventType: EventType.NODE_STARTED
+        eventType: 'NODE_STARTED'
       },
       action: {
-        type: TriggerActionType.START_WORKFLOW,
+        type: 'start_workflow',
         parameters: {}
       }
     } as any;
@@ -585,10 +585,10 @@ describe('validateWorkflowTrigger', () => {
       id: 'trigger-4',
       name: 'Invalid Trigger',
       condition: {
-        eventType: EventType.NODE_STARTED
+        eventType: 'NODE_STARTED'
       },
       action: {
-        type: TriggerActionType.START_WORKFLOW,
+        type: 'start_workflow',
         parameters: {}
       },
       maxTriggers: -1
@@ -609,10 +609,10 @@ describe('validateWorkflowTrigger', () => {
       id: 'trigger-5',
       name: 'Valid Trigger',
       condition: {
-        eventType: EventType.NODE_STARTED
+        eventType: 'NODE_STARTED'
       },
       action: {
-        type: TriggerActionType.START_WORKFLOW,
+        type: 'start_workflow',
         parameters: {}
       },
       maxTriggers: 0
@@ -628,10 +628,10 @@ describe('validateWorkflowTrigger', () => {
       id: 'trigger-6',
       name: 'Disabled Trigger',
       condition: {
-        eventType: EventType.NODE_STARTED
+        eventType: 'NODE_STARTED'
       },
       action: {
-        type: TriggerActionType.START_WORKFLOW,
+        type: 'start_workflow',
         parameters: {}
       },
       enabled: false
@@ -647,10 +647,10 @@ describe('validateWorkflowTrigger', () => {
       id: '',
       name: 'Invalid Trigger',
       condition: {
-        eventType: EventType.NODE_STARTED
+        eventType: 'NODE_STARTED'
       },
       action: {
-        type: TriggerActionType.START_WORKFLOW,
+        type: 'start_workflow',
         parameters: {}
       }
     };
@@ -734,7 +734,7 @@ describe('validateTriggerReference', () => {
       triggerId: 'trigger-ref-5',
       configOverride: {
         condition: {
-          eventType: EventType.NODE_CUSTOM_EVENT,
+          eventType: 'NODE_CUSTOM_EVENT',
           eventName: 'custom-event'
         }
       }
@@ -751,7 +751,7 @@ describe('validateTriggerReference', () => {
       triggerId: 'trigger-ref-6',
       configOverride: {
         action: {
-          type: TriggerActionType.START_WORKFLOW,
+          type: 'start_workflow',
           parameters: { workflowId: 'new-workflow' }
         }
       }
@@ -786,10 +786,10 @@ describe('validateTriggers', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: {
-          eventType: EventType.NODE_STARTED
+          eventType: 'NODE_STARTED'
         },
         action: {
-          type: TriggerActionType.START_WORKFLOW,
+          type: 'start_workflow',
           parameters: {}
         }
       },
@@ -862,10 +862,10 @@ describe('validateTriggers', () => {
         id: 'trigger-1',
         name: 'Valid Trigger',
         condition: {
-          eventType: EventType.NODE_STARTED
+          eventType: 'NODE_STARTED'
         },
         action: {
-          type: TriggerActionType.START_WORKFLOW,
+          type: 'start_workflow',
           parameters: {}
         }
       },
@@ -887,10 +887,10 @@ describe('validateTriggers', () => {
         id: 'trigger-1',
         name: 'Valid Trigger',
         condition: {
-          eventType: EventType.NODE_STARTED
+          eventType: 'NODE_STARTED'
         },
         action: {
-          type: TriggerActionType.START_WORKFLOW,
+          type: 'start_workflow',
           parameters: {}
         }
       },
@@ -912,10 +912,10 @@ describe('validateTriggers', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: {
-          eventType: EventType.NODE_STARTED
+          eventType: 'NODE_STARTED'
         },
         action: {
-          type: TriggerActionType.START_WORKFLOW,
+          type: 'start_workflow',
           parameters: {}
         }
       },
@@ -923,7 +923,7 @@ describe('validateTriggers', () => {
         id: 'trigger-1',
         name: 'Trigger 2',
         condition: {
-          eventType: EventType.THREAD_COMPLETED
+          eventType: 'THREAD_COMPLETED'
         },
         action: {
           type: TriggerActionType.STOP_THREAD,
@@ -948,10 +948,10 @@ describe('validateTriggers', () => {
         id: 'trigger-1',
         name: 'Workflow Trigger',
         condition: {
-          eventType: EventType.NODE_STARTED
+          eventType: 'NODE_STARTED'
         },
         action: {
-          type: TriggerActionType.START_WORKFLOW,
+          type: 'start_workflow',
           parameters: {}
         }
       },
@@ -979,10 +979,10 @@ describe('validateTriggers', () => {
         id: 'trigger-1',
         name: 'Valid Trigger',
         condition: {
-          eventType: EventType.NODE_STARTED
+          eventType: 'NODE_STARTED'
         },
         action: {
-          type: TriggerActionType.START_WORKFLOW,
+          type: 'start_workflow',
           parameters: {}
         }
       },
@@ -990,7 +990,7 @@ describe('validateTriggers', () => {
         id: '',
         name: 'Invalid Trigger',
         condition: {
-          eventType: EventType.THREAD_COMPLETED
+          eventType: 'THREAD_COMPLETED'
         },
         action: {
           type: TriggerActionType.STOP_THREAD,
@@ -1009,10 +1009,10 @@ describe('validateTriggers', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: {
-          eventType: EventType.NODE_STARTED
+          eventType: 'NODE_STARTED'
         },
         action: {
-          type: TriggerActionType.START_WORKFLOW,
+          type: 'start_workflow',
           parameters: {}
         }
       },
@@ -1020,7 +1020,7 @@ describe('validateTriggers', () => {
         id: 'trigger-2',
         name: 'Trigger 2',
         condition: {
-          eventType: EventType.THREAD_COMPLETED
+          eventType: 'THREAD_COMPLETED'
         },
         action: {
           type: TriggerActionType.STOP_THREAD,
@@ -1048,10 +1048,10 @@ describe('validateTriggers', () => {
         id: 'trigger-1',
         name: 'Valid Trigger',
         condition: {
-          eventType: EventType.NODE_STARTED
+          eventType: 'NODE_STARTED'
         },
         action: {
-          type: TriggerActionType.START_WORKFLOW,
+          type: 'start_workflow',
           parameters: {}
         }
       },
@@ -1059,7 +1059,7 @@ describe('validateTriggers', () => {
         id: '',
         name: 'Invalid Trigger',
         condition: {
-          eventType: EventType.THREAD_COMPLETED
+          eventType: 'THREAD_COMPLETED'
         },
         action: {
           type: TriggerActionType.STOP_THREAD,

@@ -26,7 +26,7 @@ export function createThreadStateCheckHook(
   allowedStates: string[] = ['RUNNING']
 ): NodeHook {
   return {
-    hookType: HookType.BEFORE_EXECUTE,
+    hookType: 'BEFORE_EXECUTE',
     eventName: 'validation.thread_status_check',
     weight: 200,
     eventPayload: {
@@ -74,7 +74,7 @@ export function createCustomValidationHook(
   weight: number = 150
 ): NodeHook {
   return {
-    hookType: HookType.BEFORE_EXECUTE,
+    hookType: 'BEFORE_EXECUTE',
     eventName,
     weight,
     eventPayload: {
@@ -92,7 +92,7 @@ export function createPermissionCheckHook(
   requiredPermissions: string[]
 ): NodeHook {
   return {
-    hookType: HookType.BEFORE_EXECUTE,
+    hookType: 'BEFORE_EXECUTE',
     eventName: 'business.permission_check',
     weight: 100,
     eventPayload: {
@@ -121,7 +121,7 @@ export function createAuditLoggingHook(
   auditService: { log: (event: any) => Promise<void> }
 ): NodeHook {
   return {
-    hookType: HookType.BEFORE_EXECUTE,
+    hookType: 'BEFORE_EXECUTE',
     eventName: 'monitoring.execution_audit',
     weight: 50,
     eventPayload: {

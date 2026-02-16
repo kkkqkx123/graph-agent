@@ -4,27 +4,24 @@
  */
 
 /**
- * 错误严重程度枚举
+ * 错误严重程度
  */
-export enum ErrorSeverity {
+export type ErrorSeverity =
   /**
    * 严重错误 - 导致执行停止
    * 适用于：配置错误、验证错误、不可恢复的逻辑错误
    */
-  ERROR = 'error',
-
+  'error' |
   /**
    * 警告错误 - 继续执行
    * 适用于：网络超时、临时故障、可重试的错误
    */
-  WARNING = 'warning',
-
+  'warning' |
   /**
    * 信息错误 - 继续执行
    * 适用于：调试信息、非关键警告、监控事件
    */
-  INFO = 'info'
-}
+  'info';
 
 /**
  * 错误上下文
@@ -78,7 +75,7 @@ export class SDKError extends Error {
    * 子类可以覆盖此方法以提供不同的默认值
    */
   protected getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.ERROR;
+    return 'error';
   }
 
   constructor(
@@ -132,7 +129,7 @@ export class ValidationError extends SDKError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.ERROR;
+    return 'error';
   }
 }
 
@@ -152,7 +149,7 @@ export class ExecutionError extends SDKError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.ERROR;
+    return 'error';
   }
 }
 
@@ -171,6 +168,6 @@ export class NotFoundError extends SDKError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.WARNING;
+    return 'warning';
   }
 }

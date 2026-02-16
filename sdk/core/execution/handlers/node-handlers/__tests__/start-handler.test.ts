@@ -18,7 +18,7 @@ describe('start-handler', () => {
       id: 'thread-1',
       workflowId: 'workflow-1',
       workflowVersion: '1.0.0',
-      status: ThreadStatus.CREATED,
+      status: 'CREATED',
       currentNodeId: '',
       graph: {} as any,
       variables: [],
@@ -39,7 +39,7 @@ describe('start-handler', () => {
     mockNode = {
       id: 'start-node-1',
       name: 'Start Node',
-      type: NodeType.START,
+      type: 'START',
       config: {} as StartNodeConfig,
       incomingEdgeIds: [],
       outgoingEdgeIds: []
@@ -56,7 +56,7 @@ describe('start-handler', () => {
       });
 
       // 验证Thread状态已更新
-      expect(mockThread.status).toBe(ThreadStatus.RUNNING);
+      expect(mockThread.status).toBe('RUNNING');
       expect(mockThread.currentNodeId).toBe('start-node-1');
       expect(mockThread.startTime).toBeGreaterThan(0);
 
@@ -72,7 +72,7 @@ describe('start-handler', () => {
       expect(executionResult).toMatchObject({
         step: 1,
         nodeId: 'start-node-1',
-        nodeType: NodeType.START,
+        nodeType: 'START',
         status: 'COMPLETED'
       });
       expect(executionResult.timestamp).toBeDefined();
@@ -97,31 +97,31 @@ describe('start-handler', () => {
 
   describe('执行条件测试', () => {
     it('应该在CREATED状态下正常执行', async () => {
-      mockThread.status = ThreadStatus.CREATED;
+      mockThread.status = 'CREATED';
       
       const result = await startHandler(mockThread, mockNode);
       
       expect(result.message).toBe('Workflow started');
-      expect(mockThread.status).toBe(ThreadStatus.RUNNING);
+      expect(mockThread.status).toBe('RUNNING');
     });
 
     it('应该在RUNNING状态下正常执行（如果尚未执行过）', async () => {
-      mockThread.status = ThreadStatus.RUNNING;
+      mockThread.status = 'RUNNING';
       mockThread.nodeResults = []; // 确保没有执行过
       
       const result = await startHandler(mockThread, mockNode);
       
       expect(result.message).toBe('Workflow started');
-      expect(mockThread.status).toBe(ThreadStatus.RUNNING); // 状态保持不变
+      expect(mockThread.status).toBe('RUNNING'); // 状态保持不变
     });
 
     it('应该在非CREATED/RUNNING状态下跳过执行', async () => {
       const nonRunnableStates = [
-        ThreadStatus.PAUSED,
-        ThreadStatus.COMPLETED,
-        ThreadStatus.FAILED,
-        ThreadStatus.CANCELLED,
-        ThreadStatus.TIMEOUT
+        'PAUSED',
+        'COMPLETED',
+        'FAILED',
+        'CANCELLED',
+        'TIMEOUT'
       ];
 
       for (const status of nonRunnableStates) {
@@ -182,7 +182,7 @@ describe('start-handler', () => {
       const executionResult = mockThread.nodeResults[0]!;
       expect(executionResult).toMatchObject({
         nodeId: 'start-node-1',
-        nodeType: NodeType.START,
+        nodeType: 'START',
         status: 'COMPLETED',
         step: 1
       });

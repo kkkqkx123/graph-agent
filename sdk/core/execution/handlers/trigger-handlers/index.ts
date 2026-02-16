@@ -42,13 +42,13 @@ import { executeTriggeredSubgraphHandler } from './execute-triggered-subgraph-ha
  */
 export const triggerHandlers: Record<TriggerActionType, TriggerHandler> = {
   [TriggerActionType.STOP_THREAD]: stopThreadHandler,
-  [TriggerActionType.PAUSE_THREAD]: pauseThreadHandler,
-  [TriggerActionType.RESUME_THREAD]: resumeThreadHandler,
-  [TriggerActionType.SKIP_NODE]: skipNodeHandler,
-  [TriggerActionType.SET_VARIABLE]: setVariableHandler,
-  [TriggerActionType.SEND_NOTIFICATION]: sendNotificationHandler,
-  [TriggerActionType.CUSTOM]: customHandler,
-  [TriggerActionType.EXECUTE_TRIGGERED_SUBGRAPH]: executeTriggeredSubgraphHandler
+  ['pause_thread']: pauseThreadHandler,
+  ['resume_thread']: resumeThreadHandler,
+  ['skip_node']: skipNodeHandler,
+  ['set_variable']: setVariableHandler,
+  ['send_notification']: sendNotificationHandler,
+  ['custom']: customHandler,
+  ['execute_triggered_subgraph']: executeTriggeredSubgraphHandler
 } as Record<TriggerActionType, TriggerHandler>;
 
 /**

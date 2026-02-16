@@ -160,7 +160,7 @@ export class WorkflowBuilder extends BaseBuilder<WorkflowDefinition> {
    * @returns this
    */
   addStartNode(id: string = 'start'): this {
-    return this.addNode(id, NodeType.START, {});
+    return this.addNode(id, 'START', {});
   }
 
   /**
@@ -169,7 +169,7 @@ export class WorkflowBuilder extends BaseBuilder<WorkflowDefinition> {
    * @returns this
    */
   addEndNode(id: string = 'end'): this {
-    return this.addNode(id, NodeType.END, {});
+    return this.addNode(id, 'END', {});
   }
 
   /**
@@ -185,7 +185,7 @@ export class WorkflowBuilder extends BaseBuilder<WorkflowDefinition> {
       profileId,
       prompt
     };
-    return this.addNode(id, NodeType.LLM, config, name);
+    return this.addNode(id, 'LLM', config, name);
   }
 
   /**
@@ -209,7 +209,7 @@ export class WorkflowBuilder extends BaseBuilder<WorkflowDefinition> {
       scriptType,
       risk
     };
-    return this.addNode(id, NodeType.CODE, config, name);
+    return this.addNode(id, 'CODE', config, name);
   }
 
   /**
@@ -233,7 +233,7 @@ export class WorkflowBuilder extends BaseBuilder<WorkflowDefinition> {
       variableType,
       expression
     };
-    return this.addNode(id, NodeType.VARIABLE, config, name);
+    return this.addNode(id, 'VARIABLE', config, name);
   }
 
   /**
@@ -259,7 +259,7 @@ export class WorkflowBuilder extends BaseBuilder<WorkflowDefinition> {
       })),
       defaultTargetNodeId
     };
-    return this.addNode(id, NodeType.ROUTE, config, name);
+    return this.addNode(id, 'ROUTE', config, name);
   }
 
   /**
@@ -423,7 +423,7 @@ export class WorkflowBuilder extends BaseBuilder<WorkflowDefinition> {
     }
 
     // 检查是否有START节点
-    const startNodes = Array.from(this.nodes.values()).filter(n => n.type === NodeType.START);
+    const startNodes = Array.from(this.nodes.values()).filter(n => n.type === 'START');
     if (startNodes.length === 0) {
       errors.push('工作流必须有一个START节点');
     } else if (startNodes.length > 1) {
@@ -431,7 +431,7 @@ export class WorkflowBuilder extends BaseBuilder<WorkflowDefinition> {
     }
 
     // 检查是否有END节点
-    const endNodes = Array.from(this.nodes.values()).filter(n => n.type === NodeType.END);
+    const endNodes = Array.from(this.nodes.values()).filter(n => n.type === 'END');
     if (endNodes.length === 0) {
       errors.push('工作流必须有一个END节点');
     } else if (endNodes.length > 1) {
@@ -474,7 +474,7 @@ export class WorkflowBuilder extends BaseBuilder<WorkflowDefinition> {
    */
   static fromConfig(
     configFile: string,
-    format: ConfigFormat = ConfigFormat.TOML,
+    format: ConfigFormat = 'toml',
     parameters?: Record<string, any>
   ): WorkflowBuilder {
     const parser = new ConfigParser();

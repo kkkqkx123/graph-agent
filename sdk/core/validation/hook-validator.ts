@@ -15,7 +15,7 @@ import type { Result } from '@modular-agent/types';
  */
 const hookSchema = z.object({
   hookType: z.custom<HookType>((val): val is HookType =>
-    Object.values(HookType).includes(val as HookType)
+    ['BEFORE_EXECUTE', 'AFTER_EXECUTE'].includes(val as HookType)
   ),
   enabled: z.boolean().optional(),
   weight: z.number().optional(),

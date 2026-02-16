@@ -20,28 +20,27 @@ export interface TriggerCondition {
 }
 
 /**
- * 触发动作类型枚举（后续需要重新设计）
+ * 触发动作类型（后续需要重新设计）
  */
-export enum TriggerActionType {
+export type TriggerActionType =
   /** 启动工作流 */
-  START_WORKFLOW = 'start_workflow',
+  'start_workflow' |
   /** 停止工作流 */
-  STOP_THREAD = 'stop_workflow',
+  'stop_workflow' |
   /** 暂停线程 */
-  PAUSE_THREAD = 'pause_thread',
+  'pause_thread' |
   /** 恢复线程 */
-  RESUME_THREAD = 'resume_thread',
+  'resume_thread' |
   /** 跳过节点 */
-  SKIP_NODE = 'skip_node',
+  'skip_node' |
   /** 设置变量 */
-  SET_VARIABLE = 'set_variable',
+  'set_variable' |
   /** 发送通知 */
-  SEND_NOTIFICATION = 'send_notification',
+  'send_notification' |
   /** 自定义动作 */
-  CUSTOM = 'custom',
+  'custom' |
   /** 执行触发子工作流 */
-  EXECUTE_TRIGGERED_SUBGRAPH = 'execute_triggered_subgraph'
-}
+  'execute_triggered_subgraph';
 
 /**
  * 触发动作接口

@@ -51,12 +51,12 @@ describe('Thread构建到执行实例创建集成测试', () => {
     id,
     name,
     version: '1.0.0',
-    type: WorkflowType.STANDALONE,
+    type: 'STANDALONE',
     description: 'Test workflow',
     nodes: [
       {
         id: `${id}-start`,
-        type: NodeType.START,
+        type: 'START',
         name: 'Start',
         config: {},
         outgoingEdgeIds: [`${id}-edge-1`],
@@ -64,7 +64,7 @@ describe('Thread构建到执行实例创建集成测试', () => {
       },
       {
         id: `${id}-process`,
-        type: NodeType.CODE,
+        type: 'CODE',
         name: 'Process',
         config: {
           scriptName: 'process',
@@ -76,7 +76,7 @@ describe('Thread构建到执行实例创建集成测试', () => {
       },
       {
         id: `${id}-end`,
-        type: NodeType.END,
+        type: 'END',
         name: 'End',
         config: {},
         outgoingEdgeIds: [],
@@ -179,12 +179,12 @@ describe('Thread构建到执行实例创建集成测试', () => {
         id: 'workflow-complex-thread',
         name: 'Complex Thread Workflow',
         version: '1.0.0',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         description: 'Complex workflow with multiple nodes for thread testing',
         nodes: [
           {
             id: 'node-start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -192,7 +192,7 @@ describe('Thread构建到执行实例创建集成测试', () => {
           },
           {
             id: 'node-llm',
-            type: NodeType.LLM,
+            type: 'LLM',
             name: 'LLM Node',
             config: {
               profileId: 'profile-1',
@@ -203,7 +203,7 @@ describe('Thread构建到执行实例创建集成测试', () => {
           },
           {
             id: 'node-code',
-            type: NodeType.CODE,
+            type: 'CODE',
             name: 'Code Node',
             config: {
               scriptName: 'process',
@@ -217,7 +217,7 @@ describe('Thread构建到执行实例创建集成测试', () => {
           },
           {
             id: 'node-end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],
@@ -334,11 +334,11 @@ describe('Thread构建到执行实例创建集成测试', () => {
         id: workflowId,
         name: 'Invalid Thread Workflow',
         version: '1.0.0',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         nodes: [
           {
             id: 'start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {},
             outgoingEdgeIds: [],
@@ -370,7 +370,7 @@ describe('Thread构建到执行实例创建集成测试', () => {
         id: 'workflow-invalid-thread',
         name: 'Invalid Thread Workflow',
         version: '1.0.0',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         nodes: [], // 无效 - 没有节点
         edges: [],
         config: {},
@@ -389,11 +389,11 @@ describe('Thread构建到执行实例创建集成测试', () => {
         id: 'workflow-no-start',
         name: 'Workflow Without Start',
         version: '1.0.0',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         nodes: [
           {
             id: 'node-process',
-            type: NodeType.CODE,
+            type: 'CODE',
             name: 'Process',
             config: {},
             outgoingEdgeIds: ['edge-1'],
@@ -401,7 +401,7 @@ describe('Thread构建到执行实例创建集成测试', () => {
           },
           {
             id: 'node-end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {},
             outgoingEdgeIds: [],

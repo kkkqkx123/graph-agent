@@ -7,7 +7,7 @@ import type { Edge } from '../edge';
 import type { ID, Version, Timestamp } from '../common';
 import type { WorkflowTrigger } from '../trigger';
 import type { TriggerReference } from '../trigger-template';
-import type { WorkflowType } from './enums';
+import type { WorkflowType } from './type';
 import type { WorkflowVariable } from './variables';
 import type { WorkflowConfig } from './config';
 import type { WorkflowMetadata } from './metadata';

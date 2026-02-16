@@ -21,7 +21,7 @@ export class MessageBuilder {
    */
   static buildUserMessage(content: string): LLMMessage {
     return {
-      role: 'user' as MessageRole.USER,
+      role: 'user' as 'user',
       content
     };
   }
@@ -39,7 +39,7 @@ export class MessageBuilder {
     thinking?: string
   ): LLMMessage {
     const message: LLMMessage = {
-      role: 'assistant' as MessageRole.ASSISTANT,
+      role: 'assistant' as 'assistant',
       content
     };
 
@@ -69,7 +69,7 @@ export class MessageBuilder {
       : JSON.stringify({ error: result.error });
 
     return {
-      role: 'tool' as MessageRole.TOOL,
+      role: 'tool' as 'tool',
       content,
       toolCallId
     };
@@ -82,7 +82,7 @@ export class MessageBuilder {
    */
   static buildSystemMessage(content: string): LLMMessage {
     return {
-      role: 'system' as MessageRole.SYSTEM,
+      role: 'system' as 'system',
       content
     };
   }
@@ -98,7 +98,7 @@ export class MessageBuilder {
     }
 
     return {
-      role: 'system' as MessageRole.SYSTEM,
+      role: 'system' as 'system',
       content: descriptionText
     };
   }

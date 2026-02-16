@@ -38,7 +38,7 @@ describe('检查点资源API集成测试', () => {
   const createTestWorkflow = (id: string, name: string): WorkflowDefinition => ({
     id,
     name,
-    type: WorkflowType.STANDALONE,
+    type: 'STANDALONE',
     version: '1.0.0',
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -46,7 +46,7 @@ describe('检查点资源API集成测试', () => {
       {
         id: `${id}-start`,
         name: 'Start',
-        type: NodeType.START,
+        type: 'START',
         config: {},
         incomingEdgeIds: [],
         outgoingEdgeIds: [`${id}-edge-1`]
@@ -54,7 +54,7 @@ describe('检查点资源API集成测试', () => {
       {
         id: `${id}-process`,
         name: 'Process',
-        type: NodeType.CODE,
+        type: 'CODE',
         config: {
           scriptName: 'test-process',
           scriptType: 'javascript',
@@ -66,7 +66,7 @@ describe('检查点资源API集成测试', () => {
       {
         id: `${id}-end`,
         name: 'End',
-        type: NodeType.END,
+        type: 'END',
         config: {},
         incomingEdgeIds: [`${id}-edge-2`],
         outgoingEdgeIds: []
@@ -110,7 +110,7 @@ describe('检查点资源API集成测试', () => {
       id: generateId(),
       workflowId: workflow.id,
       workflowVersion: workflow.version,
-      status: ThreadStatus.RUNNING,
+      status: 'RUNNING',
       currentNodeId: `${workflow.id}-process`,
       graph,
       variables: [],

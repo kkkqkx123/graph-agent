@@ -27,7 +27,7 @@ const variableNodeConfigSchema = z.object({
  * @returns 验证结果
  */
 export function validateVariableNode(node: Node): Result<Node, ConfigurationValidationError[]> {
-  if (node.type !== NodeType.VARIABLE) {
+  if (node.type !== 'VARIABLE') {
     return err([new ConfigurationValidationError(`Invalid node type for variable validator: ${node.type}`, {
       configType: 'node',
       configPath: `node.${node.id}`

@@ -66,10 +66,10 @@ describe('TriggerCoordinator', () => {
       id: 'trigger-1',
       name: 'Test Trigger',
       condition: {
-        eventType: EventType.NODE_COMPLETED
+        eventType: 'NODE_COMPLETED'
       },
       action: {
-        type: TriggerActionType.START_WORKFLOW,
+        type: 'start_workflow',
         parameters: {}
       },
       enabled: true
@@ -336,8 +336,8 @@ describe('TriggerCoordinator', () => {
       const mockWorkflowTrigger = {
         id: 'trigger-1',
         name: 'Test Trigger',
-        condition: { eventType: EventType.NODE_COMPLETED },
-        action: { type: TriggerActionType.START_WORKFLOW, parameters: {} },
+        condition: { eventType: 'NODE_COMPLETED' },
+        action: { type: 'start_workflow', parameters: {} },
         maxTriggers: 10
       };
 
@@ -439,13 +439,13 @@ describe('TriggerCoordinator', () => {
         {
           id: 'trigger-1',
           name: 'Trigger 1',
-          condition: { eventType: EventType.NODE_COMPLETED },
-          action: { type: TriggerActionType.START_WORKFLOW, parameters: {} }
+          condition: { eventType: 'NODE_COMPLETED' },
+          action: { type: 'start_workflow', parameters: {} }
         },
         {
           id: 'trigger-2',
           name: 'Trigger 2',
-          condition: { eventType: EventType.NODE_STARTED },
+          condition: { eventType: 'NODE_STARTED' },
           action: { type: TriggerActionType.STOP_THREAD, parameters: {} }
         }
       ];
@@ -505,8 +505,8 @@ describe('TriggerCoordinator', () => {
         triggers: [{
           id: 'trigger-1',
           name: 'Trigger 1',
-          condition: { eventType: EventType.NODE_COMPLETED },
-          action: { type: TriggerActionType.START_WORKFLOW, parameters: {} }
+          condition: { eventType: 'NODE_COMPLETED' },
+          action: { type: 'start_workflow', parameters: {} }
         }],
         graph: {} as any,
         graphAnalysis: {} as any,
@@ -540,7 +540,7 @@ describe('TriggerCoordinator', () => {
 
   describe('handleEvent', () => {
     const mockEvent = {
-      type: EventType.NODE_COMPLETED,
+      type: 'NODE_COMPLETED',
       timestamp: now(),
       workflowId: 'workflow-1',
       threadId: 'thread-1',
@@ -554,8 +554,8 @@ describe('TriggerCoordinator', () => {
           id: 'trigger-1',
           name: 'Test Trigger',
           type: TriggerType.EVENT,
-          condition: { eventType: EventType.NODE_COMPLETED },
-          action: { type: TriggerActionType.START_WORKFLOW, parameters: {} },
+          condition: { eventType: 'NODE_COMPLETED' },
+          action: { type: 'start_workflow', parameters: {} },
           status: TriggerStatus.ENABLED,
           triggerCount: 0,
           maxTriggers: 10,
@@ -579,7 +579,7 @@ describe('TriggerCoordinator', () => {
 
       // 验证触发器执行
       expect(mockHandler).toHaveBeenCalledWith(
-        { type: TriggerActionType.START_WORKFLOW, parameters: {} },
+        { type: 'start_workflow', parameters: {} },
         'trigger-1',
         expect.objectContaining({
           getThreadRegistry: expect.any(Function),
@@ -599,8 +599,8 @@ describe('TriggerCoordinator', () => {
           id: 'trigger-1',
           name: 'Test Trigger',
           type: TriggerType.EVENT,
-          condition: { eventType: EventType.NODE_STARTED }, // 不同的事件类型
-          action: { type: TriggerActionType.START_WORKFLOW, parameters: {} },
+          condition: { eventType: 'NODE_STARTED' }, // 不同的事件类型
+          action: { type: 'start_workflow', parameters: {} },
           status: TriggerStatus.ENABLED,
           triggerCount: 0,
           workflowId: 'workflow-1',
@@ -627,8 +627,8 @@ describe('TriggerCoordinator', () => {
           id: 'trigger-1',
           name: 'Test Trigger',
           type: TriggerType.EVENT,
-          condition: { eventType: EventType.NODE_COMPLETED },
-          action: { type: TriggerActionType.START_WORKFLOW, parameters: {} },
+          condition: { eventType: 'NODE_COMPLETED' },
+          action: { type: 'start_workflow', parameters: {} },
           status: TriggerStatus.DISABLED, // 禁用状态
           triggerCount: 0,
           workflowId: 'workflow-1',
@@ -650,7 +650,7 @@ describe('TriggerCoordinator', () => {
 
     it('应该处理自定义事件的事件名称匹配', async () => {
       const customEvent = {
-        type: EventType.NODE_CUSTOM_EVENT,
+        type: 'NODE_CUSTOM_EVENT',
         timestamp: now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',
@@ -664,10 +664,10 @@ describe('TriggerCoordinator', () => {
           name: 'Test Trigger',
           type: TriggerType.EVENT,
           condition: {
-            eventType: EventType.NODE_CUSTOM_EVENT,
+            eventType: 'NODE_CUSTOM_EVENT',
             eventName: 'custom.event' // 匹配的事件名称
           },
-          action: { type: TriggerActionType.START_WORKFLOW, parameters: {} },
+          action: { type: 'start_workflow', parameters: {} },
           status: TriggerStatus.ENABLED,
           triggerCount: 0,
           workflowId: 'workflow-1',
@@ -691,7 +691,7 @@ describe('TriggerCoordinator', () => {
 
     it('应该过滤掉不匹配事件名称的自定义事件', async () => {
       const customEvent = {
-        type: EventType.NODE_CUSTOM_EVENT,
+        type: 'NODE_CUSTOM_EVENT',
         timestamp: now(),
         workflowId: 'workflow-1',
         threadId: 'thread-1',
@@ -705,10 +705,10 @@ describe('TriggerCoordinator', () => {
           name: 'Test Trigger',
           type: TriggerType.EVENT,
           condition: {
-            eventType: EventType.NODE_CUSTOM_EVENT,
+            eventType: 'NODE_CUSTOM_EVENT',
             eventName: 'different.event' // 不匹配的事件名称
           },
-          action: { type: TriggerActionType.START_WORKFLOW, parameters: {} },
+          action: { type: 'start_workflow', parameters: {} },
           status: TriggerStatus.ENABLED,
           triggerCount: 0,
           workflowId: 'workflow-1',
@@ -735,8 +735,8 @@ describe('TriggerCoordinator', () => {
           id: 'trigger-1',
           name: 'Test Trigger',
           type: TriggerType.EVENT,
-          condition: { eventType: EventType.NODE_COMPLETED },
-          action: { type: TriggerActionType.START_WORKFLOW, parameters: {} },
+          condition: { eventType: 'NODE_COMPLETED' },
+          action: { type: 'start_workflow', parameters: {} },
           status: TriggerStatus.ENABLED,
           triggerCount: 0,
           maxTriggers: 1, // 一次性触发器
@@ -766,8 +766,8 @@ describe('TriggerCoordinator', () => {
           id: 'trigger-1',
           name: 'Test Trigger',
           type: TriggerType.EVENT,
-          condition: { eventType: EventType.NODE_COMPLETED },
-          action: { type: TriggerActionType.START_WORKFLOW, parameters: {} },
+          condition: { eventType: 'NODE_COMPLETED' },
+          action: { type: 'start_workflow', parameters: {} },
           status: TriggerStatus.ENABLED,
           triggerCount: 0,
           workflowId: 'workflow-1',

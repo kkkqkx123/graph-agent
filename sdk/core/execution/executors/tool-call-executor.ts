@@ -125,7 +125,7 @@ export class ToolCallExecutor {
         // 触发消息添加事件
         if (this.eventManager) {
           safeEmit(this.eventManager, {
-            type: EventType.MESSAGE_ADDED,
+            type: 'MESSAGE_ADDED',
             timestamp: now(),
             workflowId: '',
             threadId: threadId || '',
@@ -139,7 +139,7 @@ export class ToolCallExecutor {
         // 触发工具调用失败事件
         if (this.eventManager) {
           safeEmit(this.eventManager, {
-            type: EventType.TOOL_CALL_FAILED,
+            type: 'TOOL_CALL_FAILED',
             timestamp: now(),
             workflowId: '',
             threadId: threadId || '',
@@ -217,7 +217,7 @@ export class ToolCallExecutor {
     // 触发工具调用开始事件
     if (this.eventManager) {
       await safeEmit(this.eventManager, {
-        type: EventType.TOOL_CALL_STARTED,
+        type: 'TOOL_CALL_STARTED',
         timestamp: now(),
         workflowId: '',
         threadId: threadId || '',
@@ -279,7 +279,7 @@ export class ToolCallExecutor {
       // 触发消息添加事件
       if (this.eventManager) {
         await safeEmit(this.eventManager, {
-          type: EventType.MESSAGE_ADDED,
+          type: 'MESSAGE_ADDED',
           timestamp: now(),
           workflowId: '',
           threadId: threadId || '',
@@ -293,7 +293,7 @@ export class ToolCallExecutor {
       // 触发工具调用失败事件
       if (this.eventManager) {
         await safeEmit(this.eventManager, {
-          type: EventType.TOOL_CALL_FAILED,
+          type: 'TOOL_CALL_FAILED',
           timestamp: now(),
           workflowId: '',
           threadId: threadId || '',
@@ -331,7 +331,7 @@ export class ToolCallExecutor {
     // 触发消息添加事件
     if (this.eventManager) {
       await safeEmit(this.eventManager, {
-        type: EventType.MESSAGE_ADDED,
+        type: 'MESSAGE_ADDED',
         timestamp: now(),
         workflowId: '',
         threadId: threadId || '',
@@ -372,7 +372,7 @@ export class ToolCallExecutor {
     // 触发工具调用完成事件
     if (this.eventManager) {
       await safeEmit(this.eventManager, {
-        type: EventType.TOOL_CALL_COMPLETED,
+        type: 'TOOL_CALL_COMPLETED',
         timestamp: now(),
         workflowId: '',
         threadId: threadId || '',

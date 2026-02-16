@@ -24,7 +24,7 @@ describe('end-handler', () => {
       id: 'thread-1',
       workflowId: 'workflow-1',
       workflowVersion: '1.0.0',
-      status: ThreadStatus.RUNNING,
+      status: 'RUNNING',
       currentNodeId: 'current-node',
       graph: {} as any,
       variables: [],
@@ -45,7 +45,7 @@ describe('end-handler', () => {
     mockNode = {
       id: 'end-node-1',
       name: 'End Node',
-      type: NodeType.END,
+      type: 'END',
       config: {} as EndNodeConfig,
       incomingEdgeIds: [],
       outgoingEdgeIds: []
@@ -70,7 +70,7 @@ describe('end-handler', () => {
       expect(executionResult).toMatchObject({
         step: 1,
         nodeId: 'end-node-1',
-        nodeType: NodeType.END,
+        nodeType: 'END',
         status: 'COMPLETED'
       });
       expect(executionResult.timestamp).toBe(1000);
@@ -116,7 +116,7 @@ describe('end-handler', () => {
 
   describe('执行条件测试', () => {
     it('应该在RUNNING状态下正常执行', async () => {
-      mockThread.status = ThreadStatus.RUNNING;
+      mockThread.status = 'RUNNING';
 
       const result = await endHandler(mockThread, mockNode);
 
@@ -125,12 +125,12 @@ describe('end-handler', () => {
 
     it('应该在非RUNNING状态下跳过执行', async () => {
       const nonRunnableStates = [
-        ThreadStatus.CREATED,
-        ThreadStatus.PAUSED,
-        ThreadStatus.COMPLETED,
-        ThreadStatus.FAILED,
-        ThreadStatus.CANCELLED,
-        ThreadStatus.TIMEOUT
+        'CREATED',
+        'PAUSED',
+        'COMPLETED',
+        'FAILED',
+        'CANCELLED',
+        'TIMEOUT'
       ];
 
       for (const status of nonRunnableStates) {

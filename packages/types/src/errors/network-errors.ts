@@ -21,7 +21,7 @@ export class NetworkError extends SDKError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.WARNING;
+    return 'warning';
   }
 }
 
@@ -43,7 +43,7 @@ export class HttpError extends SDKError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.WARNING;
+    return 'warning';
   }
 }
 
@@ -80,7 +80,7 @@ export class LLMError extends HttpError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.WARNING;
+    return 'warning';
   }
 }
 
@@ -98,6 +98,6 @@ export class CircuitBreakerOpenError extends SDKError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.WARNING;
+    return 'warning';
   }
 }

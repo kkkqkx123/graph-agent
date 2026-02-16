@@ -144,7 +144,7 @@ describe('UserInteractionResourceAPI', () => {
       api.onInteractionRequested(listener);
 
       expect(mockEventManager.on).toHaveBeenCalledWith(
-        EventType.USER_INTERACTION_REQUESTED,
+        'USER_INTERACTION_REQUESTED',
         listener
       );
     });
@@ -155,7 +155,7 @@ describe('UserInteractionResourceAPI', () => {
       api.offInteractionRequested(listener);
 
       expect(mockEventManager.off).toHaveBeenCalledWith(
-        EventType.USER_INTERACTION_REQUESTED,
+        'USER_INTERACTION_REQUESTED',
         listener
       );
     });
@@ -166,7 +166,7 @@ describe('UserInteractionResourceAPI', () => {
       api.onInteractionResponded(listener);
 
       expect(mockEventManager.on).toHaveBeenCalledWith(
-        EventType.USER_INTERACTION_RESPONDED,
+        'USER_INTERACTION_RESPONDED',
         listener
       );
     });
@@ -177,7 +177,7 @@ describe('UserInteractionResourceAPI', () => {
       api.onInteractionProcessed(listener);
 
       expect(mockEventManager.on).toHaveBeenCalledWith(
-        EventType.USER_INTERACTION_PROCESSED,
+        'USER_INTERACTION_PROCESSED',
         listener
       );
     });
@@ -188,7 +188,7 @@ describe('UserInteractionResourceAPI', () => {
       api.onInteractionFailed(listener);
 
       expect(mockEventManager.on).toHaveBeenCalledWith(
-        EventType.USER_INTERACTION_FAILED,
+        'USER_INTERACTION_FAILED',
         listener
       );
     });

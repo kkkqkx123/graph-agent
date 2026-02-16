@@ -51,7 +51,7 @@ export async function waitForThreadPaused(
 ): Promise<void> {
   const actualTimeout = timeout === WAIT_FOREVER ? undefined : timeout;
   await eventManager.waitFor(
-    EventType.THREAD_PAUSED,
+    'THREAD_PAUSED',
     actualTimeout,
     (event) => event.threadId === threadId
   );
@@ -72,7 +72,7 @@ export async function waitForThreadCancelled(
 ): Promise<void> {
   const actualTimeout = timeout === WAIT_FOREVER ? undefined : timeout;
   await eventManager.waitFor(
-    EventType.THREAD_CANCELLED,
+    'THREAD_CANCELLED',
     actualTimeout,
     (event) => event.threadId === threadId
   );
@@ -93,7 +93,7 @@ export async function waitForThreadCompleted(
 ): Promise<void> {
   const actualTimeout = timeout === WAIT_FOREVER ? undefined : timeout;
   await eventManager.waitFor(
-    EventType.THREAD_COMPLETED,
+    'THREAD_COMPLETED',
     actualTimeout,
     (event) => event.threadId === threadId
   );
@@ -114,7 +114,7 @@ export async function waitForThreadFailed(
 ): Promise<void> {
   const actualTimeout = timeout === WAIT_FOREVER ? undefined : timeout;
   await eventManager.waitFor(
-    EventType.THREAD_FAILED,
+    'THREAD_FAILED',
     actualTimeout,
     (event) => event.threadId === threadId
   );
@@ -135,7 +135,7 @@ export async function waitForThreadResumed(
 ): Promise<void> {
   const actualTimeout = timeout === WAIT_FOREVER ? undefined : timeout;
   await eventManager.waitFor(
-    EventType.THREAD_RESUMED,
+    'THREAD_RESUMED',
     actualTimeout,
     (event) => event.threadId === threadId
   );
@@ -158,11 +158,11 @@ export async function waitForAnyLifecycleEvent(
   
   // 使用Promise.race等待任意一个生命周期事件
   const events = [
-    EventType.THREAD_PAUSED,
-    EventType.THREAD_CANCELLED,
-    EventType.THREAD_COMPLETED,
-    EventType.THREAD_FAILED,
-    EventType.THREAD_RESUMED
+    'THREAD_PAUSED',
+    'THREAD_CANCELLED',
+    'THREAD_COMPLETED',
+    'THREAD_FAILED',
+    'THREAD_RESUMED'
   ];
 
   // 创建多个等待Promise，每个都使用threadId过滤器
@@ -262,7 +262,7 @@ export async function waitForNodeCompleted(
 ): Promise<void> {
   const actualTimeout = timeout === WAIT_FOREVER ? undefined : timeout;
   await eventManager.waitFor(
-    EventType.NODE_COMPLETED,
+    'NODE_COMPLETED',
     actualTimeout,
     (event: any) => event.threadId === threadId && event.nodeId === nodeId
   );
@@ -285,7 +285,7 @@ export async function waitForNodeFailed(
 ): Promise<void> {
   const actualTimeout = timeout === WAIT_FOREVER ? undefined : timeout;
   await eventManager.waitFor(
-    EventType.NODE_FAILED,
+    'NODE_FAILED',
     actualTimeout,
     (event: any) => event.threadId === threadId && event.nodeId === nodeId
   );

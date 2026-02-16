@@ -21,20 +21,19 @@ export interface CheckpointMetadata {
 /**
  * 检查点触发类型
  */
-export enum CheckpointTriggerType {
+export type CheckpointTriggerType =
   /** 节点执行前 */
-  NODE_BEFORE_EXECUTE = 'NODE_BEFORE_EXECUTE',
+  'NODE_BEFORE_EXECUTE' |
   /** 节点执行后 */
-  NODE_AFTER_EXECUTE = 'NODE_AFTER_EXECUTE',
+  'NODE_AFTER_EXECUTE' |
   /** Hook触发 */
-  HOOK = 'HOOK',
+  'HOOK' |
   /** Trigger触发 */
-  TRIGGER = 'TRIGGER',
+  'TRIGGER' |
   /** 工具调用前 */
-  TOOL_BEFORE = 'TOOL_BEFORE',
+  'TOOL_BEFORE' |
   /** 工具调用后 */
-  TOOL_AFTER = 'TOOL_AFTER'
-}
+  'TOOL_AFTER';
 
 /**
  * 检查点配置上下文
@@ -49,24 +48,23 @@ export interface CheckpointConfigContext {
 }
 
 /**
- * 检查点配置来源枚举
+ * 检查点配置来源
  */
-export enum CheckpointConfigSource {
+export type CheckpointConfigSource =
   /** 节点级配置 */
-  NODE = 'node',
+  'node' |
   /** Hook配置 */
-  HOOK = 'hook',
+  'hook' |
   /** Trigger配置 */
-  TRIGGER = 'trigger',
+  'trigger' |
   /** 工具配置 */
-  TOOL = 'tool',
+  'tool' |
   /** 全局配置 */
-  GLOBAL = 'global',
+  'global' |
   /** 全局禁用 */
-  DISABLED = 'disabled',
+  'disabled' |
   /** 触发子工作流默认配置 */
-  TRIGGERED_SUBWORKFLOW = 'triggered_subworkflow'
-}
+  'triggered_subworkflow';
 
 /**
  * 检查点配置解析结果

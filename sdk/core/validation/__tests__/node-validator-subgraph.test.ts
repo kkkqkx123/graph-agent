@@ -22,7 +22,7 @@ describe('NodeValidator - Subgraph Node Validation', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Subgraph',
-        type: NodeType.SUBGRAPH,
+        type: 'SUBGRAPH',
         config: {
           subgraphId: 'subgraph-1',
           async: false
@@ -40,7 +40,7 @@ describe('NodeValidator - Subgraph Node Validation', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Subgraph',
-        type: NodeType.SUBGRAPH,
+        type: 'SUBGRAPH',
         config: {
           async: false
         } as any,
@@ -61,7 +61,7 @@ describe('NodeValidator - Subgraph Node Validation', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Start From Trigger',
-        type: NodeType.START_FROM_TRIGGER,
+        type: 'START'_FROM_TRIGGER,
         config: {}, // 空配置
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -75,7 +75,7 @@ describe('NodeValidator - Subgraph Node Validation', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Start From Trigger',
-        type: NodeType.START_FROM_TRIGGER,
+        type: 'START'_FROM_TRIGGER,
         config: {},
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -89,7 +89,7 @@ describe('NodeValidator - Subgraph Node Validation', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Start From Trigger',
-        type: NodeType.START_FROM_TRIGGER,
+        type: 'START'_FROM_TRIGGER,
         config: {
           subgraphId: 'parent-workflow', // 不应该有此配置
           async: false // 不应该有此配置
@@ -110,7 +110,7 @@ describe('NodeValidator - Subgraph Node Validation', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Continue From Trigger',
-        type: NodeType.CONTINUE_FROM_TRIGGER,
+        type: 'CONTINUE_FROM_TRIGGER',
         config: {}, // 空配置
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -124,7 +124,7 @@ describe('NodeValidator - Subgraph Node Validation', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Continue From Trigger',
-        type: NodeType.CONTINUE_FROM_TRIGGER,
+        type: 'CONTINUE_FROM_TRIGGER',
         config: {
           variableCallback: {
             includeVariables: ['var1', 'var2']
@@ -142,7 +142,7 @@ describe('NodeValidator - Subgraph Node Validation', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Continue From Trigger',
-        type: NodeType.CONTINUE_FROM_TRIGGER,
+        type: 'CONTINUE_FROM_TRIGGER',
         config: {
           variableCallback: {
             includeAll: true
@@ -160,7 +160,7 @@ describe('NodeValidator - Subgraph Node Validation', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Continue From Trigger',
-        type: NodeType.CONTINUE_FROM_TRIGGER,
+        type: 'CONTINUE_FROM_TRIGGER',
         config: {
           conversationHistoryCallback: {
             lastN: 10
@@ -178,7 +178,7 @@ describe('NodeValidator - Subgraph Node Validation', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Continue From Trigger',
-        type: NodeType.CONTINUE_FROM_TRIGGER,
+        type: 'CONTINUE_FROM_TRIGGER',
         config: {
           conversationHistoryCallback: {
             lastNByRole: {
@@ -199,7 +199,7 @@ describe('NodeValidator - Subgraph Node Validation', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Continue From Trigger',
-        type: NodeType.CONTINUE_FROM_TRIGGER,
+        type: 'CONTINUE_FROM_TRIGGER',
         config: {
           conversationHistoryCallback: {
             byRole: 'assistant'
@@ -217,7 +217,7 @@ describe('NodeValidator - Subgraph Node Validation', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Continue From Trigger',
-        type: NodeType.CONTINUE_FROM_TRIGGER,
+        type: 'CONTINUE_FROM_TRIGGER',
         config: {
           conversationHistoryCallback: {
             range: {
@@ -238,7 +238,7 @@ describe('NodeValidator - Subgraph Node Validation', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Continue From Trigger',
-        type: NodeType.CONTINUE_FROM_TRIGGER,
+        type: 'CONTINUE_FROM_TRIGGER',
         config: {
           variableCallback: {
             includeVariables: ['var1', 'var2']
@@ -259,7 +259,7 @@ describe('NodeValidator - Subgraph Node Validation', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Continue From Trigger',
-        type: NodeType.CONTINUE_FROM_TRIGGER,
+        type: 'CONTINUE_FROM_TRIGGER',
         config: {
           variableCallback: {
             includeAll: true,
@@ -280,7 +280,7 @@ describe('NodeValidator - Subgraph Node Validation', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Continue From Trigger',
-        type: NodeType.CONTINUE_FROM_TRIGGER,
+        type: 'CONTINUE_FROM_TRIGGER',
         config: {
           someConfig: 'value' // 不应该有此配置
         } as any,
@@ -298,7 +298,7 @@ describe('NodeValidator - Subgraph Node Validation', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Continue From Trigger',
-        type: NodeType.CONTINUE_FROM_TRIGGER,
+        type: 'CONTINUE_FROM_TRIGGER',
         config: {
           conversationHistoryCallback: {
             byRole: 'invalid_role' as any

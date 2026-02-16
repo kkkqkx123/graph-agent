@@ -21,10 +21,10 @@ describe('TriggerTemplateRegistry', () => {
         name: 'test-template',
         description: 'Test trigger template',
         condition: {
-          eventType: EventType.NODE_COMPLETED
+          eventType: 'NODE_COMPLETED'
         },
         action: {
-          type: TriggerActionType.SEND_NOTIFICATION,
+          type: 'send_notification',
           parameters: {
             message: 'Test notification'
           }
@@ -47,10 +47,10 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: EventType.NODE_COMPLETED
+          eventType: 'NODE_COMPLETED'
         },
         action: {
-          type: TriggerActionType.SEND_NOTIFICATION,
+          type: 'send_notification',
           parameters: {}
         },
         createdAt: Date.now(),
@@ -71,10 +71,10 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: '',
         condition: {
-          eventType: EventType.NODE_COMPLETED
+          eventType: 'NODE_COMPLETED'
         },
         action: {
-          type: TriggerActionType.SEND_NOTIFICATION,
+          type: 'send_notification',
           parameters: {}
         },
         createdAt: Date.now(),
@@ -91,7 +91,7 @@ describe('TriggerTemplateRegistry', () => {
         name: 'test-template',
         condition: null as any,
         action: {
-          type: TriggerActionType.SEND_NOTIFICATION,
+          type: 'send_notification',
           parameters: {}
         },
         createdAt: Date.now(),
@@ -107,7 +107,7 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: EventType.NODE_COMPLETED
+          eventType: 'NODE_COMPLETED'
         },
         action: null as any,
         createdAt: Date.now(),
@@ -126,7 +126,7 @@ describe('TriggerTemplateRegistry', () => {
           eventType: 'INVALID_EVENT' as EventType
         },
         action: {
-          type: TriggerActionType.SEND_NOTIFICATION,
+          type: 'send_notification',
           parameters: {}
         },
         createdAt: Date.now(),
@@ -145,7 +145,7 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: EventType.NODE_COMPLETED
+          eventType: 'NODE_COMPLETED'
         },
         action: {
           type: 'INVALID_ACTION' as TriggerActionType,
@@ -170,10 +170,10 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-1',
           condition: {
-            eventType: EventType.NODE_COMPLETED
+            eventType: 'NODE_COMPLETED'
           },
           action: {
-            type: TriggerActionType.SEND_NOTIFICATION,
+            type: 'send_notification',
             parameters: {}
           },
           createdAt: Date.now(),
@@ -182,10 +182,10 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-2',
           condition: {
-            eventType: EventType.THREAD_STARTED
+            eventType: 'THREAD_STARTED'
           },
           action: {
-            type: TriggerActionType.PAUSE_THREAD,
+            type: 'pause_thread',
             parameters: {}
           },
           createdAt: Date.now(),
@@ -194,10 +194,10 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-3',
           condition: {
-            eventType: EventType.NODE_FAILED
+            eventType: 'NODE_FAILED'
           },
           action: {
-            type: TriggerActionType.SET_VARIABLE,
+            type: 'set_variable',
             parameters: {}
           },
           createdAt: Date.now(),
@@ -218,10 +218,10 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-1',
           condition: {
-            eventType: EventType.NODE_COMPLETED
+            eventType: 'NODE_COMPLETED'
           },
           action: {
-            type: TriggerActionType.SEND_NOTIFICATION,
+            type: 'send_notification',
             parameters: {}
           },
           createdAt: Date.now(),
@@ -231,7 +231,7 @@ describe('TriggerTemplateRegistry', () => {
           name: 'template-2',
           condition: null as any,
           action: {
-            type: TriggerActionType.SEND_NOTIFICATION,
+            type: 'send_notification',
             parameters: {}
           },
           createdAt: Date.now(),
@@ -240,10 +240,10 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-3',
           condition: {
-            eventType: EventType.NODE_FAILED
+            eventType: 'NODE_FAILED'
           },
           action: {
-            type: TriggerActionType.SET_VARIABLE,
+            type: 'set_variable',
             parameters: {}
           },
           createdAt: Date.now(),
@@ -268,10 +268,10 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: EventType.NODE_COMPLETED
+          eventType: 'NODE_COMPLETED'
         },
         action: {
-          type: TriggerActionType.SEND_NOTIFICATION,
+          type: 'send_notification',
           parameters: {}
         },
         createdAt: Date.now(),
@@ -297,10 +297,10 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: EventType.NODE_COMPLETED
+          eventType: 'NODE_COMPLETED'
         },
         action: {
-          type: TriggerActionType.SEND_NOTIFICATION,
+          type: 'send_notification',
           parameters: {}
         },
         createdAt: Date.now(),
@@ -323,10 +323,10 @@ describe('TriggerTemplateRegistry', () => {
         name: 'test-template',
         description: 'Original description',
         condition: {
-          eventType: EventType.NODE_COMPLETED
+          eventType: 'NODE_COMPLETED'
         },
         action: {
-          type: TriggerActionType.SEND_NOTIFICATION,
+          type: 'send_notification',
           parameters: {}
         },
         createdAt: Date.now(),
@@ -361,10 +361,10 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: EventType.NODE_COMPLETED
+          eventType: 'NODE_COMPLETED'
         },
         action: {
-          type: TriggerActionType.SEND_NOTIFICATION,
+          type: 'send_notification',
           parameters: {}
         },
         createdAt: Date.now(),
@@ -382,10 +382,10 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: EventType.NODE_COMPLETED
+          eventType: 'NODE_COMPLETED'
         },
         action: {
-          type: TriggerActionType.SEND_NOTIFICATION,
+          type: 'send_notification',
           parameters: {}
         },
         createdAt: Date.now(),
@@ -411,10 +411,10 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: EventType.NODE_COMPLETED
+          eventType: 'NODE_COMPLETED'
         },
         action: {
-          type: TriggerActionType.SEND_NOTIFICATION,
+          type: 'send_notification',
           parameters: {}
         },
         createdAt: Date.now(),
@@ -442,10 +442,10 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-1',
           condition: {
-            eventType: EventType.NODE_COMPLETED
+            eventType: 'NODE_COMPLETED'
           },
           action: {
-            type: TriggerActionType.SEND_NOTIFICATION,
+            type: 'send_notification',
             parameters: {}
           },
           createdAt: Date.now(),
@@ -454,10 +454,10 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-2',
           condition: {
-            eventType: EventType.THREAD_STARTED
+            eventType: 'THREAD_STARTED'
           },
           action: {
-            type: TriggerActionType.PAUSE_THREAD,
+            type: 'pause_thread',
             parameters: {}
           },
           createdAt: Date.now(),
@@ -466,10 +466,10 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-3',
           condition: {
-            eventType: EventType.NODE_FAILED
+            eventType: 'NODE_FAILED'
           },
           action: {
-            type: TriggerActionType.SET_VARIABLE,
+            type: 'set_variable',
             parameters: {}
           },
           createdAt: Date.now(),
@@ -492,10 +492,10 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-1',
           condition: {
-            eventType: EventType.NODE_COMPLETED
+            eventType: 'NODE_COMPLETED'
           },
           action: {
-            type: TriggerActionType.SEND_NOTIFICATION,
+            type: 'send_notification',
             parameters: {}
           },
           createdAt: Date.now(),
@@ -504,10 +504,10 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-2',
           condition: {
-            eventType: EventType.THREAD_STARTED
+            eventType: 'THREAD_STARTED'
           },
           action: {
-            type: TriggerActionType.PAUSE_THREAD,
+            type: 'pause_thread',
             parameters: {}
           },
           createdAt: Date.now(),
@@ -534,10 +534,10 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-1',
           condition: {
-            eventType: EventType.NODE_COMPLETED
+            eventType: 'NODE_COMPLETED'
           },
           action: {
-            type: TriggerActionType.SEND_NOTIFICATION,
+            type: 'send_notification',
             parameters: {}
           },
           createdAt: Date.now(),
@@ -546,10 +546,10 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-2',
           condition: {
-            eventType: EventType.THREAD_STARTED
+            eventType: 'THREAD_STARTED'
           },
           action: {
-            type: TriggerActionType.PAUSE_THREAD,
+            type: 'pause_thread',
             parameters: {}
           },
           createdAt: Date.now(),
@@ -579,10 +579,10 @@ describe('TriggerTemplateRegistry', () => {
         name: 'test-template',
         description: 'Test description',
         condition: {
-          eventType: EventType.NODE_COMPLETED
+          eventType: 'NODE_COMPLETED'
         },
         action: {
-          type: TriggerActionType.SEND_NOTIFICATION,
+          type: 'send_notification',
           parameters: {}
         },
         metadata: {
@@ -612,10 +612,10 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: EventType.NODE_COMPLETED
+          eventType: 'NODE_COMPLETED'
         },
         action: {
-          type: TriggerActionType.SEND_NOTIFICATION,
+          type: 'send_notification',
           parameters: {}
         },
         createdAt: Date.now(),
@@ -637,10 +637,10 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-1',
           condition: {
-            eventType: EventType.NODE_COMPLETED
+            eventType: 'NODE_COMPLETED'
           },
           action: {
-            type: TriggerActionType.SEND_NOTIFICATION,
+            type: 'send_notification',
             parameters: {}
           },
           createdAt: Date.now(),
@@ -649,10 +649,10 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-2',
           condition: {
-            eventType: EventType.THREAD_STARTED
+            eventType: 'THREAD_STARTED'
           },
           action: {
-            type: TriggerActionType.PAUSE_THREAD,
+            type: 'pause_thread',
             parameters: {}
           },
           createdAt: Date.now(),
@@ -675,10 +675,10 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-1',
           condition: {
-            eventType: EventType.NODE_COMPLETED
+            eventType: 'NODE_COMPLETED'
           },
           action: {
-            type: TriggerActionType.SEND_NOTIFICATION,
+            type: 'send_notification',
             parameters: {}
           },
           createdAt: Date.now(),
@@ -687,10 +687,10 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-2',
           condition: {
-            eventType: EventType.THREAD_STARTED
+            eventType: 'THREAD_STARTED'
           },
           action: {
-            type: TriggerActionType.PAUSE_THREAD,
+            type: 'pause_thread',
             parameters: {}
           },
           createdAt: Date.now(),
@@ -715,10 +715,10 @@ describe('TriggerTemplateRegistry', () => {
           name: 'notification-template',
           description: 'Notification template for testing',
           condition: {
-            eventType: EventType.NODE_COMPLETED
+            eventType: 'NODE_COMPLETED'
           },
           action: {
-            type: TriggerActionType.SEND_NOTIFICATION,
+            type: 'send_notification',
             parameters: {}
           },
           metadata: { tags: ['notification', 'test'] },
@@ -729,10 +729,10 @@ describe('TriggerTemplateRegistry', () => {
           name: 'pause-template',
           description: 'Pause template',
           condition: {
-            eventType: EventType.THREAD_STARTED
+            eventType: 'THREAD_STARTED'
           },
           action: {
-            type: TriggerActionType.PAUSE_THREAD,
+            type: 'pause_thread',
             parameters: {}
           },
           createdAt: Date.now(),
@@ -752,10 +752,10 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'Notification-Template',
         condition: {
-          eventType: EventType.NODE_COMPLETED
+          eventType: 'NODE_COMPLETED'
         },
         action: {
-          type: TriggerActionType.SEND_NOTIFICATION,
+          type: 'send_notification',
           parameters: {}
         },
         createdAt: Date.now(),
@@ -774,10 +774,10 @@ describe('TriggerTemplateRegistry', () => {
         name: 'test-template',
         description: 'AI template',
         condition: {
-          eventType: EventType.NODE_COMPLETED
+          eventType: 'NODE_COMPLETED'
         },
         action: {
-          type: TriggerActionType.SEND_NOTIFICATION,
+          type: 'send_notification',
           parameters: {}
         },
         metadata: {
@@ -806,10 +806,10 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: EventType.NODE_COMPLETED
+          eventType: 'NODE_COMPLETED'
         },
         action: {
-          type: TriggerActionType.SEND_NOTIFICATION,
+          type: 'send_notification',
           parameters: {}
         },
         createdAt: Date.now(),
@@ -837,10 +837,10 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: EventType.NODE_COMPLETED
+          eventType: 'NODE_COMPLETED'
         },
         action: {
-          type: TriggerActionType.SEND_NOTIFICATION,
+          type: 'send_notification',
           parameters: {}
         },
         createdAt: Date.now(),
@@ -866,7 +866,7 @@ describe('TriggerTemplateRegistry', () => {
         name: 'test-template',
         condition: null as any,
         action: {
-          type: TriggerActionType.SEND_NOTIFICATION,
+          type: 'send_notification',
           parameters: {}
         },
         createdAt: Date.now(),
@@ -887,11 +887,11 @@ describe('TriggerTemplateRegistry', () => {
         name: 'test-template',
         description: 'Test template',
         condition: {
-          eventType: EventType.NODE_COMPLETED,
+          eventType: 'NODE_COMPLETED',
           metadata: { test: 'value' }
         },
         action: {
-          type: TriggerActionType.SEND_NOTIFICATION,
+          type: 'send_notification',
           parameters: { message: 'test' },
           metadata: { action: 'value' }
         },
@@ -927,10 +927,10 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: EventType.NODE_COMPLETED
+          eventType: 'NODE_COMPLETED'
         },
         action: {
-          type: TriggerActionType.SEND_NOTIFICATION,
+          type: 'send_notification',
           parameters: { message: 'original' }
         },
         enabled: true,
@@ -975,10 +975,10 @@ describe('TriggerTemplateRegistry', () => {
       const template = {
         name: 'test-template',
         condition: {
-          eventType: EventType.NODE_COMPLETED
+          eventType: 'NODE_COMPLETED'
         },
         action: {
-          type: TriggerActionType.SEND_NOTIFICATION,
+          type: 'send_notification',
           parameters: {}
         },
         createdAt: Date.now(),
@@ -1003,10 +1003,10 @@ describe('TriggerTemplateRegistry', () => {
         name: 'test-template',
         description: 'Test template',
         condition: {
-          eventType: EventType.NODE_COMPLETED
+          eventType: 'NODE_COMPLETED'
         },
         action: {
-          type: TriggerActionType.SEND_NOTIFICATION,
+          type: 'send_notification',
           parameters: {}
         },
         metadata: {
@@ -1054,10 +1054,10 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-1',
           condition: {
-            eventType: EventType.NODE_COMPLETED
+            eventType: 'NODE_COMPLETED'
           },
           action: {
-            type: TriggerActionType.SEND_NOTIFICATION,
+            type: 'send_notification',
             parameters: {}
           },
           createdAt: Date.now(),
@@ -1066,10 +1066,10 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-2',
           condition: {
-            eventType: EventType.THREAD_STARTED
+            eventType: 'THREAD_STARTED'
           },
           action: {
-            type: TriggerActionType.PAUSE_THREAD,
+            type: 'pause_thread',
             parameters: {}
           },
           createdAt: Date.now(),
@@ -1078,10 +1078,10 @@ describe('TriggerTemplateRegistry', () => {
         {
           name: 'template-3',
           condition: {
-            eventType: EventType.NODE_FAILED
+            eventType: 'NODE_FAILED'
           },
           action: {
-            type: TriggerActionType.SET_VARIABLE,
+            type: 'set_variable',
             parameters: {}
           },
           createdAt: Date.now(),

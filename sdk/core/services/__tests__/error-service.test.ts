@@ -84,7 +84,7 @@ describe('ErrorService', () => {
     });
 
     it('应该处理 INFO 级别的错误', async () => {
-      const error = new SDKError('Info message', ErrorSeverity.INFO);
+      const error = new SDKError('Info message', 'info');
       const context = {
         threadId: 'thread-123'
       };
@@ -141,7 +141,7 @@ describe('ErrorService', () => {
 
       expect(mockEventManager.emit).toHaveBeenCalled();
       // 验证错误包含正确的 severity
-      expect(error.severity).toBe(ErrorSeverity.ERROR);
+      expect(error.severity).toBe('error');
     });
 
     it('WARNING 级别应该使用 warn 日志', async () => {
@@ -151,17 +151,17 @@ describe('ErrorService', () => {
       await errorService.handleError(error, context);
 
       expect(mockEventManager.emit).toHaveBeenCalled();
-      expect(error.severity).toBe(ErrorSeverity.WARNING);
+      expect(error.severity).toBe('warning');
     });
 
     it('INFO 级别应该使用 info 日志', async () => {
-      const error = new SDKError('Info message', ErrorSeverity.INFO);
+      const error = new SDKError('Info message', 'info');
       const context = { threadId: 'thread-123' };
 
       await errorService.handleError(error, context);
 
       expect(mockEventManager.emit).toHaveBeenCalled();
-      expect(error.severity).toBe(ErrorSeverity.INFO);
+      expect(error.severity).toBe('info');
     });
   });
 });

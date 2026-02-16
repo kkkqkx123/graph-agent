@@ -18,7 +18,7 @@ describe('NodeTemplateRegistry', () => {
     it('应该成功注册有效的节点模板', () => {
       const template = {
         name: 'test-template',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: {
           profileId: 'profile-1',
           prompt: 'Test prompt'
@@ -39,7 +39,7 @@ describe('NodeTemplateRegistry', () => {
     it('应该抛出 ValidationError 当节点模板名称已存在', () => {
       const template = {
         name: 'test-template',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: {
           profileId: 'profile-1',
           prompt: 'Test prompt'
@@ -61,7 +61,7 @@ describe('NodeTemplateRegistry', () => {
     it('应该抛出 ValidationError 当节点模板名称为空', () => {
       const template = {
         name: '',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: {
           profileId: 'profile-1'
         },
@@ -94,7 +94,7 @@ describe('NodeTemplateRegistry', () => {
     it('应该抛出 ValidationError 当节点配置为空', () => {
       const template = {
         name: 'test-template',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: null as any,
         createdAt: Date.now(),
         updatedAt: Date.now()
@@ -111,14 +111,14 @@ describe('NodeTemplateRegistry', () => {
       const templates = [
         {
           name: 'template-1',
-          type: NodeType.LLM,
+          type: 'LLM',
           config: { profileId: 'profile-1' },
           createdAt: Date.now(),
           updatedAt: Date.now()
         },
         {
           name: 'template-2',
-          type: NodeType.CODE,
+          type: 'CODE',
           config: {
             scriptName: 'test-script',
             scriptType: 'javascript',
@@ -129,7 +129,7 @@ describe('NodeTemplateRegistry', () => {
         },
         {
           name: 'template-3',
-          type: NodeType.VARIABLE,
+          type: 'VARIABLE',
           config: {
             variableName: 'test-var',
             variableType: 'string',
@@ -152,21 +152,21 @@ describe('NodeTemplateRegistry', () => {
       const templates = [
         {
           name: 'template-1',
-          type: NodeType.LLM,
+          type: 'LLM',
           config: { profileId: 'profile-1' },
           createdAt: Date.now(),
           updatedAt: Date.now()
         },
         {
           name: 'template-2',
-          type: NodeType.LLM,
+          type: 'LLM',
           config: null as any,
           createdAt: Date.now(),
           updatedAt: Date.now()
         },
         {
           name: 'template-3',
-          type: NodeType.VARIABLE,
+          type: 'VARIABLE',
           config: {
             variableName: 'test-var',
             variableType: 'string',
@@ -193,7 +193,7 @@ describe('NodeTemplateRegistry', () => {
     it('应该返回已注册的节点模板', () => {
       const template = {
         name: 'test-template',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: { profileId: 'profile-1' },
         createdAt: Date.now(),
         updatedAt: Date.now()
@@ -217,7 +217,7 @@ describe('NodeTemplateRegistry', () => {
     it('应该返回 true 当节点模板存在', () => {
       const template = {
         name: 'test-template',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: { profileId: 'profile-1' },
         createdAt: Date.now(),
         updatedAt: Date.now()
@@ -237,7 +237,7 @@ describe('NodeTemplateRegistry', () => {
     it('应该成功更新节点模板', () => {
       const template = {
         name: 'test-template',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: { profileId: 'profile-1' },
         description: 'Original description',
         createdAt: Date.now(),
@@ -271,7 +271,7 @@ describe('NodeTemplateRegistry', () => {
     it('应该抛出 ValidationError 当更新后的配置无效', () => {
       const template = {
         name: 'test-template',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: { profileId: 'profile-1' },
         createdAt: Date.now(),
         updatedAt: Date.now()
@@ -287,7 +287,7 @@ describe('NodeTemplateRegistry', () => {
     it('应该更新 updatedAt 时间戳', () => {
       const template = {
         name: 'test-template',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: { profileId: 'profile-1' },
         createdAt: Date.now(),
         updatedAt: Date.now()
@@ -311,7 +311,7 @@ describe('NodeTemplateRegistry', () => {
     it('应该成功删除节点模板', () => {
       const template = {
         name: 'test-template',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: { profileId: 'profile-1' },
         createdAt: Date.now(),
         updatedAt: Date.now()
@@ -337,14 +337,14 @@ describe('NodeTemplateRegistry', () => {
       const templates = [
         {
           name: 'template-1',
-          type: NodeType.LLM,
+          type: 'LLM',
           config: { profileId: 'profile-1' },
           createdAt: Date.now(),
           updatedAt: Date.now()
         },
         {
           name: 'template-2',
-          type: NodeType.CODE,
+          type: 'CODE',
           config: {
             scriptName: 'test-script',
             scriptType: 'javascript',
@@ -355,7 +355,7 @@ describe('NodeTemplateRegistry', () => {
         },
         {
           name: 'template-3',
-          type: NodeType.VARIABLE,
+          type: 'VARIABLE',
           config: {
             variableName: 'test-var',
             variableType: 'string',
@@ -380,14 +380,14 @@ describe('NodeTemplateRegistry', () => {
       const templates = [
         {
           name: 'template-1',
-          type: NodeType.LLM,
+          type: 'LLM',
           config: { profileId: 'profile-1' },
           createdAt: Date.now(),
           updatedAt: Date.now()
         },
         {
           name: 'template-2',
-          type: NodeType.CODE,
+          type: 'CODE',
           config: {
             scriptName: 'test-script',
             scriptType: 'javascript',
@@ -416,14 +416,14 @@ describe('NodeTemplateRegistry', () => {
       const templates = [
         {
           name: 'template-1',
-          type: NodeType.LLM,
+          type: 'LLM',
           config: { profileId: 'profile-1' },
           createdAt: Date.now(),
           updatedAt: Date.now()
         },
         {
           name: 'template-2',
-          type: NodeType.CODE,
+          type: 'CODE',
           config: {
             scriptName: 'test-script',
             scriptType: 'javascript',
@@ -454,7 +454,7 @@ describe('NodeTemplateRegistry', () => {
     it('应该返回所有节点模板的摘要信息', () => {
       const template = {
         name: 'test-template',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: { profileId: 'profile-1' },
         description: 'Test description',
         metadata: {
@@ -472,7 +472,7 @@ describe('NodeTemplateRegistry', () => {
       expect(summaries).toHaveLength(1);
       expect(summaries[0]).toEqual({
         name: 'test-template',
-        type: NodeType.LLM,
+        type: 'LLM',
         description: 'Test description',
         category: 'test',
         tags: ['test', 'llm'],
@@ -484,7 +484,7 @@ describe('NodeTemplateRegistry', () => {
     it('应该不包含 config 字段', () => {
       const template = {
         name: 'test-template',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: { profileId: 'profile-1' },
         createdAt: Date.now(),
         updatedAt: Date.now()
@@ -503,21 +503,21 @@ describe('NodeTemplateRegistry', () => {
       const templates = [
         {
           name: 'llm-template-1',
-          type: NodeType.LLM,
+          type: 'LLM',
           config: { profileId: 'profile-1' },
           createdAt: Date.now(),
           updatedAt: Date.now()
         },
         {
           name: 'llm-template-2',
-          type: NodeType.LLM,
+          type: 'LLM',
           config: { profileId: 'profile-2' },
           createdAt: Date.now(),
           updatedAt: Date.now()
         },
         {
           name: 'code-template',
-          type: NodeType.CODE,
+          type: 'CODE',
           config: {
             scriptName: 'test-script',
             scriptType: 'javascript',
@@ -530,8 +530,8 @@ describe('NodeTemplateRegistry', () => {
 
       registry.registerBatch(templates);
 
-      const llmTemplates = registry.listByType(NodeType.LLM);
-      const codeTemplates = registry.listByType(NodeType.CODE);
+      const llmTemplates = registry.listByType('LLM');
+      const codeTemplates = registry.listByType('CODE');
 
       expect(llmTemplates).toHaveLength(2);
       expect(llmTemplates.map(t => t.name)).toContain('llm-template-1');
@@ -542,7 +542,7 @@ describe('NodeTemplateRegistry', () => {
     });
 
     it('应该返回空数组当没有指定类型的节点模板', () => {
-      const result = registry.listByType(NodeType.LLM);
+      const result = registry.listByType('LLM');
 
       expect(result).toEqual([]);
     });
@@ -553,7 +553,7 @@ describe('NodeTemplateRegistry', () => {
       const templates = [
         {
           name: 'template-1',
-          type: NodeType.LLM,
+          type: 'LLM',
           config: { profileId: 'profile-1' },
           metadata: { category: 'ai' },
           createdAt: Date.now(),
@@ -561,7 +561,7 @@ describe('NodeTemplateRegistry', () => {
         },
         {
           name: 'template-2',
-          type: NodeType.CODE,
+          type: 'CODE',
           config: {
             scriptName: 'test-script',
             scriptType: 'javascript',
@@ -573,7 +573,7 @@ describe('NodeTemplateRegistry', () => {
         },
         {
           name: 'template-3',
-          type: NodeType.VARIABLE,
+          type: 'VARIABLE',
           config: {
             variableName: 'test-var',
             variableType: 'string',
@@ -606,7 +606,7 @@ describe('NodeTemplateRegistry', () => {
       const templates = [
         {
           name: 'template-1',
-          type: NodeType.LLM,
+          type: 'LLM',
           config: { profileId: 'profile-1' },
           metadata: { tags: ['ai', 'llm', 'test'] },
           createdAt: Date.now(),
@@ -614,7 +614,7 @@ describe('NodeTemplateRegistry', () => {
         },
         {
           name: 'template-2',
-          type: NodeType.CODE,
+          type: 'CODE',
           config: {
             scriptName: 'test-script',
             scriptType: 'javascript',
@@ -626,7 +626,7 @@ describe('NodeTemplateRegistry', () => {
         },
         {
           name: 'template-3',
-          type: NodeType.VARIABLE,
+          type: 'VARIABLE',
           config: {
             variableName: 'test-var',
             variableType: 'string',
@@ -659,14 +659,14 @@ describe('NodeTemplateRegistry', () => {
       const templates = [
         {
           name: 'template-1',
-          type: NodeType.LLM,
+          type: 'LLM',
           config: { profileId: 'profile-1' },
           createdAt: Date.now(),
           updatedAt: Date.now()
         },
         {
           name: 'template-2',
-          type: NodeType.CODE,
+          type: 'CODE',
           config: {
             scriptName: 'test-script',
             scriptType: 'javascript',
@@ -691,14 +691,14 @@ describe('NodeTemplateRegistry', () => {
       const templates = [
         {
           name: 'template-1',
-          type: NodeType.LLM,
+          type: 'LLM',
           config: { profileId: 'profile-1' },
           createdAt: Date.now(),
           updatedAt: Date.now()
         },
         {
           name: 'template-2',
-          type: NodeType.CODE,
+          type: 'CODE',
           config: {
             scriptName: 'test-script',
             scriptType: 'javascript',
@@ -724,7 +724,7 @@ describe('NodeTemplateRegistry', () => {
       const templates = [
         {
           name: 'llm-template',
-          type: NodeType.LLM,
+          type: 'LLM',
           config: { profileId: 'profile-1' },
           description: 'LLM template for testing',
           metadata: { tags: ['llm', 'ai'] },
@@ -733,7 +733,7 @@ describe('NodeTemplateRegistry', () => {
         },
         {
           name: 'code-template',
-          type: NodeType.CODE,
+          type: 'CODE',
           config: {
             scriptName: 'test-script',
             scriptType: 'javascript',
@@ -756,7 +756,7 @@ describe('NodeTemplateRegistry', () => {
     it('应该不区分大小写', () => {
       const template = {
         name: 'LLM-Template',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: { profileId: 'profile-1' },
         createdAt: Date.now(),
         updatedAt: Date.now()
@@ -772,7 +772,7 @@ describe('NodeTemplateRegistry', () => {
     it('应该搜索名称、描述、标签和分类', () => {
       const template = {
         name: 'test-template',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: { profileId: 'profile-1' },
         description: 'AI template',
         metadata: {
@@ -800,7 +800,7 @@ describe('NodeTemplateRegistry', () => {
     it('应该成功导出节点模板为 JSON 字符串', () => {
       const template = {
         name: 'test-template',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: { profileId: 'profile-1' },
         createdAt: Date.now(),
         updatedAt: Date.now()
@@ -826,7 +826,7 @@ describe('NodeTemplateRegistry', () => {
     it('应该成功从 JSON 字符串导入节点模板', () => {
       const template = {
         name: 'test-template',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: { profileId: 'profile-1' },
         createdAt: Date.now(),
         updatedAt: Date.now()
@@ -849,7 +849,7 @@ describe('NodeTemplateRegistry', () => {
     it('应该抛出 ValidationError 当节点配置无效', () => {
       const invalidTemplate = {
         name: 'test-template',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: null as any,
         createdAt: Date.now(),
         updatedAt: Date.now()
@@ -868,7 +868,7 @@ describe('NodeTemplateRegistry', () => {
       // 1. 注册节点模板
       const template = {
         name: 'test-template',
-        type: NodeType.LLM,
+        type: 'LLM',
         config: { profileId: 'profile-1' },
         description: 'Test template',
         metadata: {
@@ -908,14 +908,14 @@ describe('NodeTemplateRegistry', () => {
       const templates = [
         {
           name: 'template-1',
-          type: NodeType.LLM,
+          type: 'LLM',
           config: { profileId: 'profile-1' },
           createdAt: Date.now(),
           updatedAt: Date.now()
         },
         {
           name: 'template-2',
-          type: NodeType.CODE,
+          type: 'CODE',
           config: {
             scriptName: 'test-script',
             scriptType: 'javascript',
@@ -926,7 +926,7 @@ describe('NodeTemplateRegistry', () => {
         },
         {
           name: 'template-3',
-          type: NodeType.VARIABLE,
+          type: 'VARIABLE',
           config: {
             variableName: 'test-var',
             variableType: 'string',

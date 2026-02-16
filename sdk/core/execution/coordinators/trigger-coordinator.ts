@@ -251,7 +251,7 @@ export class TriggerCoordinator {
         }
 
         // 对于 NODE_CUSTOM_EVENT 事件，需要额外匹配 eventName
-        if (event.type === EventType.NODE_CUSTOM_EVENT) {
+        if (event.type === 'NODE_CUSTOM_EVENT') {
           const customEvent = event as NodeCustomEvent;
           if (trigger.condition.eventName && trigger.condition.eventName !== customEvent.eventName) {
             continue;

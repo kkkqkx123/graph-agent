@@ -114,16 +114,16 @@ describe('检查点存储适配器兼容性集成测试', () => {
         return { valid: true, errors: [] };
       },
       getSupportedTypes() {
-        return [ScriptType.JAVASCRIPT];
+        return ['JAVASCRIPT'];
       }
     };
 
-    codeService.registerExecutor(ScriptType.JAVASCRIPT, javascriptExecutor);
+    codeService.registerExecutor('JAVASCRIPT', javascriptExecutor);
 
     const testProcessScript = {
       id: generateId(),
       name: 'test-process',
-      type: ScriptType.JAVASCRIPT,
+      type: 'JAVASCRIPT',
       content: 'return { processed: true };',
       description: 'Test process script',
       options: {}
@@ -148,7 +148,7 @@ describe('检查点存储适配器兼容性集成测试', () => {
     nodes: [
       {
         id: `${id}-start`,
-        type: NodeType.START,
+        type: 'START',
         name: 'Start',
         config: {},
         outgoingEdgeIds: [`${id}-edge-1`],
@@ -156,7 +156,7 @@ describe('检查点存储适配器兼容性集成测试', () => {
       },
       {
         id: `${id}-process`,
-        type: NodeType.CODE,
+        type: 'CODE',
         name: 'Process',
         config: {
           scriptName: 'test-process',
@@ -168,7 +168,7 @@ describe('检查点存储适配器兼容性集成测试', () => {
       },
       {
         id: `${id}-end`,
-        type: NodeType.END,
+        type: 'END',
         name: 'End',
         config: {},
         outgoingEdgeIds: [],

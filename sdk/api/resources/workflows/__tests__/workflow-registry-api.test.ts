@@ -41,7 +41,7 @@ describe('WorkflowRegistryAPI', () => {
     const baseWorkflow: WorkflowDefinition = {
       id: 'test-workflow',
       name: 'Test Workflow',
-      type: WorkflowType.STANDALONE,
+      type: 'STANDALONE',
       version: '1.0.0',
       nodes: [],
       edges: [],
@@ -167,7 +167,7 @@ describe('WorkflowRegistryAPI', () => {
     const baseWorkflow: WorkflowDefinition = {
       id: 'test-workflow',
       name: 'Test Workflow',
-      type: WorkflowType.STANDALONE,
+      type: 'STANDALONE',
       version: '1.0.0',
       nodes: [],
       edges: [],

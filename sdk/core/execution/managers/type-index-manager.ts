@@ -22,10 +22,10 @@ export class TypeIndexManager {
 
   constructor() {
     // 初始化所有类型的索引数组
-    this.typeIndices.set(MessageRole.SYSTEM, []);
-    this.typeIndices.set(MessageRole.USER, []);
-    this.typeIndices.set(MessageRole.ASSISTANT, []);
-    this.typeIndices.set(MessageRole.TOOL, []);
+    this.typeIndices.set('system', []);
+    this.typeIndices.set('user', []);
+    this.typeIndices.set('assistant', []);
+    this.typeIndices.set('tool', []);
   }
 
   /**
@@ -165,10 +165,10 @@ export class TypeIndexManager {
    * 重置类型索引管理器
    */
   reset(): void {
-    this.typeIndices.set(MessageRole.SYSTEM, []);
-    this.typeIndices.set(MessageRole.USER, []);
-    this.typeIndices.set(MessageRole.ASSISTANT, []);
-    this.typeIndices.set(MessageRole.TOOL, []);
+    this.typeIndices.set('system', []);
+    this.typeIndices.set('user', []);
+    this.typeIndices.set('assistant', []);
+    this.typeIndices.set('tool', []);
     this.totalMessages = 0;
   }
 

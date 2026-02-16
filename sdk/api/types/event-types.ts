@@ -4,33 +4,28 @@
  */
 
 /**
- * 事件类型枚举
+ * 事件类型
  */
-export enum APIEventType {
+export type APIEventType =
   // 资源事件
-  RESOURCE_CREATED = 'RESOURCE_CREATED',
-  RESOURCE_UPDATED = 'RESOURCE_UPDATED',
-  RESOURCE_DELETED = 'RESOURCE_DELETED',
-  RESOURCE_ACCESSED = 'RESOURCE_ACCESSED',
-  
+  | 'RESOURCE_CREATED'    /** 资源已创建 */
+  | 'RESOURCE_UPDATED'    /** 资源已更新 */
+  | 'RESOURCE_DELETED'    /** 资源已删除 */
+  | 'RESOURCE_ACCESSED'   /** 资源已访问 */
   // 错误事件
-  ERROR_OCCURRED = 'ERROR_OCCURRED',
-  VALIDATION_FAILED = 'VALIDATION_FAILED',
-  
+  | 'ERROR_OCCURRED'      /** 错误发生 */
+  | 'VALIDATION_FAILED'   /** 验证失败 */
   // 性能事件
-  SLOW_QUERY = 'SLOW_QUERY',
-  CACHE_HIT = 'CACHE_HIT',
-  CACHE_MISS = 'CACHE_MISS',
-  
+  | 'SLOW_QUERY'          /** 慢查询 */
+  | 'CACHE_HIT'           /** 缓存命中 */
+  | 'CACHE_MISS'          /** 缓存未命中 */
   // 操作事件
-  OPERATION_STARTED = 'OPERATION_STARTED',
-  OPERATION_COMPLETED = 'OPERATION_COMPLETED',
-  OPERATION_FAILED = 'OPERATION_FAILED',
-  
+  | 'OPERATION_STARTED'   /** 操作开始 */
+  | 'OPERATION_COMPLETED' /** 操作完成 */
+  | 'OPERATION_FAILED'    /** 操作失败 */
   // 系统事件
-  SYSTEM_READY = 'SYSTEM_READY',
-  SYSTEM_SHUTDOWN = 'SYSTEM_SHUTDOWN'
-}
+  | 'SYSTEM_READY'        /** 系统就绪 */
+  | 'SYSTEM_SHUTDOWN';    /** 系统关闭 */
 
 /**
  * 事件数据接口

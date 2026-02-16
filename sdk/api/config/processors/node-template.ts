@@ -16,9 +16,9 @@ import { ok } from '@modular-agent/common-utils';
  * @param config 解析后的配置对象
  * @returns 验证结果
  */
-export function validateNodeTemplate(config: ParsedConfig<ConfigType.NODE_TEMPLATE>): Result<ParsedConfig<ConfigType.NODE_TEMPLATE>, ValidationError[]> {
+export function validateNodeTemplate(config: ParsedConfig<'node_template'>): Result<ParsedConfig<'node_template'>, ValidationError[]> {
   const result = validateNodeTemplateConfig(config.config);
 
   // 使用 andThen 进行类型转换
-  return result.andThen(() => ok(config)) as Result<ParsedConfig<ConfigType.NODE_TEMPLATE>, ValidationError[]>;
+  return result.andThen(() => ok(config)) as Result<ParsedConfig<'node_template'>, ValidationError[]>;
 }

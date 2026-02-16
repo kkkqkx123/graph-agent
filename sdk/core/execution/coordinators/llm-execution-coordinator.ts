@@ -197,14 +197,14 @@ export class LLMExecutionCoordinator {
 
     // 步骤1：添加用户消息
     const userMessage = {
-      role: MessageRole.USER,
+      role: 'user',
       content: prompt
     };
     conversationState.addMessage(userMessage);
 
     // 触发消息添加事件
     await safeEmit(this.eventManager, {
-      type: EventType.MESSAGE_ADDED,
+      type: 'MESSAGE_ADDED',
       timestamp: now(),
       workflowId: '',
       threadId: threadId || '',
@@ -226,7 +226,7 @@ export class LLMExecutionCoordinator {
       // 当使用量超过 80% 时触发警告
       if (usagePercentage > 80) {
         await safeEmit(this.eventManager, {
-          type: EventType.TOKEN_USAGE_WARNING,
+          type: 'TOKEN_USAGE_WARNING',
           timestamp: now(),
           workflowId: '',
           threadId: threadId || '',
@@ -293,7 +293,7 @@ export class LLMExecutionCoordinator {
 
     // 将 LLM 响应添加到对话历史
     const assistantMessage = {
-      role: MessageRole.ASSISTANT,
+      role: 'assistant',
       content: llmResult.content,
       toolCalls: llmResult.toolCalls?.map((tc: any) => ({
         id: tc.id,
@@ -308,7 +308,7 @@ export class LLMExecutionCoordinator {
 
     // 触发消息添加事件
     await safeEmit(this.eventManager, {
-      type: EventType.MESSAGE_ADDED,
+      type: 'MESSAGE_ADDED',
       timestamp: now(),
       workflowId: '',
       threadId: threadId || '',
@@ -359,7 +359,7 @@ export class LLMExecutionCoordinator {
     // 触发对话状态变化事件
     const finalTokenUsage = conversationState.getTokenUsage();
     await safeEmit(this.eventManager, {
-      type: EventType.CONVERSATION_STATE_CHANGED,
+      type: 'CONVERSATION_STATE_CHANGED',
       timestamp: now(),
       workflowId: '',
       threadId: threadId || '',
@@ -406,7 +406,7 @@ export class LLMExecutionCoordinator {
         if (!approvalResult.approved) {
           // 用户拒绝，跳过此工具调用
           const toolMessage = {
-            role: MessageRole.TOOL,
+            role: 'tool',
             content: JSON.stringify({
               error: 'Tool call was rejected by user approval',
               rejected: true
@@ -425,7 +425,7 @@ export class LLMExecutionCoordinator {
         // 如果用户提供了额外指令，添加到对话历史
         if (approvalResult.userInstruction) {
           conversationState.addMessage({
-            role: MessageRole.USER,
+            role: 'user',
             content: approvalResult.userInstruction
           });
         }
@@ -519,7 +519,7 @@ export class LLMExecutionCoordinator {
           undefined,
           { toolCallId: toolCall.id },
           getErrorOrNew(error),
-          ErrorSeverity.WARNING
+          'warning'
         );
       }
     }
@@ -527,13 +527,13 @@ export class LLMExecutionCoordinator {
     try {
       // 触发USER_INTERACTION_REQUESTED事件
       await safeEmit(this.eventManager, {
-        type: EventType.USER_INTERACTION_REQUESTED,
+        type: 'USER_INTERACTION_REQUESTED',
         timestamp: now(),
         workflowId: '',
         threadId,
         nodeId,
         interactionId,
-        operationType: UserInteractionOperationType.TOOL_APPROVAL,
+        operationType: 'TOOL_APPROVAL',
         prompt: `是否批准调用工具 "${toolCall.id}"?`,
         timeout: approvalConfig?.approvalTimeout || 0, // 使用配置的超时时间，默认无限等待
         metadata: {
@@ -552,12 +552,12 @@ export class LLMExecutionCoordinator {
 
       // 触发USER_INTERACTION_PROCESSED事件
       await safeEmit(this.eventManager, {
-        type: EventType.USER_INTERACTION_PROCESSED,
+        type: 'USER_INTERACTION_PROCESSED',
         timestamp: now(),
         workflowId: '',
         threadId,
         interactionId,
-        operationType: UserInteractionOperationType.TOOL_APPROVAL,
+        operationType: 'TOOL_APPROVAL',
         results: approvalResult
       });
 
@@ -578,7 +578,7 @@ export class LLMExecutionCoordinator {
             undefined,
             { checkpointId },
             getErrorOrNew(error),
-            ErrorSeverity.WARNING
+            'warning'
           );
         }
       }
@@ -604,7 +604,7 @@ export class LLMExecutionCoordinator {
           if (timeoutId) {
             clearTimeout(timeoutId);
           }
-          this.eventManager.off(EventType.USER_INTERACTION_RESPONDED, handler);
+          this.eventManager.off('USER_INTERACTION_RESPONDED', handler);
           resolve(event);
         }
       };
@@ -612,12 +612,12 @@ export class LLMExecutionCoordinator {
       // 只有当 timeoutMs > 0 时才设置超时
       if (timeoutMs > 0) {
         timeoutId = setTimeout(() => {
-          this.eventManager.off(EventType.USER_INTERACTION_RESPONDED, handler);
+          this.eventManager.off('USER_INTERACTION_RESPONDED', handler);
           reject(new Error(`User interaction timeout after ${timeoutMs}ms`));
         }, timeoutMs);
       }
 
-      this.eventManager.on(EventType.USER_INTERACTION_RESPONDED, handler);
+      this.eventManager.on('USER_INTERACTION_RESPONDED', handler);
     });
   }
 

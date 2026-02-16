@@ -18,7 +18,7 @@ describe('CodeConfigValidator', () => {
       const validScript = {
         id: 'script-1',
         name: 'test-script',
-        type: ScriptType.JAVASCRIPT,
+        type: 'JAVASCRIPT',
         description: 'A test script',
         content: 'console.log("Hello World");',
         options: {
@@ -36,7 +36,7 @@ describe('CodeConfigValidator', () => {
       const validScript = {
         id: 'script-2',
         name: 'test-script-file',
-        type: ScriptType.PYTHON,
+        type: 'PYTHON',
         description: 'A test script from file',
         filePath: '/path/to/script.py',
         options: {
@@ -52,7 +52,7 @@ describe('CodeConfigValidator', () => {
       const invalidScript = {
         id: 'script-1',
         // 缺少name字段
-        type: ScriptType.JAVASCRIPT,
+        type: 'JAVASCRIPT',
         description: 'A test script',
         content: 'console.log("Hello World");',
         options: {
@@ -71,7 +71,7 @@ describe('CodeConfigValidator', () => {
       const invalidScript = {
         id: 'script-1',
         name: 'test-script',
-        type: ScriptType.JAVASCRIPT,
+        type: 'JAVASCRIPT',
         description: 'A test script',
         // 缺少content和filePath
         options: {
@@ -90,7 +90,7 @@ describe('CodeConfigValidator', () => {
       const invalidScript = {
         id: 'script-1',
         name: 'test-script',
-        type: ScriptType.JAVASCRIPT,
+        type: 'JAVASCRIPT',
         description: 'A test script',
         content: 'console.log("Hello World");',
         options: {
@@ -177,15 +177,15 @@ describe('CodeConfigValidator', () => {
 
   describe('validateScriptTypeCompatibility', () => {
     it('应该验证脚本类型与文件扩展名的兼容性', () => {
-      const result1 = validator.validateScriptTypeCompatibility(ScriptType.PYTHON, undefined, 'script.py');
+      const result1 = validator.validateScriptTypeCompatibility('PYTHON', undefined, 'script.py');
       expect(result1.isOk()).toBe(true);
 
-      const result2 = validator.validateScriptTypeCompatibility(ScriptType.JAVASCRIPT, undefined, 'script.js');
+      const result2 = validator.validateScriptTypeCompatibility('JAVASCRIPT', undefined, 'script.js');
       expect(result2.isOk()).toBe(true);
     });
 
     it('应该返回无效结果当文件扩展名与脚本类型不兼容', () => {
-      const result = validator.validateScriptTypeCompatibility(ScriptType.PYTHON, undefined, 'script.js');
+      const result = validator.validateScriptTypeCompatibility('PYTHON', undefined, 'script.js');
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.length).toBeGreaterThan(0);
@@ -196,10 +196,10 @@ describe('CodeConfigValidator', () => {
       const pythonContent = 'def main():\n    print("Hello World")';
       const jsContent = 'function main() {\n    console.log("Hello World");\n}';
 
-      const result1 = validator.validateScriptTypeCompatibility(ScriptType.PYTHON, pythonContent);
+      const result1 = validator.validateScriptTypeCompatibility('PYTHON', pythonContent);
       expect(result1.isOk()).toBe(true);
 
-      const result2 = validator.validateScriptTypeCompatibility(ScriptType.JAVASCRIPT, jsContent);
+      const result2 = validator.validateScriptTypeCompatibility('JAVASCRIPT', jsContent);
       expect(result2.isOk()).toBe(true);
     });
   });
@@ -209,7 +209,7 @@ describe('CodeConfigValidator', () => {
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: ScriptType.JAVASCRIPT,
+        type: 'JAVASCRIPT',
         description: 'A test script',
         content: 'console.log("Hello World");',
         options: {
@@ -231,7 +231,7 @@ describe('CodeConfigValidator', () => {
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: ScriptType.JAVASCRIPT,
+        type: 'JAVASCRIPT',
         description: 'A test script',
         content: 'console.log("Hello World");',
         options: {
@@ -252,7 +252,7 @@ describe('CodeConfigValidator', () => {
       const script = {
         id: 'script-1',
         name: 'test-script',
-        type: ScriptType.JAVASCRIPT,
+        type: 'JAVASCRIPT',
         description: 'A test script',
         content: 'console.log("Hello World");',
         options: {},

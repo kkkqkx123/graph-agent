@@ -43,10 +43,10 @@ class ToolService {
    */
   private initializeExecutors(): void {
     // 直接使用packages中的实现
-    this.executors.set(ToolType.STATELESS, new StatelessExecutor());
-    this.executors.set(ToolType.STATEFUL, new StatefulExecutor());
-    this.executors.set(ToolType.REST, new RestExecutor());
-    this.executors.set(ToolType.MCP, new McpExecutor());
+    this.executors.set('STATELESS', new StatelessExecutor());
+    this.executors.set('STATEFUL', new StatefulExecutor());
+    this.executors.set('REST', new RestExecutor());
+    this.executors.set('MCP', new McpExecutor());
   }
 
   /**
@@ -277,7 +277,7 @@ class ToolService {
    * @param threadId 线程ID
    */
   cleanupThread(threadId: string): void {
-    const statefulExecutor = this.executors.get(ToolType.STATEFUL);
+    const statefulExecutor = this.executors.get('STATEFUL');
     if (statefulExecutor && typeof (statefulExecutor as any).cleanupThread === 'function') {
       (statefulExecutor as any).cleanupThread(threadId);
     }

@@ -45,7 +45,7 @@ export function parseWorkflow(
  * @returns 验证结果
  */
 export function validateWorkflow(content: string, format: ConfigFormat) {
-  const parsed = workflowParser.parse(content, format, ConfigType.WORKFLOW);
+  const parsed = workflowParser.parse(content, format, 'workflow');
   return workflowParser.validate(parsed);
 }
 
@@ -58,8 +58,8 @@ export function validateWorkflow(content: string, format: ConfigFormat) {
 export function parseWorkflowConfig(
   content: string,
   format: ConfigFormat
-): ParsedConfig<ConfigType.WORKFLOW> {
-  return workflowParser.parse(content, format, ConfigType.WORKFLOW);
+): ParsedConfig<'workflow'> {
+  return workflowParser.parse(content, format, 'workflow');
 }
 
 /**
@@ -92,7 +92,7 @@ export function parseNodeTemplate(
   content: string,
   format: ConfigFormat
 ): NodeTemplate {
-  const config = nodeTemplateParser.parse(content, format, ConfigType.NODE_TEMPLATE);
+  const config = nodeTemplateParser.parse(content, format, 'node_template');
   return config.config as NodeTemplate;
 }
 
@@ -124,7 +124,7 @@ export function parseTriggerTemplate(
   content: string,
   format: ConfigFormat
 ): TriggerTemplate {
-  const config = triggerTemplateParser.parse(content, format, ConfigType.TRIGGER_TEMPLATE);
+  const config = triggerTemplateParser.parse(content, format, 'trigger_template');
   return config.config as TriggerTemplate;
 }
 
@@ -156,7 +156,7 @@ export function parseScript(
   content: string,
   format: ConfigFormat
 ): Script {
-  const config = scriptParser.parse(content, format, ConfigType.SCRIPT);
+  const config = scriptParser.parse(content, format, 'script');
   return config.config as Script;
 }
 

@@ -24,12 +24,11 @@ import type { Script } from '@modular-agent/types';
 import type { LLMProfile } from '@modular-agent/types';
 
 /**
- * 配置格式枚举
+ * 配置格式
  */
-export enum ConfigFormat {
-  TOML = 'toml',
-  JSON = 'json'
-}
+export type ConfigFormat =
+  | 'toml'   /** TOML格式 */
+  | 'json';  /** JSON格式 */
 
 /**
  * 节点配置文件格式
@@ -81,15 +80,14 @@ export type ScriptConfigFile = Script;
 export type LLMProfileConfigFile = LLMProfile;
 
 /**
- * 配置类型枚举
+ * 配置类型
  */
-export enum ConfigType {
-  WORKFLOW = 'workflow',
-  NODE_TEMPLATE = 'node_template',
-  TRIGGER_TEMPLATE = 'trigger_template',
-  SCRIPT = 'script',
-  LLM_PROFILE = 'llm_profile'
-}
+export type ConfigType =
+  | 'workflow'         /** 工作流配置 */
+  | 'node_template'    /** 节点模板配置 */
+  | 'trigger_template' /** 触发器模板配置 */
+  | 'script'           /** 脚本配置 */
+  | 'llm_profile';     /** LLM Profile配置 */
 
 /**
  * 通用配置文件类型
@@ -110,22 +108,22 @@ export interface ParsedConfig<T extends ConfigType = ConfigType> {
   /** 配置格式 */
   format: ConfigFormat;
   /** 配置文件内容 */
-  config: T extends ConfigType.WORKFLOW ? WorkflowConfigFile :
-  T extends ConfigType.NODE_TEMPLATE ? NodeTemplateConfigFile :
-  T extends ConfigType.TRIGGER_TEMPLATE ? TriggerTemplateConfigFile :
-  T extends ConfigType.SCRIPT ? ScriptConfigFile :
-  T extends ConfigType.LLM_PROFILE ? LLMProfileConfigFile :
+  config: T extends 'workflow' ? WorkflowConfigFile :
+  T extends 'node_template' ? NodeTemplateConfigFile :
+  T extends 'trigger_template' ? TriggerTemplateConfigFile :
+  T extends 'script' ? ScriptConfigFile :
+  T extends 'llm_profile' ? LLMProfileConfigFile :
   ConfigFile;
   /** 原始内容 */
   rawContent: string;
 }
 
 // 向后兼容的类型别名
-export type ParsedWorkflowConfig = ParsedConfig<ConfigType.WORKFLOW>;
-export type ParsedNodeTemplateConfig = ParsedConfig<ConfigType.NODE_TEMPLATE>;
-export type ParsedTriggerTemplateConfig = ParsedConfig<ConfigType.TRIGGER_TEMPLATE>;
-export type ParsedScriptConfig = ParsedConfig<ConfigType.SCRIPT>;
-export type ParsedLLMProfileConfig = ParsedConfig<ConfigType.LLM_PROFILE>;
+export type ParsedWorkflowConfig = ParsedConfig<'workflow'>;
+export type ParsedNodeTemplateConfig = ParsedConfig<'node_template'>;
+export type ParsedTriggerTemplateConfig = ParsedConfig<'trigger_template'>;
+export type ParsedScriptConfig = ParsedConfig<'script'>;
+export type ParsedLLMProfileConfig = ParsedConfig<'llm_profile'>;
 
 /**
  * 配置解析器接口
@@ -142,7 +140,7 @@ export interface IConfigParser {
    * @param configType 配置类型（可选，默认为WORKFLOW）
    * @returns 解析后的配置对象
    */
-  parse<T extends ConfigType = ConfigType.WORKFLOW>(
+  parse<T extends ConfigType = 'workflow'>(
     content: string,
     format: ConfigFormat,
     configType?: T

@@ -9,7 +9,7 @@ import type { BaseEvent, EventType } from './base';
  * 线程开始事件类型
  */
 export interface ThreadStartedEvent extends BaseEvent {
-  type: EventType.THREAD_STARTED;
+  type: 'THREAD_STARTED';
   /** 输入数据 */
   input: Record<string, any>;
 }
@@ -18,7 +18,7 @@ export interface ThreadStartedEvent extends BaseEvent {
  * 线程完成事件类型
  */
 export interface ThreadCompletedEvent extends BaseEvent {
-  type: EventType.THREAD_COMPLETED;
+  type: 'THREAD_COMPLETED';
   /** 输出数据 */
   output: Record<string, any>;
   /** 执行时间 */
@@ -29,7 +29,7 @@ export interface ThreadCompletedEvent extends BaseEvent {
  * 线程失败事件类型
  */
 export interface ThreadFailedEvent extends BaseEvent {
-  type: EventType.THREAD_FAILED;
+  type: 'THREAD_FAILED';
   /** 错误信息 */
   error: any;
 }
@@ -38,7 +38,7 @@ export interface ThreadFailedEvent extends BaseEvent {
  * 线程暂停事件类型
  */
 export interface ThreadPausedEvent extends BaseEvent {
-  type: EventType.THREAD_PAUSED;
+  type: 'THREAD_PAUSED';
   /** 暂停原因 */
   reason?: string;
 }
@@ -47,14 +47,14 @@ export interface ThreadPausedEvent extends BaseEvent {
  * 线程恢复事件类型
  */
 export interface ThreadResumedEvent extends BaseEvent {
-  type: EventType.THREAD_RESUMED;
+  type: 'THREAD_RESUMED';
 }
 
 /**
  * 线程取消事件类型
  */
 export interface ThreadCancelledEvent extends BaseEvent {
-  type: EventType.THREAD_CANCELLED;
+  type: 'THREAD_CANCELLED';
   /** 取消原因 */
   reason?: string;
 }
@@ -63,7 +63,7 @@ export interface ThreadCancelledEvent extends BaseEvent {
  * 线程状态变更事件类型
  */
 export interface ThreadStateChangedEvent extends BaseEvent {
-  type: EventType.THREAD_STATE_CHANGED;
+  type: 'THREAD_STATE_CHANGED';
   /** 变更前状态 */
   previousStatus: string;
   /** 变更后状态 */
@@ -74,7 +74,7 @@ export interface ThreadStateChangedEvent extends BaseEvent {
  * 线程分叉开始事件类型
  */
 export interface ThreadForkStartedEvent extends BaseEvent {
-  type: EventType.THREAD_FORK_STARTED;
+  type: 'THREAD_FORK_STARTED';
   /** 父线程ID */
   parentThreadId: ID;
   /** Fork配置 */
@@ -85,7 +85,7 @@ export interface ThreadForkStartedEvent extends BaseEvent {
  * 线程分叉完成事件类型
  */
 export interface ThreadForkCompletedEvent extends BaseEvent {
-  type: EventType.THREAD_FORK_COMPLETED;
+  type: 'THREAD_FORK_COMPLETED';
   /** 父线程ID */
   parentThreadId: ID;
   /** 子线程ID数组 */
@@ -96,7 +96,7 @@ export interface ThreadForkCompletedEvent extends BaseEvent {
  * 线程合并开始事件类型
  */
 export interface ThreadJoinStartedEvent extends BaseEvent {
-  type: EventType.THREAD_JOIN_STARTED;
+  type: 'THREAD_JOIN_STARTED';
   /** 父线程ID */
   parentThreadId: ID;
   /** 子线程ID数组 */
@@ -109,7 +109,7 @@ export interface ThreadJoinStartedEvent extends BaseEvent {
  * 线程合并条件满足事件类型
  */
 export interface ThreadJoinConditionMetEvent extends BaseEvent {
-  type: EventType.THREAD_JOIN_CONDITION_MET;
+  type: 'THREAD_JOIN_CONDITION_MET';
   /** 父线程ID */
   parentThreadId: ID;
   /** 子线程ID数组 */
@@ -122,7 +122,7 @@ export interface ThreadJoinConditionMetEvent extends BaseEvent {
  * 线程复制开始事件类型
  */
 export interface ThreadCopyStartedEvent extends BaseEvent {
-  type: EventType.THREAD_COPY_STARTED;
+  type: 'THREAD_COPY_STARTED';
   /** 源线程ID */
   sourceThreadId: ID;
 }
@@ -131,7 +131,7 @@ export interface ThreadCopyStartedEvent extends BaseEvent {
  * 线程复制完成事件类型
  */
 export interface ThreadCopyCompletedEvent extends BaseEvent {
-  type: EventType.THREAD_COPY_COMPLETED;
+  type: 'THREAD_COPY_COMPLETED';
   /** 源线程ID */
   sourceThreadId: ID;
   /** 副本线程ID */

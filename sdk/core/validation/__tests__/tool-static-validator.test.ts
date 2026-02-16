@@ -18,7 +18,7 @@ describe('StaticValidator', () => {
       const validTool = {
         id: 'tool-1',
         name: 'test-tool',
-        type: ToolType.STATELESS,
+        type: 'STATELESS',
         description: 'A test tool',
         parameters: {
           properties: {
@@ -42,7 +42,7 @@ describe('StaticValidator', () => {
       const validTool = {
         id: 'tool-2',
         name: 'test-stateful-tool',
-        type: ToolType.STATEFUL,
+        type: 'STATEFUL',
         description: 'A test stateful tool',
         parameters: {
           properties: {
@@ -70,7 +70,7 @@ describe('StaticValidator', () => {
       const validTool = {
         id: 'tool-3',
         name: 'test-rest-tool',
-        type: ToolType.REST,
+        type: 'REST',
         description: 'A test REST tool',
         parameters: {
           properties: {
@@ -95,7 +95,7 @@ describe('StaticValidator', () => {
       const validTool = {
         id: 'tool-4',
         name: 'test-mcp-tool',
-        type: ToolType.MCP,
+        type: 'MCP',
         description: 'A test MCP tool',
         parameters: {
           properties: {
@@ -120,7 +120,7 @@ describe('StaticValidator', () => {
       const invalidTool = {
         id: 'tool-1',
         // 缺少name字段
-        type: ToolType.STATELESS,
+        type: 'STATELESS',
         description: 'A test tool',
         parameters: {
           properties: {},
@@ -142,7 +142,7 @@ describe('StaticValidator', () => {
       const invalidTool = {
         id: 'tool-1',
         name: 'test-tool',
-        type: ToolType.STATELESS,
+        type: 'STATELESS',
         description: 'A test tool',
         parameters: {
           properties: {},
@@ -164,7 +164,7 @@ describe('StaticValidator', () => {
       const invalidTool = {
         id: 'tool-1',
         name: 'test-tool',
-        type: ToolType.STATELESS,
+        type: 'STATELESS',
         description: 'A test tool',
         parameters: {
           properties: {
@@ -233,7 +233,7 @@ describe('StaticValidator', () => {
         execute: async (params: any) => params.input,
       };
 
-      const result = validator.validateToolConfig(ToolType.STATELESS, validConfig);
+      const result = validator.validateToolConfig('STATELESS', validConfig);
       expect(result.isOk()).toBe(true);
     });
 
@@ -244,7 +244,7 @@ describe('StaticValidator', () => {
         },
       };
 
-      const result = validator.validateToolConfig(ToolType.STATEFUL, validConfig);
+      const result = validator.validateToolConfig('STATEFUL', validConfig);
       expect(result.isOk()).toBe(true);
     });
 
@@ -254,7 +254,7 @@ describe('StaticValidator', () => {
         timeout: 5000,
       };
 
-      const result = validator.validateToolConfig(ToolType.REST, validConfig);
+      const result = validator.validateToolConfig('REST', validConfig);
       expect(result.isOk()).toBe(true);
     });
 
@@ -264,7 +264,7 @@ describe('StaticValidator', () => {
         serverUrl: 'ws://localhost:8080',
       };
 
-      const result = validator.validateToolConfig(ToolType.MCP, validConfig);
+      const result = validator.validateToolConfig('MCP', validConfig);
       expect(result.isOk()).toBe(true);
     });
 
@@ -274,7 +274,7 @@ describe('StaticValidator', () => {
         serverUrl: 'ws://localhost:8080',
       };
 
-      const result = validator.validateToolConfig(ToolType.MCP, invalidConfig);
+      const result = validator.validateToolConfig('MCP', invalidConfig);
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.length).toBeGreaterThan(0);

@@ -83,7 +83,7 @@ export class ThreadLifecycleCoordinator {
 
     // 步骤 5：根据执行结果更新 Thread 状态
     const status = result.metadata?.status;
-    const isSuccess = status === ThreadStatus.COMPLETED;
+    const isSuccess = status === 'COMPLETED';
 
     if (isSuccess) {
       await this.getLifecycleManager().completeThread(threadContext.thread, result);
@@ -224,7 +224,7 @@ export class ThreadLifecycleCoordinator {
     threadContext.setStatus(status);
 
     // 如果是终止状态，设置结束时间并清理
-    if ([ThreadStatus.COMPLETED, ThreadStatus.FAILED, ThreadStatus.CANCELLED, ThreadStatus.TIMEOUT].includes(status)) {
+    if (['COMPLETED', 'FAILED', 'CANCELLED', 'TIMEOUT'].includes(status)) {
       threadContext.setEndTime(now());
       const globalMessageStorage = SingletonRegistry.getGlobalMessageStorage();
       globalMessageStorage.removeReference(threadId);
@@ -232,13 +232,13 @@ export class ThreadLifecycleCoordinator {
       // 触发相应的终止事件
       let event;
       switch (status) {
-        case ThreadStatus.COMPLETED:
+        case 'COMPLETED':
           event = buildThreadCompletedEvent(threadContext.thread, { success: true, output: threadContext.getOutput() } as any);
           break;
-        case ThreadStatus.FAILED:
+        case 'FAILED':
           event = buildThreadFailedEvent(threadContext.thread, new Error('Thread failed'));
           break;
-        case ThreadStatus.CANCELLED:
+        case 'CANCELLED':
           event = buildThreadCancelledEvent(threadContext.thread, 'forced_cancel');
           break;
       }
@@ -254,7 +254,7 @@ export class ThreadLifecycleCoordinator {
    * @param threadId 线程ID
    */
   async forcePauseThread(threadId: string): Promise<void> {
-    await this.forceSetThreadStatus(threadId, ThreadStatus.PAUSED);
+    await this.forceSetThreadStatus(threadId, 'PAUSED');
   }
 
   /**
@@ -269,7 +269,7 @@ export class ThreadLifecycleCoordinator {
     }
 
     // 设置状态
-    threadContext.setStatus(ThreadStatus.CANCELLED);
+    threadContext.setStatus('CANCELLED');
 
     // 设置结束时间
     threadContext.setEndTime(now());

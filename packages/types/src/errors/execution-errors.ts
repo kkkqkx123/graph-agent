@@ -26,7 +26,7 @@ export class BusinessLogicError extends ExecutionError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.ERROR;
+    return 'error';
   }
 }
 
@@ -51,7 +51,7 @@ export class SystemExecutionError extends ExecutionError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.ERROR;
+    return 'error';
   }
 }
 
@@ -77,6 +77,6 @@ export class ResourceAccessError extends ExecutionError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return ErrorSeverity.ERROR;
+    return 'error';
   }
 }

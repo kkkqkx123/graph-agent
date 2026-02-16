@@ -69,11 +69,11 @@ describe('复杂工作流结构检查点集成测试', () => {
         }
       },
       getSupportedTypes() {
-        return [ScriptType.JAVASCRIPT];
+        return ['JAVASCRIPT'];
       }
     };
 
-    codeService.registerExecutor(ScriptType.JAVASCRIPT, javascriptExecutor);
+    codeService.registerExecutor('JAVASCRIPT', javascriptExecutor);
 
     // 注册多个测试脚本
     const scripts = ['process-branch1', 'process-branch2', 'process-main'];
@@ -82,7 +82,7 @@ describe('复杂工作流结构检查点集成测试', () => {
         codeService.registerScript({
           id: generateId(),
           name: scriptName,
-          type: ScriptType.JAVASCRIPT,
+          type: 'JAVASCRIPT',
           description: `Test script for ${scriptName}`,
           content: `({ result: "${scriptName} completed", timestamp: Date.now() })`,
           options: { timeout: 5000 }
@@ -116,13 +116,13 @@ describe('复杂工作流结构检查点集成测试', () => {
     return {
       id,
       name,
-      type: WorkflowType.STANDALONE,
+      type: 'STANDALONE',
       version: '1.0.0',
       description: 'FORK/JOIN workflow for checkpoint testing',
     nodes: [
       {
         id: `${id}-start`,
-        type: NodeType.START,
+        type: 'START',
         name: 'Start',
         config: {},
         outgoingEdgeIds: [`${id}-edge-1`],
@@ -130,7 +130,7 @@ describe('复杂工作流结构检查点集成测试', () => {
       },
       {
         id: `${id}-fork`,
-        type: NodeType.FORK,
+        type: 'FORK',
         name: 'Fork',
         config: {
           forkStrategy: 'parallel',
@@ -144,7 +144,7 @@ describe('复杂工作流结构检查点集成测试', () => {
       },
       {
         id: `${id}-branch1`,
-        type: NodeType.CODE,
+        type: 'CODE',
         name: 'Branch 1',
         config: {
           scriptName: 'process-branch1',
@@ -156,7 +156,7 @@ describe('复杂工作流结构检查点集成测试', () => {
       },
       {
         id: `${id}-branch2`,
-        type: NodeType.CODE,
+        type: 'CODE',
         name: 'Branch 2',
         config: {
           scriptName: 'process-branch2',
@@ -168,7 +168,7 @@ describe('复杂工作流结构检查点集成测试', () => {
       },
       {
         id: `${id}-join`,
-        type: NodeType.JOIN,
+        type: 'JOIN',
         name: 'Join',
         config: {
           joinStrategy: 'ALL_COMPLETED',
@@ -180,7 +180,7 @@ describe('复杂工作流结构检查点集成测试', () => {
       },
       {
         id: `${id}-end`,
-        type: NodeType.END,
+        type: 'END',
         name: 'End',
         config: {},
         outgoingEdgeIds: [],
@@ -255,13 +255,13 @@ describe('复杂工作流结构检查点集成测试', () => {
     return {
       id,
       name,
-      type: WorkflowType.STANDALONE,
+      type: 'STANDALONE',
       version: '1.0.0',
       description: 'Workflow with triggered subworkflow for checkpoint testing',
     nodes: [
       {
         id: `${id}-start`,
-        type: NodeType.START,
+        type: 'START',
         name: 'Start',
         config: {},
         outgoingEdgeIds: [`${id}-edge-1`],
@@ -269,7 +269,7 @@ describe('复杂工作流结构检查点集成测试', () => {
       },
       {
         id: `${id}-main-process`,
-        type: NodeType.CODE,
+        type: 'CODE',
         name: 'Main Process',
         config: {
           scriptName: 'process-main',
@@ -281,7 +281,7 @@ describe('复杂工作流结构检查点集成测试', () => {
       },
       {
         id: `${id}-end`,
-        type: NodeType.END,
+        type: 'END',
         name: 'End',
         config: {},
         outgoingEdgeIds: [],

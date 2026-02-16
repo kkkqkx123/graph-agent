@@ -167,7 +167,7 @@ export class GeminiNativeClient extends BaseLLMClient {
       model: this.profile.model,
       content,
       message: {
-        role: MessageRole.ASSISTANT,
+        role: 'assistant',
         content,
         toolCalls: toolCalls.length > 0 ? toolCalls : undefined
       },
@@ -224,7 +224,7 @@ export class GeminiNativeClient extends BaseLLMClient {
       model: this.profile.model,
       content,
       message: {
-        role: MessageRole.ASSISTANT,
+        role: 'assistant',
         content,
         toolCalls: toolCalls.length > 0 ? toolCalls : undefined
       },

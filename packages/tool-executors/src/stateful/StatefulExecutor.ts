@@ -209,6 +209,6 @@ export class StatefulExecutor extends BaseExecutor {
    * 获取执行器类型
    */
   getExecutorType(): string {
-    return ExecutorType.STATEFUL;
+    return 'STATEFUL';
   }
 }

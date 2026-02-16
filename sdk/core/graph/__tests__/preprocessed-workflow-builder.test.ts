@@ -16,13 +16,13 @@ function createSimpleWorkflow(): WorkflowDefinition {
     name: 'Simple Workflow',
     description: 'A simple workflow',
     version: '1.0.0',
-    type: WorkflowType.STANDALONE,
+    type: 'STANDALONE',
     createdAt: Date.now(),
     updatedAt: Date.now(),
     nodes: [
       {
         id: 'start',
-        type: NodeType.START,
+        type: 'START',
         name: 'Start',
         description: 'Start node',
         config: {} as any,
@@ -31,7 +31,7 @@ function createSimpleWorkflow(): WorkflowDefinition {
       },
       {
         id: 'llm',
-        type: NodeType.LLM,
+        type: 'LLM',
         name: 'LLM',
         description: 'LLM node',
         config: {
@@ -43,7 +43,7 @@ function createSimpleWorkflow(): WorkflowDefinition {
       },
       {
         id: 'end',
-        type: NodeType.END,
+        type: 'END',
         name: 'End',
         description: 'End node',
         config: {} as any,
@@ -79,13 +79,13 @@ function createSubgraphWorkflow(): WorkflowDefinition {
     name: 'Subgraph Workflow',
     description: 'A workflow with subgraph',
     version: '1.0.0',
-    type: WorkflowType.DEPENDENT,
+    type: 'DEPENDENT',
     createdAt: Date.now(),
     updatedAt: Date.now(),
     nodes: [
       {
         id: 'start',
-        type: NodeType.START,
+        type: 'START',
         name: 'Start',
         description: 'Start node',
         config: {} as any,
@@ -94,7 +94,7 @@ function createSubgraphWorkflow(): WorkflowDefinition {
       },
       {
         id: 'subgraph',
-        type: NodeType.SUBGRAPH,
+        type: 'SUBGRAPH',
         name: 'Subgraph',
         description: 'Subgraph node',
         config: {
@@ -106,7 +106,7 @@ function createSubgraphWorkflow(): WorkflowDefinition {
       },
       {
         id: 'end',
-        type: NodeType.END,
+        type: 'END',
         name: 'End',
         description: 'End node',
         config: {} as any,
@@ -140,13 +140,13 @@ function createSubWorkflow(): WorkflowDefinition {
     name: 'Sub Workflow',
     description: 'A sub workflow',
     version: '1.0.0',
-    type: WorkflowType.STANDALONE,
+    type: 'STANDALONE',
     createdAt: Date.now(),
     updatedAt: Date.now(),
     nodes: [
       {
         id: 'subStart',
-        type: NodeType.START,
+        type: 'START',
         name: 'Sub Start',
         description: 'Sub start node',
         config: {} as any,
@@ -155,7 +155,7 @@ function createSubWorkflow(): WorkflowDefinition {
       },
       {
         id: 'subLLM',
-        type: NodeType.LLM,
+        type: 'LLM',
         name: 'Sub LLM',
         description: 'Sub LLM node',
         config: { profileId: 'profile1' } as any,
@@ -164,7 +164,7 @@ function createSubWorkflow(): WorkflowDefinition {
       },
       {
         id: 'subEnd',
-        type: NodeType.END,
+        type: 'END',
         name: 'Sub End',
         description: 'Sub end node',
         config: {} as any,
@@ -198,13 +198,13 @@ function createWorkflowWithTriggers(): WorkflowDefinition {
     name: 'Workflow with Triggers',
     description: 'A workflow with triggers',
     version: '1.0.0',
-    type: WorkflowType.STANDALONE,
+    type: 'STANDALONE',
     createdAt: Date.now(),
     updatedAt: Date.now(),
     nodes: [
       {
         id: 'start',
-        type: NodeType.START,
+        type: 'START',
         name: 'Start',
         description: 'Start node',
         config: {} as any,
@@ -385,13 +385,13 @@ describe('PreprocessedWorkflowBuilder', () => {
         name: 'Invalid Subgraph',
         description: 'Test',
         version: '1.0.0',
-        type: WorkflowType.DEPENDENT,
+        type: 'DEPENDENT',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         nodes: [
           {
             id: 'start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {} as any,
             outgoingEdgeIds: ['e1'],
@@ -399,7 +399,7 @@ describe('PreprocessedWorkflowBuilder', () => {
           },
           {
             id: 'subgraph',
-            type: NodeType.SUBGRAPH,
+            type: 'SUBGRAPH',
             name: 'Subgraph',
             config: {
               subgraphId: '',
@@ -410,7 +410,7 @@ describe('PreprocessedWorkflowBuilder', () => {
           },
           {
             id: 'end',
-            type: NodeType.END,
+            type: 'END',
             name: 'End',
             config: {} as any,
             outgoingEdgeIds: [],
@@ -445,7 +445,7 @@ describe('PreprocessedWorkflowBuilder', () => {
         name: 'Empty Workflow',
         description: 'Empty',
         version: '1.0.0',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         nodes: [],
@@ -468,13 +468,13 @@ describe('PreprocessedWorkflowBuilder', () => {
         name: 'Multiple Ends',
         description: 'Test',
         version: '1.0.0',
-        type: WorkflowType.STANDALONE,
+        type: 'STANDALONE',
         createdAt: Date.now(),
         updatedAt: Date.now(),
         nodes: [
           {
             id: 'start',
-            type: NodeType.START,
+            type: 'START',
             name: 'Start',
             config: {} as any,
             outgoingEdgeIds: ['e1'],
@@ -482,7 +482,7 @@ describe('PreprocessedWorkflowBuilder', () => {
           },
           {
             id: 'llm',
-            type: NodeType.LLM,
+            type: 'LLM',
             name: 'LLM',
             config: { profileId: 'profile1' } as any,
             outgoingEdgeIds: ['e2', 'e3'],
@@ -490,7 +490,7 @@ describe('PreprocessedWorkflowBuilder', () => {
           },
           {
             id: 'end1',
-            type: NodeType.END,
+            type: 'END',
             name: 'End 1',
             config: {} as any,
             outgoingEdgeIds: [],
@@ -498,7 +498,7 @@ describe('PreprocessedWorkflowBuilder', () => {
           },
           {
             id: 'end2',
-            type: NodeType.END,
+            type: 'END',
             name: 'End 2',
             config: {} as any,
             outgoingEdgeIds: [],
@@ -561,14 +561,14 @@ describe('PreprocessedWorkflowBuilder', () => {
       const startNode = result.graph.getNode('0');
       expect(startNode).toBeDefined();
       expect(startNode?.id).toBe('0');
-      expect(startNode?.type).toBe(NodeType.START);
+      expect(startNode?.type).toBe('START');
       expect(startNode?.name).toBe('Start');
       expect(startNode?.workflowId).toBe('wf1');
       expect(startNode?.originalNode).toBeDefined();
 
       const llmNode = result.graph.getNode('1');
       expect(llmNode).toBeDefined();
-      expect(llmNode?.type).toBe(NodeType.LLM);
+      expect(llmNode?.type).toBe('LLM');
       expect(llmNode?.name).toBe('LLM');
     });
 

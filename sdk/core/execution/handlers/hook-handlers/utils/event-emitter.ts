@@ -25,7 +25,7 @@ export async function emitHookEvent(
   const { thread, node } = context;
 
   const event: NodeCustomEvent = {
-    type: EventType.NODE_CUSTOM_EVENT,
+    type: 'NODE_CUSTOM_EVENT',
     timestamp: Date.now(),
     workflowId: thread.workflowId,
     threadId: thread.id,

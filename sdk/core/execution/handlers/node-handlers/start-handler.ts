@@ -13,7 +13,7 @@ import { now } from '@modular-agent/common-utils';
  */
 function canExecute(thread: Thread, node: Node): boolean {
   // START节点可以在CREATED或RUNNING状态下执行（如果还没有执行过）
-  if (thread.status !== ThreadStatus.CREATED && thread.status !== ThreadStatus.RUNNING) {
+  if (thread.status !== 'CREATED' && thread.status !== 'RUNNING') {
     return false;
   }
 
@@ -43,7 +43,7 @@ export async function startHandler(thread: Thread, node: Node, context?: any): P
   }
 
   // 初始化Thread状态
-  thread.status = ThreadStatus.RUNNING;
+  thread.status = 'RUNNING';
   thread.currentNodeId = node.id;
   thread.startTime = now();
 

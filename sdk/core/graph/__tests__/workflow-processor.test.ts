@@ -28,13 +28,13 @@ function createSimpleWorkflow(): WorkflowDefinition {
     name: 'Simple Workflow',
     description: 'A simple workflow',
     version: '1.0.0',
-    type: WorkflowType.STANDALONE,
+    type: 'STANDALONE',
     createdAt: Date.now(),
     updatedAt: Date.now(),
     nodes: [
       {
         id: 'start',
-        type: NodeType.START,
+        type: 'START',
         name: 'Start',
         description: 'Start node',
         config: {} as any,
@@ -43,7 +43,7 @@ function createSimpleWorkflow(): WorkflowDefinition {
       },
       {
         id: 'llm',
-        type: NodeType.LLM,
+        type: 'LLM',
         name: 'LLM',
         description: 'LLM node',
         config: {
@@ -55,7 +55,7 @@ function createSimpleWorkflow(): WorkflowDefinition {
       },
       {
         id: 'end',
-        type: NodeType.END,
+        type: 'END',
         name: 'End',
         description: 'End node',
         config: {} as any,
@@ -91,13 +91,13 @@ function createWorkflowWithNodeReference(): WorkflowDefinition {
     name: 'Workflow with Node Reference',
     description: 'A workflow with node reference',
     version: '1.0.0',
-    type: WorkflowType.STANDALONE,
+    type: 'STANDALONE',
     createdAt: Date.now(),
     updatedAt: Date.now(),
     nodes: [
       {
         id: 'start',
-        type: NodeType.START,
+        type: 'START',
         name: 'Start',
         description: 'Start node',
         config: {} as any,
@@ -106,7 +106,7 @@ function createWorkflowWithNodeReference(): WorkflowDefinition {
       },
       {
         id: 'llm',
-        type: NodeType.LLM,
+        type: 'LLM',
         name: 'LLM',
         description: 'LLM node',
         config: {
@@ -123,7 +123,7 @@ function createWorkflowWithNodeReference(): WorkflowDefinition {
       },
       {
         id: 'end',
-        type: NodeType.END,
+        type: 'END',
         name: 'End',
         description: 'End node',
         config: {} as any,
@@ -157,13 +157,13 @@ function createWorkflowWithTriggers(): WorkflowDefinition {
     name: 'Workflow with Triggers',
     description: 'A workflow with triggers',
     version: '1.0.0',
-    type: WorkflowType.STANDALONE,
+    type: 'STANDALONE',
     createdAt: Date.now(),
     updatedAt: Date.now(),
     nodes: [
       {
         id: 'start',
-        type: NodeType.START,
+        type: 'START',
         name: 'Start',
         description: 'Start node',
         config: {} as any,
@@ -199,13 +199,13 @@ function createWorkflowWithTriggerReference(): WorkflowDefinition {
     name: 'Workflow with Trigger Reference',
     description: 'A workflow with trigger reference',
     version: '1.0.0',
-    type: WorkflowType.STANDALONE,
+    type: 'STANDALONE',
     createdAt: Date.now(),
     updatedAt: Date.now(),
     nodes: [
       {
         id: 'start',
-        type: NodeType.START,
+        type: 'START',
         name: 'Start',
         description: 'Start node',
         config: {} as any,
@@ -236,13 +236,13 @@ function createSubgraphWorkflow(): WorkflowDefinition {
     name: 'Subgraph Workflow',
     description: 'A workflow with subgraph',
     version: '1.0.0',
-    type: WorkflowType.DEPENDENT,
+    type: 'DEPENDENT',
     createdAt: Date.now(),
     updatedAt: Date.now(),
     nodes: [
       {
         id: 'start',
-        type: NodeType.START,
+        type: 'START',
         name: 'Start',
         description: 'Start node',
         config: {} as any,
@@ -251,7 +251,7 @@ function createSubgraphWorkflow(): WorkflowDefinition {
       },
       {
         id: 'subgraph',
-        type: NodeType.SUBGRAPH,
+        type: 'SUBGRAPH',
         name: 'Subgraph',
         description: 'Subgraph node',
         config: {
@@ -263,7 +263,7 @@ function createSubgraphWorkflow(): WorkflowDefinition {
       },
       {
         id: 'end',
-        type: NodeType.END,
+        type: 'END',
         name: 'End',
         description: 'End node',
         config: {} as any,
@@ -297,13 +297,13 @@ function createSubWorkflow(): WorkflowDefinition {
     name: 'Sub Workflow',
     description: 'A sub workflow',
     version: '1.0.0',
-    type: WorkflowType.STANDALONE,
+    type: 'STANDALONE',
     createdAt: Date.now(),
     updatedAt: Date.now(),
     nodes: [
       {
         id: 'subStart',
-        type: NodeType.START,
+        type: 'START',
         name: 'Sub Start',
         description: 'Sub start node',
         config: {} as any,
@@ -312,7 +312,7 @@ function createSubWorkflow(): WorkflowDefinition {
       },
       {
         id: 'subLLM',
-        type: NodeType.LLM,
+        type: 'LLM',
         name: 'Sub LLM',
         description: 'Sub LLM node',
         config: { profileId: 'profile1' } as any,
@@ -321,7 +321,7 @@ function createSubWorkflow(): WorkflowDefinition {
       },
       {
         id: 'subEnd',
-        type: NodeType.END,
+        type: 'END',
         name: 'Sub End',
         description: 'Sub end node',
         config: {} as any,
@@ -555,7 +555,7 @@ describe('processWorkflow', () => {
       // Mock nodeTemplateRegistry
       (nodeTemplateRegistry.get as jest.Mock).mockReturnValue({
         name: 'llm-template',
-        type: NodeType.LLM,
+        type: 'LLM',
         description: 'LLM template',
         config: {
           profileId: 'default-profile',

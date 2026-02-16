@@ -22,7 +22,7 @@ describe('user-interaction-handler', () => {
       id: 'thread-1',
       workflowId: 'workflow-1',
       workflowVersion: '1.0.0',
-      status: ThreadStatus.RUNNING,
+      status: 'RUNNING',
       currentNodeId: '',
       graph: {} as any,
       variables: [],
@@ -67,7 +67,7 @@ describe('user-interaction-handler', () => {
       mockNode = {
         id: 'user-interaction-node-1',
         name: 'User Interaction Node',
-        type: NodeType.USER_INTERACTION,
+        type: 'USER_INTERACTION',
         config: {
           operationType: 'UPDATE_VARIABLES',
           variables: [
@@ -120,7 +120,7 @@ describe('user-interaction-handler', () => {
       mockNode = {
         id: 'user-interaction-node-1',
         name: 'User Interaction Node',
-        type: NodeType.USER_INTERACTION,
+        type: 'USER_INTERACTION',
         config: {
           operationType: 'UPDATE_VARIABLES',
           variables: [],
@@ -146,7 +146,7 @@ describe('user-interaction-handler', () => {
       mockNode = {
         id: 'user-interaction-node-1',
         name: 'User Interaction Node',
-        type: NodeType.USER_INTERACTION,
+        type: 'USER_INTERACTION',
         config: {
           operationType: 'UPDATE_VARIABLES',
           variables: [
@@ -177,7 +177,7 @@ describe('user-interaction-handler', () => {
       mockNode = {
         id: 'user-interaction-node-1',
         name: 'User Interaction Node',
-        type: NodeType.USER_INTERACTION,
+        type: 'USER_INTERACTION',
         config: {
           operationType: 'ADD_MESSAGE',
           message: {
@@ -216,7 +216,7 @@ describe('user-interaction-handler', () => {
       mockNode = {
         id: 'user-interaction-node-1',
         name: 'User Interaction Node',
-        type: NodeType.USER_INTERACTION,
+        type: 'USER_INTERACTION',
         config: {
           operationType: 'ADD_MESSAGE',
           prompt: 'Please enter your message',
@@ -242,7 +242,7 @@ describe('user-interaction-handler', () => {
       mockNode = {
         id: 'user-interaction-node-1',
         name: 'User Interaction Node',
-        type: NodeType.USER_INTERACTION,
+        type: 'USER_INTERACTION',
         config: {
           operationType: 'ADD_MESSAGE',
           message: {
@@ -275,7 +275,7 @@ describe('user-interaction-handler', () => {
       mockNode = {
         id: 'user-interaction-node-1',
         name: 'User Interaction Node',
-        type: NodeType.USER_INTERACTION,
+        type: 'USER_INTERACTION',
         config: {
           operationType: 'UPDATE_VARIABLES',
           variables: [
@@ -304,7 +304,7 @@ describe('user-interaction-handler', () => {
       mockNode = {
         id: 'user-interaction-node-1',
         name: 'User Interaction Node',
-        type: NodeType.USER_INTERACTION,
+        type: 'USER_INTERACTION',
         config: {
           operationType: 'UPDATE_VARIABLES',
           variables: [
@@ -341,7 +341,7 @@ describe('user-interaction-handler', () => {
       mockNode = {
         id: 'user-interaction-node-1',
         name: 'User Interaction Node',
-        type: NodeType.USER_INTERACTION,
+        type: 'USER_INTERACTION',
         config: {
           operationType: 'UPDATE_VARIABLES',
           variables: [
@@ -373,7 +373,7 @@ describe('user-interaction-handler', () => {
       mockNode = {
         id: 'user-interaction-node-1',
         name: 'User Interaction Node',
-        type: NodeType.USER_INTERACTION,
+        type: 'USER_INTERACTION',
         config: {
           operationType: 'UPDATE_VARIABLES',
           variables: [
@@ -402,7 +402,7 @@ describe('user-interaction-handler', () => {
       mockNode = {
         id: 'user-interaction-node-1',
         name: 'User Interaction Node',
-        type: NodeType.USER_INTERACTION,
+        type: 'USER_INTERACTION',
         config: {
           operationType: 'UNKNOWN_OPERATION' as any,
           prompt: 'Please enter your name',
@@ -440,7 +440,7 @@ describe('user-interaction-handler', () => {
       mockNode = {
         id: 'user-interaction-node-1',
         name: 'User Interaction Node',
-        type: NodeType.USER_INTERACTION,
+        type: 'USER_INTERACTION',
         config: {
           operationType: 'UPDATE_VARIABLES',
           variables: [
@@ -476,7 +476,7 @@ describe('user-interaction-handler', () => {
       mockNode = {
         id: 'user-interaction-node-1',
         name: 'User Interaction Node',
-        type: NodeType.USER_INTERACTION,
+        type: 'USER_INTERACTION',
         config: {
           operationType: 'UPDATE_VARIABLES',
           variables: [
@@ -508,7 +508,7 @@ describe('user-interaction-handler', () => {
       mockNode = {
         id: 'user-interaction-node-1',
         name: 'User Interaction Node',
-        type: NodeType.USER_INTERACTION,
+        type: 'USER_INTERACTION',
         config: {
           operationType: 'UPDATE_VARIABLES',
           variables: [

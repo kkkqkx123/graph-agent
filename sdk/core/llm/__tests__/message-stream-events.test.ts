@@ -20,26 +20,26 @@ import type { LLMMessage, LLMResult } from '@modular-agent/types';
 describe('MessageStreamEvents', () => {
   describe('MessageStreamEventType', () => {
     it('应该定义所有事件类型', () => {
-      expect(MessageStreamEventType.CONNECT).toBe('connect');
-      expect(MessageStreamEventType.STREAM_EVENT).toBe('streamEvent');
-      expect(MessageStreamEventType.TEXT).toBe('text');
-      expect(MessageStreamEventType.TOOL_CALL).toBe('toolCall');
-      expect(MessageStreamEventType.MESSAGE).toBe('message');
-      expect(MessageStreamEventType.FINAL_MESSAGE).toBe('finalMessage');
-      expect(MessageStreamEventType.ERROR).toBe('error');
-      expect(MessageStreamEventType.ABORT).toBe('abort');
-      expect(MessageStreamEventType.END).toBe('end');
+      expect('connect').toBe('connect');
+      expect('streamEvent').toBe('streamEvent');
+      expect('text').toBe('text');
+      expect('toolCall').toBe('toolCall');
+      expect('message').toBe('message');
+      expect('finalMessage').toBe('finalMessage');
+      expect('error').toBe('error');
+      expect('abort').toBe('abort');
+      expect('end').toBe('end');
     });
   });
 
   describe('MessageStreamConnectEvent', () => {
     it('应该正确创建连接事件', () => {
       const event: MessageStreamConnectEvent = {
-        type: MessageStreamEventType.CONNECT,
+        type: 'connect',
         requestId: 'test-request-id'
       };
 
-      expect(event.type).toBe(MessageStreamEventType.CONNECT);
+      expect(event.type).toBe('connect');
       expect(event.requestId).toBe('test-request-id');
     });
   });
@@ -47,7 +47,7 @@ describe('MessageStreamEvents', () => {
   describe('MessageStreamStreamEvent', () => {
     it('应该正确创建流事件', () => {
       const event: MessageStreamStreamEvent = {
-        type: MessageStreamEventType.STREAM_EVENT,
+        type: 'streamEvent',
         event: {
           type: 'content_block_delta',
           data: { delta: { type: 'text_delta', text: 'Hello' } }
@@ -58,14 +58,14 @@ describe('MessageStreamEvents', () => {
         }
       };
 
-      expect(event.type).toBe(MessageStreamEventType.STREAM_EVENT);
+      expect(event.type).toBe('streamEvent');
       expect(event.event.type).toBe('content_block_delta');
       expect(event.snapshot).toBeDefined();
     });
 
     it('应该允许snapshot为null', () => {
       const event: MessageStreamStreamEvent = {
-        type: MessageStreamEventType.STREAM_EVENT,
+        type: 'streamEvent',
         event: {
           type: 'test',
           data: {}
@@ -80,19 +80,19 @@ describe('MessageStreamEvents', () => {
   describe('MessageStreamTextEvent', () => {
     it('应该正确创建文本增量事件', () => {
       const event: MessageStreamTextEvent = {
-        type: MessageStreamEventType.TEXT,
+        type: 'text',
         delta: 'Hello',
         snapshot: 'Hello'
       };
 
-      expect(event.type).toBe(MessageStreamEventType.TEXT);
+      expect(event.type).toBe('text');
       expect(event.delta).toBe('Hello');
       expect(event.snapshot).toBe('Hello');
     });
 
     it('应该支持累积文本', () => {
       const event: MessageStreamTextEvent = {
-        type: MessageStreamEventType.TEXT,
+        type: 'text',
         delta: ' World',
         snapshot: 'Hello World'
       };
@@ -126,12 +126,12 @@ describe('MessageStreamEvents', () => {
       };
 
       const event: MessageStreamToolCallEvent = {
-        type: MessageStreamEventType.TOOL_CALL,
+        type: 'toolCall',
         toolCall,
         snapshot: message
       };
 
-      expect(event.type).toBe(MessageStreamEventType.TOOL_CALL);
+      expect(event.type).toBe('toolCall');
       expect(event.toolCall).toEqual(toolCall);
       expect(event.snapshot).toEqual(message);
     });
@@ -145,11 +145,11 @@ describe('MessageStreamEvents', () => {
       };
 
       const event: MessageStreamMessageEvent = {
-        type: MessageStreamEventType.MESSAGE,
+        type: 'message',
         message
       };
 
-      expect(event.type).toBe(MessageStreamEventType.MESSAGE);
+      expect(event.type).toBe('message');
       expect(event.message).toEqual(message);
     });
 
@@ -168,7 +168,7 @@ describe('MessageStreamEvents', () => {
       };
 
       const event: MessageStreamMessageEvent = {
-        type: MessageStreamEventType.MESSAGE,
+        type: 'message',
         message
       };
 
@@ -199,12 +199,12 @@ describe('MessageStreamEvents', () => {
       };
 
       const event: MessageStreamFinalMessageEvent = {
-        type: MessageStreamEventType.FINAL_MESSAGE,
+        type: 'finalMessage',
         message,
         result
       };
 
-      expect(event.type).toBe(MessageStreamEventType.FINAL_MESSAGE);
+      expect(event.type).toBe('finalMessage');
       expect(event.message).toEqual(message);
       expect(event.result).toEqual(result);
     });
@@ -215,11 +215,11 @@ describe('MessageStreamEvents', () => {
       const error = new Error('Test error');
 
       const event: MessageStreamErrorEvent = {
-        type: MessageStreamEventType.ERROR,
+        type: 'error',
         error
       };
 
-      expect(event.type).toBe(MessageStreamEventType.ERROR);
+      expect(event.type).toBe('error');
       expect(event.error).toBe(error);
       expect(event.error.message).toBe('Test error');
     });
@@ -235,7 +235,7 @@ describe('MessageStreamEvents', () => {
       const error = new CustomError('Custom error', 'ERR_001');
 
       const event: MessageStreamErrorEvent = {
-        type: MessageStreamEventType.ERROR,
+        type: 'error',
         error
       };
 
@@ -247,20 +247,20 @@ describe('MessageStreamEvents', () => {
   describe('MessageStreamAbortEvent', () => {
     it('应该正确创建中止事件', () => {
       const event: MessageStreamAbortEvent = {
-        type: MessageStreamEventType.ABORT,
+        type: 'abort',
         reason: 'User cancelled'
       };
 
-      expect(event.type).toBe(MessageStreamEventType.ABORT);
+      expect(event.type).toBe('abort');
       expect(event.reason).toBe('User cancelled');
     });
 
     it('应该允许reason为undefined', () => {
       const event: MessageStreamAbortEvent = {
-        type: MessageStreamEventType.ABORT
+        type: 'abort'
       };
 
-      expect(event.type).toBe(MessageStreamEventType.ABORT);
+      expect(event.type).toBe('abort');
       expect(event.reason).toBeUndefined();
     });
   });
@@ -268,10 +268,10 @@ describe('MessageStreamEvents', () => {
   describe('MessageStreamEndEvent', () => {
     it('应该正确创建结束事件', () => {
       const event: MessageStreamEndEvent = {
-        type: MessageStreamEventType.END
+        type: 'end'
       };
 
-      expect(event.type).toBe(MessageStreamEventType.END);
+      expect(event.type).toBe('end');
     });
   });
 
@@ -307,8 +307,8 @@ describe('MessageStreamEvents', () => {
             usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
           }
         },
-        { type: MessageStreamEventType.ERROR, error: new Error('test') },
-        { type: MessageStreamEventType.ABORT },
+        { type: MessageStream'ERROR', error: new Error('test') },
+        { type: 'abort' },
         { type: MessageStreamEventType.END }
       ];
 

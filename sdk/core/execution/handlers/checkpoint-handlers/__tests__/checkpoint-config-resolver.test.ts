@@ -59,7 +59,7 @@ describe('CheckpointConfigResolver', () => {
         eventType: 'THREAD_STARTED'
       },
       action: {
-        type: TriggerActionType.CUSTOM,
+        type: 'custom',
         parameters: {}
       },
       status: 'enabled',
@@ -306,7 +306,7 @@ describe('CheckpointConfigResolver', () => {
       let triggeredWorkflow: WorkflowDefinition;
 
       beforeEach(() => {
-        triggeredWorkflow = createMockWorkflow(WorkflowType.TRIGGERED_SUBWORKFLOW);
+        triggeredWorkflow = createMockWorkflow('TRIGGERED_SUBWORKFLOW');
       });
 
       it('应该默认不创建检查点对于triggered子工作流', () => {
@@ -361,7 +361,7 @@ describe('CheckpointConfigResolver', () => {
 
       it('应该创建检查点当enableCheckpoints为true时', () => {
         const workflowWithEnabledCheckpoints = createMockProcessedWorkflow(
-          WorkflowType.TRIGGERED_SUBWORKFLOW,
+          'TRIGGERED_SUBWORKFLOW',
           {
             enableCheckpoints: true,
             checkpointConfig: {
@@ -388,7 +388,7 @@ describe('CheckpointConfigResolver', () => {
 
       it('应该使用triggered子工作流的专用配置', () => {
         const workflowWithCustomConfig = createMockProcessedWorkflow(
-          WorkflowType.TRIGGERED_SUBWORKFLOW,
+          'TRIGGERED_SUBWORKFLOW',
           {
             enableCheckpoints: true,
             checkpointConfig: {
@@ -416,7 +416,7 @@ describe('CheckpointConfigResolver', () => {
 
       it('应该优先使用节点配置当enableCheckpoints为true时', () => {
         const workflowWithEnabledCheckpoints = createMockProcessedWorkflow(
-          WorkflowType.TRIGGERED_SUBWORKFLOW,
+          'TRIGGERED_SUBWORKFLOW',
           {
             enableCheckpoints: true,
             checkpointConfig: {
@@ -445,7 +445,7 @@ describe('CheckpointConfigResolver', () => {
 
       it('应该优先使用Hook配置当enableCheckpoints为true时', () => {
         const workflowWithEnabledCheckpoints = createMockProcessedWorkflow(
-          WorkflowType.TRIGGERED_SUBWORKFLOW,
+          'TRIGGERED_SUBWORKFLOW',
           {
             enableCheckpoints: true,
             checkpointConfig: {
@@ -476,7 +476,7 @@ describe('CheckpointConfigResolver', () => {
 
       it('应该优先使用Trigger配置当enableCheckpoints为true时', () => {
         const workflowWithEnabledCheckpoints = createMockProcessedWorkflow(
-          WorkflowType.TRIGGERED_SUBWORKFLOW,
+          'TRIGGERED_SUBWORKFLOW',
           {
             enableCheckpoints: true,
             checkpointConfig: {
@@ -507,7 +507,7 @@ describe('CheckpointConfigResolver', () => {
 
       it('应该优先使用Tool配置当enableCheckpoints为true时', () => {
         const workflowWithEnabledCheckpoints = createMockProcessedWorkflow(
-          WorkflowType.TRIGGERED_SUBWORKFLOW,
+          'TRIGGERED_SUBWORKFLOW',
           {
             enableCheckpoints: true,
             checkpointConfig: {
@@ -535,7 +535,7 @@ describe('CheckpointConfigResolver', () => {
       });
 
       it('应该正确处理非triggered子工作流', () => {
-        const standaloneWorkflow = createMockProcessedWorkflow(WorkflowType.STANDALONE);
+        const standaloneWorkflow = createMockProcessedWorkflow('STANDALONE');
 
         globalConfig.checkpointBeforeNode = true;
 
@@ -554,7 +554,7 @@ describe('CheckpointConfigResolver', () => {
       });
 
       it('应该正确处理DEPENDENT类型工作流', () => {
-        const dependentWorkflow = createMockProcessedWorkflow(WorkflowType.DEPENDENT);
+        const dependentWorkflow = createMockProcessedWorkflow('DEPENDENT');
 
         globalConfig.checkpointBeforeNode = true;
 
