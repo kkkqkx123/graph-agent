@@ -9,6 +9,8 @@ import { HookType } from '@modular-agent/types';
 import { ConfigurationValidationError } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
+import { validateConfig } from './utils.js';
+import { all } from '@modular-agent/common-utils';
 
 /**
  * Hook配置schema
@@ -34,23 +36,12 @@ const hookSchema = z.object({
  * @throws ValidationError 当配置无效时抛出
  */
 export function validateHook(hook: NodeHook, nodeId: string): Result<NodeHook, ConfigurationValidationError[]> {
-  const result = hookSchema.safeParse(hook);
-  if (!result.success) {
-    const errors = result.error.issues;
-    if (errors.length === 0) {
-      return err([new ConfigurationValidationError('Invalid hook configuration', {
-        configType: 'node',
-        configPath: `node.${nodeId}.hooks`
-      })]);
-    }
-    return err(errors.map(error =>
-      new ConfigurationValidationError(error.message, {
-        configType: 'node',
-        configPath: `node.${nodeId}.hooks.${error.path.join('.')}`
-      })
-    ));
-  }
-  return ok(hook);
+  return validateConfig(
+    hook,
+    hookSchema,
+    `node.${nodeId}.hooks`,
+    'node'
+  );
 }
 
 /**
@@ -67,20 +58,12 @@ export function validateHooks(hooks: NodeHook[], nodeId: string): Result<NodeHoo
     })]);
   }
 
-  const errors: ConfigurationValidationError[] = [];
-  for (let i = 0; i < hooks.length; i++) {
-    const hook = hooks[i];
-    if (!hook) continue;
-
-    // 验证Hook配置
-    const result = validateHook(hook, nodeId);
-    if (result.isErr()) {
-      errors.push(...result.error);
+  const results = hooks.map(hook => {
+    if (!hook) {
+      return ok(hook);
     }
-  }
+    return validateHook(hook, nodeId);
+  });
 
-  if (errors.length === 0) {
-    return ok(hooks);
-  }
-  return err(errors);
+  return all(results);
 }

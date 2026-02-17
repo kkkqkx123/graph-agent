@@ -15,6 +15,7 @@ import { ToolType } from '@modular-agent/types';
 import { ConfigurationValidationError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
+import { validateConfig } from './utils.js';
 
 /**
  * 工具参数属性schema（基于JSON Schema Draft 2020-12）
@@ -152,21 +153,7 @@ export class StaticValidator {
    * @returns 验证结果
    */
   validateTool(tool: Tool): Result<Tool, ConfigurationValidationError[]> {
-    const result = toolSchema.safeParse(tool);
-    if (!result.success) {
-      const error = result.error.issues[0];
-      if (!error) {
-        return err([new ConfigurationValidationError('Invalid tool configuration', {
-          configType: 'tool',
-          field: 'tool'
-        })]);
-      }
-      return err([new ConfigurationValidationError(error.message, {
-        configType: 'tool',
-        configPath: `tool.${error.path.join('.')}`
-      })]);
-    }
-    return ok(tool);
+    return validateConfig(tool, toolSchema, 'tool', 'tool');
   }
 
   /**
@@ -175,21 +162,7 @@ export class StaticValidator {
    * @returns 验证结果
    */
   validateParameters(parameters: ToolParameters): Result<ToolParameters, ConfigurationValidationError[]> {
-    const result = toolParametersSchema.safeParse(parameters);
-    if (!result.success) {
-      const error = result.error.issues[0];
-      if (!error) {
-        return err([new ConfigurationValidationError('Invalid tool parameters schema', {
-          configType: 'tool',
-          field: 'parameters'
-        })]);
-      }
-      return err([new ConfigurationValidationError(error.message, {
-        configType: 'tool',
-        configPath: `parameters.${error.path.join('.')}`
-      })]);
-    }
-    return ok(parameters);
+    return validateConfig(parameters, toolParametersSchema, 'parameters', 'tool');
   }
 
   /**
@@ -199,7 +172,7 @@ export class StaticValidator {
    * @returns 验证结果
    */
   validateToolConfig(toolType: ToolType, config: any): Result<any, ConfigurationValidationError[]> {
-    let result;
+    let result: z.ZodSafeParseResult<any>;
 
     switch (toolType) {
       case 'STATELESS':
@@ -222,18 +195,14 @@ export class StaticValidator {
     }
 
     if (!result.success) {
-      const error = result.error.issues[0];
-      if (!error) {
-        return err([new ConfigurationValidationError(`Invalid ${toolType} tool configuration`, {
+      const errors = result.error.issues.map((issue: any) =>
+        new ConfigurationValidationError(issue.message, {
           configType: 'tool',
-          field: 'config'
-        })]);
-      }
-      return err([new ConfigurationValidationError(error.message, {
-        configType: 'tool',
-        configPath: `config.${error.path.join('.')}`
-      })]);
+          configPath: `config.${issue.path.join('.')}`
+        })
+      );
+      return err(errors);
     }
-    return ok(config);
+    return ok(result.data);
   }
 }

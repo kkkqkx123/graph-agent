@@ -5,10 +5,10 @@
 
 import { z } from 'zod';
 import type { Node } from '@modular-agent/types';
-import { NodeType } from '@modular-agent/types';
 import { ConfigurationValidationError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
+import { validateNodeType, validateNodeConfig } from '../utils.js';
 import type { ToolRegistry } from '../../tools/tool-registry.js';
 
 /**
@@ -32,26 +32,19 @@ export function validateAddToolNode(
   node: Node,
   toolRegistry?: ToolRegistry
 ): Result<Node, ConfigurationValidationError[]> {
-  if (node.type !== 'ADD_TOOL') {
-    return err([new ConfigurationValidationError(`Invalid node type for ADD_TOOL validator: ${node.type}`, {
-      configType: 'node',
-      configPath: `node.${node.id}`
-    })]);
+  const typeResult = validateNodeType(node, 'ADD_TOOL');
+  if (typeResult.isErr()) {
+    return typeResult;
   }
 
-  const result = addToolNodeConfigSchema.safeParse(node.config);
-  if (!result.success) {
-    const error = result.error.issues[0];
-    if (!error) {
-      return err([new ConfigurationValidationError('Invalid ADD_TOOL node configuration', {
-        configType: 'node',
-        configPath: `node.${node.id}.config`
-      })]);
-    }
-    return err([new ConfigurationValidationError(error.message, {
-      configType: 'node',
-      configPath: `node.${node.id}.config.${error.path.join('.')}`
-    })]);
+  const configResult = validateNodeConfig(
+    node.config,
+    addToolNodeConfigSchema,
+    node.id,
+    'ADD_TOOL'
+  );
+  if (configResult.isErr()) {
+    return configResult;
   }
 
   // 如果提供了工具注册器，验证工具存在性

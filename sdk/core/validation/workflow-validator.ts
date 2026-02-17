@@ -36,11 +36,13 @@ import { WorkflowType } from '@modular-agent/types';
 import { ConfigurationValidationError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
+import { all } from '@modular-agent/common-utils';
 import { validateNodeByType } from './node-validation/index.js';
 import { validateHooks } from './hook-validator.js';
 import { validateTriggers } from './trigger-validator.js';
 import { SelfReferenceValidationStrategy } from './strategies/self-reference-validation-strategy.js';
 import { TriggerActionType } from '@modular-agent/types';
+import { validateConfig, convertZodError } from './utils.js';
 
 /**
  * 工作流变量schema
@@ -155,12 +157,11 @@ export class WorkflowValidator {
    * @returns 验证结果
    */
   private validateBasicInfo(workflow: WorkflowDefinition): ConfigurationValidationError[] {
-    const result = workflowBasicSchema.safeParse(workflow);
-    if (result.success) {
-      return [];
+    const result = validateConfig(workflow, workflowBasicSchema, 'workflow', 'workflow');
+    if (result.isErr()) {
+      return result.error;
     }
-    const validationErrors = this.convertZodError(result.error, 'workflow');
-    return validationErrors;
+    return [];
   }
 
   /**
@@ -535,30 +536,11 @@ export class WorkflowValidator {
       return [];
     }
 
-    const result = workflowConfigSchema.safeParse(workflow.config);
-    if (result.success) {
-      return [];
+    const result = validateConfig(workflow.config, workflowConfigSchema, 'workflow.config', 'workflow');
+    if (result.isErr()) {
+      return result.error;
     }
-    return this.convertZodError(result.error, 'workflow.config');
-  }
-
-  /**
-    * 将zod错误转换为ValidationError数组
-    * @param error zod错误
-    * @param prefix 字段路径前缀
-    * @returns ValidationError[]
-    */
-  private convertZodError(error: z.ZodError, prefix?: string): ConfigurationValidationError[] {
-    const errors: ConfigurationValidationError[] = error.issues.map((issue) => {
-      const field = issue.path.length > 0
-        ? (prefix ? `${prefix}.${issue.path.join('.')}` : issue.path.join('.'))
-        : prefix;
-      return new ConfigurationValidationError(issue.message, {
-        configType: 'schema',
-        configPath: field
-      });
-    });
-    return errors;
+    return [];
   }
 
   /**

@@ -5,10 +5,10 @@
 
 import { z } from 'zod';
 import type { Node } from '@modular-agent/types';
-import { NodeType } from '@modular-agent/types';
 import { ConfigurationValidationError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
-import { ok, err } from '@modular-agent/common-utils';
+import { ok } from '@modular-agent/common-utils';
+import { validateNodeType, validateNodeConfig } from '../utils.js';
 
 /**
  * Join节点配置schema
@@ -47,26 +47,20 @@ const joinNodeConfigSchema = z.object({
  * @returns 验证结果
  */
 export function validateJoinNode(node: Node): Result<Node, ConfigurationValidationError[]> {
-  if (node.type !== 'JOIN') {
-    return err([new ConfigurationValidationError(`Invalid node type for join validator: ${node.type}`, {
-      configType: 'node',
-      configPath: `node.${node.id}`
-    })]);
+  const typeResult = validateNodeType(node, 'JOIN');
+  if (typeResult.isErr()) {
+    return typeResult;
   }
 
-  const result = joinNodeConfigSchema.safeParse(node.config);
-  if (!result.success) {
-    const error = result.error.issues[0];
-    if (!error) {
-      return err([new ConfigurationValidationError('Invalid join node configuration', {
-        configType: 'node',
-        configPath: `node.${node.id}.config`
-      })]);
-    }
-    return err([new ConfigurationValidationError(error.message, {
-      configType: 'node',
-      configPath: `node.${node.id}.config.${error.path.join('.')}`
-    })]);
+  const configResult = validateNodeConfig(
+    node.config,
+    joinNodeConfigSchema,
+    node.id,
+    'JOIN'
+  );
+  if (configResult.isErr()) {
+    return configResult;
   }
+
   return ok(node);
 }

@@ -5,10 +5,10 @@
 
 import { z } from 'zod';
 import type { Node } from '@modular-agent/types';
-import { NodeType } from '@modular-agent/types';
 import { ConfigurationValidationError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
+import { validateNodeType, validateNodeConfig } from '../utils.js';
 
 /**
  * ContinueFromTrigger节点配置schema
@@ -38,25 +38,19 @@ const continueFromTriggerNodeConfigSchema = z.object({
  * @returns 验证结果
  */
 export function validateContinueFromTriggerNode(node: Node): Result<Node, ConfigurationValidationError[]> {
-  if (node.type !== 'CONTINUE_FROM_TRIGGER') {
-    return err([new ConfigurationValidationError(`Invalid node type for continue-from-trigger validator: ${node.type}`, {
-      configType: 'node',
-      configPath: `node.${node.id}`
-    })]);
+  const typeResult = validateNodeType(node, 'CONTINUE_FROM_TRIGGER');
+  if (typeResult.isErr()) {
+    return typeResult;
   }
 
-  const result = continueFromTriggerNodeConfigSchema.safeParse(node.config || {});
-  if (!result.success) {
-    const errors = result.error.issues.map((err: any) =>
-      new ConfigurationValidationError(
-        `Invalid CONTINUE_FROM_TRIGGER node configuration: ${err.message}`,
-        {
-          configType: 'node',
-          configPath: `node.${node.id}.config`
-        }
-      )
-    );
-    return err(errors);
+  const configResult = validateNodeConfig(
+    node.config || {},
+    continueFromTriggerNodeConfigSchema,
+    node.id,
+    'CONTINUE_FROM_TRIGGER'
+  );
+  if (configResult.isErr()) {
+    return configResult;
   }
 
   // 验证配置逻辑

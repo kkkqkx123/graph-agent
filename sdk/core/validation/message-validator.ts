@@ -9,6 +9,7 @@ import type { LLMMessage, LLMToolCall } from '@modular-agent/types';
 import { MessageRole, SchemaValidationError } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
+import { all } from '@modular-agent/common-utils';
 
 /**
  * 文本内容项schema
@@ -215,21 +216,19 @@ export class MessageValidator {
       return err([new SchemaValidationError('Messages must be an array', { field: 'messages' })]);
     }
 
-    const allErrors: SchemaValidationError[] = [];
-    messages.forEach((message, index) => {
+    const results = messages.map((message, index) => {
       const result = this.validateMessage(message);
       if (result.isErr()) {
-        result.error.forEach((error) => {
+        const errors = result.error.map((error) => {
           const field = error.field ? `messages[${index}].${error.field}` : `messages[${index}]`;
-          allErrors.push(new SchemaValidationError(error.message, { field, value: error.value }));
+          return new SchemaValidationError(error.message, { field, value: error.value });
         });
+        return err(errors);
       }
+      return result;
     });
-    if (allErrors.length === 0) {
-      return ok(messages);
-    }
-    return err(allErrors);
 
+    return all(results);
   }
 
   /**

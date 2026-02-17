@@ -1,15 +1,31 @@
 /**
  * 节点验证函数模块
  * 提供所有节点类型的验证函数
- * 
+ *
  * subgraph节点在执行阶段不存在，故不需要任何处理
  */
 
-import { NodeType } from '@modular-agent/types';
 import type { Node } from '@modular-agent/types';
 import { ConfigurationValidationError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
-import { ok, err } from '@modular-agent/common-utils';
+import { err } from '@modular-agent/common-utils';
+
+import { validateStartNode } from './start-validator.js';
+import { validateEndNode } from './end-validator.js';
+import { validateForkNode } from './fork-validator.js';
+import { validateJoinNode } from './join-validator.js';
+import { validateLoopStartNode } from './loop-start-validator.js';
+import { validateLoopEndNode } from './loop-end-validator.js';
+import { validateCodeNode } from './code-validator.js';
+import { validateContextProcessorNode } from './context-processor-validator.js';
+import { validateRouteNode } from './route-validator.js';
+import { validateVariableNode } from './variable-validator.js';
+import { validateLLMNode } from './llm-validator.js';
+import { validateAddToolNode } from './add-tool-validator.js';
+import { validateUserInteractionNode } from './user-interaction-validator.js';
+import { validateSubgraphNode } from './subgraph-validator.js';
+import { validateStartFromTriggerNode } from './start-from-trigger-validator.js';
+import { validateContinueFromTriggerNode } from './continue-from-trigger-validator.js';
 
 export { validateForkNode } from './fork-validator.js';
 export { validateJoinNode } from './join-validator.js';
@@ -36,52 +52,36 @@ export { validateContinueFromTriggerNode } from './continue-from-trigger-validat
 export function validateNodeByType(node: Node): Result<Node, ConfigurationValidationError[]> {
   switch (node.type) {
     case 'START':
-      const { validateStartNode } = require('./start-validator');
       return validateStartNode(node);
     case 'END':
-      const { validateEndNode } = require('./end-validator');
       return validateEndNode(node);
     case 'FORK':
-      const { validateForkNode } = require('./fork-validator');
       return validateForkNode(node);
     case 'JOIN':
-      const { validateJoinNode } = require('./join-validator');
       return validateJoinNode(node);
     case 'LOOP_START':
-      const { validateLoopStartNode } = require('./loop-start-validator');
       return validateLoopStartNode(node);
     case 'LOOP_END':
-      const { validateLoopEndNode } = require('./loop-end-validator');
       return validateLoopEndNode(node);
     case 'CODE':
-      const { validateCodeNode } = require('./code-validator');
       return validateCodeNode(node);
     case 'CONTEXT_PROCESSOR':
-      const { validateContextProcessorNode } = require('./context-processor-validator');
       return validateContextProcessorNode(node);
     case 'ROUTE':
-      const { validateRouteNode } = require('./route-validator');
       return validateRouteNode(node);
     case 'VARIABLE':
-      const { validateVariableNode } = require('./variable-validator');
       return validateVariableNode(node);
     case 'LLM':
-      const { validateLLMNode } = require('./llm-validator');
       return validateLLMNode(node);
     case 'ADD_TOOL':
-      const { validateAddToolNode } = require('./add-tool-validator');
       return validateAddToolNode(node);
     case 'USER_INTERACTION':
-      const { validateUserInteractionNode } = require('./user-interaction-validator');
       return validateUserInteractionNode(node);
     case 'SUBGRAPH':
-      const { validateSubgraphNode } = require('./subgraph-validator');
       return validateSubgraphNode(node);
     case 'START_FROM_TRIGGER':
-      const { validateStartFromTriggerNode } = require('./start-from-trigger-validator');
       return validateStartFromTriggerNode(node);
     case 'CONTINUE_FROM_TRIGGER':
-      const { validateContinueFromTriggerNode } = require('./continue-from-trigger-validator');
       return validateContinueFromTriggerNode(node);
     default:
       return err([new ConfigurationValidationError(`Unknown node type: ${node.type}`, {

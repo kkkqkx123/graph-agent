@@ -9,6 +9,7 @@ import { ScriptType } from '@modular-agent/types';
 import { ConfigurationValidationError, ErrorSeverity } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
+import { validateConfig } from './utils.js';
 
 /**
  * 沙箱配置schema
@@ -88,21 +89,7 @@ export class CodeConfigValidator {
    * @throws ValidationError 当脚本定义无效时抛出
    */
   validateScript(script: Script): Result<Script, ConfigurationValidationError[]> {
-    const result = scriptSchema.safeParse(script);
-    if (!result.success) {
-      const error = result.error.issues[0];
-      if (!error) {
-        return err([new ConfigurationValidationError('Invalid script configuration', {
-          configType: 'script',
-          field: 'script'
-        })]);
-      }
-      return err([new ConfigurationValidationError(error.message, {
-        configType: 'script',
-        configPath: `script.${error.path.join('.')}`
-      })]);
-    }
-    return ok(script);
+    return validateConfig(script, scriptSchema, 'script', 'script');
   }
 
   /**
@@ -111,21 +98,7 @@ export class CodeConfigValidator {
    * @throws ValidationError 当执行选项无效时抛出
    */
   validateExecutionOptions(options: ScriptExecutionOptions): Result<ScriptExecutionOptions, ConfigurationValidationError[]> {
-    const result = scriptExecutionOptionsSchema.safeParse(options);
-    if (!result.success) {
-      const error = result.error.issues[0];
-      if (!error) {
-        return err([new ConfigurationValidationError('Invalid execution options', {
-          configType: 'script',
-          field: 'options'
-        })]);
-      }
-      return err([new ConfigurationValidationError(error.message, {
-        configType: 'script',
-        configPath: `options.${error.path.join('.')}`
-      })]);
-    }
-    return ok(options);
+    return validateConfig(options, scriptExecutionOptionsSchema, 'options', 'script');
   }
 
   /**
@@ -134,21 +107,7 @@ export class CodeConfigValidator {
    * @throws ValidationError 当沙箱配置无效时抛出
    */
   validateSandboxConfig(config: SandboxConfig): Result<SandboxConfig, ConfigurationValidationError[]> {
-    const result = sandboxConfigSchema.safeParse(config);
-    if (!result.success) {
-      const error = result.error.issues[0];
-      if (!error) {
-        return err([new ConfigurationValidationError('Invalid sandbox configuration', {
-          configType: 'script',
-          field: 'sandbox'
-        })]);
-      }
-      return err([new ConfigurationValidationError(error.message, {
-        configType: 'script',
-        configPath: `sandbox.${error.path.join('.')}`
-      })]);
-    }
-    return ok(config);
+    return validateConfig(config, sandboxConfigSchema, 'sandbox', 'script');
   }
 
   /**

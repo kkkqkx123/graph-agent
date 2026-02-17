@@ -5,10 +5,10 @@
 
 import { z } from 'zod';
 import type { Node } from '@modular-agent/types';
-import { NodeType } from '@modular-agent/types';
 import { ConfigurationValidationError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
-import { ok, err } from '@modular-agent/common-utils';
+import { ok } from '@modular-agent/common-utils';
+import { validateNodeType, validateNodeConfig } from '../utils.js';
 
 /**
  * START_FROM_TRIGGER 节点配置 schema
@@ -22,19 +22,19 @@ const startFromTriggerNodeConfigSchema = z.strictObject({});
  * @returns 验证结果
  */
 export function validateStartFromTriggerNode(node: Node): Result<Node, ConfigurationValidationError[]> {
-  if (node.type !== 'START_FROM_TRIGGER') {
-    return err([new ConfigurationValidationError(`Invalid node type for start-from-trigger validator: ${node.type}`, {
-      configType: 'node',
-      configPath: `node.${node.id}`
-    })]);
+  const typeResult = validateNodeType(node, 'START_FROM_TRIGGER');
+  if (typeResult.isErr()) {
+    return typeResult;
   }
 
-  const result = startFromTriggerNodeConfigSchema.safeParse(node.config || {});
-  if (!result.success) {
-    return err([new ConfigurationValidationError('START_FROM_TRIGGER node must have no configuration', {
-      configType: 'node',
-      configPath: `node.${node.id}.config`
-    })]);
+  const configResult = validateNodeConfig(
+    node.config || {},
+    startFromTriggerNodeConfigSchema,
+    node.id,
+    'START_FROM_TRIGGER'
+  );
+  if (configResult.isErr()) {
+    return configResult;
   }
 
   return ok(node);
