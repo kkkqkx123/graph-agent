@@ -179,7 +179,9 @@ describe('createCustomValidationHook', () => {
     const hook = createCustomValidationHook(validator);
     const context = createMockExecutionContext();
 
-    await expect(hook.eventPayload!.handler(context)).resolves.toBeUndefined();
+    // 同步函数直接调用，不返回 Promise
+    const result = hook.eventPayload!.handler(context);
+    expect(result).toBeUndefined();
     expect(validator).toHaveBeenCalledWith(context);
   });
 

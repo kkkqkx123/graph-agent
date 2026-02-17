@@ -189,6 +189,9 @@ export class APIFactory {
 }
 
 /**
- * 导出工厂单例实例
+ * 获取工厂单例实例
+ * 延迟初始化，避免在模块加载时就初始化 DI 容器
  */
-export const apiFactory = APIFactory.getInstance();
+export function getAPIFactory(): APIFactory {
+  return APIFactory.getInstance();
+}

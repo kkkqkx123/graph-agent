@@ -30,7 +30,8 @@ export class WorkflowAdapter {
     parameters?: Record<string, any>
   ): Promise<any> {
     try {
-      const { sdk } = await import('@modular-agent/sdk');
+      const { getSDK } = await import('@modular-agent/sdk');
+      const sdk = getSDK();
       
       // 使用 ConfigManager 加载配置
       const fullPath = resolve(process.cwd(), filePath);
@@ -60,7 +61,8 @@ export class WorkflowAdapter {
     failures: Array<{ filePath: string; error: string }>;
   }> {
     try {
-      const { sdk } = await import('@modular-agent/sdk');
+      const { getSDK } = await import('@modular-agent/sdk');
+      const sdk = getSDK();
       
       // 使用 ConfigManager 批量加载配置
       const result = await this.configManager.loadWorkflows(options);
@@ -96,7 +98,8 @@ export class WorkflowAdapter {
    */
   async listWorkflows(filter?: any): Promise<any[]> {
     try {
-      const { sdk } = await import('@modular-agent/sdk');
+      const { getSDK } = await import('@modular-agent/sdk');
+      const sdk = getSDK();
       const api = sdk.workflows;
       const result = await api.getAll();
       const workflows = (result as any).data || result;
@@ -124,7 +127,8 @@ export class WorkflowAdapter {
    */
   async getWorkflow(id: string): Promise<any> {
     try {
-      const { sdk } = await import('@modular-agent/sdk');
+      const { getSDK } = await import('@modular-agent/sdk');
+      const sdk = getSDK();
       const api = sdk.workflows;
       const result = await api.get(id);
       const workflow = (result as any).data || result;
@@ -145,7 +149,8 @@ export class WorkflowAdapter {
    */
   async deleteWorkflow(id: string): Promise<void> {
     try {
-      const { sdk } = await import('@modular-agent/sdk');
+      const { getSDK } = await import('@modular-agent/sdk');
+      const sdk = getSDK();
       const api = sdk.workflows;
       await api.delete(id);
 

@@ -42,7 +42,7 @@ export { ExecutionResult, success, failure, isSuccess, isFailure, getData, getEr
 export { ExecutionOptions, DEFAULT_EXECUTION_OPTIONS, mergeExecutionOptions } from './types/execution-options.js';
 
 // 全局SDK实例
-export { sdk } from './core/sdk.js';
+export { getSDK } from './core/sdk.js';
 
 // 资源管理API (CRUD Operations)
 export { WorkflowRegistryAPI } from './resources/workflows/workflow-registry-api.js';
@@ -75,7 +75,7 @@ export {
 } from './resources/index.js';
 
 // API工厂
-export { APIFactory, apiFactory, type AllAPIs } from './core/api-factory.js';
+export { APIFactory, getAPIFactory, type AllAPIs } from './core/api-factory.js';
 
 
 // 事件系统类型

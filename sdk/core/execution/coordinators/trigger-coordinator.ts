@@ -29,7 +29,6 @@ import type { BaseEvent, NodeCustomEvent } from '@modular-agent/types';
 import type { ID } from '@modular-agent/types';
 import { getTriggerHandler } from '../handlers/trigger-handlers/index.js';
 import { ExecutionError, ConfigurationValidationError, RuntimeValidationError, SystemExecutionError } from '@modular-agent/types';
-import { EventType } from '@modular-agent/types';
 import { now, getErrorOrNew } from '@modular-agent/common-utils';
 import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { WorkflowRegistry } from '../../services/workflow-registry.js';

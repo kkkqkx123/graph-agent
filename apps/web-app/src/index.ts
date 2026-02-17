@@ -1,7 +1,7 @@
 /**
  * Web application entry point for Modular Agent Framework
  */
-import { sdk } from '@modular-agent/sdk';
+import { getSDK } from '@modular-agent/sdk';
 
 async function main(): Promise<void> {
   console.log('Starting Modular Agent Web Application...');
@@ -12,6 +12,7 @@ async function main(): Promise<void> {
   console.log('Waited successfully!');
 
   // Example usage of SDK
+  const sdk = getSDK();
   console.log('SDK initialized with workflows API:', !!sdk.workflows);
   console.log('SDK initialized with threads API:', !!sdk.threads);
   console.log('SDK initialized with tools API:', !!sdk.tools);

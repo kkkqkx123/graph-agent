@@ -4,17 +4,16 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { Thread } from '@modular-agent/types';
 import { ExecutionError, RuntimeValidationError } from '@modular-agent/types';
 
 // Mock 依赖模块
 vi.mock('../event/event-builder.js', () => ({
-  buildThreadForkStartedEvent: vi.fn(),
-  buildThreadForkCompletedEvent: vi.fn(),
-  buildThreadJoinStartedEvent: vi.fn(),
-  buildThreadJoinConditionMetEvent: vi.fn(),
-  buildThreadCopyStartedEvent: vi.fn(),
-  buildThreadCopyCompletedEvent: vi.fn()
+  buildThreadForkStartedEvent: vi.fn().mockReturnValue({ type: 'THREAD_FORK_STARTED' }),
+  buildThreadForkCompletedEvent: vi.fn().mockReturnValue({ type: 'THREAD_FORK_COMPLETED' }),
+  buildThreadJoinStartedEvent: vi.fn().mockReturnValue({ type: 'THREAD_JOIN_STARTED' }),
+  buildThreadJoinConditionMetEvent: vi.fn().mockReturnValue({ type: 'THREAD_JOIN_CONDITION_MET' }),
+  buildThreadCopyStartedEvent: vi.fn().mockReturnValue({ type: 'THREAD_COPY_STARTED' }),
+  buildThreadCopyCompletedEvent: vi.fn().mockReturnValue({ type: 'THREAD_COPY_COMPLETED' })
 }));
 
 vi.mock('../event/event-emitter.js', () => ({
@@ -95,6 +94,10 @@ function createMockThreadContext(threadId: string, workflowId: string = 'test-wo
         loop: []
       },
       forkJoinContext: undefined
+    },
+    conversationManager: {
+      getMessages: vi.fn().mockReturnValue([]),
+      addMessage: vi.fn()
     }
   } as unknown as ThreadContext;
 }
@@ -243,6 +246,12 @@ describe('join', () => {
     mockParentContext = createMockThreadContext('parent-thread');
     mockChildContext = createMockThreadContext('child-thread');
 
+    // 设置子线程的 forkJoinContext，使其成为主线程
+    mockChildContext.thread.forkJoinContext = {
+      forkId: 'fork-1',
+      forkPathId: 'main-path'
+    };
+
     const threads = new Map([
       ['parent-thread', mockParentContext],
       ['child-thread', mockChildContext]
@@ -341,8 +350,8 @@ describe('join', () => {
 
     const threads = new Map<string, ThreadContext>([
       ['parent-thread', mockParentContext],
-      ['child-1', { ...mockChildContext, thread: { ...mockChildContext.thread, status: 'COMPLETED' } } as ThreadContext],
-      ['child-2', { ...mockChildContext, thread: { ...mockChildContext.thread, id: 'child-2', status: 'COMPLETED' } } as ThreadContext]
+      ['child-1', { ...mockChildContext, thread: { ...mockChildContext.thread, id: 'child-1', status: 'COMPLETED', forkJoinContext: { forkId: 'fork-1', forkPathId: 'main-path' } } } as ThreadContext],
+      ['child-2', { ...mockChildContext, thread: { ...mockChildContext.thread, id: 'child-2', status: 'COMPLETED', forkJoinContext: { forkId: 'fork-1', forkPathId: 'other-path' } } } as ThreadContext]
     ]);
     mockThreadRegistry = createMockThreadRegistry(threads);
 
@@ -369,10 +378,19 @@ describe('join', () => {
 
     (waitForAnyThreadCompleted as any).mockResolvedValue('child-1');
 
+    // 创建独立的 mock child-1 context，确保 id 正确
+    const mockChild1Context = createMockThreadContext('child-1');
+    mockChild1Context.thread.status = 'COMPLETED';
+    mockChild1Context.thread.forkJoinContext = { forkId: 'fork-1', forkPathId: 'main-path' };
+
+    const mockChild2Context = createMockThreadContext('child-2');
+    mockChild2Context.thread.status = 'RUNNING';
+    mockChild2Context.thread.forkJoinContext = { forkId: 'fork-1', forkPathId: 'other-path' };
+
     const threads = new Map<string, ThreadContext>([
       ['parent-thread', mockParentContext],
-      ['child-1', { ...mockChildContext, thread: { ...mockChildContext.thread, status: 'COMPLETED' } } as ThreadContext],
-      ['child-2', { ...mockChildContext, thread: { ...mockChildContext.thread, id: 'child-2', status: 'RUNNING' } } as ThreadContext]
+      ['child-1', mockChild1Context],
+      ['child-2', mockChild2Context]
     ]);
     mockThreadRegistry = createMockThreadRegistry(threads);
 

@@ -447,8 +447,8 @@ describe('VariableAccessor', () => {
       const accessor = new VariableAccessor(context);
 
       // 注意：null 值会被 get 返回，但 has 检查的是 !== undefined
-      // 这里取决于具体实现，当前实现返回 false 因为 get 返回 null
-      expect(accessor.has('input.userName')).toBe(false);
+      // 因为 null !== undefined，所以 has 返回 true
+      expect(accessor.has('input.userName')).toBe(true);
     });
   });
 
@@ -487,8 +487,8 @@ describe('VariableAccessor', () => {
       });
       const accessor = new VariableAccessor(context);
 
-      // 注意：当前实现可能不支持这种路径，取决于 resolvePath 的实现
-      expect(accessor.get('input.key-with-dash')).toBe('value');
+      // 当前实现不支持带连字符的路径，会抛出 RuntimeValidationError
+      expect(() => accessor.get('input.key-with-dash')).toThrow('Path contains invalid characters');
     });
   });
 });

@@ -18,9 +18,13 @@ function createMockWorkflowRegistry(overrides?: {
   parentWorkflow?: string | null;
   hierarchy?: { depth: number };
 }): WorkflowRegistry {
+  const workflowList = overrides?.workflows
+    ? Array.from(overrides.workflows.values()).map(w => ({ id: w.id, name: w.name, version: w.version || '1.0.0' }))
+    : [];
+  
   return {
     get: vi.fn().mockImplementation((id: string) => overrides?.workflows?.get(id)),
-    list: vi.fn().mockReturnValue([]),
+    list: vi.fn().mockReturnValue(workflowList),
     getParentWorkflow: vi.fn().mockReturnValue(overrides?.parentWorkflow || null),
     getWorkflowHierarchy: vi.fn().mockReturnValue(overrides?.hierarchy || { depth: 1 })
   } as unknown as WorkflowRegistry;
@@ -216,6 +220,8 @@ describe('checkWorkflowReferences', () => {
       };
 
       const workflow = createMockWorkflow({
+        id: 'referring-workflow',
+        name: 'Referring Workflow',
         triggers: [trigger]
       });
 
@@ -365,6 +371,8 @@ describe('checkWorkflowReferences', () => {
       };
 
       const referringWorkflow = createMockWorkflow({
+        id: 'referring-workflow',
+        name: 'Referring Workflow',
         triggers: [trigger]
       });
 

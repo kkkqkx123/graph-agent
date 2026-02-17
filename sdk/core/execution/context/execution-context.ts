@@ -46,8 +46,8 @@ import { ThreadCascadeManager } from '../managers/thread-cascade-manager.js';
 import { ToolContextManager } from '../managers/tool-context-manager.js';
 import { ThreadLifecycleCoordinator } from '../coordinators/thread-lifecycle-coordinator.js';
 import type { LifecycleCapable } from '../managers/lifecycle-capable.js';
-import { MemoryCheckpointStorage } from '../../storage/memory-checkpoint-storage.js';
 import { getContainer } from '../../di/container-config.js';
+import * as ServiceIdentifiers from '../../di/service-identifiers.js';
 
 /**
  * 执行上下文 - 轻量级依赖注入容器
@@ -69,31 +69,35 @@ export class ExecutionContext {
   private initialized = false;
   private currentThreadId: string | null = null;
 
-  constructor() {
-    // 从 DI 容器获取所有服务
-    const container = getContainer();
-    this.workflowRegistry = container.get('WorkflowRegistry' as any);
-    this.threadRegistry = container.get('ThreadRegistry' as any);
-    this.eventManager = container.get('EventManager' as any);
-    this.toolService = container.get('ToolService' as any);
-    this.llmExecutor = container.get('LLMExecutor' as any);
-    this.errorService = container.get('ErrorService' as any);
-    this.taskRegistry = container.get('TaskRegistry' as any);
-    this.globalMessageStorage = container.get('GlobalMessageStorage' as any);
-    
-    // 创建执行层服务
-    const checkpointStorage = new MemoryCheckpointStorage();
-    this.checkpointStateManager = new CheckpointStateManager(checkpointStorage, this.eventManager);
-    
-    this.threadLifecycleManager = new ThreadLifecycleManager(this.eventManager, this.globalMessageStorage);
-    this.threadCascadeManager = new ThreadCascadeManager(
-      this.threadRegistry,
-      this.threadLifecycleManager,
-      this.eventManager,
-      this.taskRegistry
-    );
-    this.toolContextManager = new ToolContextManager();
-    this.threadLifecycleCoordinator = new ThreadLifecycleCoordinator(this, this.globalMessageStorage);
+  constructor(
+    workflowRegistry: WorkflowRegistry,
+    threadRegistry: ThreadRegistry,
+    eventManager: EventManager,
+    toolService: ToolService,
+    llmExecutor: LLMExecutor,
+    errorService: ErrorService,
+    taskRegistry: TaskRegistry,
+    globalMessageStorage: GlobalMessageStorage,
+    checkpointStateManager: CheckpointStateManager,
+    threadLifecycleManager: ThreadLifecycleManager,
+    threadCascadeManager: ThreadCascadeManager,
+    toolContextManager: ToolContextManager,
+    threadLifecycleCoordinator: ThreadLifecycleCoordinator
+  ) {
+    // 所有依赖通过构造函数注入，由 DI 容器管理
+    this.workflowRegistry = workflowRegistry;
+    this.threadRegistry = threadRegistry;
+    this.eventManager = eventManager;
+    this.toolService = toolService;
+    this.llmExecutor = llmExecutor;
+    this.errorService = errorService;
+    this.taskRegistry = taskRegistry;
+    this.globalMessageStorage = globalMessageStorage;
+    this.checkpointStateManager = checkpointStateManager;
+    this.threadLifecycleManager = threadLifecycleManager;
+    this.threadCascadeManager = threadCascadeManager;
+    this.toolContextManager = toolContextManager;
+    this.threadLifecycleCoordinator = threadLifecycleCoordinator;
   }
 
   /**
@@ -361,18 +365,19 @@ export class ExecutionContext {
 
   /**
    * 创建默认执行上下文
+   * 从 DI 容器获取实例
    * @returns ExecutionContext 实例
    */
   static createDefault(): ExecutionContext {
-    const context = new ExecutionContext();
-    context.initialize();
+    const container = getContainer();
+    const context = container.get(ServiceIdentifiers.ExecutionContext);
     return context;
   }
 
   /**
    * 创建测试专用执行上下文
-   * 允许替换全局单例服务以进行测试隔离
-   * @param customSingletons 自定义单例服务映射
+   * 重置 DI 容器以确保干净状态
+   * @param customSingletons 自定义单例服务映射（暂不支持）
    * @returns ExecutionContext 实例
    */
   static createForTesting(customSingletons?: Map<string, any>): ExecutionContext {
@@ -381,12 +386,9 @@ export class ExecutionContext {
     resetContainer();
     initializeContainer();
 
-    // 如果提供了自定义单例，需要通过 DI 容器重新配置
-    // 这里暂时不支持，因为 DI 容器已经初始化
-    // 如果需要测试隔离，应该使用子容器或重新配置容器
-
-    const context = new ExecutionContext();
-    context.initialize();
+    // 从重新初始化的容器获取实例
+    const container = getContainer();
+    const context = container.get(ServiceIdentifiers.ExecutionContext);
     return context;
   }
 

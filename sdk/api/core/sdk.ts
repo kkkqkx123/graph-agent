@@ -185,10 +185,12 @@ class SDK {
 }
 
 /**
- * 全局SDK实例
- * 提供统一的API入口，整合所有功能模块
+ * 获取全局SDK实例
+ * 延迟初始化，避免在模块加载时就初始化 DI 容器
  */
-export const sdk = new SDK();
+export function getSDK(): SDK {
+  return new SDK();
+}
 
 // 导出依赖管理类
 export { APIDependencyManager };

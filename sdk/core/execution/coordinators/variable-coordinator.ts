@@ -21,7 +21,7 @@ import type { VariableScope } from '@modular-agent/types';
 import type { EventManager } from '../../services/event-manager.js';
 import { EventType } from '@modular-agent/types';
 import { now, getErrorOrNew } from '@modular-agent/common-utils';
-import { ValidationError, ExecutionError, RuntimeValidationError, SystemExecutionError } from '@modular-agent/types';
+import { RuntimeValidationError, SystemExecutionError } from '@modular-agent/types';
 import { VariableStateManager } from '../managers/variable-state-manager.js';
 import { VariableAccessor } from '../utils/variable-accessor.js';
 

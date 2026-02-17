@@ -3,7 +3,7 @@
  * 提供通用的适配器功能
  */
 
-import { sdk } from '@modular-agent/sdk';
+import { getSDK } from '@modular-agent/sdk';
 import { createLogger } from '../utils/logger.js';
 
 /**
@@ -11,11 +11,11 @@ import { createLogger } from '../utils/logger.js';
  */
 export class BaseAdapter {
   protected logger: ReturnType<typeof createLogger>;
-  protected sdk: typeof sdk;
+  protected sdk: ReturnType<typeof getSDK>;
 
   constructor() {
     this.logger = createLogger();
-    this.sdk = sdk;
+    this.sdk = getSDK();
   }
 
   /**

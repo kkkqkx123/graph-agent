@@ -175,7 +175,36 @@ export function initializeContainer(): Container {
 
   container.bind(Identifiers.ExecutionContext)
     .toDynamicValue((c: any) => {
-      const context = new ExecutionContext();
+      // 通过构造函数注入所有依赖
+      const workflowRegistry = c.get(Identifiers.WorkflowRegistry);
+      const threadRegistry = c.get(Identifiers.ThreadRegistry);
+      const eventManager = c.get(Identifiers.EventManager);
+      const toolService = c.get(Identifiers.ToolService);
+      const llmExecutor = c.get(Identifiers.LLMExecutor);
+      const errorService = c.get(Identifiers.ErrorService);
+      const taskRegistry = c.get(Identifiers.TaskRegistry);
+      const globalMessageStorage = c.get(Identifiers.GlobalMessageStorage);
+      const checkpointStateManager = c.get(Identifiers.CheckpointStateManager);
+      const threadLifecycleManager = c.get(Identifiers.ThreadLifecycleManager);
+      const threadCascadeManager = c.get(Identifiers.ThreadCascadeManager);
+      const toolContextManager = c.get(Identifiers.ToolContextManager);
+      const threadLifecycleCoordinator = c.get(Identifiers.ThreadLifecycleCoordinator);
+      
+      const context = new ExecutionContext(
+        workflowRegistry,
+        threadRegistry,
+        eventManager,
+        toolService,
+        llmExecutor,
+        errorService,
+        taskRegistry,
+        globalMessageStorage,
+        checkpointStateManager,
+        threadLifecycleManager,
+        threadCascadeManager,
+        toolContextManager,
+        threadLifecycleCoordinator
+      );
       context.initialize();
       return context;
     })

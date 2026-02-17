@@ -19,7 +19,7 @@ import { type ThreadRegistry } from '../../services/thread-registry.js';
 import { ThreadBuilder } from '../thread-builder.js';
 import type { EventManager } from '../../services/event-manager.js';
 import type { WorkflowRegistry } from '../../services/workflow-registry.js';
-import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types';
+import { ThreadContextNotFoundError } from '@modular-agent/types';
 import { fork, join, copy } from '../utils/thread-operations.js';
 import { ExecutionContext } from '../context/execution-context.js';
 
