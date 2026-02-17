@@ -4,17 +4,17 @@
  */
 
 // 核心接口和基类
-export { IToolExecutor } from './core/interfaces/IToolExecutor';
-export { BaseExecutor } from './core/base/BaseExecutor';
-export { ParameterValidator } from './core/base/ParameterValidator';
-export { RetryStrategy } from './core/base/RetryStrategy';
-export { TimeoutController } from './core/base/TimeoutController';
-export { ExecutorType, ExecutorConfig, ExecutorMetadata } from './core/types';
+export { IToolExecutor } from './core/interfaces/IToolExecutor.js';
+export { BaseExecutor } from './core/base/BaseExecutor.js';
+export { ParameterValidator } from './core/base/ParameterValidator.js';
+export { RetryStrategy } from './core/base/RetryStrategy.js';
+export { TimeoutController } from './core/base/TimeoutController.js';
+export { ExecutorType, ExecutorConfig, ExecutorMetadata } from './core/types.js';
 
 // MCP执行器
-export { McpExecutor } from './mcp/McpExecutor';
-export { StdioTransport } from './mcp/transport/StdioTransport';
-export { SessionPool } from './mcp/session/SessionPool';
+export { McpExecutor } from './mcp/McpExecutor.js';
+export { StdioTransport } from './mcp/transport/StdioTransport.js';
+export { SessionPool } from './mcp/session/SessionPool.js';
 export type {
   McpToolDefinition,
   McpToolResult,
@@ -23,10 +23,10 @@ export type {
   McpSessionInfo,
   McpMessage,
   IMcpTransport
-} from './mcp/types';
+} from './mcp/types.js';
 
 // REST执行器
-export { RestExecutor } from './rest/RestExecutor';
+export { RestExecutor } from './rest/RestExecutor.js';
 export type {
   HttpRequestConfig,
   HttpResponse,
@@ -35,18 +35,18 @@ export type {
   ErrorInterceptor,
   CacheConfig,
   RestExecutorConfig
-} from './rest/types';
+} from './rest/types.js';
 
 // Stateful执行器
-export { StatefulExecutor } from './stateful/StatefulExecutor';
+export { StatefulExecutor } from './stateful/StatefulExecutor.js';
 export type {
   StatefulExecutorConfig
-} from './stateful/types';
+} from './stateful/types.js';
 
 // Stateless执行器
-export { StatelessExecutor } from './stateless/StatelessExecutor';
-export { FunctionRegistry } from './stateless/registry/FunctionRegistry';
+export { StatelessExecutor } from './stateless/StatelessExecutor.js';
+export { FunctionRegistry } from './stateless/registry/FunctionRegistry.js';
 export type {
   FunctionRegistryItem,
   FunctionRegistryConfig
-} from './stateless/types';
+} from './stateless/types.js';

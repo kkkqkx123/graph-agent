@@ -1,44 +1,8 @@
 {
+    "extends": "../tsconfig.json",
     "compilerOptions": {
-        "target": "ES2023",
-        "module": "ESNext",
-        "lib": [
-            "ES2023"
-        ],
         "outDir": "./dist",
-        "rootDir": ".",
-        "strict": true,
-        "skipLibCheck": true,
-        "forceConsistentCasingInFileNames": true,
-        "declaration": true,
-        "declarationMap": true,
-        "sourceMap": true,
-        "removeComments": false,
-        "noImplicitAny": true,
-        "noImplicitReturns": true,
-        "noImplicitThis": true,
-        "noUnusedLocals": false,
-        "noUnusedParameters": false,
-        "exactOptionalPropertyTypes": false,
-        "noImplicitOverride": true,
-        "noPropertyAccessFromIndexSignature": true,
-        "noUncheckedIndexedAccess": true,
-        "resolveJsonModule": true,
-        "moduleResolution": "bundler",
-        "allowSyntheticDefaultImports": true,
-        "esModuleInterop": true,
-        "baseUrl": ".",
-        "paths": {
-            "@core/*": [
-                "core/*"
-            ],
-            "@api/*": [
-                "api/*"
-            ],
-            "@utils/*": [
-                "utils/*"
-            ]
-        }
+        "rootDir": "."
     },
     "include": [
         "index.ts",

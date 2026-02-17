@@ -2,12 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src",
-    "baseUrl": ".",
-    "paths": {
-      "@modular-agent/sdk": ["../../sdk/src/index.ts"],
-      "@modular-agent/common-utils": ["../common-utils/src/index.ts"]
-    }
+    "rootDir": "./src"
   },
   "include": [
     "src/**/*"
