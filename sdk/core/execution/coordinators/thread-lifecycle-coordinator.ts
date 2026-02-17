@@ -123,7 +123,7 @@ export class ThreadLifecycleCoordinator {
     const thread = threadContext.thread;
 
     // 1. 请求暂停（InterruptionManager 会自动触发 AbortController）
-    threadContext.setShouldPause(true);
+    threadContext.interrupt('PAUSE');
 
     // 2. 完全委托给Manager进行状态转换和事件触发
     await this.getLifecycleManager().pauseThread(thread);
@@ -188,7 +188,7 @@ export class ThreadLifecycleCoordinator {
     const thread = threadContext.thread;
 
     // 1. 请求停止（InterruptionManager 会自动触发 AbortController）
-    threadContext.setShouldStop(true);
+    threadContext.interrupt('STOP');
 
     // 2. 完全委托给Manager进行状态转换和事件触发
     await this.getLifecycleManager().cancelThread(thread, 'user_requested');

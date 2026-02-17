@@ -7,6 +7,7 @@ import type { Node, ContinueFromTriggerNodeConfig } from '@modular-agent/types';
 import { NodeType } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
 import { ThreadStatus } from '@modular-agent/types';
+import type { MessageRole } from '@modular-agent/types';
 
 describe('continue-from-trigger-handler', () => {
   let mockThread: Thread;
@@ -197,7 +198,12 @@ describe('continue-from-trigger-handler', () => {
       mockContext.conversationManager.getRecentMessages.mockReturnValue(mockMessages);
 
       (mockNode.config as ContinueFromTriggerNodeConfig).conversationHistoryCallback = {
-        lastN: 3
+        operation: 'TRUNCATE',
+        truncate: {
+          operation: 'TRUNCATE',
+          strategy: { type: 'KEEP_LAST', count: 3 },
+          lastN: 3
+        }
       };
 
       await continueFromTriggerHandler(mockThread, mockNode, mockContext);
@@ -214,9 +220,15 @@ describe('continue-from-trigger-handler', () => {
       mockContext.conversationManager.getRecentMessagesByRole.mockReturnValue(mockMessages);
 
       (mockNode.config as ContinueFromTriggerNodeConfig).conversationHistoryCallback = {
-        lastNByRole: {
+        operation: 'TRUNCATE',
+        truncate: {
+          operation: 'TRUNCATE',
+          strategy: { type: 'KEEP_LAST', count: 2 },
           role: 'user' as MessageRole,
-          count: 2
+          lastNByRole: {
+            role: 'user' as MessageRole,
+            count: 2
+          }
         }
       };
 
@@ -234,7 +246,12 @@ describe('continue-from-trigger-handler', () => {
       mockContext.conversationManager.getMessagesByRole.mockReturnValue(mockMessages);
 
       (mockNode.config as ContinueFromTriggerNodeConfig).conversationHistoryCallback = {
-        byrole: 'assistant' as MessageRole
+        operation: 'FILTER',
+        filter: {
+          operation: 'FILTER',
+          roles: ['assistant'],
+          byRole: 'assistant' as MessageRole
+        }
       };
 
       await continueFromTriggerHandler(mockThread, mockNode, mockContext);
@@ -251,9 +268,13 @@ describe('continue-from-trigger-handler', () => {
       mockContext.conversationManager.getMessagesByRange.mockReturnValue(mockMessages);
 
       (mockNode.config as ContinueFromTriggerNodeConfig).conversationHistoryCallback = {
-        range: {
-          start: 0,
-          end: 2
+        operation: 'FILTER',
+        filter: {
+          operation: 'FILTER',
+          range: {
+            start: 0,
+            end: 2
+          }
         }
       };
 
@@ -266,7 +287,12 @@ describe('continue-from-trigger-handler', () => {
     it('应该在没有conversationManager时不调用回调方法', async () => {
       mockContext.conversationManager = undefined;
       (mockNode.config as ContinueFromTriggerNodeConfig).conversationHistoryCallback = {
-        lastN: 3
+        operation: 'TRUNCATE',
+        truncate: {
+          operation: 'TRUNCATE',
+          strategy: { type: 'KEEP_LAST', count: 3 },
+          lastN: 3
+        }
       };
 
       await continueFromTriggerHandler(mockThread, mockNode, mockContext);
@@ -289,7 +315,12 @@ describe('continue-from-trigger-handler', () => {
     it('应该处理空的消息数组', async () => {
       mockContext.conversationManager.getRecentMessages.mockReturnValue([]);
       (mockNode.config as ContinueFromTriggerNodeConfig).conversationHistoryCallback = {
-        lastN: 3
+        operation: 'TRUNCATE',
+        truncate: {
+          operation: 'TRUNCATE',
+          strategy: { type: 'KEEP_LAST', count: 3 },
+          lastN: 3
+        }
       };
 
       await continueFromTriggerHandler(mockThread, mockNode, mockContext);
@@ -308,7 +339,7 @@ describe('continue-from-trigger-handler', () => {
     });
 
     it('应该在非RUNNING状态下跳过执行', async () => {
-      const nonRunnableStates = [
+      const nonRunnableStates: ThreadStatus[] = [
         'CREATED',
         'PAUSED',
         'COMPLETED',
@@ -405,7 +436,12 @@ describe('continue-from-trigger-handler', () => {
           includeVariables: ['var1', 'var2']
         },
         conversationHistoryCallback: {
-          lastN: 2
+          operation: 'TRUNCATE',
+          truncate: {
+            operation: 'TRUNCATE',
+            strategy: { type: 'KEEP_LAST', count: 2 },
+            lastN: 2
+          }
         }
       } as ContinueFromTriggerNodeConfig;
 
@@ -449,7 +485,12 @@ describe('continue-from-trigger-handler', () => {
           includeAll: true
         },
         conversationHistoryCallback: {
-          byrole: 'user' as MessageRole
+          operation: 'FILTER',
+          filter: {
+            operation: 'FILTER',
+            roles: ['user'],
+            byRole: 'user' as MessageRole
+          }
         }
       } as ContinueFromTriggerNodeConfig;
 

@@ -28,6 +28,10 @@ export * from './message';
 // 代码安全工具模块
 export * from './code-security';
 
+// AbortSignal 和线程中断工具
+export * from './utils/signal/abort-utils';
+export * from './utils/signal/thread-interruption-utils';
+
 // 日志系统（选择性导出以避免命名冲突）
 export {
   createLogger,

@@ -134,21 +134,31 @@ describe('ThreadContext', () => {
     });
   });
 
-  describe('pause/stop management', () => {
-    it('should manage pause flag correctly', () => {
-      expect(threadContext.getShouldPause()).toBe(false);
-      
-      threadContext.setShouldPause(true);
-      expect(threadContext.getShouldPause()).toBe(true);
-      expect(mockThread.shouldPause).toBe(true);
+  describe('interruption management', () => {
+    it('should get AbortSignal correctly', () => {
+      const abortSignal = threadContext.getAbortSignal();
+      expect(abortSignal).toBeDefined();
+      expect(abortSignal.aborted).toBe(false);
     });
 
-    it('should manage stop flag correctly', () => {
-      expect(threadContext.getShouldStop()).toBe(false);
+    it('should interrupt with PAUSE correctly', () => {
+      threadContext.interrupt('PAUSE');
+      const abortSignal = threadContext.getAbortSignal();
+      expect(abortSignal.aborted).toBe(true);
+    });
+
+    it('should interrupt with STOP correctly', () => {
+      threadContext.interrupt('STOP');
+      const abortSignal = threadContext.getAbortSignal();
+      expect(abortSignal.aborted).toBe(true);
+    });
+
+    it('should reset interrupt correctly', () => {
+      threadContext.interrupt('PAUSE');
+      expect(threadContext.getAbortSignal().aborted).toBe(true);
       
-      threadContext.setShouldStop(true);
-      expect(threadContext.getShouldStop()).toBe(true);
-      expect(mockThread.shouldStop).toBe(true);
+      threadContext.resetInterrupt();
+      expect(threadContext.getAbortSignal().aborted).toBe(false);
     });
   });
 

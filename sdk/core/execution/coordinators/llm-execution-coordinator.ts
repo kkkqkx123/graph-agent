@@ -31,6 +31,7 @@ import { CheckpointCoordinator } from './checkpoint-coordinator';
 import type { ExecutionContext } from '../context/execution-context';
 import { SingletonRegistry } from '../context/singleton-registry';
 import type { InterruptionDetector } from '../managers/interruption-detector';
+import { throwIfAborted, getThreadInterruptedException } from '@modular-agent/common-utils';
 
 /**
  * LLM 执行参数
@@ -98,14 +99,14 @@ export class LLMExecutionCoordinator {
   }
 
   /**
-   * 检查是否应该中断当前执行
+   * 检查是否已中止
    *
    * @param threadId Thread ID
-   * @returns 是否应该中断
+   * @returns 是否已中止
    */
-  shouldInterrupt(threadId: string): boolean {
+  isAborted(threadId: string): boolean {
     if (this.interruptionDetector) {
-      return this.interruptionDetector.shouldInterrupt(threadId);
+      return this.interruptionDetector.isAborted(threadId);
     }
     
     // 向后兼容：如果没有提供 interruptionDetector，使用旧的方式
@@ -118,7 +119,7 @@ export class LLMExecutionCoordinator {
       return false;
     }
 
-    return threadContext.getShouldStop() || threadContext.getShouldPause();
+    return threadContext.getAbortSignal().aborted;
   }
 
   /**
@@ -184,15 +185,15 @@ export class LLMExecutionCoordinator {
     const threadContext = this.executionContext?.getThreadRegistry().get(threadId);
     const abortSignal = threadContext?.getAbortSignal();
 
-    // 检查是否应该中断
-    if (this.shouldInterrupt(threadId)) {
-      const interruptionType = threadContext?.getShouldStop() ? 'STOP' : 'PAUSE';
-      throw new ThreadInterruptedException(
-        `LLM execution ${interruptionType.toLowerCase()}`,
-        interruptionType,
-        threadId,
-        nodeId
-      );
+    // 使用 AbortSignal 检查中断
+    if (abortSignal) {
+      throwIfAborted(abortSignal);
+
+      // 如果已中止，抛出线程中断异常
+      const exception = getThreadInterruptedException(abortSignal);
+      if (exception && exception.interruptionType) {
+        throw exception;
+      }
     }
 
     // 步骤1：添加用户消息
@@ -260,15 +261,13 @@ export class LLMExecutionCoordinator {
     }
 
     // 执行 LLM 调用前再次检查中断
-    if (this.shouldInterrupt(threadId)) {
-      const threadContext = this.executionContext?.getThreadRegistry().get(threadId);
-      const interruptionType = threadContext?.getShouldStop() ? 'STOP' : 'PAUSE';
-      throw new ThreadInterruptedException(
-        `LLM execution ${interruptionType.toLowerCase()} before LLM call`,
-        interruptionType,
-        threadId,
-        nodeId
-      );
+    if (abortSignal) {
+      throwIfAborted(abortSignal);
+
+      const exception = getThreadInterruptedException(abortSignal);
+      if (exception && exception.interruptionType) {
+        throw exception;
+      }
     }
 
     // 执行 LLM 调用（传递 AbortSignal）
@@ -332,15 +331,13 @@ export class LLMExecutionCoordinator {
       }
 
       // 执行工具调用前检查中断
-      if (this.shouldInterrupt(threadId)) {
-        const threadContext = this.executionContext?.getThreadRegistry().get(threadId);
-        const interruptionType = threadContext?.getShouldStop() ? 'STOP' : 'PAUSE';
-        throw new ThreadInterruptedException(
-          `LLM execution ${interruptionType.toLowerCase()} before tool calls`,
-          interruptionType,
-          threadId,
-          nodeId
-        );
+      if (abortSignal) {
+        throwIfAborted(abortSignal);
+
+        const exception = getThreadInterruptedException(abortSignal);
+        if (exception && exception.interruptionType) {
+          throw exception;
+        }
       }
 
       // 创建工具调用执行器并执行工具调用（传递 AbortSignal）

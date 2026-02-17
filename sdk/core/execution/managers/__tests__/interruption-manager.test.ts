@@ -19,7 +19,6 @@ describe('InterruptionManager', () => {
     });
 
     it('should initialize with no interruption', () => {
-      expect(interruptionManager.shouldInterrupt()).toBe(false);
       expect(interruptionManager.getInterruptionType()).toBe(null);
       expect(interruptionManager.isAborted()).toBe(false);
     });
@@ -29,7 +28,7 @@ describe('InterruptionManager', () => {
     it('should set interruption type to PAUSE', () => {
       interruptionManager.requestPause();
       
-      expect(interruptionManager.shouldInterrupt()).toBe(true);
+      expect(interruptionManager.isAborted()).toBe(true);
       expect(interruptionManager.getInterruptionType()).toBe('PAUSE');
     });
 
@@ -67,7 +66,7 @@ describe('InterruptionManager', () => {
     it('should set interruption type to STOP', () => {
       interruptionManager.requestStop();
       
-      expect(interruptionManager.shouldInterrupt()).toBe(true);
+      expect(interruptionManager.isAborted()).toBe(true);
       expect(interruptionManager.getInterruptionType()).toBe('STOP');
     });
 
@@ -106,7 +105,7 @@ describe('InterruptionManager', () => {
       interruptionManager.requestPause();
       interruptionManager.resume();
       
-      expect(interruptionManager.shouldInterrupt()).toBe(false);
+      expect(interruptionManager.isAborted()).toBe(false);
       expect(interruptionManager.getInterruptionType()).toBe(null);
     });
 
@@ -133,31 +132,8 @@ describe('InterruptionManager', () => {
     it('should be safe to call when not interrupted', () => {
       interruptionManager.resume();
       
-      expect(interruptionManager.shouldInterrupt()).toBe(false);
+      expect(interruptionManager.isAborted()).toBe(false);
       expect(isAborted(interruptionManager.getAbortSignal())).toBe(false);
-    });
-  });
-
-  describe('shouldInterrupt', () => {
-    it('should return false when no interruption', () => {
-      expect(interruptionManager.shouldInterrupt()).toBe(false);
-    });
-
-    it('should return true when paused', () => {
-      interruptionManager.requestPause();
-      expect(interruptionManager.shouldInterrupt()).toBe(true);
-    });
-
-    it('should return true when stopped', () => {
-      interruptionManager.requestStop();
-      expect(interruptionManager.shouldInterrupt()).toBe(true);
-    });
-
-    it('should return false after resume', () => {
-      interruptionManager.requestPause();
-      interruptionManager.resume();
-      
-      expect(interruptionManager.shouldInterrupt()).toBe(false);
     });
   });
 

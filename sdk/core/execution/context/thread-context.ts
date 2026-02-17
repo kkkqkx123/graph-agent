@@ -250,46 +250,6 @@ export class ThreadContext implements LifecycleCapable {
     this.interruptionManager.updateNodeId(nodeId);
   }
 
-  /**
-   * 设置暂停标志
-   * @param shouldPause 是否应该暂停
-   */
-  setShouldPause(shouldPause: boolean): void {
-    if (shouldPause) {
-      this.interruptionManager.requestPause();
-    } else {
-      // 如果设置为 false，且当前是暂停状态，则恢复
-      if (this.interruptionManager.getInterruptionType() === 'PAUSE') {
-        this.interruptionManager.resume();
-      }
-    }
-  }
-
-  /**
-   * 获取暂停标志
-   * @returns 是否应该暂停
-   */
-  getShouldPause(): boolean {
-    return this.interruptionManager.getInterruptionType() === 'PAUSE';
-  }
-
-  /**
-   * 设置停止标志
-   * @param shouldStop 是否应该停止
-   */
-  setShouldStop(shouldStop: boolean): void {
-    if (shouldStop) {
-      this.interruptionManager.requestStop();
-    }
-  }
-
-  /**
-   * 获取停止标志
-   * @returns 是否应该停止
-   */
-  getShouldStop(): boolean {
-    return this.interruptionManager.getInterruptionType() === 'STOP';
-  }
 
   /**
    * 获取 AbortSignal

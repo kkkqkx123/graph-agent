@@ -1,16 +1,17 @@
 /**
  * 中断管理器
  * 统一管理线程中断状态和操作
- * 
+ *
  * 职责：
  * - 管理中断状态（PAUSE/STOP）
  * - 提供 AbortSignal 用于深度中断
  * - 统一中断请求和恢复操作
- * 
+ *
  * 设计原则：
  * - 单一职责：只负责中断状态管理
  * - 封装性：隐藏内部实现细节
  * - 线程安全：确保状态变更的原子性
+ * - 统一使用 AbortSignal 作为主要中断机制
  */
 
 import { ThreadInterruptedException } from '@modular-agent/types';
@@ -75,13 +76,6 @@ export class InterruptionManager {
     this.interruptionType = null;
     // 重置 AbortController
     this.abortController = new AbortController();
-  }
-
-  /**
-   * 检查是否应该中断
-   */
-  shouldInterrupt(): boolean {
-    return this.interruptionType !== null;
   }
 
   /**

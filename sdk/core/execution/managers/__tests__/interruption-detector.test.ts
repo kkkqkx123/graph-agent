@@ -35,55 +35,6 @@ describe('InterruptionDetector', () => {
     interruptionDetector = new InterruptionDetectorImpl(mockThreadRegistry);
   });
 
-  describe('shouldInterrupt', () => {
-    it('should return false when threadContext does not exist', () => {
-      mockThreadRegistry.get.mockReturnValue(null);
-      
-      const result = interruptionDetector.shouldInterrupt(threadId);
-      
-      expect(result).toBe(false);
-    });
-
-    it('should return false when interruptionManager does not exist', () => {
-      mockThreadRegistry.get.mockReturnValue({} as any);
-      
-      const result = interruptionDetector.shouldInterrupt(threadId);
-      
-      expect(result).toBe(false);
-    });
-
-    it('should return false when no interruption', () => {
-      const result = interruptionDetector.shouldInterrupt(threadId);
-      
-      expect(result).toBe(false);
-    });
-
-    it('should return true when paused', () => {
-      mockInterruptionManager.requestPause();
-      
-      const result = interruptionDetector.shouldInterrupt(threadId);
-      
-      expect(result).toBe(true);
-    });
-
-    it('should return true when stopped', () => {
-      mockInterruptionManager.requestStop();
-      
-      const result = interruptionDetector.shouldInterrupt(threadId);
-      
-      expect(result).toBe(true);
-    });
-
-    it('should return false after resume', () => {
-      mockInterruptionManager.requestPause();
-      mockInterruptionManager.resume();
-      
-      const result = interruptionDetector.shouldInterrupt(threadId);
-      
-      expect(result).toBe(false);
-    });
-  });
-
   describe('getInterruptionType', () => {
     it('should return null when threadContext does not exist', () => {
       mockThreadRegistry.get.mockReturnValue(null);
@@ -271,11 +222,11 @@ describe('InterruptionDetector', () => {
       interruptionManager2.requestStop();
       
       // 检查第一个线程
-      expect(interruptionDetector.shouldInterrupt(threadId)).toBe(true);
+      expect(interruptionDetector.isAborted(threadId)).toBe(true);
       expect(interruptionDetector.getInterruptionType(threadId)).toBe('PAUSE');
       
       // 检查第二个线程
-      expect(interruptionDetector.shouldInterrupt(threadId2)).toBe(true);
+      expect(interruptionDetector.isAborted(threadId2)).toBe(true);
       expect(interruptionDetector.getInterruptionType(threadId2)).toBe('STOP');
     });
 
@@ -288,10 +239,10 @@ describe('InterruptionDetector', () => {
       mockInterruptionManager.resume();
       
       // 检查第一个线程
-      expect(interruptionDetector.shouldInterrupt(threadId)).toBe(false);
+      expect(interruptionDetector.isAborted(threadId)).toBe(false);
       
       // 检查第二个线程应该仍然暂停
-      expect(interruptionDetector.shouldInterrupt(threadId2)).toBe(true);
+      expect(interruptionDetector.isAborted(threadId2)).toBe(true);
       expect(interruptionDetector.getInterruptionType(threadId2)).toBe('PAUSE');
     });
   });
@@ -299,33 +250,28 @@ describe('InterruptionDetector', () => {
   describe('integration with InterruptionManager', () => {
     it('should correctly reflect all state changes', () => {
       // 初始状态
-      expect(interruptionDetector.shouldInterrupt(threadId)).toBe(false);
-      expect(interruptionDetector.getInterruptionType(threadId)).toBe(null);
       expect(interruptionDetector.isAborted(threadId)).toBe(false);
+      expect(interruptionDetector.getInterruptionType(threadId)).toBe(null);
       
       // 暂停
       mockInterruptionManager.requestPause();
-      expect(interruptionDetector.shouldInterrupt(threadId)).toBe(true);
-      expect(interruptionDetector.getInterruptionType(threadId)).toBe('PAUSE');
       expect(interruptionDetector.isAborted(threadId)).toBe(true);
+      expect(interruptionDetector.getInterruptionType(threadId)).toBe('PAUSE');
       
       // 恢复
       mockInterruptionManager.resume();
-      expect(interruptionDetector.shouldInterrupt(threadId)).toBe(false);
-      expect(interruptionDetector.getInterruptionType(threadId)).toBe(null);
       expect(interruptionDetector.isAborted(threadId)).toBe(false);
+      expect(interruptionDetector.getInterruptionType(threadId)).toBe(null);
       
       // 停止
       mockInterruptionManager.requestStop();
-      expect(interruptionDetector.shouldInterrupt(threadId)).toBe(true);
-      expect(interruptionDetector.getInterruptionType(threadId)).toBe('STOP');
       expect(interruptionDetector.isAborted(threadId)).toBe(true);
+      expect(interruptionDetector.getInterruptionType(threadId)).toBe('STOP');
       
       // 再次恢复
       mockInterruptionManager.resume();
-      expect(interruptionDetector.shouldInterrupt(threadId)).toBe(false);
-      expect(interruptionDetector.getInterruptionType(threadId)).toBe(null);
       expect(interruptionDetector.isAborted(threadId)).toBe(false);
+      expect(interruptionDetector.getInterruptionType(threadId)).toBe(null);
     });
 
     it('should get correct AbortSignal from interruptionManager', () => {
@@ -350,7 +296,6 @@ describe('InterruptionDetector', () => {
     it('should handle empty threadId', () => {
       mockThreadRegistry.get.mockReturnValue(null);
       
-      expect(interruptionDetector.shouldInterrupt('')).toBe(false);
       expect(interruptionDetector.getInterruptionType('')).toBe(null);
       expect(interruptionDetector.isAborted('')).toBe(false);
     });
@@ -365,23 +310,23 @@ describe('InterruptionDetector', () => {
       
       specialInterruptionManager.requestPause();
       
-      expect(interruptionDetector.shouldInterrupt(specialThreadId)).toBe(true);
+      expect(interruptionDetector.isAborted(specialThreadId)).toBe(true);
       expect(interruptionDetector.getInterruptionType(specialThreadId)).toBe('PAUSE');
     });
 
     it('should handle rapid state changes', () => {
       // 快速切换状态
       mockInterruptionManager.requestPause();
-      expect(interruptionDetector.shouldInterrupt(threadId)).toBe(true);
+      expect(interruptionDetector.isAborted(threadId)).toBe(true);
       
       mockInterruptionManager.requestStop();
       expect(interruptionDetector.getInterruptionType(threadId)).toBe('STOP');
       
       mockInterruptionManager.resume();
-      expect(interruptionDetector.shouldInterrupt(threadId)).toBe(false);
+      expect(interruptionDetector.isAborted(threadId)).toBe(false);
       
       mockInterruptionManager.requestPause();
-      expect(interruptionDetector.shouldInterrupt(threadId)).toBe(true);
+      expect(interruptionDetector.isAborted(threadId)).toBe(true);
     });
   });
 });

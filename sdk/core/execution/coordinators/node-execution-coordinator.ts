@@ -23,23 +23,19 @@ import type { UserInteractionHandler } from '@modular-agent/types';
 import type { HumanRelayHandler } from '@modular-agent/types';
 import { LLMExecutionCoordinator } from './llm-execution-coordinator';
 import { enterSubgraph, exitSubgraph, getSubgraphInput, getSubgraphOutput } from '../handlers/subgraph-handler';
-import { EventType } from '@modular-agent/types';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '@modular-agent/types';
 import { ExecutionError, ThreadInterruptedException, SystemExecutionError } from '@modular-agent/types';
 import { executeHook } from '../handlers/hook-handlers';
-import { HookType } from '@modular-agent/types';
-import { NodeType } from '@modular-agent/types';
 import { now, diffTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
 import { getNodeHandler } from '../handlers/node-handlers';
 import { SUBGRAPH_METADATA_KEYS, SubgraphBoundaryType } from '@modular-agent/types';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils';
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils';
 import { resolveCheckpointConfig } from '../handlers/checkpoint-handlers/checkpoint-config-resolver';
-import { CheckpointTriggerType } from '@modular-agent/types';
-import { ThreadStatus } from '@modular-agent/types';
 import { emit } from '../utils/event/event-emitter';
 import { buildThreadPausedEvent, buildThreadCancelledEvent } from '../utils/event/event-builder';
 import type { InterruptionDetector } from '../managers/interruption-detector';
+import { throwIfAborted, getThreadInterruptedException } from '@modular-agent/common-utils';
 
 /**
  * 节点执行协调器
@@ -59,14 +55,14 @@ export class NodeExecutionCoordinator {
   ) { }
 
   /**
-   * 检查是否应该中断当前执行
+   * 检查是否已中止
    *
    * @param threadId Thread ID
-   * @returns 是否应该中断
+   * @returns 是否已中止
    */
-  shouldInterrupt(threadId: string): boolean {
+  isAborted(threadId: string): boolean {
     if (this.interruptionDetector) {
-      return this.interruptionDetector.shouldInterrupt(threadId);
+      return this.interruptionDetector.isAborted(threadId);
     }
 
     const threadContext = this.threadRegistry.get(threadId);
@@ -74,7 +70,7 @@ export class NodeExecutionCoordinator {
       return false;
     }
 
-    return threadContext.getShouldStop() || threadContext.getShouldPause();
+    return threadContext.getAbortSignal().aborted;
   }
 
   /**
@@ -147,17 +143,16 @@ export class NodeExecutionCoordinator {
     const nodeId = node.id;
     const nodeType = node.type;
     const threadId = threadContext.getThreadId();
+    const abortSignal = threadContext.getAbortSignal();
 
-    // 检查是否应该中断
-    if (this.shouldInterrupt(threadId)) {
-      const interruptionType = threadContext.getShouldStop() ? 'STOP' : 'PAUSE';
-      await this.handleInterruption(threadId, nodeId, interruptionType);
-      throw new ThreadInterruptedException(
-        `Thread ${interruptionType.toLowerCase()} at node: ${nodeId}`,
-        interruptionType,
-        threadId,
-        nodeId
-      );
+    // 使用 AbortSignal 检查中断
+    throwIfAborted(abortSignal);
+
+    // 如果已中止，处理中断（创建检查点、触发事件）
+    const exception = getThreadInterruptedException(abortSignal);
+    if (exception && exception.interruptionType) {
+      await this.handleInterruption(threadId, nodeId, exception.interruptionType);
+      throw exception;
     }
 
     // 获取GraphNode以检查边界信息

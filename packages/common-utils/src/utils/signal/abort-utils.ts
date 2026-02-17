@@ -1,13 +1,19 @@
 /**
  * Abort 工具函数
- * 提供基于 AbortSignal 的高级包装和组合功能
+ * 提供基于 AbortSignal 的基础包装功能
+ *
+ * 设计原则：
+ * - 统一使用 AbortSignal 作为中断机制
+ * - 简化异步操作的中断处理
+ * - 提供类型安全的工具函数
  */
 
 /**
- * 创建包装函数，支持 AbortSignal
+ * 检查 AbortSignal 并执行函数
  * @param fn 异步函数
  * @param signal AbortSignal
- * @returns 包装后的异步函数
+ * @returns 函数执行结果
+ * @throws 当 signal 已中止时抛出中止原因
  */
 export function withAbortSignal<T>(
   fn: () => Promise<T>,
@@ -24,108 +30,164 @@ export function withAbortSignal<T>(
 }
 
 /**
- * 创建包装函数，支持 AbortSignal 和超时
- * @param fn 异步函数
+ * 检查 AbortSignal 并执行函数（支持传递 signal 给函数）
+ * @param fn 异步函数（接收 AbortSignal 参数）
  * @param signal AbortSignal
- * @param timeout 超时时间（毫秒）
- * @returns 包装后的异步函数
+ * @returns 函数执行结果
+ * @throws 当 signal 已中止时抛出中止原因
  */
-export async function withAbortSignalAndTimeout<T>(
-  fn: () => Promise<T>,
-  signal?: AbortSignal,
-  timeout?: number
+export function withAbortSignalArg<T>(
+  fn: (signal: AbortSignal) => Promise<T>,
+  signal?: AbortSignal
 ): Promise<T> {
-  const timeoutController = new AbortController();
-  const timeoutId = timeout ? setTimeout(() => {
-    timeoutController.abort(new Error('Operation timeout'));
-  }, timeout) : undefined;
-
-  try {
-    // 组合 signal 和 timeout signal
-    const combinedSignal = signal ? 
-      combineSignals([signal, timeoutController.signal]) : 
-      timeoutController.signal;
-
-    return await withAbortSignal(fn, combinedSignal);
-  } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
+  if (signal?.aborted) {
+    const reason = signal.reason;
+    if (reason instanceof Error) {
+      throw reason;
     }
+    throw new Error('Operation aborted');
   }
+  return fn(signal!);
+}
+
+/**
+ * 创建带超时的 AbortSignal
+ * @param timeoutMs 超时时间（毫秒）
+ * @returns AbortController 和 AbortSignal
+ */
+export function createTimeoutSignal(timeoutMs: number): {
+  controller: AbortController;
+  signal: AbortSignal;
+} {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort(new Error(`Operation timed out after ${timeoutMs}ms`));
+  }, timeoutMs);
+
+  // 清理定时器
+  const originalAbort = controller.abort.bind(controller);
+  controller.abort = (reason?: any) => {
+    clearTimeout(timeoutId);
+    return originalAbort(reason);
+  };
+
+  return { controller, signal: controller.signal };
 }
 
 /**
  * 组合多个 AbortSignal
+ * 当任意一个 signal 中止时，组合的 signal 也会中止
  * @param signals AbortSignal 数组
- * @returns 组合后的 AbortSignal
+ * @returns AbortController 和组合的 AbortSignal
  */
-export function combineSignals(signals: AbortSignal[]): AbortSignal {
+export function combineAbortSignals(signals: AbortSignal[]): {
+  controller: AbortController;
+  signal: AbortSignal;
+} {
   const controller = new AbortController();
 
-  // 检查是否有已中止的 signal
-  for (const signal of signals) {
-    if (signal.aborted) {
-      controller.abort(signal.reason);
-      return controller.signal;
-    }
-  }
-
   // 监听所有 signal
-  const abortHandler = () => {
-    controller.abort();
+  const abortHandlers = signals.map(signal => {
+    if (signal.aborted) {
+      // 如果已经中止，立即中止组合的 signal
+      controller.abort(signal.reason);
+      return () => {};
+    }
+    
+    const handler = () => {
+      controller.abort(signal.reason);
+    };
+    signal.addEventListener('abort', handler);
+    return () => signal.removeEventListener('abort', handler);
+  });
+
+  // 清理事件监听器
+  const originalAbort = controller.abort.bind(controller);
+  controller.abort = (reason?: any) => {
+    abortHandlers.forEach(cleanup => cleanup());
+    return originalAbort(reason);
   };
 
-  for (const signal of signals) {
-    signal.addEventListener('abort', abortHandler, { once: true });
-  }
+  return { controller, signal: controller.signal };
+}
 
+/**
+ * 检查 AbortSignal 是否已中止
+ * @param signal AbortSignal
+ * @returns 是否已中止
+ */
+export function isAborted(signal?: AbortSignal): boolean {
+  return signal?.aborted ?? false;
+}
+
+/**
+ * 获取 AbortSignal 的中止原因
+ * @param signal AbortSignal
+ * @returns 中止原因（Error 或其他值）
+ */
+export function getAbortReason(signal?: AbortSignal): any {
+  return signal?.reason;
+}
+
+/**
+ * 创建永不中止的 AbortSignal
+ * @returns AbortSignal
+ */
+export function createNeverAbortSignal(): AbortSignal {
+  const controller = new AbortController();
+  // 不调用 abort，返回一个永远不会中止的 signal
   return controller.signal;
 }
 
 /**
- * 创建可取消的 Promise
- * @param promise Promise 对象
- * @param signal AbortSignal
- * @returns 可取消的 Promise
+ * 包装异步操作，支持超时和中断
+ * @param fn 异步函数
+ * @param options 选项
+ * @returns 函数执行结果
  */
-export function createCancellablePromise<T>(
-  promise: Promise<T>,
-  signal?: AbortSignal
+export async function withTimeoutAndAbort<T>(
+  fn: (signal: AbortSignal) => Promise<T>,
+  options: {
+    signal?: AbortSignal;
+    timeoutMs?: number;
+  }
 ): Promise<T> {
-  return new Promise((resolve, reject) => {
-    // 检查是否已中止
-    if (signal?.aborted) {
-      const reason = signal.reason;
-      if (reason instanceof Error) {
-        reject(reason);
-      } else {
-        reject(new Error('Operation aborted'));
-      }
-      return;
-    }
+  const { signal, timeoutMs } = options;
 
-    // 监听中止事件
-    const abortHandler = () => {
-      const reason = signal!.reason;
-      if (reason instanceof Error) {
-        reject(reason);
-      } else {
-        reject(new Error('Operation aborted'));
-      }
-    };
+  // 如果没有超时和 signal，直接执行
+  if (!signal && !timeoutMs) {
+    return await fn(createNeverAbortSignal());
+  }
 
-    if (signal) {
-      signal.addEventListener('abort', abortHandler, { once: true });
-    }
+  // 创建超时 signal
+  let timeoutController: AbortController | undefined;
+  if (timeoutMs) {
+    const { controller, signal: timeoutSignal } = createTimeoutSignal(timeoutMs);
+    timeoutController = controller;
+  }
 
-    // 处理 Promise
-    promise
-      .then(resolve)
-      .catch(reject)
-      .finally(() => {
-        if (signal) {
-          signal.removeEventListener('abort', abortHandler);
-        }
-      });
-  });
+  // 组合 signal
+  const signals: AbortSignal[] = [];
+  if (signal) signals.push(signal);
+  if (timeoutController) signals.push(timeoutController.signal);
+  
+  let combinedController: AbortController | undefined;
+  let combinedSignal: AbortSignal;
+  
+  if (signals.length === 0) {
+    combinedSignal = createNeverAbortSignal();
+  } else if (signals.length === 1) {
+    combinedSignal = signals[0]!;
+  } else {
+    const result = combineAbortSignals(signals);
+    combinedController = result.controller;
+    combinedSignal = result.signal;
+  }
+
+  try {
+    return await fn(combinedSignal);
+  } finally {
+    timeoutController?.abort();
+    combinedController?.abort();
+  }
 }

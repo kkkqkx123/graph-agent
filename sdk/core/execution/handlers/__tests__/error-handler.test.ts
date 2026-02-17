@@ -48,7 +48,7 @@ describe('ErrorHandler', () => {
       getWorkflowId: jest.fn().mockReturnValue('workflow-456'),
       addError: jest.fn(),
       setStatus: jest.fn(),
-      setShouldStop: jest.fn(),
+      interrupt: jest.fn(),
       thread: {
         id: 'thread-123',
         workflowId: 'workflow-456'
@@ -77,7 +77,7 @@ describe('ErrorHandler', () => {
       expect(mockThreadContext.addError).toHaveBeenCalled();
       expect(mockEventManager.emit).toHaveBeenCalled();
       expect(mockThreadContext.setStatus).toHaveBeenCalledWith('FAILED');
-      expect(mockThreadContext.setShouldStop).toHaveBeenCalledWith(true);
+      expect(mockThreadContext.interrupt).toHaveBeenCalledWith('STOP');
       expect(mockThreadContext.thread.endTime).toBeDefined();
     });
 
@@ -100,7 +100,7 @@ describe('ErrorHandler', () => {
       expect(mockThreadContext.addError).toHaveBeenCalled();
       expect(mockEventManager.emit).toHaveBeenCalled();
       expect(mockThreadContext.setStatus).toHaveBeenCalledWith('FAILED');
-      expect(mockThreadContext.setShouldStop).toHaveBeenCalledWith(true);
+      expect(mockThreadContext.interrupt).toHaveBeenCalledWith('STOP');
     });
 
     it('应该处理非Error类型的错误', async () => {

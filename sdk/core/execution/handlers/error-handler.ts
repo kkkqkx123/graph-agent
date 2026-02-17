@@ -73,7 +73,7 @@ export async function handleNodeFailure(
   if (standardizedError.severity === 'error') {
     threadContext.setStatus('FAILED');
     threadContext.thread.endTime = now();
-    threadContext.setShouldStop(true);
+    threadContext.interrupt('STOP');
   }
   // WARNING 和 INFO 级别自动继续执行
 }
@@ -108,7 +108,7 @@ export async function handleExecutionError(
   if (standardizedError.severity === 'error') {
     threadContext.setStatus('FAILED');
     threadContext.thread.endTime = now();
-    threadContext.setShouldStop(true);
+    threadContext.interrupt('STOP');
   }
   // WARNING 和 INFO 级别自动继续执行
 }

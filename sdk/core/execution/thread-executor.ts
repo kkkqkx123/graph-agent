@@ -25,15 +25,15 @@ import type { NodeExecutionResult } from '@modular-agent/types';
 import { ThreadContext } from './context/thread-context';
 import type { EventManager } from '../services/event-manager';
 import type { WorkflowRegistry } from '../services/workflow-registry';
-import { NotFoundError, ThreadInterruptedException, NodeNotFoundError } from '@modular-agent/types';
+import { ThreadInterruptedException, NodeNotFoundError } from '@modular-agent/types';
 import { ThreadStatus } from '@modular-agent/types';
 import { now, diffTimestamp } from '@modular-agent/common-utils';
 import { NodeExecutionCoordinator } from './coordinators/node-execution-coordinator';
 import { handleNodeFailure, handleExecutionError } from './handlers/error-handler';
 import { LLMExecutionCoordinator } from './coordinators/llm-execution-coordinator';
-import { ThreadBuilder } from './thread-builder';
 import { ExecutionContext } from './context/execution-context';
 import { InterruptionDetector, InterruptionDetectorImpl } from './managers/interruption-detector';
+import { throwIfAborted, getThreadInterruptedException } from '@modular-agent/common-utils';
 
 /**
  * ThreadExecutor - Thread 执行器
@@ -45,7 +45,6 @@ export class ThreadExecutor {
   private nodeExecutionCoordinator: NodeExecutionCoordinator;
   private llmExecutionCoordinator: LLMExecutionCoordinator;
   private eventManager: EventManager;
-  private threadBuilder: ThreadBuilder;
   private workflowRegistry: WorkflowRegistry;
   private executionContext: ExecutionContext;
   private interruptionDetector: InterruptionDetector;
@@ -57,9 +56,6 @@ export class ThreadExecutor {
     // 从ExecutionContext获取全局单例服务
     this.eventManager = this.executionContext.getEventManager();
     this.workflowRegistry = this.executionContext.getWorkflowRegistry();
-
-    // 创建线程构建器（使用相同的ExecutionContext）
-    this.threadBuilder = new ThreadBuilder(this.workflowRegistry, this.executionContext);
 
     // 创建 LLM 执行协调器
     this.llmExecutionCoordinator = new LLMExecutionCoordinator(
@@ -97,24 +93,20 @@ export class ThreadExecutor {
    */
   private async checkInterruption(threadContext: ThreadContext): Promise<void> {
     const threadId = threadContext.getThreadId();
+    const abortSignal = threadContext.getAbortSignal();
 
-    // 使用统一的中断检测器
-    if (this.interruptionDetector.shouldInterrupt(threadId)) {
-      const interruptionType = this.interruptionDetector.getInterruptionType(threadId)!;
-      
-      // 处理中断（创建检查点、触发事件）
+    // 使用 AbortSignal 检查中断
+    throwIfAborted(abortSignal);
+
+    // 如果已中止，处理中断（创建检查点、触发事件）
+    const exception = getThreadInterruptedException(abortSignal);
+    if (exception && exception.interruptionType) {
       await this.nodeExecutionCoordinator.handleInterruption(
         threadId,
         threadContext.getCurrentNodeId(),
-        interruptionType
+        exception.interruptionType
       );
-      
-      throw new ThreadInterruptedException(
-        `Thread ${interruptionType.toLowerCase()}`,
-        interruptionType,
-        threadId,
-        threadContext.getCurrentNodeId()
-      );
+      throw exception;
     }
   }
 
@@ -161,7 +153,7 @@ export class ThreadExecutor {
         // 中断异常已经被协调器处理过，直接返回结果
         return this.createThreadResult(threadContext);
       }
-      
+
       // 处理其他错误
       await handleExecutionError(threadContext, error);
       return this.createThreadResult(threadContext);
