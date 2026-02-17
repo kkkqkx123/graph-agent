@@ -28,6 +28,7 @@ import { VariableCoordinator } from '../coordinators/variable-coordinator.js';
 import { VariableStateManager } from '../managers/variable-state-manager.js';
 import { TriggerCoordinator } from '../coordinators/trigger-coordinator.js';
 import { TriggerStateManager } from '../managers/trigger-state-manager.js';
+import { ToolVisibilityCoordinator } from '../coordinators/tool-visibility-coordinator.js';
 import { GraphNavigator, type NavigationResult } from '../../graph/graph-navigator.js';
 import { ExecutionState } from './execution-state.js';
 import type { ThreadRegistry } from '../../services/thread-registry.js';
@@ -123,6 +124,11 @@ export class ThreadContext implements LifecycleCapable {
   public readonly interruptionManager: InterruptionManager;
 
   /**
+   * 工具可见性协调器
+   */
+  public readonly toolVisibilityCoordinator: ToolVisibilityCoordinator;
+
+  /**
    * 可用工具集合（从workflow配置）
    */
   private availableTools: Set<string> = new Set();
@@ -179,6 +185,9 @@ export class ThreadContext implements LifecycleCapable {
 
     // 初始化中断管理器
     this.interruptionManager = new InterruptionManager(thread.id, thread.currentNodeId);
+
+    // 初始化工具可见性协调器
+    this.toolVisibilityCoordinator = new ToolVisibilityCoordinator(toolService);
   }
 
   /**
@@ -189,6 +198,20 @@ export class ThreadContext implements LifecycleCapable {
     if (this.thread.variables && this.thread.variables.length > 0) {
       this.variableStateManager.initializeFromThreadVariables(this.thread.variables);
     }
+  }
+
+  /**
+   * 初始化工具可见性上下文
+   * 这个方法应该在Thread构建后调用
+   */
+  initializeToolVisibility(): void {
+    const initialTools = this.getAvailableTools();
+    this.toolVisibilityCoordinator.initializeContext(
+      this.thread.id,
+      initialTools,
+      'THREAD',
+      this.thread.id
+    );
   }
 
 
@@ -489,21 +512,42 @@ export class ThreadContext implements LifecycleCapable {
    * @param parentWorkflowId 父工作流ID
    * @param input 输入数据
    */
-  enterSubgraph(workflowId: ID, parentWorkflowId: ID, input: any): void {
+  async enterSubgraph(workflowId: ID, parentWorkflowId: ID, input: any): Promise<void> {
     // 先创建新的本地作用域
     this.variableCoordinator.enterLocalScope(this);
     // 再调用原有的执行状态管理
     this.executionState.enterSubgraph(workflowId, parentWorkflowId, input);
+    
+    // 更新工具可见性
+    const subgraphTools = this.getAvailableTools();
+    await this.toolVisibilityCoordinator.updateVisibilityOnScopeChange(
+      this,
+      'WORKFLOW',
+      workflowId,
+      subgraphTools,
+      'enter_scope'
+    );
   }
 
   /**
    * 退出子图
    */
-  exitSubgraph(): void {
+  async exitSubgraph(): Promise<void> {
     // 先调用原有的执行状态管理
     this.executionState.exitSubgraph();
     // 再退出本地作用域
     this.variableCoordinator.exitLocalScope(this);
+    
+    // 恢复父作用域的工具可见性
+    const parentScopeId = this.getWorkflowId();
+    const parentTools = this.getAvailableTools();
+    await this.toolVisibilityCoordinator.updateVisibilityOnScopeChange(
+      this,
+      'WORKFLOW',
+      parentScopeId,
+      parentTools,
+      'exit_scope'
+    );
   }
 
   /**
@@ -618,6 +662,9 @@ export class ThreadContext implements LifecycleCapable {
 
     // 5. 清理执行状态
     this.executionState.clear();
+
+    // 6. 清理工具可见性上下文
+    this.toolVisibilityCoordinator.deleteContext(this.thread.id);
   }
 
   /**
@@ -627,7 +674,8 @@ export class ThreadContext implements LifecycleCapable {
     return {
       variableState: this.variableStateManager.createSnapshot(),
       triggerState: this.triggerStateManager.createSnapshot(),
-      conversationState: this.conversationManager.createSnapshot()
+      conversationState: this.conversationManager.createSnapshot(),
+      toolVisibilityState: this.toolVisibilityCoordinator.getSnapshot(this.thread.id)
       // 注意：executionState 不包含在快照中，因为它表示临时执行状态，
       // 在检查点恢复时应该重新开始执行
     };
@@ -645,6 +693,9 @@ export class ThreadContext implements LifecycleCapable {
     }
     if (snapshot.conversationState) {
       this.conversationManager.restoreFromSnapshot(snapshot.conversationState);
+    }
+    if (snapshot.toolVisibilityState) {
+      this.toolVisibilityCoordinator.restoreSnapshot(this.thread.id, snapshot.toolVisibilityState);
     }
     // executionState 不从快照恢复，保持当前状态或重新初始化
   }
@@ -891,8 +942,16 @@ export class ThreadContext implements LifecycleCapable {
    * 添加动态工具到可用集合
    * @param toolIds 工具ID列表
    */
-  addDynamicTools(toolIds: string[]): void {
+  async addDynamicTools(toolIds: string[]): Promise<void> {
+    // 更新可用工具集合
     toolIds.forEach(id => this.availableTools.add(id));
+    
+    // 生成可见性声明
+    await this.toolVisibilityCoordinator.addToolsDynamically(
+      this,
+      toolIds,
+      'THREAD'
+    );
   }
 
   /**

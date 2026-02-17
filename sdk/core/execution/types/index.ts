@@ -29,3 +29,12 @@ export {
   DynamicThreadEventType,
   type CreateDynamicThreadRequest
 } from './dynamic-thread.types.js';
+
+export {
+  type ToolVisibilityContext,
+  type VisibilityDeclaration,
+  type VisibilityDeclarationStrategy,
+  type VisibilityChangeType,
+  type VisibilityUpdateRequest,
+  defaultVisibilityDeclarationStrategy
+} from './tool-visibility.types.js';

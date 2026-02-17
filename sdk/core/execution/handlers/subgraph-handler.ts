@@ -24,21 +24,21 @@ import { now } from '@modular-agent/common-utils';
  * @param parentWorkflowId 父工作流ID
  * @param input 子图输入
  */
-export function enterSubgraph(
+export async function enterSubgraph(
   threadContext: ThreadContext,
   workflowId: string,
   parentWorkflowId: string,
   input: any
-): void {
-  threadContext.enterSubgraph(workflowId, parentWorkflowId, input);
+): Promise<void> {
+  await threadContext.enterSubgraph(workflowId, parentWorkflowId, input);
 }
 
 /**
  * 退出子图
  * @param threadContext 线程上下文
  */
-export function exitSubgraph(threadContext: ThreadContext): void {
-  threadContext.exitSubgraph();
+export async function exitSubgraph(threadContext: ThreadContext): Promise<void> {
+  await threadContext.exitSubgraph();
 }
 
 /**

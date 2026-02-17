@@ -218,12 +218,15 @@ export class CheckpointCoordinator {
       executionContext.getLlmExecutor()
     );
 
-    // 步骤10：恢复触发器状态
+    // 步骤10：初始化工具可见性上下文
+    threadContext.initializeToolVisibility();
+
+    // 步骤11：恢复触发器状态
     if (checkpoint.threadState.triggerStates) {
       threadContext.restoreTriggerState(checkpoint.threadState.triggerStates);
     }
 
-    // 步骤11：恢复FORK/JOIN上下文（如果存在）
+    // 步骤12：恢复FORK/JOIN上下文（如果存在）
     if (checkpoint.threadState.forkJoinContext) {
       threadContext.setForkId(checkpoint.threadState.forkJoinContext.forkId);
       threadContext.setForkPathId(checkpoint.threadState.forkJoinContext.forkPathId);

@@ -14,6 +14,7 @@
  * - ThreadLifecycleCoordinator: Thread 生命周期协调器
  * - ThreadOperationCoordinator: Thread 操作协调器
  * - VariableCoordinator: 变量协调器
+ * - ToolVisibilityCoordinator: 工具可见性协调器
  */
 
 export { NodeExecutionCoordinator } from './node-execution-coordinator.js';
@@ -23,3 +24,4 @@ export { ThreadLifecycleCoordinator } from './thread-lifecycle-coordinator.js';
 export { ThreadOperationCoordinator } from './thread-operation-coordinator.js';
 export { VariableCoordinator } from './variable-coordinator.js';
 export { VariableAccessor, VariableNamespace } from '../utils/variable-accessor.js';
+export { ToolVisibilityCoordinator } from './tool-visibility-coordinator.js';

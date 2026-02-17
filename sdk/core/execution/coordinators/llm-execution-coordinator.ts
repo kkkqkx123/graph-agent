@@ -346,7 +346,12 @@ export class LLMExecutionCoordinator {
       }
 
       // 创建工具调用执行器并执行工具调用（传递 AbortSignal）
-      const toolCallExecutor = new ToolCallExecutor(this.toolService, this.eventManager);
+      const toolCallExecutor = new ToolCallExecutor(
+        this.toolService,
+        this.eventManager,
+        undefined,
+        threadContext?.toolVisibilityCoordinator
+      );
       await this.executeToolCallsWithApproval(
         llmResult.toolCalls,
         conversationState,

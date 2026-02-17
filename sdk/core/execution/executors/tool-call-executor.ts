@@ -26,6 +26,7 @@ import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/che
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
 import { ThreadInterruptedException, SystemExecutionError, ToolError } from '@modular-agent/types';
 import { MessageBuilder } from '../../messages/message-builder.js';
+import type { ToolVisibilityCoordinator } from '../coordinators/tool-visibility-coordinator.js';
 
 /**
  * 工具执行结果
@@ -52,7 +53,8 @@ export class ToolCallExecutor {
   constructor(
     private toolService: ToolService,
     private eventManager?: EventManager,
-    private checkpointDependencies?: CheckpointDependencies
+    private checkpointDependencies?: CheckpointDependencies,
+    private toolVisibilityCoordinator?: ToolVisibilityCoordinator
   ) { }
 
   /**
@@ -185,6 +187,61 @@ export class ToolCallExecutor {
       toolConfig = this.toolService.getTool(toolCall.name);
     } catch (error) {
       // 工具不存在，继续执行
+    }
+
+    // 检查工具是否在当前可见性上下文中
+    if (threadId && this.toolVisibilityCoordinator) {
+      if (!this.toolVisibilityCoordinator.isToolVisible(threadId, toolCall.name)) {
+        const visibleTools = this.toolVisibilityCoordinator.getEffectiveVisibleTools(threadId);
+        const errorMessage = `工具 '${toolCall.name}' 在当前作用域不可用。当前可用工具：[${Array.from(visibleTools).join(', ')}]`;
+
+        // 使用 MessageBuilder 构建失败的工具结果消息
+        const toolMessage = MessageBuilder.buildToolMessage(
+          toolCall.id,
+          {
+            success: false,
+            error: errorMessage,
+            executionTime: Date.now() - startTime,
+            retryCount: 0
+          }
+        );
+        conversationState.addMessage(toolMessage);
+
+        // 触发消息添加事件
+        if (this.eventManager) {
+          await safeEmit(this.eventManager, {
+            type: 'MESSAGE_ADDED',
+            timestamp: now(),
+            workflowId: '',
+            threadId: threadId || '',
+            nodeId,
+            role: toolMessage.role,
+            content: typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
+            toolCalls: undefined
+          });
+        }
+
+        // 触发工具调用失败事件
+        if (this.eventManager) {
+          await safeEmit(this.eventManager, {
+            type: 'TOOL_CALL_FAILED',
+            timestamp: now(),
+            workflowId: '',
+            threadId: threadId || '',
+            nodeId: nodeId || '',
+            toolId: toolCall.name,
+            error: errorMessage
+          });
+        }
+
+        return {
+          toolCallId: toolCall.id,
+          toolId: toolCall.name,
+          success: false,
+          error: errorMessage,
+          executionTime: Date.now() - startTime
+        };
+      }
     }
 
     // 工具调用前创建检查点（如果配置了）

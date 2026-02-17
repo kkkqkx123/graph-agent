@@ -387,7 +387,7 @@ export class NodeExecutionCoordinator {
     if (boundaryType === 'entry') {
       // 进入子图
       const input = getSubgraphInput(threadContext);
-      enterSubgraph(
+      await enterSubgraph(
         threadContext,
         graphNode.workflowId,
         graphNode.parentWorkflowId!,
@@ -423,7 +423,7 @@ export class NodeExecutionCoordinator {
         };
         await this.eventManager.emit(subgraphCompletedEvent);
 
-        exitSubgraph(threadContext);
+        await exitSubgraph(threadContext);
       }
     }
   }
@@ -476,7 +476,8 @@ export class NodeExecutionCoordinator {
       handlerContext = {
         toolContextManager: this.toolContextManager,
         toolService: this.toolService,
-        eventManager: this.eventManager
+        eventManager: this.eventManager,
+        threadContext: threadContext
       };
     }
 

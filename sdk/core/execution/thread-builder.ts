@@ -150,7 +150,10 @@ export class ThreadBuilder {
     // 步骤7：初始化变量
     threadContext.initializeVariables();
 
-    // 步骤8：注册工作流触发器到 ThreadContext 的 TriggerManager
+    // 步骤8：初始化工具可见性上下文
+    threadContext.initializeToolVisibility();
+
+    // 步骤9：注册工作流触发器到 ThreadContext 的 TriggerManager
     this.registerWorkflowTriggers(threadContext, preprocessedGraph);
 
     return threadContext;
@@ -283,6 +286,9 @@ export class ThreadBuilder {
     // 初始化变量
     copiedThreadContext.initializeVariables();
 
+    // 初始化工具可见性上下文
+    copiedThreadContext.initializeToolVisibility();
+
     return copiedThreadContext;
   }
 
@@ -355,6 +361,9 @@ export class ThreadBuilder {
 
     // 初始化变量
     forkThreadContext.initializeVariables();
+
+    // 初始化工具可见性上下文
+    forkThreadContext.initializeToolVisibility();
 
     return forkThreadContext;
   }
