@@ -7,7 +7,8 @@ import { GenericResourceAPI } from '../generic-resource-api.js';
 import type { ThreadRegistry } from '../../../core/services/thread-registry.js';
 import type { LLMMessage } from '@modular-agent/types';
 import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types';
-import { SingletonRegistry } from '../../../core/execution/context/singleton-registry.js';
+import { getContainer } from '../../../core/di/index.js';
+import * as Identifiers from '../../../core/di/service-identifiers.js';
 
 /**
  * 消息过滤器
@@ -45,7 +46,8 @@ export class MessageResourceAPI extends GenericResourceAPI<LLMMessage, string, M
 
   constructor() {
     super();
-    this.registry = SingletonRegistry.getThreadRegistry();
+    const container = getContainer();
+    this.registry = container.get(Identifiers.ThreadRegistry);
   }
 
   // ============================================================================

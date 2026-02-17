@@ -11,7 +11,8 @@
 import type { Node, CodeNodeConfig } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
 import { now, getErrorMessage } from '@modular-agent/common-utils';
-import { SingletonRegistry } from '../../context/singleton-registry.js';
+import { getContainer } from '../../../di/index.js';
+import * as Identifiers from '../../../di/service-identifiers.js';
 
 /**
  * Code节点处理函数
@@ -30,7 +31,8 @@ export async function codeHandler(thread: Thread, node: Node, context?: any): Pr
 
   try {
     // 使用脚本服务执行脚本
-    const codeService = SingletonRegistry.getCodeService();
+    const container = getContainer();
+    const codeService = container.get(Identifiers.CodeService);
     const result = await codeService.execute(config.scriptName);
 
     // 记录执行历史

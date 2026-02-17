@@ -39,7 +39,8 @@ import { CheckpointStateManager } from '../managers/checkpoint-state-manager.js'
 import { convertToTrigger } from '@modular-agent/types';
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
-import { SingletonRegistry } from '../context/singleton-registry.js';
+import { getContainer } from '../../di/index.js';
+import * as Identifiers from '../../di/service-identifiers.js';
 
 /**
  * TriggerCoordinator - 触发器协调器
@@ -344,7 +345,8 @@ export class TriggerCoordinator {
     }
 
     // 获取处理后的图
-    const graphRegistry = SingletonRegistry.getGraphRegistry();
+    const container = getContainer();
+    const graphRegistry = container.get(Identifiers.GraphRegistry);
     const processedWorkflow = graphRegistry.get(targetWorkflowId);
     if (!processedWorkflow || !processedWorkflow.triggers) {
       return undefined;

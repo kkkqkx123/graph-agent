@@ -18,7 +18,8 @@ import { GraphData } from '../entities/graph-data.js';
 import { GraphValidator } from '../validation/graph-validator.js';
 import { generateSubgraphNamespace, generateNamespacedNodeId, generateNamespacedEdgeId, generateId } from '@modular-agent/common-utils';
 import { SUBGRAPH_METADATA_KEYS } from '@modular-agent/types';
-import { SingletonRegistry } from '../execution/context/singleton-registry.js';
+import { getContainer } from '../di/index.js';
+import * as Identifiers from '../di/service-identifiers.js';
 
 /**
  * 图构建器类
@@ -219,7 +220,8 @@ export class GraphBuilder {
       const subworkflowId = subgraphConfig.subgraphId;
 
       // 确保子工作流已完整预处理（包括引用展开和嵌套子工作流处理）
-      const graphRegistry = SingletonRegistry.getGraphRegistry();
+      const container = getContainer();
+      const graphRegistry = container.get(Identifiers.GraphRegistry) as any;
       let processedSubworkflow = graphRegistry.get(subworkflowId);
 
       if (!processedSubworkflow) {

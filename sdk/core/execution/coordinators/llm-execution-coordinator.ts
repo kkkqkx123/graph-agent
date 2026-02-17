@@ -29,7 +29,8 @@ import { ToolCallExecutor } from '../executors/tool-call-executor.js';
 import { ExecutionError, ThreadInterruptedException, SystemExecutionError, ErrorSeverity } from '@modular-agent/types';
 import { CheckpointCoordinator } from './checkpoint-coordinator.js';
 import type { ExecutionContext } from '../context/execution-context.js';
-import { SingletonRegistry } from '../context/singleton-registry.js';
+import { getContainer } from '../../di/index.js';
+import * as Identifiers from '../../di/service-identifiers.js';
 import type { InterruptionDetector } from '../managers/interruption-detector.js';
 import { throwIfAborted, getThreadInterruptedException } from '@modular-agent/common-utils';
 
@@ -491,11 +492,12 @@ export class LLMExecutionCoordinator {
     let checkpointId: string | undefined;
     if (this.executionContext) {
       try {
+        const container = getContainer();
         const dependencies = {
           threadRegistry: this.executionContext.getThreadRegistry(),
           checkpointStateManager: this.executionContext.getCheckpointStateManager(),
           workflowRegistry: this.executionContext.getWorkflowRegistry(),
-          globalMessageStorage: SingletonRegistry.getGlobalMessageStorage()
+          globalMessageStorage: container.get(Identifiers.GlobalMessageStorage)
         };
         checkpointId = await CheckpointCoordinator.createCheckpoint(threadId, dependencies, {
           description: 'Waiting for tool approval',

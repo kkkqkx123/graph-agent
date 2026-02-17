@@ -9,7 +9,7 @@ import type { Thread, ThreadResult, ThreadStatus, ThreadFilter, ThreadSummary } 
 import { GenericResourceAPI } from '../generic-resource-api.js';
 import { getErrorMessage, isSuccess, getData } from '../../types/execution-result.js';
 import type { APIDependencyManager } from '../../core/sdk-dependencies.js';
-import { SingletonRegistry } from '../../../core/execution/context/singleton-registry.js';
+// SingletonRegistry 已被移除，不再需要此导入
 
 
 /**

@@ -9,50 +9,63 @@
 - 建立明确的单向依赖关系，消除循环依赖
 - 不保留适配器层，DI 容器直接作为服务管理中心
 - 不需要向后兼容，可以完全重构
+- **复用 `packages/common-utils/src/di` 的成熟 DI 容器实现**
+
+## 重要说明：复用现有 DI 容器
+
+经过分析，`packages/common-utils/src/di` 已经提供了一个功能完整且成熟的 DI 容器实现，包括：
+
+- ✅ 完整的容器实现（Container、Binding、ResolutionEngine）
+- ✅ 支持多种绑定类型（INSTANCE、CONSTANT、FACTORY、DYNAMIC）
+- ✅ 支持多种作用域（TRANSIENT、SINGLETON、SCOPED）
+- ✅ 流式 API 设计（bind().to().inSingletonScope()）
+- ✅ 循环依赖检测
+- ✅ 子容器支持
+- ✅ 已有完整的测试用例
+
+**因此，本方案将直接复用 common-utils 的 DI 容器，避免重复开发。**
 
 ---
 
 ## 阶段一：创建 DI 容器基础设施
 
 ### 1.1 目标
-建立 DI 容器核心基础设施，包括容器实现、服务标识符系统和配置管理。
+建立 DI 容器核心基础设施，包括服务标识符系统和配置管理。**直接复用 `packages/common-utils/src/di` 的成熟 DI 容器实现**。
 
 ### 1.2 新增文件
-
-#### `sdk/core/di/container.ts`
-**文件实现方式**：有状态全局单例
-
-**文件职责**：
-- 实现 DI 容器核心功能
-- 管理服务绑定和生命周期
-- 提供依赖解析能力
-- 支持单例和瞬态两种生命周期
-
-**主要功能**：
-- `bind<T>(identifier: ServiceIdentifier<T>): BindingBuilder<T>` - 创建服务绑定
-- `get<T>(identifier: ServiceIdentifier<T>): T` - 获取服务实例
-- `has(identifier: ServiceIdentifier<T>): boolean` - 检查服务是否存在
-- `reset(): void` - 重置容器（主要用于测试）
-
-**依赖关系**：
-- 无外部依赖
-- 被 `container-config.ts` 依赖
-
-**集成方式**：
-- 作为 DI 系统的核心，被所有需要获取服务的模块使用
-- 通过 `container-config.ts` 进行初始化配置
 
 #### `sdk/core/di/service-identifiers.ts`
 **文件实现方式**：无状态常量导出
 
 **文件职责**：
-- 定义所有服务的 Symbol 标识符
+- 定义所有 SDK 服务的 Symbol 标识符
 - 提供类型安全的服务标识符
-- 支持服务标识符的类型推断
 
 **主要功能**：
-- 导出所有服务的 Symbol 常量
-- 每个标识符都有明确的类型注解
+```typescript
+// 存储层服务
+export const GraphRegistry = Symbol('GraphRegistry');
+export const ThreadRegistry = Symbol('ThreadRegistry');
+export const GlobalMessageStorage = Symbol('GlobalMessageStorage');
+
+// 业务层服务
+export const EventManager = Symbol('EventManager');
+export const ToolService = Symbol('ToolService');
+export const CodeService = Symbol('CodeService');
+export const WorkflowRegistry = Symbol('WorkflowRegistry');
+export const WorkflowReferenceManager = Symbol('WorkflowReferenceManager');
+
+// 执行层服务
+export const ExecutionContext = Symbol('ExecutionContext');
+export const ThreadBuilder = Symbol('ThreadBuilder');
+export const ThreadExecutor = Symbol('ThreadExecutor');
+export const ThreadLifecycleCoordinator = Symbol('ThreadLifecycleCoordinator');
+
+// API 层服务
+export const APIDependencyManager = Symbol('APIDependencyManager');
+export const APIFactory = Symbol('APIFactory');
+export const SDK = Symbol('SDK');
+```
 
 **依赖关系**：
 - 无外部依赖
@@ -71,12 +84,86 @@
 - 提供容器初始化和重置功能
 
 **主要功能**：
-- `initializeContainer(): Container` - 初始化容器并配置所有服务
-- `getContainer(): Container` - 获取已初始化的容器实例
-- `resetContainer(): void` - 重置容器（主要用于测试）
+```typescript
+import { Container } from '@modular-agent/common-utils';
+import * as Identifiers from './service-identifiers.js';
+import { GraphRegistry } from '../services/graph-registry.js';
+import { ThreadRegistry } from '../services/thread-registry.js';
+// ... 其他服务导入
+
+let container: Container | null = null;
+
+export function initializeContainer(): Container {
+  if (container) {
+    return container;
+  }
+
+  container = new Container();
+
+  // 存储层服务（无依赖）
+  container.bind(Identifiers.GraphRegistry)
+    .to(GraphRegistry)
+    .inSingletonScope();
+
+  container.bind(Identifiers.ThreadRegistry)
+    .to(ThreadRegistry)
+    .inSingletonScope();
+
+  // 业务层服务（依赖存储层）
+  container.bind(Identifiers.EventManager)
+    .to(EventManager)
+    .inSingletonScope();
+
+  container.bind(Identifiers.WorkflowReferenceManager)
+    .to(WorkflowReferenceManager)
+    .inSingletonScope();
+
+  container.bind(Identifiers.WorkflowRegistry)
+    .to(WorkflowRegistry)
+    .inSingletonScope();
+
+  // 执行层服务（依赖业务层）
+  container.bind(Identifiers.ExecutionContext)
+    .to(ExecutionContext)
+    .inSingletonScope();
+
+  container.bind(Identifiers.ThreadBuilder)
+    .to(ThreadBuilder)
+    .inSingletonScope();
+
+  // API 层服务（依赖执行层）
+  container.bind(Identifiers.APIDependencyManager)
+    .to(APIDependencyManager)
+    .inSingletonScope();
+
+  container.bind(Identifiers.APIFactory)
+    .to(APIFactory)
+    .inSingletonScope();
+
+  container.bind(Identifiers.SDK)
+    .to(SDK)
+    .inSingletonScope();
+
+  return container;
+}
+
+export function getContainer(): Container {
+  if (!container) {
+    throw new Error('Container not initialized. Call initializeContainer() first.');
+  }
+  return container;
+}
+
+export function resetContainer(): void {
+  if (container) {
+    container.clearAllCaches();
+    container = null;
+  }
+}
+```
 
 **依赖关系**：
-- 依赖 `container.ts`（DI 容器）
+- 依赖 `@modular-agent/common-utils` 的 `Container`
 - 依赖 `service-identifiers.ts`（服务标识符）
 - 依赖所有服务类定义（用于类型绑定）
 
@@ -89,15 +176,36 @@
 
 **文件职责**：
 - 导出 DI 模块的所有公共 API
-- 提供便捷的容器访问方法
+- 重新导出 common-utils 的 DI 类型
 
 **主要功能**：
-- 导出 `Container` 类
-- 导出所有服务标识符
-- 导出 `initializeContainer()` 和 `getContainer()` 函数
+```typescript
+// 重新导出 common-utils 的 DI 类型
+export {
+  Container,
+  ServiceIdentifier,
+  BindingScope,
+  BindingType,
+  Injectable,
+  Constructor,
+  Factory,
+  DynamicValue,
+} from '@modular-agent/common-utils';
+
+// 导出 SDK 服务标识符
+export * as ServiceIdentifiers from './service-identifiers.js';
+
+// 导出容器配置函数
+export {
+  initializeContainer,
+  getContainer,
+  resetContainer,
+} from './container-config.js';
+```
 
 **依赖关系**：
-- 依赖 `container.ts`、`service-identifiers.ts`、`container-config.ts`
+- 依赖 `@modular-agent/common-utils`
+- 依赖 `service-identifiers.ts`、`container-config.ts`
 
 **集成方式**：
 - 作为 DI 模块的统一导出入口
@@ -928,6 +1036,77 @@ sdk/index.ts 通过容器获取 SDK 实例
 **修改内容**：
 - 移除 SingletonRegistry、ComponentRegistry、LifecycleManager 的导出
 - 只导出 ExecutionContext
+
+---
+
+## 复用 common-utils DI 容器的优势
+
+### 为什么选择复用而非重新实现
+
+1. **功能完整性**
+   - common-utils 的 DI 容器已经实现了完整的依赖注入功能
+   - 支持多种绑定类型（INSTANCE、CONSTANT、FACTORY、DYNAMIC）
+   - 支持多种作用域（TRANSIENT、SINGLETON、SCOPED）
+   - 提供流式 API 设计，使用体验优秀
+
+2. **代码质量保证**
+   - 已有完整的测试用例覆盖
+   - 经过实际项目验证，稳定性高
+   - 代码质量经过审查和维护
+
+3. **架构一致性**
+   - 符合 monorepo 的代码复用原则
+   - 统一整个项目的 DI 容器实现
+   - 避免多个 DI 容器实现带来的混乱
+
+4. **减少维护成本**
+   - 避免重复实现约 500+ 行的 DI 容器代码
+   - DI 容器的维护集中在 common-utils
+   - 减少潜在的 bug 和安全漏洞
+
+5. **降低迁移风险**
+   - 使用成熟的实现，减少新引入的问题
+   - 可以专注于业务逻辑的迁移，而非基础设施
+   - 加快迁移进度
+
+### 复用带来的具体好处
+
+1. **减少代码量**
+   - 不需要创建 `sdk/core/di/container.ts`（约 280 行）
+   - 不需要创建 `sdk/core/di/binding.ts`（约 170 行）
+   - 不需要创建 `sdk/core/di/resolver.ts`（约 167 行）
+   - 只需要创建 `service-identifiers.ts` 和 `container-config.ts`
+
+2. **提高开发效率**
+   - 直接使用现成的 API
+   - 无需学习和调试新的 DI 容器实现
+   - 可以立即开始业务逻辑迁移
+
+3. **统一技术栈**
+   - 整个项目使用同一个 DI 容器
+   - 开发者只需要学习一套 API
+   - 代码风格和模式保持一致
+
+### 如何使用 common-utils 的 DI 容器
+
+```typescript
+import { Container } from '@modular-agent/common-utils';
+import * as Identifiers from './service-identifiers.js';
+
+// 创建容器
+const container = new Container();
+
+// 绑定服务
+container.bind(Identifiers.WorkflowRegistry)
+  .to(WorkflowRegistry)
+  .inSingletonScope();
+
+// 获取服务
+const workflowRegistry = container.get(Identifiers.WorkflowRegistry);
+
+// 重置容器（用于测试）
+container.clearAllCaches();
+```
 
 ---
 

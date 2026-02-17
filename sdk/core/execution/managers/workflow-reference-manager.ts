@@ -13,21 +13,14 @@ import type {
   WorkflowReferenceType
 } from '@modular-agent/types';
 import { checkWorkflowReferences as checkReferences } from '../utils/workflow-reference-checker.js';
-import { SingletonRegistry } from '../context/singleton-registry.js';
 
 export class WorkflowReferenceManager {
   private referenceRelations: Map<string, WorkflowReferenceRelation[]> = new Map();
 
   constructor(
-    private workflowRegistry: WorkflowRegistry
+    private workflowRegistry: WorkflowRegistry,
+    private threadRegistry: ThreadRegistry
   ) { }
-
-  /**
-   * 获取 ThreadRegistry 实例
-   */
-  private getThreadRegistry(): ThreadRegistry {
-    return SingletonRegistry.getThreadRegistry();
-  }
 
   /**
    * 添加工作流引用关系
@@ -94,7 +87,7 @@ export class WorkflowReferenceManager {
    * 检查工作流引用（整合现有功能）
    */
   checkWorkflowReferences(workflowId: string): WorkflowReferenceInfo {
-    return checkReferences(this.workflowRegistry, this.getThreadRegistry(), workflowId);
+    return checkReferences(this.workflowRegistry, this.threadRegistry, workflowId);
   }
 
   /**

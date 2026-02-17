@@ -12,7 +12,8 @@ import type { Condition } from '@modular-agent/types';
 import type { WorkflowTrigger } from '@modular-agent/types';
 import type { TriggerReference } from '@modular-agent/types';
 import { generateId } from '@modular-agent/common-utils';
-import { SingletonRegistry } from '../../core/execution/context/singleton-registry.js';
+import { getContainer } from '../../core/di/index.js';
+import * as Identifiers from '../../core/di/service-identifiers.js';
 import { ConfigParser, ConfigFormat } from '../config/index.js';
 import { NodeBuilder } from './node-builder.js';
 import { BaseBuilder } from './base-builder.js';
@@ -135,7 +136,8 @@ export class WorkflowBuilder extends BaseBuilder<WorkflowDefinition> {
     configOverride?: Partial<NodeConfig>,
     nodeName?: string
   ): this {
-    const nodeTemplateRegistry = SingletonRegistry.getNodeTemplateRegistry();
+    const container = getContainer();
+    const nodeTemplateRegistry = container.get(Identifiers.NodeTemplateRegistry) as any;
     const template = nodeTemplateRegistry.get(templateName);
     if (!template) {
       throw new Error(`节点模板 '${templateName}' 不存在`);
@@ -449,7 +451,8 @@ export class WorkflowBuilder extends BaseBuilder<WorkflowDefinition> {
     }
 
     // 验证触发器引用
-    const triggerTemplateRegistry = SingletonRegistry.getTriggerTemplateRegistry();
+    const container = getContainer();
+    const triggerTemplateRegistry = container.get(Identifiers.TriggerTemplateRegistry) as any;
     for (const trigger of this.triggers) {
       if ('templateName' in trigger) {
         const reference = trigger as TriggerReference;

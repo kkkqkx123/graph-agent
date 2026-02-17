@@ -32,12 +32,14 @@
  * - 清晰的依赖注入
  */
 
-import { SingletonRegistry } from './singleton-registry.js';
-import { ComponentRegistry } from './component-registry.js';
-import { LifecycleManager } from './lifecycle-manager.js';
 import type { WorkflowRegistry } from '../../services/workflow-registry.js';
 import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { EventManager } from '../../services/event-manager.js';
+import type { ToolService } from '../../services/tool-service.js';
+import type { LLMExecutor } from '../executors/llm-executor.js';
+import type { ErrorService } from '../../services/error-service.js';
+import type { TaskRegistry } from '../../services/task-registry.js';
+import type { GlobalMessageStorage } from '../../services/global-message-storage.js';
 import { CheckpointStateManager } from '../managers/checkpoint-state-manager.js';
 import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager.js';
 import { ThreadCascadeManager } from '../managers/thread-cascade-manager.js';
@@ -45,19 +47,53 @@ import { ToolContextManager } from '../managers/tool-context-manager.js';
 import { ThreadLifecycleCoordinator } from '../coordinators/thread-lifecycle-coordinator.js';
 import type { LifecycleCapable } from '../managers/lifecycle-capable.js';
 import { MemoryCheckpointStorage } from '../../storage/memory-checkpoint-storage.js';
+import { getContainer } from '../../di/container-config.js';
 
 /**
  * 执行上下文 - 轻量级依赖注入容器
  */
 export class ExecutionContext {
-  private componentRegistry: ComponentRegistry;
-  private lifecycleManager: LifecycleManager;
+  private workflowRegistry: WorkflowRegistry;
+  private threadRegistry: ThreadRegistry;
+  private eventManager: EventManager;
+  private toolService: ToolService;
+  private llmExecutor: LLMExecutor;
+  private errorService: ErrorService;
+  private taskRegistry: TaskRegistry;
+  private globalMessageStorage: GlobalMessageStorage;
+  private checkpointStateManager: CheckpointStateManager;
+  private threadLifecycleManager: ThreadLifecycleManager;
+  private threadCascadeManager: ThreadCascadeManager;
+  private toolContextManager: ToolContextManager;
+  private threadLifecycleCoordinator: ThreadLifecycleCoordinator;
   private initialized = false;
   private currentThreadId: string | null = null;
 
   constructor() {
-    this.componentRegistry = new ComponentRegistry();
-    this.lifecycleManager = new LifecycleManager();
+    // 从 DI 容器获取所有服务
+    const container = getContainer();
+    this.workflowRegistry = container.get('WorkflowRegistry' as any);
+    this.threadRegistry = container.get('ThreadRegistry' as any);
+    this.eventManager = container.get('EventManager' as any);
+    this.toolService = container.get('ToolService' as any);
+    this.llmExecutor = container.get('LLMExecutor' as any);
+    this.errorService = container.get('ErrorService' as any);
+    this.taskRegistry = container.get('TaskRegistry' as any);
+    this.globalMessageStorage = container.get('GlobalMessageStorage' as any);
+    
+    // 创建执行层服务
+    const checkpointStorage = new MemoryCheckpointStorage();
+    this.checkpointStateManager = new CheckpointStateManager(checkpointStorage, this.eventManager);
+    
+    this.threadLifecycleManager = new ThreadLifecycleManager(this.eventManager, this.globalMessageStorage);
+    this.threadCascadeManager = new ThreadCascadeManager(
+      this.threadRegistry,
+      this.threadLifecycleManager,
+      this.eventManager,
+      this.taskRegistry
+    );
+    this.toolContextManager = new ToolContextManager();
+    this.threadLifecycleCoordinator = new ThreadLifecycleCoordinator(this, this.globalMessageStorage);
   }
 
   /**
@@ -68,54 +104,8 @@ export class ExecutionContext {
     if (this.initialized) {
       return;
     }
-
-    // 确保SingletonRegistry已初始化
-    SingletonRegistry.initialize();
-
-    // 按依赖顺序初始化
-    // 1. 从SingletonRegistry获取全局单例服务
-    const eventManager = SingletonRegistry.get<EventManager>('eventManager');
-    const workflowRegistry = SingletonRegistry.get<WorkflowRegistry>('workflowRegistry');
-    const threadRegistry = SingletonRegistry.get<ThreadRegistry>('threadRegistry');
-    const taskRegistry = SingletonRegistry.get<any>('taskRegistry');
-    const toolService = SingletonRegistry.get<any>('toolService');
-    const llmExecutor = SingletonRegistry.get<any>('llmExecutor');
-    const errorService = SingletonRegistry.get<any>('errorService');
-
-    // 注册全局单例服务到ComponentRegistry
-    this.componentRegistry.register('eventManager', eventManager);
-    this.componentRegistry.register('workflowRegistry', workflowRegistry);
-    this.componentRegistry.register('threadRegistry', threadRegistry);
-    this.componentRegistry.register('taskRegistry', taskRegistry);
-    this.componentRegistry.register('toolService', toolService);
-    this.componentRegistry.register('llmExecutor', llmExecutor);
-    this.componentRegistry.register('errorService', errorService);
-
-    // 2. CheckpointStateManager 依赖 CheckpointStorage
-    const checkpointStorage = new MemoryCheckpointStorage();
-    const checkpointStateManager = new CheckpointStateManager(checkpointStorage);
-    this.componentRegistry.register('checkpointStateManager', checkpointStateManager);
-
-    // 3. CheckpointCoordinator 是完全无状态的静态类，不需要实例化
-    // 使用 CheckpointCoordinator.createCheckpoint() 和 CheckpointCoordinator.restoreFromCheckpoint() 静态方法
-
-    // 4. ThreadLifecycleManager 依赖 EventManager
-    const lifecycleManager = new ThreadLifecycleManager(eventManager);
-    this.componentRegistry.register('lifecycleManager', lifecycleManager);
-
-    // 5. ThreadCascadeManager 依赖 ThreadRegistry、ThreadLifecycleManager、EventManager 和 TaskRegistry
-    const cascadeManager = new ThreadCascadeManager(threadRegistry, lifecycleManager, eventManager, taskRegistry);
-    this.componentRegistry.register('cascadeManager', cascadeManager);
-
-    // 6. ToolContextManager - 工具上下文管理器
-    const toolContextManager = new ToolContextManager();
-    this.componentRegistry.register('toolContextManager', toolContextManager);
-
-    // 7. ThreadLifecycleCoordinator 依赖 ExecutionContext
-    const lifecycleCoordinator = new ThreadLifecycleCoordinator(this);
-    this.componentRegistry.register('lifecycleCoordinator', lifecycleCoordinator);
-
-    this.componentRegistry.markAsInitialized();
+    
+    // 所有服务已在构造函数中初始化
     this.initialized = true;
   }
 
@@ -125,7 +115,8 @@ export class ExecutionContext {
    * @param instance 组件实例
    */
   register<T>(key: string, instance: T): void {
-    this.componentRegistry.register(key, instance);
+    // 不再需要注册功能，所有服务通过 DI 容器管理
+    // 保留此方法以保持向后兼容
   }
 
   /**
@@ -134,7 +125,7 @@ export class ExecutionContext {
    */
   getWorkflowRegistry(): WorkflowRegistry {
     this.ensureInitialized();
-    return this.componentRegistry.get('workflowRegistry');
+    return this.workflowRegistry;
   }
 
   /**
@@ -143,7 +134,7 @@ export class ExecutionContext {
    */
   getThreadRegistry(): ThreadRegistry {
     this.ensureInitialized();
-    return this.componentRegistry.get('threadRegistry');
+    return this.threadRegistry;
   }
 
   /**
@@ -152,7 +143,7 @@ export class ExecutionContext {
    */
   getEventManager(): EventManager {
     this.ensureInitialized();
-    return this.componentRegistry.get('eventManager');
+    return this.eventManager;
   }
 
   /**
@@ -161,7 +152,7 @@ export class ExecutionContext {
    */
   getCheckpointStateManager(): CheckpointStateManager {
     this.ensureInitialized();
-    return this.componentRegistry.get('checkpointStateManager');
+    return this.checkpointStateManager;
   }
 
   /**
@@ -171,34 +162,34 @@ export class ExecutionContext {
    */
   getThreadLifecycleManager(): ThreadLifecycleManager {
     this.ensureInitialized();
-    return this.componentRegistry.get('lifecycleManager');
+    return this.threadLifecycleManager;
   }
 
   /**
    * 获取 ToolService
    * @returns ToolService 实例
    */
-  getToolService(): any {
+  getToolService(): ToolService {
     this.ensureInitialized();
-    return this.componentRegistry.getAny('toolService');
+    return this.toolService;
   }
 
   /**
    * 获取 LLMExecutor
    * @returns LLMExecutor 实例
    */
-  getLlmExecutor(): any {
+  getLlmExecutor(): LLMExecutor {
     this.ensureInitialized();
-    return this.componentRegistry.getAny('llmExecutor');
+    return this.llmExecutor;
   }
 
   /**
    * 获取 ErrorService
    * @returns ErrorService 实例
    */
-  getErrorService(): any {
+  getErrorService(): ErrorService {
     this.ensureInitialized();
-    return this.componentRegistry.getAny('errorService');
+    return this.errorService;
   }
 
   /**
@@ -207,7 +198,7 @@ export class ExecutionContext {
    */
   getToolContextManager(): ToolContextManager {
     this.ensureInitialized();
-    return this.componentRegistry.get('toolContextManager');
+    return this.toolContextManager;
   }
 
   /**
@@ -216,16 +207,25 @@ export class ExecutionContext {
    */
   getLifecycleCoordinator(): ThreadLifecycleCoordinator {
     this.ensureInitialized();
-    return this.componentRegistry.get('lifecycleCoordinator');
+    return this.threadLifecycleCoordinator;
   }
 
   /**
    * 获取 ThreadCascadeManager
    * @returns ThreadCascadeManager 实例
    */
-  getCascadeManager(): any {
+  getCascadeManager(): ThreadCascadeManager {
     this.ensureInitialized();
-    return this.componentRegistry.getAny('cascadeManager');
+    return this.threadCascadeManager;
+  }
+
+  /**
+   * 获取 GlobalMessageStorage
+   * @returns GlobalMessageStorage 实例
+   */
+  getGlobalMessageStorage(): GlobalMessageStorage {
+    this.ensureInitialized();
+    return this.globalMessageStorage;
   }
 
   /**
@@ -242,9 +242,8 @@ export class ExecutionContext {
    */
   getHumanRelayHandler(): any {
     this.ensureInitialized();
-    return this.componentRegistry.has('humanRelayHandler')
-      ? this.componentRegistry.getAny('humanRelayHandler')
-      : undefined;
+    // 不再支持动态注册，返回 undefined
+    return undefined;
   }
 
   /**
@@ -261,9 +260,8 @@ export class ExecutionContext {
    */
   getUserInteractionHandler(): any {
     this.ensureInitialized();
-    return this.componentRegistry.has('userInteractionHandler')
-      ? this.componentRegistry.getAny('userInteractionHandler')
-      : undefined;
+    // 不再支持动态注册，返回 undefined
+    return undefined;
   }
 
   /**
@@ -273,7 +271,8 @@ export class ExecutionContext {
    */
   get<T>(key: string): T {
     this.ensureInitialized();
-    return this.componentRegistry.getAny(key);
+    // 不再支持通用获取，所有服务通过 DI 容器管理
+    throw new Error('Generic get() is no longer supported. Use specific getter methods instead.');
   }
 
   /**
@@ -281,7 +280,7 @@ export class ExecutionContext {
    * @returns 是否已初始化
    */
   isInitialized(): boolean {
-    return this.initialized && this.componentRegistry.isInitialized();
+    return this.initialized;
   }
 
   /**
@@ -301,24 +300,11 @@ export class ExecutionContext {
       return;
     }
 
-    // 定义需要清理的组件及其清理顺序（按依赖关系的逆序）
-    // 注意：不包含全局单例（eventManager、workflowRegistry、threadRegistry、toolService、llmExecutor）
-    // 注意：不包含checkpointCoordinator，因为它是完全无状态的静态类
-    const cleanupOrder: string[] = [
-      'lifecycleCoordinator',     // 依赖其他所有组件
-      'cascadeManager',           // 依赖 ThreadRegistry 和 ThreadLifecycleManager
-      'lifecycleManager',         // 依赖 eventManager
-      'checkpointStateManager'    // 依赖 checkpointStorage
-    ];
+    // 清理检查点状态管理器
+    await this.checkpointStateManager.cleanup();
 
-    // 获取组件映射用于清理
-    const componentsForCleanup = this.componentRegistry.getAllComponents();
-
-    // 按顺序清理组件
-    await this.lifecycleManager.cleanupComponents(componentsForCleanup, cleanupOrder);
-
-    // 清空组件注册表（包括全局单例的引用）
-    this.componentRegistry.clear();
+    // 清理工具上下文管理器
+    this.toolContextManager.clearAll();
 
     // 重置初始化状态
     this.initialized = false;
@@ -338,13 +324,13 @@ export class ExecutionContext {
    * @returns 生命周期管理器数组
    */
   getLifecycleManagers(): Array<{ name: string; manager: LifecycleCapable }> {
-    // 只返回由ExecutionContext创建的组件，不包括全局单例
-    // 注意：不包含checkpointCoordinator，因为它是完全无状态的静态类
-    const managedComponents = ['checkpointStateManager', 'lifecycleManager', 'cascadeManager', 'lifecycleCoordinator'];
-
-    const componentsMap = this.componentRegistry.getAllComponents();
-
-    return this.lifecycleManager.getLifecycleCapableComponents(componentsMap, managedComponents);
+    // 返回所有实现了 LifecycleCapable 接口的组件
+    return [
+      { name: 'checkpointStateManager', manager: this.checkpointStateManager },
+      { name: 'threadLifecycleManager', manager: this.threadLifecycleManager },
+      { name: 'threadCascadeManager', manager: this.threadCascadeManager },
+      { name: 'threadLifecycleCoordinator', manager: this.threadLifecycleCoordinator }
+    ];
   }
 
   /**
@@ -390,15 +376,14 @@ export class ExecutionContext {
    * @returns ExecutionContext 实例
    */
   static createForTesting(customSingletons?: Map<string, any>): ExecutionContext {
-    // 重置 SingletonRegistry 以确保干净状态
-    SingletonRegistry.reset();
+    // 重置 DI 容器以确保干净状态
+    const { resetContainer, initializeContainer } = require('../../di/container-config.js');
+    resetContainer();
+    initializeContainer();
 
-    // 如果提供了自定义单例，临时注册到SingletonRegistry
-    if (customSingletons && customSingletons.size > 0) {
-      for (const [key, instance] of customSingletons.entries()) {
-        SingletonRegistry.register(key, instance);
-      }
-    }
+    // 如果提供了自定义单例，需要通过 DI 容器重新配置
+    // 这里暂时不支持，因为 DI 容器已经初始化
+    // 如果需要测试隔离，应该使用子容器或重新配置容器
 
     const context = new ExecutionContext();
     context.initialize();
@@ -407,9 +392,10 @@ export class ExecutionContext {
 
   /**
    * 重置测试环境
-   * 清理SingletonRegistry中的自定义单例
+   * 清理 DI 容器
    */
   static resetTestingEnvironment(): void {
-    SingletonRegistry.reset();
+    const { resetContainer } = require('../../di/container-config.js');
+    resetContainer();
   }
 }

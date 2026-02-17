@@ -27,26 +27,30 @@ import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager.js'
 import { ThreadCascadeManager } from '../managers/thread-cascade-manager.js';
 import { ExecutionContext } from '../context/execution-context.js';
 import { now } from '@modular-agent/common-utils';
-import { SingletonRegistry } from '../context/singleton-registry.js';
+import type { GlobalMessageStorage } from '../../services/global-message-storage.js';
 import {
   buildThreadCompletedEvent,
   buildThreadFailedEvent,
   buildThreadCancelledEvent
 } from '../utils/event/event-builder.js';
 import { emit } from '../utils/event/event-emitter.js';
+import { LifecycleCapable } from '../managers/lifecycle-capable.js';
 
 /**
  * Thread 生命周期协调器
- * 
+ *
  * 负责高层的流程编排和协调，组织多个组件完成复杂的Thread生命周期操作
  */
-export class ThreadLifecycleCoordinator {
+export class ThreadLifecycleCoordinator implements LifecycleCapable<{ executionContext: ExecutionContext; globalMessageStorage: GlobalMessageStorage }> {
   private executionContext: ExecutionContext;
+  private globalMessageStorage: GlobalMessageStorage;
 
   constructor(
-    executionContext?: ExecutionContext
+    executionContext?: ExecutionContext,
+    globalMessageStorage?: GlobalMessageStorage
   ) {
     this.executionContext = executionContext || ExecutionContext.createDefault();
+    this.globalMessageStorage = globalMessageStorage || this.executionContext.getGlobalMessageStorage();
   }
 
   /**
@@ -226,8 +230,7 @@ export class ThreadLifecycleCoordinator {
     // 如果是终止状态，设置结束时间并清理
     if (['COMPLETED', 'FAILED', 'CANCELLED', 'TIMEOUT'].includes(status)) {
       threadContext.setEndTime(now());
-      const globalMessageStorage = SingletonRegistry.getGlobalMessageStorage();
-      globalMessageStorage.removeReference(threadId);
+      this.globalMessageStorage.removeReference(threadId);
 
       // 触发相应的终止事件
       let event;
@@ -275,11 +278,42 @@ export class ThreadLifecycleCoordinator {
     threadContext.setEndTime(now());
 
     // 清理全局消息存储
-    const globalMessageStorage = SingletonRegistry.getGlobalMessageStorage();
-    globalMessageStorage.removeReference(threadId);
+    this.globalMessageStorage.removeReference(threadId);
 
     // 触发取消事件
     const cancelledEvent = buildThreadCancelledEvent(threadContext.thread, reason || 'forced_cancel');
     await emit(this.executionContext.getEventManager(), cancelledEvent);
+  }
+
+  // ============================================================
+  // LifecycleCapable 接口实现
+  // ============================================================
+
+  /**
+   * 清理资源
+   * ThreadLifecycleCoordinator 持有 ExecutionContext 和 GlobalMessageStorage 引用，但不需要清理
+   */
+  async cleanup(): Promise<void> {
+    // 不需要清理，ExecutionContext 和 GlobalMessageStorage 由 DI 容器管理
+  }
+
+  /**
+   * 创建状态快照
+   * ThreadLifecycleCoordinator 持有 ExecutionContext 和 GlobalMessageStorage 引用
+   */
+  createSnapshot(): { executionContext: ExecutionContext; globalMessageStorage: GlobalMessageStorage } {
+    return {
+      executionContext: this.executionContext,
+      globalMessageStorage: this.globalMessageStorage
+    };
+  }
+
+  /**
+   * 从快照恢复状态
+   * ThreadLifecycleCoordinator 从快照恢复 ExecutionContext 和 GlobalMessageStorage 引用
+   */
+  async restoreFromSnapshot(snapshot: { executionContext: ExecutionContext; globalMessageStorage: GlobalMessageStorage }): Promise<void> {
+    this.executionContext = snapshot.executionContext;
+    this.globalMessageStorage = snapshot.globalMessageStorage;
   }
 }

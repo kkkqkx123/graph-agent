@@ -21,7 +21,8 @@ import { ExecutionContext } from '../../context/execution-context.js';
 import { getErrorMessage } from '@modular-agent/common-utils';
 import { TriggeredSubworkflowManager } from '../../managers/triggered-subworkflow-manager.js';
 import type { TriggeredSubgraphTask } from '../../types/triggered-subgraph.types.js';
-import { SingletonRegistry } from '../../context/singleton-registry.js';
+import { getContainer } from '../../../di/index.js';
+import * as Identifiers from '../../../di/service-identifiers.js';
 
 /**
  * 创建成功结果（同步执行）
@@ -135,7 +136,8 @@ export async function executeTriggeredSubgraphHandler(
     }
 
     // 从 graph-registry 获取已预处理的图
-    const graphRegistry = SingletonRegistry.getGraphRegistry();
+    const container = getContainer();
+    const graphRegistry = container.get(Identifiers.GraphRegistry);
     const processedTriggeredWorkflow = graphRegistry.get(triggeredWorkflowId);
 
     if (!processedTriggeredWorkflow) {

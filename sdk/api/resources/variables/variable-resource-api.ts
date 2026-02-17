@@ -7,7 +7,8 @@ import { GenericResourceAPI } from '../generic-resource-api.js';
 import type { ThreadRegistry } from '../../../core/services/thread-registry.js';
 import type { Thread, VariableFilter } from '@modular-agent/types';
 import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types';
-import { SingletonRegistry } from '../../../core/execution/context/singleton-registry.js';
+import { getContainer } from '../../../core/di/index.js';
+import * as Identifiers from '../../../core/di/service-identifiers.js';
 
 // 重新导出 VariableFilter 供外部使用
 export type { VariableFilter };
@@ -36,7 +37,8 @@ export class VariableResourceAPI extends GenericResourceAPI<any, string, Variabl
 
   constructor() {
     super();
-    this.registry = SingletonRegistry.getThreadRegistry();
+    const container = getContainer();
+    this.registry = container.get(Identifiers.ThreadRegistry);
   }
 
   // ============================================================================

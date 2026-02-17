@@ -6,6 +6,10 @@
  */
 
 import { ConfigurationError } from '@modular-agent/types';
+import { initializeContainer } from './core/di/container-config.js';
+
+// 初始化 DI 容器
+initializeContainer();
 
 /**
  * 全局实例管理器

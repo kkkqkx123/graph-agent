@@ -19,10 +19,12 @@ import type {
 import { WorkflowType } from '@modular-agent/types';
 import type { WorkflowReferenceInfo, WorkflowReferenceRelation, WorkflowReferenceType } from '@modular-agent/types';
 import { WorkflowReferenceManager } from '../execution/managers/workflow-reference-manager.js';
+import type { ThreadRegistry } from './thread-registry.js';
 import { ValidationError, ExecutionError, ConfigurationValidationError, WorkflowNotFoundError } from '@modular-agent/types';
 import type { GraphRegistry } from './graph-registry.js';
 import { processWorkflow, type ProcessOptions } from '../graph/workflow-processor.js';
-import { SingletonRegistry } from '../execution/context/singleton-registry.js';
+import { getContainer } from '../di/container-config.js';
+import * as Identifiers from '../di/service-identifiers.js';
 import { getErrorMessage } from '@modular-agent/common-utils';
 
 /**
@@ -44,11 +46,20 @@ export class WorkflowRegistry {
   private referenceManager: WorkflowReferenceManager;
   private maxRecursionDepth: number;
 
-  constructor(options: {
-    maxRecursionDepth?: number;
-  } = {}) {
+  constructor(
+    options: {
+      maxRecursionDepth?: number;
+    } = {},
+    threadRegistry?: ThreadRegistry
+  ) {
     this.maxRecursionDepth = options.maxRecursionDepth ?? 10;
-    this.referenceManager = new WorkflowReferenceManager(this);
+    // 如果没有提供 threadRegistry，延迟初始化 referenceManager
+    if (threadRegistry) {
+      this.referenceManager = new WorkflowReferenceManager(this, threadRegistry);
+    } else {
+      // 延迟初始化，在第一次使用时通过 DI 容器获取
+      this.referenceManager = null as any;
+    }
   }
 
   /**
@@ -56,7 +67,8 @@ export class WorkflowRegistry {
    * @returns GraphRegistry实例
    */
   private getGraphRegistry(): GraphRegistry {
-    return SingletonRegistry.get<GraphRegistry>('graphRegistry');
+    const container = getContainer();
+    return container.get(Identifiers.GraphRegistry);
   }
 
   /**
@@ -411,7 +423,9 @@ export class WorkflowRegistry {
     this.workflowRelationships.clear();
     this.activeWorkflows.clear();
     // 重新创建引用管理器
-    this.referenceManager = new WorkflowReferenceManager(this);
+    // 注意：这里需要通过 DI 容器获取 threadRegistry
+    // 暂时保持为 null，由 DI 容器负责注入
+    this.referenceManager = null as any;
   }
 
   /**

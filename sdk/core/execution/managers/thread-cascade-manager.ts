@@ -19,11 +19,12 @@ import { TaskRegistry } from '../../services/task-registry.js';
 import { EventType } from '@modular-agent/types';
 import { SystemExecutionError } from '@modular-agent/types';
 import { getErrorOrNew } from '@modular-agent/common-utils';
+import { LifecycleCapable } from './lifecycle-capable.js';
 
 /**
  * ThreadCascadeManager - Thread级联管理器
  */
-export class ThreadCascadeManager {
+export class ThreadCascadeManager implements LifecycleCapable<void> {
   constructor(
     private threadRegistry: ThreadRegistry,
     private lifecycleManager: ThreadLifecycleManager,
@@ -312,5 +313,33 @@ export class ThreadCascadeManager {
     }
 
     return allDescendants;
+  }
+
+  // ============================================================
+  // LifecycleCapable 接口实现
+  // ============================================================
+
+  /**
+   * 清理资源
+   * ThreadCascadeManager 是无状态的，无需清理
+   */
+  async cleanup(): Promise<void> {
+    // 无状态，无需清理
+  }
+
+  /**
+   * 创建状态快照
+   * ThreadCascadeManager 是无状态的，返回空快照
+   */
+  createSnapshot(): void {
+    // 无状态，返回空快照
+  }
+
+  /**
+   * 从快照恢复状态
+   * ThreadCascadeManager 是无状态的，无需恢复
+   */
+  async restoreFromSnapshot(_snapshot: void): Promise<void> {
+    // 无状态，无需恢复
   }
 }

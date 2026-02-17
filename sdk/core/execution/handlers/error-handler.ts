@@ -20,7 +20,8 @@ import type { Node } from '@modular-agent/types';
 import type { NodeExecutionResult } from '@modular-agent/types';
 import { ThreadStatus } from '@modular-agent/types';
 import { ErrorContext, SDKError, ErrorSeverity } from '@modular-agent/types';
-import { SingletonRegistry } from '../context/singleton-registry.js';
+import { getContainer } from '../../di/index.js';
+import * as Identifiers from '../../di/service-identifiers.js';
 import { now } from '@modular-agent/common-utils';
 
 /**
@@ -66,7 +67,8 @@ export async function handleNodeFailure(
   threadContext.addError(standardizedError);
 
   // 使用 ErrorService 处理错误（记录日志和触发事件）
-  const errorService = SingletonRegistry.getErrorService();
+  const container = getContainer();
+  const errorService = container.get(Identifiers.ErrorService);
   await errorService.handleError(standardizedError, context);
 
   // 核心简化：仅当 severity 为 ERROR 时才停止执行
@@ -101,7 +103,8 @@ export async function handleExecutionError(
   threadContext.addError(standardizedError);
 
   // 使用 ErrorService 处理错误（记录日志和触发事件）
-  const errorService = SingletonRegistry.getErrorService();
+  const container = getContainer();
+  const errorService = container.get(Identifiers.ErrorService);
   await errorService.handleError(standardizedError, context);
 
   // 核心简化：仅当 severity 为 ERROR 时才停止执行

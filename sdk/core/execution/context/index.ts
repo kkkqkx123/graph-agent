@@ -5,3 +5,4 @@
 
 export { ThreadContext } from './thread-context.js';
 export { ExecutionState } from './execution-state.js';
+export { ExecutionContext } from './execution-context.js';

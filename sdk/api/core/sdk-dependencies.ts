@@ -21,11 +21,12 @@ import type { CodeService } from '../../core/services/code-service.js';
 import type { NodeTemplateRegistry } from '../../core/services/node-template-registry.js';
 import type { TriggerTemplateRegistry } from '../../core/services/trigger-template-registry.js';
 import type { GraphRegistry } from '../../core/services/graph-registry.js';
-import { SingletonRegistry } from '../../core/execution/context/singleton-registry.js';
+import { getContainer } from '../../core/di/container-config.js';
+import * as Identifiers from '../../core/di/service-identifiers.js';
 
 /**
  * API依赖管理类
- * 通过ExecutionContext管理所有依赖实例
+ * 通过DI容器管理所有依赖实例
  */
 export class APIDependencyManager {
   private executionContext: ExecutionContext;
@@ -84,28 +85,32 @@ export class APIDependencyManager {
    * 获取代码服务
    */
   getCodeService(): CodeService {
-    return SingletonRegistry.getCodeService();
+    const container = getContainer();
+    return container.get(Identifiers.CodeService);
   }
   
   /**
    * 获取节点模板注册表
    */
   getNodeTemplateRegistry(): NodeTemplateRegistry {
-    return SingletonRegistry.getNodeTemplateRegistry();
+    const container = getContainer();
+    return container.get(Identifiers.NodeTemplateRegistry);
   }
   
   /**
    * 获取触发器模板注册表
    */
   getTriggerTemplateRegistry(): TriggerTemplateRegistry {
-    return SingletonRegistry.getTriggerTemplateRegistry();
+    const container = getContainer();
+    return container.get(Identifiers.TriggerTemplateRegistry);
   }
   
   /**
    * 获取图注册表
    */
   getGraphRegistry(): GraphRegistry {
-    return SingletonRegistry.getGraphRegistry();
+    const container = getContainer();
+    return container.get(Identifiers.GraphRegistry);
   }
   
   /**

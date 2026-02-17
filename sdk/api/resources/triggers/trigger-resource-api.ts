@@ -8,7 +8,8 @@ import type { ThreadRegistry } from '../../../core/services/thread-registry.js';
 import { TriggerStatus } from '@modular-agent/types';
 import type { Trigger } from '@modular-agent/types';
 import { NotFoundError, ThreadContextNotFoundError, TriggerFilter } from '@modular-agent/types';
-import { SingletonRegistry } from '../../../core/execution/context/singleton-registry.js';
+import { getContainer } from '../../../core/di/index.js';
+import * as Identifiers from '../../../core/di/service-identifiers.js';
 
 /**
  * TriggerResourceAPI - 触发器资源管理API
@@ -18,7 +19,8 @@ export class TriggerResourceAPI extends GenericResourceAPI<Trigger, string, Trig
 
   constructor() {
     super();
-    this.registry = SingletonRegistry.getThreadRegistry();
+    const container = getContainer();
+    this.registry = container.get(Identifiers.ThreadRegistry);
   }
 
   // ============================================================================

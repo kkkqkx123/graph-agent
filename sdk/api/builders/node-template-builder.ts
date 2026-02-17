@@ -6,7 +6,8 @@
 import type { NodeTemplate } from '@modular-agent/types';
 import type { NodeType, NodeConfig } from '@modular-agent/types';
 import { TemplateBuilder } from './template-builder.js';
-import { SingletonRegistry } from '../../core/execution/context/singleton-registry.js';
+import { getContainer } from '../../core/di/index.js';
+import * as Identifiers from '../../core/di/service-identifiers.js';
 
 /**
  * NodeTemplateBuilder - 节点模板构建器
@@ -62,7 +63,8 @@ export class NodeTemplateBuilder extends TemplateBuilder<NodeTemplate> {
    * @param template 节点模板
    */
   protected registerTemplate(template: NodeTemplate): void {
-    const nodeTemplateRegistry = SingletonRegistry.getNodeTemplateRegistry();
+    const container = getContainer();
+    const nodeTemplateRegistry = container.get(Identifiers.NodeTemplateRegistry) as any;
     nodeTemplateRegistry.register(template);
   }
 

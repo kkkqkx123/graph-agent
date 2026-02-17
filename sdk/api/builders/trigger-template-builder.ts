@@ -6,7 +6,8 @@
 import type { TriggerTemplate, TriggerCondition, TriggerAction } from '@modular-agent/types';
 import { EventType, TriggerActionType } from '@modular-agent/types';
 import { TemplateBuilder } from './template-builder.js';
-import { SingletonRegistry } from '../../core/execution/context/singleton-registry.js';
+import { getContainer } from '../../core/di/index.js';
+import * as Identifiers from '../../core/di/service-identifiers.js';
 
 /**
  * TriggerTemplateBuilder - 触发器模板构建器
@@ -156,7 +157,8 @@ export class TriggerTemplateBuilder extends TemplateBuilder<TriggerTemplate> {
    * @param template 触发器模板
    */
   protected registerTemplate(template: TriggerTemplate): void {
-    const triggerTemplateRegistry = SingletonRegistry.getTriggerTemplateRegistry();
+    const container = getContainer();
+    const triggerTemplateRegistry = container.get(Identifiers.TriggerTemplateRegistry) as any;
     triggerTemplateRegistry.register(template);
   }
 

@@ -9,7 +9,8 @@ import type { Checkpoint, CheckpointMetadata } from '@modular-agent/types';
 import type { CheckpointFilter } from '@modular-agent/types';
 import { MemoryCheckpointStorage } from '../../../core/storage/memory-checkpoint-storage.js';
 import { CheckpointCoordinator } from '../../../core/execution/coordinators/checkpoint-coordinator.js';
-import { SingletonRegistry } from '../../../core/execution/context/singleton-registry.js';
+import { getContainer } from '../../../core/di/index.js';
+import * as Identifiers from '../../../core/di/service-identifiers.js';
 import { getErrorMessage, isSuccess, getData } from '../../types/execution-result.js';
 import type { EventManager } from '../../../core/services/event-manager.js';
 
@@ -138,17 +139,17 @@ export class CheckpointResourceAPI extends GenericResourceAPI<Checkpoint, string
    * @returns 检查点ID
    */
   async createThreadCheckpoint(threadId: string, metadata?: CheckpointMetadata): Promise<string> {
-    // 从SingletonRegistry获取全局服务
-    SingletonRegistry.initialize();
-    const threadRegistry = SingletonRegistry.getThreadRegistry();
-    const workflowRegistry = SingletonRegistry.getWorkflowRegistry();
-    const globalMessageStorage = SingletonRegistry.getGlobalMessageStorage();
+    // 从DI容器获取全局服务
+    const container = getContainer();
+    const threadRegistry = container.get(Identifiers.ThreadRegistry);
+    const workflowRegistry = container.get(Identifiers.WorkflowRegistry) as any;
+    const globalMessageStorage = container.get(Identifiers.GlobalMessageStorage) as any;
 
     const dependencies = {
-      threadRegistry,
+      threadRegistry: threadRegistry as any,
       checkpointStateManager: this.stateManager,
-      workflowRegistry,
-      globalMessageStorage
+      workflowRegistry: workflowRegistry as any,
+      globalMessageStorage: globalMessageStorage as any
     };
 
     const checkpointId = await CheckpointCoordinator.createCheckpoint(threadId, dependencies, metadata);
@@ -161,17 +162,17 @@ export class CheckpointResourceAPI extends GenericResourceAPI<Checkpoint, string
    * @returns 恢复的线程ID
    */
   async restoreFromCheckpoint(checkpointId: string): Promise<string> {
-    // 从SingletonRegistry获取全局服务
-    SingletonRegistry.initialize();
-    const threadRegistry = SingletonRegistry.getThreadRegistry();
-    const workflowRegistry = SingletonRegistry.getWorkflowRegistry();
-    const globalMessageStorage = SingletonRegistry.getGlobalMessageStorage();
+    // 从DI容器获取全局服务
+    const container = getContainer();
+    const threadRegistry = container.get(Identifiers.ThreadRegistry) as any;
+    const workflowRegistry = container.get(Identifiers.WorkflowRegistry) as any;
+    const globalMessageStorage = container.get(Identifiers.GlobalMessageStorage) as any;
 
     const dependencies = {
-      threadRegistry,
+      threadRegistry: threadRegistry as any,
       checkpointStateManager: this.stateManager,
-      workflowRegistry,
-      globalMessageStorage
+      workflowRegistry: workflowRegistry as any,
+      globalMessageStorage: globalMessageStorage as any
     };
 
     const threadContext = await CheckpointCoordinator.restoreFromCheckpoint(checkpointId, dependencies);

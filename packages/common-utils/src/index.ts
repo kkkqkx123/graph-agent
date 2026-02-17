@@ -28,6 +28,9 @@ export * from './message/index.js';
 // 代码安全工具模块
 export * from './code-security/index.js';
 
+// 依赖注入容器
+export * from './di/index.js';
+
 // AbortSignal 和线程中断工具
 export * from './utils/signal/abort-utils.js';
 export * from './utils/signal/thread-interruption-utils.js';

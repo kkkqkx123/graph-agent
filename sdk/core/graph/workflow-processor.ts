@@ -24,7 +24,8 @@ import { PreprocessedWorkflowBuilder } from './preprocessed-workflow-builder.js'
 import { PreprocessedGraphData } from '../entities/preprocessed-graph-data.js';
 import { now } from '@modular-agent/common-utils';
 import { ConfigurationValidationError, NodeTemplateNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
-import { SingletonRegistry } from '../execution/context/singleton-registry.js';
+import { getContainer } from '../di/index.js';
+import * as Identifiers from '../di/service-identifiers.js';
 
 export interface ProcessOptions extends GraphBuildOptions {
   workflowRegistry?: any;
@@ -143,7 +144,8 @@ export async function processWorkflow(
   // 7. 处理触发器引用的工作流
   if (options.workflowRegistry) {
     const triggeredWorkflowIds = extractTriggeredWorkflowIds(expandedTriggers);
-    const graphRegistry = SingletonRegistry.getGraphRegistry();
+    const container = getContainer();
+    const graphRegistry = container.get(Identifiers.GraphRegistry);
 
     for (const triggeredWorkflowId of triggeredWorkflowIds) {
       // 从 graph-registry 获取已预处理的图
@@ -241,7 +243,8 @@ function expandNodeReferences(nodes: Node[]): Node[] {
       const configOverride = config.configOverride;
 
       // 获取节点模板
-      const nodeTemplateRegistry = SingletonRegistry.getNodeTemplateRegistry();
+      const container = getContainer();
+      const nodeTemplateRegistry = container.get(Identifiers.NodeTemplateRegistry) as any;
       const template = nodeTemplateRegistry.get(templateName);
       if (!template) {
         throw new NodeTemplateNotFoundError(
@@ -297,7 +300,8 @@ function expandTriggerReferences(triggers: (WorkflowTrigger | TriggerReference)[
       const reference = trigger as TriggerReference;
 
       // 使用 TriggerTemplateRegistry 的转换方法
-      const triggerTemplateRegistry = SingletonRegistry.getTriggerTemplateRegistry();
+      const container = getContainer();
+      const triggerTemplateRegistry = container.get(Identifiers.TriggerTemplateRegistry) as any;
       const workflowTrigger = triggerTemplateRegistry.convertToWorkflowTrigger(
         reference.templateName,
         reference.triggerId,

@@ -5,7 +5,8 @@
 
 import type { Node, NodeConfig, NodeType } from '@modular-agent/types';
 import { generateId } from '@modular-agent/common-utils';
-import { SingletonRegistry } from '../../core/execution/context/singleton-registry.js';
+import { getContainer } from '../../core/di/index.js';
+import * as Identifiers from '../../core/di/service-identifiers.js';
 import { BaseBuilder } from './base-builder.js';
 
 /**
@@ -84,7 +85,8 @@ export class NodeBuilder extends BaseBuilder<Node> {
    * @returns this
    */
   fromTemplate(templateName: string, configOverride?: Partial<NodeConfig>): this {
-    const nodeTemplateRegistry = SingletonRegistry.getNodeTemplateRegistry();
+    const container = getContainer();
+    const nodeTemplateRegistry = container.get(Identifiers.NodeTemplateRegistry) as any;
     const template = nodeTemplateRegistry.get(templateName);
     if (!template) {
       throw new Error(`节点模板 '${templateName}' 不存在`);

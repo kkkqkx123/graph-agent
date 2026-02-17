@@ -20,7 +20,8 @@ import { ExecutionError, RuntimeValidationError } from '@modular-agent/types';
 import { type WorkflowRegistry } from '../services/workflow-registry.js';
 import { ExecutionContext } from './context/execution-context.js';
 import { TriggerStatus } from '@modular-agent/types';
-import { SingletonRegistry } from './context/singleton-registry.js';
+import { getContainer } from '../di/container-config.js';
+import * as Identifiers from '../di/service-identifiers.js';
 
 /**
  * ThreadBuilder - Thread构建器
@@ -56,7 +57,8 @@ export class ThreadBuilder {
   async build(workflowId: string, options: ThreadOptions = {}): Promise<ThreadContext> {
     // 从 graph-registry 获取已预处理的图
     // 预处理逻辑已移到 workflow-registry，注册时自动处理
-    const graphRegistry = SingletonRegistry.getGraphRegistry();
+    const container = getContainer();
+    const graphRegistry = container.get(Identifiers.GraphRegistry) as any;
     const preprocessedGraph = graphRegistry.get(workflowId);
     
     if (!preprocessedGraph) {

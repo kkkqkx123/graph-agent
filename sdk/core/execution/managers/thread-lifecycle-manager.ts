@@ -20,7 +20,8 @@
 
 import type { Thread, ThreadStatus, ThreadResult } from '@modular-agent/types';
 import type { EventManager } from '../../services/event-manager.js';
-import { SingletonRegistry } from '../context/singleton-registry.js';
+import type { GlobalMessageStorage } from '../../services/global-message-storage.js';
+import { LifecycleCapable } from './lifecycle-capable.js';
 import { validateTransition } from '../utils/thread-state-validator.js';
 import {
   buildThreadStartedEvent,
@@ -38,12 +39,15 @@ import { now } from '@modular-agent/common-utils';
 
 /**
  * ThreadLifecycleManager - Thread生命周期管理器
- * 
+ *
  * 提供原子化的状态转换操作
  */
-export class ThreadLifecycleManager {
-  constructor(private eventManager: EventManager) {
-    // eventManager 必须通过构造函数传入，不再使用默认值
+export class ThreadLifecycleManager implements LifecycleCapable<void> {
+  constructor(
+    private eventManager: EventManager,
+    private globalMessageStorage: GlobalMessageStorage
+  ) {
+    // eventManager 和 globalMessageStorage 必须通过构造函数传入
   }
 
   /**
@@ -145,8 +149,7 @@ export class ThreadLifecycleManager {
         thread.endTime = now();
       }
       // 清理全局消息存储中的消息历史
-      const globalMessageStorage = SingletonRegistry.getGlobalMessageStorage();
-      globalMessageStorage.removeReference(thread.id);
+      this.globalMessageStorage.removeReference(thread.id);
       // 触发THREAD_COMPLETED事件
       const completedEvent = buildThreadCompletedEvent(thread, result);
       await emit(this.eventManager, completedEvent);
@@ -163,8 +166,7 @@ export class ThreadLifecycleManager {
     thread.endTime = now();
 
     // 清理全局消息存储中的消息历史
-    const globalMessageStorage = SingletonRegistry.getGlobalMessageStorage();
-    globalMessageStorage.removeReference(thread.id);
+    this.globalMessageStorage.removeReference(thread.id);
 
     // 触发THREAD_COMPLETED事件
     const completedEvent = buildThreadCompletedEvent(thread, result);
@@ -198,8 +200,7 @@ export class ThreadLifecycleManager {
     thread.errors.push(error.message);
 
     // 清理全局消息存储中的消息历史
-    const globalMessageStorage = SingletonRegistry.getGlobalMessageStorage();
-    globalMessageStorage.removeReference(thread.id);
+    this.globalMessageStorage.removeReference(thread.id);
 
     // 触发THREAD_FAILED事件
     const failedEvent = buildThreadFailedEvent(thread, error);
@@ -235,8 +236,7 @@ export class ThreadLifecycleManager {
     thread.endTime = now();
 
     // 清理全局消息存储中的消息历史
-    const globalMessageStorage = SingletonRegistry.getGlobalMessageStorage();
-    globalMessageStorage.removeReference(thread.id);
+    this.globalMessageStorage.removeReference(thread.id);
 
     // 触发THREAD_CANCELLED事件
     const cancelledEvent = buildThreadCancelledEvent(thread, reason);
@@ -245,5 +245,33 @@ export class ThreadLifecycleManager {
     // 触发THREAD_STATE_CHANGED事件
     const stateChangedEvent = buildThreadStateChangedEvent(thread, previousStatus, 'CANCELLED');
     await emit(this.eventManager, stateChangedEvent);
+  }
+
+  // ============================================================
+  // LifecycleCapable 接口实现
+  // ============================================================
+
+  /**
+   * 清理资源
+   * ThreadLifecycleManager 是无状态的，无需清理
+   */
+  async cleanup(): Promise<void> {
+    // 无状态，无需清理
+  }
+
+  /**
+   * 创建状态快照
+   * ThreadLifecycleManager 是无状态的，返回空快照
+   */
+  createSnapshot(): void {
+    // 无状态，返回空快照
+  }
+
+  /**
+   * 从快照恢复状态
+   * ThreadLifecycleManager 是无状态的，无需恢复
+   */
+  async restoreFromSnapshot(_snapshot: void): Promise<void> {
+    // 无状态，无需恢复
   }
 }
