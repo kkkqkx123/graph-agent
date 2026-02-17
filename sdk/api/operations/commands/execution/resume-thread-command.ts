@@ -18,7 +18,7 @@ export class ResumeThreadCommand extends BaseCommand<ThreadResult> {
   }
 
   protected async executeInternal(): Promise<ThreadResult> {
-    const lifecycleCoordinator = await this.dependencies.getThreadLifecycleCoordinator();
+    const lifecycleCoordinator = this.dependencies.getThreadLifecycleCoordinator();
     const result = await lifecycleCoordinator.resumeThread(this.threadId);
     return result;
   }

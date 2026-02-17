@@ -18,7 +18,7 @@ export class GenerateCommand extends BaseCommand<LLMResult> {
   }
 
   protected async executeInternal(): Promise<LLMResult> {
-    const llmWrapper = await this.dependencies.getLLMWrapper();
+    const llmWrapper = this.dependencies.getLLMWrapper();
     const result = await llmWrapper.generate(this.request);
     
     // 处理 Result 类型，提取成功的结果或抛出错误

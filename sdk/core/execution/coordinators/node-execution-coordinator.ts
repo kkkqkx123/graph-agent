@@ -38,21 +38,58 @@ import type { InterruptionDetector } from '../managers/interruption-detector.js'
 import { throwIfAborted, getThreadInterruptedException } from '@modular-agent/common-utils';
 
 /**
+ * 节点执行协调器配置
+ */
+export interface NodeExecutionCoordinatorConfig {
+  /** 事件管理器 */
+  eventManager: EventManager;
+  /** LLM 执行协调器 */
+  llmCoordinator: LLMExecutionCoordinator;
+  /** 用户交互处理器（可选） */
+  userInteractionHandler?: UserInteractionHandler;
+  /** 人工中继处理器（可选） */
+  humanRelayHandler?: HumanRelayHandler;
+  /** 检查点依赖项（可选） */
+  checkpointDependencies?: CheckpointDependencies;
+  /** 全局检查点配置（可选） */
+  globalCheckpointConfig?: any;
+  /** 线程注册表（可选） */
+  threadRegistry?: any;
+  /** 中断检测器（可选） */
+  interruptionDetector?: InterruptionDetector;
+  /** 工具上下文管理器（可选） */
+  toolContextManager?: any;
+  /** 工具服务（可选） */
+  toolService?: any;
+}
+
+/**
  * 节点执行协调器
  */
 export class NodeExecutionCoordinator {
-  constructor(
-    private eventManager: EventManager,
-    private llmCoordinator: LLMExecutionCoordinator,
-    private userInteractionHandler?: UserInteractionHandler,
-    private humanRelayHandler?: HumanRelayHandler,
-    private checkpointDependencies?: CheckpointDependencies,
-    private globalCheckpointConfig?: any,
-    private threadRegistry?: any,
-    private interruptionDetector?: InterruptionDetector,
-    private toolContextManager?: any,
-    private toolService?: any
-  ) { }
+  private eventManager: EventManager;
+  private llmCoordinator: LLMExecutionCoordinator;
+  private userInteractionHandler?: UserInteractionHandler;
+  private humanRelayHandler?: HumanRelayHandler;
+  private checkpointDependencies?: CheckpointDependencies;
+  private globalCheckpointConfig?: any;
+  private threadRegistry?: any;
+  private interruptionDetector?: InterruptionDetector;
+  private toolContextManager?: any;
+  private toolService?: any;
+
+  constructor(config: NodeExecutionCoordinatorConfig) {
+    this.eventManager = config.eventManager;
+    this.llmCoordinator = config.llmCoordinator;
+    this.userInteractionHandler = config.userInteractionHandler;
+    this.humanRelayHandler = config.humanRelayHandler;
+    this.checkpointDependencies = config.checkpointDependencies;
+    this.globalCheckpointConfig = config.globalCheckpointConfig;
+    this.threadRegistry = config.threadRegistry;
+    this.interruptionDetector = config.interruptionDetector;
+    this.toolContextManager = config.toolContextManager;
+    this.toolService = config.toolService;
+  }
 
   /**
    * 检查是否已中止

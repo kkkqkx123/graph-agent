@@ -144,12 +144,14 @@ export class CheckpointResourceAPI extends GenericResourceAPI<Checkpoint, string
     const threadRegistry = container.get(Identifiers.ThreadRegistry);
     const workflowRegistry = container.get(Identifiers.WorkflowRegistry) as any;
     const globalMessageStorage = container.get(Identifiers.GlobalMessageStorage) as any;
+    const graphRegistry = container.get(Identifiers.GraphRegistry) as any;
 
     const dependencies = {
       threadRegistry: threadRegistry as any,
       checkpointStateManager: this.stateManager,
       workflowRegistry: workflowRegistry as any,
-      globalMessageStorage: globalMessageStorage as any
+      globalMessageStorage: globalMessageStorage as any,
+      graphRegistry: graphRegistry as any
     };
 
     const checkpointId = await CheckpointCoordinator.createCheckpoint(threadId, dependencies, metadata);
@@ -167,12 +169,14 @@ export class CheckpointResourceAPI extends GenericResourceAPI<Checkpoint, string
     const threadRegistry = container.get(Identifiers.ThreadRegistry) as any;
     const workflowRegistry = container.get(Identifiers.WorkflowRegistry) as any;
     const globalMessageStorage = container.get(Identifiers.GlobalMessageStorage) as any;
+    const graphRegistry = container.get(Identifiers.GraphRegistry) as any;
 
     const dependencies = {
       threadRegistry: threadRegistry as any,
       checkpointStateManager: this.stateManager,
       workflowRegistry: workflowRegistry as any,
-      globalMessageStorage: globalMessageStorage as any
+      globalMessageStorage: globalMessageStorage as any,
+      graphRegistry: graphRegistry as any
     };
 
     const threadContext = await CheckpointCoordinator.restoreFromCheckpoint(checkpointId, dependencies);

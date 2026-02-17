@@ -36,10 +36,14 @@ import type { WorkflowRegistry } from '../../services/workflow-registry.js';
 import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { EventManager } from '../../services/event-manager.js';
 import type { ToolService } from '../../services/tool-service.js';
+import type { CodeService } from '../../services/code-service.js';
 import type { LLMExecutor } from '../executors/llm-executor.js';
 import type { ErrorService } from '../../services/error-service.js';
 import type { TaskRegistry } from '../../services/task-registry.js';
 import type { GlobalMessageStorage } from '../../services/global-message-storage.js';
+import type { GraphRegistry } from '../../services/graph-registry.js';
+import type { NodeTemplateRegistry } from '../../services/node-template-registry.js';
+import type { TriggerTemplateRegistry } from '../../services/trigger-template-registry.js';
 import { CheckpointStateManager } from '../managers/checkpoint-state-manager.js';
 import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager.js';
 import { ThreadCascadeManager } from '../managers/thread-cascade-manager.js';
@@ -57,10 +61,14 @@ export class ExecutionContext {
   private threadRegistry: ThreadRegistry;
   private eventManager: EventManager;
   private toolService: ToolService;
+  private codeService: CodeService;
   private llmExecutor: LLMExecutor;
   private errorService: ErrorService;
   private taskRegistry: TaskRegistry;
   private globalMessageStorage: GlobalMessageStorage;
+  private graphRegistry: GraphRegistry;
+  private nodeTemplateRegistry: NodeTemplateRegistry;
+  private triggerTemplateRegistry: TriggerTemplateRegistry;
   private checkpointStateManager: CheckpointStateManager;
   private threadLifecycleManager: ThreadLifecycleManager;
   private threadCascadeManager: ThreadCascadeManager;
@@ -74,10 +82,14 @@ export class ExecutionContext {
     threadRegistry: ThreadRegistry,
     eventManager: EventManager,
     toolService: ToolService,
+    codeService: CodeService,
     llmExecutor: LLMExecutor,
     errorService: ErrorService,
     taskRegistry: TaskRegistry,
     globalMessageStorage: GlobalMessageStorage,
+    graphRegistry: GraphRegistry,
+    nodeTemplateRegistry: NodeTemplateRegistry,
+    triggerTemplateRegistry: TriggerTemplateRegistry,
     checkpointStateManager: CheckpointStateManager,
     threadLifecycleManager: ThreadLifecycleManager,
     threadCascadeManager: ThreadCascadeManager,
@@ -89,10 +101,14 @@ export class ExecutionContext {
     this.threadRegistry = threadRegistry;
     this.eventManager = eventManager;
     this.toolService = toolService;
+    this.codeService = codeService;
     this.llmExecutor = llmExecutor;
     this.errorService = errorService;
     this.taskRegistry = taskRegistry;
     this.globalMessageStorage = globalMessageStorage;
+    this.graphRegistry = graphRegistry;
+    this.nodeTemplateRegistry = nodeTemplateRegistry;
+    this.triggerTemplateRegistry = triggerTemplateRegistry;
     this.checkpointStateManager = checkpointStateManager;
     this.threadLifecycleManager = threadLifecycleManager;
     this.threadCascadeManager = threadCascadeManager;
@@ -230,6 +246,51 @@ export class ExecutionContext {
   getGlobalMessageStorage(): GlobalMessageStorage {
     this.ensureInitialized();
     return this.globalMessageStorage;
+  }
+
+  /**
+   * 获取 TaskRegistry
+   * @returns TaskRegistry 实例
+   */
+  getTaskRegistry(): TaskRegistry {
+    this.ensureInitialized();
+    return this.taskRegistry;
+  }
+
+  /**
+   * 获取 GraphRegistry
+   * @returns GraphRegistry 实例
+   */
+  getGraphRegistry(): GraphRegistry {
+    this.ensureInitialized();
+    return this.graphRegistry;
+  }
+
+  /**
+   * 获取 CodeService
+   * @returns CodeService 实例
+   */
+  getCodeService(): CodeService {
+    this.ensureInitialized();
+    return this.codeService;
+  }
+
+  /**
+   * 获取 NodeTemplateRegistry
+   * @returns NodeTemplateRegistry 实例
+   */
+  getNodeTemplateRegistry(): NodeTemplateRegistry {
+    this.ensureInitialized();
+    return this.nodeTemplateRegistry;
+  }
+
+  /**
+   * 获取 TriggerTemplateRegistry
+   * @returns TriggerTemplateRegistry 实例
+   */
+  getTriggerTemplateRegistry(): TriggerTemplateRegistry {
+    this.ensureInitialized();
+    return this.triggerTemplateRegistry;
   }
 
   /**

@@ -180,10 +180,14 @@ export function initializeContainer(): Container {
       const threadRegistry = c.get(Identifiers.ThreadRegistry);
       const eventManager = c.get(Identifiers.EventManager);
       const toolService = c.get(Identifiers.ToolService);
+      const codeService = c.get(Identifiers.CodeService);
       const llmExecutor = c.get(Identifiers.LLMExecutor);
       const errorService = c.get(Identifiers.ErrorService);
       const taskRegistry = c.get(Identifiers.TaskRegistry);
       const globalMessageStorage = c.get(Identifiers.GlobalMessageStorage);
+      const graphRegistry = c.get(Identifiers.GraphRegistry);
+      const nodeTemplateRegistry = c.get(Identifiers.NodeTemplateRegistry);
+      const triggerTemplateRegistry = c.get(Identifiers.TriggerTemplateRegistry);
       const checkpointStateManager = c.get(Identifiers.CheckpointStateManager);
       const threadLifecycleManager = c.get(Identifiers.ThreadLifecycleManager);
       const threadCascadeManager = c.get(Identifiers.ThreadCascadeManager);
@@ -195,10 +199,14 @@ export function initializeContainer(): Container {
         threadRegistry,
         eventManager,
         toolService,
+        codeService,
         llmExecutor,
         errorService,
         taskRegistry,
         globalMessageStorage,
+        graphRegistry,
+        nodeTemplateRegistry,
+        triggerTemplateRegistry,
         checkpointStateManager,
         threadLifecycleManager,
         threadCascadeManager,

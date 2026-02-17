@@ -5,7 +5,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { VariableAccessor } from '../variable-accessor.js';
-import type { ThreadContext } from '../context/thread-context.js';
+import type { ThreadContext } from '../../context/thread-context.js';
 import type { Thread } from '@modular-agent/types';
 
 /**

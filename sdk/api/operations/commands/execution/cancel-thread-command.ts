@@ -17,7 +17,7 @@ export class CancelThreadCommand extends BaseCommand<void> {
   }
 
   protected async executeInternal(): Promise<void> {
-    const lifecycleCoordinator = await this.dependencies.getThreadLifecycleCoordinator();
+    const lifecycleCoordinator = this.dependencies.getThreadLifecycleCoordinator();
     await lifecycleCoordinator.stopThread(this.threadId);
   }
 

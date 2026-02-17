@@ -61,8 +61,8 @@ describe('estimateTokens', () => {
         {
           role: 'user',
           content: [
-            'Hello',
-            'World',
+            { type: 'text', text: 'Hello' },
+            { type: 'text', text: 'World' },
             { type: 'text', text: 'Test' }
           ]
         }

@@ -18,7 +18,7 @@ export class GenerateBatchCommand extends BaseCommand<LLMResult[]> {
   }
 
   protected async executeInternal(): Promise<LLMResult[]> {
-    const llmWrapper = await this.dependencies.getLLMWrapper();
+    const llmWrapper = this.dependencies.getLLMWrapper();
     const results = await Promise.all(
       this.requests.map(request => llmWrapper.generate(request))
     );

@@ -5,16 +5,16 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { checkWorkflowReferences } from '../workflow-reference-checker.js';
-import type { WorkflowRegistry } from '../../services/workflow-registry.js';
-import type { ThreadRegistry } from '../../services/thread-registry.js';
-import type { ThreadContext } from '../context/thread-context.js';
-import type { Workflow, WorkflowTrigger } from '@modular-agent/types';
+import type { WorkflowRegistry } from '../../../services/workflow-registry.js';
+import type { ThreadRegistry } from '../../../services/thread-registry.js';
+import type { ThreadContext } from '../../context/thread-context.js';
+import type { WorkflowDefinition, WorkflowTrigger } from '@modular-agent/types';
 
 /**
  * 创建模拟 WorkflowRegistry
  */
 function createMockWorkflowRegistry(overrides?: {
-  workflows?: Map<string, Workflow>;
+  workflows?: Map<string, WorkflowDefinition>;
   parentWorkflow?: string | null;
   hierarchy?: { depth: number };
 }): WorkflowRegistry {
@@ -65,17 +65,22 @@ function createMockThreadContext(overrides?: {
 }
 
 /**
- * 创建模拟 Workflow
+ * 创建模拟 WorkflowDefinition
  */
-function createMockWorkflow(overrides?: Partial<Workflow>): Workflow {
+function createMockWorkflow(overrides?: Partial<WorkflowDefinition>): WorkflowDefinition {
   return {
     id: overrides?.id || 'test-workflow',
     name: overrides?.name || 'Test Workflow',
-    graph: {} as any,
+    nodes: [],
+    edges: [],
+    type: 'default' as any,
     triggers: overrides?.triggers || [],
     variables: overrides?.variables || [],
-    description: overrides?.description || ''
-  } as Workflow;
+    description: overrides?.description || '',
+    version: '1.0.0',
+    createdAt: Date.now(),
+    updatedAt: Date.now()
+  } as WorkflowDefinition;
 }
 
 describe('checkWorkflowReferences', () => {
@@ -144,7 +149,7 @@ describe('checkWorkflowReferences', () => {
       const trigger: WorkflowTrigger = {
         id: 'trigger-1',
         name: 'Test Trigger',
-        eventName: 'test.event',
+        condition: { eventType: 'THREAD_COMPLETED' },
         action: {
           type: 'start_workflow',
           parameters: {
@@ -181,7 +186,7 @@ describe('checkWorkflowReferences', () => {
       const trigger: WorkflowTrigger = {
         id: 'trigger-1',
         name: 'Test Trigger',
-        eventName: 'test.event',
+        condition: { eventType: 'THREAD_COMPLETED' },
         action: {
           type: 'start_workflow',
           parameters: {
@@ -210,7 +215,7 @@ describe('checkWorkflowReferences', () => {
       const trigger: WorkflowTrigger = {
         id: 'trigger-1',
         name: 'Test Trigger',
-        eventName: 'test.event',
+        condition: { eventType: 'THREAD_COMPLETED' },
         action: {
           type: 'execute_triggered_subgraph',
           parameters: {
@@ -361,7 +366,7 @@ describe('checkWorkflowReferences', () => {
       const trigger: WorkflowTrigger = {
         id: 'trigger-1',
         name: 'Test Trigger',
-        eventName: 'test.event',
+        condition: { eventType: 'THREAD_COMPLETED' },
         action: {
           type: 'start_workflow',
           parameters: {

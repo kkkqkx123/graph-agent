@@ -21,8 +21,6 @@ import type { CodeService } from '../../core/services/code-service.js';
 import type { NodeTemplateRegistry } from '../../core/services/node-template-registry.js';
 import type { TriggerTemplateRegistry } from '../../core/services/trigger-template-registry.js';
 import type { GraphRegistry } from '../../core/services/graph-registry.js';
-import { getContainer } from '../../core/di/container-config.js';
-import * as Identifiers from '../../core/di/service-identifiers.js';
 
 /**
  * API依赖管理类
@@ -85,32 +83,28 @@ export class APIDependencyManager {
    * 获取代码服务
    */
   getCodeService(): CodeService {
-    const container = getContainer();
-    return container.get(Identifiers.CodeService);
+    return this.executionContext.getCodeService();
   }
   
   /**
    * 获取节点模板注册表
    */
   getNodeTemplateRegistry(): NodeTemplateRegistry {
-    const container = getContainer();
-    return container.get(Identifiers.NodeTemplateRegistry);
+    return this.executionContext.getNodeTemplateRegistry();
   }
   
   /**
    * 获取触发器模板注册表
    */
   getTriggerTemplateRegistry(): TriggerTemplateRegistry {
-    const container = getContainer();
-    return container.get(Identifiers.TriggerTemplateRegistry);
+    return this.executionContext.getTriggerTemplateRegistry();
   }
   
   /**
    * 获取图注册表
    */
   getGraphRegistry(): GraphRegistry {
-    const container = getContainer();
-    return container.get(Identifiers.GraphRegistry);
+    return this.executionContext.getGraphRegistry();
   }
   
   /**
@@ -123,16 +117,15 @@ export class APIDependencyManager {
   /**
    * 获取线程生命周期协调器
    */
-  async getThreadLifecycleCoordinator(): Promise<import('../../core/execution/coordinators/thread-lifecycle-coordinator.js').ThreadLifecycleCoordinator> {
-    const { ThreadLifecycleCoordinator } = await import('../../core/execution/coordinators/thread-lifecycle-coordinator.js');
-    return new ThreadLifecycleCoordinator(this.executionContext);
+  getThreadLifecycleCoordinator(): import('../../core/execution/coordinators/thread-lifecycle-coordinator.js').ThreadLifecycleCoordinator {
+    return this.executionContext.getLifecycleCoordinator();
   }
   
   /**
    * 获取 LLM 包装器
    */
-  async getLLMWrapper(): Promise<import('../../core/llm/wrapper.js').LLMWrapper> {
-    const { LLMWrapper } = await import('../../core/llm/wrapper.js');
+  getLLMWrapper(): import('../../core/llm/wrapper.js').LLMWrapper {
+    const { LLMWrapper } = require('../../core/llm/wrapper.js');
     const eventManager = this.getEventManager();
     return new LLMWrapper(eventManager);
   }

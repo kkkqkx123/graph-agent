@@ -131,7 +131,10 @@ describe('ThreadExecutor', () => {
     } as any;
 
     // 创建 mock NodeExecutionCoordinator 实例
-    mockNodeExecutionCoordinator = new NodeExecutionCoordinator();
+    mockNodeExecutionCoordinator = new NodeExecutionCoordinator({
+      eventManager: mockEventManager,
+      llmCoordinator: mockLLMExecutionCoordinator
+    });
     mockNodeExecutionCoordinator.executeNode = vi.fn();
     mockNodeExecutionCoordinator.handleInterruption = vi.fn();
     

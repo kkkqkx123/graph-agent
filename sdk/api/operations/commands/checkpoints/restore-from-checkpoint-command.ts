@@ -63,7 +63,8 @@ export class RestoreFromCheckpointCommand extends BaseCommand<Thread> {
       threadRegistry: this.dependencies.getThreadRegistry(),
       checkpointStateManager: this.dependencies.getCheckpointStateManager(),
       workflowRegistry: this.dependencies.getWorkflowRegistry(),
-      globalMessageStorage: container.get(Identifiers.GlobalMessageStorage) as any
+      globalMessageStorage: container.get(Identifiers.GlobalMessageStorage) as any,
+      graphRegistry: this.dependencies.getGraphRegistry()
     };
 
     const threadContext = await CheckpointCoordinator.restoreFromCheckpoint(

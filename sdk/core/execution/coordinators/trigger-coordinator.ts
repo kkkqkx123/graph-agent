@@ -33,6 +33,7 @@ import { now, getErrorOrNew } from '@modular-agent/common-utils';
 import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { WorkflowRegistry } from '../../services/workflow-registry.js';
 import type { GlobalMessageStorage } from '../../services/global-message-storage.js';
+import type { GraphRegistry } from '../../services/graph-registry.js';
 import { TriggerStateManager } from '../managers/trigger-state-manager.js';
 import { CheckpointStateManager } from '../managers/checkpoint-state-manager.js';
 import { convertToTrigger } from '@modular-agent/types';
@@ -274,11 +275,13 @@ export class TriggerCoordinator {
     // 触发前创建检查点（如果配置了）
     if (trigger.createCheckpoint && this.checkpointStateManager && this.globalMessageStorage && trigger.threadId) {
       try {
+        const container = getContainer();
         const dependencies: CheckpointDependencies = {
           threadRegistry: this.threadRegistry,
           checkpointStateManager: this.checkpointStateManager,
           workflowRegistry: this.workflowRegistry,
-          globalMessageStorage: this.globalMessageStorage
+          globalMessageStorage: this.globalMessageStorage,
+          graphRegistry: container.get(Identifiers.GraphRegistry)
         };
 
         await createCheckpoint(

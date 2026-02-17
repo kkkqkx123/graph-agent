@@ -91,7 +91,8 @@ export async function createThreadHandler(
     const input = action.input || {};
 
     // 创建DynamicThreadManager
-    const dynamicThreadManager = new DynamicThreadManager(executionContext);
+    const taskRegistry = executionContext.getTaskRegistry();
+    const dynamicThreadManager = new DynamicThreadManager(executionContext, taskRegistry);
 
     // 创建线程请求
     const request: CreateDynamicThreadRequest = {
@@ -174,10 +175,11 @@ export async function cancelThreadHandler(
     // 验证参数
     if (!action.threadId) {
       throw new ToolError('threadId is required', 'cancel-thread');
-    }
-
-    // 创建DynamicThreadManager
-    const dynamicThreadManager = new DynamicThreadManager(executionContext);
+      }
+  
+      // 创建DynamicThreadManager
+      const taskRegistry = executionContext.getTaskRegistry();
+      const dynamicThreadManager = new DynamicThreadManager(executionContext, taskRegistry);
 
     // 取消线程
     const success = dynamicThreadManager.cancelDynamicThread(action.threadId);
@@ -223,10 +225,11 @@ export async function getThreadStatusHandler(
     // 验证参数
     if (!action.threadId) {
       throw new ToolError('threadId is required', 'get-thread-status');
-    }
-
-    // 创建DynamicThreadManager
-    const dynamicThreadManager = new DynamicThreadManager(executionContext);
+      }
+  
+      // 创建DynamicThreadManager
+      const taskRegistry = executionContext.getTaskRegistry();
+      const dynamicThreadManager = new DynamicThreadManager(executionContext, taskRegistry);
 
     // 查询线程状态
     const threadStatus = dynamicThreadManager.getThreadStatus(action.threadId);

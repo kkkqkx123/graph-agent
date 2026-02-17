@@ -88,16 +88,19 @@ export class DynamicThreadManager implements TaskManager {
   /**
    * 构造函数
    * @param executionContext 执行上下文
+   * @param taskRegistry 任务注册表（通过构造函数注入）
    * @param config 配置
    */
-  constructor(executionContext: ExecutionContext, config?: any) {
+  constructor(
+    executionContext: ExecutionContext,
+    taskRegistry: TaskRegistry,
+    config?: any
+  ) {
     this.executionContext = executionContext;
+    this.taskRegistry = taskRegistry;
     this.eventManager = executionContext.getEventManager();
     this.threadRegistry = executionContext.getThreadRegistry();
     this.threadBuilder = new ThreadBuilder(executionContext.getWorkflowRegistry(), executionContext);
-
-    // 获取全局任务注册表
-    this.taskRegistry = TaskRegistry.getInstance();
 
     // 创建线程池管理器
     this.threadPoolManager = new ThreadPoolManager(executionContext, config);

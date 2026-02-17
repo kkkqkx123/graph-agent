@@ -58,7 +58,7 @@ export class ExecuteThreadCommand extends BaseCommand<ThreadResult> {
 
   protected async executeInternal(): Promise<ThreadResult> {
     // 通过 APIDependencyManager 获取 ThreadLifecycleCoordinator
-    const lifecycleCoordinator = await this.dependencies.getThreadLifecycleCoordinator();
+    const lifecycleCoordinator = this.dependencies.getThreadLifecycleCoordinator();
     
     // 执行线程（委托给 ThreadLifecycleCoordinator）
     const result = await lifecycleCoordinator.execute(

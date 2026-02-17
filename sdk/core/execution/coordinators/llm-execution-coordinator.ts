@@ -32,6 +32,7 @@ import type { ExecutionContext } from '../context/execution-context.js';
 import { getContainer } from '../../di/index.js';
 import * as Identifiers from '../../di/service-identifiers.js';
 import type { InterruptionDetector } from '../managers/interruption-detector.js';
+import { InterruptionDetectorImpl } from '../managers/interruption-detector.js';
 import { throwIfAborted, getThreadInterruptedException } from '@modular-agent/common-utils';
 
 /**
@@ -90,10 +91,13 @@ export class LLMExecutionCoordinator {
     private llmExecutor: LLMExecutor,
     private toolService: ToolService,
     private eventManager: EventManager,
-    private executionContext?: ExecutionContext
+    private executionContext?: ExecutionContext,
+    interruptionDetector?: InterruptionDetector
   ) {
-    if (executionContext) {
-      this.interruptionDetector = new (require('../managers/interruption-detector').InterruptionDetectorImpl)(
+    if (interruptionDetector) {
+      this.interruptionDetector = interruptionDetector;
+    } else if (executionContext) {
+      this.interruptionDetector = new InterruptionDetectorImpl(
         executionContext.getThreadRegistry()
       );
     }
@@ -492,12 +496,12 @@ export class LLMExecutionCoordinator {
     let checkpointId: string | undefined;
     if (this.executionContext) {
       try {
-        const container = getContainer();
         const dependencies = {
           threadRegistry: this.executionContext.getThreadRegistry(),
           checkpointStateManager: this.executionContext.getCheckpointStateManager(),
           workflowRegistry: this.executionContext.getWorkflowRegistry(),
-          globalMessageStorage: container.get(Identifiers.GlobalMessageStorage)
+          globalMessageStorage: this.executionContext.getGlobalMessageStorage(),
+          graphRegistry: this.executionContext.getGraphRegistry()
         };
         checkpointId = await CheckpointCoordinator.createCheckpoint(threadId, dependencies, {
           description: 'Waiting for tool approval',

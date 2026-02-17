@@ -9,14 +9,13 @@ import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot, MessageMarkMa
 import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { WorkflowRegistry } from '../../services/workflow-registry.js';
 import type { GlobalMessageStorage } from '../../services/global-message-storage.js';
+import type { GraphRegistry } from '../../services/graph-registry.js';
 import { CheckpointStateManager } from '../managers/checkpoint-state-manager.js';
 import { ConversationManager } from '../managers/conversation-manager.js';
 import { VariableStateManager } from '../managers/variable-state-manager.js';
 import { ThreadContext } from '../context/thread-context.js';
 import { ExecutionContext } from '../context/execution-context.js';
 import { generateId, now } from '@modular-agent/common-utils';
-import { getContainer } from '../../di/index.js';
-import * as Identifiers from '../../di/service-identifiers.js';
 
 /**
  * 检查点依赖项
@@ -26,6 +25,7 @@ export interface CheckpointDependencies {
   checkpointStateManager: CheckpointStateManager;
   workflowRegistry: WorkflowRegistry;
   globalMessageStorage: GlobalMessageStorage;
+  graphRegistry: GraphRegistry;
 }
 
 /**
@@ -130,7 +130,7 @@ export class CheckpointCoordinator {
     checkpointId: string,
     dependencies: CheckpointDependencies
   ): Promise<ThreadContext> {
-    const { threadRegistry, checkpointStateManager, workflowRegistry, globalMessageStorage } = dependencies;
+    const { threadRegistry, checkpointStateManager, workflowRegistry, globalMessageStorage, graphRegistry } = dependencies;
 
     // 步骤1：从 CheckpointStateManager 加载检查点
     const checkpoint = await checkpointStateManager.get(checkpointId);
@@ -143,8 +143,6 @@ export class CheckpointCoordinator {
 
     // 步骤3：从 GraphRegistry 获取 PreprocessedGraph
     // PreprocessedGraph 包含完整的预处理后的图结构
-    const container = getContainer();
-    const graphRegistry = container.get(Identifiers.GraphRegistry);
     const processedWorkflow = graphRegistry.get(checkpoint.workflowId);
     if (!processedWorkflow) {
       throw new WorkflowNotFoundError(`Processed workflow not found`, checkpoint.workflowId);

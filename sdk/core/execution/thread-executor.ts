@@ -71,18 +71,18 @@ export class ThreadExecutor {
     );
 
     // 创建节点执行协调器（从ExecutionContext获取Handler）
-    this.nodeExecutionCoordinator = new NodeExecutionCoordinator(
-      this.eventManager,
-      this.llmExecutionCoordinator,
-      this.executionContext.getUserInteractionHandler(),
-      this.executionContext.getHumanRelayHandler(),
-      undefined,
-      undefined,
-      this.executionContext.getThreadRegistry(),
-      this.interruptionDetector,
-      this.executionContext.getToolContextManager(),
-      this.executionContext.getToolService()
-    );
+    this.nodeExecutionCoordinator = new NodeExecutionCoordinator({
+      eventManager: this.eventManager,
+      llmCoordinator: this.llmExecutionCoordinator,
+      userInteractionHandler: this.executionContext.getUserInteractionHandler(),
+      humanRelayHandler: this.executionContext.getHumanRelayHandler(),
+      checkpointDependencies: undefined,
+      globalCheckpointConfig: undefined,
+      threadRegistry: this.executionContext.getThreadRegistry(),
+      interruptionDetector: this.interruptionDetector,
+      toolContextManager: this.executionContext.getToolContextManager(),
+      toolService: this.executionContext.getToolService()
+    });
   }
 
   /**
