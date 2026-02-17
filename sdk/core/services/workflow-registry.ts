@@ -1,7 +1,7 @@
 /**
  * WorkflowRegistry - 工作流注册器
  * 负责工作流定义的注册、查询和管理
- * 引用管理委托给 WorkflowReferenceManager
+ * 包括工作流关系管理和引用管理
  *
  * 预处理后的图由 GraphRegistry 管理
  *
@@ -16,16 +16,15 @@ import type {
   WorkflowHierarchy,
   WorkflowSummary
 } from '@modular-agent/types';
-import { WorkflowType } from '@modular-agent/types';
 import type { WorkflowReferenceInfo, WorkflowReferenceRelation, WorkflowReferenceType } from '@modular-agent/types';
-import { WorkflowReferenceManager } from '../execution/managers/workflow-reference-manager.js';
 import type { ThreadRegistry } from './thread-registry.js';
-import { ValidationError, ExecutionError, ConfigurationValidationError, WorkflowNotFoundError } from '@modular-agent/types';
+import { ExecutionError, ConfigurationValidationError, WorkflowNotFoundError } from '@modular-agent/types';
 import type { GraphRegistry } from './graph-registry.js';
 import { processWorkflow, type ProcessOptions } from '../graph/workflow-processor.js';
 import { getContainer } from '../di/container-config.js';
 import * as Identifiers from '../di/service-identifiers.js';
 import { getErrorMessage } from '@modular-agent/common-utils';
+import { checkWorkflowReferences } from '../execution/utils/workflow-reference-checker.js';
 
 /**
  * 工作流版本信息
@@ -43,8 +42,9 @@ export class WorkflowRegistry {
   private workflows: Map<string, WorkflowDefinition> = new Map();
   private workflowRelationships: Map<string, WorkflowRelationship> = new Map();
   private activeWorkflows: Set<string> = new Set();
-  private referenceManager: WorkflowReferenceManager;
+  private referenceRelations: Map<string, WorkflowReferenceRelation[]> = new Map();
   private maxRecursionDepth: number;
+  private threadRegistry: ThreadRegistry | undefined;
 
   constructor(
     options: {
@@ -53,13 +53,19 @@ export class WorkflowRegistry {
     threadRegistry?: ThreadRegistry
   ) {
     this.maxRecursionDepth = options.maxRecursionDepth ?? 10;
-    // 如果没有提供 threadRegistry，延迟初始化 referenceManager
-    if (threadRegistry) {
-      this.referenceManager = new WorkflowReferenceManager(this, threadRegistry);
-    } else {
-      // 延迟初始化，在第一次使用时通过 DI 容器获取
-      this.referenceManager = null as any;
+    this.threadRegistry = threadRegistry;
+  }
+
+  /**
+   * 获取ThreadRegistry实例（延迟获取）
+   * @returns ThreadRegistry实例或undefined
+   */
+  private getThreadRegistry(): ThreadRegistry | undefined {
+    if (!this.threadRegistry) {
+      const container = getContainer();
+      this.threadRegistry = container.get(Identifiers.ThreadRegistry);
     }
+    return this.threadRegistry;
   }
 
   /**
@@ -101,7 +107,11 @@ export class WorkflowRegistry {
    * @param relation 引用关系
    */
   addReferenceRelation(relation: WorkflowReferenceRelation): void {
-    this.referenceManager.addReferenceRelation(relation);
+    const key = relation.targetWorkflowId;
+    if (!this.referenceRelations.has(key)) {
+      this.referenceRelations.set(key, []);
+    }
+    this.referenceRelations.get(key)!.push(relation);
   }
 
   /**
@@ -115,7 +125,18 @@ export class WorkflowRegistry {
     targetWorkflowId: string,
     referenceType: WorkflowReferenceType
   ): void {
-    this.referenceManager.removeReferenceRelation(sourceWorkflowId, targetWorkflowId, referenceType);
+    const relations = this.referenceRelations.get(targetWorkflowId);
+    if (relations) {
+      const filtered = relations.filter((rel: WorkflowReferenceRelation) =>
+        !(rel.sourceWorkflowId === sourceWorkflowId &&
+          rel.referenceType === referenceType)
+      );
+      if (filtered.length === 0) {
+        this.referenceRelations.delete(targetWorkflowId);
+      } else {
+        this.referenceRelations.set(targetWorkflowId, filtered);
+      }
+    }
   }
 
   /**
@@ -124,7 +145,14 @@ export class WorkflowRegistry {
    * @returns 是否有引用
    */
   hasReferences(workflowId: string): boolean {
-    return this.referenceManager.hasReferences(workflowId);
+    // 检查 referenceRelations 中的引用（如 trigger、thread 等）
+    const hasReferenceRelations = this.referenceRelations.has(workflowId) &&
+      this.referenceRelations.get(workflowId)!.length > 0;
+
+    // 检查 workflowRelationships 中的父子关系
+    const hasParentRelationship = this.getParentWorkflow(workflowId) !== null;
+
+    return hasReferenceRelations || hasParentRelationship;
   }
 
   /**
@@ -133,7 +161,7 @@ export class WorkflowRegistry {
    * @returns 引用关系列表
    */
   getReferenceRelations(workflowId: string): WorkflowReferenceRelation[] {
-    return this.referenceManager.getReferenceRelations(workflowId);
+    return this.referenceRelations.get(workflowId) || [];
   }
 
   /**
@@ -141,7 +169,28 @@ export class WorkflowRegistry {
    * @param workflowId 工作流ID
    */
   clearReferenceRelations(workflowId: string): void {
-    this.referenceManager.clearReferenceRelations(workflowId);
+    this.referenceRelations.delete(workflowId);
+  }
+
+  /**
+   * 清理指定工作流的所有引用关系
+   * @param workflowId 工作流ID
+   */
+  cleanupWorkflowReferences(workflowId: string): void {
+    // 清空该工作流的引用关系
+    this.clearReferenceRelations(workflowId);
+
+    // 从其他工作流的引用关系中移除对该工作流的引用
+    for (const [targetId, relations] of this.referenceRelations.entries()) {
+      const filteredRelations = relations.filter(
+        relation => relation.sourceWorkflowId !== workflowId
+      );
+      if (filteredRelations.length === 0) {
+        this.referenceRelations.delete(targetId);
+      } else {
+        this.referenceRelations.set(targetId, filteredRelations);
+      }
+    }
   }
 
   /**
@@ -355,7 +404,90 @@ export class WorkflowRegistry {
    * @returns 引用信息
    */
   checkWorkflowReferences(workflowId: string): WorkflowReferenceInfo {
-    return this.referenceManager.checkWorkflowReferences(workflowId);
+    const threadRegistry = this.getThreadRegistry();
+    if (!threadRegistry) {
+      throw new ExecutionError(
+        'ThreadRegistry not available',
+        undefined,
+        workflowId,
+        { operation: 'check_workflow_references' }
+      );
+    }
+    return checkWorkflowReferences(this, threadRegistry, workflowId);
+  }
+
+  /**
+   * 格式化引用详情信息
+   * @param references 引用列表
+   * @returns 格式化的字符串
+   */
+  private formatReferenceDetails(references: import('@modular-agent/types').WorkflowReference[]): string {
+    if (references.length === 0) {
+      return '  No references found.';
+    }
+
+    return references.map((ref, index) => {
+      const details = Object.entries(ref.details)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(', ');
+
+      return `  ${index + 1}. [${ref.type}] ${ref.sourceName} (${ref.sourceId}) - ${ref.isRuntimeReference ? 'Runtime' : 'Static'}${details ? ` - ${details}` : ''}`;
+    }).join('\n');
+  }
+
+  /**
+   * 检查是否可以安全删除工作流
+   * @param workflowId 工作流ID
+   * @param options 删除选项
+   * @returns 是否可以删除及详细信息
+   */
+  canSafelyDelete(workflowId: string, options?: { force?: boolean }): { canDelete: boolean; details: string } {
+    const referenceInfo = this.checkWorkflowReferences(workflowId);
+
+    if (!referenceInfo.hasReferences) {
+      return { canDelete: true, details: 'No references found' };
+    }
+
+    if (options?.force) {
+      if (referenceInfo.stats.runtimeReferences > 0) {
+        const runtimeReferences = referenceInfo.references.filter(ref => ref.isRuntimeReference);
+        const runtimeDetails = this.formatReferenceDetails(runtimeReferences);
+        return {
+          canDelete: true,
+          details: `Force deleting workflow with ${referenceInfo.stats.runtimeReferences} active references:\n${runtimeDetails}`
+        };
+      }
+      return { canDelete: true, details: 'Force delete enabled' };
+    }
+
+    const referenceDetails = this.formatReferenceDetails(referenceInfo.references);
+    return {
+      canDelete: false,
+      details: `Cannot delete workflow: it is referenced by ${referenceInfo.references.length} other components.\n\nReferences:\n${referenceDetails}\n\nUse force=true to override, or check references first.`
+    };
+  }
+
+  /**
+   * 获取所有引用目标工作流的源工作流ID
+   * @param targetWorkflowId 目标工作流ID
+   * @returns 源工作流ID数组
+   */
+  getReferencingWorkflows(targetWorkflowId: string): string[] {
+    const referencingWorkflows = new Set<string>();
+
+    // 从引用关系中查找
+    const relations = this.getReferenceRelations(targetWorkflowId);
+    relations.forEach(relation => {
+      referencingWorkflows.add(relation.sourceWorkflowId);
+    });
+
+    // 从父子关系中查找
+    const parentId = this.getParentWorkflow(targetWorkflowId);
+    if (parentId) {
+      referencingWorkflows.add(parentId);
+    }
+
+    return Array.from(referencingWorkflows);
   }
 
   /**
@@ -373,7 +505,7 @@ export class WorkflowRegistry {
     const shouldCheck = options?.checkReferences !== false;
 
     if (shouldCheck) {
-      const checkResult = this.referenceManager.canSafelyDelete(workflowId, options);
+      const checkResult = this.canSafelyDelete(workflowId, options);
       if (!checkResult.canDelete) {
         throw new ConfigurationValidationError(
           checkResult.details,
@@ -402,7 +534,7 @@ export class WorkflowRegistry {
     this.workflows.delete(workflowId);
 
     // 清理引用关系
-    this.referenceManager.cleanupWorkflowReferences(workflowId);
+    this.cleanupWorkflowReferences(workflowId);
   }
 
   /**
@@ -422,10 +554,7 @@ export class WorkflowRegistry {
     this.workflows.clear();
     this.workflowRelationships.clear();
     this.activeWorkflows.clear();
-    // 重新创建引用管理器
-    // 注意：这里需要通过 DI 容器获取 threadRegistry
-    // 暂时保持为 null，由 DI 容器负责注入
-    this.referenceManager = null as any;
+    this.referenceRelations.clear();
   }
 
   /**

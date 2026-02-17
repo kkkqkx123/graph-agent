@@ -25,7 +25,6 @@ import { NodeTemplateRegistry } from '../services/node-template-registry.js';
 import { TriggerTemplateRegistry } from '../services/trigger-template-registry.js';
 import { TaskRegistry } from '../services/task-registry.js';
 import { ErrorService } from '../services/error-service.js';
-import { WorkflowReferenceManager } from '../execution/managers/workflow-reference-manager.js';
 import { WorkflowRegistry } from '../services/workflow-registry.js';
 
 // 执行层服务
@@ -114,23 +113,12 @@ export function initializeContainer(): Container {
     .inSingletonScope();
 
   // ============================================================
-  // 第四层：相互依赖的业务层服务
+  // 第四层：依赖存储层的业务层服务
   // ============================================================
 
-  // WorkflowReferenceManager 依赖 WorkflowRegistry 和 ThreadRegistry
-  container.bind(Identifiers.WorkflowReferenceManager)
-    .toDynamicValue((c: any) => {
-      const workflowRegistry = c.get(Identifiers.WorkflowRegistry);
-      const threadRegistry = c.get(Identifiers.ThreadRegistry);
-      return new WorkflowReferenceManager(workflowRegistry, threadRegistry);
-    })
-    .inSingletonScope();
-
-  // WorkflowRegistry 依赖 GraphRegistry 和 WorkflowReferenceManager
+  // WorkflowRegistry 依赖 ThreadRegistry 进行引用检查
   container.bind(Identifiers.WorkflowRegistry)
     .toDynamicValue((c: any) => {
-      const graphRegistry = c.get(Identifiers.GraphRegistry);
-      const workflowReferenceManager = c.get(Identifiers.WorkflowReferenceManager);
       const threadRegistry = c.get(Identifiers.ThreadRegistry);
       return new WorkflowRegistry({ maxRecursionDepth: 10 }, threadRegistry);
     })

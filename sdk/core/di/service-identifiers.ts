@@ -56,15 +56,9 @@ export const CodeService = Symbol('CodeService') as ServiceIdentifier<any>;
 
 /**
  * WorkflowRegistry - 工作流注册表
- * 管理工作流定义的完整生命周期
+ * 管理工作流定义的完整生命周期，包括引用管理
  */
 export const WorkflowRegistry = Symbol('WorkflowRegistry') as ServiceIdentifier<any>;
-
-/**
- * WorkflowReferenceManager - 工作流引用管理器
- * 管理工作流间的引用关系
- */
-export const WorkflowReferenceManager = Symbol('WorkflowReferenceManager') as ServiceIdentifier<any>;
 
 /**
  * NodeTemplateRegistry - 节点模板注册表

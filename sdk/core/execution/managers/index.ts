@@ -31,8 +31,6 @@ export {
   ConversationState
 } from './conversation-manager.js';
 
-export { WorkflowReferenceManager } from './workflow-reference-manager.js';
-
 export { InterruptionManager, type InterruptionType } from './interruption-manager.js';
 export { InterruptionDetector, InterruptionDetectorImpl } from './interruption-detector.js';
 
