@@ -18,9 +18,9 @@
     "scripts": {
         "build": "tsc",
         "build:watch": "tsc --watch",
-        "test": "jest --config=jest.config.mjs",
-        "test:watch": "jest --config=jest.config.mjs --watch",
-        "test:coverage": "jest --config=jest.config.mjs --coverage",
+        "test": "vitest",
+        "test:watch": "vitest --watch",
+        "test:coverage": "vitest --coverage",
         "typecheck": "tsc --noEmit",
         "clean": "rimraf dist",
         "prebuild": "npm run clean"
