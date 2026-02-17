@@ -2,7 +2,7 @@
  * 工作流关系类型定义
  */
 
-import type { ID } from '../common';
+import type { ID } from '../common.js';
 
 /**
  * 工作流关系信息

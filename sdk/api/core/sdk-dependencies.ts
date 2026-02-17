@@ -10,18 +10,18 @@
  * - 统一通过ExecutionContext获取依赖
  */
 
-import { ExecutionContext } from '../../core/execution/context/execution-context';
-import type { WorkflowRegistry } from '../../core/services/workflow-registry';
-import type { ThreadRegistry } from '../../core/services/thread-registry';
-import type { EventManager } from '../../core/services/event-manager';
-import type { CheckpointStateManager } from '../../core/execution/managers/checkpoint-state-manager';
-import type { ToolService } from '../../core/services/tool-service';
-import type { LLMExecutor } from '../../core/execution/executors/llm-executor';
-import type { CodeService } from '../../core/services/code-service';
-import type { NodeTemplateRegistry } from '../../core/services/node-template-registry';
-import type { TriggerTemplateRegistry } from '../../core/services/trigger-template-registry';
-import type { GraphRegistry } from '../../core/services/graph-registry';
-import { SingletonRegistry } from '../../core/execution/context/singleton-registry';
+import { ExecutionContext } from '../../core/execution/context/execution-context.js';
+import type { WorkflowRegistry } from '../../core/services/workflow-registry.js';
+import type { ThreadRegistry } from '../../core/services/thread-registry.js';
+import type { EventManager } from '../../core/services/event-manager.js';
+import type { CheckpointStateManager } from '../../core/execution/managers/checkpoint-state-manager.js';
+import type { ToolService } from '../../core/services/tool-service.js';
+import type { LLMExecutor } from '../../core/execution/executors/llm-executor.js';
+import type { CodeService } from '../../core/services/code-service.js';
+import type { NodeTemplateRegistry } from '../../core/services/node-template-registry.js';
+import type { TriggerTemplateRegistry } from '../../core/services/trigger-template-registry.js';
+import type { GraphRegistry } from '../../core/services/graph-registry.js';
+import { SingletonRegistry } from '../../core/execution/context/singleton-registry.js';
 
 /**
  * API依赖管理类
@@ -118,16 +118,16 @@ export class APIDependencyManager {
   /**
    * 获取线程生命周期协调器
    */
-  getThreadLifecycleCoordinator(): import('../../core/execution/coordinators/thread-lifecycle-coordinator').ThreadLifecycleCoordinator {
-    const { ThreadLifecycleCoordinator } = require('../../core/execution/coordinators/thread-lifecycle-coordinator');
+  async getThreadLifecycleCoordinator(): Promise<import('../../core/execution/coordinators/thread-lifecycle-coordinator.js').ThreadLifecycleCoordinator> {
+    const { ThreadLifecycleCoordinator } = await import('../../core/execution/coordinators/thread-lifecycle-coordinator.js');
     return new ThreadLifecycleCoordinator(this.executionContext);
   }
   
   /**
    * 获取 LLM 包装器
    */
-  getLLMWrapper(): import('../../core/llm/wrapper').LLMWrapper {
-    const { LLMWrapper } = require('../../core/llm/wrapper');
-    return new LLMWrapper(this.executionContext);
+  async getLLMWrapper(): Promise<import('../../core/llm/wrapper.js').LLMWrapper> {
+    const { LLMWrapper } = await import('../../core/llm/wrapper.js');
+    return new LLMWrapper();
   }
 }

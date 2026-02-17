@@ -9,9 +9,9 @@
  * - 便于序列化和反序列化
  */
 
-import type { ID, Timestamp, Metadata } from './common';
-import type { TriggerCondition } from './trigger';
-import type { TriggerAction } from './trigger';
+import type { ID, Timestamp, Metadata } from './common.js';
+import type { TriggerCondition } from './trigger/index.js';
+import type { TriggerAction } from './trigger/index.js';
 
 /**
  * 触发器模板定义

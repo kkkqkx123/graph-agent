@@ -10,17 +10,17 @@
 import type { PreprocessedGraph } from '@modular-agent/types';
 import type { Thread, ThreadOptions, ThreadStatus } from '@modular-agent/types';
 import { ThreadType } from '@modular-agent/types';
-import { ConversationManager } from './managers/conversation-manager';
-import { ThreadContext } from './context/thread-context';
+import { ConversationManager } from './managers/conversation-manager.js';
+import { ThreadContext } from './context/thread-context.js';
 import { NodeType } from '@modular-agent/types';
 import { generateId, now as getCurrentTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
-import { VariableCoordinator } from './coordinators/variable-coordinator';
-import { VariableStateManager } from './managers/variable-state-manager';
+import { VariableCoordinator } from './coordinators/variable-coordinator.js';
+import { VariableStateManager } from './managers/variable-state-manager.js';
 import { ExecutionError, RuntimeValidationError } from '@modular-agent/types';
-import { type WorkflowRegistry } from '../services/workflow-registry';
-import { ExecutionContext } from './context/execution-context';
+import { type WorkflowRegistry } from '../services/workflow-registry.js';
+import { ExecutionContext } from './context/execution-context.js';
 import { TriggerStatus } from '@modular-agent/types';
-import { SingletonRegistry } from './context/singleton-registry';
+import { SingletonRegistry } from './context/singleton-registry.js';
 
 /**
  * ThreadBuilder - Thread构建器

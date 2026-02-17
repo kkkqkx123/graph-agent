@@ -3,9 +3,9 @@
  * 定义统一的命令执行接口
  */
 
-import type { ExecutionResult } from './execution-result';
+import type { ExecutionResult } from './execution-result.js';
 import { SDKError, ExecutionError as SDKExecutionError } from '@modular-agent/types';
-import { CommandValidator } from '../utils/command-validator';
+import { CommandValidator } from '../utils/command-validator.js';
 import { ok, err, isError } from '@modular-agent/common-utils';
 
 /**

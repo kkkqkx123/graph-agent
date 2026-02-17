@@ -7,11 +7,11 @@
  * - 简化配置，移除不必要的配置机制
  */
 
-import { APIFactory } from './api-factory';
-import { APIDependencyManager } from './sdk-dependencies';
-import { getData } from '../types/execution-result';
+import { APIFactory } from './api-factory.js';
+import { APIDependencyManager } from './sdk-dependencies.js';
+import { getData } from '../types/execution-result.js';
 import type { SDKOptions } from '@modular-agent/types';
-import { logger } from '../../index';
+import { logger } from '../../utils/index.js';
 import { getErrorMessage } from '@modular-agent/common-utils';
 
 /**

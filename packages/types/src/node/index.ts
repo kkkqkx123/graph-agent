@@ -4,50 +4,50 @@
  */
 
 // 导出基础类型
-export * from './base';
+export * from './base.js';
 
 // 导出节点配置类型
-export * from './configs';
+export * from './configs/index.js';
 
 // 导出Hook相关类型
-export * from './hooks';
+export * from './hooks.js';
 
 // 导出节点属性类型
-export * from './properties';
+export * from './properties.js';
 
 // 导出所有节点配置的联合类型
 import type {
   StartNodeConfig,
   EndNodeConfig,
   RouteNodeConfig
-} from './configs/control-configs';
+} from './configs/control-configs.js';
 
-import type { VariableNodeConfig } from './configs/variable-configs';
+import type { VariableNodeConfig } from './configs/variable-configs.js';
 
 import type {
   ForkNodeConfig,
   JoinNodeConfig
-} from './configs/fork-join-configs';
+} from './configs/fork-join-configs.js';
 
 import type {
   LoopStartNodeConfig,
   LoopEndNodeConfig
-} from './configs/loop-configs';
+} from './configs/loop-configs.js';
 
 import type {
   CodeNodeConfig,
   LLMNodeConfig
-} from './configs/execution-configs';
+} from './configs/execution-configs.js';
 
-import type { UserInteractionNodeConfig } from './configs/interaction-configs';
+import type { UserInteractionNodeConfig } from './configs/interaction-configs.js';
 
-import type { ContextProcessorNodeConfig } from './configs/context-configs';
+import type { ContextProcessorNodeConfig } from './configs/context-configs.js';
 
 import type {
   SubgraphNodeConfig,
   StartFromTriggerNodeConfig,
   ContinueFromTriggerNodeConfig
-} from './configs/subgraph-configs';
+} from './configs/subgraph-configs.js';
 
 /**
  * 节点配置联合类型

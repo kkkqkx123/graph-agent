@@ -11,22 +11,22 @@ import { ConfigurationValidationError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 
-export { validateForkNode } from './fork-validator';
-export { validateJoinNode } from './join-validator';
-export { validateLoopStartNode } from './loop-start-validator';
-export { validateLoopEndNode } from './loop-end-validator';
-export { validateStartNode } from './start-validator';
-export { validateEndNode } from './end-validator';
-export { validateCodeNode } from './code-validator';
-export { validateContextProcessorNode } from './context-processor-validator';
-export { validateRouteNode } from './route-validator';
-export { validateVariableNode } from './variable-validator';
-export { validateLLMNode } from './llm-validator';
-export { validateAddToolNode } from './add-tool-validator';
-export { validateUserInteractionNode } from './user-interaction-validator';
-export { validateSubgraphNode } from './subgraph-validator';
-export { validateStartFromTriggerNode } from './start-from-trigger-validator';
-export { validateContinueFromTriggerNode } from './continue-from-trigger-validator';
+export { validateForkNode } from './fork-validator.js';
+export { validateJoinNode } from './join-validator.js';
+export { validateLoopStartNode } from './loop-start-validator.js';
+export { validateLoopEndNode } from './loop-end-validator.js';
+export { validateStartNode } from './start-validator.js';
+export { validateEndNode } from './end-validator.js';
+export { validateCodeNode } from './code-validator.js';
+export { validateContextProcessorNode } from './context-processor-validator.js';
+export { validateRouteNode } from './route-validator.js';
+export { validateVariableNode } from './variable-validator.js';
+export { validateLLMNode } from './llm-validator.js';
+export { validateAddToolNode } from './add-tool-validator.js';
+export { validateUserInteractionNode } from './user-interaction-validator.js';
+export { validateSubgraphNode } from './subgraph-validator.js';
+export { validateStartFromTriggerNode } from './start-from-trigger-validator.js';
+export { validateContinueFromTriggerNode } from './continue-from-trigger-validator.js';
 
 /**
  * 根据节点类型验证节点配置

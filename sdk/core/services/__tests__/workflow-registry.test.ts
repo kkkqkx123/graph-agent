@@ -2,7 +2,7 @@
  * WorkflowRegistry 单元测试
  */
 
-import { WorkflowRegistry } from '../workflow-registry';
+import { WorkflowRegistry } from '../workflow-registry.js';
 import { NodeType } from '@modular-agent/types';
 import { EdgeType } from '@modular-agent/types';
 import { WorkflowType } from '@modular-agent/types';

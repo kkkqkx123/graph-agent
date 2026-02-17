@@ -8,9 +8,9 @@
  * - 直接使用 error.severity 确定日志级别
  */
 
-import { ErrorService } from '../error-service';
+import { ErrorService } from '../error-service.js';
 import { ValidationError, ExecutionError, ToolError, NotFoundError, SDKError, ErrorSeverity } from '@modular-agent/types';
-import { EventManager } from '../event-manager';
+import { EventManager } from '../event-manager.js';
 import type { ErrorEvent } from '@modular-agent/types';
 
 // Mock EventManager

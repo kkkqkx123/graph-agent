@@ -2,10 +2,10 @@
  * 触发器执行相关类型定义
  */
 
-import type { ID, Timestamp, Metadata } from '../common';
-import type { TriggerAction } from './config';
-import type { Trigger, WorkflowTrigger } from './definition';
-import { TriggerStatus, TriggerType } from './state';
+import type { ID, Timestamp, Metadata } from '../common.js';
+import type { TriggerAction } from './config.js';
+import type { Trigger, WorkflowTrigger } from './definition.js';
+import { TriggerStatus, TriggerType } from './state.js';
 
 /**
  * 触发器执行结果接口

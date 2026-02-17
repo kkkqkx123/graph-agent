@@ -2,7 +2,7 @@
  * UserInteractionResourceAPI 单元测试
  */
 
-import { UserInteractionResourceAPI, type UserInteractionConfig, type UserInteractionFilter } from '../user-interaction-resource-api';
+import { UserInteractionResourceAPI, type UserInteractionConfig, type UserInteractionFilter } from '../user-interaction-resource-api.js';
 import type { UserInteractionHandler, UserInteractionRequest } from '@modular-agent/types';
 import { SingletonRegistry } from '@modular-agent/sdk/core/execution/context/singleton-registry';
 import { EventManager } from '@modular-agent/sdk/core/services/event-manager';

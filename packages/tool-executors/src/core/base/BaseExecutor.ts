@@ -4,10 +4,10 @@
  */
 
 import type { Tool, ToolExecutionOptions, ToolExecutionResult } from '@modular-agent/types';
-import { IToolExecutor } from '../interfaces/IToolExecutor';
-import { ParameterValidator } from './ParameterValidator';
-import { RetryStrategy } from './RetryStrategy';
-import { TimeoutController } from './TimeoutController';
+import { IToolExecutor } from '../interfaces/IToolExecutor.js';
+import { ParameterValidator } from './ParameterValidator.js';
+import { RetryStrategy } from './RetryStrategy.js';
+import { TimeoutController } from './TimeoutController.js';
 import { now, diffTimestamp } from '@modular-agent/common-utils';
 
 /**

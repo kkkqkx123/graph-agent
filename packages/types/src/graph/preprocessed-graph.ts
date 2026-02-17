@@ -3,13 +3,13 @@
  * 扩展Graph接口，添加预处理相关的元数据
  */
 
-import type { Graph } from './structure';
-import type { ID, Timestamp, Version } from '../common';
-import type { IdMapping, SubgraphRelationship } from '../workflow/id-mapping';
-import type { GraphAnalysisResult } from './analysis';
-import type { PreprocessValidationResult, SubgraphMergeLog } from '../workflow/preprocess';
-import type { WorkflowTrigger } from '../trigger';
-import type { WorkflowVariable } from '../workflow/variables';
+import type { Graph } from './structure.js';
+import type { ID, Timestamp, Version } from '../common.js';
+import type { IdMapping, SubgraphRelationship } from '../workflow/id-mapping.js';
+import type { GraphAnalysisResult } from './analysis.js';
+import type { PreprocessValidationResult, SubgraphMergeLog } from '../workflow/preprocess.js';
+import type { WorkflowTrigger } from '../trigger/index.js';
+import type { WorkflowVariable } from '../workflow/variables.js';
 
 /**
  * 预处理后的图接口

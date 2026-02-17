@@ -4,16 +4,16 @@
  */
 
 // 执行上下文
-export { ThreadContext, ExecutionState } from './context';
+export { ThreadContext, ExecutionState } from './context/index.js';
 
 // 执行上下文（依赖注入容器）
-export { ExecutionContext } from './context/execution-context';
+export { ExecutionContext } from './context/execution-context.js';
 
 // 主要执行引擎
-export { ThreadExecutor } from './thread-executor';
+export { ThreadExecutor } from './thread-executor.js';
 
 // Thread构建器
-export { ThreadBuilder } from './thread-builder';
+export { ThreadBuilder } from './thread-builder.js';
 
 // Thread状态验证工具函数
 export {
@@ -22,30 +22,30 @@ export {
   getAllowedTransitions,
   isTerminalStatus,
   isActiveStatus
-} from './utils/thread-state-validator';
+} from './utils/thread-state-validator.js';
 
 // Thread注册表
-export { ThreadRegistry } from '../services/thread-registry';
+export { ThreadRegistry } from '../services/thread-registry.js';
 
 // 变量协调器和状态管理器
-export { VariableCoordinator } from './coordinators/variable-coordinator';
-export { VariableStateManager } from './managers/variable-state-manager';
+export { VariableCoordinator } from './coordinators/variable-coordinator.js';
+export { VariableStateManager } from './managers/variable-state-manager.js';
 
 // LLM执行相关
-export { ConversationManager, type ConversationState } from './managers/conversation-manager';
-export type { ConversationManagerOptions } from './managers/conversation-manager';
-export { TokenUsageTracker } from './token-usage-tracker';
-export type { TokenUsageTrackerOptions, FullTokenUsageStats } from './token-usage-tracker';
+export { ConversationManager, type ConversationState } from './managers/conversation-manager.js';
+export type { ConversationManagerOptions } from './managers/conversation-manager.js';
+export { TokenUsageTracker } from './token-usage-tracker.js';
+export type { TokenUsageTrackerOptions, FullTokenUsageStats } from './token-usage-tracker.js';
 export type { TokenUsageStats } from '@modular-agent/types';
 
 // Hook处理函数
-export * from './handlers/hook-handlers';
+export * from './handlers/hook-handlers/index.js';
 
 // Hook创建器工具
-export * from './utils/hook-creators';
+export * from './utils/hook-creators.js';
 
 // 节点处理函数
-export * from './handlers/node-handlers';
+export * from './handlers/node-handlers/index.js';
 
 // 触发器处理函数
-export * from './handlers/trigger-handlers';
+export * from './handlers/trigger-handlers/index.js';

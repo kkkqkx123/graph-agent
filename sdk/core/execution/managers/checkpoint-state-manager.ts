@@ -5,13 +5,13 @@
 
 import type { Checkpoint } from '@modular-agent/types';
 import type { CheckpointStorage, CheckpointStorageMetadata, CleanupPolicy, CleanupResult } from '@modular-agent/types';
-import type { EventManager } from '../../services/event-manager';
-import { LifecycleCapable } from './lifecycle-capable';
-import { serializeCheckpoint, deserializeCheckpoint } from '../utils/checkpoint-serializer';
-import { createCleanupStrategy } from '../utils/checkpoint-cleanup-policy';
+import type { EventManager } from '../../services/event-manager.js';
+import { LifecycleCapable } from './lifecycle-capable.js';
+import { serializeCheckpoint, deserializeCheckpoint } from '../utils/checkpoint-serializer.js';
+import { createCleanupStrategy } from '../utils/checkpoint-cleanup-policy.js';
 import { generateId, now, getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
 import { EventType } from '@modular-agent/types';
-import { safeEmit } from '../utils/event/event-emitter';
+import { safeEmit } from '../utils/event/event-emitter.js';
 import { SystemExecutionError } from '@modular-agent/types';
 
 /**

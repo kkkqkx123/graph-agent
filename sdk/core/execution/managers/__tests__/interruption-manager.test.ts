@@ -1,4 +1,4 @@
-import { InterruptionManager } from '../interruption-manager';
+import { InterruptionManager } from '../interruption-manager.js';
 import { ThreadInterruptedException } from '@modular-agent/types';
 import { getThreadInterruptedException } from '@modular-agent/common-utils';
 

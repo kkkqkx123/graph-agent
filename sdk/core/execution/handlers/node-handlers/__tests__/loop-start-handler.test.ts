@@ -2,7 +2,7 @@
  * LoopStart节点处理函数单元测试
  */
 
-import { loopStartHandler } from '../loop-start-handler';
+import { loopStartHandler } from '../loop-start-handler.js';
 import type { Node, LoopStartNodeConfig } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
 import { ValidationError, ExecutionError } from '@modular-agent/types';

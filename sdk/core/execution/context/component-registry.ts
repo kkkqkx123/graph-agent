@@ -3,13 +3,13 @@
  * 负责组件的注册和获取，提供类型安全的访问接口
  */
 
-import type { WorkflowRegistry } from '../../services/workflow-registry';
-import type { ThreadRegistry } from '../../services/thread-registry';
-import type { EventManager } from '../../services/event-manager';
-import { CheckpointStateManager } from '../managers/checkpoint-state-manager';
-import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager';
-import { ThreadLifecycleCoordinator } from '../coordinators/thread-lifecycle-coordinator';
-import { ToolContextManager } from '../managers/tool-context-manager';
+import type { WorkflowRegistry } from '../../services/workflow-registry.js';
+import type { ThreadRegistry } from '../../services/thread-registry.js';
+import type { EventManager } from '../../services/event-manager.js';
+import { CheckpointStateManager } from '../managers/checkpoint-state-manager.js';
+import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager.js';
+import { ThreadLifecycleCoordinator } from '../coordinators/thread-lifecycle-coordinator.js';
+import { ToolContextManager } from '../managers/tool-context-manager.js';
 
 /**
  * 组件映射类型，确保类型安全

@@ -3,10 +3,10 @@
  * 图环检测函数的单元测试
  */
 
-import { GraphData } from '../../../entities/graph-data';
+import { GraphData } from '../../../entities/graph-data.js';
 import type { GraphNode, GraphEdge } from '@modular-agent/types';
 import { NodeType, EdgeType } from '@modular-agent/types';
-import { detectCycles } from '../graph-cycle-detector';
+import { detectCycles } from '../graph-cycle-detector.js';
 
 /**
  * 创建无环的有向无环图（DAG）

@@ -2,7 +2,7 @@
  * 限流器单元测试
  */
 
-import { RateLimiter } from '../rate-limiter';
+import { RateLimiter } from '../rate-limiter.js';
 
 describe('RateLimiter', () => {
   describe('构造函数', () => {

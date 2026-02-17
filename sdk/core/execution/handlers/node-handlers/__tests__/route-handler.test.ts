@@ -2,7 +2,7 @@
  * Route节点处理函数单元测试
  */
 
-import { routeHandler } from '../route-handler';
+import { routeHandler } from '../route-handler.js';
 import type { Node, RouteNodeConfig } from '@modular-agent/types';
 import { NodeType } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';

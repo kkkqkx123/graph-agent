@@ -12,10 +12,10 @@
  * - 空闲超时回收，避免资源浪费
  */
 
-import { ThreadExecutor } from '../thread-executor';
-import { ExecutionContext } from '../context/execution-context';
-import { WorkerStatus, type ExecutorWrapper, type PoolStats } from '../types/task.types';
-import { type SubworkflowManagerConfig } from '../types/triggered-subgraph.types';
+import { ThreadExecutor } from '../thread-executor.js';
+import { ExecutionContext } from '../context/execution-context.js';
+import { WorkerStatus, type ExecutorWrapper, type PoolStats } from '../types/task.types.js';
+import { type SubworkflowManagerConfig } from '../types/triggered-subgraph.types.js';
 
 /**
  * ThreadPoolManager - 线程池管理器

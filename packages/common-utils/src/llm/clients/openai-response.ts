@@ -6,7 +6,7 @@
  * 支持流式和非流式调用
  */
 
-import { BaseLLMClient } from '../base-client';
+import { BaseLLMClient } from '../base-client.js';
 import type {
   LLMRequest,
   LLMResult,
@@ -15,7 +15,7 @@ import type {
   LLMToolCall
 } from '@modular-agent/types';
 import { MessageRole } from '@modular-agent/types';
-import { convertToolsToOpenAIFormat } from '../../tool';
+import { convertToolsToOpenAIFormat } from '../../tool/index.js';
 
 /**
  * OpenAI Response客户端

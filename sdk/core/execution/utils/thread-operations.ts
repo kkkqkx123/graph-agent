@@ -5,12 +5,12 @@
  */
 
 import type { Thread } from '@modular-agent/types';
-import type { ThreadContext } from '../context/thread-context';
-import type { ThreadBuilder } from '../thread-builder';
-import type { ThreadRegistry } from '../../services/thread-registry';
-import type { EventManager } from '../../services/event-manager';
+import type { ThreadContext } from '../context/thread-context.js';
+import type { ThreadBuilder } from '../thread-builder.js';
+import type { ThreadRegistry } from '../../services/thread-registry.js';
+import type { EventManager } from '../../services/event-manager.js';
 import { ExecutionError, RuntimeValidationError } from '@modular-agent/types';
-import { MessageArrayUtils } from '../../utils/message-array-utils';
+import { MessageArrayUtils } from '../../utils/message-array-utils.js';
 import { getErrorMessage, getErrorOrUndefined } from '@modular-agent/common-utils';
 import {
   buildThreadForkStartedEvent,
@@ -19,15 +19,15 @@ import {
   buildThreadJoinConditionMetEvent,
   buildThreadCopyStartedEvent,
   buildThreadCopyCompletedEvent
-} from './event/event-builder';
+} from './event/event-builder.js';
 import {
   safeEmit
-} from './event/event-emitter';
+} from './event/event-emitter.js';
 import {
   waitForMultipleThreadsCompleted,
   waitForAnyThreadCompleted,
   waitForAnyThreadCompletion
-} from './event/event-waiter';
+} from './event/event-waiter.js';
 
 /**
  * Fork 配置

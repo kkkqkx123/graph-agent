@@ -14,11 +14,11 @@ import type {
   SubgraphMergeOptions,
   SubgraphMergeResult,
 } from '@modular-agent/types';
-import { GraphData } from '../entities/graph-data';
-import { GraphValidator } from '../validation/graph-validator';
+import { GraphData } from '../entities/graph-data.js';
+import { GraphValidator } from '../validation/graph-validator.js';
 import { generateSubgraphNamespace, generateNamespacedNodeId, generateNamespacedEdgeId, generateId } from '@modular-agent/common-utils';
 import { SUBGRAPH_METADATA_KEYS } from '@modular-agent/types';
-import { SingletonRegistry } from '../execution/context/singleton-registry';
+import { SingletonRegistry } from '../execution/context/singleton-registry.js';
 
 /**
  * 图构建器类

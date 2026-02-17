@@ -15,15 +15,15 @@
  * - 支持同步和异步执行模式
  */
 
-import type { ThreadContext } from '../../context/thread-context';
-import type { ExecutionContext } from '../../context/execution-context';
-import { DynamicThreadManager } from '../../managers/dynamic-thread-manager';
+import type { ThreadContext } from '../../context/thread-context.js';
+import type { ExecutionContext } from '../../context/execution-context.js';
+import { DynamicThreadManager } from '../../managers/dynamic-thread-manager.js';
 import {
   type CreateDynamicThreadRequest,
   type ExecutedThreadResult,
   type ThreadSubmissionResult,
   type DynamicThreadConfig
-} from '../../types/dynamic-thread.types';
+} from '../../types/dynamic-thread.types.js';
 import { getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
 import { ToolError } from '@modular-agent/types';
 

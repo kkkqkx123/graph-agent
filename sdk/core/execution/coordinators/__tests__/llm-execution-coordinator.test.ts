@@ -2,11 +2,11 @@
  * LLMExecutionCoordinator 单元测试
  */
 
-import { LLMExecutionCoordinator } from '../llm-execution-coordinator';
-import { ConversationManager } from '../../managers/conversation-manager';
-import { LLMExecutor } from '../../executors/llm-executor';
-import { ToolCallExecutor } from '../../executors/tool-call-executor';
-import { EventManager } from '../../../services/event-manager';
+import { LLMExecutionCoordinator } from '../llm-execution-coordinator.js';
+import { ConversationManager } from '../../managers/conversation-manager.js';
+import { LLMExecutor } from '../../executors/llm-executor.js';
+import { ToolCallExecutor } from '../../executors/tool-call-executor.js';
+import { EventManager } from '../../../services/event-manager.js';
 import { EventType } from '@modular-agent/types';
 import { ExecutionError } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';

@@ -2,7 +2,7 @@
  * Result类型单元测试
  */
 
-import { ok, err, tryCatch, tryCatchAsync, all, any } from '../result';
+import { ok, err, tryCatch, tryCatchAsync, all, any } from '../result.js';
 
 describe('Result类型', () => {
   describe('ok', () => {

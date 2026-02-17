@@ -26,14 +26,14 @@ export type TriggerHandler = (
 ) => Promise<TriggerExecutionResult>;
 
 // 导入各个触发器处理函数
-import { stopThreadHandler } from './stop-thread-handler';
-import { pauseThreadHandler } from './pause-thread-handler';
-import { resumeThreadHandler } from './resume-thread-handler';
-import { skipNodeHandler } from './skip-node-handler';
-import { setVariableHandler } from './set-variable-handler';
-import { sendNotificationHandler } from './send-notification-handler';
-import { customHandler } from './custom-handler';
-import { executeTriggeredSubgraphHandler } from './execute-triggered-subgraph-handler';
+import { stopThreadHandler } from './stop-thread-handler.js';
+import { pauseThreadHandler } from './pause-thread-handler.js';
+import { resumeThreadHandler } from './resume-thread-handler.js';
+import { skipNodeHandler } from './skip-node-handler.js';
+import { setVariableHandler } from './set-variable-handler.js';
+import { sendNotificationHandler } from './send-notification-handler.js';
+import { customHandler } from './custom-handler.js';
+import { executeTriggeredSubgraphHandler } from './execute-triggered-subgraph-handler.js';
 
 /**
  * 触发器处理函数映射
@@ -80,11 +80,11 @@ export function getTriggerHandler(actionType: TriggerActionType): TriggerHandler
 }
 
 // 导出各个触发器处理函数（用于外部使用）
-export { stopThreadHandler } from './stop-thread-handler';
-export { pauseThreadHandler } from './pause-thread-handler';
-export { resumeThreadHandler } from './resume-thread-handler';
-export { skipNodeHandler } from './skip-node-handler';
-export { setVariableHandler } from './set-variable-handler';
-export { sendNotificationHandler } from './send-notification-handler';
-export { customHandler } from './custom-handler';
-export { executeTriggeredSubgraphHandler } from './execute-triggered-subgraph-handler';
+export { stopThreadHandler } from './stop-thread-handler.js';
+export { pauseThreadHandler } from './pause-thread-handler.js';
+export { resumeThreadHandler } from './resume-thread-handler.js';
+export { skipNodeHandler } from './skip-node-handler.js';
+export { setVariableHandler } from './set-variable-handler.js';
+export { sendNotificationHandler } from './send-notification-handler.js';
+export { customHandler } from './custom-handler.js';
+export { executeTriggeredSubgraphHandler } from './execute-triggered-subgraph-handler.js';

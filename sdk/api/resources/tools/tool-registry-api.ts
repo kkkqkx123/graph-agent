@@ -7,12 +7,12 @@ import {
   validateRequiredFields,
   validateStringLength,
   validateObject
-} from '../../validation/validation-strategy';
+} from '../../validation/validation-strategy.js';
 
 import type { Tool, ToolFilter } from '@modular-agent/types';
 import { NotFoundError } from '@modular-agent/types';
-import { GenericResourceAPI } from '../generic-resource-api';
-import type { APIDependencyManager } from '../../core/sdk-dependencies';
+import { GenericResourceAPI } from '../generic-resource-api.js';
+import type { APIDependencyManager } from '../../core/sdk-dependencies.js';
 
 /**
  * ToolRegistryAPI - 工具资源管理API

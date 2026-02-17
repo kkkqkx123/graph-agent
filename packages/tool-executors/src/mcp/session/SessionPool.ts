@@ -3,8 +3,8 @@
  * 管理多个MCP会话，提供连接池功能
  */
 
-import type { IMcpTransport, McpServerConfig, McpSessionInfo } from '../types';
-import { StdioTransport } from '../transport/StdioTransport';
+import type { IMcpTransport, McpServerConfig, McpSessionInfo } from '../types.js';
+import { StdioTransport } from '../transport/StdioTransport.js';
 import { NetworkError, ConfigurationError } from '@modular-agent/types';
 
 /**

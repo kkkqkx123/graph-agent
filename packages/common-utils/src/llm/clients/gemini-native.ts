@@ -5,7 +5,7 @@
  * 支持流式和非流式调用
  */
 
-import { BaseLLMClient } from '../base-client';
+import { BaseLLMClient } from '../base-client.js';
 import type {
   LLMRequest,
   LLMResult,
@@ -14,9 +14,9 @@ import type {
   LLMToolCall
 } from '@modular-agent/types';
 import { MessageRole } from '@modular-agent/types';
-import { generateId } from '../../utils';
-import { convertToolsToGeminiFormat } from '../../tool';
-import { extractAndFilterSystemMessages } from '../message-helper';
+import { generateId } from '../../utils/index.js';
+import { convertToolsToGeminiFormat } from '../../tool/index.js';
+import { extractAndFilterSystemMessages } from '../message-helper.js';
 
 /**
  * Gemini Native客户端

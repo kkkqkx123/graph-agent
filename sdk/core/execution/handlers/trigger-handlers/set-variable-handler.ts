@@ -5,7 +5,7 @@
 
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import { NotFoundError, ValidationError, RuntimeValidationError, ThreadContextNotFoundError } from '@modular-agent/types';
-import { ExecutionContext } from '../../context/execution-context';
+import { ExecutionContext } from '../../context/execution-context.js';
 
 /**
  * 创建成功结果

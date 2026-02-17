@@ -2,7 +2,7 @@
  * StartFromTrigger节点处理函数单元测试
  */
 
-import { startFromTriggerHandler } from '../start-from-trigger-handler';
+import { startFromTriggerHandler } from '../start-from-trigger-handler.js';
 import type { Node, StartFromTriggerNodeConfig } from '@modular-agent/types';
 import { NodeType } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';

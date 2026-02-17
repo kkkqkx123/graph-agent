@@ -2,8 +2,8 @@
  * CallbackManager 单元测试
  */
 
-import { CallbackManager } from '../callback-manager';
-import type { ExecutedThreadResult } from '../../types/dynamic-thread.types';
+import { CallbackManager } from '../callback-manager.js';
+import type { ExecutedThreadResult } from '../../types/dynamic-thread.types.js';
 
 describe('CallbackManager', () => {
   let callbackManager: CallbackManager<ExecutedThreadResult>;

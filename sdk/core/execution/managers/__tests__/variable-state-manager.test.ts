@@ -1,4 +1,4 @@
-import { VariableStateManager } from '../variable-state-manager';
+import { VariableStateManager } from '../variable-state-manager.js';
 import type { ThreadVariable, WorkflowVariable } from '@modular-agent/types';
 
 describe('VariableStateManager', () => {

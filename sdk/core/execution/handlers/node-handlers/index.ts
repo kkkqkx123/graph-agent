@@ -23,21 +23,21 @@ import type { Thread } from '@modular-agent/types';
 export type NodeHandler = (thread: Thread, node: Node, context?: any) => Promise<any>;
 
 // 导入各个节点处理函数
-import { startHandler } from './start-handler';
-import { endHandler } from './end-handler';
-import { variableHandler } from './variable-handler';
-import { codeHandler } from './code-handler';
-import { forkHandler } from './fork-handler';
-import { joinHandler } from './join-handler';
-import { routeHandler } from './route-handler';
-import { loopStartHandler } from './loop-start-handler';
-import { loopEndHandler } from './loop-end-handler';
-import { userInteractionHandler } from './user-interaction-handler';
-import { contextProcessorHandler } from './context-processor-handler';
-import { llmHandler } from './llm-handler';
-import { addToolHandler } from './add-tool-handler';
-import { startFromTriggerHandler } from './start-from-trigger-handler';
-import { continueFromTriggerHandler } from './continue-from-trigger-handler';
+import { startHandler } from './start-handler.js';
+import { endHandler } from './end-handler.js';
+import { variableHandler } from './variable-handler.js';
+import { codeHandler } from './code-handler.js';
+import { forkHandler } from './fork-handler.js';
+import { joinHandler } from './join-handler.js';
+import { routeHandler } from './route-handler.js';
+import { loopStartHandler } from './loop-start-handler.js';
+import { loopEndHandler } from './loop-end-handler.js';
+import { userInteractionHandler } from './user-interaction-handler.js';
+import { contextProcessorHandler } from './context-processor-handler.js';
+import { llmHandler } from './llm-handler.js';
+import { addToolHandler } from './add-tool-handler.js';
+import { startFromTriggerHandler } from './start-from-trigger-handler.js';
+import { continueFromTriggerHandler } from './continue-from-trigger-handler.js';
 
 /**
  * 节点处理函数映射
@@ -75,18 +75,18 @@ export function getNodeHandler(nodeType: NodeType): NodeHandler {
 }
 
 // 导出各个节点处理函数（用于外部使用）
-export { startHandler } from './start-handler';
-export { endHandler } from './end-handler';
-export { variableHandler } from './variable-handler';
-export { codeHandler } from './code-handler';
-export { forkHandler } from './fork-handler';
-export { joinHandler } from './join-handler';
-export { routeHandler } from './route-handler';
-export { loopStartHandler } from './loop-start-handler';
-export { loopEndHandler } from './loop-end-handler';
-export { userInteractionHandler } from './user-interaction-handler';
-export { contextProcessorHandler } from './context-processor-handler';
-export { llmHandler } from './llm-handler';
-export { addToolHandler } from './add-tool-handler';
-export { startFromTriggerHandler } from './start-from-trigger-handler';
-export { continueFromTriggerHandler } from './continue-from-trigger-handler';
+export { startHandler } from './start-handler.js';
+export { endHandler } from './end-handler.js';
+export { variableHandler } from './variable-handler.js';
+export { codeHandler } from './code-handler.js';
+export { forkHandler } from './fork-handler.js';
+export { joinHandler } from './join-handler.js';
+export { routeHandler } from './route-handler.js';
+export { loopStartHandler } from './loop-start-handler.js';
+export { loopEndHandler } from './loop-end-handler.js';
+export { userInteractionHandler } from './user-interaction-handler.js';
+export { contextProcessorHandler } from './context-processor-handler.js';
+export { llmHandler } from './llm-handler.js';
+export { addToolHandler } from './add-tool-handler.js';
+export { startFromTriggerHandler } from './start-from-trigger-handler.js';
+export { continueFromTriggerHandler } from './continue-from-trigger-handler.js';

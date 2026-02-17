@@ -2,7 +2,7 @@
  * TokenUsageTracker 单元测试
  */
 
-import { TokenUsageTracker } from '../token-usage-tracker';
+import { TokenUsageTracker } from '../token-usage-tracker.js';
 import { MessageRole } from '@modular-agent/types';
 import type { LLMMessage } from '@modular-agent/types';
 

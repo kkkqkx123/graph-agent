@@ -17,7 +17,7 @@ import type {
   Edge,
   Graph,
 } from '@modular-agent/types';
-import { getReachableNodes } from './utils/graph-traversal';
+import { getReachableNodes } from './utils/graph-traversal.js';
 
 /**
  * 导航结果

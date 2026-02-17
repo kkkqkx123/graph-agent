@@ -19,28 +19,28 @@
  * - CheckpointCleanupPolicy: 检查点清理策略
  */
 
-export { TriggerStateManager } from "./trigger-state-manager";
+export { TriggerStateManager } from './trigger-state-manager.js';
 export type { TriggerRuntimeState } from '@modular-agent/types';
-export { VariableStateManager } from "./variable-state-manager";
-export { ToolContextManager, type ToolScope, type ToolMetadata, type ToolContext } from "./tool-context-manager";
-export { type LifecycleCapable } from "./lifecycle-capable";
+export { VariableStateManager } from './variable-state-manager.js';
+export { ToolContextManager, type ToolScope, type ToolMetadata, type ToolContext } from './tool-context-manager.js';
+export { type LifecycleCapable } from './lifecycle-capable.js';
 
 export {
   ConversationManager,
   ConversationManagerOptions,
   ConversationState
-} from "./conversation-manager";
+} from './conversation-manager.js';
 
-export { WorkflowReferenceManager } from "./workflow-reference-manager";
+export { WorkflowReferenceManager } from './workflow-reference-manager.js';
 
-export { InterruptionManager, type InterruptionType } from "./interruption-manager";
-export { InterruptionDetector, InterruptionDetectorImpl } from "./interruption-detector";
+export { InterruptionManager, type InterruptionType } from './interruption-manager.js';
+export { InterruptionDetector, InterruptionDetectorImpl } from './interruption-detector.js';
 
 // 任务队列和线程池相关
-export { ThreadPoolManager } from "./thread-pool-manager";
-export { TaskQueueManager } from "./task-queue-manager";
-export { TriggeredSubworkflowManager } from "./triggered-subworkflow-manager";
+export { ThreadPoolManager } from './thread-pool-manager.js';
+export { TaskQueueManager } from './task-queue-manager.js';
+export { TriggeredSubworkflowManager } from './triggered-subworkflow-manager.js';
 
 // 动态线程相关
-export { CallbackManager, type GenericCallbackInfo } from "./callback-manager";
-export { DynamicThreadManager } from "./dynamic-thread-manager";
+export { CallbackManager, type GenericCallbackInfo } from './callback-manager.js';
+export { DynamicThreadManager } from './dynamic-thread-manager.js';

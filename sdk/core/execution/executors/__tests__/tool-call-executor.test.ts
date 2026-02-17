@@ -2,10 +2,10 @@
  * ToolCallExecutor 单元测试
  */
 
-import { ToolCallExecutor } from '../tool-call-executor';
-import type { ToolService } from '../../../services/tool-service';
-import type { EventManager } from '../../../services/event-manager';
-import type { ConversationManager } from '../../managers/conversation-manager';
+import { ToolCallExecutor } from '../tool-call-executor.js';
+import type { ToolService } from '../../../services/tool-service.js';
+import type { EventManager } from '../../../services/event-manager.js';
+import type { ConversationManager } from '../../managers/conversation-manager.js';
 import { EventType } from '@modular-agent/types';
 
 // Mock dependencies

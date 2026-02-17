@@ -18,11 +18,11 @@ import type {
 } from '@modular-agent/types';
 import { WorkflowType } from '@modular-agent/types';
 import type { WorkflowReferenceInfo, WorkflowReferenceRelation, WorkflowReferenceType } from '@modular-agent/types';
-import { WorkflowReferenceManager } from '../execution/managers/workflow-reference-manager';
+import { WorkflowReferenceManager } from '../execution/managers/workflow-reference-manager.js';
 import { ValidationError, ExecutionError, ConfigurationValidationError, WorkflowNotFoundError } from '@modular-agent/types';
-import type { GraphRegistry } from './graph-registry';
-import { processWorkflow, type ProcessOptions } from '../graph/workflow-processor';
-import { SingletonRegistry } from '../execution/context/singleton-registry';
+import type { GraphRegistry } from './graph-registry.js';
+import { processWorkflow, type ProcessOptions } from '../graph/workflow-processor.js';
+import { SingletonRegistry } from '../execution/context/singleton-registry.js';
 import { getErrorMessage } from '@modular-agent/common-utils';
 
 /**

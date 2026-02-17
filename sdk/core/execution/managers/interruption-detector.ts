@@ -14,8 +14,8 @@
  * - 统一使用 AbortSignal 作为主要中断机制
  */
 
-import type { ThreadRegistry } from '../../services/thread-registry';
-import type { InterruptionType } from './interruption-manager';
+import type { ThreadRegistry } from '../../services/thread-registry.js';
+import type { InterruptionType } from './interruption-manager.js';
 import { isAborted, getThreadInterruptedException } from '@modular-agent/common-utils';
 
 /**

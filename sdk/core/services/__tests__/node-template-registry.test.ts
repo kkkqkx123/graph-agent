@@ -2,7 +2,7 @@
  * NodeTemplateRegistry 单元测试
  */
 
-import { NodeTemplateRegistry } from '../node-template-registry';
+import { NodeTemplateRegistry } from '../node-template-registry.js';
 import { NodeType } from '@modular-agent/types';
 import { ValidationError, NotFoundError } from '@modular-agent/types';
 

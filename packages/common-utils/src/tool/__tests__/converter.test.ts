@@ -12,7 +12,7 @@ import {
   OpenAITool,
   AnthropicTool,
   GeminiTool
-} from '../converter';
+} from '../converter.js';
 
 describe('tool-converter', () => {
   const mockToolSchemas: ToolSchema[] = [

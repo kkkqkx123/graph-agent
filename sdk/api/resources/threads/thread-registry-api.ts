@@ -4,12 +4,12 @@
  * 重构版本：继承GenericResourceAPI，提高代码复用性和一致性
  */
 
-import type { ThreadRegistry } from '../../../core/services/thread-registry';
+import type { ThreadRegistry } from '../../../core/services/thread-registry.js';
 import type { Thread, ThreadResult, ThreadStatus, ThreadFilter, ThreadSummary } from '@modular-agent/types';
-import { GenericResourceAPI } from '../generic-resource-api';
-import { getErrorMessage, isSuccess, getData } from '../../types/execution-result';
-import type { APIDependencyManager } from '../../core/sdk-dependencies';
-import { SingletonRegistry } from '../../../core/execution/context/singleton-registry';
+import { GenericResourceAPI } from '../generic-resource-api.js';
+import { getErrorMessage, isSuccess, getData } from '../../types/execution-result.js';
+import type { APIDependencyManager } from '../../core/sdk-dependencies.js';
+import { SingletonRegistry } from '../../../core/execution/context/singleton-registry.js';
 
 
 /**

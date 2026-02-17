@@ -6,7 +6,7 @@ import {
   Observable,
   Observer,
   create
-} from '../observable';
+} from '../observable.js';
 
 describe('Observable', () => {
   describe('基础功能', () => {

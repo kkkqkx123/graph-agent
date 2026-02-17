@@ -2,7 +2,7 @@
  * CodeService 单元测试
  */
 
-import { CodeService } from '../code-service';
+import { CodeService } from '../code-service.js';
 import { ScriptType } from '@modular-agent/types';
 import { NotFoundError, CodeExecutionError } from '@modular-agent/types';
 

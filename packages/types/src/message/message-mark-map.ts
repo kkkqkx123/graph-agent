@@ -3,7 +3,7 @@
  * 定义消息标记映射的数据结构，用于跟踪消息的可见性和批次信息
  */
 
-import type { MessageRole } from './message';
+import type { MessageRole } from './message.js';
 
 /**
  * 消息标记映射

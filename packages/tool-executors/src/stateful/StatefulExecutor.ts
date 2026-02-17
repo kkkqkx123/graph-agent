@@ -6,9 +6,9 @@
 import type { Tool } from '@modular-agent/types';
 import type { StatefulToolConfig, StatefulToolFactory } from '@modular-agent/types';
 import { ToolError } from '@modular-agent/types';
-import { BaseExecutor } from '../core/base/BaseExecutor';
-import { ExecutorType } from '../core/types';
-import type { StatefulExecutorConfig } from './types';
+import { BaseExecutor } from '../core/base/BaseExecutor.js';
+import { ExecutorType } from '../core/types.js';
+import type { StatefulExecutorConfig } from './types.js';
 
 /**
  * 有状态工具执行器

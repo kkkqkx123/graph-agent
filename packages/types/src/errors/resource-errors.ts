@@ -3,7 +3,7 @@
  * 定义资源未找到相关的错误类型
  */
 
-import { NotFoundError, ErrorSeverity } from './base';
+import { NotFoundError, ErrorSeverity } from './base.js';
 
 /**
  * 工作流未找到错误类型

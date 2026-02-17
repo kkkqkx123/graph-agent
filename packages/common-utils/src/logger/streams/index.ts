@@ -4,13 +4,13 @@
  */
 
 // ConsoleStream
-export { ConsoleStream, createConsoleStream } from './console-stream';
+export { ConsoleStream, createConsoleStream } from './console-stream.js';
 
 // FileStream
-export { FileStream, createFileStream } from './file-stream';
+export { FileStream, createFileStream } from './file-stream.js';
 
 // AsyncStream
-export { AsyncStream, createAsyncStream } from './async-stream';
+export { AsyncStream, createAsyncStream } from './async-stream.js';
 
 // Multistream
-export { Multistream, createMultistream } from './multistream';
+export { Multistream, createMultistream } from './multistream.js';

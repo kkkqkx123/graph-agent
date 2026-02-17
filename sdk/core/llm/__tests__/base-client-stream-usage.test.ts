@@ -2,7 +2,7 @@
  * BaseLLMClient 流式响应 Token 统计测试
  */
 
-import { BaseLLMClient } from '../base-client';
+import { BaseLLMClient } from '../base-client.js';
 import type { LLMRequest, LLMResult, LLMProfile } from '@modular-agent/types';
 
 // 创建一个测试用的客户端实现

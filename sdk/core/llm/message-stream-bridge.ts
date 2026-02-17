@@ -9,10 +9,10 @@ import {
   type MessageStreamAbortEvent,
   type MessageStreamErrorEvent
 } from '@modular-agent/common-utils';
-import type { EventManager } from '../services/event-manager';
+import type { EventManager } from '../services/event-manager.js';
 import { EventType } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
-import { safeEmit } from '../execution/utils/event/event-emitter';
+import { safeEmit } from '../execution/utils/event/event-emitter.js';
 
 /**
  * 桥接器上下文

@@ -3,9 +3,9 @@
  * 测试transport stream创建功能
  */
 
-import { transport } from '../transport';
-import type { LogTransportOptions, MultiLogTransportOptions } from '../transport';
-import type { LogStream, LogEntry } from '../../types';
+import { transport } from '../transport.js';
+import type { LogTransportOptions, MultiLogTransportOptions } from '../transport.js';
+import type { LogStream, LogEntry } from '../../types.js';
 
 // Mock console 方法
 const mockConsole = {

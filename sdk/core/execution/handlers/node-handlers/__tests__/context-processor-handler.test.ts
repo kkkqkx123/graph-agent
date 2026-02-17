@@ -2,7 +2,7 @@
  * ContextProcessor节点处理函数单元测试
  */
 
-import { contextProcessorHandler } from '../context-processor-handler';
+import { contextProcessorHandler } from '../context-processor-handler.js';
 import type { Node, ContextProcessorNodeConfig } from '@modular-agent/types';
 import { NodeType } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';

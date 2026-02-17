@@ -1,4 +1,4 @@
 /**
  * 错误处理工具函数
  */
-export * from './error-utils';
+export * from './error-utils.js';

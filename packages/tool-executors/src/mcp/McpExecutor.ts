@@ -6,10 +6,10 @@
 import type { Tool } from '@modular-agent/types';
 import type { McpToolConfig } from '@modular-agent/types';
 import { NetworkError, ToolError, ConfigurationError } from '@modular-agent/types';
-import { BaseExecutor } from '../core/base/BaseExecutor';
-import { ExecutorType } from '../core/types';
-import { SessionPool } from './session/SessionPool';
-import type { McpServerConfig } from './types';
+import { BaseExecutor } from '../core/base/BaseExecutor.js';
+import { ExecutorType } from '../core/types.js';
+import { SessionPool } from './session/SessionPool.js';
+import type { McpServerConfig } from './types.js';
 
 /**
  * MCP工具执行器

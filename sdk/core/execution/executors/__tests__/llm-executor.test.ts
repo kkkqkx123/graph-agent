@@ -2,7 +2,7 @@
  * LLMExecutor 单元测试
  */
 
-import { LLMExecutor } from '../llm-executor';
+import { LLMExecutor } from '../llm-executor.js';
 import { LLMWrapper } from '@modular-agent/common-utils';
 import type { LLMMessage, LLMResult } from '@modular-agent/types';
 import { ExecutionError } from '@modular-agent/types';

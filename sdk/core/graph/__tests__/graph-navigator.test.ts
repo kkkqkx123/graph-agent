@@ -3,8 +3,8 @@
  * 图导航器的单元测试
  */
 
-import { GraphData } from '../../entities/graph-data';
-import { GraphNavigator } from '../graph-navigator';
+import { GraphData } from '../../entities/graph-data.js';
+import { GraphNavigator } from '../graph-navigator.js';
 import type { GraphNode, GraphEdge, Condition } from '@modular-agent/types';
 import { NodeType, EdgeType } from '@modular-agent/types';
 

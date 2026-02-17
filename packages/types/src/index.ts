@@ -3,39 +3,39 @@
  */
 
 // 基础类型
-export * from './common';
+export * from './common.js';
 
 // 核心实体类型
-export * from './workflow';
-export * from './workflow-reference';
-export * from './node';
-export * from './node-template';
-export * from './edge';
-export * from './graph';
-export * from './condition';
-export * from './subgraph';
+export * from './workflow/index.js';
+export * from './workflow-reference.js';
+export * from './node/index.js';
+export * from './node-template.js';
+export * from './edge.js';
+export * from './graph/index.js';
+export * from './condition.js';
+export * from './subgraph.js';
 
 // 执行相关类型
-export * from './thread';
-export * from './execution';
-export * from './events';
-export * from './errors/index';
-export * from './trigger';
-export * from './trigger-template';
+export * from './thread/index.js';
+export * from './execution.js';
+export * from './events/index.js';
+export * from './errors/index.js';
+export * from './trigger/index.js';
+export * from './trigger-template.js';
 
 // 集成类型
-export * from './tool';
-export * from './llm';
-export * from './message';
-export * from './code';
-export * from './code-security';
-export * from './checkpoint';
-export * from './checkpoint-storage';
-export * from './interaction';
-export * from './human-relay';
-export * from './result';
-export * from './signal/index';
-export * from './http';
+export * from './tool/index.js';
+export * from './llm/index.js';
+export * from './message/index.js';
+export * from './code.js';
+export * from './code-security.js';
+export * from './checkpoint/index.js';
+export * from './checkpoint-storage.js';
+export * from './interaction.js';
+export * from './human-relay.js';
+export * from './result.js';
+export * from './signal/index.js';
+export * from './http.js';
 
 // API类型
-export * from './api-types';
+export * from './api-types.js';

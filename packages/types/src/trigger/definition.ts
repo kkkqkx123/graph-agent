@@ -2,10 +2,10 @@
  * 触发器定义类型
  */
 
-import type { ID, Timestamp, Metadata } from '../common';
-import { EventType } from '../events';
-import type { TriggerType, TriggerStatus } from './state';
-import type { TriggerCondition, TriggerAction } from './config';
+import type { ID, Timestamp, Metadata } from '../common.js';
+import { EventType } from '../events/index.js';
+import type { TriggerType, TriggerStatus } from './state.js';
+import type { TriggerCondition, TriggerAction } from './config.js';
 
 /**
  * 触发器定义接口

@@ -3,9 +3,9 @@
  * 封装模板相关的 SDK API 调用
  */
 
-import { BaseAdapter } from './base-adapter';
+import { BaseAdapter } from './base-adapter.js';
 import { resolve } from 'path';
-import { ConfigManager, type ConfigLoadOptions } from '../config/config-manager';
+import { ConfigManager, type ConfigLoadOptions } from '../config/config-manager.js';
 
 /**
  * 模板适配器

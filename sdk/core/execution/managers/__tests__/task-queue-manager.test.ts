@@ -2,12 +2,12 @@
  * TaskQueueManager 单元测试
  */
 
-import { TaskQueueManager } from '../task-queue-manager';
-import { TaskRegistry, type TaskManager } from '../../../services/task-registry';
-import { ThreadPoolManager } from '../thread-pool-manager';
-import { TaskStatus } from '../../types/task.types';
-import { ThreadContext } from '../../context/thread-context';
-import { ExecutionContext } from '../../context/execution-context';
+import { TaskQueueManager } from '../task-queue-manager.js';
+import { TaskRegistry, type TaskManager } from '../../../services/task-registry.js';
+import { ThreadPoolManager } from '../thread-pool-manager.js';
+import { TaskStatus } from '../../types/task.types.js';
+import { ThreadContext } from '../../context/thread-context.js';
+import { ExecutionContext } from '../../context/execution-context.js';
 
 describe('TaskQueueManager', () => {
   let taskQueueManager: TaskQueueManager;

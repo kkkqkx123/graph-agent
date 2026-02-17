@@ -6,16 +6,16 @@
 import { NotFoundError, ThreadContextNotFoundError, CheckpointNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
 import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot, MessageMarkMap } from '@modular-agent/types';
-import type { ThreadRegistry } from '../../services/thread-registry';
-import type { WorkflowRegistry } from '../../services/workflow-registry';
-import type { GlobalMessageStorage } from '../../services/global-message-storage';
-import { CheckpointStateManager } from '../managers/checkpoint-state-manager';
-import { ConversationManager } from '../managers/conversation-manager';
-import { VariableStateManager } from '../managers/variable-state-manager';
-import { ThreadContext } from '../context/thread-context';
-import { ExecutionContext } from '../context/execution-context';
+import type { ThreadRegistry } from '../../services/thread-registry.js';
+import type { WorkflowRegistry } from '../../services/workflow-registry.js';
+import type { GlobalMessageStorage } from '../../services/global-message-storage.js';
+import { CheckpointStateManager } from '../managers/checkpoint-state-manager.js';
+import { ConversationManager } from '../managers/conversation-manager.js';
+import { VariableStateManager } from '../managers/variable-state-manager.js';
+import { ThreadContext } from '../context/thread-context.js';
+import { ExecutionContext } from '../context/execution-context.js';
 import { generateId, now } from '@modular-agent/common-utils';
-import { SingletonRegistry } from '../context/singleton-registry';
+import { SingletonRegistry } from '../context/singleton-registry.js';
 
 /**
  * 检查点依赖项

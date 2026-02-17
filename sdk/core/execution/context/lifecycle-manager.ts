@@ -3,7 +3,7 @@
  * 负责管理组件的生命周期，包括清理和快照操作
  */
 
-import type { LifecycleCapable } from '../managers/lifecycle-capable';
+import type { LifecycleCapable } from '../managers/lifecycle-capable.js';
 import { SystemExecutionError } from '@modular-agent/types';
 import { getErrorOrNew } from '@modular-agent/common-utils';
 

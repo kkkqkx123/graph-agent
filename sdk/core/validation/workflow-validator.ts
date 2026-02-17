@@ -36,10 +36,10 @@ import { WorkflowType } from '@modular-agent/types';
 import { ConfigurationValidationError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
-import { validateNodeByType } from './node-validation';
-import { validateHooks } from './hook-validator';
-import { validateTriggers } from './trigger-validator';
-import { SelfReferenceValidationStrategy } from './strategies/self-reference-validation-strategy';
+import { validateNodeByType } from './node-validation/index.js';
+import { validateHooks } from './hook-validator.js';
+import { validateTriggers } from './trigger-validator.js';
+import { SelfReferenceValidationStrategy } from './strategies/self-reference-validation-strategy.js';
 import { TriggerActionType } from '@modular-agent/types';
 
 /**

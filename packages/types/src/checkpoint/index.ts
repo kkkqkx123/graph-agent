@@ -4,10 +4,10 @@
  */
 
 // 导出检查点类型
-export * from './checkpoint';
+export * from './checkpoint.js';
 
 // 导出快照类型
-export * from './snapshot';
+export * from './snapshot.js';
 
 // 导出配置类型
-export * from './config';
+export * from './config.js';

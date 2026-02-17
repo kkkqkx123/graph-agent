@@ -9,8 +9,8 @@ import { HookType } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
 import type { NodeExecutionResult } from '@modular-agent/types';
 import type { NodeCustomEvent } from '@modular-agent/types';
-import type { CheckpointDependencies } from '../checkpoint-handlers/checkpoint-utils';
-import { createCheckpoint } from '../checkpoint-handlers/checkpoint-utils';
+import type { CheckpointDependencies } from '../checkpoint-handlers/checkpoint-utils.js';
+import { createCheckpoint } from '../checkpoint-handlers/checkpoint-utils.js';
 import { ValidationError, RuntimeValidationError, ExecutionError, ErrorSeverity } from '@modular-agent/types';
 import { getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
 
@@ -75,7 +75,7 @@ async function executeSingleHook(
       convertToEvaluationContext,
       generateHookEventData,
       emitHookEvent
-    } = await import('./utils');
+    } = await import('./utils/index.js');
 
     // 构建评估上下文
     const evalContext = buildHookEvaluationContext(context);
@@ -185,4 +185,4 @@ async function executeSingleHook(
 }
 
 // 导出工具函数
-export * from './utils';
+export * from './utils/index.js';

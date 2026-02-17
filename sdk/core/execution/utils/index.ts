@@ -33,7 +33,7 @@ export {
   buildTriggeredSubgraphStartedEvent,
   buildTriggeredSubgraphCompletedEvent,
   buildTriggeredSubgraphFailedEvent
-} from './event';
+} from './event/index.js';
 
 // 事件触发工具函数
 export {
@@ -45,7 +45,7 @@ export {
   emitDelayed,
   emitWithRetry,
   emitAndWaitForCallback
-} from './event/event-emitter';
+} from './event/event-emitter.js';
 
 // 事件等待工具函数
 export {
@@ -63,7 +63,7 @@ export {
   waitForCondition,
   waitForAllConditions,
   waitForAnyCondition
-} from './event/event-waiter';
+} from './event/event-waiter.js';
 
 // 线程操作工具
 export {
@@ -73,7 +73,7 @@ export {
   type ForkConfig,
   type JoinStrategy,
   type JoinResult
-} from './thread-operations';
+} from './thread-operations.js';
 
 // 线程状态验证工具
 export {
@@ -82,14 +82,14 @@ export {
   getAllowedTransitions,
   isTerminalStatus,
   isActiveStatus
-} from './thread-state-validator';
+} from './thread-state-validator.js';
 
 export {
   VariableAccessor,
   VariableNamespace
-} from './variable-accessor';
+} from './variable-accessor.js';
 
-export { checkWorkflowReferences } from "./workflow-reference-checker";
+export { checkWorkflowReferences } from './workflow-reference-checker.js';
 
 // Hook创建器工具
 export {
@@ -97,7 +97,7 @@ export {
   createCustomValidationHook,
   createPermissionCheckHook,
   createAuditLoggingHook
-} from './hook-creators';
+} from './hook-creators.js';
 
 // 回调工具函数
 export {
@@ -114,4 +114,4 @@ export {
   createOnceCallback,
   createCachedCallback,
   cleanupCache
-} from './callback-utils';
+} from './callback-utils.js';

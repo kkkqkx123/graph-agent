@@ -3,5 +3,5 @@
  * 这里动态导入的实例统一由 SDK 模块的主索引文件初始化
  */
 
-export { encodeText, encodeObject, resetEncoder } from "./token-encoder";
-export { logger } from "./logger";
+export { encodeText, encodeObject, resetEncoder } from './token-encoder.js';
+export { logger } from './logger.js';

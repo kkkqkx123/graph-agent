@@ -2,9 +2,9 @@
  * 检查点类型定义
  */
 
-import type { ID, Timestamp, Metadata } from '../common';
-import type { ThreadStateSnapshot } from './snapshot';
-import type { CheckpointMetadata } from './config';
+import type { ID, Timestamp, Metadata } from '../common.js';
+import type { ThreadStateSnapshot } from './snapshot.js';
+import type { CheckpointMetadata } from './config.js';
 
 /**
  * 检查点类型

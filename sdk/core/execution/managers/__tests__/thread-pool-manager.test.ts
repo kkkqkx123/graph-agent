@@ -2,9 +2,9 @@
  * ThreadPoolManager 单元测试
  */
 
-import { ThreadPoolManager } from '../thread-pool-manager';
-import { WorkerStatus } from '../../types/task.types';
-import { ExecutionContext } from '../../context/execution-context';
+import { ThreadPoolManager } from '../thread-pool-manager.js';
+import { WorkerStatus } from '../../types/task.types.js';
+import { ExecutionContext } from '../../context/execution-context.js';
 
 describe('ThreadPoolManager', () => {
   let threadPoolManager: ThreadPoolManager;

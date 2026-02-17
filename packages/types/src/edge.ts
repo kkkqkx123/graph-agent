@@ -3,8 +3,8 @@
  * 定义工作流中节点之间的连接关系
  */
 
-import type { ID, Metadata } from './common';
-import type { Condition } from './condition';
+import type { ID, Metadata } from './common.js';
+import type { Condition } from './condition.js';
 
 /**
  * 边类型

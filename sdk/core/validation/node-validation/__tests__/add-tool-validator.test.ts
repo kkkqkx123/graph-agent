@@ -2,10 +2,10 @@
  * ADD_TOOL节点验证器测试
  */
 
-import { validateAddToolNode } from '../add-tool-validator';
+import { validateAddToolNode } from '../add-tool-validator.js';
 import { NodeType } from '@modular-agent/types';
 import { ConfigurationValidationError } from '@modular-agent/types';
-import { ToolRegistry } from '../../../tools/tool-registry';
+import { ToolRegistry } from '../../../tools/tool-registry.js';
 import { ToolType } from '@modular-agent/types';
 
 describe('validateAddToolNode', () => {

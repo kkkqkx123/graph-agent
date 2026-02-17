@@ -7,10 +7,10 @@ import {
   resolvePayloadTemplate,
   resolveTemplateVariable,
   getVariableValue
-} from '../payload-generator';
+} from '../payload-generator.js';
 import type { NodeHook } from '@modular-agent/types';
 import { HookType } from '@modular-agent/types';
-import type { HookEvaluationContext } from '../context-builder';
+import type { HookEvaluationContext } from '../context-builder.js';
 
 describe('payload-generator', () => {
   describe('generateHookEventData', () => {

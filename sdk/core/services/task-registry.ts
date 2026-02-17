@@ -15,9 +15,9 @@
  */
 
 import { generateId } from '@modular-agent/common-utils';
-import type { ThreadContext } from '../execution/context/thread-context';
+import type { ThreadContext } from '../execution/context/thread-context.js';
 import type { ThreadResult } from '@modular-agent/types';
-import { TaskStatus, type TaskInfo } from '../execution/types/task.types';
+import { TaskStatus, type TaskInfo } from '../execution/types/task.types.js';
 
 /**
  * 任务管理器接口

@@ -5,13 +5,13 @@
  */
 
 // 基础设施
-export * from './base-client';
-export * from './client-factory';
-export * from './message-stream';
-export * from './message-stream-events';
+export * from './base-client.js';
+export * from './client-factory.js';
+export * from './message-stream.js';
+export * from './message-stream-events.js';
 
 // 工具函数
-export * from './message-helper';
+export * from './message-helper.js';
 
 // 客户端实现
-export * from './clients';
+export * from './clients/index.js';

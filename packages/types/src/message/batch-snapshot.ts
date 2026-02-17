@@ -3,7 +3,7 @@
  * 定义批次快照的数据结构，用于存储历史状态
  */
 
-import type { Message } from './message';
+import type { Message } from './message.js';
 
 /**
  * 批次快照

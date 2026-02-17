@@ -2,7 +2,7 @@
  * 循环节点配置类型定义
  */
 
-import type { Condition } from '../../condition';
+import type { Condition } from '../../condition.js';
 
 /**
  * 循环数据源配置

@@ -7,7 +7,7 @@ import {
   CountBasedCleanupStrategy,
   SizeBasedCleanupStrategy,
   createCleanupStrategy
-} from '../checkpoint-cleanup-policy';
+} from '../checkpoint-cleanup-policy.js';
 import type {
   CheckpointInfo,
   TimeBasedCleanupPolicy,

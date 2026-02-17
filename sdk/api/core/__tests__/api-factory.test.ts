@@ -7,7 +7,7 @@ import {
   APIFactory,
   type SDKAPIConfig,
   type AllAPIs
-} from '../api-factory';
+} from '../api-factory.js';
 
 describe('APIFactory', () => {
   let factory: APIFactory;

@@ -3,8 +3,8 @@
  * 图构建器的单元测试
  */
 
-import { GraphBuilder } from '../graph-builder';
-import { GraphData } from '../../entities/graph-data';
+import { GraphBuilder } from '../graph-builder.js';
+import { GraphData } from '../../entities/graph-data.js';
 import type { WorkflowDefinition, GraphNode, GraphEdge } from '@modular-agent/types';
 import { NodeType, EdgeType, WorkflowType } from '@modular-agent/types';
 

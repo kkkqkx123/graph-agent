@@ -23,20 +23,20 @@ import type { TriggerRuntimeState } from '@modular-agent/types';
 import type { StatefulToolFactory } from '@modular-agent/types';
 import type { LLMMessage } from '@modular-agent/types';
 import type { MessageRole } from '@modular-agent/types';
-import { ConversationManager } from '../managers/conversation-manager';
-import { VariableCoordinator } from '../coordinators/variable-coordinator';
-import { VariableStateManager } from '../managers/variable-state-manager';
-import { TriggerCoordinator } from '../coordinators/trigger-coordinator';
-import { TriggerStateManager } from '../managers/trigger-state-manager';
-import { GraphNavigator, type NavigationResult } from '../../graph/graph-navigator';
-import { ExecutionState } from './execution-state';
-import type { ThreadRegistry } from '../../services/thread-registry';
-import type { WorkflowRegistry } from '../../services/workflow-registry';
-import type { EventManager } from '../../services/event-manager';
-import type { ToolService } from '../../services/tool-service';
-import { LLMExecutor } from '../executors/llm-executor';
-import type { LifecycleCapable } from '../managers/lifecycle-capable';
-import { InterruptionManager } from '../managers/interruption-manager';
+import { ConversationManager } from '../managers/conversation-manager.js';
+import { VariableCoordinator } from '../coordinators/variable-coordinator.js';
+import { VariableStateManager } from '../managers/variable-state-manager.js';
+import { TriggerCoordinator } from '../coordinators/trigger-coordinator.js';
+import { TriggerStateManager } from '../managers/trigger-state-manager.js';
+import { GraphNavigator, type NavigationResult } from '../../graph/graph-navigator.js';
+import { ExecutionState } from './execution-state.js';
+import type { ThreadRegistry } from '../../services/thread-registry.js';
+import type { WorkflowRegistry } from '../../services/workflow-registry.js';
+import type { EventManager } from '../../services/event-manager.js';
+import type { ToolService } from '../../services/tool-service.js';
+import { LLMExecutor } from '../executors/llm-executor.js';
+import type { LifecycleCapable } from '../managers/lifecycle-capable.js';
+import { InterruptionManager } from '../managers/interruption-manager.js';
 
 /**
  * ThreadContext - Thread 执行上下文

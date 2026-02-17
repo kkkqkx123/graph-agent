@@ -7,9 +7,9 @@
  * - 提供完整的动态线程生命周期状态
  */
 
-import type { ThreadContext } from '../context/thread-context';
+import type { ThreadContext } from '../context/thread-context.js';
 import type { ThreadResult } from '@modular-agent/types';
-import { TaskStatus } from './task.types';
+import { TaskStatus } from './task.types.js';
 
 /**
  * 动态线程信息接口

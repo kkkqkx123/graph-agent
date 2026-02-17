@@ -7,12 +7,12 @@
 
 import type { LLMClient, LLMProfile } from '@modular-agent/types';
 import { LLMProvider } from '@modular-agent/types';
-import { OpenAIChatClient } from './clients/openai-chat';
-import { OpenAIResponseClient } from './clients/openai-response';
-import { AnthropicClient } from './clients/anthropic';
-import { GeminiNativeClient } from './clients/gemini-native';
-import { GeminiOpenAIClient } from './clients/gemini-openai';
-// import { HumanRelayClient } from './clients/human-relay'; // TODO: 实现HumanRelayClient
+import { OpenAIChatClient } from './clients/openai-chat.js';
+import { OpenAIResponseClient } from './clients/openai-response.js';
+import { AnthropicClient } from './clients/anthropic.js';
+import { GeminiNativeClient } from './clients/gemini-native.js';
+import { GeminiOpenAIClient } from './clients/gemini-openai.js';
+// import { HumanRelayClient } from './clients/human-relay.js'; // TODO: 实现HumanRelayClient
 import { ConfigurationError } from '@modular-agent/types';
 
 /**

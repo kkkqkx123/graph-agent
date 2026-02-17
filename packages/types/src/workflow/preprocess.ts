@@ -2,11 +2,11 @@
  * 工作流预处理相关类型定义
  */
 
-import type { ID, Timestamp } from '../common';
-import type { WorkflowDefinition } from './definition';
-import type { WorkflowTrigger } from '../trigger';
-import type { GraphAnalysisResult, Graph } from '../graph';
-import type { IdMapping, SubgraphRelationship } from './id-mapping';
+import type { ID, Timestamp } from '../common.js';
+import type { WorkflowDefinition } from './definition.js';
+import type { WorkflowTrigger } from '../trigger/index.js';
+import type { GraphAnalysisResult, Graph } from '../graph/index.js';
+import type { IdMapping, SubgraphRelationship } from './id-mapping.js';
 
 /**
  * 子工作流合并日志类型

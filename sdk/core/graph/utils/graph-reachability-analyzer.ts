@@ -4,7 +4,7 @@
  */
 
 import type { ID, ReachabilityResult, Graph } from '@modular-agent/types';
-import { getReachableNodes, getNodesReachingTo } from './graph-traversal';
+import { getReachableNodes, getNodesReachingTo } from './graph-traversal.js';
 
 /**
  * 分析图的可达性

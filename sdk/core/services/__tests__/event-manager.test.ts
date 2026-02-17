@@ -2,7 +2,7 @@
  * EventManager 单元测试
  */
 
-import { EventManager } from '../event-manager';
+import { EventManager } from '../event-manager.js';
 import { EventType } from '@modular-agent/types';
 
 describe('EventManager', () => {

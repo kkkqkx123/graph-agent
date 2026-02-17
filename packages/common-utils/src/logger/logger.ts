@@ -4,10 +4,10 @@
  * 支持child logger模式和多种输出方式
  */
 
-import type { Logger, LogLevel, LoggerContext, LoggerOptions, LogStream, LogEntry } from './types';
-import { createConsoleStream } from './streams';
-import { destination } from './transports';
-import { shouldLog, mergeContext, createLogEntry } from './utils';
+import type { Logger, LogLevel, LoggerContext, LoggerOptions, LogStream, LogEntry } from './types.js';
+import { createConsoleStream } from './streams/index.js';
+import { destination } from './transports/index.js';
+import { shouldLog, mergeContext, createLogEntry } from './utils.js';
 
 /**
  * 基础日志器实现

@@ -33,7 +33,7 @@ export {
     buildTriggeredSubgraphStartedEvent,
     buildTriggeredSubgraphCompletedEvent,
     buildTriggeredSubgraphFailedEvent
-} from './event-builder';
+} from './event-builder.js';
 
 // 事件触发工具函数
 export {
@@ -45,7 +45,7 @@ export {
     emitDelayed,
     emitWithRetry,
     emitAndWaitForCallback
-} from './event-emitter';
+} from './event-emitter.js';
 
 // 事件等待工具函数
 export {
@@ -63,4 +63,4 @@ export {
     waitForCondition,
     waitForAllConditions,
     waitForAnyCondition
-} from './event-waiter';
+} from './event-waiter.js';

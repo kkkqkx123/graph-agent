@@ -14,23 +14,23 @@
  * - 提供任务状态查询和取消功能
  */
 
-import { ThreadContext } from '../context/thread-context';
-import type { EventManager } from '../../services/event-manager';
-import type { ThreadRegistry } from '../../services/thread-registry';
+import { ThreadContext } from '../context/thread-context.js';
+import type { EventManager } from '../../services/event-manager.js';
+import type { ThreadRegistry } from '../../services/thread-registry.js';
 import { EventType } from '@modular-agent/types';
 import { now, getErrorMessage } from '@modular-agent/common-utils';
-import { TaskRegistry, type TaskManager } from '../../services/task-registry';
-import { ThreadPoolManager } from './thread-pool-manager';
-import { TaskQueueManager } from './task-queue-manager';
-import { ExecutionContext } from '../context/execution-context';
-import { ThreadBuilder } from '../thread-builder';
-import { CallbackManager } from './callback-manager';
+import { TaskRegistry, type TaskManager } from '../../services/task-registry.js';
+import { ThreadPoolManager } from './thread-pool-manager.js';
+import { TaskQueueManager } from './task-queue-manager.js';
+import { ExecutionContext } from '../context/execution-context.js';
+import { ThreadBuilder } from '../thread-builder.js';
+import { CallbackManager } from './callback-manager.js';
 import {
   type TriggeredSubgraphTask,
   type ExecutedSubgraphResult,
   type TaskSubmissionResult,
   type SubworkflowManagerConfig
-} from '../types/triggered-subgraph.types';
+} from '../types/triggered-subgraph.types.js';
 
 /**
  * TriggeredSubworkflowManager - 触发子工作流管理器

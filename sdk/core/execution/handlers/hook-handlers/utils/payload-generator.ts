@@ -4,7 +4,7 @@
  */
 
 import type { NodeHook } from '@modular-agent/types';
-import type { HookEvaluationContext } from './context-builder';
+import type { HookEvaluationContext } from './context-builder.js';
 import { resolvePath } from '@modular-agent/common-utils';
 
 /**

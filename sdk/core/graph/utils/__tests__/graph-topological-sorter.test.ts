@@ -3,10 +3,10 @@
  * 图拓扑排序函数的单元测试
  */
 
-import { GraphData } from '../../../entities/graph-data';
+import { GraphData } from '../../../entities/graph-data.js';
 import type { GraphNode, GraphEdge } from '@modular-agent/types';
 import { NodeType, EdgeType } from '@modular-agent/types';
-import { topologicalSort } from '../graph-topological-sorter';
+import { topologicalSort } from '../graph-topological-sorter.js';
 
 /**
  * 创建无环的有向无环图（DAG）

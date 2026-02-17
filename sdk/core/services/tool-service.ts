@@ -9,7 +9,7 @@
 import type { Tool } from '@modular-agent/types';
 import { ToolType } from '@modular-agent/types';
 import { ToolError, ToolNotFoundError, RuntimeValidationError } from '@modular-agent/types';
-import { ToolRegistry } from '../tools/tool-registry';
+import { ToolRegistry } from '../tools/tool-registry.js';
 import type { IToolExecutor } from '@modular-agent/tool-executors';
 import type { ToolExecutionOptions, ToolExecutionResult } from '@modular-agent/types';
 import { StatelessExecutor } from '@modular-agent/tool-executors';
@@ -19,8 +19,8 @@ import { McpExecutor } from '@modular-agent/tool-executors';
 import { tryCatchAsync } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
-import { StaticValidator } from '../validation/tool-static-validator';
-import { RuntimeValidator } from '../validation/tool-runtime-validator';
+import { StaticValidator } from '../validation/tool-static-validator.js';
+import { RuntimeValidator } from '../validation/tool-runtime-validator.js';
 
 /**
  * 工具服务类

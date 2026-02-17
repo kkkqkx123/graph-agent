@@ -4,16 +4,16 @@
  */
 
 // 导出工具定义
-export * from './definition';
+export * from './definition.js';
 
 // 导出状态类型
-export * from './state';
+export * from './state.js';
 
 // 导出配置类型
-export * from './config';
+export * from './config.js';
 
 // 导出工具配置类型
-export * from './tool-config';
+export * from './tool-config.js';
 
 // 导出执行相关类型
-export * from './execution';
+export * from './execution.js';

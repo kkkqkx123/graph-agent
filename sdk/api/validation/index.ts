@@ -13,4 +13,4 @@ export {
   validateBoolean,
   validatePattern,
   validateEnum
-} from './validation-strategy';
+} from './validation-strategy.js';

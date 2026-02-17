@@ -8,9 +8,9 @@
  */
 
 import type { ID } from '@modular-agent/types';
-import type { ThreadContext } from '../context/thread-context';
+import type { ThreadContext } from '../context/thread-context.js';
 import type { ThreadResult } from '@modular-agent/types';
-import { TaskStatus } from './task.types';
+import { TaskStatus } from './task.types.js';
 
 /**
  * 触发子工作流任务接口

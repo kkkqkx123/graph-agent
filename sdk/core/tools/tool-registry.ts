@@ -6,7 +6,7 @@
 
 import type { Tool } from '@modular-agent/types';
 import { ConfigurationValidationError, ToolNotFoundError } from '@modular-agent/types';
-import { StaticValidator } from '../validation/tool-static-validator';
+import { StaticValidator } from '../validation/tool-static-validator.js';
 
 /**
  * 工具注册表类

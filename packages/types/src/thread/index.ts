@@ -5,22 +5,22 @@
  */
 
 // 导出作用域定义
-export * from './scopes';
+export * from './scopes.js';
 
 // 导出线程定义
-export * from './definition';
+export * from './definition.js';
 
 // 导出状态类型
-export * from './status';
+export * from './status.js';
 
 // 导出上下文类型
-export * from './context';
+export * from './context.js';
 
 // 导出变量类型
-export * from './variables';
+export * from './variables.js';
 
 // 导出执行相关类型
-export * from './execution';
+export * from './execution.js';
 
 // 导出历史记录类型
-export * from './history';
+export * from './history.js';

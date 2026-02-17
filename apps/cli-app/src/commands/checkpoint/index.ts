@@ -3,10 +3,10 @@
  */
 
 import { Command } from 'commander';
-import { CheckpointAdapter } from '../../adapters/checkpoint-adapter';
-import { createLogger } from '../../utils/logger';
-import { formatCheckpoint, formatCheckpointList } from '../../utils/formatter';
-import type { CommandOptions } from '../../types/cli-types';
+import { CheckpointAdapter } from '../../adapters/checkpoint-adapter.js';
+import { createLogger } from '../../utils/logger.js';
+import { formatCheckpoint, formatCheckpointList } from '../../utils/formatter.js';
+import type { CommandOptions } from '../../types/cli-types.js';
 
 const logger = createLogger();
 

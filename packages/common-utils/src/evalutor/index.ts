@@ -4,13 +4,13 @@
  */
 
 // 条件评估器
-export { ConditionEvaluator, conditionEvaluator } from './condition-evaluator';
+export { ConditionEvaluator, conditionEvaluator } from './condition-evaluator.js';
 
 // 表达式解析器
-export { ExpressionEvaluator, parseExpression, parseValue, parseCompoundExpression } from './expression-parser';
+export { ExpressionEvaluator, parseExpression, parseValue, parseCompoundExpression } from './expression-parser.js';
 
 // 路径解析器
-export { resolvePath, pathExists, setPath } from './path-resolver';
+export { resolvePath, pathExists, setPath } from './path-resolver.js';
 
 // 安全验证器
-export { validateExpression, validatePath, validateArrayIndex, validateValueType, SECURITY_CONFIG } from './security-validator';
+export { validateExpression, validatePath, validateArrayIndex, validateValueType, SECURITY_CONFIG } from './security-validator.js';

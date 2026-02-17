@@ -1,7 +1,7 @@
-import { ConversationManager, ConversationManagerOptions } from '../conversation-manager';
+import { ConversationManager, ConversationManagerOptions } from '../conversation-manager.js';
 import { ValidationError, MessageRole } from '@modular-agent/types';
 import type { LLMMessage } from '@modular-agent/types';
-import { EventManager } from '../../../services/event-manager';
+import { EventManager } from '../../../services/event-manager.js';
 
 describe('ConversationManager', () => {
   let conversationManager: ConversationManager;

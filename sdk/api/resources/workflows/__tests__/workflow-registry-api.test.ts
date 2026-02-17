@@ -2,8 +2,8 @@
  * WorkflowRegistryAPI 单元测试
  */
 
-import { WorkflowRegistryAPI } from '../workflow-registry-api';
-import type { APIDependencyManager } from '../../../core/sdk-dependencies';
+import { WorkflowRegistryAPI } from '../workflow-registry-api.js';
+import type { APIDependencyManager } from '../../../core/sdk-dependencies.js';
 import type { WorkflowDefinition } from '@modular-agent/types';
 import { WorkflowType } from '@modular-agent/types';
 

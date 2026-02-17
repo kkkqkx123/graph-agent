@@ -2,12 +2,12 @@
  * VariableManagerAPI 单元测试
  */
 
-import { VariableManagerAPI } from '../operations/state/variable-manager-api';
+import { VariableManagerAPI } from '../operations/state/variable-manager-api.js';
 import { ThreadRegistry } from '@modular-agent/sdk/core/registry/thread-registry';
 import type { ThreadVariable } from '@modular-agent/types';
 import { ThreadStatus } from '@modular-agent/types';
 import { NotFoundError, ValidationError } from '@modular-agent/types';
-import { ExecutionContext } from '../../core/execution/context/execution-context';
+import { ExecutionContext } from '../../core/execution/context/execution-context.js';
 
 describe('VariableManagerAPI', () => {
   let api: VariableManagerAPI;

@@ -13,7 +13,7 @@ import type {
 
 import { HookType } from '@modular-agent/types';
 
-import type { HookExecutionContext } from '../handlers/hook-handlers';
+import type { HookExecutionContext } from '../handlers/hook-handlers/index.js';
 
 import { ExecutionError } from '@modular-agent/types';
 

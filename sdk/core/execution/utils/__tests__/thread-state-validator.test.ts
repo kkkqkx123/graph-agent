@@ -8,7 +8,7 @@ import {
   getAllowedTransitions,
   isTerminalStatus,
   isActiveStatus
-} from '../thread-state-validator';
+} from '../thread-state-validator.js';
 import { ValidationError } from '@modular-agent/types';
 import { ThreadStatus } from '@modular-agent/types';
 

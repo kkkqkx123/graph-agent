@@ -7,16 +7,16 @@
  * - Singleton模式：确保工厂实例唯一
  */
 
-import { WorkflowRegistryAPI } from '../resources/workflows/workflow-registry-api';
-import { ToolRegistryAPI } from '../resources/tools/tool-registry-api';
-import { ThreadRegistryAPI } from '../resources/threads/thread-registry-api';
-import { ScriptRegistryAPI } from '../resources/scripts/script-registry-api';
-import { LLMProfileRegistryAPI } from '../resources/llm/llm-profile-registry-api';
-import { NodeRegistryAPI } from '../resources/templates/node-template-registry-api';
-import { TriggerTemplateRegistryAPI } from '../resources/templates/trigger-template-registry-api';
-import { UserInteractionResourceAPI } from '../resources/user-interaction/user-interaction-resource-api';
-import { HumanRelayResourceAPI } from '../resources/human-relay/human-relay-resource-api';
-import { APIDependencyManager } from './sdk-dependencies';
+import { WorkflowRegistryAPI } from '../resources/workflows/workflow-registry-api.js';
+import { ToolRegistryAPI } from '../resources/tools/tool-registry-api.js';
+import { ThreadRegistryAPI } from '../resources/threads/thread-registry-api.js';
+import { ScriptRegistryAPI } from '../resources/scripts/script-registry-api.js';
+import { LLMProfileRegistryAPI } from '../resources/llm/llm-profile-registry-api.js';
+import { NodeRegistryAPI } from '../resources/templates/node-template-registry-api.js';
+import { TriggerTemplateRegistryAPI } from '../resources/templates/trigger-template-registry-api.js';
+import { UserInteractionResourceAPI } from '../resources/user-interaction/user-interaction-resource-api.js';
+import { HumanRelayResourceAPI } from '../resources/human-relay/human-relay-resource-api.js';
+import { APIDependencyManager } from './sdk-dependencies.js';
 
 /**
  * 所有API实例集合

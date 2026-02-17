@@ -4,7 +4,7 @@
  */
 
 import { AbortError, ThreadInterruptedException } from '@modular-agent/types';
-import { err } from '../utils/result-utils';
+import { err } from '../utils/result-utils.js';
 import type { Result } from '@modular-agent/types';
 
 /**

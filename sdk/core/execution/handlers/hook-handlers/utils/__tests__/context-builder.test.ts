@@ -6,8 +6,8 @@ import {
   buildHookEvaluationContext,
   convertToEvaluationContext,
   type HookEvaluationContext
-} from '../context-builder';
-import type { HookExecutionContext } from '../../index';
+} from '../context-builder.js';
+import type { HookExecutionContext } from '../../index.js';
 import type { NodeExecutionResult } from '@modular-agent/types';
 
 describe('context-builder', () => {

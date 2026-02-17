@@ -5,15 +5,15 @@
  */
 
 import type { TriggerTemplate } from '@modular-agent/types';
-import type { ConfigFile } from '../types';
+import type { ConfigFile } from '../types.js';
 import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 import { ValidationError } from '@modular-agent/types';
-import { validateWorkflowTrigger } from '../../../core/validation/trigger-validator';
+import { validateWorkflowTrigger } from '../../../core/validation/trigger-validator.js';
 import {
   validateRequiredFields,
   validateNumberField
-} from './base-validator';
+} from './base-validator.js';
 
 /**
  * 验证触发器模板配置

@@ -33,9 +33,9 @@
 
 import type { EvaluationContext } from '@modular-agent/types';
 import { RuntimeValidationError } from '@modular-agent/types';
-import { validateExpression, validatePath } from './security-validator';
-import { resolvePath } from './path-resolver';
-import { getGlobalLogger } from '../logger/logger';
+import { validateExpression, validatePath } from './security-validator.js';
+import { resolvePath } from './path-resolver.js';
+import { getGlobalLogger } from '../logger/logger.js';
 
 /**
  * 解析表达式字符串

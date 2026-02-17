@@ -16,13 +16,13 @@
  */
 
 import type { ID } from '@modular-agent/types';
-import { ThreadContext } from '../context/thread-context';
-import type { EventManager } from '../../services/event-manager';
+import { ThreadContext } from '../context/thread-context.js';
+import type { EventManager } from '../../services/event-manager.js';
 import { EventType } from '@modular-agent/types';
 import type { ThreadResult } from '@modular-agent/types';
 import { now, getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
-import { createSubgraphMetadata } from './subgraph-handler';
-import type { TriggeredSubgraphTask, ExecutedSubgraphResult } from '../types/triggered-subgraph.types';
+import { createSubgraphMetadata } from './subgraph-handler.js';
+import type { TriggeredSubgraphTask, ExecutedSubgraphResult } from '../types/triggered-subgraph.types.js';
 
 /**
  * 子工作流执行器接口

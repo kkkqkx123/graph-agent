@@ -3,8 +3,8 @@
  * 定义用户交互相关的核心业务类型
  */
 
-import type { ID, Metadata } from './common';
-import type { VariableScope } from './thread/scopes';
+import type { ID, Metadata } from './common.js';
+import type { VariableScope } from './thread/scopes.js';
 
 /**
  * 用户交互操作类型

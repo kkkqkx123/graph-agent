@@ -13,15 +13,15 @@
  * - 自动处理队列和线程池协调
  */
 
-import { ThreadExecutor } from '../thread-executor';
-import { TaskRegistry } from '../../services/task-registry';
-import { ThreadPoolManager } from './thread-pool-manager';
-import type { EventManager } from '../../services/event-manager';
+import { ThreadExecutor } from '../thread-executor.js';
+import { TaskRegistry } from '../../services/task-registry.js';
+import { ThreadPoolManager } from './thread-pool-manager.js';
+import type { EventManager } from '../../services/event-manager.js';
 import { EventType } from '@modular-agent/types';
-import type { ThreadContext } from '../context/thread-context';
+import type { ThreadContext } from '../context/thread-context.js';
 import type { ThreadResult } from '@modular-agent/types';
-import { TaskStatus } from '../types/task.types';
-import { type QueueTask, type ExecutedSubgraphResult, type TaskSubmissionResult } from '../types/triggered-subgraph.types';
+import { TaskStatus } from '../types/task.types.js';
+import { type QueueTask, type ExecutedSubgraphResult, type TaskSubmissionResult } from '../types/triggered-subgraph.types.js';
 import { now, getErrorMessage } from '@modular-agent/common-utils';
 
 /**

@@ -2,7 +2,7 @@
  * MessageBuilder 测试
  */
 
-import { MessageBuilder } from '../../messages/message-builder';
+import { MessageBuilder } from '../../messages/message-builder.js';
 import type { LLMToolCall } from '@modular-agent/types';
 
 describe('MessageBuilder', () => {

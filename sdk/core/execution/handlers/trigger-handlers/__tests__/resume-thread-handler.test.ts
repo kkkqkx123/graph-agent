@@ -2,11 +2,11 @@
  * 恢复线程处理函数单元测试
  */
 
-import { resumeThreadHandler } from '../resume-thread-handler';
+import { resumeThreadHandler } from '../resume-thread-handler.js';
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import { TriggerActionType } from '@modular-agent/types';
 import { ValidationError } from '@modular-agent/types';
-import { ExecutionContext } from '../../../context/execution-context';
+import { ExecutionContext } from '../../../context/execution-context.js';
 
 // Mock ExecutionContext
 jest.mock('../../../context/execution-context');

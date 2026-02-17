@@ -18,11 +18,11 @@ import {
   validateStringLength,
   validatePositiveNumber,
   validateBoolean
-} from '../../validation/validation-strategy';
+} from '../../validation/validation-strategy.js';
 
-import { GenericResourceAPI } from '../generic-resource-api';
-import type { ExecutionResult } from '../../types/execution-result';
-import { success, failure } from '../../types/execution-result';
+import { GenericResourceAPI } from '../generic-resource-api.js';
+import type { ExecutionResult } from '../../types/execution-result.js';
+import { success, failure } from '../../types/execution-result.js';
 import type { HumanRelayHandler, HumanRelayRequest, HumanRelayResponse } from '@modular-agent/types';
 import { EventType, ExecutionError as SDKExecutionError, ConfigurationError, NotFoundError } from '@modular-agent/types';
 import type {
@@ -31,7 +31,7 @@ import type {
   HumanRelayProcessedEvent,
   HumanRelayFailedEvent
 } from '@modular-agent/types';
-import type { APIDependencyManager } from '../../core/sdk-dependencies';
+import type { APIDependencyManager } from '../../core/sdk-dependencies.js';
 
 /**
  * Human Relay配置

@@ -3,10 +3,10 @@
  */
 
 import { Command } from 'commander';
-import { ThreadAdapter } from '../../adapters/thread-adapter';
-import { createLogger } from '../../utils/logger';
-import { formatThread, formatThreadList } from '../../utils/formatter';
-import type { CommandOptions } from '../../types/cli-types';
+import { ThreadAdapter } from '../../adapters/thread-adapter.js';
+import { createLogger } from '../../utils/logger.js';
+import { formatThread, formatThreadList } from '../../utils/formatter.js';
+import type { CommandOptions } from '../../types/cli-types.js';
 
 const logger = createLogger();
 

@@ -14,16 +14,16 @@
  * - 提供完整的事件通知机制
  */
 
-import type { ThreadContext } from '../context/thread-context';
-import type { EventManager } from '../../services/event-manager';
-import type { ThreadRegistry } from '../../services/thread-registry';
+import type { ThreadContext } from '../context/thread-context.js';
+import type { EventManager } from '../../services/event-manager.js';
+import type { ThreadRegistry } from '../../services/thread-registry.js';
 import { now, getErrorMessage } from '@modular-agent/common-utils';
-import { TaskRegistry, type TaskManager } from '../../services/task-registry';
-import { ThreadPoolManager } from './thread-pool-manager';
-import { TaskQueueManager } from './task-queue-manager';
-import { ExecutionContext } from '../context/execution-context';
-import { ThreadBuilder } from '../thread-builder';
-import { CallbackManager } from './callback-manager';
+import { TaskRegistry, type TaskManager } from '../../services/task-registry.js';
+import { ThreadPoolManager } from './thread-pool-manager.js';
+import { TaskQueueManager } from './task-queue-manager.js';
+import { ExecutionContext } from '../context/execution-context.js';
+import { ThreadBuilder } from '../thread-builder.js';
+import { CallbackManager } from './callback-manager.js';
 import {
   type DynamicThreadInfo,
   type ExecutedThreadResult,
@@ -32,8 +32,8 @@ import {
   type DynamicThreadEvent,
   DynamicThreadEventType,
   type DynamicThreadConfig
-} from '../types/dynamic-thread.types';
-import { TaskStatus } from '../types/task.types';
+} from '../types/dynamic-thread.types.js';
+import { TaskStatus } from '../types/task.types.js';
 import { EventType } from '@modular-agent/types';
 
 /**

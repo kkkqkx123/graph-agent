@@ -3,9 +3,9 @@
  * 定义所有消息操作的配置和结果类型
  */
 
-import type { Message } from './message';
-import type { MessageMarkMap } from './message-mark-map';
-import { MessageRole } from './message';
+import type { Message } from './message.js';
+import type { MessageMarkMap } from './message-mark-map.js';
+import { MessageRole } from './message.js';
 
 /**
  * 消息操作类型

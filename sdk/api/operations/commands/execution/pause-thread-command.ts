@@ -2,8 +2,8 @@
  * PauseThreadCommand - 暂停线程命令
  */
 
-import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
-import { APIDependencyManager } from '../../../core/sdk-dependencies';
+import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
+import { APIDependencyManager } from '../../../core/sdk-dependencies.js';
 
 /**
  * 暂停线程命令
@@ -17,7 +17,7 @@ export class PauseThreadCommand extends BaseCommand<void> {
   }
 
   protected async executeInternal(): Promise<void> {
-    const lifecycleCoordinator = this.dependencies.getThreadLifecycleCoordinator();
+    const lifecycleCoordinator = await this.dependencies.getThreadLifecycleCoordinator();
     await lifecycleCoordinator.pauseThread(this.threadId);
   }
 

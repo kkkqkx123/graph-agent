@@ -5,8 +5,8 @@
 
 import type { Node, NodeConfig, NodeType } from '@modular-agent/types';
 import { generateId } from '@modular-agent/common-utils';
-import { SingletonRegistry } from '../../core/execution/context/singleton-registry';
-import { BaseBuilder } from './base-builder';
+import { SingletonRegistry } from '../../core/execution/context/singleton-registry.js';
+import { BaseBuilder } from './base-builder.js';
 
 /**
  * NodeBuilder - 节点构建器

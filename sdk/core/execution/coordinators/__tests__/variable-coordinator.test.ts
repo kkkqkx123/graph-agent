@@ -2,13 +2,13 @@
  * VariableCoordinator 单元测试
  */
 
-import { VariableCoordinator } from '../variable-coordinator';
-import { VariableStateManager } from '../../managers/variable-state-manager';
-import { ThreadContext } from '../../context/thread-context';
-import { EventManager } from '../../../services/event-manager';
+import { VariableCoordinator } from '../variable-coordinator.js';
+import { VariableStateManager } from '../../managers/variable-state-manager.js';
+import { ThreadContext } from '../../context/thread-context.js';
+import { EventManager } from '../../../services/event-manager.js';
 import { EventType } from '@modular-agent/types';
 import { ValidationError } from '@modular-agent/types';
-import { VariableAccessor } from '../../utils/variable-accessor';
+import { VariableAccessor } from '../../utils/variable-accessor.js';
 import type { VariableScope } from '@modular-agent/types';
 
 // Mock 依赖

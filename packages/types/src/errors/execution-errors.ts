@@ -3,7 +3,7 @@
  * 定义执行过程中的错误类型
  */
 
-import { SDKError, ExecutionError, ErrorSeverity } from './base';
+import { SDKError, ExecutionError, ErrorSeverity } from './base.js';
 
 /**
  * 业务逻辑错误类型

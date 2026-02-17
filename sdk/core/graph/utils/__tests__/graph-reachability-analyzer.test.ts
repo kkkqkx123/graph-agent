@@ -3,10 +3,10 @@
  * 图可达性分析函数的单元测试
  */
 
-import { GraphData } from '../../../entities/graph-data';
+import { GraphData } from '../../../entities/graph-data.js';
 import type { GraphNode, GraphEdge } from '@modular-agent/types';
 import { NodeType, EdgeType } from '@modular-agent/types';
-import { analyzeReachability } from '../graph-reachability-analyzer';
+import { analyzeReachability } from '../graph-reachability-analyzer.js';
 
 /**
  * 创建标准工作流图

@@ -2,11 +2,11 @@
  * 设置变量处理函数单元测试
  */
 
-import { setVariableHandler } from '../set-variable-handler';
+import { setVariableHandler } from '../set-variable-handler.js';
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import { TriggerActionType } from '@modular-agent/types';
 import { ValidationError, NotFoundError } from '@modular-agent/types';
-import { ExecutionContext } from '../../../context/execution-context';
+import { ExecutionContext } from '../../../context/execution-context.js';
 
 // Mock ExecutionContext
 jest.mock('../../../context/execution-context');

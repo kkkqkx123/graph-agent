@@ -2,7 +2,7 @@
  * 用户交互节点处理函数单元测试
  */
 
-import { userInteractionHandler } from '../user-interaction-handler';
+import { userInteractionHandler } from '../user-interaction-handler.js';
 import type { Node, UserInteractionNodeConfig } from '@modular-agent/types';
 import { NodeType } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';

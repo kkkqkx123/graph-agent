@@ -2,10 +2,10 @@
  * LLMWrapper 单元测试
  */
 
-import { LLMWrapper } from '../wrapper';
+import { LLMWrapper } from '../wrapper.js';
 import type { LLMProfile, LLMRequest, LLMResult } from '@modular-agent/types';
 import { ConfigurationError, LLMError } from '@modular-agent/types';
-import { BaseLLMClient } from '../base-client';
+import { BaseLLMClient } from '../base-client.js';
 
 describe('LLMWrapper', () => {
   let wrapper: LLMWrapper;

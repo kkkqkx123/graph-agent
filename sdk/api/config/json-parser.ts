@@ -3,7 +3,7 @@
  * 负责解析JSON格式的配置文件
  */
 
-import type { WorkflowConfigFile } from './types';
+import type { WorkflowConfigFile } from './types.js';
 import { ConfigurationError } from '@modular-agent/types';
 import { isError } from '@modular-agent/common-utils';
 

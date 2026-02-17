@@ -3,7 +3,7 @@
  * 测试工具参数的运行时检查（执行时验证）
  */
 
-import { RuntimeValidator } from '../tool-runtime-validator';
+import { RuntimeValidator } from '../tool-runtime-validator.js';
 import { ToolType } from '@modular-agent/types';
 import { RuntimeValidationError } from '@modular-agent/types';
 

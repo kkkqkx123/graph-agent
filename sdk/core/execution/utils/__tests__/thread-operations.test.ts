@@ -2,15 +2,15 @@
  * ThreadOperations 单元测试
  */
 
-import { fork, join, copy, ForkConfig, JoinStrategy, JoinResult } from '../thread-operations';
+import { fork, join, copy, ForkConfig, JoinStrategy, JoinResult } from '../thread-operations.js';
 import type { Thread } from '@modular-agent/types';
-import type { ThreadContext } from '../../context/thread-context';
-import type { ThreadBuilder } from '../../thread-builder';
-import type { ThreadRegistry } from '../../../services/thread-registry';
+import type { ThreadContext } from '../../context/thread-context.js';
+import type { ThreadBuilder } from '../../thread-builder.js';
+import type { ThreadRegistry } from '../../../services/thread-registry.js';
 import { ExecutionError, TimeoutError, ValidationError } from '@modular-agent/types';
 import { ThreadStatus } from '@modular-agent/types';
-import { ExecutionState } from '../../context/execution-state';
-import { ConversationManager } from '../../managers/conversation-manager';
+import { ExecutionState } from '../../context/execution-state.js';
+import { ConversationManager } from '../../managers/conversation-manager.js';
 import type { Graph, GraphNode, GraphEdge } from '@modular-agent/types';
 
 // Mock types for testing

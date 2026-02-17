@@ -4,34 +4,34 @@
  */
 
 // 导出基础类型
-export * from './base';
+export * from './base.js';
 
 // 导出线程相关事件
-export * from './thread-events';
+export * from './thread-events.js';
 
 // 导出节点相关事件
-export * from './node-events';
+export * from './node-events.js';
 
 // 导出工具相关事件
-export * from './tool-events';
+export * from './tool-events.js';
 
 // 导出对话相关事件
-export * from './conversation-events';
+export * from './conversation-events.js';
 
 // 导出检查点相关事件
-export * from './checkpoint-events';
+export * from './checkpoint-events.js';
 
 // 导出子图相关事件
-export * from './subgraph-events';
+export * from './subgraph-events.js';
 
 // 导出交互相关事件
-export * from './interaction-events';
+export * from './interaction-events.js';
 
 // 导出系统事件
-export * from './system-events';
+export * from './system-events.js';
 
 // 为了向后兼容，重新导出 EventType
-export { EventType } from './base';
+export { EventType } from './base.js';
 
 // 导出所有事件类型的联合类型
 import type {
@@ -48,33 +48,33 @@ import type {
   ThreadJoinConditionMetEvent,
   ThreadCopyStartedEvent,
   ThreadCopyCompletedEvent
-} from './thread-events';
+} from './thread-events.js';
 
 import type {
   NodeStartedEvent,
   NodeCompletedEvent,
   NodeFailedEvent,
   NodeCustomEvent
-} from './node-events';
+} from './node-events.js';
 
 import type {
   ToolCallStartedEvent,
   ToolCallCompletedEvent,
   ToolCallFailedEvent,
   ToolAddedEvent
-} from './tool-events';
+} from './tool-events.js';
 
 import type {
   MessageAddedEvent,
   ConversationStateChangedEvent
-} from './conversation-events';
+} from './conversation-events.js';
 
 import type {
   CheckpointCreatedEvent,
   CheckpointRestoredEvent,
   CheckpointDeletedEvent,
   CheckpointFailedEvent
-} from './checkpoint-events';
+} from './checkpoint-events.js';
 
 import type {
   SubgraphStartedEvent,
@@ -82,7 +82,7 @@ import type {
   TriggeredSubgraphStartedEvent,
   TriggeredSubgraphCompletedEvent,
   TriggeredSubgraphFailedEvent
-} from './subgraph-events';
+} from './subgraph-events.js';
 
 import type {
   UserInteractionRequestedEvent,
@@ -93,7 +93,7 @@ import type {
   HumanRelayRespondedEvent,
   HumanRelayProcessedEvent,
   HumanRelayFailedEvent
-} from './interaction-events';
+} from './interaction-events.js';
 
 import type {
   TokenLimitExceededEvent,
@@ -102,7 +102,7 @@ import type {
   VariableChangedEvent,
   LLMStreamAbortedEvent,
   LLMStreamErrorEvent
-} from './system-events';
+} from './system-events.js';
 
 /**
  * 所有事件类型的联合类型

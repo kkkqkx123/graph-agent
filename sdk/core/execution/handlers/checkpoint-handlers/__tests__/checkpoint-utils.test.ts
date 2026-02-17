@@ -7,13 +7,13 @@ import {
   createCheckpoints,
   createNodeCheckpoint,
   createToolCheckpoint
-} from '../checkpoint-utils';
-import { CheckpointCoordinator } from '../../../coordinators/checkpoint-coordinator';
-import { CheckpointStateManager } from '../../../managers/checkpoint-state-manager';
-import { ThreadRegistry } from '../../../../services/thread-registry';
-import { WorkflowRegistry } from '../../../../services/workflow-registry';
-import { globalMessageStorage } from '../../../../services/global-message-storage';
-import type { ThreadContext } from '../../../context/thread-context';
+} from '../checkpoint-utils.js';
+import { CheckpointCoordinator } from '../../../coordinators/checkpoint-coordinator.js';
+import { CheckpointStateManager } from '../../../managers/checkpoint-state-manager.js';
+import { ThreadRegistry } from '../../../../services/thread-registry.js';
+import { WorkflowRegistry } from '../../../../services/workflow-registry.js';
+import { globalMessageStorage } from '../../../../services/global-message-storage.js';
+import type { ThreadContext } from '../../../context/thread-context.js';
 import { WorkflowType } from '@modular-agent/types';
 
 describe('CheckpointUtils', () => {

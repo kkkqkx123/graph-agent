@@ -2,9 +2,9 @@
  * TaskRegistry 单元测试
  */
 
-import { TaskRegistry, type TaskManager } from '../task-registry';
-import { TaskStatus } from '../../execution/types/task.types';
-import { ThreadContext } from '../../execution/context/thread-context';
+import { TaskRegistry, type TaskManager } from '../task-registry.js';
+import { TaskStatus } from '../../execution/types/task.types.js';
+import { ThreadContext } from '../../execution/context/thread-context.js';
 
 describe('TaskRegistry', () => {
   let taskRegistry: TaskRegistry;

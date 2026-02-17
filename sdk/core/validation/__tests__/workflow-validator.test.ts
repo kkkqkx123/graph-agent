@@ -3,7 +3,7 @@
  * 使用Result类型进行错误处理
  */
 
-import { WorkflowValidator } from '../workflow-validator';
+import { WorkflowValidator } from '../workflow-validator.js';
 import { NodeType } from '@modular-agent/types';
 import { EdgeType } from '@modular-agent/types';
 import { WorkflowType } from '@modular-agent/types';

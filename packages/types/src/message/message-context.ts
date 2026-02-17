@@ -3,8 +3,8 @@
  * 定义消息操作所需的上下文信息
  */
 
-import type { LLMMessage } from './message';
-import type { MessageMarkMap } from './message-mark-map';
+import type { LLMMessage } from './message.js';
+import type { MessageMarkMap } from './message-mark-map.js';
 
 /**
  * 消息操作上下文

@@ -18,9 +18,9 @@ import type {
   LLMMessage,
   MessageMarkMap
 } from '@modular-agent/types';
-import { getCurrentBoundary, getVisibleOriginalIndices, visibleIndexToOriginal, getVisibleMessages } from './visible-range-calculator';
-import { startNewBatch } from './batch-management-utils';
-import { MessageArrayUtils } from './message-array-utils';
+import { getCurrentBoundary, getVisibleOriginalIndices, visibleIndexToOriginal, getVisibleMessages } from './visible-range-calculator.js';
+import { startNewBatch } from './batch-management-utils.js';
+import { MessageArrayUtils } from './message-array-utils.js';
 
 /**
  * 执行消息操作

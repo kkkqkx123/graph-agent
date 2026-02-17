@@ -15,15 +15,15 @@
  * - 委托模式：使用VariableStateManager进行原子状态操作
  */
 
-import type { ThreadContext } from '../context/thread-context';
+import type { ThreadContext } from '../context/thread-context.js';
 import type { Thread } from '@modular-agent/types';
 import type { VariableScope } from '@modular-agent/types';
-import type { EventManager } from '../../services/event-manager';
+import type { EventManager } from '../../services/event-manager.js';
 import { EventType } from '@modular-agent/types';
 import { now, getErrorOrNew } from '@modular-agent/common-utils';
 import { ValidationError, ExecutionError, RuntimeValidationError, SystemExecutionError } from '@modular-agent/types';
-import { VariableStateManager } from '../managers/variable-state-manager';
-import { VariableAccessor } from '../utils/variable-accessor';
+import { VariableStateManager } from '../managers/variable-state-manager.js';
+import { VariableAccessor } from '../utils/variable-accessor.js';
 
 /**
  * VariableCoordinator - 变量协调器

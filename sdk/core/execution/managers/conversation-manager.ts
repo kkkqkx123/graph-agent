@@ -19,14 +19,14 @@ import type { LLMMessage, LLMUsage, TokenUsageHistory, TokenUsageStats } from '@
 import type { MessageMarkMap } from '@modular-agent/types';
 import { MessageRole } from '@modular-agent/types';
 import { ValidationError, RuntimeValidationError, ErrorSeverity } from '@modular-agent/types';
-import { TokenUsageTracker } from '../token-usage-tracker';
-import { TypeIndexManager } from './type-index-manager';
-import { getVisibleOriginalIndices, getVisibleMessages } from '../../utils/visible-range-calculator';
-import { startNewBatch, rollbackToBatch as rollbackBatch } from '../../utils/batch-management-utils';
-import type { EventManager } from '../../services/event-manager';
+import { TokenUsageTracker } from '../token-usage-tracker.js';
+import { TypeIndexManager } from './type-index-manager.js';
+import { getVisibleOriginalIndices, getVisibleMessages } from '../../utils/visible-range-calculator.js';
+import { startNewBatch, rollbackToBatch as rollbackBatch } from '../../utils/batch-management-utils.js';
+import type { EventManager } from '../../services/event-manager.js';
 import type { TokenLimitExceededEvent } from '@modular-agent/types';
 import { EventType } from '@modular-agent/types';
-import type { LifecycleCapable } from './lifecycle-capable';
+import type { LifecycleCapable } from './lifecycle-capable.js';
 
 /**
  * ConversationManager事件回调

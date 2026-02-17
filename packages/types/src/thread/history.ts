@@ -2,7 +2,7 @@
  * 线程历史记录类型定义
  */
 
-import type { ID, Timestamp } from '../common';
+import type { ID, Timestamp } from '../common.js';
 
 /**
  * 节点执行结果类型

@@ -2,7 +2,7 @@
  * 线程上下文类型定义
  */
 
-import type { ID } from '../common';
+import type { ID } from '../common.js';
 
 /**
  * FORK/JOIN上下文

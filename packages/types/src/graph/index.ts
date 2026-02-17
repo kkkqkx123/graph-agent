@@ -4,16 +4,16 @@
  */
 
 // 导出图结构类型
-export * from './structure';
+export * from './structure.js';
 
 // 导出验证相关类型
-export * from './validation';
+export * from './validation.js';
 
 // 导出分析结果类型
-export * from './analysis';
+export * from './analysis.js';
 
 // 导出合并相关类型
-export * from './merge';
+export * from './merge.js';
 
 // 导出预处理图类型
-export * from './preprocessed-graph';
+export * from './preprocessed-graph.js';

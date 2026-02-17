@@ -10,12 +10,12 @@ import type {
   LLMResult,
   LLMProfile
 } from '@modular-agent/types';
-import { ProfileManager } from './profile-manager';
+import { ProfileManager } from './profile-manager.js';
 import { ClientFactory, MessageStream, tryCatchAsync, isAbortError, getThreadInterruptedException } from '@modular-agent/common-utils';
 import { ConfigurationError, LLMError } from '@modular-agent/types';
 import { now, diffTimestamp, generateId } from '@modular-agent/common-utils';
-import type { EventManager } from '../services/event-manager';
-import { MessageStreamBridge, MessageStreamBridgeContext } from './message-stream-bridge';
+import type { EventManager } from '../services/event-manager.js';
+import { MessageStreamBridge, MessageStreamBridgeContext } from './message-stream-bridge.js';
 import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 

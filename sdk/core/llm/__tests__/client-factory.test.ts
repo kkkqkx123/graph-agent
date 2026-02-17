@@ -2,7 +2,7 @@
  * ClientFactory 单元测试
  */
 
-import { ClientFactory } from '../client-factory';
+import { ClientFactory } from '../client-factory.js';
 import type { LLMProfile } from '@modular-agent/types';
 import { LLMProvider } from '@modular-agent/types';
 import { ConfigurationError } from '@modular-agent/types';

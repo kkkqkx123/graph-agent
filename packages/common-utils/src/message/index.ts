@@ -3,4 +3,4 @@
  * 导出消息数组管理器
  */
 
-export { MessageArrayManager } from './message-array-manager';
+export { MessageArrayManager } from './message-array-manager.js';

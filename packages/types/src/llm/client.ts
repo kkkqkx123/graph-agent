@@ -2,9 +2,9 @@
  * LLM客户端类型定义
  */
 
-import type { LLMProvider } from './state';
-import type { LLMRequest } from './request';
-import type { LLMResult } from './response';
+import type { LLMProvider } from './state.js';
+import type { LLMRequest } from './request.js';
+import type { LLMResult } from './response.js';
 
 /**
  * LLM客户端接口

@@ -7,7 +7,7 @@
  * - 提供完整的任务生命周期状态
  */
 
-import type { ThreadContext } from '../context/thread-context';
+import type { ThreadContext } from '../context/thread-context.js';
 import type { ThreadResult } from '@modular-agent/types';
 
 /**

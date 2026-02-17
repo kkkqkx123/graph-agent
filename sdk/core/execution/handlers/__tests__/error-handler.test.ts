@@ -3,12 +3,12 @@
  * 测试工作流内部错误处理器的各种功能
  */
 
-import { handleNodeFailure, handleExecutionError } from '../error-handler';
+import { handleNodeFailure, handleExecutionError } from '../error-handler.js';
 import { ValidationError, ExecutionError, ToolError, NotFoundError } from '@modular-agent/types';
-import { EventManager } from '../../../services/event-manager';
+import { EventManager } from '../../../services/event-manager.js';
 import type { Node } from '@modular-agent/types';
 import type { NodeExecutionResult } from '@modular-agent/types';
-import { SingletonRegistry } from '../../context/singleton-registry';
+import { SingletonRegistry } from '../../context/singleton-registry.js';
 
 // Mock EventManager
 jest.mock('../../../services/event-manager');

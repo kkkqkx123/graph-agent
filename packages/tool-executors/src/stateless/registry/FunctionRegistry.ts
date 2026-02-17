@@ -3,7 +3,7 @@
  * 管理无状态工具的函数，支持版本控制、调用统计等功能
  */
 
-import type { FunctionRegistryItem, FunctionRegistryConfig } from '../types';
+import type { FunctionRegistryItem, FunctionRegistryConfig } from '../types.js';
 import type { ID } from '@modular-agent/types';
 import { ToolError } from '@modular-agent/types';
 

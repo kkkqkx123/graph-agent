@@ -12,7 +12,7 @@ import {
   APIEventType,
   APIEventData,
   APIEventListener
-} from '../types/event-types';
+} from '../types/event-types.js';
 import { SDKError, ErrorSeverity } from '@modular-agent/types';
 import { getErrorOrNew } from '@modular-agent/common-utils';
 

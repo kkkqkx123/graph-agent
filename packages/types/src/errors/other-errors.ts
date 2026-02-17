@@ -3,7 +3,7 @@
  * 定义配置、超时、工具和代码执行相关的错误类型
  */
 
-import { SDKError, ErrorSeverity } from './base';
+import { SDKError, ErrorSeverity } from './base.js';
 
 /**
  * 配置错误类型

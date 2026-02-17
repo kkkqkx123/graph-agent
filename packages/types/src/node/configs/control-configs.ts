@@ -3,7 +3,7 @@
  * 包含 START、END、ROUTE 节点配置
  */
 
-import type { Condition } from '../../condition';
+import type { Condition } from '../../condition.js';
 
 /**
  * 开始节点配置

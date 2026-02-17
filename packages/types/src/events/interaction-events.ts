@@ -2,8 +2,8 @@
  * 交互相关事件类型定义
  */
 
-import type { ID } from '../common';
-import type { BaseEvent, EventType } from './base';
+import type { ID } from '../common.js';
+import type { BaseEvent, EventType } from './base.js';
 
 /**
  * 用户交互请求事件类型

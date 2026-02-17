@@ -2,7 +2,7 @@
  * 传输协议单元测试
  */
 
-import { HttpTransport, SseTransport } from '../transport';
+import { HttpTransport, SseTransport } from '../transport.js';
 
 // Mock fetch
 global.fetch = jest.fn();

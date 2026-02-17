@@ -14,7 +14,7 @@ import {
   type MessageStreamErrorEvent,
   type MessageStreamAbortEvent,
   type MessageStreamEndEvent
-} from '../message-stream-events';
+} from '../message-stream-events.js';
 import type { LLMMessage, LLMResult } from '@modular-agent/types';
 
 describe('MessageStreamEvents', () => {

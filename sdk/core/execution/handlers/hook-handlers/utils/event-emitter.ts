@@ -3,7 +3,7 @@
  * 负责触发Hook相关的自定义事件
  */
 
-import type { HookExecutionContext } from '../index';
+import type { HookExecutionContext } from '../index.js';
 import type { NodeCustomEvent } from '@modular-agent/types';
 import { EventType } from '@modular-agent/types';
 import { SystemExecutionError } from '@modular-agent/types';

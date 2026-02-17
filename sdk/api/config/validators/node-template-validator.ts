@@ -5,12 +5,12 @@
  */
 
 import type { NodeTemplate } from '@modular-agent/types';
-import type { ConfigFile } from '../types';
-import { ConfigType } from '../types';
+import type { ConfigFile } from '../types.js';
+import { ConfigType } from '../types.js';
 import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 import { ValidationError } from '@modular-agent/types';
-import { NodeValidator } from '../../../core/validation/node-validator';
+import { NodeValidator } from '../../../core/validation/node-validator.js';
 import { NodeType } from '@modular-agent/types';
 import {
   validateRequiredFields,
@@ -18,7 +18,7 @@ import {
   validateEnumField,
   validateNumberField,
   validateObjectField
-} from './base-validator';
+} from './base-validator.js';
 
 /**
  * 验证节点模板配置

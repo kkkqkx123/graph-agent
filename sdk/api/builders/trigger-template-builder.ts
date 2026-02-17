@@ -5,8 +5,8 @@
 
 import type { TriggerTemplate, TriggerCondition, TriggerAction } from '@modular-agent/types';
 import { EventType, TriggerActionType } from '@modular-agent/types';
-import { TemplateBuilder } from './template-builder';
-import { SingletonRegistry } from '../../core/execution/context/singleton-registry';
+import { TemplateBuilder } from './template-builder.js';
+import { SingletonRegistry } from '../../core/execution/context/singleton-registry.js';
 
 /**
  * TriggerTemplateBuilder - 触发器模板构建器

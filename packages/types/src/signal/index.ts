@@ -4,7 +4,7 @@
  */
 
 // 基础信号类型
-export * from './base';
+export * from './base.js';
 
 // 中断请求类型
-export * from './interruption';
+export * from './interruption.js';

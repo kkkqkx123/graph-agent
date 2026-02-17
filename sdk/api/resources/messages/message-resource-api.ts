@@ -3,11 +3,11 @@
  * 继承GenericResourceAPI，提供统一的CRUD操作
  */
 
-import { GenericResourceAPI } from '../generic-resource-api';
-import type { ThreadRegistry } from '../../../core/services/thread-registry';
+import { GenericResourceAPI } from '../generic-resource-api.js';
+import type { ThreadRegistry } from '../../../core/services/thread-registry.js';
 import type { LLMMessage } from '@modular-agent/types';
 import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types';
-import { SingletonRegistry } from '../../../core/execution/context/singleton-registry';
+import { SingletonRegistry } from '../../../core/execution/context/singleton-registry.js';
 
 /**
  * 消息过滤器

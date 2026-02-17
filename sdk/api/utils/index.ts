@@ -14,5 +14,5 @@ export {
   Subscription,
   ObservableImpl,
   create
-} from './observable';
-export type { OperatorFunction } from './observable';
+} from './observable.js';
+export type { OperatorFunction } from './observable.js';

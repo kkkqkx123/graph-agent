@@ -3,9 +3,9 @@
  * 用于预处理阶段的ID映射和配置更新
  */
 
-import type { ID } from '../common';
-import type { Node } from '../node';
-import type { NodeType } from '../node/base';
+import type { ID } from '../common.js';
+import type { Node } from '../node/index.js';
+import type { NodeType } from '../node/base.js';
 
 /**
  * ID映射表

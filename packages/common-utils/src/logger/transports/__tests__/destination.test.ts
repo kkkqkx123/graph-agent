@@ -3,8 +3,8 @@
  * 测试目标stream创建功能
  */
 
-import { destination } from '../destination';
-import type { LogStream } from '../../types';
+import { destination } from '../destination.js';
+import type { LogStream } from '../../types.js';
 import { Writable } from 'stream';
 
 // Mock console 方法

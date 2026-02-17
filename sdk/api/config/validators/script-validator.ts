@@ -5,15 +5,15 @@
  */
 
 import type { Script } from '@modular-agent/types';
-import type { ConfigFile } from '../types';
+import type { ConfigFile } from '../types.js';
 import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 import { ValidationError } from '@modular-agent/types';
-import { CodeConfigValidator } from '../../../core/validation/code-config-validator';
+import { CodeConfigValidator } from '../../../core/validation/code-config-validator.js';
 import {
   validateRequiredFields,
   validateBooleanField
-} from './base-validator';
+} from './base-validator.js';
 
 /**
  * 验证脚本配置

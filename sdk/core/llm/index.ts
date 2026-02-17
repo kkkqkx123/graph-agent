@@ -5,9 +5,9 @@
  */
 
 // SDK级别核心类
-export { LLMWrapper } from './wrapper';
-export { ProfileManager } from './profile-manager';
-export { MessageStreamBridge, type MessageStreamBridgeContext } from './message-stream-bridge';
+export { LLMWrapper } from './wrapper.js';
+export { ProfileManager } from './profile-manager.js';
+export { MessageStreamBridge, type MessageStreamBridgeContext } from './message-stream-bridge.js';
 
 // 基础设施（从common-utils导入）
 export { ClientFactory } from '@modular-agent/common-utils';

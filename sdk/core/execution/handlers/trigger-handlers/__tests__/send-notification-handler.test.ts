@@ -2,7 +2,7 @@
  * 发送通知处理函数单元测试
  */
 
-import { sendNotificationHandler } from '../send-notification-handler';
+import { sendNotificationHandler } from '../send-notification-handler.js';
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import { TriggerActionType } from '@modular-agent/types';
 import { ValidationError } from '@modular-agent/types';

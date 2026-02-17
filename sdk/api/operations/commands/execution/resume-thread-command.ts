@@ -2,9 +2,9 @@
  * ResumeThreadCommand - 恢复线程命令
  */
 
-import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
+import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
 import type { ThreadResult } from '@modular-agent/types';
-import { APIDependencyManager } from '../../../core/sdk-dependencies';
+import { APIDependencyManager } from '../../../core/sdk-dependencies.js';
 
 /**
  * 恢复线程命令
@@ -18,7 +18,7 @@ export class ResumeThreadCommand extends BaseCommand<ThreadResult> {
   }
 
   protected async executeInternal(): Promise<ThreadResult> {
-    const lifecycleCoordinator = this.dependencies.getThreadLifecycleCoordinator();
+    const lifecycleCoordinator = await this.dependencies.getThreadLifecycleCoordinator();
     const result = await lifecycleCoordinator.resumeThread(this.threadId);
     return result;
   }

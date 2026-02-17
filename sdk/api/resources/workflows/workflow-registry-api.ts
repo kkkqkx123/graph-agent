@@ -8,11 +8,11 @@ import {
   validateStringLength,
   validateArray,
   validatePattern
-} from '../../validation/validation-strategy';
+} from '../../validation/validation-strategy.js';
 
-import { GenericResourceAPI } from '../generic-resource-api';
+import { GenericResourceAPI } from '../generic-resource-api.js';
 import type { WorkflowDefinition, WorkflowFilter, WorkflowSummary } from '@modular-agent/types';
-import type { APIDependencyManager } from '../../core/sdk-dependencies';
+import type { APIDependencyManager } from '../../core/sdk-dependencies.js';
 
 /**
  * WorkflowRegistryAPI - 工作流管理API

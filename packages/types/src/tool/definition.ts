@@ -2,10 +2,10 @@
  * 工具定义类型
  */
 
-import type { ID, Metadata } from '../common';
-import type { ToolType } from './state';
-import type { ToolParameters, ToolMetadata } from './config';
-import type { ToolConfig } from './tool-config';
+import type { ID, Metadata } from '../common.js';
+import type { ToolType } from './state.js';
+import type { ToolParameters, ToolMetadata } from './config.js';
+import type { ToolConfig } from './tool-config.js';
 
 /**
  * 工具定义类型

@@ -2,7 +2,7 @@
  * 基础节点类型定义
  */
 
-import type { ID, Metadata } from '../common';
+import type { ID, Metadata } from '../common.js';
 
 /**
  * 节点类型

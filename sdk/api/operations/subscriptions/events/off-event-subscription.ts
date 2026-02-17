@@ -2,9 +2,9 @@
  * OffEventSubscription - 取消事件监听器
  */
 
-import { BaseSubscription, SubscriptionMetadata } from '../../../types/subscription';
+import { BaseSubscription, SubscriptionMetadata } from '../../../types/subscription.js';
 import type { EventType, EventListener, BaseEvent } from '@modular-agent/types';
-import type { APIDependencyManager } from '../../../core/sdk-dependencies';
+import type { APIDependencyManager } from '../../../core/sdk-dependencies.js';
 
 /**
  * 取消事件监听器参数

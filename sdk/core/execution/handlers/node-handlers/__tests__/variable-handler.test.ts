@@ -2,7 +2,7 @@
  * Variable节点处理函数单元测试
  */
 
-import { variableHandler } from '../variable-handler';
+import { variableHandler } from '../variable-handler.js';
 import type { Node, VariableNodeConfig } from '@modular-agent/types';
 import { NodeType } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';

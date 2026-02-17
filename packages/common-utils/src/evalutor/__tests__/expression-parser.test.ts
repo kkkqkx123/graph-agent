@@ -1,4 +1,4 @@
-import { ExpressionEvaluator, parseExpression, parseValue, parseCompoundExpression } from '../expression-parser';
+import { ExpressionEvaluator, parseExpression, parseValue, parseCompoundExpression } from '../expression-parser.js';
 import type { EvaluationContext } from '@modular-agent/types';
 import { RuntimeValidationError } from '@modular-agent/types';
 

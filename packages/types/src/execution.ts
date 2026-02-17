@@ -3,9 +3,9 @@
  * 定义工作流执行相关的类型
  */
 
-import type { Thread, ThreadOptions, ThreadResult } from './thread';
-import type { WorkflowDefinition } from './workflow';
-import type { ID, Timestamp, Metadata } from './common';
+import type { Thread, ThreadOptions, ThreadResult } from './thread/index.js';
+import type { WorkflowDefinition } from './workflow/index.js';
+import type { ID, Timestamp, Metadata } from './common.js';
 
 /**
  * 执行选项类型

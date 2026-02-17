@@ -4,7 +4,7 @@
 
 import type { IdMapping } from '@modular-agent/types';
 import { NodeType } from '@modular-agent/types';
-import { getNodeConfigUpdater } from '../node-config-updaters';
+import { getNodeConfigUpdater } from '../node-config-updaters.js';
 
 describe('节点配置更新器', () => {
   let idMapping: IdMapping;

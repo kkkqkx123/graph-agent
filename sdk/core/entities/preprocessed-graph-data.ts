@@ -18,7 +18,7 @@ import type {
   NodeType,
   EdgeType
 } from '@modular-agent/types';
-import { GraphData } from './graph-data';
+import { GraphData } from './graph-data.js';
 
 /**
  * 预处理后的图数据类

@@ -2,8 +2,8 @@
  * AsyncStream单元测试
  */
 
-import { AsyncStream, createAsyncStream } from '../async-stream';
-import type { LogStream, LogEntry } from '../../types';
+import { AsyncStream, createAsyncStream } from '../async-stream.js';
+import type { LogStream, LogEntry } from '../../types.js';
 
 // 创建一个mock stream用于测试
 class MockStream implements LogStream {

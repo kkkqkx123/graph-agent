@@ -2,8 +2,8 @@
  * 对话相关事件类型定义
  */
 
-import type { ID } from '../common';
-import type { BaseEvent, EventType } from './base';
+import type { ID } from '../common.js';
+import type { BaseEvent, EventType } from './base.js';
 
 /**
  * 消息添加事件类型

@@ -22,17 +22,17 @@
 import type { ThreadResult } from '@modular-agent/types';
 import type { Node } from '@modular-agent/types';
 import type { NodeExecutionResult } from '@modular-agent/types';
-import { ThreadContext } from './context/thread-context';
-import type { EventManager } from '../services/event-manager';
-import type { WorkflowRegistry } from '../services/workflow-registry';
+import { ThreadContext } from './context/thread-context.js';
+import type { EventManager } from '../services/event-manager.js';
+import type { WorkflowRegistry } from '../services/workflow-registry.js';
 import { ThreadInterruptedException, NodeNotFoundError } from '@modular-agent/types';
 import { ThreadStatus } from '@modular-agent/types';
 import { now, diffTimestamp } from '@modular-agent/common-utils';
-import { NodeExecutionCoordinator } from './coordinators/node-execution-coordinator';
-import { handleNodeFailure, handleExecutionError } from './handlers/error-handler';
-import { LLMExecutionCoordinator } from './coordinators/llm-execution-coordinator';
-import { ExecutionContext } from './context/execution-context';
-import { InterruptionDetector, InterruptionDetectorImpl } from './managers/interruption-detector';
+import { NodeExecutionCoordinator } from './coordinators/node-execution-coordinator.js';
+import { handleNodeFailure, handleExecutionError } from './handlers/error-handler.js';
+import { LLMExecutionCoordinator } from './coordinators/llm-execution-coordinator.js';
+import { ExecutionContext } from './context/execution-context.js';
+import { InterruptionDetector, InterruptionDetectorImpl } from './managers/interruption-detector.js';
 import { throwIfAborted, getThreadInterruptedException } from '@modular-agent/common-utils';
 
 /**

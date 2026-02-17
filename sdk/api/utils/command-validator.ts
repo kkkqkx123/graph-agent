@@ -5,8 +5,8 @@
  * 简化验证逻辑，减少重复代码
  */
 
-import type { CommandValidationResult } from '../types/command';
-import { validationSuccess, validationFailure } from '../types/command';
+import type { CommandValidationResult } from '../types/command.js';
+import { validationSuccess, validationFailure } from '../types/command.js';
 
 /**
  * 命令验证器

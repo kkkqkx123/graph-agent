@@ -4,13 +4,13 @@
  * 重构版本：继承GenericResourceAPI，提高代码复用性和一致性
  */
 
-import { ProfileManager } from '../../../core/llm/profile-manager';
+import { ProfileManager } from '../../../core/llm/profile-manager.js';
 import type { LLMProfile, LLMProvider } from '@modular-agent/types';
 import { ValidationError, NotFoundError, ConfigurationValidationError, NodeTemplateNotFoundError } from '@modular-agent/types';
-import { GenericResourceAPI } from '../generic-resource-api';
-import { isSuccess, getData } from '../../types/execution-result';
+import { GenericResourceAPI } from '../generic-resource-api.js';
+import { isSuccess, getData } from '../../types/execution-result.js';
 import { getErrorMessage } from '@modular-agent/common-utils';
-import type { APIDependencyManager } from '../../core/sdk-dependencies';
+import type { APIDependencyManager } from '../../core/sdk-dependencies.js';
 
 /**
  * Profile模板类型

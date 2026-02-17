@@ -26,7 +26,7 @@
  * - accessor.get('loop.item') - 获取循环变量
  */
 
-import type { ThreadContext } from '../context/thread-context';
+import type { ThreadContext } from '../context/thread-context.js';
 import type { VariableScope } from '@modular-agent/types';
 import { resolvePath } from '@modular-agent/common-utils';
 

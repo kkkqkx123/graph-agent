@@ -14,7 +14,7 @@
  * - 使用纯函数，无内部状态
  */
 
-import { ThreadContext } from '../context/thread-context';
+import { ThreadContext } from '../context/thread-context.js';
 import { now } from '@modular-agent/common-utils';
 
 /**

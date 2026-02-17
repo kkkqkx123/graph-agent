@@ -2,7 +2,7 @@
  * 熔断器单元测试
  */
 
-import { CircuitBreaker } from '../circuit-breaker';
+import { CircuitBreaker } from '../circuit-breaker.js';
 
 describe('CircuitBreaker', () => {
   describe('构造函数', () => {

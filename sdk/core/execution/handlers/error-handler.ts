@@ -15,12 +15,12 @@
  * - severity 驱动：仅 ERROR 级别错误停止执行，WARNING 和 INFO 级别继续执行
  */
 
-import { ThreadContext } from '../context/thread-context';
+import { ThreadContext } from '../context/thread-context.js';
 import type { Node } from '@modular-agent/types';
 import type { NodeExecutionResult } from '@modular-agent/types';
 import { ThreadStatus } from '@modular-agent/types';
 import { ErrorContext, SDKError, ErrorSeverity } from '@modular-agent/types';
-import { SingletonRegistry } from '../context/singleton-registry';
+import { SingletonRegistry } from '../context/singleton-registry.js';
 import { now } from '@modular-agent/common-utils';
 
 /**

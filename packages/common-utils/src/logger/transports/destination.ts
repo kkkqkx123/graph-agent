@@ -3,8 +3,8 @@
  * 用于创建各种目标stream
  */
 
-import type { LogStream, StreamOptions } from '../types';
-import { createConsoleStream, createFileStream } from '../streams';
+import type { LogStream, StreamOptions } from '../types.js';
+import { createConsoleStream, createFileStream } from '../streams/index.js';
 
 /**
  * Destination类型

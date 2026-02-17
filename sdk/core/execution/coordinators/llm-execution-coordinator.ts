@@ -16,21 +16,21 @@
 import type { LLMMessage, ID } from '@modular-agent/types';
 import { MessageRole } from '@modular-agent/types';
 import type { WorkflowConfig } from '@modular-agent/types';
-import { ConversationManager } from '../managers/conversation-manager';
-import { LLMExecutor } from '../executors/llm-executor';
-import { type ToolService } from '../../services/tool-service';
-import type { EventManager } from '../../services/event-manager';
-import { safeEmit } from '../utils/event/event-emitter';
+import { ConversationManager } from '../managers/conversation-manager.js';
+import { LLMExecutor } from '../executors/llm-executor.js';
+import { type ToolService } from '../../services/tool-service.js';
+import type { EventManager } from '../../services/event-manager.js';
+import { safeEmit } from '../utils/event/event-emitter.js';
 import { EventType } from '@modular-agent/types';
 import { UserInteractionOperationType } from '@modular-agent/types';
 import type { ToolApprovalData } from '@modular-agent/types';
 import { now, generateId, getErrorOrNew } from '@modular-agent/common-utils';
-import { ToolCallExecutor } from '../executors/tool-call-executor';
+import { ToolCallExecutor } from '../executors/tool-call-executor.js';
 import { ExecutionError, ThreadInterruptedException, SystemExecutionError, ErrorSeverity } from '@modular-agent/types';
-import { CheckpointCoordinator } from './checkpoint-coordinator';
-import type { ExecutionContext } from '../context/execution-context';
-import { SingletonRegistry } from '../context/singleton-registry';
-import type { InterruptionDetector } from '../managers/interruption-detector';
+import { CheckpointCoordinator } from './checkpoint-coordinator.js';
+import type { ExecutionContext } from '../context/execution-context.js';
+import { SingletonRegistry } from '../context/singleton-registry.js';
+import type { InterruptionDetector } from '../managers/interruption-detector.js';
 import { throwIfAborted, getThreadInterruptedException } from '@modular-agent/common-utils';
 
 /**

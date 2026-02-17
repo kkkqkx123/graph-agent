@@ -4,7 +4,7 @@
  * 测试覆盖率目标：> 90%
  */
 
-import { MessageArrayUtils } from '../message-array-utils';
+import { MessageArrayUtils } from '../message-array-utils.js';
 import type { LLMMessage } from '@modular-agent/types';
 
 describe('MessageArrayUtils', () => {

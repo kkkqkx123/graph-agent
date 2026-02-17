@@ -2,7 +2,7 @@
  * 触发器状态类型定义
  */
 
-import type { ID, Timestamp } from '../common';
+import type { ID, Timestamp } from '../common.js';
 
 /**
  * 触发器类型

@@ -4,7 +4,7 @@
  */
 
 // 导出主执行函数和类型
-export { executeHook, type HookExecutionContext } from './hook-handler';
+export { executeHook, type HookExecutionContext } from './hook-handler.js';
 
 // 导出工具函数
-export * from './utils';
+export * from './utils/index.js';

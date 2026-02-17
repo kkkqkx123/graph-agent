@@ -2,8 +2,8 @@
  * 工具执行相关类型定义
  */
 
-import type { ID, Timestamp } from '../common';
-import type { Tool } from './definition';
+import type { ID, Timestamp } from '../common.js';
+import type { Tool } from './definition.js';
 
 /**
  * 工具调用记录类型

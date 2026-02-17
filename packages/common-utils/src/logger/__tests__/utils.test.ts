@@ -7,8 +7,8 @@ import {
   formatTimestamp,
   mergeContext,
   createLogEntry
-} from '../utils';
-import { LOG_LEVEL_PRIORITY } from '../types';
+} from '../utils.js';
+import { LOG_LEVEL_PRIORITY } from '../types.js';
 
 describe('shouldLog', () => {
   it('应该在当前级别为debug时输出所有级别', () => {

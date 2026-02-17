@@ -15,17 +15,17 @@
  */
 
 import { isAbortError, getThreadInterruptedException } from '@modular-agent/common-utils';
-import type { ToolService } from '../../services/tool-service';
-import type { EventManager } from '../../services/event-manager';
+import type { ToolService } from '../../services/tool-service.js';
+import type { EventManager } from '../../services/event-manager.js';
 import type { Tool, ID } from '@modular-agent/types';
-import { safeEmit } from '../utils/event/event-emitter';
+import { safeEmit } from '../utils/event/event-emitter.js';
 import { EventType, MessageRole } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
-import type { ConversationManager } from '../managers/conversation-manager';
-import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils';
-import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils';
+import type { ConversationManager } from '../managers/conversation-manager.js';
+import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
+import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
 import { ThreadInterruptedException, SystemExecutionError, ToolError } from '@modular-agent/types';
-import { MessageBuilder } from '../../messages/message-builder';
+import { MessageBuilder } from '../../messages/message-builder.js';
 
 /**
  * 工具执行结果

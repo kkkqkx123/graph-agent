@@ -3,7 +3,7 @@
  * 封装线程相关的 SDK API 调用
  */
 
-import { BaseAdapter } from './base-adapter';
+import { BaseAdapter } from './base-adapter.js';
 
 /**
  * 线程适配器

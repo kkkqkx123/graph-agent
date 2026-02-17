@@ -2,9 +2,9 @@
  * ADD_TOOL节点处理器测试
  */
 
-import { addToolHandler, type AddToolHandlerContext } from '../add-tool-handler';
+import { addToolHandler, type AddToolHandlerContext } from '../add-tool-handler.js';
 import { NodeType } from '@modular-agent/types';
-import { ToolContextManager } from '../../../managers/tool-context-manager';
+import { ToolContextManager } from '../../../managers/tool-context-manager.js';
 import { ExecutionError } from '@modular-agent/types';
 
 describe('addToolHandler', () => {

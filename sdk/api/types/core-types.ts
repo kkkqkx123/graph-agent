@@ -5,7 +5,7 @@
 
 import type { UserInteractionHandler } from '@modular-agent/types';
 import type { ThreadOptions, SDKOptions, SDKDependencies } from '@modular-agent/types';
-import type { ExecutionContext } from '../../core/execution/context/execution-context';
+import type { ExecutionContext } from '../../core/execution/context/execution-context.js';
 
 // 重新导出类型供API层使用
 export type { ThreadOptions, SDKOptions, SDKDependencies };

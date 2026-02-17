@@ -4,11 +4,11 @@
  * 所有函数都是无状态的纯函数
  */
 
-import type { ParsedConfig } from '../types';
-import { ConfigType } from '../types';
+import type { ParsedConfig } from '../types.js';
+import { ConfigType } from '../types.js';
 import type { Result } from '@modular-agent/types';
 import { ValidationError } from '@modular-agent/types';
-import { validateLLMProfileConfig } from '../validators/llm-profile-validator';
+import { validateLLMProfileConfig } from '../validators/llm-profile-validator.js';
 import { ok } from '@modular-agent/common-utils';
 
 /**

@@ -3,8 +3,8 @@
  * 包含 CODE、LLM、TOOL 节点配置
  */
 
-import type { ID } from '../../common';
-import { CodeRiskLevel } from '../../code-security';
+import type { ID } from '../../common.js';
+import { CodeRiskLevel } from '../../code-security.js';
 
 /**
  * 代码节点配置

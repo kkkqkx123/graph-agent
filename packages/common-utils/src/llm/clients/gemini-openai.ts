@@ -6,7 +6,7 @@
  * 支持流式和非流式调用
  */
 
-import { BaseLLMClient } from '../base-client';
+import { BaseLLMClient } from '../base-client.js';
 import type {
   LLMRequest,
   LLMResult,
@@ -15,8 +15,8 @@ import type {
   LLMToolCall
 } from '@modular-agent/types';
 import { MessageRole } from '@modular-agent/types';
-import { generateId } from '../../utils';
-import { convertToolsToOpenAIFormat } from '../../tool';
+import { generateId } from '../../utils/index.js';
+import { convertToolsToOpenAIFormat } from '../../tool/index.js';
 
 /**
  * Gemini OpenAI兼容客户端

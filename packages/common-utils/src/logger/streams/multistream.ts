@@ -3,8 +3,8 @@
  * 支持同时输出到多个stream，支持级别过滤和去重
  */
 
-import type { LogStream, LogEntry, StreamEntry, MultistreamOptions, LogLevel } from '../types';
-import { LOG_LEVEL_PRIORITY } from '../types';
+import type { LogStream, LogEntry, StreamEntry, MultistreamOptions, LogLevel } from '../types.js';
+import { LOG_LEVEL_PRIORITY } from '../types.js';
 
 /**
  * Multistream类

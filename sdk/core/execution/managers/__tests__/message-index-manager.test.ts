@@ -2,7 +2,7 @@
  * TypeIndexManager 单元测试
  */
 
-import { TypeIndexManager } from '../type-index-manager';
+import { TypeIndexManager } from '../type-index-manager.js';
 import { MessageRole } from '@modular-agent/types';
 
 describe('TypeIndexManager', () => {

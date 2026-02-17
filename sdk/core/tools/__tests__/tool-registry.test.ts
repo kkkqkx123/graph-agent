@@ -2,7 +2,7 @@
  * 工具注册表单元测试
  */
 
-import { ToolRegistry } from '../tool-registry';
+import { ToolRegistry } from '../tool-registry.js';
 import type { Tool } from '@modular-agent/types';
 import { ToolType } from '@modular-agent/types';
 import { ValidationError, NotFoundError } from '@modular-agent/types';

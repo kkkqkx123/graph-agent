@@ -13,8 +13,8 @@
  * - 支持泛型，适配不同的结果类型
  */
 
-import type { CallbackInfo, DynamicThreadEvent } from '../types/dynamic-thread.types';
-import { DynamicThreadEventType } from '../types/dynamic-thread.types';
+import type { CallbackInfo, DynamicThreadEvent } from '../types/dynamic-thread.types.js';
+import { DynamicThreadEventType } from '../types/dynamic-thread.types.js';
 
 /**
  * 回调信息接口（泛型版本）

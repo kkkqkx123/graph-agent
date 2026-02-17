@@ -3,13 +3,13 @@
  * 工流处理器的单元测试
  */
 
-import { processWorkflow } from '../workflow-processor';
+import { processWorkflow } from '../workflow-processor.js';
 import type { WorkflowDefinition, Node, WorkflowTrigger, TriggerReference } from '@modular-agent/types';
 import { NodeType, EdgeType, WorkflowType } from '@modular-agent/types';
 import { ConfigurationValidationError, NodeTemplateNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
-import { nodeTemplateRegistry } from '../../services/node-template-registry';
-import { triggerTemplateRegistry } from '../../services/trigger-template-registry';
-import { graphRegistry } from '../../services/graph-registry';
+import { nodeTemplateRegistry } from '../../services/node-template-registry.js';
+import { triggerTemplateRegistry } from '../../services/trigger-template-registry.js';
+import { graphRegistry } from '../../services/graph-registry.js';
 
 // Mock dependencies
 jest.mock('../../validation/workflow-validator');

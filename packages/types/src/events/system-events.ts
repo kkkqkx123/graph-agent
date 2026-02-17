@@ -2,8 +2,8 @@
  * 系统事件类型定义
  */
 
-import type { ID } from '../common';
-import type { BaseEvent, EventType } from './base';
+import type { ID } from '../common.js';
+import type { BaseEvent, EventType } from './base.js';
 
 /**
  * Token 超过限制事件类型

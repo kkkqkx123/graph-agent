@@ -13,7 +13,7 @@ import type {
   RollbackMessageOperation
 } from '@modular-agent/types';
 import { MessageRole } from '@modular-agent/types';
-import { MessageArrayManager } from '../message-array-manager';
+import { MessageArrayManager } from '../message-array-manager.js';
 
 describe('MessageArrayManager', () => {
   const createMockMessage = (role: Message['role'], content: string): Message => ({

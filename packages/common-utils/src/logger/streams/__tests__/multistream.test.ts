@@ -2,8 +2,8 @@
  * Multistream单元测试
  */
 
-import { Multistream, createMultistream } from '../multistream';
-import type { LogStream, LogEntry, StreamEntry } from '../../types';
+import { Multistream, createMultistream } from '../multistream.js';
+import type { LogStream, LogEntry, StreamEntry } from '../../types.js';
 
 // 创建一个mock stream用于测试
 class MockStream implements LogStream {

@@ -5,7 +5,7 @@
  * 支持流式和非流式调用
  */
 
-import { BaseLLMClient } from '../base-client';
+import { BaseLLMClient } from '../base-client.js';
 import type {
   LLMRequest,
   LLMResult,
@@ -14,8 +14,8 @@ import type {
   LLMToolCall
 } from '@modular-agent/types';
 import { MessageRole } from '@modular-agent/types';
-import { convertToolsToAnthropicFormat } from '../../tool';
-import { extractAndFilterSystemMessages } from '../message-helper';
+import { convertToolsToAnthropicFormat } from '../../tool/index.js';
+import { extractAndFilterSystemMessages } from '../message-helper.js';
 
 /**
  * Anthropic客户端

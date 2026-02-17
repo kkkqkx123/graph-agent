@@ -3,7 +3,7 @@
  * 预处理工作流构建器的单元测试
  */
 
-import { PreprocessedWorkflowBuilder } from '../preprocessed-workflow-builder';
+import { PreprocessedWorkflowBuilder } from '../preprocessed-workflow-builder.js';
 import type { WorkflowDefinition, ID } from '@modular-agent/types';
 import { NodeType, EdgeType, WorkflowType } from '@modular-agent/types';
 

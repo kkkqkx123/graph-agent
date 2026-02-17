@@ -2,7 +2,7 @@
  * 分叉/合并节点配置类型定义
  */
 
-import type { ID } from '../../common';
+import type { ID } from '../../common.js';
 
 /**
  * 分叉路径配置

@@ -2,7 +2,7 @@
  * GlobalMessageStorage 单元测试
  */
 
-import { GlobalMessageStorage } from '../global-message-storage';
+import { GlobalMessageStorage } from '../global-message-storage.js';
 import type { LLMMessage } from '@modular-agent/types';
 import { MessageRole } from '@modular-agent/types';
 

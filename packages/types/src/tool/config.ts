@@ -2,7 +2,7 @@
  * 工具配置类型定义
  */
 
-import type { Metadata } from '../common';
+import type { Metadata } from '../common.js';
 
 /**
  * 工具参数属性类型（基于JSON Schema Draft 2020-12）

@@ -7,8 +7,8 @@
  */
 
 import type { Script, ScriptType, ScriptExecutor, ScriptExecutionOptions, ScriptExecutionResult } from '@modular-agent/types';
-import type { ThreadContext } from '../execution/context/thread-context';
-import { CodeRegistry } from '../code/code-registry';
+import type { ThreadContext } from '../execution/context/thread-context.js';
+import { CodeRegistry } from '../code/code-registry.js';
 import { CodeExecutionError, ScriptNotFoundError } from '@modular-agent/types';
 import { tryCatchAsync } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';

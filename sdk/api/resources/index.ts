@@ -4,63 +4,63 @@
  */
 
 // 通用资源API基类
-import { GenericResourceAPI } from './generic-resource-api';
+import { GenericResourceAPI } from './generic-resource-api.js';
 
 // 检查点资源管理
-import { CheckpointResourceAPI } from './checkpoints/checkpoint-resource-api';
+import { CheckpointResourceAPI } from './checkpoints/checkpoint-resource-api.js';
 
 // 消息资源管理
 import {
   MessageResourceAPI,
   type MessageFilter,
   type MessageStats
-} from './messages/message-resource-api';
+} from './messages/message-resource-api.js';
 
 // 变量资源管理
 import {
   VariableResourceAPI,
   type VariableFilter,
   type VariableDefinition
-} from './variables/variable-resource-api';
+} from './variables/variable-resource-api.js';
 
 // 触发器资源管理
-import { TriggerResourceAPI } from './triggers/trigger-resource-api';
+import { TriggerResourceAPI } from './triggers/trigger-resource-api.js';
 
 // 事件资源管理
 import {
   EventResourceAPI,
   type EventStats
-} from './events/event-resource-api';
+} from './events/event-resource-api.js';
 
 // 工作流资源管理
-import { WorkflowRegistryAPI } from './workflows/workflow-registry-api';
+import { WorkflowRegistryAPI } from './workflows/workflow-registry-api.js';
 
 // 线程资源管理
-import { ThreadRegistryAPI } from './threads/thread-registry-api';
+import { ThreadRegistryAPI } from './threads/thread-registry-api.js';
 
 // 工具资源管理
-import { ToolRegistryAPI } from './tools/tool-registry-api';
+import { ToolRegistryAPI } from './tools/tool-registry-api.js';
 
 // 脚本资源管理
-import { ScriptRegistryAPI } from './scripts/script-registry-api';
+import { ScriptRegistryAPI } from './scripts/script-registry-api.js';
 
 // 节点模板资源管理
-import { NodeRegistryAPI } from './templates/node-template-registry-api';
+import { NodeRegistryAPI } from './templates/node-template-registry-api.js';
 
 // 触发器模板资源管理
-import { TriggerTemplateRegistryAPI } from './templates/trigger-template-registry-api';
+import { TriggerTemplateRegistryAPI } from './templates/trigger-template-registry-api.js';
 
 // Profile资源管理
-import { LLMProfileRegistryAPI } from './llm/llm-profile-registry-api';
+import { LLMProfileRegistryAPI } from './llm/llm-profile-registry-api.js';
 
 // 用户交互资源管理
-import { UserInteractionResourceAPI, type UserInteractionConfig, type UserInteractionFilter } from './user-interaction/user-interaction-resource-api';
+import { UserInteractionResourceAPI, type UserInteractionConfig, type UserInteractionFilter } from './user-interaction/user-interaction-resource-api.js';
 
 // Human Relay资源管理
-import { HumanRelayResourceAPI, type HumanRelayConfig, type HumanRelayFilter } from './human-relay/human-relay-resource-api';
+import { HumanRelayResourceAPI, type HumanRelayConfig, type HumanRelayFilter } from './human-relay/human-relay-resource-api.js';
 
 // 依赖管理
-import type { APIDependencyManager } from '../core/sdk-dependencies';
+import type { APIDependencyManager } from '../core/sdk-dependencies.js';
 
 // 重新导出所有资源管理API
 export { GenericResourceAPI };

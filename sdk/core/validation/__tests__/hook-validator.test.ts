@@ -2,7 +2,7 @@
  * Hook验证器单元测试
  */
 
-import { validateHook, validateHooks } from '../hook-validator';
+import { validateHook, validateHooks } from '../hook-validator.js';
 import { HookType } from '@modular-agent/types';
 
 describe('validateHook', () => {

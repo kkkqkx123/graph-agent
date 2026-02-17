@@ -3,7 +3,7 @@
  * 基于队列的异步批量处理，不阻塞主线程
  */
 
-import type { LogStream, LogEntry, StreamOptions } from '../types';
+import type { LogStream, LogEntry, StreamOptions } from '../types.js';
 
 /**
  * 日志队列项

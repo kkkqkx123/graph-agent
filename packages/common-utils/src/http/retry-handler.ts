@@ -10,7 +10,7 @@ import {
   InternalServerError,
   RateLimitError,
   ServiceUnavailableError,
-} from './errors';
+} from './errors.js';
 
 /**
  * 不应该重试的 HTTP 状态码

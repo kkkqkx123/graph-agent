@@ -10,7 +10,7 @@ import { NodeType } from '@modular-agent/types';
 import { ConfigurationValidationError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
-import { validateNodeByType } from './node-validation';
+import { validateNodeByType } from './node-validation/index.js';
 
 /**
  * 节点schema（基本信息验证）

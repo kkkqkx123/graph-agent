@@ -3,7 +3,7 @@
  * 测试工具配置的静态检查（注册时验证）
  */
 
-import { StaticValidator } from '../tool-static-validator';
+import { StaticValidator } from '../tool-static-validator.js';
 import { ToolType } from '@modular-agent/types';
 
 describe('StaticValidator', () => {

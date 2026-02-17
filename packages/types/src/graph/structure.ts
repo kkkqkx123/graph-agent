@@ -2,10 +2,10 @@
  * 图结构类型定义
  */
 
-import type { ID, Metadata } from '../common';
-import type { Node } from '../node';
-import { NodeType } from '../node';
-import type { Edge, EdgeType } from '../edge';
+import type { ID, Metadata } from '../common.js';
+import type { Node } from '../node/index.js';
+import { NodeType } from '../node/index.js';
+import type { Edge, EdgeType } from '../edge.js';
 
 /**
  * 图节点类型

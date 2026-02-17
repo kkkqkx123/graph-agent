@@ -17,14 +17,14 @@ import type {
 import type { Node } from '@modular-agent/types';
 import type { WorkflowTrigger } from '@modular-agent/types';
 import type { TriggerReference } from '@modular-agent/types';
-import { GraphBuilder } from './graph-builder';
-import { GraphValidator } from '../validation/graph-validator';
-import { WorkflowValidator } from '../validation/workflow-validator';
-import { PreprocessedWorkflowBuilder } from './preprocessed-workflow-builder';
-import { PreprocessedGraphData } from '../entities/preprocessed-graph-data';
+import { GraphBuilder } from './graph-builder.js';
+import { GraphValidator } from '../validation/graph-validator.js';
+import { WorkflowValidator } from '../validation/workflow-validator.js';
+import { PreprocessedWorkflowBuilder } from './preprocessed-workflow-builder.js';
+import { PreprocessedGraphData } from '../entities/preprocessed-graph-data.js';
 import { now } from '@modular-agent/common-utils';
 import { ConfigurationValidationError, NodeTemplateNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
-import { SingletonRegistry } from '../execution/context/singleton-registry';
+import { SingletonRegistry } from '../execution/context/singleton-registry.js';
 
 export interface ProcessOptions extends GraphBuildOptions {
   workflowRegistry?: any;

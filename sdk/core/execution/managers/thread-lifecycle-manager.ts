@@ -19,9 +19,9 @@
  */
 
 import type { Thread, ThreadStatus, ThreadResult } from '@modular-agent/types';
-import type { EventManager } from '../../services/event-manager';
-import { SingletonRegistry } from '../context/singleton-registry';
-import { validateTransition } from '../utils/thread-state-validator';
+import type { EventManager } from '../../services/event-manager.js';
+import { SingletonRegistry } from '../context/singleton-registry.js';
+import { validateTransition } from '../utils/thread-state-validator.js';
 import {
   buildThreadStartedEvent,
   buildThreadStateChangedEvent,
@@ -30,10 +30,10 @@ import {
   buildThreadCompletedEvent,
   buildThreadFailedEvent,
   buildThreadCancelledEvent
-} from '../utils/event/event-builder';
+} from '../utils/event/event-builder.js';
 import {
   emit
-} from '../utils/event/event-emitter';
+} from '../utils/event/event-emitter.js';
 import { now } from '@modular-agent/common-utils';
 
 /**

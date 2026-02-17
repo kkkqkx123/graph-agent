@@ -2,15 +2,15 @@
  * CheckpointResourceAPI 单元测试
  */
 
-import { CheckpointResourceAPI } from '../resources/checkpoints/checkpoint-resource-api';
-import { ThreadRegistry } from '../../../core/services/thread-registry';
+import { CheckpointResourceAPI } from '../resources/checkpoints/checkpoint-resource-api.js';
+import { ThreadRegistry } from '../../../core/services/thread-registry.js';
 import { WorkflowRegistry } from '@modular-agent/sdk/core/services/workflow-registry';
 import type { WorkflowDefinition } from '@modular-agent/types';
 import { NodeType } from '@modular-agent/types';
 import { EdgeType } from '@modular-agent/types';
 import { ThreadStatus } from '@modular-agent/types';
 import { NotFoundError } from '@modular-agent/types';
-import { ExecutionContext } from '../../core/execution/context/execution-context';
+import { ExecutionContext } from '../../core/execution/context/execution-context.js';
 import { SingletonRegistry } from '@modular-agent/sdk/core/execution/context/singleton-registry';
 
 describe('CheckpointResourceAPI', () => {

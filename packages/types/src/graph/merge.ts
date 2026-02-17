@@ -2,7 +2,7 @@
  * 子工作流合并相关类型定义
  */
 
-import type { ID } from '../common';
+import type { ID } from '../common.js';
 
 /**
  * 图构建选项

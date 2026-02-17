@@ -2,9 +2,9 @@
  * 线程执行相关类型定义
  */
 
-import type { ID, Timestamp } from '../common';
-import type { ThreadStatus } from './status';
-import type { NodeExecutionResult } from './history';
+import type { ID, Timestamp } from '../common.js';
+import type { ThreadStatus } from './status.js';
+import type { NodeExecutionResult } from './history.js';
 
 /**
  * 线程执行选项类型

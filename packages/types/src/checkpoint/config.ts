@@ -2,7 +2,7 @@
  * 检查点配置类型定义
  */
 
-import type { Metadata, ID } from '../common';
+import type { Metadata, ID } from '../common.js';
 
 /**
  * 检查点元数据类型

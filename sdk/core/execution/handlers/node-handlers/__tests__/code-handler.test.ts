@@ -5,7 +5,7 @@
  * 注意：验证、安全检查、状态判断由应用层负责，不在此测试
  */
 
-import { codeHandler } from '../code-handler';
+import { codeHandler } from '../code-handler.js';
 import type { Node, CodeNodeConfig } from '@modular-agent/types';
 import { NodeType } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';

@@ -8,7 +8,7 @@
  * - 支持错误处理和超时控制
  */
 
-import type { ExecutedThreadResult } from '../types/dynamic-thread.types';
+import type { ExecutedThreadResult } from '../types/dynamic-thread.types.js';
 import { getErrorOrNew } from '@modular-agent/common-utils';
 
 /**

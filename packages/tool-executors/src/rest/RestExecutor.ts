@@ -6,10 +6,10 @@
 import type { Tool } from '@modular-agent/types';
 import type { RestToolConfig } from '@modular-agent/types';
 import { NetworkError, ToolError, ValidationError, RuntimeValidationError, TimeoutError, CircuitBreakerOpenError } from '@modular-agent/types';
-import { BaseExecutor } from '../core/base/BaseExecutor';
-import { ExecutorType } from '../core/types';
+import { BaseExecutor } from '../core/base/BaseExecutor.js';
+import { ExecutorType } from '../core/types.js';
 import { HttpClient, InterceptorManager, HttpCache } from '@modular-agent/common-utils';
-import type { RestExecutorConfig } from './types';
+import type { RestExecutorConfig } from './types.js';
 
 /**
  * REST工具执行器

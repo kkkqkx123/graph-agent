@@ -16,8 +16,8 @@ import type {
 import type { Node } from '@modular-agent/types';
 import type { Edge } from '@modular-agent/types';
 import type { NodeType } from '@modular-agent/types';
-import { GraphData } from '../entities/graph-data';
-import { updateIdReferences } from './utils/node-config-updaters';
+import { GraphData } from '../entities/graph-data.js';
+import { updateIdReferences } from './utils/node-config-updaters.js';
 import { generateSubgraphNamespace } from '@modular-agent/common-utils';
 import { NodeType as NodeTypeEnum } from '@modular-agent/types';
 

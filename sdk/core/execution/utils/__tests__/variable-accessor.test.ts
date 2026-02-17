@@ -3,8 +3,8 @@
  * 测试统一的变量访问器功能
  */
 
-import { VariableAccessor, VariableNamespace } from '../variable-accessor';
-import type { ThreadContext } from '../../context/thread-context';
+import { VariableAccessor, VariableNamespace } from '../variable-accessor.js';
+import type { ThreadContext } from '../../context/thread-context.js';
 
 // Mock ThreadContext
 const createMockThreadContext = (

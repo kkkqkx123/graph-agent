@@ -3,7 +3,7 @@
  * 定义线程中断和操作中止相关的错误类型
  */
 
-import { SDKError, ErrorSeverity } from './base';
+import { SDKError, ErrorSeverity } from './base.js';
 
 /**
  * 中断类型

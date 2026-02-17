@@ -4,7 +4,7 @@
  */
 
 import { sdk } from '@modular-agent/sdk';
-import { createLogger } from '../utils/logger';
+import { createLogger } from '../utils/logger.js';
 
 /**
  * 基础适配器类

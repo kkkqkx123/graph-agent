@@ -128,8 +128,8 @@ class GlobalInstanceManager {
 export const globalInstanceManager = new GlobalInstanceManager();
 
 // Re-export all API layer content
-export * from './api';
+export * from './api/index.js';
 
 // Re-export utilities
-export * from './utils';
+export * from './utils/index.js';
 

@@ -4,7 +4,7 @@
  */
 
 // Command模式相关类型
-export type { ExecutionResult } from './execution-result';
+export type { ExecutionResult } from './execution-result.js';
 export {
   success,
   failure,
@@ -12,13 +12,13 @@ export {
   isFailure,
   getData,
   getError
-} from './execution-result';
+} from './execution-result.js';
 
-export type { ExecutionOptions } from './execution-options';
-export { DEFAULT_EXECUTION_OPTIONS, mergeExecutionOptions } from './execution-options';
+export type { ExecutionOptions } from './execution-options.js';
+export { DEFAULT_EXECUTION_OPTIONS, mergeExecutionOptions } from './execution-options.js';
 
 // 核心类型
-export type { ThreadOptions, SDKOptions, SDKDependencies } from './core-types';
+export type { ThreadOptions, SDKOptions, SDKDependencies } from './core-types.js';
 
 // 注册表类型（从 types 层导入）
 export type {
@@ -57,7 +57,7 @@ export type {
   ScriptStatistics,
   ScriptRegistrationConfig,
   ScriptBatchExecutionConfig
-} from './code-types';
+} from './code-types.js';
 
 // 重新导出触发器模板类型（来自types层）
 export type {

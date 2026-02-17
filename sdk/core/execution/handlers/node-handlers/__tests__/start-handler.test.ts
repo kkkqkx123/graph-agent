@@ -2,7 +2,7 @@
  * Start节点处理函数单元测试
  */
 
-import { startHandler } from '../start-handler';
+import { startHandler } from '../start-handler.js';
 import type { Node, StartNodeConfig } from '@modular-agent/types';
 import { NodeType } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';

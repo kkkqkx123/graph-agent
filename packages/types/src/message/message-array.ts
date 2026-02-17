@@ -3,8 +3,8 @@
  * 定义消息数组的状态和统计信息
  */
 
-import type { Message } from './message';
-import type { BatchSnapshot } from './batch-snapshot';
+import type { Message } from './message.js';
+import type { BatchSnapshot } from './batch-snapshot.js';
 
 /**
  * 消息数组状态

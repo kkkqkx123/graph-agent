@@ -9,7 +9,7 @@
  * - 保持同步接口
  */
 
-import { globalInstanceManager } from '../index';
+import { globalInstanceManager } from '../index.js';
 
 /**
  * 初始化编码器（延迟初始化）

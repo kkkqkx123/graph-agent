@@ -21,19 +21,19 @@
 import { ThreadContextNotFoundError } from '@modular-agent/types';
 import type { ThreadOptions, ThreadResult } from '@modular-agent/types';
 import { ThreadStatus } from '@modular-agent/types';
-import { ThreadBuilder } from '../thread-builder';
-import { ThreadExecutor } from '../thread-executor';
-import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager';
-import { ThreadCascadeManager } from '../managers/thread-cascade-manager';
-import { ExecutionContext } from '../context/execution-context';
+import { ThreadBuilder } from '../thread-builder.js';
+import { ThreadExecutor } from '../thread-executor.js';
+import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager.js';
+import { ThreadCascadeManager } from '../managers/thread-cascade-manager.js';
+import { ExecutionContext } from '../context/execution-context.js';
 import { now } from '@modular-agent/common-utils';
-import { SingletonRegistry } from '../context/singleton-registry';
+import { SingletonRegistry } from '../context/singleton-registry.js';
 import {
   buildThreadCompletedEvent,
   buildThreadFailedEvent,
   buildThreadCancelledEvent
-} from '../utils/event/event-builder';
-import { emit } from '../utils/event/event-emitter';
+} from '../utils/event/event-builder.js';
+import { emit } from '../utils/event/event-emitter.js';
 
 /**
  * Thread 生命周期协调器
@@ -217,7 +217,7 @@ export class ThreadLifecycleCoordinator {
     }
 
     // 验证状态转换合法性
-    const { validateTransition } = await import('../utils/thread-state-validator');
+    const { validateTransition } = await import('../utils/thread-state-validator.js');
     validateTransition(threadId, threadContext.getStatus() as ThreadStatus, status);
 
     // 直接设置状态

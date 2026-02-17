@@ -1,6 +1,6 @@
-import { InterruptionDetectorImpl } from '../interruption-detector';
-import { InterruptionManager } from '../interruption-manager';
-import type { ThreadRegistry } from '../../../services/thread-registry';
+import { InterruptionDetectorImpl } from '../interruption-detector.js';
+import { InterruptionManager } from '../interruption-manager.js';
+import type { ThreadRegistry } from '../../../services/thread-registry.js';
 
 describe('InterruptionDetector', () => {
   let interruptionDetector: InterruptionDetectorImpl;

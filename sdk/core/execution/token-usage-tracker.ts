@@ -17,7 +17,7 @@
 
 import type { LLMMessage, LLMUsage, TokenUsageHistory, TokenUsageStatistics, TokenUsageStats } from '@modular-agent/types';
 import { generateId } from '@modular-agent/common-utils';
-import { estimateTokens as estimateTokensUtil, getTokenUsage as getTokenUsageUtil, isTokenLimitExceeded as isTokenLimitExceededUtil } from './utils/token-utils';
+import { estimateTokens as estimateTokensUtil, getTokenUsage as getTokenUsageUtil, isTokenLimitExceeded as isTokenLimitExceededUtil } from './utils/token-utils.js';
 
 /**
  * 完整的 Token 使用统计（包含当前累计和生命周期统计）

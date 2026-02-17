@@ -7,7 +7,7 @@
  * 实例通过 SingletonRegistry 统一管理
  */
 
-import { ThreadContext } from '../execution/context/thread-context';
+import { ThreadContext } from '../execution/context/thread-context.js';
 
 /**
  * ThreadRegistry - ThreadContext注册表

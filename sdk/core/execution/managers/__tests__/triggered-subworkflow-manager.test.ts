@@ -2,10 +2,10 @@
  * TriggeredSubworkflowManager 单元测试
  */
 
-import { TriggeredSubworkflowManager } from '../triggered-subworkflow-manager';
-import type { SubgraphContextFactory, SubgraphExecutor, TriggeredSubgraphTask } from '../triggered-subworkflow-manager';
-import { ThreadContext } from '../../context/thread-context';
-import type { EventManager } from '../../../services/event-manager';
+import { TriggeredSubworkflowManager } from '../triggered-subworkflow-manager.js';
+import type { SubgraphContextFactory, SubgraphExecutor, TriggeredSubgraphTask } from '../triggered-subworkflow-manager.js';
+import { ThreadContext } from '../../context/thread-context.js';
+import type { EventManager } from '../../../services/event-manager.js';
 import { EventType } from '@modular-agent/types';
 import type { ThreadResult } from '@modular-agent/types';
 

@@ -9,7 +9,7 @@ import { NodeType } from '@modular-agent/types';
 import { ConfigurationValidationError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
-import type { ToolRegistry } from '../../tools/tool-registry';
+import type { ToolRegistry } from '../../tools/tool-registry.js';
 
 /**
  * ADD_TOOL节点配置schema

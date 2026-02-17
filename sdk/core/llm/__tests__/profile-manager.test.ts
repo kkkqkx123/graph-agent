@@ -2,7 +2,7 @@
  * ProfileManager 单元测试
  */
 
-import { ProfileManager } from '../profile-manager';
+import { ProfileManager } from '../profile-manager.js';
 import type { LLMProfile } from '@modular-agent/types';
 import { ValidationError, NotFoundError } from '@modular-agent/types';
 

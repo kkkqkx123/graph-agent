@@ -27,19 +27,19 @@ import type {
 } from '@modular-agent/types';
 import type { BaseEvent, NodeCustomEvent } from '@modular-agent/types';
 import type { ID } from '@modular-agent/types';
-import { getTriggerHandler } from '../handlers/trigger-handlers';
+import { getTriggerHandler } from '../handlers/trigger-handlers/index.js';
 import { ExecutionError, ConfigurationValidationError, RuntimeValidationError, SystemExecutionError } from '@modular-agent/types';
 import { EventType } from '@modular-agent/types';
 import { now, getErrorOrNew } from '@modular-agent/common-utils';
-import type { ThreadRegistry } from '../../services/thread-registry';
-import type { WorkflowRegistry } from '../../services/workflow-registry';
-import type { GlobalMessageStorage } from '../../services/global-message-storage';
-import { TriggerStateManager } from '../managers/trigger-state-manager';
-import { CheckpointStateManager } from '../managers/checkpoint-state-manager';
+import type { ThreadRegistry } from '../../services/thread-registry.js';
+import type { WorkflowRegistry } from '../../services/workflow-registry.js';
+import type { GlobalMessageStorage } from '../../services/global-message-storage.js';
+import { TriggerStateManager } from '../managers/trigger-state-manager.js';
+import { CheckpointStateManager } from '../managers/checkpoint-state-manager.js';
 import { convertToTrigger } from '@modular-agent/types';
-import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils';
-import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils';
-import { SingletonRegistry } from '../context/singleton-registry';
+import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
+import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
+import { SingletonRegistry } from '../context/singleton-registry.js';
 
 /**
  * TriggerCoordinator - 触发器协调器

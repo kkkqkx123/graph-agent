@@ -2,9 +2,9 @@
  * 图分析结果类型定义
  */
 
-import { NodeType } from '../node';
-import type { EdgeType } from '../edge';
-import type { CycleDetectionResult, ReachabilityResult, TopologicalSortResult, ForkJoinValidationResult } from './validation';
+import { NodeType } from '../node/index.js';
+import type { EdgeType } from '../edge.js';
+import type { CycleDetectionResult, ReachabilityResult, TopologicalSortResult, ForkJoinValidationResult } from './validation.js';
 
 /**
  * 图分析结果

@@ -2,9 +2,9 @@
  * 子图节点配置类型定义
  */
 
-import type { ID } from '../../common';
-import type { MessageRole } from '../../message';
-import type { TruncateMessageOperation, FilterMessageOperation } from '../../message';
+import type { ID } from '../../common.js';
+import type { MessageRole } from '../../message/index.js';
+import type { TruncateMessageOperation, FilterMessageOperation } from '../../message/index.js';
 
 /**
  * 子图节点配置

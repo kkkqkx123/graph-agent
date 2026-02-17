@@ -3,7 +3,7 @@
  * 测试内存存储实现的所有功能
  */
 
-import { MemoryCheckpointStorage } from '../memory-checkpoint-storage';
+import { MemoryCheckpointStorage } from '../memory-checkpoint-storage.js';
 import type { CheckpointStorageMetadata, CheckpointListOptions } from '@modular-agent/types';
 
 describe('MemoryCheckpointStorage', () => {

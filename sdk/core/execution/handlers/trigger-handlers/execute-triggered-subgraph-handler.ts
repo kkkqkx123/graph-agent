@@ -17,11 +17,11 @@
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import type { ExecuteTriggeredSubgraphActionConfig } from '@modular-agent/types';
 import { RuntimeValidationError, ThreadContextNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
-import { ExecutionContext } from '../../context/execution-context';
+import { ExecutionContext } from '../../context/execution-context.js';
 import { getErrorMessage } from '@modular-agent/common-utils';
-import { TriggeredSubworkflowManager } from '../../managers/triggered-subworkflow-manager';
-import type { TriggeredSubgraphTask } from '../../types/triggered-subgraph.types';
-import { SingletonRegistry } from '../../context/singleton-registry';
+import { TriggeredSubworkflowManager } from '../../managers/triggered-subworkflow-manager.js';
+import type { TriggeredSubgraphTask } from '../../types/triggered-subgraph.types.js';
+import { SingletonRegistry } from '../../context/singleton-registry.js';
 
 /**
  * 创建成功结果（同步执行）

@@ -9,8 +9,8 @@ import { ValidationError, ConfigurationValidationError } from '@modular-agent/ty
 import type { Result } from '@modular-agent/types';
 import { ok, err, getErrorMessage } from '@modular-agent/common-utils';
 import { NodeType } from '@modular-agent/types';
-import { GenericResourceAPI } from '../generic-resource-api';
-import type { APIDependencyManager } from '../../core/sdk-dependencies';
+import { GenericResourceAPI } from '../generic-resource-api.js';
+import type { APIDependencyManager } from '../../core/sdk-dependencies.js';
 
 
 /**

@@ -3,9 +3,9 @@
  * 负责执行命令并管理中间件链
  */
 
-import type { Command, CommandValidationResult } from '../types/command';
-import type { ExecutionResult } from '../types/execution-result';
-import { failure } from '../types/execution-result';
+import type { Command, CommandValidationResult } from '../types/command.js';
+import type { ExecutionResult } from '../types/execution-result.js';
+import { failure } from '../types/execution-result.js';
 import { SDKError, ExecutionError as SDKExecutionError, ValidationError } from '@modular-agent/types';
 import { isError } from '@modular-agent/common-utils';
 

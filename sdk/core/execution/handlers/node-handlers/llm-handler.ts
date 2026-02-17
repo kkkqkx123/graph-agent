@@ -12,10 +12,10 @@ import type { Node, LLMNodeConfig } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
 import { ExecutionError } from '@modular-agent/types';
 import { now, diffTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
-import { LLMExecutionCoordinator } from '../../coordinators/llm-execution-coordinator';
-import { LLMWrapper } from '../../../llm/wrapper';
-import { executeHumanRelay } from '../human-relay-handler';
-import type { EventManager } from '../../../services/event-manager';
+import { LLMExecutionCoordinator } from '../../coordinators/llm-execution-coordinator.js';
+import { LLMWrapper } from '../../../llm/wrapper.js';
+import { executeHumanRelay } from '../human-relay-handler.js';
+import type { EventManager } from '../../../services/event-manager.js';
 
 /**
  * LLM节点执行结果

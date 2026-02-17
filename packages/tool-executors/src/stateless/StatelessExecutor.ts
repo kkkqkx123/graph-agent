@@ -6,10 +6,10 @@
 import type { Tool, ID } from '@modular-agent/types';
 import type { StatelessToolConfig } from '@modular-agent/types';
 import { ToolError } from '@modular-agent/types';
-import { BaseExecutor } from '../core/base/BaseExecutor';
-import { ExecutorType } from '../core/types';
-import { FunctionRegistry } from './registry/FunctionRegistry';
-import type { FunctionRegistryConfig } from './types';
+import { BaseExecutor } from '../core/base/BaseExecutor.js';
+import { ExecutorType } from '../core/types.js';
+import { FunctionRegistry } from './registry/FunctionRegistry.js';
+import type { FunctionRegistryConfig } from './types.js';
 
 /**
  * 无状态工具执行器

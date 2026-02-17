@@ -12,8 +12,8 @@ import {
   waitForAnyLifecycleEvent,
   waitForNodeCompleted,
   WAIT_FOREVER
-} from '../event-waiter';
-import { eventManager } from '../../../../services/event-manager';
+} from '../event-waiter.js';
+import { eventManager } from '../../../../services/event-manager.js';
 import { EventType } from '@modular-agent/types';
 
 describe('EventWaiter', () => {

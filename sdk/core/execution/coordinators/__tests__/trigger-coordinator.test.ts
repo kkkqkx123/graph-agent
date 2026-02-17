@@ -2,10 +2,10 @@
  * TriggerCoordinator 单元测试
  */
 
-import { TriggerCoordinator } from '../trigger-coordinator';
-import { ThreadRegistry } from '../../../services/thread-registry';
-import { WorkflowRegistry } from '../../../services/workflow-registry';
-import { TriggerStateManager } from '../../managers/trigger-state-manager';
+import { TriggerCoordinator } from '../trigger-coordinator.js';
+import { ThreadRegistry } from '../../../services/thread-registry.js';
+import { WorkflowRegistry } from '../../../services/workflow-registry.js';
+import { TriggerStateManager } from '../../managers/trigger-state-manager.js';
 import { EventType } from '@modular-agent/types';
 import { ValidationError, ExecutionError } from '@modular-agent/types';
 import { TriggerActionType, TriggerStatus, TriggerType } from '@modular-agent/types';

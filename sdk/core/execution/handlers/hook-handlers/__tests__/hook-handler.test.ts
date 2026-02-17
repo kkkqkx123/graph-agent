@@ -5,7 +5,7 @@
 import {
   executeHook,
   type HookExecutionContext
-} from '../hook-handler';
+} from '../hook-handler.js';
 import { HookType } from '@modular-agent/types';
 import type { Node, NodeHook } from '@modular-agent/types';
 import type { Thread, NodeExecutionResult } from '@modular-agent/types';

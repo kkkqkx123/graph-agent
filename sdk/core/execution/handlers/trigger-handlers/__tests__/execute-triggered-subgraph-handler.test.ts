@@ -2,11 +2,11 @@
  * 执行触发子工作流处理函数单元测试
  */
 
-import { executeTriggeredSubgraphHandler } from '../execute-triggered-subgraph-handler';
+import { executeTriggeredSubgraphHandler } from '../execute-triggered-subgraph-handler.js';
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import { TriggerActionType } from '@modular-agent/types';
-import { ExecutionContext } from '../../../context/execution-context';
-import { TriggeredSubworkflowManager } from '../../../managers/triggered-subworkflow-manager';
+import { ExecutionContext } from '../../../context/execution-context.js';
+import { TriggeredSubworkflowManager } from '../../../managers/triggered-subworkflow-manager.js';
 
 // Mock dependencies
 jest.mock('../../../context/execution-context');

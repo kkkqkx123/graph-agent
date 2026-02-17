@@ -5,7 +5,7 @@
  */
 
 // 工具注册表
-export { ToolRegistry } from './tool-registry';
+export { ToolRegistry } from './tool-registry.js';
 
 // 类型定义（从types包导入）
 export type { ToolExecutionOptions, ToolExecutionResult } from '@modular-agent/types';

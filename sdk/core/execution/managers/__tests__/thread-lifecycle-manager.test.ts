@@ -3,8 +3,8 @@
  * ThreadLifecycleManager的单元测试
  */
 
-import { ThreadLifecycleManager } from '../thread-lifecycle-manager';
-import { eventManager } from '../../../services/event-manager';
+import { ThreadLifecycleManager } from '../thread-lifecycle-manager.js';
+import { eventManager } from '../../../services/event-manager.js';
 import { ThreadStatus } from '@modular-agent/types';
 import { EventType } from '@modular-agent/types';
 import { generateId, now } from '@modular-agent/common-utils';

@@ -3,7 +3,7 @@
  * 负责构建Hook执行所需的评估上下文
  */
 
-import type { HookExecutionContext } from '../index';
+import type { HookExecutionContext } from '../index.js';
 import type { EvaluationContext } from '@modular-agent/types';
 
 /**

@@ -3,8 +3,8 @@
  * 定义线程中断信号的基础类型
  */
 
-import type { ID } from '../common';
-import type { ThreadInterruptedException } from '../errors';
+import type { ID } from '../common.js';
+import type { ThreadInterruptedException } from '../errors/index.js';
 
 /**
  * 线程中断信号

@@ -2,8 +2,8 @@
  * 线程变量类型定义
  */
 
-import type { Metadata } from '../common';
-import type { VariableScope } from './scopes';
+import type { Metadata } from '../common.js';
+import type { VariableScope } from './scopes.js';
 
 /**
  * 线程变量类型

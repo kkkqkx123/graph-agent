@@ -4,12 +4,12 @@
  */
 
 // 基础构建器
-export { BaseBuilder } from './base-builder';
-export { TemplateBuilder } from './template-builder';
+export { BaseBuilder } from './base-builder.js';
+export { TemplateBuilder } from './template-builder.js';
 
 // 具体构建器
-export { WorkflowBuilder } from './workflow-builder';
-export { ExecutionBuilder } from './execution-builder';
-export { NodeBuilder } from './node-builder';
-export { NodeTemplateBuilder } from './node-template-builder';
-export { TriggerTemplateBuilder } from './trigger-template-builder';
+export { WorkflowBuilder } from './workflow-builder.js';
+export { ExecutionBuilder } from './execution-builder.js';
+export { NodeBuilder } from './node-builder.js';
+export { NodeTemplateBuilder } from './node-template-builder.js';
+export { TriggerTemplateBuilder } from './trigger-template-builder.js';

@@ -1,4 +1,4 @@
-import { resolvePath, pathExists, setPath } from '../path-resolver';
+import { resolvePath, pathExists, setPath } from '../path-resolver.js';
 
 describe('PathResolver', () => {
   describe('resolve', () => {

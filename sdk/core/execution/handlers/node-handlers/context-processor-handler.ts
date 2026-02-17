@@ -12,7 +12,7 @@ import type { Node, ContextProcessorNodeConfig } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
 import { ExecutionError, RuntimeValidationError } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
-import { executeOperation } from '../../../utils/message-operation-utils';
+import { executeOperation } from '../../../utils/message-operation-utils.js';
 import type { MessageOperationContext } from '@modular-agent/types';
 
 /**

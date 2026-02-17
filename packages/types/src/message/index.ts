@@ -9,21 +9,21 @@ export type {
   MessageContent,
   LLMMessage,
   LLMToolCall
-} from './message';
+} from './message.js';
 
-export { MessageRole } from './message';
+export { MessageRole } from './message.js';
 
 // 批次快照类型
 export type {
   BatchSnapshot,
   BatchSnapshotArray
-} from './batch-snapshot';
+} from './batch-snapshot.js';
 
 // 消息数组类型
 export type {
   MessageArrayState,
   MessageArrayStats
-} from './message-array';
+} from './message-array.js';
 
 // 消息操作类型
 export type {
@@ -37,20 +37,20 @@ export type {
   FilterMessageOperation,
   RollbackMessageOperation,
   MessageOperationResult
-} from './message-operations';
+} from './message-operations.js';
 
 // 消息操作上下文类型
 export type {
   MessageOperationContext
-} from './message-context';
+} from './message-context.js';
 
 // 消息标记映射类型
 export type {
   MessageMarkMap
-} from './message-mark-map';
+} from './message-mark-map.js';
 
 // 批次管理操作类型
 export type {
   BatchManagementOperation,
   BatchManagementOperationType
-} from './batch-management-operation';
+} from './batch-management-operation.js';

@@ -4,19 +4,19 @@
  */
 
 // 导出状态类型
-export * from './state';
+export * from './state.js';
 
 // 导出配置文件类型
-export * from './profile';
+export * from './profile.js';
 
 // 导出请求类型
-export * from './request';
+export * from './request.js';
 
 // 导出响应类型
-export * from './response';
+export * from './response.js';
 
 // 导出使用统计类型
-export * from './usage';
+export * from './usage.js';
 
 // 导出客户端类型
-export * from './client';
+export * from './client.js';

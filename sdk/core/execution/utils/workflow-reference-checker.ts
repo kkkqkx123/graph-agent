@@ -3,9 +3,9 @@
  * 提供工作流引用检查功能，用于安全删除和更新操作
  */
 
-import type { WorkflowRegistry } from '../../services/workflow-registry';
-import type { ThreadRegistry } from '../../services/thread-registry';
-import type { ThreadContext } from '../context/thread-context';
+import type { WorkflowRegistry } from '../../services/workflow-registry.js';
+import type { ThreadRegistry } from '../../services/thread-registry.js';
+import type { ThreadContext } from '../context/thread-context.js';
 import type { WorkflowTrigger } from '@modular-agent/types';
 import { TriggerActionType } from '@modular-agent/types';
 import type { TriggerReference } from '@modular-agent/types';

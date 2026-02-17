@@ -2,7 +2,7 @@
  * 变量节点配置类型定义
  */
 
-import type { VariableScope } from '../../thread/scopes';
+import type { VariableScope } from '../../thread/scopes.js';
 
 /**
  * 变量操作节点配置

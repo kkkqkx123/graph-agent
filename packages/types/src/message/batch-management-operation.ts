@@ -3,7 +3,7 @@
  * 定义批次管理相关的操作配置
  */
 
-import type { MessageOperationConfig } from './message-operations';
+import type { MessageOperationConfig } from './message-operations.js';
 
 /**
  * 批次管理操作类型

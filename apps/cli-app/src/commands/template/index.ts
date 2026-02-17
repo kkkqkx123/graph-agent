@@ -3,10 +3,10 @@
  */
 
 import { Command } from 'commander';
-import { TemplateAdapter } from '../../adapters/template-adapter';
-import { createLogger } from '../../utils/logger';
-import { formatWorkflow, formatWorkflowList } from '../../utils/formatter';
-import type { CommandOptions } from '../../types/cli-types';
+import { TemplateAdapter } from '../../adapters/template-adapter.js';
+import { createLogger } from '../../utils/logger.js';
+import { formatWorkflow, formatWorkflowList } from '../../utils/formatter.js';
+import type { CommandOptions } from '../../types/cli-types.js';
 
 const logger = createLogger();
 

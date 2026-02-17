@@ -3,8 +3,8 @@
  * 基于pino设计思想的性能优化工具
  */
 
-import type { LogLevel, LoggerContext, LogEntry } from './types';
-import { LOG_LEVEL_PRIORITY } from './types';
+import type { LogLevel, LoggerContext, LogEntry } from './types.js';
+import { LOG_LEVEL_PRIORITY } from './types.js';
 
 /**
  * 检查日志级别是否应该输出

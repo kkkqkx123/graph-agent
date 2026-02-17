@@ -6,7 +6,7 @@ import {
   resolveCheckpointConfig,
   shouldCreateCheckpoint,
   getCheckpointDescription
-} from '../checkpoint-config-resolver';
+} from '../checkpoint-config-resolver.js';
 import { CheckpointTriggerType, CheckpointConfigSource } from '@modular-agent/types';
 import type { CheckpointConfig, TriggeredSubworkflowConfig } from '@modular-agent/types';
 import type { Node, NodeHook } from '@modular-agent/types';

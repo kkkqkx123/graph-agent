@@ -3,9 +3,9 @@
  * 用于定义可重用的节点配置模板
  */
 
-import type { ID, Metadata, Timestamp } from './common';
-import { NodeType } from './node';
-import type { NodeConfig } from './node';
+import type { ID, Metadata, Timestamp } from './common.js';
+import { NodeType } from './node/index.js';
+import type { NodeConfig } from './node/index.js';
 
 /**
  * 节点模板

@@ -2,8 +2,8 @@
  * 图验证器单元测试
  */
 
-import { GraphValidator } from '../graph-validator';
-import { GraphData } from '../../entities/graph-data';
+import { GraphValidator } from '../graph-validator.js';
+import { GraphData } from '../../entities/graph-data.js';
 import { NodeType } from '@modular-agent/types';
 import { EdgeType } from '@modular-agent/types';
 import type { GraphNode, GraphEdge } from '@modular-agent/types';

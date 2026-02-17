@@ -2,7 +2,7 @@
  * ToolContextManager 测试
  */
 
-import { ToolContextManager, type ToolScope } from '../tool-context-manager';
+import { ToolContextManager, type ToolScope } from '../tool-context-manager.js';
 
 describe('ToolContextManager', () => {
   let manager: ToolContextManager;

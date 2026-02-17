@@ -3,7 +3,7 @@
  * 使用Result类型进行错误处理
  */
 
-import { NodeValidator } from '../node-validator';
+import { NodeValidator } from '../node-validator.js';
 import { NodeType } from '@modular-agent/types';
 import type { Node } from '@modular-agent/types';
 

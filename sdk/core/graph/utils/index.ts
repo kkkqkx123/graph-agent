@@ -4,4 +4,4 @@
  * 内部工具类不导出
  */
 
-export * from './graph-analyzer';
+export * from './graph-analyzer.js';

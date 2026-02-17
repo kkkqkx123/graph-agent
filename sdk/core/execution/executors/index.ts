@@ -4,8 +4,8 @@
  */
 
 // llm执行器
-export { LLMExecutor } from './llm-executor';
+export { LLMExecutor } from './llm-executor.js';
 
 // 工具调用执行器
-export { ToolCallExecutor } from './tool-call-executor';
-export type { ToolExecutionResult } from './tool-call-executor';
+export { ToolCallExecutor } from './tool-call-executor.js';
+export type { ToolExecutionResult } from './tool-call-executor.js';

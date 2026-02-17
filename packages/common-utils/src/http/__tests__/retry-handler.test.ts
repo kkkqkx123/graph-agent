@@ -2,9 +2,9 @@
  * 重试处理器单元测试
  */
 
-import { executeWithRetry } from '../retry-handler';
+import { executeWithRetry } from '../retry-handler.js';
 import { TimeoutError, NetworkError, HttpError } from '@modular-agent/types';
-import { RateLimitError } from '../errors';
+import { RateLimitError } from '../errors.js';
 
 describe('executeWithRetry', () => {
   describe('正常执行', () => {

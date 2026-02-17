@@ -12,7 +12,7 @@ import {
   getLastUserMessage,
   getLastAssistantMessage,
   countMessagesByRole
-} from '../message-helper';
+} from '../message-helper.js';
 
 describe('message-helper', () => {
   const mockMessages: LLMMessage[] = [

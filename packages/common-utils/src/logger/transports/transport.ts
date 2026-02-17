@@ -3,9 +3,9 @@
  * 支持创建各种transport stream
  */
 
-import type { LogStream, StreamOptions, StreamEntry, LogLevel } from '../types';
-import { destination } from './destination';
-import { createMultistream } from '../streams';
+import type { LogStream, StreamOptions, StreamEntry, LogLevel } from '../types.js';
+import { destination } from './destination.js';
+import { createMultistream } from '../streams/index.js';
 
 /**
  * 日志Transport配置

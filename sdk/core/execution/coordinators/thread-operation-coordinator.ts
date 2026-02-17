@@ -14,14 +14,14 @@
  * - 专门处理 Thread 结构变更操作
  */
 
-import type { ForkConfig, JoinResult } from '../utils/thread-operations';
-import { type ThreadRegistry } from '../../services/thread-registry';
-import { ThreadBuilder } from '../thread-builder';
-import type { EventManager } from '../../services/event-manager';
-import type { WorkflowRegistry } from '../../services/workflow-registry';
+import type { ForkConfig, JoinResult } from '../utils/thread-operations.js';
+import { type ThreadRegistry } from '../../services/thread-registry.js';
+import { ThreadBuilder } from '../thread-builder.js';
+import type { EventManager } from '../../services/event-manager.js';
+import type { WorkflowRegistry } from '../../services/workflow-registry.js';
 import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types';
-import { fork, join, copy } from '../utils/thread-operations';
-import { ExecutionContext } from '../context/execution-context';
+import { fork, join, copy } from '../utils/thread-operations.js';
+import { ExecutionContext } from '../context/execution-context.js';
 
 /**
  * Thread 操作协调器类

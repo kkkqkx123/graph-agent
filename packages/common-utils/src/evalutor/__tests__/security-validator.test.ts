@@ -1,4 +1,4 @@
-import { SECURITY_CONFIG, validateExpression, validatePath, validateArrayIndex, validateValueType } from '../security-validator';
+import { SECURITY_CONFIG, validateExpression, validatePath, validateArrayIndex, validateValueType } from '../security-validator.js';
 import { ValidationError } from '@modular-agent/types';
 
 describe('SecurityValidator', () => {

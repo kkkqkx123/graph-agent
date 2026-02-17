@@ -3,12 +3,12 @@
  * 继承GenericResourceAPI，提供统一的CRUD操作
  */
 
-import { GenericResourceAPI } from '../generic-resource-api';
-import type { ThreadRegistry } from '../../../core/services/thread-registry';
+import { GenericResourceAPI } from '../generic-resource-api.js';
+import type { ThreadRegistry } from '../../../core/services/thread-registry.js';
 import { TriggerStatus } from '@modular-agent/types';
 import type { Trigger } from '@modular-agent/types';
 import { NotFoundError, ThreadContextNotFoundError, TriggerFilter } from '@modular-agent/types';
-import { SingletonRegistry } from '../../../core/execution/context/singleton-registry';
+import { SingletonRegistry } from '../../../core/execution/context/singleton-registry.js';
 
 /**
  * TriggerResourceAPI - 触发器资源管理API

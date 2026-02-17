@@ -6,11 +6,11 @@
  * - 验证结果使用 Result<WorkflowDefinition, ValidationError[]> 类型
  */
 
-import { ConfigParser } from '../config-parser';
-import { ConfigFormat } from '../types';
-import { ConfigTransformer } from '../config-transformer';
-import { parseJson, stringifyJson, validateJsonSyntax } from '../json-parser';
-import { parseToml, validateTomlSyntax } from '../toml-parser';
+import { ConfigParser } from '../config-parser.js';
+import { ConfigFormat } from '../types.js';
+import { ConfigTransformer } from '../config-transformer.js';
+import { parseJson, stringifyJson, validateJsonSyntax } from '../json-parser.js';
+import { parseToml, validateTomlSyntax } from '../toml-parser.js';
 import { NodeType, EdgeType } from '@modular-agent/types';
 
 describe('ConfigParser', () => {

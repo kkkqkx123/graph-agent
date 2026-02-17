@@ -16,7 +16,7 @@
 
 import { abortErrorToResult } from '@modular-agent/common-utils';
 import type { LLMMessage, LLMResult } from '@modular-agent/types';
-import { LLMWrapper } from '../../llm/wrapper';
+import { LLMWrapper } from '../../llm/wrapper.js';
 import { ExecutionError, ThreadInterruptedException, LLMError } from '@modular-agent/types';
 
 /**

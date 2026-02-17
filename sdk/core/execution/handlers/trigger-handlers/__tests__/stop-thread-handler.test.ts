@@ -2,11 +2,11 @@
  * 停止线程处理函数单元测试
  */
 
-import { stopThreadHandler } from '../stop-thread-handler';
+import { stopThreadHandler } from '../stop-thread-handler.js';
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import { TriggerActionType } from '@modular-agent/types';
 import { ValidationError } from '@modular-agent/types';
-import { ExecutionContext } from '../../../context/execution-context';
+import { ExecutionContext } from '../../../context/execution-context.js';
 
 // Mock ExecutionContext
 jest.mock('../../../context/execution-context');

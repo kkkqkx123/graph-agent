@@ -23,7 +23,7 @@ import {
   MessageStreamInputJsonEvent,
   MessageStreamContentBlockStartEvent,
   MessageStreamContentBlockStopEvent
-} from './message-stream-events';
+} from './message-stream-events.js';
 
 /**
  * 事件监听器

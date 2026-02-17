@@ -2,7 +2,7 @@
  * ThreadRegistry 单元测试
  */
 
-import { ThreadRegistry } from '../thread-registry';
+import { ThreadRegistry } from '../thread-registry.js';
 
 // Mock ThreadContext 类 - 只实现 getThreadId 方法
 class MockThreadContext {

@@ -5,32 +5,32 @@
  */
 
 // HTTP相关
-export * from './http';
+export * from './http/index.js';
 
 // 工具函数
-export * from './utils';
+export * from './utils/index.js';
 
 // 错误处理工具
-export * from './error';
+export * from './error/index.js';
 
 // 表达式求值器
-export * from './evalutor';
+export * from './evalutor/index.js';
 
 // 工具定义转换模块
-export * from './tool';
+export * from './tool/index.js';
 
 // LLM相关基础设施
-export * from './llm';
+export * from './llm/index.js';
 
 // 消息管理模块
-export * from './message';
+export * from './message/index.js';
 
 // 代码安全工具模块
-export * from './code-security';
+export * from './code-security/index.js';
 
 // AbortSignal 和线程中断工具
-export * from './utils/signal/abort-utils';
-export * from './utils/signal/thread-interruption-utils';
+export * from './utils/signal/abort-utils.js';
+export * from './utils/signal/thread-interruption-utils.js';
 
 // 日志系统（选择性导出以避免命名冲突）
 export {
@@ -42,7 +42,7 @@ export {
   getGlobalLogger,
   setGlobalLogLevel,
   getGlobalLogLevel
-} from './logger/logger';
+} from './logger/logger.js';
 
 export {
   ConsoleStream,
@@ -53,19 +53,19 @@ export {
   createAsyncStream,
   Multistream,
   createMultistream
-} from './logger/streams';
+} from './logger/streams/index.js';
 
 export {
   destination,
   transport
-} from './logger/transports';
+} from './logger/transports/index.js';
 
 export {
   shouldLog,
   formatTimestamp,
   mergeContext,
   createLogEntry
-} from './logger/utils';
+} from './logger/utils.js';
 
 export type {
   Logger,
@@ -78,12 +78,12 @@ export type {
   StreamOptions,
   MultistreamOptions,
   StreamEntry
-} from './logger/types';
+} from './logger/types.js';
 
-export { LOG_LEVEL_PRIORITY } from './logger/types';
+export { LOG_LEVEL_PRIORITY } from './logger/types.js';
 
 export type {
   Destination,
   TransportOptions,
   MultiTransportOptions
-} from './logger/transports';
+} from './logger/transports/index.js';

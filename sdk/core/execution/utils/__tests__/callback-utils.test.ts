@@ -16,8 +16,8 @@ import {
   createOnceCallback,
   createCachedCallback,
   cleanupCache
-} from '../callback-utils';
-import type { ExecutedThreadResult } from '../../types/dynamic-thread.types';
+} from '../callback-utils.js';
+import type { ExecutedThreadResult } from '../../types/dynamic-thread.types.js';
 
 describe('callback-utils', () => {
   describe('wrapCallback', () => {

@@ -10,7 +10,7 @@ import {
   validateWorkflowTrigger,
   validateTriggerReference,
   validateTriggers
-} from '../trigger-validator';
+} from '../trigger-validator.js';
 import { EventType } from '@modular-agent/types';
 import { TriggerActionType } from '@modular-agent/types';
 import { ValidationError } from '@modular-agent/types';

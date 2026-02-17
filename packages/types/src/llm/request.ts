@@ -2,9 +2,9 @@
  * LLM请求类型定义
  */
 
-import type { ID } from '../common';
-import type { Message } from '../message';
-import type { ToolSchema } from '../tool';
+import type { ID } from '../common.js';
+import type { Message } from '../message/index.js';
+import type { ToolSchema } from '../tool/index.js';
 
 /**
  * LLM请求类型

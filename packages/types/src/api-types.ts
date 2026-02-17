@@ -3,12 +3,12 @@
  * 定义SDK API层使用的过滤器和摘要类型
  */
 
-import type { ID, Timestamp } from './common';
-import { ThreadStatus } from './thread';
-import { ToolType } from './tool';
-import type { ScriptType } from './code';
-import { CheckpointTriggerType } from './checkpoint';
-import { EventType } from './events';
+import type { ID, Timestamp } from './common.js';
+import { ThreadStatus } from './thread/index.js';
+import { ToolType } from './tool/index.js';
+import type { ScriptType } from './code.js';
+import { CheckpointTriggerType } from './checkpoint/index.js';
+import { EventType } from './events/index.js';
 
 // ============================================================================
 // SDK配置类型

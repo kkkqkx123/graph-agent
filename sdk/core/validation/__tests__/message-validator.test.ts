@@ -3,7 +3,7 @@
  * 使用Result类型进行错误处理
  */
 
-import { MessageValidator } from '../message-validator';
+import { MessageValidator } from '../message-validator.js';
 import type { LLMMessage, MessageRole } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
 import { ValidationError } from '@modular-agent/types';

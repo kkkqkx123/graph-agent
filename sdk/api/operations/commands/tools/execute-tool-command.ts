@@ -2,10 +2,10 @@
  * ExecuteToolCommand - 执行工具命令
  */
 
-import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
+import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
 import type { ID, ToolOptions } from '@modular-agent/types';
 import type { ToolExecutionResult } from '@modular-agent/types';
-import type { APIDependencyManager } from '../../../core/sdk-dependencies';
+import type { APIDependencyManager } from '../../../core/sdk-dependencies.js';
 
 /**
  * 执行工具命令

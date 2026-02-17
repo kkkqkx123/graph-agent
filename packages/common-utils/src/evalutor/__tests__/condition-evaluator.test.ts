@@ -1,4 +1,4 @@
-import { ConditionEvaluator, conditionEvaluator } from '../condition-evaluator';
+import { ConditionEvaluator, conditionEvaluator } from '../condition-evaluator.js';
 import type { Condition, EvaluationContext } from '@modular-agent/types';
 import { RuntimeValidationError } from '@modular-agent/types';
 

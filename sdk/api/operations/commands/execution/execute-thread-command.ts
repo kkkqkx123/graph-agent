@@ -18,9 +18,9 @@
  * - Thread 是工作流的执行实例，每次执行都会创建新的 Thread
  */
 
-import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
+import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
 import type { ThreadResult, ThreadOptions } from '@modular-agent/types';
-import { APIDependencyManager } from '../../../core/sdk-dependencies';
+import { APIDependencyManager } from '../../../core/sdk-dependencies.js';
 
 /**
  * 执行线程命令参数
@@ -58,7 +58,7 @@ export class ExecuteThreadCommand extends BaseCommand<ThreadResult> {
 
   protected async executeInternal(): Promise<ThreadResult> {
     // 通过 APIDependencyManager 获取 ThreadLifecycleCoordinator
-    const lifecycleCoordinator = this.dependencies.getThreadLifecycleCoordinator();
+    const lifecycleCoordinator = await this.dependencies.getThreadLifecycleCoordinator();
     
     // 执行线程（委托给 ThreadLifecycleCoordinator）
     const result = await lifecycleCoordinator.execute(

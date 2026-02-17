@@ -4,7 +4,7 @@
  */
 
 import * as fs from 'fs';
-import type { LogStream, LogEntry, StreamOptions } from '../types';
+import type { LogStream, LogEntry, StreamOptions } from '../types.js';
 
 /**
  * FileStream类

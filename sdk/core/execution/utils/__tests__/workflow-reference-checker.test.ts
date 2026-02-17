@@ -2,10 +2,10 @@
  * checkWorkflowReferences 单元测试
  */
 
-import { checkWorkflowReferences } from '../workflow-reference-checker';
-import type { WorkflowRegistry } from '../../../services/workflow-registry';
-import type { ThreadRegistry } from '../../../services/thread-registry';
-import type { ThreadContext } from '../../context/thread-context';
+import { checkWorkflowReferences } from '../workflow-reference-checker.js';
+import type { WorkflowRegistry } from '../../../services/workflow-registry.js';
+import type { ThreadRegistry } from '../../../services/thread-registry.js';
+import type { ThreadContext } from '../../context/thread-context.js';
 
 // Mock dependencies
 const mockWorkflowRegistry = {

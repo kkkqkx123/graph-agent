@@ -9,9 +9,9 @@
  * - 保持同步接口，避免影响现有代码
  */
 
-import type { WorkflowConfigFile } from './types';
+import type { WorkflowConfigFile } from './types.js';
 import { ConfigurationError } from '@modular-agent/types';
-import { globalInstanceManager } from '../../index';
+import { globalInstanceManager } from '../../index.js';
 import { isError } from '@modular-agent/common-utils';
 
 /**

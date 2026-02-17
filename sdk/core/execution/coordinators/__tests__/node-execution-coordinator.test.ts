@@ -2,10 +2,10 @@
  * NodeExecutionCoordinator 单元测试
  */
 
-import { NodeExecutionCoordinator } from '../node-execution-coordinator';
-import { ThreadContext } from '../../context/thread-context';
-import { EventManager } from '../../../services/event-manager';
-import { LLMExecutionCoordinator } from '../llm-execution-coordinator';
+import { NodeExecutionCoordinator } from '../node-execution-coordinator.js';
+import { ThreadContext } from '../../context/thread-context.js';
+import { EventManager } from '../../../services/event-manager.js';
+import { LLMExecutionCoordinator } from '../llm-execution-coordinator.js';
 import { EventType } from '@modular-agent/types';
 import { ExecutionError } from '@modular-agent/types';
 import { NodeType, HookType } from '@modular-agent/types';

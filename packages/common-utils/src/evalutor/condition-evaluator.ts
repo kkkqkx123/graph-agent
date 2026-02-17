@@ -5,8 +5,8 @@
 
 import type { Condition, EvaluationContext } from '@modular-agent/types';
 import { RuntimeValidationError } from '@modular-agent/types';
-import { ExpressionEvaluator } from './expression-parser';
-import { getGlobalLogger } from '../logger/logger';
+import { ExpressionEvaluator } from './expression-parser.js';
+import { getGlobalLogger } from '../logger/logger.js';
 
 /**
  * 条件评估器实现

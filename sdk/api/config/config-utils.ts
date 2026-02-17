@@ -4,7 +4,7 @@
  */
 
 import * as path from 'path';
-import { ConfigFormat } from './types';
+import { ConfigFormat } from './types.js';
 import { isError } from '@modular-agent/common-utils';
 
 /**

@@ -3,12 +3,12 @@
  * 测试 CancelThreadCommand, ExecuteThreadCommand, PauseThreadCommand, ResumeThreadCommand
  */
 
-import { CancelThreadCommand } from '../cancel-thread-command';
-import { ExecuteThreadCommand } from '../execute-thread-command';
-import { PauseThreadCommand } from '../pause-thread-command';
-import { ResumeThreadCommand } from '../resume-thread-command';
-import { ThreadLifecycleCoordinator } from '../../core/execution/coordinators/thread-lifecycle-coordinator';
-import { ExecutionContext } from '../../core/execution/context/execution-context';
+import { CancelThreadCommand } from '../cancel-thread-command.js';
+import { ExecuteThreadCommand } from '../execute-thread-command.js';
+import { PauseThreadCommand } from '../pause-thread-command.js';
+import { ResumeThreadCommand } from '../resume-thread-command.js';
+import { ThreadLifecycleCoordinator } from '../../core/execution/coordinators/thread-lifecycle-coordinator.js';
+import { ExecutionContext } from '../../core/execution/context/execution-context.js';
 import type { ThreadResult, ThreadOptions } from '@modular-agent/types';
 
 // Mock ThreadLifecycleCoordinator

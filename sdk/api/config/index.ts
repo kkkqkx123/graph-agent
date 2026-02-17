@@ -31,33 +31,33 @@ export {
   ParsedLLMProfileConfig,
   IConfigParser,
   IConfigTransformer
-} from './types';
+} from './types.js';
 
 // 解析器
-export { ConfigParser } from './config-parser';
+export { ConfigParser } from './config-parser.js';
 
 // 配置工具函数
 export {
   detectConfigFormat,
   readConfigFile,
   loadConfigContent
-} from './config-utils';
+} from './config-utils.js';
 
 // JSON解析函数
 export {
   parseJson,
   stringifyJson,
   validateJsonSyntax
-} from './json-parser';
+} from './json-parser.js';
 
 // TOML解析函数
 export {
   parseToml,
   validateTomlSyntax
-} from './toml-parser';
+} from './toml-parser.js';
 
 // 转换器
-export { ConfigTransformer } from './config-transformer';
+export { ConfigTransformer } from './config-transformer.js';
 
 // 配置解析函数（推荐使用）
 export {
@@ -71,7 +71,7 @@ export {
   parseBatchTriggerTemplates,
   parseScript,
   parseBatchScripts
-} from './parsers';
+} from './parsers.js';
 
 // 验证器
 // 验证工具函数导出
@@ -83,14 +83,14 @@ export {
   validateArrayField,
   validateObjectField,
   validateEnumField
-} from './validators/base-validator';
+} from './validators/base-validator.js';
 
 // 配置验证函数导出
-export { validateWorkflowConfig } from './validators/workflow-validator';
-export { validateNodeTemplateConfig } from './validators/node-template-validator';
-export { validateTriggerTemplateConfig } from './validators/trigger-template-validator';
-export { validateScriptConfig } from './validators/script-validator';
-export { validateLLMProfileConfig } from './validators/llm-profile-validator';
+export { validateWorkflowConfig } from './validators/workflow-validator.js';
+export { validateNodeTemplateConfig } from './validators/node-template-validator.js';
+export { validateTriggerTemplateConfig } from './validators/trigger-template-validator.js';
+export { validateScriptConfig } from './validators/script-validator.js';
+export { validateLLMProfileConfig } from './validators/llm-profile-validator.js';
 
 // 批量验证函数导出
 export {
@@ -98,7 +98,7 @@ export {
   validateBatchNodeTemplates,
   validateBatchTriggerTemplates,
   validateBatchScripts
-} from './validators/batch-validators';
+} from './validators/batch-validators.js';
 
 // 配置处理函数导出（纯函数）
 export {
@@ -109,4 +109,4 @@ export {
   validateScript,
   validateTriggerTemplate,
   validateLLMProfile
-} from './processors';
+} from './processors/index.js';

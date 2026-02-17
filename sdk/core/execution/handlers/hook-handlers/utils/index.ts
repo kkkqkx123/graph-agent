@@ -7,15 +7,15 @@ export {
   buildHookEvaluationContext,
   convertToEvaluationContext,
   type HookEvaluationContext
-} from './context-builder';
+} from './context-builder.js';
 
 export {
   generateHookEventData,
   resolvePayloadTemplate,
   resolveTemplateVariable,
   getVariableValue
-} from './payload-generator';
+} from './payload-generator.js';
 
 export {
   emitHookEvent
-} from './event-emitter';
+} from './event-emitter.js';

@@ -3,8 +3,8 @@
  * EventEmitter的单元测试
  */
 
-import * as eventEmitter from '../event-emitter';
-import type { EventManager } from '../../../../services/event-manager';
+import * as eventEmitter from '../event-emitter.js';
+import type { EventManager } from '../../../../services/event-manager.js';
 import { EventType } from '@modular-agent/types';
 import type { Event } from '@modular-agent/types';
 

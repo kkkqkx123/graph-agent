@@ -4,8 +4,8 @@
  */
 
 import { resolve } from 'path';
-import { createLogger } from '../utils/logger';
-import { ConfigManager, type ConfigLoadOptions } from '../config/config-manager';
+import { createLogger } from '../utils/logger.js';
+import { ConfigManager, type ConfigLoadOptions } from '../config/config-manager.js';
 
 const logger = createLogger();
 

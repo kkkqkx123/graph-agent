@@ -2,13 +2,13 @@
  * ThreadBuilder 单元测试
  */
 
-import { ThreadBuilder } from '../thread-builder';
-import { ThreadContext } from '../context/thread-context';
-import { ExecutionContext } from '../context/execution-context';
+import { ThreadBuilder } from '../thread-builder.js';
+import { ThreadContext } from '../context/thread-context.js';
+import { ExecutionContext } from '../context/execution-context.js';
 import { ValidationError } from '@modular-agent/types';
 import { NodeType } from '@modular-agent/types';
-import { PreprocessedGraphData } from '../../entities/preprocessed-graph-data';
-import { GraphData } from '../../entities/graph-data';
+import { PreprocessedGraphData } from '../../entities/preprocessed-graph-data.js';
+import { GraphData } from '../../entities/graph-data.js';
 import type { ThreadOptions } from '@modular-agent/types';
 
 // Mock 依赖

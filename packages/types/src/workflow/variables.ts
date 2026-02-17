@@ -2,7 +2,7 @@
  * 工作流变量类型定义
  */
 
-import type { VariableScope } from '../thread/scopes';
+import type { VariableScope } from '../thread/scopes.js';
 
 /**
  * 工作流变量定义类型

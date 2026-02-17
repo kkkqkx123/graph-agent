@@ -12,8 +12,8 @@ import type { Node, AddToolNodeConfig } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
 import { ExecutionError } from '@modular-agent/types';
 import { now, diffTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
-import { ToolContextManager } from '../../managers/tool-context-manager';
-import type { EventManager } from '../../../services/event-manager';
+import { ToolContextManager } from '../../managers/tool-context-manager.js';
+import type { EventManager } from '../../../services/event-manager.js';
 import { EventType } from '@modular-agent/types';
 
 /**

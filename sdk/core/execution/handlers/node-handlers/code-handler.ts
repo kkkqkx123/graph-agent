@@ -11,7 +11,7 @@
 import type { Node, CodeNodeConfig } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
 import { now, getErrorMessage } from '@modular-agent/common-utils';
-import { SingletonRegistry } from '../../context/singleton-registry';
+import { SingletonRegistry } from '../../context/singleton-registry.js';
 
 /**
  * Code节点处理函数

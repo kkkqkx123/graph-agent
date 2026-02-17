@@ -4,9 +4,9 @@
  */
 
 // Destination
-export { destination } from './destination';
-export type { Destination } from './destination';
+export { destination } from './destination.js';
+export type { Destination } from './destination.js';
 
 // Transport
-export { transport } from './transport';
-export type { TransportOptions, MultiTransportOptions } from './transport';
+export { transport } from './transport.js';
+export type { TransportOptions, MultiTransportOptions } from './transport.js';

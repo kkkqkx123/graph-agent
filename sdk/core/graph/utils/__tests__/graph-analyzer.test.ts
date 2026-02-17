@@ -3,10 +3,10 @@
  * 图分析工具函数的单元测试
  */
 
-import { GraphData } from '../../../entities/graph-data';
+import { GraphData } from '../../../entities/graph-data.js';
 import type { GraphNode, GraphEdge, Node } from '@modular-agent/types';
 import { NodeType, EdgeType } from '@modular-agent/types';
-import { analyzeGraph, collectForkJoinPairs } from '../graph-analyzer';
+import { analyzeGraph, collectForkJoinPairs } from '../graph-analyzer.js';
 
 /**
  * 创建标准无环工作流图

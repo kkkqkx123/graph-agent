@@ -2,8 +2,8 @@
  * LLM配置文件类型定义
  */
 
-import type { ID, Metadata } from '../common';
-import type { LLMProvider } from './state';
+import type { ID, Metadata } from '../common.js';
+import type { LLMProvider } from './state.js';
 
 /**
  * LLM配置文件类型，用于独立配置和复用

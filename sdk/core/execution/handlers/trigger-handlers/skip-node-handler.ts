@@ -7,7 +7,7 @@ import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types
 import type { NodeExecutionResult } from '@modular-agent/types';
 import { ValidationError, NotFoundError, RuntimeValidationError, ThreadContextNotFoundError } from '@modular-agent/types';
 import { EventType } from '@modular-agent/types';
-import { ExecutionContext } from '../../context/execution-context';
+import { ExecutionContext } from '../../context/execution-context.js';
 import { getErrorMessage } from '@modular-agent/common-utils';
 
 /**

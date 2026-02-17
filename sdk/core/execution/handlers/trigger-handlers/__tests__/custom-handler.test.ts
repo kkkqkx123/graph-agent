@@ -2,7 +2,7 @@
  * 自定义动作处理函数单元测试
  */
 
-import { customHandler } from '../custom-handler';
+import { customHandler } from '../custom-handler.js';
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import { TriggerActionType } from '@modular-agent/types';
 import { ValidationError } from '@modular-agent/types';

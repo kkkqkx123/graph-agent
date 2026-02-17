@@ -3,4 +3,4 @@
  * 提供工具调用的处理函数
  */
 
-export * from './create-thread-handler';
+export * from './create-thread-handler.js';

@@ -8,14 +8,14 @@ import {
   validateStringLength,
   validateBoolean,
   validateEnum
-} from '../../validation/validation-strategy';
+} from '../../validation/validation-strategy.js';
 
 import type { Script } from '@modular-agent/types';
 import { ScriptType } from '@modular-agent/types';
 import type { ScriptFilter, ScriptRegistrationConfig } from '@modular-agent/types';
 import { NotFoundError } from '@modular-agent/types';
-import { GenericResourceAPI } from '../generic-resource-api';
-import type { APIDependencyManager } from '../../core/sdk-dependencies';
+import { GenericResourceAPI } from '../generic-resource-api.js';
+import type { APIDependencyManager } from '../../core/sdk-dependencies.js';
 
 /**
  * ScriptRegistryAPI - 脚本资源管理API

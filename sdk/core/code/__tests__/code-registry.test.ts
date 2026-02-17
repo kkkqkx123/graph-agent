@@ -2,7 +2,7 @@
  * CodeRegistry 单元测试
  */
 
-import { CodeRegistry } from '../code-registry';
+import { CodeRegistry } from '../code-registry.js';
 import { ScriptType } from '@modular-agent/types';
 import { ValidationError, NotFoundError } from '@modular-agent/types';
 

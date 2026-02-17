@@ -3,7 +3,7 @@
  * 用于直接操作提示词消息数组，支持截断、插入、替换、过滤、清空等操作
  */
 
-import type { MessageOperationConfig } from '../../message';
+import type { MessageOperationConfig } from '../../message/index.js';
 
 /**
  * 上下文处理器节点配置（批次感知）

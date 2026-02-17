@@ -3,7 +3,7 @@
  * EventBuilder的单元测试
  */
 
-import * as eventBuilder from '../event-builder';
+import * as eventBuilder from '../event-builder.js';
 import { EventType } from '@modular-agent/types';
 import type { Thread, ThreadResult } from '@modular-agent/types';
 import { ThreadStatus } from '@modular-agent/types';

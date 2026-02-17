@@ -4,9 +4,9 @@
  */
 
 import type { ID, NodeType, EdgeType, GraphAnalysisResult, ForkJoinValidationResult, Graph } from '@modular-agent/types';
-import { detectCycles } from './graph-cycle-detector';
-import { analyzeReachability } from './graph-reachability-analyzer';
-import { topologicalSort } from './graph-topological-sorter';
+import { detectCycles } from './graph-cycle-detector.js';
+import { analyzeReachability } from './graph-reachability-analyzer.js';
+import { topologicalSort } from './graph-topological-sorter.js';
 
 /**
  * 完整的图分析

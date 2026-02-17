@@ -3,7 +3,7 @@
  * 封装检查点相关的 SDK API 调用
  */
 
-import { BaseAdapter } from './base-adapter';
+import { BaseAdapter } from './base-adapter.js';
 
 /**
  * 检查点适配器

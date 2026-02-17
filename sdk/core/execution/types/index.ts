@@ -9,7 +9,7 @@ export {
   type QueueStats,
   type PoolStats,
   type ExecutorWrapper
-} from './task.types';
+} from './task.types.js';
 
 export {
   type TriggeredSubgraphTask,
@@ -17,7 +17,7 @@ export {
   type TaskSubmissionResult,
   type QueueTask,
   type SubworkflowManagerConfig
-} from './triggered-subgraph.types';
+} from './triggered-subgraph.types.js';
 
 export {
   type DynamicThreadInfo,
@@ -28,4 +28,4 @@ export {
   type DynamicThreadEvent,
   DynamicThreadEventType,
   type CreateDynamicThreadRequest
-} from './dynamic-thread.types';
+} from './dynamic-thread.types.js';

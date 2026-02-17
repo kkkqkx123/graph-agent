@@ -2,9 +2,9 @@
  * LLM响应类型定义
  */
 
-import type { ID, Timestamp, Metadata } from '../common';
-import type { LLMMessage, LLMToolCall } from '../message';
-import type { LLMUsage } from './usage';
+import type { ID, Timestamp, Metadata } from '../common.js';
+import type { LLMMessage, LLMToolCall } from '../message/index.js';
+import type { LLMUsage } from './usage.js';
 
 /**
  * LLM响应结果类型（整合choices和finishReason）

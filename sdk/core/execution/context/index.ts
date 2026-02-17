@@ -3,5 +3,5 @@
  * 提供线程上下文和执行状态管理
  */
 
-export { ThreadContext } from './thread-context';
-export { ExecutionState } from './execution-state';
+export { ThreadContext } from './thread-context.js';
+export { ExecutionState } from './execution-state.js';

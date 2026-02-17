@@ -5,8 +5,8 @@
 
 import type { NodeTemplate } from '@modular-agent/types';
 import type { NodeType, NodeConfig } from '@modular-agent/types';
-import { TemplateBuilder } from './template-builder';
-import { SingletonRegistry } from '../../core/execution/context/singleton-registry';
+import { TemplateBuilder } from './template-builder.js';
+import { SingletonRegistry } from '../../core/execution/context/singleton-registry.js';
 
 /**
  * NodeTemplateBuilder - 节点模板构建器

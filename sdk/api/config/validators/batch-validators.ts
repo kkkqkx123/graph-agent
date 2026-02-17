@@ -12,14 +12,14 @@ import type { WorkflowDefinition } from '@modular-agent/types';
 import type { NodeTemplate } from '@modular-agent/types';
 import type { TriggerTemplate } from '@modular-agent/types';
 import type { Script } from '@modular-agent/types';
-import type { ConfigFile } from '../types';
+import type { ConfigFile } from '../types.js';
 import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 import { ValidationError } from '@modular-agent/types';
-import { validateWorkflowConfig } from './workflow-validator';
-import { validateNodeTemplateConfig } from './node-template-validator';
-import { validateTriggerTemplateConfig } from './trigger-template-validator';
-import { validateScriptConfig } from './script-validator';
+import { validateWorkflowConfig } from './workflow-validator.js';
+import { validateNodeTemplateConfig } from './node-template-validator.js';
+import { validateTriggerTemplateConfig } from './trigger-template-validator.js';
+import { validateScriptConfig } from './script-validator.js';
 
 /**
  * 批量验证工作流配置

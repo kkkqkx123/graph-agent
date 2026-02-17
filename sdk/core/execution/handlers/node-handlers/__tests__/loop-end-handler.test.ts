@@ -2,7 +2,7 @@
  * LoopEnd节点处理函数单元测试
  */
 
-import { loopEndHandler } from '../loop-end-handler';
+import { loopEndHandler } from '../loop-end-handler.js';
 import type { Node, LoopEndNodeConfig } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
 import { NotFoundError, ExecutionError } from '@modular-agent/types';

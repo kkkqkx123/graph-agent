@@ -2,7 +2,7 @@
  * TriggerTemplateRegistry 单元测试
  */
 
-import { TriggerTemplateRegistry } from '../trigger-template-registry';
+import { TriggerTemplateRegistry } from '../trigger-template-registry.js';
 import { EventType } from '@modular-agent/types';
 import { TriggerActionType } from '@modular-agent/types';
 import { ValidationError, NotFoundError } from '@modular-agent/types';

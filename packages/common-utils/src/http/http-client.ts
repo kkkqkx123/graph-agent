@@ -25,11 +25,11 @@ import {
   InternalServerError,
   ServiceUnavailableError,
   RateLimitError,
-} from './errors';
-import { executeWithRetry, type RetryConfig } from './retry-handler';
-import { CircuitBreaker } from './circuit-breaker';
-import { RateLimiter } from './rate-limiter';
-import { isAbortError } from '../error/error-utils';
+} from './errors.js';
+import { executeWithRetry, type RetryConfig } from './retry-handler.js';
+import { CircuitBreaker } from './circuit-breaker.js';
+import { RateLimiter } from './rate-limiter.js';
+import { isAbortError } from '../error/error-utils.js';
 
 /**
  * HTTP客户端

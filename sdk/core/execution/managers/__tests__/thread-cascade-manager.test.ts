@@ -3,21 +3,21 @@
  * ThreadCascadeManager的单元测试
  */
 
-import { ThreadCascadeManager } from '../thread-cascade-manager';
-import { ThreadLifecycleManager } from '../thread-lifecycle-manager';
-import { TaskRegistry } from '../../../services/task-registry';
-import { ThreadRegistry } from '../../../services/thread-registry';
-import { EventManager } from '../../../services/event-manager';
-import { WorkflowRegistry } from '../../../services/workflow-registry';
-import { ToolService } from '../../../services/tool-service';
-import { SingletonRegistry } from '../../context/singleton-registry';
+import { ThreadCascadeManager } from '../thread-cascade-manager.js';
+import { ThreadLifecycleManager } from '../thread-lifecycle-manager.js';
+import { TaskRegistry } from '../../../services/task-registry.js';
+import { ThreadRegistry } from '../../../services/thread-registry.js';
+import { EventManager } from '../../../services/event-manager.js';
+import { WorkflowRegistry } from '../../../services/workflow-registry.js';
+import { ToolService } from '../../../services/tool-service.js';
+import { SingletonRegistry } from '../../context/singleton-registry.js';
 import { ThreadStatus, ThreadType } from '@modular-agent/types';
 import { generateId, now } from '@modular-agent/common-utils';
 import type { Thread, ThreadResult } from '@modular-agent/types';
 import type { Graph } from '@modular-agent/types';
-import { ThreadContext } from '../../context/thread-context';
-import { ConversationManager } from '../conversation-manager';
-import { LLMExecutor } from '../../executors/llm-executor';
+import { ThreadContext } from '../../context/thread-context.js';
+import { ConversationManager } from '../conversation-manager.js';
+import { LLMExecutor } from '../../executors/llm-executor.js';
 
 describe('ThreadCascadeManager', () => {
   let cascadeManager: ThreadCascadeManager;

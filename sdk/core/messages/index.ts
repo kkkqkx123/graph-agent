@@ -3,4 +3,4 @@
  * 提供统一的消息构建接口
  */
 
-export { MessageBuilder } from './message-builder';
+export { MessageBuilder } from './message-builder.js';

@@ -17,11 +17,11 @@
  * 实例通过 SingletonRegistry 统一管理
  */
 
-import type { EventManager } from './event-manager';
+import type { EventManager } from './event-manager.js';
 import { SDKError, ErrorContext, ErrorSeverity } from '@modular-agent/types';
 import type { ErrorEvent } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
-import { logger } from '../../utils/logger';
+import { logger } from '../../utils/logger.js';
 
 /**
  * ErrorService - 错误处理服务类

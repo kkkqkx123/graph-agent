@@ -2,12 +2,12 @@
  * 跳过节点处理函数单元测试
  */
 
-import { skipNodeHandler } from '../skip-node-handler';
+import { skipNodeHandler } from '../skip-node-handler.js';
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import { TriggerActionType } from '@modular-agent/types';
 import { ValidationError, NotFoundError } from '@modular-agent/types';
 import { EventType } from '@modular-agent/types';
-import { ExecutionContext } from '../../../context/execution-context';
+import { ExecutionContext } from '../../../context/execution-context.js';
 
 // Mock ExecutionContext
 jest.mock('../../../context/execution-context');

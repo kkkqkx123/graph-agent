@@ -8,24 +8,24 @@ export {
   validateWorkflow,
   transformWorkflow,
   exportWorkflow
-} from './workflow';
+} from './workflow.js';
 
 // NodeTemplate处理函数
 export {
   validateNodeTemplate
-} from './node-template';
+} from './node-template.js';
 
 // Script处理函数
 export {
   validateScript
-} from './script';
+} from './script.js';
 
 // TriggerTemplate处理函数
 export {
   validateTriggerTemplate
-} from './trigger-template';
+} from './trigger-template.js';
 
 // LLM Profile处理函数
 export {
   validateLLMProfile
-} from './llm-profile';
+} from './llm-profile.js';

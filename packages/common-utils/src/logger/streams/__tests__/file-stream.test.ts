@@ -4,8 +4,8 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { FileStream, createFileStream } from '../file-stream';
-import type { LogEntry } from '../../types';
+import { FileStream, createFileStream } from '../file-stream.js';
+import type { LogEntry } from '../../types.js';
 
 describe('FileStream', () => {
   let tempDir: string;

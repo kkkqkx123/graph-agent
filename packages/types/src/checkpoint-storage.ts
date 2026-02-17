@@ -3,7 +3,7 @@
  * 定义应用层易于实现的存储接口及清理策略
  */
 
-import type { ID, Timestamp } from './common';
+import type { ID, Timestamp } from './common.js';
 
 /**
  * 检查点存储元数据

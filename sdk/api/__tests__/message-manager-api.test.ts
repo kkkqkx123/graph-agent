@@ -2,15 +2,15 @@
  * MessageManagerAPI 单元测试
  */
 
-import { MessageManagerAPI } from '../operations/conversation/message-manager-api';
-import { threadRegistry } from '../../../core/services/thread-registry';
+import { MessageManagerAPI } from '../operations/conversation/message-manager-api.js';
+import { threadRegistry } from '../../../core/services/thread-registry.js';
 import { ThreadContext } from '@modular-agent/sdk/core/execution/context/thread-context';
 import { ConversationManager } from '@modular-agent/sdk/core/execution/managers/conversation-manager';
 import type { Thread } from '@modular-agent/types';
 import { ThreadStatus } from '@modular-agent/types';
 import { NotFoundError } from '@modular-agent/types';
 import type { LLMMessage } from '@modular-agent/types';
-import { ExecutionContext } from '../../core/execution/context/execution-context';
+import { ExecutionContext } from '../../core/execution/context/execution-context.js';
 
 describe('MessageManagerAPI', () => {
   let api: MessageManagerAPI;

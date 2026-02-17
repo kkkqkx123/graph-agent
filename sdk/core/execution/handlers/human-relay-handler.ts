@@ -21,8 +21,8 @@
 
 import type { LLMMessage } from '@modular-agent/types';
 import type { HumanRelayRequest, HumanRelayResponse, HumanRelayExecutionResult, HumanRelayHandler, HumanRelayContext } from '@modular-agent/types';
-import type { EventManager } from '../../services/event-manager';
-import type { ThreadContext } from '../context/thread-context';
+import type { EventManager } from '../../services/event-manager.js';
+import type { ThreadContext } from '../context/thread-context.js';
 import { EventType, MessageRole } from '@modular-agent/types';
 import { generateId, now, getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
 

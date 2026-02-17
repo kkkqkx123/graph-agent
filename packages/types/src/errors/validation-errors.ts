@@ -3,7 +3,7 @@
  * 定义配置验证、运行时验证和Schema验证相关的错误类型
  */
 
-import { ValidationError, ErrorSeverity } from './base';
+import { ValidationError, ErrorSeverity } from './base.js';
 
 /**
  * 配置验证错误选项

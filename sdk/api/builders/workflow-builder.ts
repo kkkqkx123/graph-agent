@@ -12,10 +12,10 @@ import type { Condition } from '@modular-agent/types';
 import type { WorkflowTrigger } from '@modular-agent/types';
 import type { TriggerReference } from '@modular-agent/types';
 import { generateId } from '@modular-agent/common-utils';
-import { SingletonRegistry } from '../../core/execution/context/singleton-registry';
-import { ConfigParser, ConfigFormat } from '../config';
-import { NodeBuilder } from './node-builder';
-import { BaseBuilder } from './base-builder';
+import { SingletonRegistry } from '../../core/execution/context/singleton-registry.js';
+import { ConfigParser, ConfigFormat } from '../config/index.js';
+import { NodeBuilder } from './node-builder.js';
+import { BaseBuilder } from './base-builder.js';
 
 /**
  * WorkflowBuilder - 声明式工作流构建器
@@ -512,7 +512,7 @@ export class WorkflowBuilder extends BaseBuilder<WorkflowDefinition> {
     parameters?: Record<string, any>
   ): Promise<WorkflowBuilder> {
     const parser = new ConfigParser();
-    const { loadConfigContent } = await import('../config/config-utils');
+    const { loadConfigContent } = await import('../config/config-utils.js');
 
     // 应用层负责文件读取
     const { content, format } = await loadConfigContent(filePath);

@@ -2,7 +2,7 @@
  * ThreadExecutorAPI 单元测试
  */
 
-import { ThreadExecutorAPI } from '../operations/execution/thread-executor-api';
+import { ThreadExecutorAPI } from '../operations/execution/thread-executor-api.js';
 import { WorkflowRegistry } from '@modular-agent/sdk/core/registry/workflow-registry';
 import type { WorkflowDefinition } from '@modular-agent/types';
 import { NodeType } from '@modular-agent/types';

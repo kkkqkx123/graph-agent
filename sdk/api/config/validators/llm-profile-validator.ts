@@ -4,8 +4,8 @@
  */
 
 import type { LLMProfile } from '@modular-agent/types';
-import type { ConfigFile } from '../types';
-import { ConfigType } from '../types';
+import type { ConfigFile } from '../types.js';
+import { ConfigType } from '../types.js';
 import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 import { ValidationError } from '@modular-agent/types';
@@ -16,7 +16,7 @@ import {
   validateEnumField,
   validateNumberField,
   validateObjectField
-} from './base-validator';
+} from './base-validator.js';
 
 /**
  * 验证LLM Profile配置

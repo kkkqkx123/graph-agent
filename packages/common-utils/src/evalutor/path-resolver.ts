@@ -14,7 +14,7 @@
  * - pathExists("user.name", obj) - 检查路径是否存在
  */
 
-import { validatePath } from './security-validator';
+import { validatePath } from './security-validator.js';
 /**
  * 解析路径并获取值
  * @param path 路径字符串，支持嵌套访问和数组索引，如 "user.name"、"items[0].name"

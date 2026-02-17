@@ -2,9 +2,9 @@
  * GenerateCommand - LLM生成命令
  */
 
-import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
+import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
 import type { LLMRequest, LLMResult } from '@modular-agent/types';
-import { APIDependencyManager } from '../../../core/sdk-dependencies';
+import { APIDependencyManager } from '../../../core/sdk-dependencies.js';
 
 /**
  * LLM生成命令
@@ -18,7 +18,7 @@ export class GenerateCommand extends BaseCommand<LLMResult> {
   }
 
   protected async executeInternal(): Promise<LLMResult> {
-    const llmWrapper = this.dependencies.getLLMWrapper();
+    const llmWrapper = await this.dependencies.getLLMWrapper();
     const result = await llmWrapper.generate(this.request);
     
     // 处理 Result 类型，提取成功的结果或抛出错误

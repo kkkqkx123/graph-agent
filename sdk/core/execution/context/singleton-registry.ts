@@ -17,18 +17,18 @@
  * 本模块是所有单例服务的唯一来源
  */
 
-import { EventManager } from '../../services/event-manager';
-import { WorkflowRegistry } from '../../services/workflow-registry';
-import { ThreadRegistry } from '../../services/thread-registry';
-import { ToolService } from '../../services/tool-service';
-import { CodeService } from '../../services/code-service';
-import { ErrorService } from '../../services/error-service';
-import { GraphRegistry } from '../../services/graph-registry';
-import { GlobalMessageStorage } from '../../services/global-message-storage';
-import { NodeTemplateRegistry } from '../../services/node-template-registry';
-import { TriggerTemplateRegistry } from '../../services/trigger-template-registry';
-import { TaskRegistry } from '../../services/task-registry';
-import { LLMExecutor } from '../executors/llm-executor';
+import { EventManager } from '../../services/event-manager.js';
+import { WorkflowRegistry } from '../../services/workflow-registry.js';
+import { ThreadRegistry } from '../../services/thread-registry.js';
+import { ToolService } from '../../services/tool-service.js';
+import { CodeService } from '../../services/code-service.js';
+import { ErrorService } from '../../services/error-service.js';
+import { GraphRegistry } from '../../services/graph-registry.js';
+import { GlobalMessageStorage } from '../../services/global-message-storage.js';
+import { NodeTemplateRegistry } from '../../services/node-template-registry.js';
+import { TriggerTemplateRegistry } from '../../services/trigger-template-registry.js';
+import { TaskRegistry } from '../../services/task-registry.js';
+import { LLMExecutor } from '../executors/llm-executor.js';
 
 /**
  * 单例注册表

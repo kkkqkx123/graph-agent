@@ -2,11 +2,11 @@
  * RestoreFromCheckpointCommand - 从检查点恢复线程
  */
 
-import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
-import { CheckpointCoordinator } from '../../../../core/execution/coordinators/checkpoint-coordinator';
+import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
+import { CheckpointCoordinator } from '../../../../core/execution/coordinators/checkpoint-coordinator.js';
 import type { Thread } from '@modular-agent/types';
-import { SingletonRegistry } from '../../../../core/execution/context/singleton-registry';
-import type { APIDependencyManager } from '../../../core/sdk-dependencies';
+import { SingletonRegistry } from '../../../../core/execution/context/singleton-registry.js';
+import type { APIDependencyManager } from '../../../core/sdk-dependencies.js';
 
 /**
  * 从检查点恢复参数

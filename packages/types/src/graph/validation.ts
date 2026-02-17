@@ -2,9 +2,9 @@
  * 图验证相关类型定义
  */
 
-import type { ID } from '../common';
-import { NodeType } from '../node';
-import type { EdgeType } from '../edge';
+import type { ID } from '../common.js';
+import { NodeType } from '../node/index.js';
+import type { EdgeType } from '../edge.js';
 
 /**
  * 环检测结果

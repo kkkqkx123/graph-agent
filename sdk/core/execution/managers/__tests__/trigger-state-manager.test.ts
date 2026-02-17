@@ -3,7 +3,7 @@
  * 测试触发器状态管理器的功能
  */
 
-import { TriggerStateManager, type TriggerRuntimeState } from '../trigger-state-manager';
+import { TriggerStateManager, type TriggerRuntimeState } from '../trigger-state-manager.js';
 import { TriggerStatus } from '@modular-agent/types';
 import { ID } from '@modular-agent/types';
 

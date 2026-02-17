@@ -3,15 +3,15 @@
  * 继承GenericResourceAPI，提供统一的CRUD操作
  */
 
-import { GenericResourceAPI } from '../generic-resource-api';
-import { CheckpointStateManager } from '../../../core/execution/managers/checkpoint-state-manager';
+import { GenericResourceAPI } from '../generic-resource-api.js';
+import { CheckpointStateManager } from '../../../core/execution/managers/checkpoint-state-manager.js';
 import type { Checkpoint, CheckpointMetadata } from '@modular-agent/types';
 import type { CheckpointFilter } from '@modular-agent/types';
-import { MemoryCheckpointStorage } from '../../../core/storage/memory-checkpoint-storage';
-import { CheckpointCoordinator } from '../../../core/execution/coordinators/checkpoint-coordinator';
-import { SingletonRegistry } from '../../../core/execution/context/singleton-registry';
-import { getErrorMessage, isSuccess, getData } from '../../types/execution-result';
-import type { EventManager } from '../../../core/services/event-manager';
+import { MemoryCheckpointStorage } from '../../../core/storage/memory-checkpoint-storage.js';
+import { CheckpointCoordinator } from '../../../core/execution/coordinators/checkpoint-coordinator.js';
+import { SingletonRegistry } from '../../../core/execution/context/singleton-registry.js';
+import { getErrorMessage, isSuccess, getData } from '../../types/execution-result.js';
+import type { EventManager } from '../../../core/services/event-manager.js';
 
 /**
  * CheckpointResourceAPI - 检查点资源管理API

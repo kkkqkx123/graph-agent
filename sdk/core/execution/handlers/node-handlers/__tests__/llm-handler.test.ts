@@ -2,7 +2,7 @@
  * LLM节点处理函数单元测试
  */
 
-import { llmHandler } from '../llm-handler';
+import { llmHandler } from '../llm-handler.js';
 import type { Node, LLMNodeConfig } from '@modular-agent/types';
 import { NodeType } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
@@ -34,9 +34,9 @@ jest.mock('../../../../../utils', () => ({
   diffTimestamp: jest.fn((start, end) => end - start)
 }));
 
-import { LLMExecutionCoordinator } from '../../../coordinators/llm-execution-coordinator';
+import { LLMExecutionCoordinator } from '../../../coordinators/llm-execution-coordinator.js';
 import { LLMWrapper } from '@modular-agent/common-utils';
-import { executeHumanRelay } from '../../human-relay-handler';
+import { executeHumanRelay } from '../../human-relay-handler.js';
 
 describe('llm-handler', () => {
   let mockThread: Thread;

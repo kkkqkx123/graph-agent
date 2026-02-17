@@ -32,19 +32,19 @@
  * - 清晰的依赖注入
  */
 
-import { SingletonRegistry } from './singleton-registry';
-import { ComponentRegistry } from './component-registry';
-import { LifecycleManager } from './lifecycle-manager';
-import type { WorkflowRegistry } from '../../services/workflow-registry';
-import type { ThreadRegistry } from '../../services/thread-registry';
-import type { EventManager } from '../../services/event-manager';
-import { CheckpointStateManager } from '../managers/checkpoint-state-manager';
-import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager';
-import { ThreadCascadeManager } from '../managers/thread-cascade-manager';
-import { ToolContextManager } from '../managers/tool-context-manager';
-import { ThreadLifecycleCoordinator } from '../coordinators/thread-lifecycle-coordinator';
-import type { LifecycleCapable } from '../managers/lifecycle-capable';
-import { MemoryCheckpointStorage } from '../../storage/memory-checkpoint-storage';
+import { SingletonRegistry } from './singleton-registry.js';
+import { ComponentRegistry } from './component-registry.js';
+import { LifecycleManager } from './lifecycle-manager.js';
+import type { WorkflowRegistry } from '../../services/workflow-registry.js';
+import type { ThreadRegistry } from '../../services/thread-registry.js';
+import type { EventManager } from '../../services/event-manager.js';
+import { CheckpointStateManager } from '../managers/checkpoint-state-manager.js';
+import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager.js';
+import { ThreadCascadeManager } from '../managers/thread-cascade-manager.js';
+import { ToolContextManager } from '../managers/tool-context-manager.js';
+import { ThreadLifecycleCoordinator } from '../coordinators/thread-lifecycle-coordinator.js';
+import type { LifecycleCapable } from '../managers/lifecycle-capable.js';
+import { MemoryCheckpointStorage } from '../../storage/memory-checkpoint-storage.js';
 
 /**
  * 执行上下文 - 轻量级依赖注入容器

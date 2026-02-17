@@ -2,9 +2,9 @@
  * HTTP客户端单元测试
  */
 
-import { HttpClient } from '../http-client';
+import { HttpClient } from '../http-client.js';
 import { TimeoutError, NetworkError, CircuitBreakerOpenError, HttpError } from '@modular-agent/types';
-import { RateLimitError } from '../errors';
+import { RateLimitError } from '../errors.js';
 
 // Mock fetch
 global.fetch = jest.fn();

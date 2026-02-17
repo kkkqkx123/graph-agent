@@ -11,8 +11,8 @@ import {
   getGlobalLogger,
   setGlobalLogLevel,
   getGlobalLogLevel
-} from '../logger';
-import type { LogStream, LogEntry } from '../types';
+} from '../logger.js';
+import type { LogStream, LogEntry } from '../types.js';
 
 describe('BaseLogger', () => {
   let mockStream: LogStream;

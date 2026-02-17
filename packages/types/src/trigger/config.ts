@@ -2,9 +2,9 @@
  * 触发器配置类型定义
  */
 
-import type { ID, Metadata } from '../common';
-import { EventType } from '../events';
-import type { MessageRole } from '../message';
+import type { ID, Metadata } from '../common.js';
+import { EventType } from '../events/index.js';
+import type { MessageRole } from '../message/index.js';
 
 /**
  * 触发条件接口

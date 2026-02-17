@@ -3,7 +3,7 @@
  * 定义网络、HTTP和LLM调用相关的错误类型
  */
 
-import { SDKError, ErrorSeverity } from './base';
+import { SDKError, ErrorSeverity } from './base.js';
 
 /**
  * 网络错误类型

@@ -2,13 +2,13 @@
  * 线程定义类型
  */
 
-import type { ID, Timestamp, Version, Metadata } from '../common';
-import type { PreprocessedGraph } from '../graph';
-import type { ThreadStatus, ThreadType } from './status';
-import type { ForkJoinContext, TriggeredSubworkflowContext } from './context';
-import type { ThreadVariable } from './variables';
-import type { NodeExecutionResult } from './history';
-import type { VariableScopes } from './scopes';
+import type { ID, Timestamp, Version, Metadata } from '../common.js';
+import type { PreprocessedGraph } from '../graph/index.js';
+import type { ThreadStatus, ThreadType } from './status.js';
+import type { ForkJoinContext, TriggeredSubworkflowContext } from './context.js';
+import type { ThreadVariable } from './variables.js';
+import type { NodeExecutionResult } from './history.js';
+import type { VariableScopes } from './scopes.js';
 
 /**
  * 线程定义类型（执行实例）

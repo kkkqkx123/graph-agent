@@ -2,7 +2,7 @@
  * 节点Hook相关类型定义
  */
 
-import type { Condition } from '../condition';
+import type { Condition } from '../condition.js';
 
 /**
  * Hook类型

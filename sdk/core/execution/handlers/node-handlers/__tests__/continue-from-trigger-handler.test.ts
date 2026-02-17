@@ -2,7 +2,7 @@
  * ContinueFromTrigger节点处理函数单元测试
  */
 
-import { continueFromTriggerHandler } from '../continue-from-trigger-handler';
+import { continueFromTriggerHandler } from '../continue-from-trigger-handler.js';
 import type { Node, ContinueFromTriggerNodeConfig } from '@modular-agent/types';
 import { NodeType } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';

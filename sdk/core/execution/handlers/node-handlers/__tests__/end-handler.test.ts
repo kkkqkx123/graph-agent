@@ -2,7 +2,7 @@
  * End节点处理函数单元测试
  */
 
-import { endHandler } from '../end-handler';
+import { endHandler } from '../end-handler.js';
 import type { Node, EndNodeConfig } from '@modular-agent/types';
 import { NodeType } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';

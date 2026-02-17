@@ -13,9 +13,9 @@ import type { WorkflowDefinition } from '@modular-agent/types';
 import type { NodeTemplate } from '@modular-agent/types';
 import type { TriggerTemplate } from '@modular-agent/types';
 import type { Script } from '@modular-agent/types';
-import { ConfigFormat, ConfigType } from './types';
-import type { ParsedConfig } from './types';
-import { ConfigParser } from './config-parser';
+import { ConfigFormat, ConfigType } from './types.js';
+import type { ParsedConfig } from './types.js';
+import { ConfigParser } from './config-parser.js';
 
 // 共享的 ConfigParser 实例
 const workflowParser = new ConfigParser();

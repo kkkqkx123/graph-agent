@@ -2,7 +2,7 @@
  * Code配置验证器测试
  */
 
-import { CodeConfigValidator } from '../code-config-validator';
+import { CodeConfigValidator } from '../code-config-validator.js';
 import { ValidationError } from '@modular-agent/types';
 import { ScriptType } from '@modular-agent/types';
 

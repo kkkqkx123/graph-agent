@@ -6,8 +6,8 @@
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import { Readable, Writable } from 'stream';
 import { EventEmitter } from 'events';
-import type { IMcpTransport, McpServerConfig, McpSessionInfo, McpMessage, McpSessionState } from '../types';
-import { McpSessionState as SessionState } from '../types';
+import type { IMcpTransport, McpServerConfig, McpSessionInfo, McpMessage, McpSessionState } from '../types.js';
+import { McpSessionState as SessionState } from '../types.js';
 import { NetworkError, ConfigurationError } from '@modular-agent/types';
 
 /**

@@ -2,7 +2,7 @@
  * BaseLLMClient 单元测试
  */
 
-import { BaseLLMClient } from '../base-client';
+import { BaseLLMClient } from '../base-client.js';
 import type { LLMProfile, LLMRequest, LLMResult } from '@modular-agent/types';
 
 // 创建测试用的具体实现

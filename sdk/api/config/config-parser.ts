@@ -10,11 +10,11 @@
  * - 支持多种配置类型：WORKFLOW, NODE_TEMPLATE, TRIGGER_TEMPLATE, SCRIPT, LLM_PROFILE
  */
 
-import type { ParsedConfig, IConfigParser } from './types';
-import { ConfigFormat, ConfigType } from './types';
+import type { ParsedConfig, IConfigParser } from './types.js';
+import { ConfigFormat, ConfigType } from './types.js';
 import type { WorkflowDefinition } from '@modular-agent/types';
-import { parseToml } from './toml-parser';
-import { parseJson } from './json-parser';
+import { parseToml } from './toml-parser.js';
+import { parseJson } from './json-parser.js';
 import { ConfigurationError } from '@modular-agent/types';
 import {
   validateWorkflow,
@@ -22,7 +22,7 @@ import {
   validateScript,
   validateTriggerTemplate,
   validateLLMProfile
-} from './processors';
+} from './processors/index.js';
 
 /**
  * 配置解析器类

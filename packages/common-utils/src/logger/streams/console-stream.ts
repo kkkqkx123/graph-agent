@@ -3,7 +3,7 @@
  * 支持JSON和普通格式，支持彩色输出
  */
 
-import type { LogStream, LogEntry, StreamOptions } from '../types';
+import type { LogStream, LogEntry, StreamOptions } from '../types.js';
 
 /**
  * ANSI颜色代码

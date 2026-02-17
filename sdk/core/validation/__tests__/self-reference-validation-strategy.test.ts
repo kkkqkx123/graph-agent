@@ -3,7 +3,7 @@
  * 测试 SelfReferenceValidationStrategy 的验证逻辑
  */
 
-import { SelfReferenceValidationStrategy } from '../strategies/self-reference-validation-strategy';
+import { SelfReferenceValidationStrategy } from '../strategies/self-reference-validation-strategy.js';
 import { NodeType } from '@modular-agent/types';
 import type { Node } from '@modular-agent/types';
 

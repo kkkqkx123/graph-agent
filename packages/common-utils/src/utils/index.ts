@@ -4,11 +4,11 @@
  */
 
 // 通用工具函数
-export { generateId, isValidId, validateId } from "./id-utils";
-export { generateSubgraphNamespace, generateNamespacedNodeId, generateNamespacedEdgeId } from "./id-utils";
-export { now, timestampFromDate, timestampToDate, timestampToISOString, nowWithTimezone, diffTimestamp, formatDuration } from "./timestamp-utils";
-export { initialVersion } from "./version-utils";
-export { emptyMetadata, getMetadata, setMetadata, deleteMetadata, hasMetadata, mergeMetadata } from "./metadata-utils";
-export { ok, err, tryCatch, tryCatchAsync, all, any } from "./result-utils";
+export { generateId, isValidId, validateId } from './id-utils.js';
+export { generateSubgraphNamespace, generateNamespacedNodeId, generateNamespacedEdgeId } from './id-utils.js';
+export { now, timestampFromDate, timestampToDate, timestampToISOString, nowWithTimezone, diffTimestamp, formatDuration } from './timestamp-utils.js';
+export { initialVersion } from './version-utils.js';
+export { emptyMetadata, getMetadata, setMetadata, deleteMetadata, hasMetadata, mergeMetadata } from './metadata-utils.js';
+export { ok, err, tryCatch, tryCatchAsync, all, any } from './result-utils.js';
 
-export * from './signal';
+export * from './signal/index.js';

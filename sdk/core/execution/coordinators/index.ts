@@ -16,10 +16,10 @@
  * - VariableCoordinator: 变量协调器
  */
 
-export { NodeExecutionCoordinator } from './node-execution-coordinator';
-export { TriggerCoordinator } from './trigger-coordinator';
-export { LLMExecutionCoordinator } from './llm-execution-coordinator';
-export { ThreadLifecycleCoordinator } from './thread-lifecycle-coordinator';
-export { ThreadOperationCoordinator } from './thread-operation-coordinator';
-export { VariableCoordinator } from './variable-coordinator';
-export { VariableAccessor, VariableNamespace } from '../utils/variable-accessor';
+export { NodeExecutionCoordinator } from './node-execution-coordinator.js';
+export { TriggerCoordinator } from './trigger-coordinator.js';
+export { LLMExecutionCoordinator } from './llm-execution-coordinator.js';
+export { ThreadLifecycleCoordinator } from './thread-lifecycle-coordinator.js';
+export { ThreadOperationCoordinator } from './thread-operation-coordinator.js';
+export { VariableCoordinator } from './variable-coordinator.js';
+export { VariableAccessor, VariableNamespace } from '../utils/variable-accessor.js';

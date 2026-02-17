@@ -2,7 +2,7 @@
  * 工具服务单元测试
  */
 
-import { ToolService } from '../tool-service';
+import { ToolService } from '../tool-service.js';
 import type { Tool } from '@modular-agent/types';
 import { ToolType } from '@modular-agent/types';
 import { NotFoundError } from '@modular-agent/types';

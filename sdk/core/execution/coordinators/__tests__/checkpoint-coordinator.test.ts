@@ -2,15 +2,15 @@
  * CheckpointCoordinator 单元测试
  */
 
-import { CheckpointCoordinator, CheckpointDependencies } from '../checkpoint-coordinator';
-import { CheckpointStateManager } from '../../managers/checkpoint-state-manager';
-import { ThreadContext } from '../../context/thread-context';
-import { ConversationManager } from '../../managers/conversation-manager';
-import { VariableStateManager } from '../../managers/variable-state-manager';
-import { ExecutionContext } from '../../context/execution-context';
-import { ThreadRegistry } from '../../../services/thread-registry';
-import { WorkflowRegistry } from '../../../services/workflow-registry';
-import { GlobalMessageStorage } from '../../../services/global-message-storage';
+import { CheckpointCoordinator, CheckpointDependencies } from '../checkpoint-coordinator.js';
+import { CheckpointStateManager } from '../../managers/checkpoint-state-manager.js';
+import { ThreadContext } from '../../context/thread-context.js';
+import { ConversationManager } from '../../managers/conversation-manager.js';
+import { VariableStateManager } from '../../managers/variable-state-manager.js';
+import { ExecutionContext } from '../../context/execution-context.js';
+import { ThreadRegistry } from '../../../services/thread-registry.js';
+import { WorkflowRegistry } from '../../../services/workflow-registry.js';
+import { GlobalMessageStorage } from '../../../services/global-message-storage.js';
 import { NotFoundError } from '@modular-agent/types';
 import { ThreadStatus } from '@modular-agent/types';
 import type { Thread, NodeExecutionResult } from '@modular-agent/types';

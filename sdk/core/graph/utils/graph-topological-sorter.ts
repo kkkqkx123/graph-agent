@@ -4,7 +4,7 @@
  */
 
 import type { ID, TopologicalSortResult, Graph } from '@modular-agent/types';
-import { detectCycles } from './graph-cycle-detector';
+import { detectCycles } from './graph-cycle-detector.js';
 
 /**
  * 拓扑排序（Kahn算法）

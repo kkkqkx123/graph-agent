@@ -2,8 +2,8 @@
  * ConsoleStream单元测试
  */
 
-import { ConsoleStream, createConsoleStream } from '../console-stream';
-import type { LogEntry } from '../../types';
+import { ConsoleStream, createConsoleStream } from '../console-stream.js';
+import type { LogEntry } from '../../types.js';
 
 describe('ConsoleStream', () => {
   let consoleStream: ConsoleStream;

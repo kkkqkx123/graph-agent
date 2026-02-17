@@ -4,16 +4,16 @@
  * 基于现有 workflow-reference-checker 扩展
  */
 
-import type { WorkflowRegistry } from '../../services/workflow-registry';
-import type { ThreadRegistry } from '../../services/thread-registry';
+import type { WorkflowRegistry } from '../../services/workflow-registry.js';
+import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type {
   WorkflowReference,
   WorkflowReferenceInfo,
   WorkflowReferenceRelation,
   WorkflowReferenceType
 } from '@modular-agent/types';
-import { checkWorkflowReferences as checkReferences } from '../utils/workflow-reference-checker';
-import { SingletonRegistry } from '../context/singleton-registry';
+import { checkWorkflowReferences as checkReferences } from '../utils/workflow-reference-checker.js';
+import { SingletonRegistry } from '../context/singleton-registry.js';
 
 export class WorkflowReferenceManager {
   private referenceRelations: Map<string, WorkflowReferenceRelation[]> = new Map();

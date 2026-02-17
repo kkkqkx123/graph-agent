@@ -2,7 +2,7 @@
  * 基础事件类型定义
  */
 
-import type { ID, Timestamp, Metadata } from '../common';
+import type { ID, Timestamp, Metadata } from '../common.js';
 
 /**
  * 事件类型

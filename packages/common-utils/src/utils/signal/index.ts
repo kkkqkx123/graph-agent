@@ -3,7 +3,7 @@
  */
 
 // Abort 高级工具函数
-export * from './abort-utils';
+export * from './abort-utils.js';
 
 // 线程中断工具函数
-export * from './thread-interruption-utils';
+export * from './thread-interruption-utils.js';

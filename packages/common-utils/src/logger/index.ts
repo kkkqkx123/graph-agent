@@ -16,8 +16,8 @@ export type {
   StreamOptions,
   MultistreamOptions,
   StreamEntry
-} from './types';
-export { LOG_LEVEL_PRIORITY } from './types';
+} from './types.js';
+export { LOG_LEVEL_PRIORITY } from './types.js';
 
 // 核心实现
 export {
@@ -29,7 +29,7 @@ export {
   getGlobalLogger,
   setGlobalLogLevel,
   getGlobalLogLevel
-} from './logger';
+} from './logger.js';
 
 // Stream实现
 export {
@@ -41,18 +41,18 @@ export {
   createAsyncStream,
   Multistream,
   createMultistream
-} from './streams';
+} from './streams/index.js';
 
 // Transport实现
 export {
   destination,
   transport
-} from './transports';
+} from './transports/index.js';
 export type {
   Destination,
   TransportOptions,
   MultiTransportOptions
-} from './transports';
+} from './transports/index.js';
 
 // 工具函数
 export {
@@ -60,4 +60,4 @@ export {
   formatTimestamp,
   mergeContext,
   createLogEntry
-} from './utils';
+} from './utils.js';
