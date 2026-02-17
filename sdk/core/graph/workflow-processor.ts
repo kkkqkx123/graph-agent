@@ -20,7 +20,7 @@ import type { TriggerReference } from '@modular-agent/types';
 import { GraphBuilder } from './graph-builder.js';
 import { GraphValidator } from '../validation/graph-validator.js';
 import { WorkflowValidator } from '../validation/workflow-validator.js';
-import { PreprocessedWorkflowBuilder } from './preprocessed-workflow-builder.js';
+import { IdMappingBuilder } from './id-mapping-builder.js';
 import { PreprocessedGraphData } from '../entities/preprocessed-graph-data.js';
 import { now } from '@modular-agent/common-utils';
 import { ConfigurationValidationError, NodeTemplateNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
@@ -188,26 +188,30 @@ export async function processWorkflow(
     validatedAt: now(),
   };
 
-  // 11. 使用PreprocessedWorkflowBuilder构建预处理工作流（包含ID映射）
-  const preprocessedBuilder = new PreprocessedWorkflowBuilder();
-  const preprocessedResult = await preprocessedBuilder.build(expandedWorkflow, options.workflowRegistry);
+  // 11. 使用IdMappingBuilder生成ID映射和更新配置
+  const idMappingBuilder = new IdMappingBuilder();
+  const idMappingResult = await idMappingBuilder.build(
+    buildResult.graph,
+    expandedWorkflow,
+    options.workflowRegistry
+  );
   
   // 12. 创建PreprocessedGraphData
   const preprocessedGraph = new PreprocessedGraphData();
   
-  // 复制图结构
-  preprocessedGraph.nodes = preprocessedResult.graph.nodes;
-  preprocessedGraph.edges = preprocessedResult.graph.edges;
-  preprocessedGraph.adjacencyList = preprocessedResult.graph.adjacencyList;
-  preprocessedGraph.reverseAdjacencyList = preprocessedResult.graph.reverseAdjacencyList;
-  preprocessedGraph.startNodeId = preprocessedResult.graph.startNodeId;
-  preprocessedGraph.endNodeIds = preprocessedResult.graph.endNodeIds;
+  // 复制图结构（使用GraphBuilder构建的图）
+  preprocessedGraph.nodes = buildResult.graph.nodes;
+  preprocessedGraph.edges = buildResult.graph.edges;
+  preprocessedGraph.adjacencyList = buildResult.graph.adjacencyList;
+  preprocessedGraph.reverseAdjacencyList = buildResult.graph.reverseAdjacencyList;
+  preprocessedGraph.startNodeId = buildResult.graph.startNodeId;
+  preprocessedGraph.endNodeIds = buildResult.graph.endNodeIds;
   
-  // 设置ID映射相关字段
-  preprocessedGraph.idMapping = preprocessedResult.idMapping;
-  preprocessedGraph.nodeConfigs = preprocessedResult.nodeConfigs;
-  preprocessedGraph.triggerConfigs = preprocessedResult.triggerConfigs;
-  preprocessedGraph.subgraphRelationships = preprocessedResult.subgraphRelationships;
+  // 设置ID映射相关字段（使用IdMappingBuilder的结果）
+  preprocessedGraph.idMapping = idMappingResult.idMapping;
+  preprocessedGraph.nodeConfigs = idMappingResult.nodeConfigs;
+  preprocessedGraph.triggerConfigs = idMappingResult.triggerConfigs;
+  preprocessedGraph.subgraphRelationships = idMappingResult.subgraphRelationships;
   
   // 设置预处理元数据
   preprocessedGraph.graphAnalysis = graphAnalysis;
