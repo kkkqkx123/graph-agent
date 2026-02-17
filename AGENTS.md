@@ -86,7 +86,7 @@ modular-agent-framework/
 ### Centralized Dependencies
 
 - Common devDependencies defined in root `package.json`
-- Shared TypeScript, Jest, ESLint configurations
+- Shared TypeScript, Vitest, ESLint configurations
 - Consistent versions across all packages
 
 ### Workspace Protocol

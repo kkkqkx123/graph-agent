@@ -47,8 +47,11 @@ export default defineConfig({
       }
     },
 
-    // 测试超时时间
+    // 测试超时时间（毫秒）
     testTimeout: 30000,
+    
+    // 钩子超时时间（毫秒）
+    hookTimeout: 30000,
 
     // 详细输出
     reporters: ['verbose'],
@@ -60,6 +63,10 @@ export default defineConfig({
     // 全局配置
     globals: true,
 
+    // 自动退出配置
+    // 防止测试进程因未关闭的连接而挂起
+    disableConsoleInterception: false,
+    
     // 别名配置
     alias: {
       '@modular-agent/common-utils': '/packages/common-utils/src',
