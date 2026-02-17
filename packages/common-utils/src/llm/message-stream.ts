@@ -226,6 +226,34 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
   }
 
   /**
+   * 推送文本增量
+   * @param delta 文本增量
+   */
+  pushText(delta: string): void {
+    if (this.ended || this.errored || this.aborted) {
+      return;
+    }
+    
+    this.currentTextSnapshot += delta;
+    this.emit('text', {
+      type: 'text',
+      delta,
+      snapshot: this.currentTextSnapshot
+    } as MessageStreamTextEvent);
+  }
+
+  /**
+   * 结束流（正常完成）
+   */
+  end(): void {
+    if (this.ended || this.errored || this.aborted) {
+      return;
+    }
+    
+    this.emit('end', {} as MessageStreamEndEvent);
+  }
+
+  /**
    * 中止流
    */
   abort(): void {

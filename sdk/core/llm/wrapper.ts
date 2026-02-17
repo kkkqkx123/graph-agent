@@ -12,7 +12,7 @@ import type {
 } from '@modular-agent/types';
 import { ProfileManager } from './profile-manager.js';
 import { ClientFactory, MessageStream, tryCatchAsync, tryCatchAsyncWithSignal, isAbortError } from '@modular-agent/common-utils';
-import { ConfigurationError, LLMError } from '@modular-agent/types';
+import { ConfigurationError, LLMError, AbortError } from '@modular-agent/types';
 import { now, diffTimestamp, generateId } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
@@ -115,13 +115,29 @@ export class LLMWrapper {
       async (signal) => {
         stream.setRequestId(generateId());
         
-        // 执行流式调用
-        for await (const chunk of client.generateStream({ ...request, signal })) {
-          chunk.duration = diffTimestamp(startTime, now());
-          
-          if (chunk.finishReason) {
-            stream.setFinalResult(chunk);
+        try {
+          // 执行流式调用
+          for await (const chunk of client.generateStream({ ...request, signal })) {
+            chunk.duration = diffTimestamp(startTime, now());
+            
+            // 推送文本内容到 MessageStream
+            if (chunk.content) {
+              stream.pushText(chunk.content);
+            }
+            
+            if (chunk.finishReason) {
+              stream.setFinalResult(chunk);
+            }
           }
+          
+          // 正常完成时结束流
+          stream.end();
+        } catch (error) {
+          // 如果是中止错误，需要中止 MessageStream 以正确更新其内部状态
+          if (isAbortError(error)) {
+            stream.abort();
+          }
+          throw error;
         }
         
         return stream;
@@ -130,6 +146,11 @@ export class LLMWrapper {
     );
     
     if (result.isErr()) {
+      // 如果是中止错误，需要中止 MessageStream 以正确更新其内部状态
+      if (isAbortError(result.error)) {
+        stream.abort();
+      }
+      
       // 触发 LLM 流错误事件
       this.emitStreamErrorEvent(request, result.error);
       return err(this.convertToLLMError(result.error, profile));
