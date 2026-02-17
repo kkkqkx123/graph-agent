@@ -30,8 +30,8 @@ export class ExecuteScriptCommand extends BaseCommand<ScriptExecutionResult> {
       sandbox: this.options?.sandbox
     };
 
-    // 验证脚本
-    const validation = this.dependencies.getCodeService().validateScript(this.scriptName);
+    // 验证脚本（使用执行器验证）
+    const validation = this.dependencies.getCodeService().validateScriptWithExecutor(this.scriptName);
     if (!validation.valid) {
       throw new Error(`脚本验证失败: ${validation.errors.join(', ')}`);
     }

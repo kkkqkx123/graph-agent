@@ -1,6 +1,6 @@
 /**
  * 脚本服务
- * 提供统一的脚本执行接口
+ * 提供统一的脚本管理和执行接口
  *
  * 本模块只导出类定义，不导出实例
  * 实例通过 SingletonRegistry 统一管理
@@ -8,16 +8,17 @@
 
 import type { Script, ScriptType, ScriptExecutor, ScriptExecutionOptions, ScriptExecutionResult } from '@modular-agent/types';
 import type { ThreadContext } from '../execution/context/thread-context.js';
-import { CodeRegistry } from '../code/code-registry.js';
-import { CodeExecutionError, ScriptNotFoundError } from '@modular-agent/types';
+import { CodeExecutionError, ScriptNotFoundError, ConfigurationValidationError } from '@modular-agent/types';
 import { tryCatchAsyncWithSignal } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 
 /**
- * 脚本执行器注册表
+ * 脚本服务类
+ * 整合脚本注册表和执行器管理功能
  */
-class ScriptExecutorRegistry {
+class CodeService {
+  private scripts: Map<string, Script> = new Map();
   private executors: Map<ScriptType, ScriptExecutor> = new Map();
 
   /**
@@ -25,7 +26,7 @@ class ScriptExecutorRegistry {
    * @param type 脚本类型
    * @param executor 脚本执行器
    */
-  register(type: ScriptType, executor: ScriptExecutor): void {
+  registerExecutor(type: ScriptType, executor: ScriptExecutor): void {
     this.executors.set(type, executor);
   }
 
@@ -34,7 +35,7 @@ class ScriptExecutorRegistry {
    * @param type 脚本类型
    * @returns 脚本执行器，如果不存在则返回undefined
    */
-  get(type: ScriptType): ScriptExecutor | undefined {
+  getExecutor(type: ScriptType): ScriptExecutor | undefined {
     return this.executors.get(type);
   }
 
@@ -43,7 +44,7 @@ class ScriptExecutorRegistry {
    * @param type 脚本类型
    * @returns 是否存在
    */
-  has(type: ScriptType): boolean {
+  hasExecutor(type: ScriptType): boolean {
     return this.executors.has(type);
   }
 
@@ -51,36 +52,45 @@ class ScriptExecutorRegistry {
    * 列出所有注册的执行器类型
    * @returns 脚本类型数组
    */
-  listTypes(): ScriptType[] {
+  listExecutorTypes(): ScriptType[] {
     return Array.from(this.executors.keys());
   }
 
   /**
    * 清空所有执行器
    */
-  clear(): void {
+  clearExecutors(): void {
     this.executors.clear();
-  }
-}
-
-/**
- * 脚本服务类
- */
-class CodeService {
-  private registry: CodeRegistry;
-  private executorRegistry: ScriptExecutorRegistry;
-
-  constructor() {
-    this.registry = new CodeRegistry();
-    this.executorRegistry = new ScriptExecutorRegistry();
   }
 
   /**
    * 注册脚本
    * @param script 脚本定义
+   * @throws ValidationError 如果脚本定义无效或名称已存在
    */
   registerScript(script: Script): void {
-    this.registry.register(script);
+    // 验证脚本定义
+    this.validateScript(script);
+
+    // 设置默认值
+    const scriptWithDefaults: Script = {
+      ...script,
+      enabled: script.enabled !== undefined ? script.enabled : true
+    };
+
+    // 检查脚本名称是否已存在
+    if (this.scripts.has(script.name)) {
+      throw new ConfigurationValidationError(
+        `Script with name '${script.name}' already exists`,
+        {
+          configType: 'script',
+          field: 'name'
+        }
+      );
+    }
+
+    // 注册脚本
+    this.scripts.set(script.name, scriptWithDefaults);
   }
 
   /**
@@ -88,15 +98,24 @@ class CodeService {
    * @param scripts 脚本定义数组
    */
   registerScripts(scripts: Script[]): void {
-    this.registry.registerBatch(scripts);
+    for (const script of scripts) {
+      this.registerScript(script);
+    }
   }
 
   /**
    * 注销脚本
    * @param scriptName 脚本名称
+   * @throws NotFoundError 如果脚本不存在
    */
   unregisterScript(scriptName: string): void {
-    this.registry.remove(scriptName);
+    if (!this.scripts.has(scriptName)) {
+      throw new ScriptNotFoundError(
+        `Script '${scriptName}' not found`,
+        scriptName
+      );
+    }
+    this.scripts.delete(scriptName);
   }
 
   /**
@@ -106,7 +125,7 @@ class CodeService {
    * @throws NotFoundError 如果脚本不存在
    */
   getScript(scriptName: string): Script {
-    const script = this.registry.get(scriptName);
+    const script = this.scripts.get(scriptName);
     if (!script) {
       throw new ScriptNotFoundError(
         `Script '${scriptName}' not found`,
@@ -117,11 +136,20 @@ class CodeService {
   }
 
   /**
+   * 获取脚本定义（可能返回undefined）
+   * @param scriptName 脚本名称
+   * @returns 脚本定义，如果不存在则返回undefined
+   */
+  findScript(scriptName: string): Script | undefined {
+    return this.scripts.get(scriptName);
+  }
+
+  /**
    * 列出所有脚本
    * @returns 脚本定义数组
    */
   listScripts(): Script[] {
-    return this.registry.list();
+    return Array.from(this.scripts.values());
   }
 
   /**
@@ -130,7 +158,7 @@ class CodeService {
    * @returns 脚本定义数组
    */
   listScriptsByType(type: string): Script[] {
-    return this.registry.listByType(type);
+    return this.listScripts().filter(script => script.type === type);
   }
 
   /**
@@ -139,7 +167,9 @@ class CodeService {
    * @returns 脚本定义数组
    */
   listScriptsByCategory(category: string): Script[] {
-    return this.registry.listByCategory(category);
+    return this.listScripts().filter(
+      script => script.metadata?.category === category
+    );
   }
 
   /**
@@ -148,7 +178,15 @@ class CodeService {
    * @returns 匹配的脚本数组
    */
   searchScripts(query: string): Script[] {
-    return this.registry.search(query);
+    const lowerQuery = query.toLowerCase();
+    return this.listScripts().filter(script => {
+      return (
+        script.name.toLowerCase().includes(lowerQuery) ||
+        script.description.toLowerCase().includes(lowerQuery) ||
+        script.metadata?.tags?.some(tag => tag.toLowerCase().includes(lowerQuery)) ||
+        script.metadata?.category?.toLowerCase().includes(lowerQuery)
+      );
+    });
   }
 
   /**
@@ -157,16 +195,205 @@ class CodeService {
    * @returns 是否存在
    */
   hasScript(scriptName: string): boolean {
-    return this.registry.has(scriptName);
+    return this.scripts.has(scriptName);
   }
 
   /**
-   * 注册脚本执行器
-   * @param type 脚本类型
-   * @param executor 脚本执行器
+   * 清空所有脚本
    */
-  registerExecutor(type: ScriptType, executor: ScriptExecutor): void {
-    this.executorRegistry.register(type, executor);
+  clearScripts(): void {
+    this.scripts.clear();
+  }
+
+  /**
+   * 获取脚本数量
+   * @returns 脚本数量
+   */
+  scriptCount(): number {
+    return this.scripts.size;
+  }
+
+  /**
+   * 更新脚本定义
+   * @param scriptName 脚本名称
+   * @param updates 更新内容
+   * @throws NotFoundError 如果脚本不存在
+   */
+  updateScript(scriptName: string, updates: Partial<Script>): void {
+    const script = this.getScript(scriptName);
+
+    const updatedScript = {
+      ...script,
+      ...updates,
+      // 确保 enabled 字段有默认值
+      enabled: updates.enabled !== undefined ? updates.enabled : (script.enabled ?? true)
+    };
+
+    this.validateScript(updatedScript);
+    this.scripts.set(scriptName, updatedScript);
+  }
+
+  /**
+   * 启用脚本
+   * @param scriptName 脚本名称
+   * @throws NotFoundError 如果脚本不存在
+   */
+  enableScript(scriptName: string): void {
+    this.updateScript(scriptName, { enabled: true });
+  }
+
+  /**
+   * 禁用脚本
+   * @param scriptName 脚本名称
+   * @throws NotFoundError 如果脚本不存在
+   */
+  disableScript(scriptName: string): void {
+    this.updateScript(scriptName, { enabled: false });
+  }
+
+  /**
+   * 检查脚本是否启用
+   * @param scriptName 脚本名称
+   * @returns 是否启用
+   * @throws NotFoundError 如果脚本不存在
+   */
+  isScriptEnabled(scriptName: string): boolean {
+    const script = this.getScript(scriptName);
+    return script.enabled ?? true;
+  }
+
+  /**
+   * 验证脚本定义
+   * @param script 脚本定义
+   * @returns 是否有效
+   * @throws ValidationError 如果脚本定义无效
+   */
+  validateScript(script: Script): boolean {
+    // 验证必需字段
+    if (!script.name || typeof script.name !== 'string') {
+      throw new ConfigurationValidationError(
+        'Script name is required and must be a string',
+        {
+          configType: 'script',
+          field: 'name'
+        }
+      );
+    }
+
+    if (!script.type || typeof script.type !== 'string') {
+      throw new ConfigurationValidationError(
+        'Script type is required and must be a string',
+        {
+          configType: 'script',
+          field: 'type'
+        }
+      );
+    }
+
+    if (!script.description || typeof script.description !== 'string') {
+      throw new ConfigurationValidationError(
+        'Script description is required and must be a string',
+        {
+          configType: 'script',
+          field: 'description'
+        }
+      );
+    }
+
+    // 验证脚本内容或文件路径至少有一个
+    if (!script.content && !script.filePath) {
+      throw new ConfigurationValidationError(
+        'Script must have either content or filePath',
+        {
+          configType: 'script',
+          field: 'content'
+        }
+      );
+    }
+
+    // 验证执行选项
+    if (!script.options) {
+      throw new ConfigurationValidationError(
+        'Script options are required',
+        {
+          configType: 'script',
+          field: 'options'
+        }
+      );
+    }
+
+    // 验证超时时间
+    if (script.options.timeout !== undefined && script.options.timeout < 0) {
+      throw new ConfigurationValidationError(
+        'Script timeout must be a positive number',
+        {
+          configType: 'script',
+          field: 'options.timeout'
+        }
+      );
+    }
+
+    // 验证重试次数
+    if (script.options.retries !== undefined && script.options.retries < 0) {
+      throw new ConfigurationValidationError(
+        'Script retries must be a non-negative number',
+        {
+          configType: 'script',
+          field: 'options.retries'
+        }
+      );
+    }
+
+    // 验证重试延迟
+    if (script.options.retryDelay !== undefined && script.options.retryDelay < 0) {
+      throw new ConfigurationValidationError(
+        'Script retryDelay must be a non-negative number',
+        {
+          configType: 'script',
+          field: 'options.retryDelay'
+        }
+      );
+    }
+
+    // 验证 enabled 字段（如果提供）
+    if (script.enabled !== undefined && typeof script.enabled !== 'boolean') {
+      throw new ConfigurationValidationError(
+        'Script enabled must be a boolean',
+        {
+          configType: 'script',
+          field: 'enabled'
+        }
+      );
+    }
+
+    return true;
+  }
+
+  /**
+   * 验证脚本（使用执行器）
+   * @param scriptName 脚本名称
+   * @returns 验证结果
+   */
+  validateScriptWithExecutor(scriptName: string): { valid: boolean; errors: string[] } {
+    try {
+      const script = this.getScript(scriptName);
+      const executor = this.executors.get(script.type);
+
+      if (!executor) {
+        return {
+          valid: false,
+          errors: [`No executor found for script type '${script.type}'`]
+        };
+      }
+
+      // 使用执行器的验证方法
+      return executor.validate(script);
+    } catch (error) {
+      return {
+        valid: false,
+        errors: [error instanceof Error ? error.message : 'Unknown error']
+      };
+    }
   }
 
   /**
@@ -185,7 +412,7 @@ class CodeService {
     const script = this.getScript(scriptName);
 
     // 获取对应的执行器
-    const executor = this.executorRegistry.get(script.type);
+    const executor = this.executors.get(script.type);
     if (!executor) {
       return err(new CodeExecutionError(
         `No executor found for script type '${script.type}'`,
@@ -251,85 +478,6 @@ class CodeService {
     return ok(successResults.map(r => r.value));
   }
 
-  /**
-   * 验证脚本
-   * @param scriptName 脚本名称
-   * @returns 验证结果
-   */
-  validateScript(scriptName: string): { valid: boolean; errors: string[] } {
-    try {
-      const script = this.getScript(scriptName);
-      const executor = this.executorRegistry.get(script.type);
-
-      if (!executor) {
-        return {
-          valid: false,
-          errors: [`No executor found for script type '${script.type}'`]
-        };
-      }
-
-      // 使用执行器的验证方法
-      return executor.validate(script);
-    } catch (error) {
-      return {
-        valid: false,
-        errors: [error instanceof Error ? error.message : 'Unknown error']
-      };
-    }
-  }
-
-  /**
-   * 清空所有脚本
-   */
-  clearScripts(): void {
-    this.registry.clear();
-  }
-
-  /**
-   * 清空所有执行器
-   */
-  clearExecutors(): void {
-    this.executorRegistry.clear();
-  }
-
-  /**
-   * 更新脚本定义
-   * @param scriptName 脚本名称
-   * @param updates 更新内容
-   * @throws NotFoundError 如果脚本不存在
-   */
-  updateScript(scriptName: string, updates: Partial<Script>): void {
-    this.registry.update(scriptName, updates);
-  }
-
-  /**
-   * 启用脚本
-   * @param scriptName 脚本名称
-   * @throws NotFoundError 如果脚本不存在
-   */
-  enableScript(scriptName: string): void {
-    this.updateScript(scriptName, { enabled: true });
-  }
-
-  /**
-   * 禁用脚本
-   * @param scriptName 脚本名称
-   * @throws NotFoundError 如果脚本不存在
-   */
-  disableScript(scriptName: string): void {
-    this.updateScript(scriptName, { enabled: false });
-  }
-
-  /**
-   * 检查脚本是否启用
-   * @param scriptName 脚本名称
-   * @returns 是否启用
-   * @throws NotFoundError 如果脚本不存在
-   */
-  isScriptEnabled(scriptName: string): boolean {
-    const script = this.getScript(scriptName);
-    return script.enabled ?? true;
-  }
   /**
    * 转换错误为CodeExecutionError
    *

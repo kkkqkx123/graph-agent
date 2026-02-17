@@ -204,7 +204,7 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    * @returns 验证结果
    */
   async validateScript(scriptName: string): Promise<{ valid: boolean; errors: string[] }> {
-    return this.dependencies.getCodeService().validateScript(scriptName);
+    return this.dependencies.getCodeService().validateScriptWithExecutor(scriptName);
   }
 
   /**
