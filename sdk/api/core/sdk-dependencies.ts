@@ -133,6 +133,7 @@ export class APIDependencyManager {
    */
   async getLLMWrapper(): Promise<import('../../core/llm/wrapper.js').LLMWrapper> {
     const { LLMWrapper } = await import('../../core/llm/wrapper.js');
-    return new LLMWrapper();
+    const eventManager = this.getEventManager();
+    return new LLMWrapper(eventManager);
   }
 }

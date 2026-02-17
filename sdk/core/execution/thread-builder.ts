@@ -9,17 +9,14 @@
 
 import type { PreprocessedGraph } from '@modular-agent/types';
 import type { Thread, ThreadOptions, ThreadStatus } from '@modular-agent/types';
-import { ThreadType } from '@modular-agent/types';
 import { ConversationManager } from './managers/conversation-manager.js';
 import { ThreadContext } from './context/thread-context.js';
-import { NodeType } from '@modular-agent/types';
 import { generateId, now as getCurrentTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
 import { VariableCoordinator } from './coordinators/variable-coordinator.js';
 import { VariableStateManager } from './managers/variable-state-manager.js';
 import { ExecutionError, RuntimeValidationError } from '@modular-agent/types';
 import { type WorkflowRegistry } from '../services/workflow-registry.js';
 import { ExecutionContext } from './context/execution-context.js';
-import { TriggerStatus } from '@modular-agent/types';
 import { getContainer } from '../di/container-config.js';
 import * as Identifiers from '../di/service-identifiers.js';
 
@@ -60,7 +57,7 @@ export class ThreadBuilder {
     const container = getContainer();
     const graphRegistry = container.get(Identifiers.GraphRegistry) as any;
     const preprocessedGraph = graphRegistry.get(workflowId);
-    
+
     if (!preprocessedGraph) {
       throw new ExecutionError(
         `Workflow '${workflowId}' not found or not preprocessed`,

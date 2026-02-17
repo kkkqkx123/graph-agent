@@ -18,6 +18,7 @@ import { abortErrorToResult } from '@modular-agent/common-utils';
 import type { LLMMessage, LLMResult } from '@modular-agent/types';
 import { LLMWrapper } from '../../llm/wrapper.js';
 import { ExecutionError, ThreadInterruptedException, LLMError } from '@modular-agent/types';
+import type { EventManager } from '../../services/event-manager.js';
 
 /**
  * LLM执行请求数据
@@ -63,19 +64,28 @@ export class LLMExecutor {
   private static instance: LLMExecutor;
   private llmWrapper: LLMWrapper;
 
-  private constructor() {
-    this.llmWrapper = new LLMWrapper();
+  private constructor(eventManager?: EventManager) {
+    this.llmWrapper = new LLMWrapper(eventManager);
   }
 
   /**
    * 获取单例实例
+   * @param eventManager 事件管理器（可选）
    * @returns LLMExecutor 实例
    */
-  static getInstance(): LLMExecutor {
+  static getInstance(eventManager?: EventManager): LLMExecutor {
     if (!LLMExecutor.instance) {
-      LLMExecutor.instance = new LLMExecutor();
+      LLMExecutor.instance = new LLMExecutor(eventManager);
     }
     return LLMExecutor.instance;
+  }
+
+  /**
+   * 设置事件管理器
+   * @param eventManager 事件管理器
+   */
+  setEventManager(eventManager: EventManager): void {
+    this.llmWrapper.setEventManager(eventManager);
   }
 
   /**

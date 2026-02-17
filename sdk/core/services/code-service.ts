@@ -10,7 +10,7 @@ import type { Script, ScriptType, ScriptExecutor, ScriptExecutionOptions, Script
 import type { ThreadContext } from '../execution/context/thread-context.js';
 import { CodeRegistry } from '../code/code-registry.js';
 import { CodeExecutionError, ScriptNotFoundError } from '@modular-agent/types';
-import { tryCatchAsync } from '@modular-agent/common-utils';
+import { tryCatchAsyncWithSignal } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 
@@ -201,11 +201,12 @@ class CodeService {
       ...options
     };
 
-    // 执行脚本
-    const result = await tryCatchAsync(
-      executor.execute(script, executionOptions)
+    // 使用 tryCatchAsyncWithSignal 确保 signal 正确传递
+    const result = await tryCatchAsyncWithSignal(
+      (signal: AbortSignal | undefined) => executor.execute(script, { ...executionOptions, signal }),
+      executionOptions?.signal
     );
-    
+
     if (result.isErr()) {
       return err(this.convertToCodeExecutionError(
         result.error,
@@ -214,7 +215,7 @@ class CodeService {
         executionOptions
       ));
     }
-    
+
     return ok(result.value);
   }
 
@@ -237,14 +238,14 @@ class CodeService {
         this.execute(exec.scriptName, exec.options, threadContext)
       )
     );
-    
+
     // 检查是否有错误
     for (const result of results) {
       if (result.isErr()) {
         return result; // 返回第一个错误
       }
     }
-    
+
     // 全部成功，返回结果数组
     const successResults = results as Array<{ isOk(): true; value: ScriptExecutionResult }>;
     return ok(successResults.map(r => r.value));
@@ -348,9 +349,9 @@ class CodeService {
     if (error instanceof CodeExecutionError) {
       return error;
     }
-    
+
     const message = error instanceof Error ? error.message : String(error);
-    
+
     return new CodeExecutionError(
       `Script execution failed: ${message}`,
       scriptName,

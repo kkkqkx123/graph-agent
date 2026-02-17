@@ -38,6 +38,8 @@ export interface ScriptExecutionOptions {
   sandbox?: boolean;
   /** 沙箱配置 */
   sandboxConfig?: SandboxConfig;
+  /** 中止信号（用于取消执行） */
+  signal?: AbortSignal;
 }
 
 /**

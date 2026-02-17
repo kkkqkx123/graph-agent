@@ -7,7 +7,6 @@
  */
 
 import type { Tool } from '@modular-agent/types';
-import { ToolType } from '@modular-agent/types';
 import { ToolError, ToolNotFoundError, RuntimeValidationError } from '@modular-agent/types';
 import { ToolRegistry } from '../tools/tool-registry.js';
 import type { IToolExecutor } from '@modular-agent/tool-executors';
@@ -16,7 +15,7 @@ import { StatelessExecutor } from '@modular-agent/tool-executors';
 import { StatefulExecutor } from '@modular-agent/tool-executors';
 import { RestExecutor } from '@modular-agent/tool-executors';
 import { McpExecutor } from '@modular-agent/tool-executors';
-import { tryCatchAsync } from '@modular-agent/common-utils';
+import { tryCatchAsyncWithSignal } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 import { StaticValidator } from '../validation/tool-static-validator.js';
@@ -189,9 +188,10 @@ class ToolService {
       ));
     }
 
-    // 调用执行器
-    const result = await tryCatchAsync(
-      executor.execute(tool, parameters, options, threadId)
+    // 使用 tryCatchAsyncWithSignal 确保 signal 正确传递
+    const result = await tryCatchAsyncWithSignal(
+      (signal: AbortSignal | undefined) => executor.execute(tool, parameters, { ...options, signal }, threadId),
+      options?.signal
     );
 
     if (result.isErr()) {

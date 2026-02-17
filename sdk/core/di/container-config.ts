@@ -141,7 +141,10 @@ export function initializeContainer(): Container {
   // ============================================================
 
   container.bind(Identifiers.LLMExecutor)
-    .toDynamicValue(() => LLMExecutor.getInstance())
+    .toDynamicValue((c: any) => {
+      const eventManager = c.get(Identifiers.EventManager);
+      return LLMExecutor.getInstance(eventManager);
+    })
     .inSingletonScope();
 
   container.bind(Identifiers.ThreadLifecycleManager)

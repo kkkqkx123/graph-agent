@@ -11,13 +11,14 @@ import type {
   LLMProfile
 } from '@modular-agent/types';
 import { ProfileManager } from './profile-manager.js';
-import { ClientFactory, MessageStream, tryCatchAsync, isAbortError, getThreadInterruptedException } from '@modular-agent/common-utils';
+import { ClientFactory, MessageStream, tryCatchAsync, tryCatchAsyncWithSignal, isAbortError } from '@modular-agent/common-utils';
 import { ConfigurationError, LLMError } from '@modular-agent/types';
 import { now, diffTimestamp, generateId } from '@modular-agent/common-utils';
-import type { EventManager } from '../services/event-manager.js';
-import { MessageStreamBridge, MessageStreamBridgeContext } from './message-stream-bridge.js';
 import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
+import type { EventManager } from '../services/event-manager.js';
+import { EventType } from '@modular-agent/types';
+import { getThreadInterruptedException } from '@modular-agent/common-utils';
 
 /**
  * LLM包装器类
@@ -30,9 +31,10 @@ export class LLMWrapper {
   private clientFactory: ClientFactory;
   private eventManager?: EventManager;
 
-  constructor() {
+  constructor(eventManager?: EventManager) {
     this.profileManager = new ProfileManager();
     this.clientFactory = new ClientFactory();
+    this.eventManager = eventManager;
   }
 
   /**
@@ -67,7 +69,11 @@ export class LLMWrapper {
     const client = this.clientFactory.createClient(profile);
     const startTime = now();
     
-    const result = await tryCatchAsync(client.generate(request));
+    // 使用 tryCatchAsyncWithSignal 确保 signal 正确传递
+    const result = await tryCatchAsyncWithSignal(
+      (signal) => client.generate({ ...request, signal }),
+      request.signal
+    );
     
     if (result.isErr()) {
       return err(this.convertToLLMError(result.error, profile));
@@ -103,50 +109,33 @@ export class LLMWrapper {
     
     // 创建 MessageStream
     const stream = new MessageStream();
-    
-    // 创建事件桥接器
-    let bridge: MessageStreamBridge | undefined;
-    if (this.eventManager) {
-      bridge = new MessageStreamBridge(stream, this.eventManager, {
-        threadId: (request as any).threadId,
-        nodeId: (request as any).nodeId,
-        workflowId: (request as any).workflowId
-      });
-    }
 
-    try {
-      stream.setRequestId(generateId());
-      
-      // 执行流式调用
-      for await (const chunk of client.generateStream(request)) {
-        chunk.duration = diffTimestamp(startTime, now());
+    // 使用 tryCatchAsyncWithSignal 简化异常处理
+    const result = await tryCatchAsyncWithSignal(
+      async (signal) => {
+        stream.setRequestId(generateId());
         
-        if (chunk.finishReason) {
-          stream.setFinalResult(chunk);
-        }
-      }
-      
-      return ok(stream);
-    } catch (error) {
-      if (isAbortError(error)) {
-        if (request.signal) {
-          const reason = getThreadInterruptedException(request.signal);
-          if (reason) {
-            stream.abort();
-          } else {
-            stream.abort();
+        // 执行流式调用
+        for await (const chunk of client.generateStream({ ...request, signal })) {
+          chunk.duration = diffTimestamp(startTime, now());
+          
+          if (chunk.finishReason) {
+            stream.setFinalResult(chunk);
           }
-        } else {
-          stream.abort();
         }
-      }
-      return err(this.convertToLLMError(error, profile));
-    } finally {
-      // 清理桥接器
-      if (bridge) {
-        bridge.destroy();
-      }
+        
+        return stream;
+      },
+      request.signal
+    );
+    
+    if (result.isErr()) {
+      // 触发 LLM 流错误事件
+      this.emitStreamErrorEvent(request, result.error);
+      return err(this.convertToLLMError(result.error, profile));
     }
+    
+    return ok(result.value);
   }
 
   /**
@@ -253,5 +242,49 @@ export class LLMWrapper {
       },
       error instanceof Error ? error : undefined
     );
+  }
+
+  /**
+   * 触发 LLM 流错误事件
+   * @param request LLM 请求
+   * @param error 错误
+   */
+  private emitStreamErrorEvent(request: LLMRequest, error: unknown): void {
+    if (!this.eventManager) {
+      return;
+    }
+
+    const context = (request as any);
+    const nodeId = context.nodeId;
+    const threadId = context.threadId;
+    const workflowId = context.workflowId;
+
+    // 检查是否是中止错误
+    if (isAbortError(error)) {
+      const reason = request.signal
+        ? getThreadInterruptedException(request.signal)?.message || 'Stream aborted'
+        : 'Stream aborted';
+
+      this.eventManager.emit({
+        type: 'LLM_STREAM_ABORTED' as EventType,
+        timestamp: now(),
+        workflowId: workflowId || '',
+        threadId: threadId || '',
+        nodeId: nodeId || '',
+        reason
+      });
+    } else {
+      // 其他错误
+      const errorMessage = error instanceof Error ? error.message : String(error);
+
+      this.eventManager.emit({
+        type: 'LLM_STREAM_ERROR' as EventType,
+        timestamp: now(),
+        workflowId: workflowId || '',
+        threadId: threadId || '',
+        nodeId: nodeId || '',
+        error: errorMessage
+      });
+    }
   }
 }
