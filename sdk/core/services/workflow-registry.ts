@@ -42,7 +42,6 @@ export class WorkflowRegistry {
   private workflowRelationships: Map<string, WorkflowRelationship> = new Map();
   private activeWorkflows: Set<string> = new Set();
   private referenceManager: WorkflowReferenceManager;
-  private graphRegistry?: GraphRegistry;
   private maxRecursionDepth: number;
 
   constructor(options: {
@@ -53,11 +52,11 @@ export class WorkflowRegistry {
   }
 
   /**
-   * 设置GraphRegistry引用
-   * @param graphRegistry GraphRegistry实例
+   * 获取GraphRegistry实例（延迟获取）
+   * @returns GraphRegistry实例
    */
-  setGraphRegistry(graphRegistry: GraphRegistry): void {
-    this.graphRegistry = graphRegistry;
+  private getGraphRegistry(): GraphRegistry {
+    return SingletonRegistry.get<GraphRegistry>('graphRegistry');
   }
 
   /**
@@ -196,12 +195,10 @@ export class WorkflowRegistry {
    * @returns 预处理后的图
    */
   private async preprocessWorkflow(workflow: WorkflowDefinition): Promise<void> {
-    if (!this.graphRegistry) {
-      return;
-    }
+    const graphRegistry = this.getGraphRegistry();
 
     // 检查是否已经预处理过
-    if (this.graphRegistry.has(workflow.id)) {
+    if (graphRegistry.has(workflow.id)) {
       return;
     }
 
@@ -218,7 +215,7 @@ export class WorkflowRegistry {
     const processedGraph = await processWorkflow(workflow, processOptions);
 
     // 缓存处理结果
-    this.graphRegistry.register(processedGraph);
+    graphRegistry.register(processedGraph);
   }
 
   /**

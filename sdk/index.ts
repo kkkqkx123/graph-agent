@@ -5,17 +5,7 @@
  * It re-exports all API layer content and manages global instances.
  */
 
-import { createPackageLogger } from '@modular-agent/common-utils';
 import { ConfigurationError } from '@modular-agent/types';
-
-/**
- * SDK包级别日志器
- * 用于记录SDK级别的日志信息
- */
-export const logger = createPackageLogger('sdk', {
-  level: (process.env['SDK_LOG_LEVEL'] as any) || 'info',
-  json: process.env['NODE_ENV'] === 'production'
-});
 
 /**
  * 全局实例管理器
@@ -139,4 +129,7 @@ export const globalInstanceManager = new GlobalInstanceManager();
 
 // Re-export all API layer content
 export * from './api';
+
+// Re-export utilities
+export * from './utils';
 

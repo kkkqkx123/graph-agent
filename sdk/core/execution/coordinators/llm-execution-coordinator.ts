@@ -92,7 +92,7 @@ export class LLMExecutionCoordinator {
     private executionContext?: ExecutionContext
   ) {
     if (executionContext) {
-      this.interruptionDetector = new (require('../utils/interruption/interruption-detector').InterruptionDetectorImpl)(
+      this.interruptionDetector = new (require('../managers/interruption-detector').InterruptionDetectorImpl)(
         executionContext.getThreadRegistry()
       );
     }

@@ -42,6 +42,8 @@ export default {
     '^@core/(.*)$': '<rootDir>/core/$1',
     '^@api/(.*)$': '<rootDir>/api/$1',
     '^@modular-agent/common-utils/(.*)$': '<rootDir>/../packages/common-utils/src/$1',
+    '^@modular-agent/tool-executors$': '<rootDir>/../packages/tool-executors/src',
+    '^@modular-agent/tool-executors/(.*)$': '<rootDir>/../packages/tool-executors/src/$1',
   },
   testTimeout: 30000,
   verbose: true

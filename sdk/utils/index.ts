@@ -4,3 +4,4 @@
  */
 
 export { encodeText, encodeObject, resetEncoder } from "./token-encoder";
+export { logger } from "./logger";

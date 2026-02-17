@@ -19,16 +19,15 @@
 
 import type { EventManager } from './event-manager';
 import { SDKError, ErrorContext, ErrorSeverity } from '@modular-agent/types';
-import { EventType } from '@modular-agent/types';
 import type { ErrorEvent } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
-import { logger } from '../../index';
+import { logger } from '../../utils/logger';
 
 /**
  * ErrorService - 错误处理服务类
  */
 class ErrorService {
-  constructor(private eventManager: EventManager) {}
+  constructor(private eventManager: EventManager) { }
 
   /**
    * 统一错误处理函数

@@ -28,6 +28,7 @@ import { GlobalMessageStorage } from '../../services/global-message-storage';
 import { NodeTemplateRegistry } from '../../services/node-template-registry';
 import { TriggerTemplateRegistry } from '../../services/trigger-template-registry';
 import { TaskRegistry } from '../../services/task-registry';
+import { LLMExecutor } from '../executors/llm-executor';
 
 /**
  * 单例注册表
@@ -67,31 +68,31 @@ export class SingletonRegistry {
     if (!this.has('taskRegistry')) {
       this.register('taskRegistry', TaskRegistry.getInstance());
     }
+    if (!this.has('llmExecutor')) {
+      this.register('llmExecutor', LLMExecutor.getInstance());
+    }
 
     // 第二层：依赖第一层的服务
     if (!this.has('errorService')) {
-      const eventManager = this.get<EventManager>('eventManager');
+      const eventManager = this.instances.get('eventManager') as EventManager;
       this.register('errorService', new ErrorService(eventManager));
     }
 
     // 第三层：相互依赖的服务
-    if (!this.has('graphRegistry')) {
-      this.register('graphRegistry', new GraphRegistry());
-    }
-    if (!this.has('workflowRegistry')) {
-      this.register('workflowRegistry', new WorkflowRegistry({ maxRecursionDepth: 10 }));
-    }
+    // 先注册 ThreadRegistry（WorkflowReferenceManager 需要它）
     if (!this.has('threadRegistry')) {
       this.register('threadRegistry', new ThreadRegistry());
     }
-
-    // 设置服务间的依赖关系
-    const graphRegistry = this.get<GraphRegistry>('graphRegistry');
-    const workflowRegistry = this.get<WorkflowRegistry>('workflowRegistry');
-    const threadRegistry = this.get<ThreadRegistry>('threadRegistry');
-
-    // workflow-registry 依赖 graph-registry
-    workflowRegistry.setGraphRegistry(graphRegistry);
+    
+    // 再注册 GraphRegistry
+    if (!this.has('graphRegistry')) {
+      this.register('graphRegistry', new GraphRegistry());
+    }
+    
+    // 最后注册 WorkflowRegistry（依赖 ThreadRegistry，通过延迟获取访问 GraphRegistry）
+    if (!this.has('workflowRegistry')) {
+      this.register('workflowRegistry', new WorkflowRegistry({ maxRecursionDepth: 10 }));
+    }
 
     this.initialized = true;
   }
