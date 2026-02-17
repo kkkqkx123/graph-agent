@@ -19,13 +19,8 @@ export interface Ok<T, E = Error> {
   isOk(): this is Ok<T, E>;
   isErr(): this is Err<E>;
   unwrap(): T;
-  unwrapOr(defaultValue: T): T;
   unwrapOrElse(fn: (error: never) => T): T;
-  map<U>(fn: (value: T) => U): Result<U, E>;
-  mapErr<F>(fn: (error: never) => F): Result<T, F>;
   andThen<U>(fn: (value: T) => Result<U, E>): Result<U, E>;
-  orElse<F>(fn: (error: never) => Result<T, F>): Result<T, F>;
-  match<U>(matcher: { ok: (value: T) => U; err: (error: never) => U }): U;
 }
 
 /**
@@ -37,11 +32,7 @@ export interface Err<E> {
   isOk(): this is Ok<never, E>;
   isErr(): this is Err<E>;
   unwrap(): never;
-  unwrapOr<T>(defaultValue: T): T;
   unwrapOrElse<T>(fn: (error: E) => T): T;
-  map<U>(fn: (value: never) => U): Result<never, E>;
-  mapErr<F>(fn: (error: E) => F): Result<never, F>;
   andThen<U>(fn: (value: never) => Result<U, E>): Result<U, E>;
   orElse<T, F>(fn: (error: E) => Result<T, F>): Result<T, F>;
-  match<U>(matcher: { ok: (value: never) => U; err: (error: E) => U }): U;
 }

@@ -15,7 +15,7 @@ import { StatelessExecutor } from '@modular-agent/tool-executors';
 import { StatefulExecutor } from '@modular-agent/tool-executors';
 import { RestExecutor } from '@modular-agent/tool-executors';
 import { McpExecutor } from '@modular-agent/tool-executors';
-import { tryCatchAsyncWithSignal } from '@modular-agent/common-utils';
+import { tryCatchAsyncWithSignal, all } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 import { StaticValidator } from '../validation/tool-static-validator.js';
@@ -222,16 +222,8 @@ class ToolService {
       )
     );
 
-    // 检查是否有错误
-    for (const result of results) {
-      if (result.isErr()) {
-        return result; // 返回第一个错误
-      }
-    }
-
-    // 全部成功，返回结果数组
-    const successResults = results as Array<{ isOk(): true; value: ToolExecutionResult }>;
-    return ok(successResults.map(r => r.value));
+    // 组合结果，全部成功时返回成功，否则返回第一个错误
+    return all(results);
   }
 
   /**

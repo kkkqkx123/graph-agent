@@ -9,6 +9,6 @@ export { generateSubgraphNamespace, generateNamespacedNodeId, generateNamespaced
 export { now, timestampFromDate, timestampToDate, timestampToISOString, nowWithTimezone, diffTimestamp, formatDuration } from './timestamp-utils.js';
 export { initialVersion } from './version-utils.js';
 export { emptyMetadata, getMetadata, setMetadata, deleteMetadata, hasMetadata, mergeMetadata } from './metadata-utils.js';
-export { ok, err, tryCatch, tryCatchAsync, tryCatchAsyncWithSignal, all, any } from './result-utils.js';
+export { ok, err, tryCatchAsyncWithSignal, all, any } from './result-utils.js';
 
 export * from './signal/index.js';

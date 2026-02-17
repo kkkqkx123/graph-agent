@@ -18,26 +18,11 @@ export function ok<T, E = Error>(value: T): Ok<T, E> {
     unwrap() {
       return this.value;
     },
-    unwrapOr() {
-      return this.value;
-    },
     unwrapOrElse() {
       return this.value;
     },
-    map(fn) {
-      return ok(fn(this.value));
-    },
-    mapErr() {
-      return this as any;
-    },
     andThen(fn) {
       return fn(this.value);
-    },
-    orElse() {
-      return this as any;
-    },
-    match(matcher) {
-      return matcher.ok(this.value);
     }
   };
 }
@@ -60,55 +45,16 @@ export function err<E>(error: E): Err<E> {
     unwrap() {
       throw new Error(`Called unwrap on an Err: ${String(this.error)}`);
     },
-    unwrapOr(defaultValue: never) {
-      return defaultValue;
-    },
     unwrapOrElse(fn) {
       return fn(this.error);
-    },
-    map() {
-      return this as any;
-    },
-    mapErr(fn) {
-      return err(fn(this.error));
     },
     andThen() {
       return this as any;
     },
     orElse(fn) {
       return fn(this.error);
-    },
-    match(matcher) {
-      return matcher.err(this.error);
     }
   };
-}
-
-/**
- * 从可能抛出异常的函数创建Result
- * @param fn 可能抛出异常的函数
- * @returns Result实例
- */
-export function tryCatch<T>(fn: () => T): Result<T, Error> {
-  try {
-    return ok(fn());
-  } catch (error) {
-    return err(error instanceof Error ? error : new Error(String(error)));
-  }
-}
-
-/**
- * 从Promise创建Result
- * @param promise Promise对象
- * @returns Result的Promise
- */
-export async function tryCatchAsync<T>(promise: Promise<T>): Promise<Result<T, Error>> {
-  try {
-    const value = await promise;
-    return ok(value);
-  } catch (error) {
-    return err(error instanceof Error ? error : new Error(String(error)));
-  }
 }
 
 /**

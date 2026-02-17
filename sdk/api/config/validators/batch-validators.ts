@@ -13,7 +13,7 @@ import type { NodeTemplate } from '@modular-agent/types';
 import type { TriggerTemplate } from '@modular-agent/types';
 import type { Script } from '@modular-agent/types';
 import type { ConfigFile } from '../types.js';
-import { ok, err } from '@modular-agent/common-utils';
+import { ok, err, all } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 import { ValidationError } from '@modular-agent/types';
 import { validateWorkflowConfig } from './workflow-validator.js';
@@ -28,20 +28,13 @@ import { validateScriptConfig } from './script-validator.js';
  */
 export function validateBatchWorkflows(
   configs: ConfigFile[]
-): Result<WorkflowDefinition[], ValidationError[][]> {
+): Result<WorkflowDefinition[], ValidationError[]> {
   const results: Result<WorkflowDefinition, ValidationError[]>[] = configs.map(config =>
     validateWorkflowConfig(config)
   );
 
-  // 检查是否有验证失败的情况
-  const errors = results.filter(r => r.isErr()).map(r => r.error);
-  if (errors.length > 0) {
-    return err(errors);
-  }
-
-  // 所有验证都成功，返回成功结果
-  const workflows = results.filter(r => r.isOk()).map(r => r.value);
-  return ok(workflows);
+  // 组合结果，全部成功时返回成功，否则返回第一个错误
+  return all(results);
 }
 
 /**
@@ -51,20 +44,13 @@ export function validateBatchWorkflows(
  */
 export function validateBatchNodeTemplates(
   configs: ConfigFile[]
-): Result<NodeTemplate[], ValidationError[][]> {
+): Result<NodeTemplate[], ValidationError[]> {
   const results: Result<NodeTemplate, ValidationError[]>[] = configs.map(config =>
     validateNodeTemplateConfig(config)
   );
 
-  // 检查是否有验证失败的情况
-  const errors = results.filter(r => r.isErr()).map(r => r.error);
-  if (errors.length > 0) {
-    return err(errors);
-  }
-
-  // 所有验证都成功，返回成功结果
-  const templates = results.filter(r => r.isOk()).map(r => r.value);
-  return ok(templates);
+  // 组合结果，全部成功时返回成功，否则返回第一个错误
+  return all(results);
 }
 
 /**
@@ -74,20 +60,13 @@ export function validateBatchNodeTemplates(
 */
 export function validateBatchTriggerTemplates(
   configs: ConfigFile[]
-): Result<TriggerTemplate[], ValidationError[][]> {
+): Result<TriggerTemplate[], ValidationError[]> {
   const results: Result<TriggerTemplate, ValidationError[]>[] = configs.map(config =>
     validateTriggerTemplateConfig(config)
   );
 
-  // 检查是否有验证失败的情况
-  const errors = results.filter(r => r.isErr()).map(r => r.error);
-  if (errors.length > 0) {
-    return err(errors);
-  }
-
-  // 所有验证都成功，返回成功结果
-  const templates = results.filter(r => r.isOk()).map(r => r.value);
-  return ok(templates);
+  // 组合结果，全部成功时返回成功，否则返回第一个错误
+  return all(results);
 }
 
 /**
@@ -97,18 +76,11 @@ export function validateBatchTriggerTemplates(
  */
 export function validateBatchScripts(
   configs: ConfigFile[]
-): Result<Script[], ValidationError[][]> {
+): Result<Script[], ValidationError[]> {
   const results: Result<Script, ValidationError[]>[] = configs.map(config =>
     validateScriptConfig(config)
   );
 
-  // 检查是否有验证失败的情况
-  const errors = results.filter(r => r.isErr()).map(r => r.error);
-  if (errors.length > 0) {
-    return err(errors);
-  }
-
-  // 所有验证都成功，返回成功结果
-  const scripts = results.filter(r => r.isOk()).map(r => r.value);
-  return ok(scripts);
+  // 组合结果，全部成功时返回成功，否则返回第一个错误
+  return all(results);
 }

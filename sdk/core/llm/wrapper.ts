@@ -11,7 +11,7 @@ import type {
   LLMProfile
 } from '@modular-agent/types';
 import { ProfileManager } from './profile-manager.js';
-import { ClientFactory, MessageStream, tryCatchAsync, tryCatchAsyncWithSignal, isAbortError } from '@modular-agent/common-utils';
+import { ClientFactory, MessageStream, tryCatchAsyncWithSignal, isAbortError } from '@modular-agent/common-utils';
 import { ConfigurationError, LLMError, AbortError } from '@modular-agent/types';
 import { now, diffTimestamp, generateId } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';

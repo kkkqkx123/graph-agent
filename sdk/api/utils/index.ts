@@ -4,7 +4,7 @@
  */
 
 // Result类型 - 从核心层导入
-export { ok, err, tryCatch, tryCatchAsync, all, any } from '@modular-agent/common-utils';
+export { ok, err, all, any, tryCatchAsyncWithSignal } from '@modular-agent/common-utils';
 export type { Result, Ok, Err } from '@modular-agent/types';
 
 // Observable类型
