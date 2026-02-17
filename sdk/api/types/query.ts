@@ -3,6 +3,8 @@
  * 定义纯查询操作的统一接口
  */
 
+import { now, diffTimestamp } from '@modular-agent/common-utils';
+
 /**
  * Query 元数据
  */
@@ -77,7 +79,7 @@ export interface Query<T> {
  * 提供通用的查询实现
  */
 export abstract class BaseQuery<T> implements Query<T> {
-  protected readonly startTime: number = Date.now();
+  protected readonly startTime: number = now();
   
   /**
    * 执行查询
@@ -93,6 +95,6 @@ export abstract class BaseQuery<T> implements Query<T> {
    * 获取执行时间
    */
   protected getExecutionTime(): number {
-    return Date.now() - this.startTime;
+    return diffTimestamp(this.startTime, now());
   }
 }

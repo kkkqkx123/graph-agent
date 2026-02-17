@@ -20,6 +20,7 @@ import {
   validateBoolean
 } from '../../validation/validation-strategy.js';
 
+import { now, diffTimestamp } from '@modular-agent/common-utils';
 import { GenericResourceAPI } from '../generic-resource-api.js';
 import type { ExecutionResult } from '../../types/execution-result.js';
 import { success, failure } from '../../types/execution-result.js';
@@ -163,7 +164,7 @@ export class HumanRelayResourceAPI extends GenericResourceAPI<HumanRelayConfig, 
    * @returns 执行结果
    */
   async handleRequest(request: HumanRelayRequest): Promise<ExecutionResult<HumanRelayResponse>> {
-    const startTime = Date.now();
+    const startTime = now();
 
     try {
       if (!this.humanRelayHandler) {
@@ -173,7 +174,7 @@ export class HumanRelayResourceAPI extends GenericResourceAPI<HumanRelayConfig, 
             'humanRelayHandler',
             { code: 'HANDLER_NOT_REGISTERED' }
           ),
-          Date.now() - startTime
+          diffTimestamp(startTime, now())
         );
       }
 
@@ -183,7 +184,7 @@ export class HumanRelayResourceAPI extends GenericResourceAPI<HumanRelayConfig, 
       // 调用处理器
       const response = await this.humanRelayHandler.handle(request, context);
 
-      return success(response, Date.now() - startTime);
+      return success(response, diffTimestamp(startTime, now()));
     } catch (error) {
       return this.handleError(error, 'HANDLE_RELAY_REQUEST', startTime);
     }
@@ -407,9 +408,9 @@ export class HumanRelayResourceAPI extends GenericResourceAPI<HumanRelayConfig, 
    * @returns 执行结果
    */
   async getConfigCount(): Promise<ExecutionResult<number>> {
-    const startTime = Date.now();
+    const startTime = now();
     try {
-      return success(this.configs.size, Date.now() - startTime);
+      return success(this.configs.size, diffTimestamp(startTime, now()));
     } catch (error) {
       return this.handleError(error, 'GET_CONFIG_COUNT', startTime);
     }
@@ -422,7 +423,7 @@ export class HumanRelayResourceAPI extends GenericResourceAPI<HumanRelayConfig, 
    * @returns 执行结果
    */
   async setConfigEnabled(id: string, enabled: boolean): Promise<ExecutionResult<void>> {
-    const startTime = Date.now();
+    const startTime = now();
     try {
       const config = this.configs.get(id);
       if (!config) {
@@ -433,14 +434,14 @@ export class HumanRelayResourceAPI extends GenericResourceAPI<HumanRelayConfig, 
             id,
             { code: 'CONFIG_NOT_FOUND' }
           ),
-          Date.now() - startTime
+          diffTimestamp(startTime, now())
         );
       }
 
       config.enabled = enabled;
       this.configs.set(id, config);
 
-      return success(undefined, Date.now() - startTime);
+      return success(undefined, diffTimestamp(startTime, now()));
     } catch (error) {
       return this.handleError(error, 'SET_CONFIG_ENABLED', startTime);
     }

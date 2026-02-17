@@ -2,6 +2,7 @@
  * ExecuteToolCommand - 执行工具命令
  */
 
+import { now, diffTimestamp } from '@modular-agent/common-utils';
 import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
 import type { ID, ToolOptions } from '@modular-agent/types';
 import type { ToolExecutionResult } from '@modular-agent/types';
@@ -21,7 +22,7 @@ export class ExecuteToolCommand extends BaseCommand<ToolExecutionResult> {
   }
 
   protected async executeInternal(): Promise<ToolExecutionResult> {
-    const startTime = Date.now();
+    const startTime = now();
     const executionOptions = {
       timeout: this.options?.timeout,
       maxRetries: this.options?.maxRetries,
@@ -37,7 +38,7 @@ export class ExecuteToolCommand extends BaseCommand<ToolExecutionResult> {
 
     // 执行工具
     const result = await this.dependencies.getToolService().execute(this.toolId, this.parameters, executionOptions);
-    const executionTime = Date.now() - startTime;
+    const executionTime = diffTimestamp(startTime, now());
 
     // 处理 Result 类型，提取成功的结果或抛出错误
     if (result.isErr()) {

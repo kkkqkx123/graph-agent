@@ -19,6 +19,7 @@ import {
   validatePositiveNumber
 } from '../../validation/validation-strategy.js';
 
+import { now, diffTimestamp } from '@modular-agent/common-utils';
 import { GenericResourceAPI } from '../generic-resource-api.js';
 import type { ExecutionResult } from '../../types/execution-result.js';
 import { success, failure } from '../../types/execution-result.js';
@@ -156,7 +157,7 @@ export class UserInteractionResourceAPI extends GenericResourceAPI<UserInteracti
    * @returns 执行结果
    */
   async handleInteraction(request: UserInteractionRequest): Promise<ExecutionResult<any>> {
-    const startTime = Date.now();
+    const startTime = now();
 
     try {
       if (!this.userInteractionHandler) {
@@ -166,7 +167,7 @@ export class UserInteractionResourceAPI extends GenericResourceAPI<UserInteracti
             'userInteractionHandler',
             { code: 'HANDLER_NOT_REGISTERED' }
           ),
-          Date.now() - startTime
+          diffTimestamp(startTime, now())
         );
       }
 
@@ -176,7 +177,7 @@ export class UserInteractionResourceAPI extends GenericResourceAPI<UserInteracti
       // 调用处理器
       const result = await this.userInteractionHandler.handle(request, context);
 
-      return success(result, Date.now() - startTime);
+      return success(result, diffTimestamp(startTime, now()));
     } catch (error) {
       return this.handleError(error, 'HANDLE_INTERACTION', startTime);
     }
@@ -384,9 +385,9 @@ export class UserInteractionResourceAPI extends GenericResourceAPI<UserInteracti
    * @returns 执行结果
    */
   async getConfigCount(): Promise<ExecutionResult<number>> {
-    const startTime = Date.now();
+    const startTime = now();
     try {
-      return success(this.configs.size, Date.now() - startTime);
+      return success(this.configs.size, diffTimestamp(startTime, now()));
     } catch (error) {
       return this.handleError(error, 'GET_CONFIG_COUNT', startTime);
     }

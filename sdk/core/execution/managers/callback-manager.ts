@@ -15,6 +15,7 @@
 
 import type { CallbackInfo, DynamicThreadEvent } from '../types/dynamic-thread.types.js';
 import { DynamicThreadEventType } from '../types/dynamic-thread.types.js';
+import { now } from '@modular-agent/common-utils';
 
 /**
  * 回调信息接口（泛型版本）
@@ -63,7 +64,7 @@ export class CallbackManager<T = any> {
       resolve,
       reject,
       eventListeners: [],
-      registeredAt: Date.now()
+      registeredAt: now()
     };
 
     this.callbacks.set(threadId, callbackInfo);
@@ -90,7 +91,7 @@ export class CallbackManager<T = any> {
       const event: DynamicThreadEvent = {
         type: 'DYNAMIC_THREAD_COMPLETED',
         threadId,
-        timestamp: Date.now(),
+        timestamp: now(),
         data: { result }
       };
 
@@ -133,7 +134,7 @@ export class CallbackManager<T = any> {
       const event: DynamicThreadEvent = {
         type: 'DYNAMIC_THREAD_FAILED',
         threadId,
-        timestamp: Date.now(),
+        timestamp: now(),
         data: { error }
       };
 

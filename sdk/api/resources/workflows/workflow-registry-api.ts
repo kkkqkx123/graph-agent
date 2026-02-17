@@ -10,6 +10,7 @@ import {
   validatePattern
 } from '../../validation/validation-strategy.js';
 
+import { now } from '@modular-agent/common-utils';
 import { GenericResourceAPI } from '../generic-resource-api.js';
 import type { WorkflowDefinition, WorkflowFilter, WorkflowSummary } from '@modular-agent/types';
 import type { APIDependencyManager } from '../../core/sdk-dependencies.js';
@@ -108,7 +109,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
       ...existingWorkflow,
       ...updates,
       version: newVersion,
-      updatedAt: Date.now()
+      updatedAt: now()
     };
 
     // 注册新版本的工作流

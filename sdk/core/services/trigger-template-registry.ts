@@ -14,7 +14,7 @@ import type { WorkflowTrigger } from '@modular-agent/types';
 import { ValidationError, NotFoundError, ConfigurationValidationError, TriggerTemplateNotFoundError } from '@modular-agent/types';
 import { EventType } from '@modular-agent/types';
 import { TriggerActionType } from '@modular-agent/types';
-import { getErrorMessage } from '@modular-agent/common-utils';
+import { getErrorMessage, now } from '@modular-agent/common-utils';
 
 /**
  * 触发器模板注册表类
@@ -95,7 +95,7 @@ class TriggerTemplateRegistry {
       ...template,
       ...updates,
       name: template.name, // 名称不可更改
-      updatedAt: Date.now()
+      updatedAt: now()
     };
 
     // 验证更新后的模板

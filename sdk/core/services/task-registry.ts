@@ -14,7 +14,7 @@
  * - 提供管理器路由功能
  */
 
-import { generateId } from '@modular-agent/common-utils';
+import { generateId, now } from '@modular-agent/common-utils';
 import type { ThreadContext } from '../execution/context/thread-context.js';
 import type { ThreadResult } from '@modular-agent/types';
 import { TaskStatus, type TaskInfo } from '../execution/types/task.types.js';
@@ -95,7 +95,7 @@ export class TaskRegistry {
       id: taskId,
       threadContext,
       status: 'QUEUED',
-      submitTime: Date.now(),
+      submitTime: now(),
       timeout
     };
 
@@ -113,7 +113,7 @@ export class TaskRegistry {
     const taskInfo = this.tasks.get(taskId);
     if (taskInfo) {
       taskInfo.status = 'RUNNING';
-      taskInfo.startTime = Date.now();
+      taskInfo.startTime = now();
     }
   }
 
@@ -126,7 +126,7 @@ export class TaskRegistry {
     const taskInfo = this.tasks.get(taskId);
     if (taskInfo) {
       taskInfo.status = 'COMPLETED';
-      taskInfo.completeTime = Date.now();
+      taskInfo.completeTime = now();
       taskInfo.result = result;
       this.stats.completed++;
     }
@@ -141,7 +141,7 @@ export class TaskRegistry {
     const taskInfo = this.tasks.get(taskId);
     if (taskInfo) {
       taskInfo.status = 'FAILED';
-      taskInfo.completeTime = Date.now();
+      taskInfo.completeTime = now();
       taskInfo.error = error;
       this.stats.failed++;
     }
@@ -155,7 +155,7 @@ export class TaskRegistry {
     const taskInfo = this.tasks.get(taskId);
     if (taskInfo) {
       taskInfo.status = 'CANCELLED';
-      taskInfo.completeTime = Date.now();
+      taskInfo.completeTime = now();
       this.stats.cancelled++;
     }
   }
@@ -168,7 +168,7 @@ export class TaskRegistry {
     const taskInfo = this.tasks.get(taskId);
     if (taskInfo) {
       taskInfo.status = 'TIMEOUT';
-      taskInfo.completeTime = Date.now();
+      taskInfo.completeTime = now();
       this.stats.timeout++;
     }
   }
@@ -254,7 +254,7 @@ export class TaskRegistry {
    * @returns 清理的任务数量
    */
   cleanup(retentionTime: number = 60 * 60 * 1000): number {
-    const now = Date.now();
+    const currentTime = now();
     let cleanedCount = 0;
 
     for (const [taskId, taskInfo] of this.tasks.entries()) {
@@ -265,7 +265,7 @@ export class TaskRegistry {
           taskInfo.status === 'CANCELLED' ||
           taskInfo.status === 'TIMEOUT') &&
         taskInfo.completeTime &&
-        (now - taskInfo.completeTime) > retentionTime
+        (currentTime - taskInfo.completeTime) > retentionTime
       ) {
         this.tasks.delete(taskId);
         this.taskManagers.delete(taskId);

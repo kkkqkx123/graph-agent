@@ -19,6 +19,7 @@
  */
 
 import type { LLMMessage } from '@modular-agent/types';
+import { now } from '@modular-agent/common-utils';
 
 /**
  * 批次消息快照
@@ -109,7 +110,7 @@ class GlobalMessageStorage {
     snapshots.set(batchId, {
       batchId,
       messages: messages.map(msg => ({ ...msg })),
-      timestamp: Date.now()
+      timestamp: now()
     });
   }
 

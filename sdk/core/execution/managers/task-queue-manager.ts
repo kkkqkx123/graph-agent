@@ -22,7 +22,7 @@ import type { ThreadContext } from '../context/thread-context.js';
 import type { ThreadResult } from '@modular-agent/types';
 import { TaskStatus } from '../types/task.types.js';
 import { type QueueTask, type ExecutedSubgraphResult, type TaskSubmissionResult } from '../types/triggered-subgraph.types.js';
-import { now, getErrorMessage } from '@modular-agent/common-utils';
+import { now, diffTimestamp, getErrorMessage } from '@modular-agent/common-utils';
 
 /**
  * TaskQueueManager - 任务队列管理器
@@ -88,7 +88,7 @@ export class TaskQueueManager {
         threadContext,
         resolve: resolve as any,
         reject,
-        submitTime: Date.now(),
+        submitTime: now(),
         timeout
       };
 
@@ -112,7 +112,7 @@ export class TaskQueueManager {
       threadContext,
       resolve: () => {}, // 异步任务不需要 resolve
       reject: () => {}, // 异步任务不需要 reject
-      submitTime: Date.now(),
+      submitTime: now(),
       timeout
     };
 
@@ -125,7 +125,7 @@ export class TaskQueueManager {
       taskId,
       status: 'QUEUED',
       message: 'Task submitted successfully',
-      submitTime: Date.now()
+      submitTime: now()
     };
   }
 
@@ -167,18 +167,18 @@ export class TaskQueueManager {
    * @param queueTask 队列任务
    */
   private async executeTask(executor: ThreadExecutor, queueTask: QueueTask): Promise<void> {
-    const startTime = Date.now();
+    const startTime = now();
     
     try {
       // 执行线程
       const threadResult = await executor.executeThread(queueTask.threadContext);
       
-      const executionTime = Date.now() - startTime;
+      const executionTime = diffTimestamp(startTime, now());
       
       // 处理任务完成
       await this.handleTaskCompleted(queueTask, threadResult, executionTime);
     } catch (error) {
-      const executionTime = Date.now() - startTime;
+      const executionTime = diffTimestamp(startTime, now());
       
       // 处理任务失败
       await this.handleTaskFailed(queueTask, error as Error, executionTime);

@@ -8,7 +8,7 @@ import type { NodeExecutionResult } from '@modular-agent/types';
 import { ValidationError, NotFoundError, RuntimeValidationError, ThreadContextNotFoundError } from '@modular-agent/types';
 import { EventType } from '@modular-agent/types';
 import { ExecutionContext } from '../../context/execution-context.js';
-import { getErrorMessage } from '@modular-agent/common-utils';
+import { getErrorMessage, now } from '@modular-agent/common-utils';
 
 /**
  * 创建成功结果
@@ -59,7 +59,7 @@ export async function skipNodeHandler(
   triggerId: string,
   executionContext?: ExecutionContext
 ): Promise<TriggerExecutionResult> {
-  const executionTime = Date.now();
+  const executionTime = now();
   const context = executionContext || ExecutionContext.createDefault();
 
   try {
@@ -98,7 +98,7 @@ export async function skipNodeHandler(
     const eventManager = context.getEventManager();
     const completedEvent = {
       type: 'NODE_COMPLETED' as EventType,
-      timestamp: Date.now(),
+      timestamp: now(),
       workflowId: threadContext.getWorkflowId(),
       threadId: threadContext.getThreadId(),
       nodeId,

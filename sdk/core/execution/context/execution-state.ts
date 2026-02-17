@@ -5,6 +5,7 @@
  */
 
 import type { ID } from '@modular-agent/types';
+import { now } from '@modular-agent/common-utils';
 
 /**
  * 子图执行上下文
@@ -61,7 +62,7 @@ export class ExecutionState {
     this.subgraphStack.push({
       workflowId,
       parentWorkflowId,
-      startTime: Date.now(),
+      startTime: now(),
       input,
       depth: this.subgraphStack.length
     });

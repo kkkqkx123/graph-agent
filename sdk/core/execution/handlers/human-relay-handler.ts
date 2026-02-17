@@ -24,7 +24,7 @@ import type { HumanRelayRequest, HumanRelayResponse, HumanRelayExecutionResult, 
 import type { EventManager } from '../../services/event-manager.js';
 import type { ThreadContext } from '../context/thread-context.js';
 import { EventType, MessageRole } from '@modular-agent/types';
-import { generateId, now, getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
+import { generateId, now, diffTimestamp, getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
 
 /**
  * HumanRelay 任务接口
@@ -270,7 +270,7 @@ export async function executeHumanRelay(
   nodeId: string
 ): Promise<HumanRelayExecutionResult> {
   const requestId = generateId();
-  const startTime = Date.now();
+  const startTime = now();
 
   const task: HumanRelayTask = {
     messages,
@@ -301,7 +301,7 @@ export async function executeHumanRelay(
     const message = convertToLLMMessage(task, response);
 
     // 7. 触发 HUMAN_RELAY_PROCESSED 事件
-    const executionTime = Date.now() - startTime;
+    const executionTime = diffTimestamp(startTime, now());
     await emitHumanRelayProcessedEvent(task, message, executionTime, eventManager);
 
     return {

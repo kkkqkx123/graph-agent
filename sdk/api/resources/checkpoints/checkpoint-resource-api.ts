@@ -3,6 +3,7 @@
  * 继承GenericResourceAPI，提供统一的CRUD操作
  */
 
+import { now } from '@modular-agent/common-utils';
 import { GenericResourceAPI } from '../generic-resource-api.js';
 import { CheckpointStateManager } from '../../../core/execution/managers/checkpoint-state-manager.js';
 import type { Checkpoint, CheckpointMetadata } from '@modular-agent/types';
@@ -187,7 +188,7 @@ export class CheckpointResourceAPI extends GenericResourceAPI<Checkpoint, string
       if (checkpoint) {
         await this.eventManager.emit({
           type: 'CHECKPOINT_RESTORED' as any,
-          timestamp: Date.now(),
+          timestamp: now(),
           workflowId: checkpoint.workflowId,
           threadId: threadContext.getThreadId(),
           checkpointId,

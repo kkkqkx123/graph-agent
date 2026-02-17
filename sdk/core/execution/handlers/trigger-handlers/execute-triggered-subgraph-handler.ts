@@ -18,7 +18,7 @@ import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types
 import type { ExecuteTriggeredSubgraphActionConfig } from '@modular-agent/types';
 import { RuntimeValidationError, ThreadContextNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
 import { ExecutionContext } from '../../context/execution-context.js';
-import { getErrorMessage } from '@modular-agent/common-utils';
+import { getErrorMessage, now, diffTimestamp } from '@modular-agent/common-utils';
 import { TriggeredSubworkflowManager } from '../../managers/triggered-subworkflow-manager.js';
 import type { TriggeredSubgraphTask } from '../../types/triggered-subgraph.types.js';
 import { getContainer } from '../../../di/index.js';
@@ -108,7 +108,7 @@ export async function executeTriggeredSubgraphHandler(
   triggerId: string,
   executionContext?: ExecutionContext
 ): Promise<TriggerExecutionResult> {
-  const startTime = Date.now();
+  const startTime = now();
   const context = executionContext || ExecutionContext.createDefault();
 
   try {
@@ -177,7 +177,7 @@ export async function executeTriggeredSubgraphHandler(
     // 执行触发子工作流
     const result = await manager.executeTriggeredSubgraph(task);
 
-    const executionTime = Date.now() - startTime;
+    const executionTime = diffTimestamp(startTime, now());
 
     // 根据执行模式返回不同的结果
     if (waitForCompletion) {
@@ -204,13 +204,13 @@ export async function executeTriggeredSubgraphHandler(
           triggeredWorkflowId,
           taskId: asyncResult.taskId,
           status: asyncResult.status,
-          executionTime: asyncResult.submitTime - startTime,
+          executionTime: diffTimestamp(startTime, now()),
         },
         executionTime
       );
     }
   } catch (error) {
-    const executionTime = Date.now() - startTime;
+    const executionTime = diffTimestamp(startTime, now());
     return createFailureResult(triggerId, action, error, executionTime);
   }
 }

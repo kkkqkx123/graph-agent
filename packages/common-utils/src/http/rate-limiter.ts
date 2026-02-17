@@ -4,6 +4,8 @@
  * 使用令牌桶算法限制请求速率
  */
 
+import { now } from '../utils/timestamp-utils.js';
+
 /**
  * 限流器配置
  */
@@ -28,7 +30,7 @@ export class RateLimiter {
     this.capacity = config.capacity;
     this.refillRate = config.refillRate;
     this.tokens = config.capacity;
-    this.lastRefill = Date.now();
+    this.lastRefill = now();
   }
 
   /**
@@ -62,19 +64,19 @@ export class RateLimiter {
    */
   reset(): void {
     this.tokens = this.capacity;
-    this.lastRefill = Date.now();
+    this.lastRefill = now();
   }
 
   /**
    * 填充令牌
    */
   private refill(): void {
-    const now = Date.now();
-    const timePassed = (now - this.lastRefill) / 1000; // 转换为秒
+    const currentTime = now();
+    const timePassed = (currentTime - this.lastRefill) / 1000; // 转换为秒
     const tokensToAdd = timePassed * this.refillRate;
 
     this.tokens = Math.min(this.capacity, this.tokens + tokensToAdd);
-    this.lastRefill = now;
+    this.lastRefill = currentTime;
   }
 
   /**

@@ -14,7 +14,7 @@ import {
   APIEventListener
 } from '../types/event-types.js';
 import { SDKError, ErrorSeverity } from '@modular-agent/types';
-import { getErrorOrNew } from '@modular-agent/common-utils';
+import { getErrorOrNew, now } from '@modular-agent/common-utils';
 
 /**
  * 事件总线类
@@ -113,7 +113,7 @@ export class APIEventBus {
  */
 export class APIEventBuilder {
   private event: Partial<APIEventData> = {
-    timestamp: Date.now(),
+    timestamp: now(),
     eventId: this.generateEventId()
   };
 
@@ -179,7 +179,7 @@ export class APIEventBuilder {
    * 生成事件ID
    */
   private generateEventId(): string {
-    return `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `evt_${now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 }
 

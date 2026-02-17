@@ -13,7 +13,7 @@ import type { Thread } from '@modular-agent/types';
 import type { UserInteractionHandler as AppUserInteractionHandler, UserInteractionRequest } from '@modular-agent/types';
 import type { VariableScope } from '@modular-agent/types';
 import { ExecutionError } from '@modular-agent/types';
-import { generateId, now } from '@modular-agent/common-utils';
+import { generateId, now, diffTimestamp } from '@modular-agent/common-utils';
 
 /**
  * 用户交互执行上下文
@@ -268,7 +268,7 @@ export async function userInteractionHandler(
 ): Promise<UserInteractionExecutionResult> {
   const config = node.config as UserInteractionNodeConfig;
   const interactionId = generateId();
-  const startTime = Date.now();
+  const startTime = now();
 
   try {
     // 1. 创建交互请求
@@ -283,7 +283,7 @@ export async function userInteractionHandler(
     // 4. 处理用户输入
     const results = await processUserInput(config, inputData, thread, context.conversationManager);
 
-    const executionTime = Date.now() - startTime;
+    const executionTime = diffTimestamp(startTime, now());
 
     return {
       interactionId,

@@ -24,7 +24,7 @@ import {
   type ThreadSubmissionResult,
   type DynamicThreadConfig
 } from '../../types/dynamic-thread.types.js';
-import { getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
+import { getErrorMessage, getErrorOrNew, now, diffTimestamp } from '@modular-agent/common-utils';
 import { ToolError } from '@modular-agent/types';
 
 /**
@@ -67,7 +67,7 @@ export async function createThreadHandler(
   triggerId: string,
   executionContext: ExecutionContext
 ): Promise<ToolExecutionResult> {
-  const startTime = Date.now();
+  const startTime = now();
 
   try {
     // 验证参数
@@ -107,7 +107,7 @@ export async function createThreadHandler(
     const result = await dynamicThreadManager.createDynamicThread(request);
 
     // 处理返回结果
-    const executionTime = Date.now() - startTime;
+    const executionTime = diffTimestamp(startTime, now());
 
     // 判断是同步执行还是异步执行
     if ('threadContext' in result) {
@@ -146,7 +146,7 @@ export async function createThreadHandler(
       };
     }
   } catch (error) {
-    const executionTime = Date.now() - startTime;
+    const executionTime = diffTimestamp(startTime, now());
     const errorMessage = getErrorMessage(error);
 
     return {
@@ -169,13 +169,13 @@ export async function cancelThreadHandler(
   triggerId: string,
   executionContext: ExecutionContext
 ): Promise<ToolExecutionResult> {
-  const startTime = Date.now();
+  const startTime = now();
 
   try {
     // 验证参数
     if (!action.threadId) {
       throw new ToolError('threadId is required', 'cancel-thread');
-      }
+    }
   
       // 创建DynamicThreadManager
       const taskRegistry = executionContext.getTaskRegistry();
@@ -184,7 +184,7 @@ export async function cancelThreadHandler(
     // 取消线程
     const success = dynamicThreadManager.cancelDynamicThread(action.threadId);
 
-    const executionTime = Date.now() - startTime;
+    const executionTime = diffTimestamp(startTime, now());
 
     return {
       success,
@@ -196,7 +196,7 @@ export async function cancelThreadHandler(
       executionTime
     };
   } catch (error) {
-    const executionTime = Date.now() - startTime;
+    const executionTime = diffTimestamp(startTime, now());
     const errorMessage = getErrorMessage(error);
 
     return {
@@ -219,13 +219,13 @@ export async function getThreadStatusHandler(
   triggerId: string,
   executionContext: ExecutionContext
 ): Promise<ToolExecutionResult> {
-  const startTime = Date.now();
+  const startTime = now();
 
   try {
     // 验证参数
     if (!action.threadId) {
       throw new ToolError('threadId is required', 'get-thread-status');
-      }
+    }
   
       // 创建DynamicThreadManager
       const taskRegistry = executionContext.getTaskRegistry();
@@ -234,7 +234,7 @@ export async function getThreadStatusHandler(
     // 查询线程状态
     const threadStatus = dynamicThreadManager.getThreadStatus(action.threadId);
 
-    const executionTime = Date.now() - startTime;
+    const executionTime = diffTimestamp(startTime, now());
 
     if (!threadStatus) {
       return {
@@ -259,7 +259,7 @@ export async function getThreadStatusHandler(
       executionTime
     };
   } catch (error) {
-    const executionTime = Date.now() - startTime;
+    const executionTime = diffTimestamp(startTime, now());
     const errorMessage = getErrorMessage(error);
 
     return {

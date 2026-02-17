@@ -16,7 +16,7 @@
  */
 
 import type { LLMMessage, LLMUsage, TokenUsageHistory, TokenUsageStatistics, TokenUsageStats } from '@modular-agent/types';
-import { generateId } from '@modular-agent/common-utils';
+import { generateId, now } from '@modular-agent/common-utils';
 import { estimateTokens as estimateTokensUtil, getTokenUsage as getTokenUsageUtil, isTokenLimitExceeded as isTokenLimitExceededUtil } from './utils/token-utils.js';
 
 /**
@@ -155,7 +155,7 @@ export class TokenUsageTracker {
   private addToHistory(usage: TokenUsageStats): void {
     const historyItem: TokenUsageHistory = {
       requestId: generateId(),
-      timestamp: Date.now(),
+      timestamp: now(),
       promptTokens: usage.promptTokens,
       completionTokens: usage.completionTokens,
       totalTokens: usage.totalTokens,

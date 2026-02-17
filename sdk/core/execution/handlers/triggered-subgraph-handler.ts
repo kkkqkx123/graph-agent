@@ -20,7 +20,7 @@ import { ThreadContext } from '../context/thread-context.js';
 import type { EventManager } from '../../services/event-manager.js';
 import { EventType } from '@modular-agent/types';
 import type { ThreadResult } from '@modular-agent/types';
-import { now, getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
+import { now, diffTimestamp, getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
 import { createSubgraphMetadata } from './subgraph-handler.js';
 import type { TriggeredSubgraphTask, ExecutedSubgraphResult } from '../types/triggered-subgraph.types.js';
 
@@ -150,7 +150,7 @@ export async function executeSingleTriggeredSubgraph(
   subgraphExecutor: SubgraphExecutor,
   eventManager: EventManager
 ): Promise<ExecutedSubgraphResult> {
-  const startTime = Date.now();
+  const startTime = now();
   
   try {
     // 创建子工作流上下文
@@ -162,7 +162,7 @@ export async function executeSingleTriggeredSubgraph(
     // 执行子工作流
     const threadResult = await subgraphExecutor.executeThread(subgraphContext);
     
-    const executionTime = Date.now() - startTime;
+    const executionTime = diffTimestamp(startTime, now());
     
     // 触发子工作流完成事件
     await emitSubgraphCompletedEvent(
@@ -179,7 +179,7 @@ export async function executeSingleTriggeredSubgraph(
       executionTime
     };
   } catch (error) {
-    const executionTime = Date.now() - startTime;
+    const executionTime = diffTimestamp(startTime, now());
     
     // 触发子工作流失败事件
     await emitSubgraphFailedEvent(

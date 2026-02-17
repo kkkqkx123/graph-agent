@@ -6,7 +6,7 @@
 import type { ExecutionResult } from './execution-result.js';
 import { SDKError, ExecutionError as SDKExecutionError } from '@modular-agent/types';
 import { CommandValidator } from '../utils/command-validator.js';
-import { ok, err, isError } from '@modular-agent/common-utils';
+import { ok, err, isError, now, diffTimestamp } from '@modular-agent/common-utils';
 
 /**
  * 命令元数据
@@ -83,16 +83,16 @@ export interface Command<T> {
  * 提供通用的命令实现
  */
 export abstract class BaseCommand<T> implements Command<T> {
-  protected readonly startTime: number = Date.now();
+  protected readonly startTime: number = now();
 
   /**
    * 执行命令 - 统一错误处理入口
    */
   async execute(): Promise<ExecutionResult<T>> {
-    const startTime = Date.now();
+    const startTime = now();
     try {
       const result = await this.executeInternal();
-      return this.success(result, Date.now() - startTime);
+      return this.success(result, diffTimestamp(startTime, now()));
     } catch (error) {
       return this.handleError(error, startTime);
     }
@@ -107,7 +107,7 @@ export abstract class BaseCommand<T> implements Command<T> {
    * 撤销命令（默认不支持）
    */
   async undo(): Promise<ExecutionResult<void>> {
-    const startTime = Date.now();
+    const startTime = now();
     try {
       throw new Error(`Command ${this.getMetadata().name} does not support undo`);
     } catch (error) {
@@ -129,7 +129,7 @@ export abstract class BaseCommand<T> implements Command<T> {
    * 获取执行时间
    */
   protected getExecutionTime(): number {
-    return Date.now() - this.startTime;
+    return diffTimestamp(this.startTime, now());
   }
 
   /**
@@ -170,7 +170,7 @@ export abstract class BaseCommand<T> implements Command<T> {
     }
     
     // 返回包含详细错误信息的失败结果
-    return this.failure(sdkError, Date.now() - startTime);
+    return this.failure(sdkError, diffTimestamp(startTime, now()));
   }
 
   /**

@@ -20,7 +20,7 @@ import type { EventManager } from '../../services/event-manager.js';
 import type { Tool, ID } from '@modular-agent/types';
 import { safeEmit } from '../utils/event/event-emitter.js';
 import { EventType, MessageRole } from '@modular-agent/types';
-import { now } from '@modular-agent/common-utils';
+import { now, diffTimestamp } from '@modular-agent/common-utils';
 import type { ConversationManager } from '../managers/conversation-manager.js';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
@@ -179,7 +179,7 @@ export class ToolCallExecutor {
     nodeId?: string,
     options?: { abortSignal?: AbortSignal }
   ): Promise<ToolExecutionResult> {
-    const startTime = Date.now();
+    const startTime = now();
 
     // 获取工具配置
     let toolConfig: Tool | undefined;
@@ -201,7 +201,7 @@ export class ToolCallExecutor {
           {
             success: false,
             error: errorMessage,
-            executionTime: Date.now() - startTime,
+            executionTime: diffTimestamp(startTime, now()),
             retryCount: 0
           }
         );
@@ -239,7 +239,7 @@ export class ToolCallExecutor {
           toolId: toolCall.name,
           success: false,
           error: errorMessage,
-          executionTime: Date.now() - startTime
+          executionTime: diffTimestamp(startTime, now())
         };
       }
     }
@@ -300,7 +300,7 @@ export class ToolCallExecutor {
       threadId
     );
 
-    const executionTime = Date.now() - startTime;
+    const executionTime = diffTimestamp(startTime, now());
 
     if (result.isErr()) {
       const error = result.error;

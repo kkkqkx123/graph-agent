@@ -16,6 +16,7 @@
  */
 
 import type { ID } from '@modular-agent/types';
+import { now } from '@modular-agent/common-utils';
 
 /**
  * 工具作用域类型
@@ -110,7 +111,7 @@ export class ToolContextManager {
         toolId,
         descriptionTemplate,
         customMetadata,
-        addedAt: Date.now()
+        addedAt: now()
       };
 
       let targetMap: Map<string, ToolMetadata>;

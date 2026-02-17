@@ -3,6 +3,7 @@
  * 实现消息数组管理的核心逻辑，支持批次管理和回滚功能
  */
 
+import { now } from '../utils/timestamp-utils.js';
 import type {
   Message,
   MessageArrayState,
@@ -151,7 +152,7 @@ export class MessageArrayManager {
     // 创建当前批次的快照（深拷贝）
     const snapshot: BatchSnapshot = {
       batchIndex: this.state.currentBatchIndex,
-      timestamp: Date.now(),
+      timestamp: now(),
       messages: JSON.parse(JSON.stringify(this.state.messages)), // 深拷贝
       messageCount: this.state.messages.length,
       description: `Before INSERT at position ${operation.position}`
@@ -192,7 +193,7 @@ export class MessageArrayManager {
     // 创建当前批次的快照（深拷贝）
     const snapshot: BatchSnapshot = {
       batchIndex: this.state.currentBatchIndex,
-      timestamp: Date.now(),
+      timestamp: now(),
       messages: JSON.parse(JSON.stringify(this.state.messages)), // 深拷贝
       messageCount: this.state.messages.length,
       description: `Before REPLACE at index ${operation.index}`
@@ -228,7 +229,7 @@ export class MessageArrayManager {
     // 创建当前批次的快照（深拷贝）
     const snapshot: BatchSnapshot = {
       batchIndex: this.state.currentBatchIndex,
-      timestamp: Date.now(),
+      timestamp: now(),
       messages: JSON.parse(JSON.stringify(this.state.messages)), // 深拷贝
       messageCount: this.state.messages.length,
       description: 'Before TRUNCATE'
@@ -290,7 +291,7 @@ export class MessageArrayManager {
     // 创建空快照（无额外拷贝开销）
     const snapshot: BatchSnapshot = {
       batchIndex: this.state.currentBatchIndex,
-      timestamp: Date.now(),
+      timestamp: now(),
       messages: [], // 空数组，无拷贝开销
       messageCount: 0,
       description: 'Before CLEAR'
@@ -325,7 +326,7 @@ export class MessageArrayManager {
     // 创建当前批次的快照（深拷贝）
     const snapshot: BatchSnapshot = {
       batchIndex: this.state.currentBatchIndex,
-      timestamp: Date.now(),
+      timestamp: now(),
       messages: JSON.parse(JSON.stringify(this.state.messages)), // 深拷贝
       messageCount: this.state.messages.length,
       description: 'Before FILTER'

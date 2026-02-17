@@ -8,7 +8,7 @@
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import { ValidationError, RuntimeValidationError } from '@modular-agent/types';
 import { ExecutionContext } from '../../context/execution-context.js';
-import { getErrorMessage } from '@modular-agent/common-utils';
+import { getErrorMessage, now } from '@modular-agent/common-utils';
 
 /**
  * 创建成功结果
@@ -60,7 +60,7 @@ export async function resumeThreadHandler(
   triggerId: string,
   executionContext?: ExecutionContext
 ): Promise<TriggerExecutionResult> {
-  const executionTime = Date.now();
+  const executionTime = now();
   const context = executionContext || ExecutionContext.createDefault();
 
   try {

@@ -1,7 +1,7 @@
 /**
  * GenericResourceAPI - 通用资源API基类
  * 提供统一的CRUD操作接口，支持缓存、错误处理等通用功能
- * 
+ *
  * 设计模式：
  * - Template Method模式：定义通用流程，具体实现由子类提供
  * - Strategy模式：通过抽象方法支持不同的资源类型
@@ -10,7 +10,7 @@
 import type { ExecutionResult } from '../types/execution-result.js';
 import { success, failure } from '../types/execution-result.js';
 import { SDKError, ExecutionError as SDKExecutionError, ValidationError } from '@modular-agent/types';
-import { isError } from '@modular-agent/common-utils';
+import { isError, now, diffTimestamp } from '@modular-agent/common-utils';
 
 /**
  * 通用资源API基类
@@ -81,11 +81,11 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
    * @returns 执行结果
    */
   async get(id: ID): Promise<ExecutionResult<T | null>> {
-    const startTime = Date.now();
+    const startTime = now();
     
     try {
       const resource = await this.getResource(id);
-      return success(resource, Date.now() - startTime);
+      return success(resource, diffTimestamp(startTime, now()));
     } catch (error) {
       return this.handleError(error, 'GET', startTime);
     }
@@ -97,7 +97,7 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
    * @returns 执行结果
    */
   async getAll(filter?: Filter): Promise<ExecutionResult<T[]>> {
-    const startTime = Date.now();
+    const startTime = now();
     
     try {
       let resources = await this.getAllResources();
@@ -107,7 +107,7 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
         resources = this.applyFilter(resources, filter);
       }
 
-      return success(resources, Date.now() - startTime);
+      return success(resources, diffTimestamp(startTime, now()));
     } catch (error) {
       return this.handleError(error, 'GET_ALL', startTime);
     }
@@ -119,7 +119,7 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
    * @returns 执行结果
    */
   async create(resource: T): Promise<ExecutionResult<void>> {
-    const startTime = Date.now();
+    const startTime = now();
     
     try {
       // 验证资源（始终启用）
@@ -132,12 +132,12 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
             undefined,
             { errors: validation.errors }
           ),
-          Date.now() - startTime
+          diffTimestamp(startTime, now())
         );
       }
 
       await this.createResource(resource);
-      return success(undefined, Date.now() - startTime);
+      return success(undefined, diffTimestamp(startTime, now()));
     } catch (error) {
       return this.handleError(error, 'CREATE', startTime);
     }
@@ -150,7 +150,7 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
    * @returns 执行结果
    */
   async update(id: ID, updates: Partial<T>): Promise<ExecutionResult<void>> {
-    const startTime = Date.now();
+    const startTime = now();
     
     try {
       // 验证更新内容（始终启用）
@@ -163,12 +163,12 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
             undefined,
             { errors: validation.errors }
           ),
-          Date.now() - startTime
+          diffTimestamp(startTime, now())
         );
       }
 
       await this.updateResource(id, updates);
-      return success(undefined, Date.now() - startTime);
+      return success(undefined, diffTimestamp(startTime, now()));
     } catch (error) {
       return this.handleError(error, 'UPDATE', startTime);
     }
@@ -180,11 +180,11 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
    * @returns 执行结果
    */
   async delete(id: ID): Promise<ExecutionResult<void>> {
-    const startTime = Date.now();
+    const startTime = now();
     
     try {
       await this.deleteResource(id);
-      return success(undefined, Date.now() - startTime);
+      return success(undefined, diffTimestamp(startTime, now()));
     } catch (error) {
       return this.handleError(error, 'DELETE', startTime);
     }
@@ -197,11 +197,11 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
    * @returns 执行结果
    */
   async has(id: ID): Promise<ExecutionResult<boolean>> {
-    const startTime = Date.now();
+    const startTime = now();
     
     try {
       const resource = await this.getResource(id);
-      return success(resource !== null, Date.now() - startTime);
+      return success(resource !== null, diffTimestamp(startTime, now()));
     } catch (error) {
       return this.handleError(error, 'HAS', startTime);
     }
@@ -212,11 +212,11 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
    * @returns 执行结果
    */
   async count(): Promise<ExecutionResult<number>> {
-    const startTime = Date.now();
+    const startTime = now();
     
     try {
       const resources = await this.getAllResources();
-      return success(resources.length, Date.now() - startTime);
+      return success(resources.length, diffTimestamp(startTime, now()));
     } catch (error) {
       return this.handleError(error, 'COUNT', startTime);
     }
@@ -227,12 +227,12 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
    * @returns 执行结果
    */
   async clear(): Promise<ExecutionResult<void>> {
-    const startTime = Date.now();
+    const startTime = now();
     
     try {
       // 子类可以重写此方法来清理注册表
       await this.clearResources();
-      return success(undefined, Date.now() - startTime);
+      return success(undefined, diffTimestamp(startTime, now()));
     } catch (error) {
       return this.handleError(error, 'CLEAR', startTime);
     }
@@ -317,7 +317,7 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
     }
     
     // 返回包含详细错误信息的失败结果
-    return failure(sdkError, Date.now() - startTime);
+    return failure(sdkError, diffTimestamp(startTime, now()));
   }
 
 }

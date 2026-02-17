@@ -6,6 +6,7 @@
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import { NotFoundError, ValidationError, RuntimeValidationError, ThreadContextNotFoundError } from '@modular-agent/types';
 import { ExecutionContext } from '../../context/execution-context.js';
+import { now, diffTimestamp } from '@modular-agent/common-utils';
 
 /**
  * 创建成功结果
@@ -56,7 +57,7 @@ export async function setVariableHandler(
   triggerId: string,
   executionContext?: ExecutionContext
 ): Promise<TriggerExecutionResult> {
-  const startTime = Date.now();
+  const startTime = now();
   const context = executionContext || ExecutionContext.createDefault();
 
   try {
@@ -79,7 +80,7 @@ export async function setVariableHandler(
       threadContext.updateVariable(name, value);
     }
 
-    const executionTime = Date.now() - startTime;
+    const executionTime = diffTimestamp(startTime, now());
 
     return createSuccessResult(
       triggerId,
@@ -88,7 +89,7 @@ export async function setVariableHandler(
       executionTime
     );
   } catch (error) {
-    const executionTime = Date.now() - startTime;
+    const executionTime = diffTimestamp(startTime, now());
     return createFailureResult(triggerId, action, error, executionTime);
   }
 }

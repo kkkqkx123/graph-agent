@@ -4,6 +4,7 @@
  * 重构版本：继承GenericResourceAPI，提高代码复用性和一致性
  */
 
+import { now } from '@modular-agent/common-utils';
 import { ProfileManager } from '../../../core/llm/profile-manager.js';
 import type { LLMProfile, LLMProvider } from '@modular-agent/types';
 import { ValidationError, NotFoundError, ConfigurationValidationError, NodeTemplateNotFoundError } from '@modular-agent/types';
@@ -359,7 +360,7 @@ export class LLMProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string
 
     // 合并模板和覆盖配置
     const profile: LLMProfile = {
-      id: overrides.id || `profile-${Date.now()}`,
+      id: overrides.id || `profile-${now()}`,
       name: overrides.name || template.name,
       provider: overrides.provider || template.profile.provider!,
       model: overrides.model || template.profile.model!,

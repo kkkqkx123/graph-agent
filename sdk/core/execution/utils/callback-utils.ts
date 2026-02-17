@@ -9,7 +9,7 @@
  */
 
 import type { ExecutedThreadResult } from '../types/dynamic-thread.types.js';
-import { getErrorOrNew } from '@modular-agent/common-utils';
+import { getErrorOrNew, now, diffTimestamp } from '@modular-agent/common-utils';
 
 /**
  * 包装回调函数，添加错误处理
@@ -183,18 +183,18 @@ export function createThrottledCallback<T extends (...args: any[]) => any>(
   let timeoutId: NodeJS.Timeout | null = null;
 
   return ((...args: Parameters<T>) => {
-    const now = Date.now();
-    const timeSinceLastCall = now - lastCallTime;
+    const currentTime = now();
+    const timeSinceLastCall = currentTime - lastCallTime;
 
     if (timeSinceLastCall >= delay) {
-      lastCallTime = now;
+      lastCallTime = currentTime;
       return callback(...args);
     } else {
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
       timeoutId = setTimeout(() => {
-        lastCallTime = Date.now();
+        lastCallTime = now();
         callback(...args);
       }, delay - timeSinceLastCall);
     }
@@ -259,12 +259,12 @@ export function createCachedCallback<T extends (...args: any[]) => any>(
     const key = keyGenerator(...args);
     const cached = cache.get(key);
 
-    if (cached && Date.now() - cached.timestamp < ttl) {
+    if (cached && diffTimestamp(cached.timestamp, now()) < ttl) {
       return cached.value;
     }
 
     const result = callback(...args);
-    cache.set(key, { value: result, timestamp: Date.now() });
+    cache.set(key, { value: result, timestamp: now() });
     return result;
   }) as T;
 }
@@ -278,11 +278,11 @@ export function cleanupCache<T>(
   cache: Map<string, { value: T; timestamp: number }>,
   ttl: number
 ): void {
-  const now = Date.now();
+  const currentTime = now();
   const keysToDelete: string[] = [];
 
   cache.forEach((entry, key) => {
-    if (now - entry.timestamp >= ttl) {
+    if (currentTime - entry.timestamp >= ttl) {
       keysToDelete.push(key);
     }
   });

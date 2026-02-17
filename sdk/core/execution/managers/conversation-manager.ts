@@ -27,6 +27,7 @@ import type { EventManager } from '../../services/event-manager.js';
 import type { TokenLimitExceededEvent } from '@modular-agent/types';
 import { EventType } from '@modular-agent/types';
 import type { LifecycleCapable } from './lifecycle-capable.js';
+import { now } from '@modular-agent/common-utils';
 
 /**
  * ConversationManager事件回调
@@ -352,7 +353,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
     if (this.eventManager && this.workflowId && this.threadId) {
       const event: TokenLimitExceededEvent = {
         type: 'TOKEN_LIMIT_EXCEEDED',
-        timestamp: Date.now(),
+        timestamp: now(),
         workflowId: this.workflowId,
         threadId: this.threadId,
         tokensUsed,

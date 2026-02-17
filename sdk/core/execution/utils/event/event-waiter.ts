@@ -17,6 +17,7 @@
 
 import type { EventManager } from '../../../services/event-manager.js';
 import { EventType } from '@modular-agent/types';
+import { now, diffTimestamp } from '@modular-agent/common-utils';
 
 /**
  * 表示始终等待的特殊值
@@ -305,9 +306,9 @@ export async function waitForCondition(
   checkInterval: number = 100,
   timeout: number = 30000
 ): Promise<void> {
-  const startTime = Date.now();
+  const startTime = now();
 
-  while (Date.now() - startTime < timeout) {
+  while (diffTimestamp(startTime, now()) < timeout) {
     if (condition()) {
       return;
     }
@@ -332,9 +333,9 @@ export async function waitForAllConditions(
   checkInterval: number = 100,
   timeout: number = 30000
 ): Promise<void> {
-  const startTime = Date.now();
+  const startTime = now();
 
-  while (Date.now() - startTime < timeout) {
+  while (diffTimestamp(startTime, now()) < timeout) {
     if (conditions.every(condition => condition())) {
       return;
     }
@@ -359,9 +360,9 @@ export async function waitForAnyCondition(
   checkInterval: number = 100,
   timeout: number = 30000
 ): Promise<number> {
-  const startTime = Date.now();
+  const startTime = now();
 
-  while (Date.now() - startTime < timeout) {
+  while (diffTimestamp(startTime, now()) < timeout) {
     for (let i = 0; i < conditions.length; i++) {
       const condition = conditions[i];
       if (condition && condition()) {

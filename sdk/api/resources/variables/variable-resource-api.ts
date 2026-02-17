@@ -3,6 +3,7 @@
  * 继承GenericResourceAPI，提供统一的CRUD操作
  */
 
+import { now } from '@modular-agent/common-utils';
 import { GenericResourceAPI } from '../generic-resource-api.js';
 import type { ThreadRegistry } from '../../../core/services/thread-registry.js';
 import type { Thread, VariableFilter } from '@modular-agent/types';
@@ -250,7 +251,7 @@ export class VariableResourceAPI extends GenericResourceAPI<any, string, Variabl
     // 简化实现，实际项目中可以从事件系统获取
     const currentValue = await this.getThreadVariable(threadId, variableName);
     return [{
-      timestamp: Date.now(),
+      timestamp: now(),
       value: currentValue,
       source: 'current'
     }];

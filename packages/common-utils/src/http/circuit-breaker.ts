@@ -4,6 +4,8 @@
  * 防止级联故障，当失败次数达到阈值时打开熔断器
  */
 
+import { now } from '../utils/timestamp-utils.js';
+
 /**
  * 熔断器状态
  */
@@ -67,7 +69,7 @@ export class CircuitBreaker {
   isOpen(): boolean {
     if (this.state === 'OPEN') {
       // 检查是否可以尝试恢复
-      if (Date.now() >= this.nextAttempt) {
+      if (now() >= this.nextAttempt) {
         this.state = 'HALF_OPEN';
         this.successCount = 0;
         return false;
@@ -117,13 +119,13 @@ export class CircuitBreaker {
     // 在HALF_OPEN状态下失败，立即重新打开熔断器
     if (this.state === 'HALF_OPEN') {
       this.state = 'OPEN';
-      this.nextAttempt = Date.now() + this.resetTimeout;
+      this.nextAttempt = now() + this.resetTimeout;
       return;
     }
 
     if (this.failureCount >= this.failureThreshold) {
       this.state = 'OPEN';
-      this.nextAttempt = Date.now() + this.resetTimeout;
+      this.nextAttempt = now() + this.resetTimeout;
     }
   }
 }

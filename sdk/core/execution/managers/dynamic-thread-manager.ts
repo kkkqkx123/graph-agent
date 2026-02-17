@@ -17,7 +17,7 @@
 import type { ThreadContext } from '../context/thread-context.js';
 import type { EventManager } from '../../services/event-manager.js';
 import type { ThreadRegistry } from '../../services/thread-registry.js';
-import { now, getErrorMessage } from '@modular-agent/common-utils';
+import { now, diffTimestamp, getErrorMessage } from '@modular-agent/common-utils';
 import { TaskRegistry, type TaskManager } from '../../services/task-registry.js';
 import { ThreadPoolManager } from './thread-pool-manager.js';
 import { TaskQueueManager } from './task-queue-manager.js';
@@ -153,7 +153,7 @@ export class DynamicThreadManager implements TaskManager {
       id: childThreadId,
       threadContext: childThreadContext,
       status: 'QUEUED',
-      submitTime: Date.now(),
+      submitTime: now(),
       parentThreadId
     };
     this.dynamicThreads.set(childThreadId, dynamicThreadInfo);
@@ -307,7 +307,7 @@ export class DynamicThreadManager implements TaskManager {
     const dynamicThreadInfo = this.dynamicThreads.get(threadId);
     if (dynamicThreadInfo) {
       dynamicThreadInfo.status = 'COMPLETED';
-      dynamicThreadInfo.completeTime = Date.now();
+      dynamicThreadInfo.completeTime = now();
       dynamicThreadInfo.result = result.threadResult;
     }
 
@@ -337,7 +337,7 @@ export class DynamicThreadManager implements TaskManager {
     const dynamicThreadInfo = this.dynamicThreads.get(threadId);
     if (dynamicThreadInfo) {
       dynamicThreadInfo.status = 'FAILED';
-      dynamicThreadInfo.completeTime = Date.now();
+      dynamicThreadInfo.completeTime = now();
       dynamicThreadInfo.error = error;
     }
 
@@ -388,7 +388,7 @@ export class DynamicThreadManager implements TaskManager {
       const dynamicThreadInfo = this.dynamicThreads.get(threadId);
       if (dynamicThreadInfo) {
         dynamicThreadInfo.status = 'CANCELLED';
-        dynamicThreadInfo.completeTime = Date.now();
+        dynamicThreadInfo.completeTime = now();
       }
 
       // 触发取消事件

@@ -3,6 +3,7 @@
  * 继承GenericResourceAPI，提供统一的CRUD操作
  */
 
+import { now } from '@modular-agent/common-utils';
 import { GenericResourceAPI } from '../generic-resource-api.js';
 import type { ThreadRegistry } from '../../../core/services/thread-registry.js';
 import { TriggerStatus } from '@modular-agent/types';
@@ -273,7 +274,7 @@ export class TriggerResourceAPI extends GenericResourceAPI<Trigger, string, Trig
     // 简化实现，实际项目中可以从事件系统获取
     const trigger = await this.getThreadTrigger(threadId, triggerId);
     return [{
-      timestamp: Date.now(),
+      timestamp: now(),
       result: `Trigger ${triggerId} is ${trigger.status}`,
       success: trigger.status === 'enabled'
     }];

@@ -418,7 +418,7 @@ export class NodeExecutionCoordinator {
           workflowId: threadContext.getWorkflowId(),
           subgraphId: subgraphContext.workflowId,
           output,
-          executionTime: Date.now() - subgraphContext.startTime,
+          executionTime: diffTimestamp(subgraphContext.startTime, now()),
           timestamp: now()
         };
         await this.eventManager.emit(subgraphCompletedEvent);

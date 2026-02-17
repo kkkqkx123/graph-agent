@@ -23,6 +23,7 @@ import type {
   SizeBasedCleanupPolicy,
   CheckpointCleanupStrategy
 } from '@modular-agent/types';
+import { now } from '@modular-agent/common-utils';
 
 /**
  * 基于时间的清理策略实现
@@ -31,7 +32,7 @@ export class TimeBasedCleanupStrategy implements CheckpointCleanupStrategy {
   constructor(private policy: TimeBasedCleanupPolicy) { }
 
   execute(checkpoints: CheckpointInfo[]): string[] {
-    const now = Date.now();
+    const currentTime = now();
     const retentionMs = this.policy.retentionDays * 24 * 60 * 60 * 1000;
     const minRetention = this.policy.minRetention || 0;
 
@@ -46,7 +47,7 @@ export class TimeBasedCleanupStrategy implements CheckpointCleanupStrategy {
       const checkpoint = sorted[i];
       if (!checkpoint) continue;
 
-      const age = now - checkpoint.metadata.timestamp;
+      const age = currentTime - checkpoint.metadata.timestamp;
 
       // 确保至少保留minRetention个检查点
       // 保留最新的minRetention个检查点（数组末尾的minRetention个）

@@ -5,7 +5,7 @@
  */
 
 import type { ThreadResult, ThreadOptions } from '@modular-agent/types';
-import { ok, err, getErrorOrNew, withAbortSignal } from '@modular-agent/common-utils';
+import { ok, err, getErrorOrNew, withAbortSignal, now } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 import { Observable, create, type Observer } from '../utils/observable.js';
 import { ExecuteThreadCommand } from '../operations/commands/execution/execute-thread-command.js';
@@ -236,7 +236,7 @@ export class ExecutionBuilder {
       // 发送开始事件
       observer.next({
         type: 'start',
-        timestamp: Date.now(),
+        timestamp: now(),
         workflowId
       } as StartEvent);
 
@@ -251,7 +251,7 @@ export class ExecutionBuilder {
             // 发送完成事件
             observer.next({
               type: 'complete',
-              timestamp: Date.now(),
+              timestamp: now(),
               workflowId,
               threadId: result.value.threadId,
               result: result.value,
@@ -267,7 +267,7 @@ export class ExecutionBuilder {
               // 发送取消事件
               observer.next({
                 type: 'cancelled',
-                timestamp: Date.now(),
+                timestamp: now(),
                 workflowId,
                 threadId: threadId || 'unknown',
                 reason: result.error.message
@@ -277,7 +277,7 @@ export class ExecutionBuilder {
               // 发送错误事件
               observer.next({
                 type: 'error',
-                timestamp: Date.now(),
+                timestamp: now(),
                 workflowId,
                 threadId: threadId || 'unknown',
                 error: result.error
@@ -345,7 +345,7 @@ export class ExecutionBuilder {
       const callback = (progress: any) => {
         observer.next({
           type: 'progress',
-          timestamp: Date.now(),
+          timestamp: now(),
           workflowId: this.workflowId!,
           threadId: progress.threadId || 'unknown',
           progress: {
@@ -387,7 +387,7 @@ export class ExecutionBuilder {
       const callback = (result: any) => {
         observer.next({
           type: 'nodeExecuted',
-          timestamp: Date.now(),
+          timestamp: now(),
           workflowId: this.workflowId!,
           threadId: result.threadId || 'unknown',
           nodeId: result.nodeId || 'unknown',
@@ -425,7 +425,7 @@ export class ExecutionBuilder {
       const callback = (error: any) => {
         observer.next({
           type: 'error',
-          timestamp: Date.now(),
+          timestamp: now(),
           workflowId: this.workflowId!,
           threadId: error.threadId || 'unknown',
           error: getErrorOrNew(error)

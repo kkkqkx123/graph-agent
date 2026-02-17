@@ -5,7 +5,7 @@
 
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import { ValidationError, RuntimeValidationError } from '@modular-agent/types';
-import { getErrorMessage } from '@modular-agent/common-utils';
+import { getErrorMessage, now } from '@modular-agent/common-utils';
 
 /**
  * 创建成功结果
@@ -54,7 +54,7 @@ export async function sendNotificationHandler(
   action: TriggerAction,
   triggerId: string
 ): Promise<TriggerExecutionResult> {
-  const executionTime = Date.now();
+  const executionTime = now();
 
   try {
     const { message, recipients, level } = action.parameters;

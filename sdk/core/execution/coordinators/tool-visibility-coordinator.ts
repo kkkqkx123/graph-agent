@@ -28,6 +28,7 @@ import type { ThreadContext } from '../context/thread-context.js';
 import type { ToolService } from '../../services/tool-service.js';
 import type { LLMMessage } from '@modular-agent/types';
 import { MessageRole } from '@modular-agent/types';
+import { now } from '@modular-agent/common-utils';
 
 /**
  * ToolVisibilityCoordinator - 工具可见性协调器
@@ -81,7 +82,7 @@ export class ToolVisibilityCoordinator {
       visibleTools: new Set(initialTools),
       declarationHistory: [],
       lastDeclarationIndex: -1,
-      initializedAt: Date.now()
+      initializedAt: now()
     };
 
     this.contexts.set(threadId, context);
@@ -140,7 +141,7 @@ export class ToolVisibilityCoordinator {
       content: message,
       metadata: {
         type: 'tool_visibility_declaration',
-        timestamp: Date.now(),
+        timestamp: now(),
         scope: newScope,
         scopeId: newScopeId,
         toolIds: availableTools,
@@ -152,7 +153,7 @@ export class ToolVisibilityCoordinator {
 
     // 更新声明历史
     const declaration: VisibilityDeclaration = {
-      timestamp: Date.now(),
+      timestamp: now(),
       scope: newScope,
       scopeId: newScopeId,
       toolIds: [...availableTools],

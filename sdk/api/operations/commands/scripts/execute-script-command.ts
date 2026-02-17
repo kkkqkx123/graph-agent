@@ -2,6 +2,7 @@
  * ExecuteScriptCommand - 执行脚本命令
  */
 
+import { now, diffTimestamp } from '@modular-agent/common-utils';
 import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
 import type { ScriptOptions } from '@modular-agent/types';
 import type { ScriptExecutionResult } from '@modular-agent/types';
@@ -20,7 +21,7 @@ export class ExecuteScriptCommand extends BaseCommand<ScriptExecutionResult> {
   }
 
   protected async executeInternal(): Promise<ScriptExecutionResult> {
-    const startTime = Date.now();
+    const startTime = now();
     const executionOptions = {
       timeout: this.options?.timeout,
       retries: this.options?.retries,
@@ -38,7 +39,7 @@ export class ExecuteScriptCommand extends BaseCommand<ScriptExecutionResult> {
 
     // 执行脚本
     const result = await this.dependencies.getCodeService().execute(this.scriptName, executionOptions);
-    const executionTime = Date.now() - startTime;
+    const executionTime = diffTimestamp(startTime, now());
 
     // 处理 Result 类型，提取成功的结果或抛出错误
     if (result.isErr()) {

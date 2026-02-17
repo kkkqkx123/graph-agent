@@ -3,6 +3,8 @@
  * 提供请求响应缓存功能
  */
 
+import { now } from '../utils/timestamp-utils.js';
+
 /**
  * 缓存项
  */
@@ -75,7 +77,7 @@ export class HttpCache {
     }
 
     // 检查是否过期
-    if (Date.now() - item.timestamp > item.ttl) {
+    if (now() - item.timestamp > item.ttl) {
       this.cache.delete(key);
       return null;
     }
@@ -105,7 +107,7 @@ export class HttpCache {
 
     this.cache.set(key, {
       data,
-      timestamp: Date.now(),
+      timestamp: now(),
       ttl: cacheTtl
     });
   }
@@ -140,9 +142,9 @@ export class HttpCache {
    * 清除过期缓存
    */
   clearExpired(): void {
-    const now = Date.now();
+    const currentTime = now();
     for (const [key, item] of this.cache.entries()) {
-      if (now - item.timestamp > item.ttl) {
+      if (currentTime - item.timestamp > item.ttl) {
         this.cache.delete(key);
       }
     }

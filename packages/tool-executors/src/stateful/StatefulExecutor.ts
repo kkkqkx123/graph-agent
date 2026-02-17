@@ -3,6 +3,7 @@
  * 执行应用层提供的有状态工具，直接管理工具实例，支持线程隔离
  */
 
+import { now } from '@modular-agent/common-utils';
 import type { Tool } from '@modular-agent/types';
 import type { StatefulToolConfig, StatefulToolFactory } from '@modular-agent/types';
 import { ToolError } from '@modular-agent/types';
@@ -134,7 +135,7 @@ export class StatefulExecutor extends BaseExecutor {
     const instance = factory.create();
     threadMap.set(toolName, {
       instance,
-      createdAt: Date.now()
+      createdAt: now()
     });
 
     return instance;
@@ -153,10 +154,10 @@ export class StatefulExecutor extends BaseExecutor {
    * 清理过期实例
    */
   private cleanupExpiredInstances(): void {
-    const now = Date.now();
+    const currentTime = now();
     for (const [threadId, threadMap] of this.threadInstances.entries()) {
       for (const [toolName, { createdAt }] of threadMap.entries()) {
-        if (now - createdAt > this.config.instanceExpirationTime!) {
+        if (currentTime - createdAt > this.config.instanceExpirationTime!) {
           threadMap.delete(toolName);
         }
       }

@@ -11,6 +11,7 @@
 import { ExecutionError } from '@modular-agent/types';
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import { TriggerActionType } from '@modular-agent/types';
+import { now } from '@modular-agent/common-utils';
 
 /**
  * 触发器处理器类型
@@ -45,14 +46,14 @@ export const triggerHandlers: Record<TriggerActionType, TriggerHandler> = {
     triggerId,
     success: false,
     action,
-    executionTime: Date.now(),
+    executionTime: now(),
     error: new Error('start_workflow not implemented')
   }),
   ['stop_workflow']: async (action, triggerId) => ({
     triggerId,
     success: false,
     action,
-    executionTime: Date.now(),
+    executionTime: now(),
     error: new Error('stop_workflow not implemented')
   }),
   ['stop_thread']: stopThreadHandler,

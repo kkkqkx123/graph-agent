@@ -16,6 +16,7 @@ import { ThreadExecutor } from '../thread-executor.js';
 import { ExecutionContext } from '../context/execution-context.js';
 import { WorkerStatus, type ExecutorWrapper, type PoolStats } from '../types/task.types.js';
 import { type SubworkflowManagerConfig } from '../types/triggered-subgraph.types.js';
+import { now } from '@modular-agent/common-utils';
 
 /**
  * ThreadPoolManager - 线程池管理器
@@ -95,14 +96,14 @@ export class ThreadPoolManager {
    * @returns 执行器包装
    */
   private createExecutor(): ExecutorWrapper {
-    const executorId = `executor-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const executorId = `executor-${now()}-${Math.random().toString(36).substr(2, 9)}`;
     const executor = new ThreadExecutor(this.executionContext);
 
     const wrapper: ExecutorWrapper = {
       executorId,
       executor,
       status: 'IDLE',
-      lastUsedTime: Date.now()
+      lastUsedTime: now()
     };
 
     return wrapper;
@@ -130,7 +131,7 @@ export class ThreadPoolManager {
 
       // 更新状态
       wrapper.status = 'BUSY';
-      wrapper.lastUsedTime = Date.now();
+      wrapper.lastUsedTime = now();
       this.busyExecutors.add(executorId);
 
       return wrapper.executor;
@@ -143,7 +144,7 @@ export class ThreadPoolManager {
       
       // 更新状态
       wrapper.status = 'BUSY';
-      wrapper.lastUsedTime = Date.now();
+      wrapper.lastUsedTime = now();
       this.busyExecutors.add(wrapper.executorId);
 
       return wrapper.executor;
@@ -187,7 +188,7 @@ export class ThreadPoolManager {
     if (this.waitingPromises.length > 0) {
       const waiting = this.waitingPromises.shift()!;
       wrapper.status = 'BUSY';
-      wrapper.lastUsedTime = Date.now();
+      wrapper.lastUsedTime = now();
       this.busyExecutors.add(executorId);
       waiting.resolve(wrapper.executor);
       return;
@@ -195,7 +196,7 @@ export class ThreadPoolManager {
 
     // 加入空闲队列
     wrapper.status = 'IDLE';
-    wrapper.lastUsedTime = Date.now();
+    wrapper.lastUsedTime = now();
     this.idleExecutors.push(executorId);
 
     // 设置空闲超时定时器

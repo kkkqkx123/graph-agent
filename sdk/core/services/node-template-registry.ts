@@ -11,7 +11,7 @@ import type { Node } from '@modular-agent/types';
 import { NodeType } from '@modular-agent/types';
 import { ValidationError, NotFoundError, ConfigurationValidationError, NodeTemplateNotFoundError } from '@modular-agent/types';
 import { validateNodeByType } from '../validation/node-validation/index.js';
-import { getErrorMessage } from '@modular-agent/common-utils';
+import { getErrorMessage, now } from '@modular-agent/common-utils';
 
 /**
  * 节点注册表类
@@ -92,7 +92,7 @@ class NodeTemplateRegistry {
       ...template,
       ...updates,
       name: template.name, // 名称不可更改
-      updatedAt: Date.now()
+      updatedAt: now()
     };
 
     // 验证更新后的模板

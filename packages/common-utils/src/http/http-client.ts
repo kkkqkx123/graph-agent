@@ -4,6 +4,7 @@
  * 提供统一的HTTP请求接口，集成重试、熔断、限流等特性
  */
 
+import { now, diffTimestamp } from '../utils/timestamp-utils.js';
 import type {
   HttpClientConfig,
   HttpRequestOptions,
@@ -183,7 +184,7 @@ export class HttpClient {
     const url = this.buildURL(options.url || '', options.query);
     const method = options.method || 'GET';
     const timeout = options.timeout || this.config.timeout;
-    const startTime = Date.now();
+    const startTime = now();
 
     this.log('info', `[HTTP] ${method} ${url} starting`);
 
@@ -216,7 +217,7 @@ export class HttpClient {
       });
 
       clearTimeout(timeoutId);
-      const duration = Date.now() - startTime;
+      const duration = diffTimestamp(startTime, now());
 
       // 检查响应状态
       if (!response.ok) {
@@ -262,7 +263,7 @@ export class HttpClient {
       };
     } catch (error) {
       clearTimeout(timeoutId);
-      const duration = Date.now() - startTime;
+      const duration = diffTimestamp(startTime, now());
 
       if (isAbortError(error)) {
         this.log('error',
