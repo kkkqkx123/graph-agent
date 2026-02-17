@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Container, BindingScope } from '../index.js';
 
+
 // ============================================================
 // 集成测试 - 验证整体功能完整性
 // ============================================================
@@ -477,6 +478,281 @@ describe('集成测试', () => {
 
       expect(service3).not.toBe(service1);
       expect(instanceCount).toBe(4);
+    });
+
+    it('单例应该在整个容器中共享', () => {
+      const IDatabase = Symbol.for('IDatabase');
+      const ICache = Symbol.for('ICache');
+      const IService = Symbol.for('IService');
+
+      let dbInstanceCount = 0;
+      let cacheInstanceCount = 0;
+
+      class Database {
+        id = ++dbInstanceCount;
+        query() { return 'data'; }
+      }
+
+      class Cache {
+        static $inject = [IDatabase] as const;
+        id = ++cacheInstanceCount;
+        constructor(public db: Database) { }
+      }
+
+      class Service {
+        static $inject = [IDatabase, ICache] as const;
+        constructor(
+          public db: Database,
+          public cache: Cache
+        ) { }
+      }
+
+      // Database 是单例，Cache 是瞬态
+      container.bind(IDatabase).to(Database).inSingletonScope();
+      container.bind(ICache).to(Cache);
+      container.bind(IService).to(Service);
+
+      const service1 = container.get<Service>(IService);
+      const service2 = container.get<Service>(IService);
+
+      // 两个 Service 应该共享同一个 Database 实例
+      expect(service1.db).toBe(service2.db);
+      expect(service1.db.id).toBe(service2.db.id);
+      expect(dbInstanceCount).toBe(1);
+
+      // 但每个 Service 有自己的 Cache 实例
+      expect(service1.cache).not.toBe(service2.cache);
+      expect(cacheInstanceCount).toBe(2);
+
+      // 每个 Cache 都引用同一个 Database
+      expect(service1.cache.db).toBe(service2.cache.db);
+    });
+
+    it('单例在父子容器间应该共享', () => {
+      const ISharedService = Symbol.for('ISharedService');
+
+      class SharedService {
+        id = Math.random();
+      }
+
+      container.bind(ISharedService).to(SharedService).inSingletonScope();
+
+      const child1 = container.createChild();
+      const child2 = container.createChild();
+
+      const instance1 = container.get<SharedService>(ISharedService);
+      const instance2 = child1.get<SharedService>(ISharedService);
+      const instance3 = child2.get<SharedService>(ISharedService);
+
+      // 所有容器应该共享同一个单例
+      expect(instance1).toBe(instance2);
+      expect(instance2).toBe(instance3);
+    });
+
+    it('瞬态应该每次创建新实例', () => {
+      const ITransientService = Symbol.for('ITransientService');
+
+      let instanceCount = 0;
+      class TransientService {
+        id = ++instanceCount;
+      }
+
+      // 显式使用瞬态作用域（虽然默认就是瞬态）
+      container.bind(ITransientService).to(TransientService).inTransientScope();
+
+      const instance1 = container.get<TransientService>(ITransientService);
+      const instance2 = container.get<TransientService>(ITransientService);
+      const instance3 = container.get<TransientService>(ITransientService);
+
+      expect(instance1).not.toBe(instance2);
+      expect(instance2).not.toBe(instance3);
+      expect(instance1.id).not.toBe(instance2.id);
+      expect(instanceCount).toBe(3);
+    });
+
+    it('瞬态依赖在单例中应该只创建一次', () => {
+      const ISingletonService = Symbol.for('ISingletonService');
+      const ITransientDep = Symbol.for('ITransientDep');
+
+      let transientCount = 0;
+
+      class TransientDep {
+        id = ++transientCount;
+      }
+
+      class SingletonService {
+        static $inject = [ITransientDep] as const;
+        constructor(public dep: TransientDep) { }
+      }
+
+      // 单例服务依赖瞬态服务
+      container.bind(ITransientDep).to(TransientDep);
+      container.bind(ISingletonService).to(SingletonService).inSingletonScope();
+
+      const service1 = container.get<SingletonService>(ISingletonService);
+      const service2 = container.get<SingletonService>(ISingletonService);
+
+      // 单例服务只创建一次，所以瞬态依赖也只创建一次
+      expect(service1).toBe(service2);
+      expect(service1.dep).toBe(service2.dep);
+      expect(transientCount).toBe(1);
+    });
+
+    it('作用域缓存应该隔离不同作用域', () => {
+      const IScopedService = Symbol.for('IScopedService');
+
+      let instanceCount = 0;
+      class ScopedService {
+        id = ++instanceCount;
+      }
+
+      container.bind(IScopedService).to(ScopedService).inScopedScope();
+
+      // 在同一个作用域中获取多次
+      const instance1 = container.get<ScopedService>(IScopedService);
+      const instance2 = container.get<ScopedService>(IScopedService);
+
+      expect(instance1).toBe(instance2);
+      expect(instanceCount).toBe(1);
+
+      // 清除作用域缓存
+      container.clearScopedCache();
+
+      // 再次获取应该创建新实例
+      const instance3 = container.get<ScopedService>(IScopedService);
+      expect(instance3).not.toBe(instance1);
+      expect(instanceCount).toBe(2);
+    });
+
+    it('混合作用域的复杂依赖链', () => {
+      const ILogger = Symbol.for('ILogger');
+      const IConfig = Symbol.for('IConfig');
+      const IDatabase = Symbol.for('IDatabase');
+      const IService = Symbol.for('IService');
+
+      let loggerCount = 0;
+      let configCount = 0;
+      let dbCount = 0;
+      let serviceCount = 0;
+
+      class Logger {
+        id = ++loggerCount;
+        logs: string[] = [];
+        log(msg: string) { this.logs.push(msg); }
+      }
+
+      class Config {
+        id = ++configCount;
+        value = 'test-config';
+      }
+
+      class Database {
+        static $inject = [ILogger, IConfig] as const;
+        id = ++dbCount;
+        constructor(
+          public logger: Logger,
+          public config: Config
+        ) { }
+      }
+
+      class Service {
+        static $inject = [ILogger, IDatabase] as const;
+        id = ++serviceCount;
+        constructor(
+          public logger: Logger,
+          public db: Database
+        ) { }
+      }
+
+      // 配置绑定：
+      // - Logger: 单例（全局共享）
+      // - Config: 瞬态（每次新建）
+      // - Database: 作用域（作用域内共享）
+      // - Service: 瞬态（每次新建）
+      container.bind(ILogger).to(Logger).inSingletonScope();
+      container.bind(IConfig).to(Config);
+      container.bind(IDatabase).to(Database).inScopedScope();
+      container.bind(IService).to(Service);
+
+      const service1 = container.get<Service>(IService);
+      const service2 = container.get<Service>(IService);
+
+      // Service 是瞬态，每次新建
+      expect(service1).not.toBe(service2);
+      expect(serviceCount).toBe(2);
+
+      // Logger 是单例，共享
+      expect(service1.logger).toBe(service2.logger);
+      expect(loggerCount).toBe(1);
+
+      // Database 是作用域，共享
+      expect(service1.db).toBe(service2.db);
+      expect(dbCount).toBe(1);
+
+      // Config 是瞬态，但在 Database 的作用域内只创建一次
+      // 因为 Database 是作用域单例，它的依赖也只解析一次
+      expect(service1.db.config).toBe(service2.db.config);
+      expect(configCount).toBe(1);
+
+      // 清除作用域缓存
+      container.clearScopedCache();
+
+      const service3 = container.get<Service>(IService);
+      expect(service3.db).not.toBe(service1.db);
+      expect(dbCount).toBe(2);
+
+      // Logger 仍然是单例
+      expect(service3.logger).toBe(service1.logger);
+      expect(loggerCount).toBe(1);
+    });
+
+    it('作用域内的多层级依赖', () => {
+      const ILevel1 = Symbol.for('ILevel1');
+      const ILevel2 = Symbol.for('ILevel2');
+      const ILevel3 = Symbol.for('ILevel3');
+
+      let count1 = 0, count2 = 0, count3 = 0;
+
+      class Level3 {
+        id = ++count3;
+      }
+
+      class Level2 {
+        static $inject = [ILevel3] as const;
+        id = ++count2;
+        constructor(public level3: Level3) { }
+      }
+
+      class Level1 {
+        static $inject = [ILevel2] as const;
+        id = ++count1;
+        constructor(public level2: Level2) { }
+      }
+
+      // 所有层级都使用作用域
+      container.bind(ILevel3).to(Level3).inScopedScope();
+      container.bind(ILevel2).to(Level2).inScopedScope();
+      container.bind(ILevel1).to(Level1).inScopedScope();
+
+      const level1a = container.get<Level1>(ILevel1);
+      const level1b = container.get<Level1>(ILevel1);
+
+      // 所有层级在作用域内共享
+      expect(level1a).toBe(level1b);
+      expect(level1a.level2).toBe(level1b.level2);
+      expect(level1a.level2.level3).toBe(level1b.level2.level3);
+      expect(count1).toBe(1);
+      expect(count2).toBe(1);
+      expect(count3).toBe(1);
+
+      // 清除缓存后全部重建
+      container.clearScopedCache();
+      const level1c = container.get<Level1>(ILevel1);
+
+      expect(level1c).not.toBe(level1a);
+      expect(count1).toBe(2);
+      expect(count2).toBe(2);
+      expect(count3).toBe(2);
     });
   });
 
