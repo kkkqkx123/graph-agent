@@ -8,8 +8,9 @@
  * - 简化错误处理逻辑
  */
 
-import { ThreadInterruptedException } from '@modular-agent/types';
+import { ThreadInterruptedException, AbortError } from '@modular-agent/types';
 import type { InterruptionType } from '@modular-agent/types';
+import { throwAbortReason } from './abort-utils.js';
 
 /**
  * 从 AbortSignal 中获取线程中断异常
@@ -158,8 +159,8 @@ export function throwIfAborted(signal: AbortSignal): void {
     if (exception) {
       throw exception;
     }
-    // 如果不是线程中断异常，抛出通用的中止错误
-    throw signal.reason || new Error('Operation aborted');
+    // 如果不是线程中断异常，使用 abort-utils 中的公共函数处理
+    throwAbortReason(signal);
   }
 }
 
@@ -201,7 +202,7 @@ export async function withThreadInterruptionArg<T>(
 export function getInterruptionDescription(signal: AbortSignal): string {
   const exception = getThreadInterruptedException(signal);
   if (!exception) {
-    return 'Operation aborted';
+    return 'This operation was aborted';
   }
 
   const type = exception.interruptionType?.toLowerCase() || 'interrupted';

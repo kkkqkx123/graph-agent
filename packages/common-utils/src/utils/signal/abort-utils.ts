@@ -7,6 +7,23 @@
  * - 简化异步操作的中断处理
  * - 提供类型安全的工具函数
  */
+import { TimeoutError, AbortError } from '@modular-agent/types';
+
+/**
+ * 抛出 AbortSignal 的中止原因
+ * 如果 reason 是 Error 实例则直接抛出，否则包装为 AbortError
+ * @param signal AbortSignal
+ * @throws 始终抛出错误
+ */
+export function throwAbortReason(signal: AbortSignal): never {
+  const reason = signal.reason;
+  if (reason instanceof Error) {
+    throw reason;
+  }
+  // 当 reason 不存在或不是 Error 实例时，使用 AbortError
+  // 使用 'This operation was aborted' 与浏览器原生行为保持一致
+  throw new AbortError('This operation was aborted', reason);
+}
 
 /**
  * 检查 AbortSignal 并执行函数
@@ -20,11 +37,7 @@ export function withAbortSignal<T>(
   signal?: AbortSignal
 ): Promise<T> {
   if (signal?.aborted) {
-    const reason = signal.reason;
-    if (reason instanceof Error) {
-      throw reason;
-    }
-    throw new Error('Operation aborted');
+    throwAbortReason(signal);
   }
   return fn();
 }
@@ -41,13 +54,12 @@ export function withAbortSignalArg<T>(
   signal?: AbortSignal
 ): Promise<T> {
   if (signal?.aborted) {
-    const reason = signal.reason;
-    if (reason instanceof Error) {
-      throw reason;
-    }
-    throw new Error('Operation aborted');
+    throwAbortReason(signal);
   }
-  return fn(signal!);
+  if (!signal) {
+    throw new Error('Signal is required for withAbortSignalArg');
+  }
+  return fn(signal);
 }
 
 /**
@@ -61,7 +73,12 @@ export function createTimeoutSignal(timeoutMs: number): {
 } {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => {
-    controller.abort(new Error(`Operation timed out after ${timeoutMs}ms`));
+    // 使用 SDK 的 TimeoutError 替代普通 Error
+    const timeoutError = new TimeoutError(
+      `Operation timed out after ${timeoutMs}ms`,
+      timeoutMs
+    );
+    controller.abort(timeoutError);
   }, timeoutMs);
 
   // 清理定时器
@@ -184,10 +201,22 @@ export async function withTimeoutAndAbort<T>(
     combinedSignal = result.signal;
   }
 
+  // 检查组合信号是否已经被中止
+  if (combinedSignal.aborted) {
+    throw combinedSignal.reason || new AbortError('This operation was aborted');
+  }
+
   try {
+    // 执行函数并返回结果
+    // 函数内部应该监听 signal 并正确处理中止
     return await fn(combinedSignal);
   } finally {
-    timeoutController?.abort();
-    combinedController?.abort();
+    // 确保清理资源，但只在未被中止时才主动中止控制器
+    if (timeoutController && !timeoutController.signal.aborted) {
+      timeoutController.abort();
+    }
+    if (combinedController && !combinedController.signal.aborted) {
+      combinedController.abort();
+    }
   }
 }

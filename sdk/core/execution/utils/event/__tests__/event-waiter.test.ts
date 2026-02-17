@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { EventManager } from '../../../services/event-manager.js';
+import type { EventManager } from '../../../../services/event-manager.js';
 import {
   WAIT_FOREVER,
   waitForThreadPaused,
@@ -42,7 +42,7 @@ describe('EventWaiter', () => {
 
   describe('waitForThreadPaused', () => {
     it('应该使用默认超时时间等待线程暂停事件', async () => {
-      const mockEvent = { type: 'THREAD_PAUSED', threadId: 'thread-1' };
+      const mockEvent = { type: 'THREAD_PAUSED', threadId: 'thread-1', timestamp: Date.now(), workflowId: 'test-workflow' } as any;
       vi.mocked(mockEventManager.waitFor).mockResolvedValue(mockEvent);
 
       await waitForThreadPaused(mockEventManager, 'thread-1');
@@ -55,7 +55,7 @@ describe('EventWaiter', () => {
     });
 
     it('应该使用自定义超时时间等待线程暂停事件', async () => {
-      const mockEvent = { type: 'THREAD_PAUSED', threadId: 'thread-1' };
+      const mockEvent = { type: 'THREAD_PAUSED', threadId: 'thread-1', timestamp: Date.now(), workflowId: 'test-workflow' } as any;
       vi.mocked(mockEventManager.waitFor).mockResolvedValue(mockEvent);
 
       await waitForThreadPaused(mockEventManager, 'thread-1', 10000);
@@ -68,7 +68,7 @@ describe('EventWaiter', () => {
     });
 
     it('应该使用 WAIT_FOREVER 表示无限等待', async () => {
-      const mockEvent = { type: 'THREAD_PAUSED', threadId: 'thread-1' };
+      const mockEvent = { type: 'THREAD_PAUSED', threadId: 'thread-1', timestamp: Date.now(), workflowId: 'test-workflow' } as any;
       vi.mocked(mockEventManager.waitFor).mockResolvedValue(mockEvent);
 
       await waitForThreadPaused(mockEventManager, 'thread-1', WAIT_FOREVER);
@@ -81,26 +81,26 @@ describe('EventWaiter', () => {
     });
 
     it('应该正确过滤线程ID', async () => {
-      const mockEvent = { type: 'THREAD_PAUSED', threadId: 'thread-1' };
-      vi.mocked(mockEventManager.waitFor).mockImplementation((eventType: any, timeout: any, filter: (arg0: { type: string; threadId: string; }) => any) => {
+      const mockEvent = { type: 'THREAD_PAUSED', threadId: 'thread-1', timestamp: Date.now(), workflowId: 'test-workflow' } as any;
+      vi.mocked(mockEventManager.waitFor).mockImplementation(((eventType: any, timeout: any, filter?: (arg0: any) => any) => {
         if (filter && filter(mockEvent)) {
           return Promise.resolve(mockEvent);
         }
         return Promise.reject(new Error('Filter failed'));
-      });
+      }) as any);
 
       await waitForThreadPaused(mockEventManager, 'thread-1');
 
       expect(mockEventManager.waitFor).toHaveBeenCalled();
-      const filterArg = vi.mocked(mockEventManager.waitFor).mock.calls[0][2];
+      const filterArg = vi.mocked(mockEventManager.waitFor).mock.calls[0][2] as any;
       expect(filterArg(mockEvent)).toBe(true);
-      expect(filterArg({ type: 'THREAD_PAUSED', threadId: 'thread-2' })).toBe(false);
+      expect(filterArg({ type: 'THREAD_PAUSED', threadId: 'thread-2', timestamp: Date.now(), workflowId: 'test-workflow' })).toBe(false);
     });
   });
 
   describe('waitForThreadCancelled', () => {
     it('应该等待线程取消事件', async () => {
-      const mockEvent = { type: 'THREAD_CANCELLED', threadId: 'thread-1' };
+      const mockEvent = { type: 'THREAD_CANCELLED', threadId: 'thread-1', timestamp: Date.now(), workflowId: 'test-workflow' } as any;
       vi.mocked(mockEventManager.waitFor).mockResolvedValue(mockEvent);
 
       await waitForThreadCancelled(mockEventManager, 'thread-1');
@@ -113,7 +113,7 @@ describe('EventWaiter', () => {
     });
 
     it('应该使用自定义超时时间', async () => {
-      const mockEvent = { type: 'THREAD_CANCELLED', threadId: 'thread-1' };
+      const mockEvent = { type: 'THREAD_CANCELLED', threadId: 'thread-1', timestamp: Date.now(), workflowId: 'test-workflow' } as any;
       vi.mocked(mockEventManager.waitFor).mockResolvedValue(mockEvent);
 
       await waitForThreadCancelled(mockEventManager, 'thread-1', 15000);
@@ -128,7 +128,7 @@ describe('EventWaiter', () => {
 
   describe('waitForThreadCompleted', () => {
     it('应该等待线程完成事件', async () => {
-      const mockEvent = { type: 'THREAD_COMPLETED', threadId: 'thread-1' };
+      const mockEvent = { type: 'THREAD_COMPLETED', threadId: 'thread-1', timestamp: Date.now(), workflowId: 'test-workflow' } as any;
       vi.mocked(mockEventManager.waitFor).mockResolvedValue(mockEvent);
 
       await waitForThreadCompleted(mockEventManager, 'thread-1');
@@ -141,7 +141,7 @@ describe('EventWaiter', () => {
     });
 
     it('应该使用自定义超时时间', async () => {
-      const mockEvent = { type: 'THREAD_COMPLETED', threadId: 'thread-1' };
+      const mockEvent = { type: 'THREAD_COMPLETED', threadId: 'thread-1', timestamp: Date.now(), workflowId: 'test-workflow' } as any;
       vi.mocked(mockEventManager.waitFor).mockResolvedValue(mockEvent);
 
       await waitForThreadCompleted(mockEventManager, 'thread-1', 60000);
@@ -156,7 +156,7 @@ describe('EventWaiter', () => {
 
   describe('waitForThreadFailed', () => {
     it('应该等待线程失败事件', async () => {
-      const mockEvent = { type: 'THREAD_FAILED', threadId: 'thread-1' };
+      const mockEvent = { type: 'THREAD_FAILED', threadId: 'thread-1', timestamp: Date.now(), workflowId: 'test-workflow' } as any;
       vi.mocked(mockEventManager.waitFor).mockResolvedValue(mockEvent);
 
       await waitForThreadFailed(mockEventManager, 'thread-1');
@@ -171,7 +171,7 @@ describe('EventWaiter', () => {
 
   describe('waitForThreadResumed', () => {
     it('应该等待线程恢复事件', async () => {
-      const mockEvent = { type: 'THREAD_RESUMED', threadId: 'thread-1' };
+      const mockEvent = { type: 'THREAD_RESUMED', threadId: 'thread-1', timestamp: Date.now(), workflowId: 'test-workflow' } as any;
       vi.mocked(mockEventManager.waitFor).mockResolvedValue(mockEvent);
 
       await waitForThreadResumed(mockEventManager, 'thread-1');
@@ -186,7 +186,7 @@ describe('EventWaiter', () => {
 
   describe('waitForAnyLifecycleEvent', () => {
     it('应该等待任意生命周期事件', async () => {
-      const mockEvent = { type: 'THREAD_PAUSED', threadId: 'thread-1' };
+      const mockEvent = { type: 'THREAD_PAUSED', threadId: 'thread-1', timestamp: Date.now(), workflowId: 'test-workflow' } as any;
       vi.mocked(mockEventManager.waitFor).mockResolvedValue(mockEvent);
 
       await waitForAnyLifecycleEvent(mockEventManager, 'thread-1');
@@ -196,7 +196,7 @@ describe('EventWaiter', () => {
     });
 
     it('应该使用自定义超时时间', async () => {
-      const mockEvent = { type: 'THREAD_PAUSED', threadId: 'thread-1' };
+      const mockEvent = { type: 'THREAD_PAUSED', threadId: 'thread-1', timestamp: Date.now(), workflowId: 'test-workflow' } as any;
       vi.mocked(mockEventManager.waitFor).mockResolvedValue(mockEvent);
 
       await waitForAnyLifecycleEvent(mockEventManager, 'thread-1', 10000);
@@ -209,7 +209,7 @@ describe('EventWaiter', () => {
     });
 
     it('应该使用 WAIT_FOREVER 表示无限等待', async () => {
-      const mockEvent = { type: 'THREAD_PAUSED', threadId: 'thread-1' };
+      const mockEvent = { type: 'THREAD_PAUSED', threadId: 'thread-1', timestamp: Date.now(), workflowId: 'test-workflow' } as any;
       vi.mocked(mockEventManager.waitFor).mockResolvedValue(mockEvent);
 
       await waitForAnyLifecycleEvent(mockEventManager, 'thread-1', WAIT_FOREVER);
@@ -224,7 +224,7 @@ describe('EventWaiter', () => {
 
   describe('waitForMultipleThreadsCompleted', () => {
     it('应该等待多个线程完成', async () => {
-      const mockEvent = { type: 'THREAD_COMPLETED', threadId: 'thread-1' };
+      const mockEvent = { type: 'THREAD_COMPLETED', threadId: 'thread-1', timestamp: Date.now(), workflowId: 'test-workflow' } as any;
       vi.mocked(mockEventManager.waitFor).mockResolvedValue(mockEvent);
 
       await waitForMultipleThreadsCompleted(mockEventManager, ['thread-1', 'thread-2', 'thread-3']);
@@ -233,7 +233,7 @@ describe('EventWaiter', () => {
     });
 
     it('应该使用自定义超时时间', async () => {
-      const mockEvent = { type: 'THREAD_COMPLETED', threadId: 'thread-1' };
+      const mockEvent = { type: 'THREAD_COMPLETED', threadId: 'thread-1', timestamp: Date.now(), workflowId: 'test-workflow' } as any;
       vi.mocked(mockEventManager.waitFor).mockResolvedValue(mockEvent);
 
       await waitForMultipleThreadsCompleted(mockEventManager, ['thread-1', 'thread-2'], 60000);
@@ -254,7 +254,7 @@ describe('EventWaiter', () => {
         // 模拟不同的线程在不同时间完成
         if (callCount === 2) {
           // thread-2 先完成
-          return Promise.resolve({ type: 'THREAD_COMPLETED', threadId: 'thread-2' });
+          return Promise.resolve({ type: 'THREAD_COMPLETED', threadId: 'thread-2', timestamp: Date.now(), workflowId: 'test-workflow' } as any);
         }
         return new Promise(() => { }); // 其他线程永不解析
       });
@@ -265,7 +265,7 @@ describe('EventWaiter', () => {
     });
 
     it('应该使用自定义超时时间', async () => {
-      const mockEvent = { type: 'THREAD_COMPLETED', threadId: 'thread-1' };
+      const mockEvent = { type: 'THREAD_COMPLETED', threadId: 'thread-1', timestamp: Date.now(), workflowId: 'test-workflow' } as any;
       vi.mocked(mockEventManager.waitFor).mockResolvedValue(mockEvent);
 
       await waitForAnyThreadCompleted(mockEventManager, ['thread-1', 'thread-2'], 60000);
@@ -285,7 +285,7 @@ describe('EventWaiter', () => {
         callCount++;
         // 模拟 thread-1 先完成
         if (eventType === 'THREAD_COMPLETED' && callCount === 1) {
-          return Promise.resolve({ type: 'THREAD_COMPLETED', threadId: 'thread-1' });
+          return Promise.resolve({ type: 'THREAD_COMPLETED', threadId: 'thread-1', timestamp: Date.now(), workflowId: 'test-workflow' } as any);
         }
         return new Promise(() => { }); // 其他事件永不解析
       });
@@ -304,7 +304,7 @@ describe('EventWaiter', () => {
         // thread-2: callCount 3 (completed), 4 (failed)
         // 让 thread-2 的失败事件先触发
         if (eventType === 'THREAD_FAILED' && callCount === 4) {
-          return Promise.resolve({ type: 'THREAD_FAILED', threadId: 'thread-2' });
+          return Promise.resolve({ type: 'THREAD_FAILED', threadId: 'thread-2', timestamp: Date.now(), workflowId: 'test-workflow' } as any);
         }
         return new Promise(() => { }); // 其他事件永不解析
       });
@@ -317,7 +317,7 @@ describe('EventWaiter', () => {
 
   describe('waitForNodeCompleted', () => {
     it('应该等待节点完成事件', async () => {
-      const mockEvent = { type: 'NODE_COMPLETED', threadId: 'thread-1', nodeId: 'node-1' };
+      const mockEvent = { type: 'NODE_COMPLETED', threadId: 'thread-1', nodeId: 'node-1', timestamp: Date.now(), workflowId: 'test-workflow' } as any;
       vi.mocked(mockEventManager.waitFor).mockResolvedValue(mockEvent);
 
       await waitForNodeCompleted(mockEventManager, 'thread-1', 'node-1');
@@ -330,26 +330,26 @@ describe('EventWaiter', () => {
     });
 
     it('应该正确过滤线程ID和节点ID', async () => {
-      const mockEvent = { type: 'NODE_COMPLETED', threadId: 'thread-1', nodeId: 'node-1' };
-      vi.mocked(mockEventManager.waitFor).mockImplementation((eventType: any, timeout: any, filter: (arg0: { type: string; threadId: string; nodeId: string; }) => any) => {
+      const mockEvent = { type: 'NODE_COMPLETED', threadId: 'thread-1', nodeId: 'node-1', timestamp: Date.now(), workflowId: 'test-workflow' } as any;
+      vi.mocked(mockEventManager.waitFor).mockImplementation(((eventType: any, timeout: any, filter?: (arg0: any) => any) => {
         if (filter && filter(mockEvent)) {
           return Promise.resolve(mockEvent);
         }
         return Promise.reject(new Error('Filter failed'));
-      });
+      }) as any);
 
       await waitForNodeCompleted(mockEventManager, 'thread-1', 'node-1');
 
-      const filterArg = vi.mocked(mockEventManager.waitFor).mock.calls[0][2];
+      const filterArg = vi.mocked(mockEventManager.waitFor).mock.calls[0][2] as any;
       expect(filterArg(mockEvent)).toBe(true);
-      expect(filterArg({ type: 'NODE_COMPLETED', threadId: 'thread-2', nodeId: 'node-1' })).toBe(false);
-      expect(filterArg({ type: 'NODE_COMPLETED', threadId: 'thread-1', nodeId: 'node-2' })).toBe(false);
+      expect(filterArg({ type: 'NODE_COMPLETED', threadId: 'thread-2', nodeId: 'node-1', timestamp: Date.now(), workflowId: 'test-workflow' })).toBe(false);
+      expect(filterArg({ type: 'NODE_COMPLETED', threadId: 'thread-1', nodeId: 'node-2', timestamp: Date.now(), workflowId: 'test-workflow' })).toBe(false);
     });
   });
 
   describe('waitForNodeFailed', () => {
     it('应该等待节点失败事件', async () => {
-      const mockEvent = { type: 'NODE_FAILED', threadId: 'thread-1', nodeId: 'node-1' };
+      const mockEvent = { type: 'NODE_FAILED', threadId: 'thread-1', nodeId: 'node-1', timestamp: Date.now(), workflowId: 'test-workflow' } as any;
       vi.mocked(mockEventManager.waitFor).mockResolvedValue(mockEvent);
 
       await waitForNodeFailed(mockEventManager, 'thread-1', 'node-1');

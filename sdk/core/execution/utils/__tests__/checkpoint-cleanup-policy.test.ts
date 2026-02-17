@@ -19,12 +19,10 @@ function createMockCheckpoint(checkpointId: string, ageInDays: number): Checkpoi
   const timestamp = Date.now() - (ageInDays * 24 * 60 * 60 * 1000);
   return {
     checkpointId,
-    threadId: 'test-thread',
-    nodeId: 'test-node',
     metadata: {
-      timestamp,
+      threadId: 'test-thread',
       workflowId: 'test-workflow',
-      status: 'COMPLETED'
+      timestamp
     }
   };
 }

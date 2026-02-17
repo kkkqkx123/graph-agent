@@ -18,7 +18,6 @@
 import { ThreadContext } from '../context/thread-context.js';
 import type { Node } from '@modular-agent/types';
 import type { NodeExecutionResult } from '@modular-agent/types';
-import { ThreadStatus } from '@modular-agent/types';
 import { ErrorContext, SDKError, ErrorSeverity } from '@modular-agent/types';
 import { getContainer } from '../../di/index.js';
 import * as Identifiers from '../../di/service-identifiers.js';
@@ -29,6 +28,12 @@ import { now } from '@modular-agent/common-utils';
  * 将普通 Error 转换为 SDKError，确保所有错误都有 severity
  */
 function standardizeErrorWithSeverity(error: Error, context: ErrorContext): SDKError {
+  // 防御：ThreadInterruptedException 不应该到达这里
+  // 它应该在 ThreadExecutor.execute() 中被显式捕获作为控制流处理
+  if (error.constructor.name === 'ThreadInterruptedException') {
+    throw new Error('ThreadInterruptedException should be handled as control flow, not error');
+  }
+
   // 如果已经是 SDKError，直接返回
   if (error instanceof SDKError) {
     return error;
@@ -52,7 +57,7 @@ export async function handleNodeFailure(
   nodeResult: NodeExecutionResult
 ): Promise<void> {
   const error = nodeResult.error || new Error('Unknown error');
-  
+
   // 标准化错误以确保有 severity
   const context: ErrorContext = {
     threadId: threadContext.getThreadId(),
@@ -60,7 +65,7 @@ export async function handleNodeFailure(
     nodeId: node.id,
     operation: 'node_execution'
   };
-  
+
   const standardizedError = standardizeErrorWithSeverity(error, context);
 
   // 记录错误到线程上下文
@@ -95,7 +100,7 @@ export async function handleExecutionError(
     workflowId: threadContext.getWorkflowId(),
     operation: 'execution'
   };
-  
+
   // 标准化错误以确保有 severity
   const standardizedError = standardizeErrorWithSeverity(error, context);
 
