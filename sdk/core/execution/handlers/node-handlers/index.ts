@@ -26,7 +26,7 @@ export type NodeHandler = (thread: Thread, node: Node, context?: any) => Promise
 import { startHandler } from './start-handler.js';
 import { endHandler } from './end-handler.js';
 import { variableHandler } from './variable-handler.js';
-import { codeHandler } from './code-handler.js';
+import { scriptHandler } from './script-handler.js';
 import { forkHandler } from './fork-handler.js';
 import { joinHandler } from './join-handler.js';
 import { routeHandler } from './route-handler.js';
@@ -78,7 +78,7 @@ export function getNodeHandler(nodeType: NodeType): NodeHandler {
 export { startHandler } from './start-handler.js';
 export { endHandler } from './end-handler.js';
 export { variableHandler } from './variable-handler.js';
-export { codeHandler } from './code-handler.js';
+export { scriptHandler } from './script-handler.js';
 export { forkHandler } from './fork-handler.js';
 export { joinHandler } from './join-handler.js';
 export { routeHandler } from './route-handler.js';

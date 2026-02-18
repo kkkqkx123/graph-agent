@@ -199,7 +199,7 @@ export function initializeContainer(): Container {
         threadRegistry,
         eventManager,
         toolService,
-        codeService,
+        scriptService,
         llmExecutor,
         errorService,
         taskRegistry,

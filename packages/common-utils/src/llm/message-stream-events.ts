@@ -4,28 +4,21 @@
  * 由于需要导入llm type且仅内部使用，不适合集中在全局定义中
  */
 
-import type { LLMMessage, LLMResult } from '@modular-agent/types';
+import type { LLMMessage } from '@modular-agent/types';
 
 /**
  * 消息流事件类型
  */
 export type MessageStreamEventType =
   | 'connect'           /** 连接建立 */
-  | 'streamEvent'       /** 流事件 */
+  | 'streamEvent'       /** 流事件（原始事件+快照） */
   | 'text'              /** 文本增量 */
-  | 'toolCall'          /** 工具调用 */
-  | 'message'           /** 消息 */
-  | 'finalMessage'      /** 最终消息 */
+  | 'inputJson'         /** 工具参数实时解析 */
+  | 'message'           /** 完整消息接收 */
+  | 'finalMessage'      /** 最终消息确认 */
   | 'error'             /** 错误 */
   | 'abort'             /** 中止 */
-  | 'end'               /** 结束 */
-  // 新增事件类型
-  | 'citation'          /** 引用事件 */
-  | 'thinking'          /** 思考事件 */
-  | 'signature'         /** 签名事件 */
-  | 'inputJson'         /** 输入 JSON 事件 */
-  | 'contentBlockStart' /** 内容块开始事件 */
-  | 'contentBlockStop'; /** 内容块停止事件 */
+  | 'end';              /** 结束 */
 
 /**
  * 消息流事件类型
@@ -34,30 +27,27 @@ export type MessageStreamEvent =
   | MessageStreamConnectEvent
   | MessageStreamStreamEvent
   | MessageStreamTextEvent
-  | MessageStreamToolCallEvent
+  | MessageStreamInputJsonEvent
   | MessageStreamMessageEvent
   | MessageStreamFinalMessageEvent
   | MessageStreamErrorEvent
   | MessageStreamAbortEvent
-  | MessageStreamEndEvent
-  // 新增事件类型
-  | MessageStreamCitationEvent
-  | MessageStreamThinkingEvent
-  | MessageStreamSignatureEvent
-  | MessageStreamInputJsonEvent
-  | MessageStreamContentBlockStartEvent
-  | MessageStreamContentBlockStopEvent;
+  | MessageStreamEndEvent;
 
 /**
- * 消息流连接建立事件
+ * 消息流连接事件
  */
 export interface MessageStreamConnectEvent {
   type: 'connect';
-  requestId: string;
 }
 
 /**
- * 消息流事件
+ * connect 事件监听器类型（展开参数）
+ */
+export type ConnectEventListener = () => void;
+
+/**
+ * 消息流事件（原始事件+快照）
  */
 export interface MessageStreamStreamEvent {
   type: 'streamEvent';
@@ -65,8 +55,13 @@ export interface MessageStreamStreamEvent {
     type: string;
     data: any;
   };
-  snapshot: LLMMessage | null;
+  snapshot: LLMMessage;
 }
+
+/**
+ * streamEvent 事件监听器类型（展开参数）
+ */
+export type StreamEventListener = (event: { type: string; data: any }, snapshot: LLMMessage) => void;
 
 /**
  * 消息流文本增量事件
@@ -78,16 +73,27 @@ export interface MessageStreamTextEvent {
 }
 
 /**
- * 消息流工具调用事件
+ * 文本事件监听器类型（展开参数）
  */
-export interface MessageStreamToolCallEvent {
-  type: 'toolCall';
-  toolCall: any;
+export type TextEventListener = (delta: string, snapshot: string) => void;
+
+/**
+ * 消息流工具参数实时解析事件
+ */
+export interface MessageStreamInputJsonEvent {
+  type: 'inputJson';
+  partialJson: string;
+  parsedSnapshot: unknown;
   snapshot: LLMMessage;
 }
 
 /**
- * 消息流消息事件
+ * inputJson 事件监听器类型（展开参数）
+ */
+export type InputJsonEventListener = (partialJson: string, parsedSnapshot: unknown, snapshot: LLMMessage) => void;
+
+/**
+ * 消息流完整消息事件
  */
 export interface MessageStreamMessageEvent {
   type: 'message';
@@ -95,13 +101,22 @@ export interface MessageStreamMessageEvent {
 }
 
 /**
+ * message 事件监听器类型（展开参数）
+ */
+export type MessageEventListener = (message: LLMMessage) => void;
+
+/**
  * 消息流最终消息事件
  */
 export interface MessageStreamFinalMessageEvent {
   type: 'finalMessage';
   message: LLMMessage;
-  result: LLMResult;
 }
+
+/**
+ * finalMessage 事件监听器类型（展开参数）
+ */
+export type FinalMessageEventListener = (message: LLMMessage) => void;
 
 /**
  * 消息流错误事件
@@ -112,12 +127,22 @@ export interface MessageStreamErrorEvent {
 }
 
 /**
+ * error 事件监听器类型（展开参数）
+ */
+export type ErrorEventListener = (error: Error) => void;
+
+/**
  * 消息流中止事件
  */
 export interface MessageStreamAbortEvent {
   type: 'abort';
   reason?: string;
 }
+
+/**
+ * abort 事件监听器类型（展开参数）
+ */
+export type AbortEventListener = (reason?: string) => void;
 
 /**
  * 消息流结束事件
@@ -127,163 +152,6 @@ export interface MessageStreamEndEvent {
 }
 
 /**
- * 引用位置类型
+ * end 事件监听器类型（展开参数）
  */
-export type CitationLocationType =
-  | 'char_location'
-  | 'page_location'
-  | 'content_block_location'
-  | 'web_search_result_location'
-  | 'search_result_location';
-
-/**
- * 引用位置
- */
-export interface CitationLocation {
-  /** 引用的文本 */
-  cited_text: string;
-  /** 文档索引 */
-  document_index: number;
-  /** 文档标题 */
-  document_title: string | null;
-  /** 位置类型 */
-  type: CitationLocationType;
-  /** 文件 ID（可选） */
-  file_id?: string;
-}
-
-/**
- * 字符位置引用
- */
-export interface CitationCharLocation extends CitationLocation {
-  type: 'char_location';
-  /** 起始字符索引 */
-  start_char_index: number;
-  /** 结束字符索引 */
-  end_char_index: number;
-}
-
-/**
- * 页面位置引用
- */
-export interface CitationPageLocation extends CitationLocation {
-  type: 'page_location';
-  /** 起始页码 */
-  start_page_number: number;
-  /** 结束页码 */
-  end_page_number: number;
-}
-
-/**
- * 内容块位置引用
- */
-export interface CitationContentBlockLocation extends CitationLocation {
-  type: 'content_block_location';
-  /** 起始块索引 */
-  start_block_index: number;
-  /** 结束块索引 */
-  end_block_index: number;
-}
-
-/**
- * Web 搜索结果位置引用
- */
-export interface CitationWebSearchResultLocation extends CitationLocation {
-  type: 'web_search_result_location';
-  /** 加密内容 */
-  encrypted_content: string;
-  /** URL */
-  url: string;
-  /** 页面年龄（可选） */
-  page_age?: string | null;
-}
-
-/**
- * 搜索结果位置引用
- */
-export interface CitationSearchResultLocation extends CitationLocation {
-  type: 'search_result_location';
-  /** 起始块索引 */
-  start_block_index: number;
-  /** 搜索结果索引 */
-  search_result_index: number;
-  /** 来源 */
-  source: string;
-  /** 标题 */
-  title: string | null;
-}
-
-/**
- * 引用类型
- */
-export type TextCitation =
-  | CitationCharLocation
-  | CitationPageLocation
-  | CitationContentBlockLocation
-  | CitationWebSearchResultLocation
-  | CitationSearchResultLocation;
-
-/**
- * 消息流引用事件
- */
-export interface MessageStreamCitationEvent {
-  type: 'citation';
-  /** 引用信息 */
-  citation: TextCitation;
-  /** 所有引用的快照 */
-  citationsSnapshot: TextCitation[];
-}
-
-/**
- * 消息流思考事件
- */
-export interface MessageStreamThinkingEvent {
-  type: 'thinking';
-  /** 思考增量 */
-  thinkingDelta: string;
-  /** 思考快照 */
-  thinkingSnapshot: string;
-}
-
-/**
- * 消息流签名事件
- */
-export interface MessageStreamSignatureEvent {
-  type: 'signature';
-  /** 签名 */
-  signature: string;
-}
-
-/**
- * 消息流输入 JSON 事件
- */
-export interface MessageStreamInputJsonEvent {
-  type: 'inputJson';
-  /** 部分 JSON */
-  partialJson: string;
-  /** JSON 快照 */
-  jsonSnapshot: unknown;
-}
-
-/**
- * 消息流内容块开始事件
- */
-export interface MessageStreamContentBlockStartEvent {
-  type: 'contentBlockStart';
-  /** 内容块索引 */
-  index: number;
-  /** 内容块 */
-  contentBlock: {
-    type: 'text' | 'tool_use' | 'thinking' | 'image' | 'document';
-    [key: string]: any;
-  };
-}
-
-/**
- * 消息流内容块停止事件
- */
-export interface MessageStreamContentBlockStopEvent {
-  type: 'contentBlockStop';
-  /** 内容块索引 */
-  index: number;
-}
+export type EndEventListener = () => void;

@@ -17,12 +17,9 @@ export { MessageStream } from '@modular-agent/common-utils';
 export {
   MessageStreamEventType,
   type MessageStreamEvent,
-  type MessageStreamConnectEvent,
   type MessageStreamStreamEvent,
   type MessageStreamTextEvent,
   type MessageStreamToolCallEvent,
-  type MessageStreamMessageEvent,
-  type MessageStreamFinalMessageEvent,
   type MessageStreamErrorEvent,
   type MessageStreamAbortEvent,
   type MessageStreamEndEvent

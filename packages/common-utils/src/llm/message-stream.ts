@@ -11,18 +11,12 @@ import {
   MessageStreamConnectEvent,
   MessageStreamStreamEvent,
   MessageStreamTextEvent,
-  MessageStreamToolCallEvent,
+  MessageStreamInputJsonEvent,
   MessageStreamMessageEvent,
   MessageStreamFinalMessageEvent,
   MessageStreamErrorEvent,
   MessageStreamAbortEvent,
-  MessageStreamEndEvent,
-  MessageStreamCitationEvent,
-  MessageStreamThinkingEvent,
-  MessageStreamSignatureEvent,
-  MessageStreamInputJsonEvent,
-  MessageStreamContentBlockStartEvent,
-  MessageStreamContentBlockStopEvent
+  MessageStreamEndEvent
 } from './message-stream-events.js';
 
 /**
@@ -250,6 +244,15 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
       return;
     }
     
+    // 触发 finalMessage 事件（仅在正常结束时）
+    if (this.receivedMessages.length > 0) {
+      const lastMessage = this.receivedMessages[this.receivedMessages.length - 1];
+      this.emit('finalMessage', {
+        type: 'finalMessage',
+        message: lastMessage
+      } as MessageStreamFinalMessageEvent);
+    }
+    
     this.emit('end', {} as MessageStreamEndEvent);
   }
 
@@ -340,7 +343,56 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
     const persistentListeners: FlaggedEventListener<T>[] = [];
     for (const listener of eventListeners) {
       try {
-        listener.listener(data);
+        // 根据事件类型展开参数
+        switch (event) {
+          case 'connect':
+            (listener.listener as () => void)();
+            break;
+          case 'streamEvent':
+            const streamEventData = data as MessageStreamStreamEvent;
+            (listener.listener as (event: { type: string; data: any }, snapshot: LLMMessage) => void)(
+              streamEventData.event,
+              streamEventData.snapshot
+            );
+            break;
+          case 'text':
+            const textData = data as MessageStreamTextEvent;
+            (listener.listener as (delta: string, snapshot: string) => void)(
+              textData.delta,
+              textData.snapshot
+            );
+            break;
+          case 'inputJson':
+            const inputJsonData = data as MessageStreamInputJsonEvent;
+            (listener.listener as (partialJson: string, parsedSnapshot: unknown, snapshot: LLMMessage) => void)(
+              inputJsonData.partialJson,
+              inputJsonData.parsedSnapshot,
+              inputJsonData.snapshot
+            );
+            break;
+          case 'message':
+            const messageData = data as MessageStreamMessageEvent;
+            (listener.listener as (message: LLMMessage) => void)(messageData.message);
+            break;
+          case 'finalMessage':
+            const finalMessageData = data as MessageStreamFinalMessageEvent;
+            (listener.listener as (message: LLMMessage) => void)(finalMessageData.message);
+            break;
+          case 'error':
+            const errorData = data as MessageStreamErrorEvent;
+            (listener.listener as (error: Error) => void)(errorData.error);
+            break;
+          case 'abort':
+            const abortData = data as MessageStreamAbortEvent;
+            (listener.listener as (reason?: string) => void)(abortData.reason);
+            break;
+          case 'end':
+            (listener.listener as () => void)();
+            break;
+          default:
+            listener.listener(data);
+        }
+        
         if (!listener.once) {
           persistentListeners.push(listener);
         }
@@ -387,6 +439,13 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
   accumulateMessage(event: InternalStreamEvent): LLMMessage | null {
     switch (event.type) {
       case 'message_start':
+        // 触发 connect 事件（仅在第一次 message_start 时）
+        if (!this.currentMessageSnapshot && this.receivedMessages.length === 0) {
+          this.emit('connect', {
+            type: 'connect'
+          } as MessageStreamConnectEvent);
+        }
+        
         if (this.currentMessageSnapshot) {
           throw new ExecutionError('Message already started');
         }
@@ -396,6 +455,12 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
           ...event.data.message
         };
         this.currentTextSnapshot = '';
+        // 触发 streamEvent 事件
+        this.emit('streamEvent', {
+          type: 'streamEvent',
+          event: { type: event.type, data: event.data },
+          snapshot: this.currentMessageSnapshot
+        } as MessageStreamStreamEvent);
         break;
 
       case 'message_delta':
@@ -409,8 +474,19 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
           (this.currentMessageSnapshot as any).stop_sequence = event.data.delta.stop_sequence;
         }
         if (event.data.usage) {
-          (this.currentMessageSnapshot as any).usage = event.data.usage;
+          // 合并 usage 字段，而不是直接覆盖
+          const currentUsage = (this.currentMessageSnapshot as any).usage || {};
+          (this.currentMessageSnapshot as any).usage = {
+            ...currentUsage,
+            ...event.data.usage
+          };
         }
+        // 触发 streamEvent 事件
+        this.emit('streamEvent', {
+          type: 'streamEvent',
+          event: { type: event.type, data: event.data },
+          snapshot: this.currentMessageSnapshot
+        } as MessageStreamStreamEvent);
         break;
 
       case 'content_block_start':
@@ -424,13 +500,12 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
           type: event.data.content_block.type,
           ...event.data.content_block
         });
-        
-        // 触发内容块开始事件
-        this.emit('contentBlockStart', {
-          type: 'contentBlockStart',
-          index: this.currentMessageSnapshot.content.length - 1,
-          contentBlock: event.data.content_block
-        } as MessageStreamContentBlockStartEvent);
+        // 触发 streamEvent 事件
+        this.emit('streamEvent', {
+          type: 'streamEvent',
+          event: { type: event.type, data: event.data },
+          snapshot: this.currentMessageSnapshot
+        } as MessageStreamStreamEvent);
         break;
 
       case 'content_block_delta':
@@ -440,12 +515,14 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
         if (!Array.isArray(this.currentMessageSnapshot.content)) {
           break;
         }
-        const lastBlock = this.currentMessageSnapshot.content[this.currentMessageSnapshot.content.length - 1];
-        if (!lastBlock) break;
+        // 使用 event.index 定位内容块（如果存在）
+        const blockIndex = event.data.index !== undefined ? event.data.index : this.currentMessageSnapshot.content.length - 1;
+        const targetBlock = this.currentMessageSnapshot.content.at(blockIndex);
+        if (!targetBlock) break;
         
         if (event.data.delta.type === 'text_delta') {
-          if (lastBlock.type === 'text') {
-            lastBlock.text += event.data.delta.text;
+          if (targetBlock.type === 'text') {
+            targetBlock.text += event.data.delta.text;
             this.currentTextSnapshot += event.data.delta.text;
             // 触发文本增量事件
             this.emit('text', {
@@ -456,74 +533,69 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
           }
         } else if (event.data.delta.type === 'citations_delta') {
           // 处理引用增量
-          if (lastBlock.type === 'text') {
-            const textBlock = lastBlock as any;
+          if (targetBlock.type === 'text') {
+            const textBlock = targetBlock as any;
             if (!textBlock.citations) {
               textBlock.citations = [];
             }
             textBlock.citations.push(event.data.delta.citation);
-            
-            // 触发引用事件
-            this.emit('citation', {
-              type: 'citation',
-              citation: event.data.delta.citation,
-              citationsSnapshot: textBlock.citations
-            } as MessageStreamCitationEvent);
           }
         } else if (event.data.delta.type === 'input_json_delta') {
-          if (lastBlock.type === 'tool_use') {
+          if (targetBlock.type === 'tool_use') {
             // 如果 input 已经是对象，说明 API 已经提供了完整的 input，不需要追加
             // 只有当 input 是字符串或 undefined 时才追加 JSON 片段
-            if (typeof (lastBlock as any).input !== 'object') {
-              const currentInput = typeof (lastBlock as any).input === 'string'
-                ? (lastBlock as any).input
+            if (typeof (targetBlock as any).input !== 'object') {
+              const currentInput = typeof (targetBlock as any).input === 'string'
+                ? (targetBlock as any).input
                 : '';
-              (lastBlock as any).input = currentInput + event.data.delta.partial_json;
+              const newInput = currentInput + event.data.delta.partial_json;
+              (targetBlock as any).input = newInput;
+              
+              // 触发 inputJson 事件，提供实时解析
+              let parsedSnapshot: unknown = newInput;
+              try {
+                parsedSnapshot = JSON.parse(newInput);
+              } catch (e) {
+                // 解析失败时保持为字符串
+              }
+              this.emit('inputJson', {
+                type: 'inputJson',
+                partialJson: newInput,
+                parsedSnapshot,
+                snapshot: this.currentMessageSnapshot
+              } as MessageStreamInputJsonEvent);
             }
-            
-            // 触发输入 JSON 事件
-            this.emit('inputJson', {
-              type: 'inputJson',
-              partialJson: event.data.delta.partial_json,
-              jsonSnapshot: (lastBlock as any).input
-            } as MessageStreamInputJsonEvent);
           }
         } else if (event.data.delta.type === 'thinking_delta') {
           // 处理思考增量
-          if ((lastBlock as any).type === 'thinking') {
-            const thinkingBlock = lastBlock as any;
+          if ((targetBlock as any).type === 'thinking') {
+            const thinkingBlock = targetBlock as any;
             thinkingBlock.thinking += event.data.delta.thinking;
-            
-            // 触发思考事件
-            this.emit('thinking', {
-              type: 'thinking',
-              thinkingDelta: event.data.delta.thinking,
-              thinkingSnapshot: thinkingBlock.thinking
-            } as MessageStreamThinkingEvent);
           }
         } else if (event.data.delta.type === 'signature_delta') {
           // 处理签名
-          if ((lastBlock as any).type === 'thinking') {
-            const thinkingBlock = lastBlock as any;
+          if ((targetBlock as any).type === 'thinking') {
+            const thinkingBlock = targetBlock as any;
             thinkingBlock.signature = event.data.delta.signature;
-            
-            // 触发签名事件
-            this.emit('signature', {
-              type: 'signature',
-              signature: event.data.delta.signature
-            } as MessageStreamSignatureEvent);
           }
         }
+        // 触发 streamEvent 事件
+        this.emit('streamEvent', {
+          type: 'streamEvent',
+          event: { type: event.type, data: event.data },
+          snapshot: this.currentMessageSnapshot
+        } as MessageStreamStreamEvent);
         break;
 
       case 'content_block_stop':
         // 尝试将 tool_use 的 input 从字符串解析为对象
         if (this.currentMessageSnapshot && Array.isArray(this.currentMessageSnapshot.content)) {
-          const lastBlock = this.currentMessageSnapshot.content[this.currentMessageSnapshot.content.length - 1];
-          if (lastBlock && lastBlock.type === 'tool_use') {
-            if (typeof (lastBlock as any).input === 'string') {
+          const blockIndex = event.data.index !== undefined ? event.data.index : this.currentMessageSnapshot.content.length - 1;
+          const targetBlock = this.currentMessageSnapshot.content.at(blockIndex);
+          if (targetBlock && targetBlock.type === 'tool_use') {
+            if (typeof (targetBlock as any).input === 'string') {
               try {
-                (lastBlock as any).input = JSON.parse((lastBlock as any).input);
+                (targetBlock as any).input = JSON.parse((targetBlock as any).input);
               } catch (e) {
                 // 如果解析失败，保持为字符串
                 console.warn('Failed to parse tool_use.input as JSON:', e);
@@ -531,25 +603,12 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
             }
           }
         }
-        
-        // 触发内容块停止事件
-        if (this.currentMessageSnapshot && Array.isArray(this.currentMessageSnapshot.content)) {
-          const lastBlock = this.currentMessageSnapshot.content[this.currentMessageSnapshot.content.length - 1];
-          
-          this.emit('contentBlockStop', {
-            type: 'contentBlockStop',
-            index: this.currentMessageSnapshot.content.length - 1
-          } as MessageStreamContentBlockStopEvent);
-          
-          // 如果是工具调用块，触发工具调用事件
-          if (lastBlock && lastBlock.type === 'tool_use') {
-            this.emit('toolCall', {
-              type: 'toolCall',
-              toolCall: lastBlock,
-              snapshot: this.currentMessageSnapshot
-            } as MessageStreamToolCallEvent);
-          }
-        }
+        // 触发 streamEvent 事件
+        this.emit('streamEvent', {
+          type: 'streamEvent',
+          event: { type: event.type, data: event.data },
+          snapshot: this.currentMessageSnapshot
+        } as MessageStreamStreamEvent);
         break;
 
       case 'message_stop':
@@ -559,12 +618,18 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
           this.currentMessageSnapshot = null;
           this.currentTextSnapshot = '';
           
-          // 触发消息事件
+          // 触发 message 事件
           this.emit('message', {
             type: 'message',
             message
           } as MessageStreamMessageEvent);
         }
+        // 触发 streamEvent 事件
+        this.emit('streamEvent', {
+          type: 'streamEvent',
+          event: { type: event.type, data: event.data },
+          snapshot: message || { role: 'assistant', content: '' }
+        } as MessageStreamStreamEvent);
         return message;
 
       default:
@@ -580,12 +645,6 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
    */
   setFinalResult(result: LLMResult): void {
     this.finalResultValue = result;
-    // 触发最终消息事件
-    this.emit('finalMessage', {
-      type: 'finalMessage',
-      message: result.message,
-      result
-    } as MessageStreamFinalMessageEvent);
   }
 
   /**
@@ -665,11 +724,6 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
    */
   setRequestId(requestId: string): void {
     this.requestId = requestId;
-    // 触发连接建立事件
-    this.emit('connect', {
-      type: 'connect',
-      requestId
-    } as MessageStreamConnectEvent);
   }
 
   /**
