@@ -4,8 +4,7 @@
  */
 
 import {
-  SDKError,
-  HttpError,
+  HttpError
 } from '@modular-agent/types';
 
 /**

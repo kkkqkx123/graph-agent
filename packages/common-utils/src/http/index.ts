@@ -51,16 +51,6 @@ export {
   createRetryInterceptor
 } from './interceptors.js';
 
-// 导出缓存
-export {
-  HttpCache,
-  CacheConfig,
-  CacheKeyGenerator,
-  defaultCacheKeyGenerator,
-  createDefaultCache,
-  createDisabledCache
-} from './cache.js';
-
 // 导出类型
 export type {
   HTTPMethod,

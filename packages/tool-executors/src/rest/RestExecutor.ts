@@ -8,7 +8,7 @@ import type { RestToolConfig } from '@modular-agent/types';
 import { NetworkError, ToolError, ValidationError, RuntimeValidationError, TimeoutError, CircuitBreakerOpenError } from '@modular-agent/types';
 import { BaseExecutor } from '../core/base/BaseExecutor.js';
 import { ExecutorType } from '../core/types.js';
-import { HttpClient, InterceptorManager, HttpCache } from '@modular-agent/common-utils';
+import { HttpClient, InterceptorManager } from '@modular-agent/common-utils';
 import type { RestExecutorConfig } from './types.js';
 
 /**
@@ -17,7 +17,6 @@ import type { RestExecutorConfig } from './types.js';
 export class RestExecutor extends BaseExecutor {
   private httpClient: HttpClient;
   private interceptorManager: InterceptorManager;
-  private cache: HttpCache;
   private config: RestExecutorConfig;
 
   constructor(config: RestExecutorConfig = {}) {
@@ -35,13 +34,6 @@ export class RestExecutor extends BaseExecutor {
 
     // 创建拦截器管理器
     this.interceptorManager = new InterceptorManager();
-
-    // 创建缓存
-    this.cache = new HttpCache({
-      enabled: config.cache?.enabled ?? true,
-      defaultTtl: config.cache?.defaultTtl ?? 60000,
-      maxSize: 100
-    });
 
     // 添加拦截器
     if (config.requestInterceptors) {
@@ -110,16 +102,8 @@ export class RestExecutor extends BaseExecutor {
       // 应用请求拦截器
       const processedConfig = await this.interceptorManager.applyRequestInterceptors(requestConfig);
 
-      // 检查缓存（仅GET请求）
-      let response;
-      if (method === 'GET') {
-        const cached = this.cache.get(processedConfig);
-        if (cached) {
-          return this.formatResponse(toolConfig, url, method, cached);
-        }
-      }
-
       // 执行请求
+      let response;
       switch (method) {
         case 'GET':
           response = await this.httpClient.get(url, processedConfig);
@@ -156,11 +140,6 @@ export class RestExecutor extends BaseExecutor {
 
       // 应用响应拦截器
       const processedResponse = await this.interceptorManager.applyResponseInterceptors(response);
-
-      // 缓存响应（仅GET请求的成功响应）
-      if (method === 'GET' && response.status >= 200 && response.status < 300) {
-        this.cache.set(processedConfig, processedResponse);
-      }
 
       return this.formatResponse(toolConfig, url, method, processedResponse);
     } catch (error) {
@@ -265,20 +244,6 @@ export class RestExecutor extends BaseExecutor {
    */
   addErrorInterceptor(interceptor: any): void {
     this.interceptorManager.addErrorInterceptor(interceptor);
-  }
-
-  /**
-   * 清除缓存
-   */
-  clearCache(): void {
-    this.cache.clear();
-  }
-
-  /**
-   * 清除指定URL的缓存
-   */
-  clearCacheByUrl(url: string): void {
-    this.cache.clearByUrl(url);
   }
 
   /**

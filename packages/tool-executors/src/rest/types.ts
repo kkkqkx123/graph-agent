@@ -4,12 +4,11 @@
 
 // 从 @modular-agent/types 导入基础类型
 import type { HTTPMethod, HttpResponse } from '@modular-agent/types';
-// 从 @modular-agent/common-utils 导入拦截器和缓存类型
+// 从 @modular-agent/common-utils 导入拦截器类型
 import type {
   RequestInterceptor,
   ResponseInterceptor,
-  ErrorInterceptor,
-  CacheConfig
+  ErrorInterceptor
 } from '@modular-agent/common-utils';
 
 /**
@@ -33,7 +32,7 @@ export interface HttpRequestConfig {
 }
 
 // 重新导出类型以保持向后兼容
-export type { HttpResponse, RequestInterceptor, ResponseInterceptor, ErrorInterceptor, CacheConfig };
+export type { HttpResponse, RequestInterceptor, ResponseInterceptor, ErrorInterceptor };
 
 /**
  * REST执行器配置
@@ -51,8 +50,6 @@ export interface RestExecutorConfig {
   responseInterceptors?: ResponseInterceptor[];
   /** 错误拦截器 */
   errorInterceptors?: ErrorInterceptor[];
-  /** 缓存配置 */
-  cache?: CacheConfig;
   /** 是否启用熔断器 */
   enableCircuitBreaker?: boolean;
   /** 熔断器配置 */

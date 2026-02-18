@@ -33,7 +33,6 @@ export type {
   RequestInterceptor,
   ResponseInterceptor,
   ErrorInterceptor,
-  CacheConfig,
   RestExecutorConfig
 } from './rest/types.js';
 
