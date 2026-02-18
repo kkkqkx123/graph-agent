@@ -85,64 +85,51 @@ if (!result.success) {
 
 ### 1. 脚本执行器实现
 
-应用层需要实现具体的脚本执行器：
+应用层可以直接使用内置的脚本执行器，或基于 `BaseScriptExecutor` 实现自定义执行器：
+
+**使用内置执行器（推荐）**:
 
 ```typescript
-import { ScriptExecutor, Script, ScriptExecutionOptions, ScriptExecutionResult } from 'sdk/types/code';
+import { ShellExecutor, PythonExecutor, JavaScriptExecutor } from '@modular-agent/script-executors';
+import { codeService } from 'sdk/core/services/code-service';
 
-class ShellScriptExecutor implements ScriptExecutor {
-  async execute(script: Script, options?: Partial<ScriptExecutionOptions>): Promise<ScriptExecutionResult> {
-    // 实现Shell脚本执行逻辑
-    const startTime = Date.now();
-    
-    try {
-      // 执行Shell脚本
-      const result = await this.executeShellScript(script.content!, options);
-      
-      return {
-        success: true,
-        scriptName: script.name,
-        scriptType: script.type,
-        stdout: result.stdout,
-        stderr: result.stderr,
-        exitCode: result.exitCode,
-        executionTime: Date.now() - startTime
-      };
-    } catch (error) {
-      return {
-        success: false,
-        scriptName: script.name,
-        scriptType: script.type,
-        stdout: undefined,
-        stderr: error.message,
-        exitCode: 1,
-        executionTime: Date.now() - startTime,
-        error: error.message
-      };
-    }
+// 注册内置执行器
+codeService.registerExecutor('SHELL', new ShellExecutor());
+codeService.registerExecutor('PYTHON', new PythonExecutor());
+codeService.registerExecutor('JAVASCRIPT', new JavaScriptExecutor());
+```
+
+**自定义执行器（可选）**:
+
+```typescript
+import { BaseScriptExecutor } from '@modular-agent/script-executors';
+import type { Script } from '@modular-agent/types';
+import type { ExecutionContext, ExecutionOutput } from '@modular-agent/script-executors';
+
+class CustomScriptExecutor extends BaseScriptExecutor {
+  constructor() {
+    super({ type: 'CUSTOM' });
   }
 
-  validate(script: Script): { valid: boolean; errors: string[] } {
-    // 验证Shell脚本
-    const errors: string[] = [];
-    
-    if (!script.content) {
-      errors.push('脚本内容不能为空');
-    }
-    
+  protected async doExecute(
+    script: Script,
+    context?: ExecutionContext
+  ): Promise<ExecutionOutput> {
+    // 实现自定义执行逻辑
+    // 基类已处理验证、重试、超时等
     return {
-      valid: errors.length === 0,
-      errors
+      stdout: 'output',
+      stderr: '',
+      exitCode: 0
     };
   }
 
   getSupportedTypes(): ScriptType[] {
-    return [ScriptType.SHELL];
+    return ['CUSTOM'];
   }
 
-  private async executeShellScript(content: string, options?: ScriptExecutionOptions): Promise<any> {
-    // 具体的Shell脚本执行实现
-    // 可以使用child_process、exec等Node.js API
+  getExecutorType(): string {
+    return 'CUSTOM';
   }
 }
 ```
@@ -153,15 +140,17 @@ class ShellScriptExecutor implements ScriptExecutor {
 
 ```typescript
 import { codeService } from 'sdk/core/services/code-service';
-import { ScriptType } from 'sdk/types/code';
+import { ShellExecutor, PythonExecutor, PowerShellExecutor, JavaScriptExecutor, CmdExecutor } from '@modular-agent/script-executors';
 
-// 注册Shell脚本执行器
-const shellExecutor = new ShellScriptExecutor();
-codeService.registerExecutor(ScriptType.SHELL, shellExecutor);
+// 注册内置执行器
+codeService.registerExecutor('SHELL', new ShellExecutor());
+codeService.registerExecutor('PYTHON', new PythonExecutor());
+codeService.registerExecutor('POWERSHELL', new PowerShellExecutor());
+codeService.registerExecutor('JAVASCRIPT', new JavaScriptExecutor());
+codeService.registerExecutor('CMD', new CmdExecutor());
 
-// 注册Python脚本执行器
-const pythonExecutor = new PythonScriptExecutor();
-codeService.registerExecutor(ScriptType.PYTHON, pythonExecutor);
+// 或注册自定义执行器
+codeService.registerExecutor('CUSTOM', new CustomScriptExecutor());
 ```
 
 ### 3. 配置脚本

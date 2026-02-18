@@ -437,7 +437,7 @@ export {
 - `validateScript(scriptName: string): { valid: boolean; errors: string[] }` - 验证脚本
 
 **依赖关系**：
-- 无外部依赖（内部使用 CodeRegistry 和 ScriptExecutorRegistry）
+- 依赖 `@modular-agent/script-executors` 包（使用 IScriptExecutor 接口）
 - 被 `CodeHandler` 依赖（执行代码节点）
 
 **集成方式**：

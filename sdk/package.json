@@ -37,6 +37,7 @@
         "@modular-agent/types": "workspace:*",
         "@modular-agent/common-utils": "workspace:*",
         "@modular-agent/tool-executors": "workspace:*",
+        "@modular-agent/script-executors": "workspace:*",
         "tiktoken": "^1.0.22",
         "zod": "^4.3.6",
         "@iarna/toml": "^2.2.5"

@@ -30,6 +30,8 @@ export interface ScriptExecutionOptions {
   retries?: number;
   /** 重试延迟（毫秒） */
   retryDelay?: number;
+  /** 是否启用指数退避 */
+  exponentialBackoff?: boolean;
   /** 工作目录 */
   workingDirectory?: string;
   /** 环境变量 */
@@ -97,6 +99,8 @@ export interface ScriptExecutionResult {
   error?: string;
   /** 执行环境信息 */
   environment?: Record<string, any>;
+  /** 重试次数 */
+  retryCount?: number;
 }
 
 /**
@@ -139,54 +143,4 @@ export interface ScriptMetadata {
   documentationUrl?: string;
   /** 自定义字段 */
   customFields?: Metadata;
-}
-
-/**
- * 脚本执行器接口
- */
-export interface ScriptExecutor {
-  /**
-   * 执行脚本
-   * @param script 脚本定义
-   * @param options 执行选项（覆盖脚本默认选项）
-   * @returns 执行结果
-   */
-  execute(script: Script, options?: Partial<ScriptExecutionOptions>): Promise<ScriptExecutionResult>;
-
-  /**
-   * 验证脚本
-   * @param script 脚本定义
-   * @returns 验证结果
-   */
-  validate(script: Script): { valid: boolean; errors: string[] };
-
-  /**
-   * 获取支持的脚本类型
-   * @returns 支持的脚本类型数组
-   */
-  getSupportedTypes(): ScriptType[];
-}
-
-/**
- * 脚本执行器工厂接口
- */
-export interface ScriptExecutorFactory {
-  /**
-   * 创建脚本执行器
-   * @param scriptType 脚本类型
-   * @returns 脚本执行器
-   */
-  create(scriptType: ScriptType): ScriptExecutor;
-}
-
-/**
- * 脚本执行器配置
- */
-export interface ScriptExecutorConfig {
-  /** 执行器类型 */
-  type: ScriptType;
-  /** 执行器工厂 */
-  factory: ScriptExecutorFactory;
-  /** 默认执行选项 */
-  defaultOptions?: ScriptExecutionOptions;
 }

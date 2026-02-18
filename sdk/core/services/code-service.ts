@@ -6,8 +6,9 @@
  * 实例通过 SingletonRegistry 统一管理
  */
 
-import type { Script, ScriptType, ScriptExecutor, ScriptExecutionOptions, ScriptExecutionResult } from '@modular-agent/types';
+import type { Script, ScriptType, ScriptExecutionOptions, ScriptExecutionResult } from '@modular-agent/types';
 import type { ThreadContext } from '../execution/context/thread-context.js';
+import type { IScriptExecutor } from '@modular-agent/script-executors';
 import { CodeExecutionError, ScriptNotFoundError, ConfigurationValidationError } from '@modular-agent/types';
 import { tryCatchAsyncWithSignal, all } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
@@ -19,14 +20,14 @@ import { ok, err } from '@modular-agent/common-utils';
  */
 class CodeService {
   private scripts: Map<string, Script> = new Map();
-  private executors: Map<ScriptType, ScriptExecutor> = new Map();
+  private executors: Map<ScriptType, IScriptExecutor> = new Map();
 
   /**
    * 注册脚本执行器
    * @param type 脚本类型
    * @param executor 脚本执行器
    */
-  registerExecutor(type: ScriptType, executor: ScriptExecutor): void {
+  registerExecutor(type: ScriptType, executor: IScriptExecutor): void {
     this.executors.set(type, executor);
   }
 
@@ -35,7 +36,7 @@ class CodeService {
    * @param type 脚本类型
    * @returns 脚本执行器，如果不存在则返回undefined
    */
-  getExecutor(type: ScriptType): ScriptExecutor | undefined {
+  getExecutor(type: ScriptType): IScriptExecutor | undefined {
     return this.executors.get(type);
   }
 

@@ -1,0 +1,25 @@
+{
+  "name": "@modular-agent/script-executors",
+  "version": "1.0.0",
+  "description": "脚本执行器包",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run --reporter=verbose",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modular-agent/types": "workspace:*",
+    "@modular-agent/common-utils": "workspace:*"
+  }
+}
