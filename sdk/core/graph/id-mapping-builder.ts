@@ -13,7 +13,7 @@ import type {
 } from '@modular-agent/types';
 import { GraphData } from '../entities/graph-data.js';
 import { updateIdReferences } from './utils/node-config-updaters.js';
-import { generateSubgraphNamespace } from '@modular-agent/common-utils';
+import { generateSubgraphNamespace } from '../../utils/index.js';
 
 /**
  * ID映射构建器类

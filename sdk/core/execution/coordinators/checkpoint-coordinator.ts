@@ -15,7 +15,9 @@ import { ConversationManager } from '../managers/conversation-manager.js';
 import { VariableStateManager } from '../managers/variable-state-manager.js';
 import { ThreadContext } from '../context/thread-context.js';
 import { ExecutionContext } from '../context/execution-context.js';
-import { generateId, now } from '@modular-agent/common-utils';
+import { generateId } from '../../../utils/index.js';
+import { now } from '@modular-agent/common-utils';
+import { mergeMetadata } from '../../../utils/metadata-utils.js';
 
 /**
  * 检查点依赖项
@@ -296,14 +298,13 @@ export class CheckpointCoordinator {
     return CheckpointCoordinator.createCheckpoint(
       threadId,
       dependencies,
-      {
-        ...metadata,
-        description: metadata?.description || `Node checkpoint for node ${nodeId}`,
-        customFields: {
-          ...metadata?.customFields,
-          nodeId
+      mergeMetadata(
+        metadata || {},
+        {
+          description: metadata?.description || `Node checkpoint for node ${nodeId}`,
+          customFields: mergeMetadata(metadata?.customFields || {}, { nodeId })
         }
-      }
+      )
     );
   }
 

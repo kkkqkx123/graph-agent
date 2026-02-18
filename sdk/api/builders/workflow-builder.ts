@@ -7,11 +7,10 @@ import type { WorkflowDefinition, WorkflowVariable, WorkflowConfig, WorkflowMeta
 import type { Node, NodeConfig } from '@modular-agent/types';
 import { NodeType } from '@modular-agent/types';
 import type { Edge } from '@modular-agent/types';
-import { EdgeType } from '@modular-agent/types';
 import type { Condition } from '@modular-agent/types';
 import type { WorkflowTrigger } from '@modular-agent/types';
 import type { TriggerReference } from '@modular-agent/types';
-import { generateId } from '@modular-agent/common-utils';
+import { generateId } from '../../utils/index.js';
 import { getContainer } from '../../core/di/index.js';
 import * as Identifiers from '../../core/di/service-identifiers.js';
 import { ConfigParser, ConfigFormat } from '../config/index.js';

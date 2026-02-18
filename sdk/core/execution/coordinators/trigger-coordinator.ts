@@ -33,7 +33,6 @@ import { now, getErrorOrNew } from '@modular-agent/common-utils';
 import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { WorkflowRegistry } from '../../services/workflow-registry.js';
 import type { GlobalMessageStorage } from '../../services/global-message-storage.js';
-import type { GraphRegistry } from '../../services/graph-registry.js';
 import { TriggerStateManager } from '../managers/trigger-state-manager.js';
 import { CheckpointStateManager } from '../managers/checkpoint-state-manager.js';
 import { convertToTrigger } from '@modular-agent/types';

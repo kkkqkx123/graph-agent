@@ -9,10 +9,10 @@ import type { EventManager } from '../../services/event-manager.js';
 import { LifecycleCapable } from './lifecycle-capable.js';
 import { serializeCheckpoint, deserializeCheckpoint } from '../utils/checkpoint-serializer.js';
 import { createCleanupStrategy } from '../utils/checkpoint-cleanup-policy.js';
-import { generateId, now, getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
-import { EventType } from '@modular-agent/types';
+import { now, getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
 import { safeEmit } from '../utils/event/event-emitter.js';
 import { SystemExecutionError } from '@modular-agent/types';
+import { mergeMetadata } from '../../../utils/metadata-utils.js';
 
 /**
  * 从检查点提取存储元数据
@@ -226,7 +226,7 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
     try {
       // 先获取检查点信息（用于触发事件）
       const checkpoint = await this.get(checkpointId);
-      
+
       await this.storage.delete(checkpointId);
       this.checkpointSizes.delete(checkpointId);
 
@@ -266,14 +266,13 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
     const metadata = checkpointData.metadata || {};
     const nodeCheckpointData: Checkpoint = {
       ...checkpointData,
-      metadata: {
-        ...metadata,
-        description: `Node checkpoint for node ${nodeId}`,
-        customFields: {
-          ...metadata.customFields,
-          nodeId
+      metadata: mergeMetadata(
+        metadata,
+        {
+          description: `Node checkpoint for node ${nodeId}`,
+          customFields: mergeMetadata(metadata.customFields || {}, { nodeId })
         }
-      }
+      )
     };
     return this.create(nodeCheckpointData);
   }

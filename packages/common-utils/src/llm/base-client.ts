@@ -12,7 +12,6 @@ import type {
   LLMProfile
 } from '@modular-agent/types';
 import { HttpClient, SseTransport } from '../http/index.js';
-import { initialVersion } from '../utils/index.js';
 
 /**
  * LLM客户端抽象基类
@@ -268,7 +267,7 @@ export abstract class BaseLLMClient implements LLMClient {
     return {
       provider: this.profile.provider,
       model: this.profile.model,
-      version: initialVersion()
+      version: '1.0.0'
     };
   }
 }

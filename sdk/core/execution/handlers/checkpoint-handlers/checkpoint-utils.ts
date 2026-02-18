@@ -11,6 +11,7 @@ import type { GlobalMessageStorage } from '../../../services/global-message-stor
 import type { GraphRegistry } from '../../../services/graph-registry.js';
 import { CheckpointStateManager } from '../../managers/checkpoint-state-manager.js';
 import { CheckpointCoordinator } from '../../coordinators/checkpoint-coordinator.js';
+import { mergeMetadata } from '../../../../utils/metadata-utils.js';
 
 /**
  * 检查点创建选项
@@ -57,15 +58,13 @@ export async function createCheckpoint(
   const { threadId, nodeId, toolId, description, metadata } = options;
 
   // 构建检查点元数据
-  const checkpointMetadata: CheckpointMetadata = {
-    ...metadata,
-    description: description || `Checkpoint${nodeId ? ` for node ${nodeId}` : toolId ? ` for tool ${toolId}` : ''}`,
-    customFields: {
-      ...metadata?.customFields,
-      nodeId,
-      toolId
+  const checkpointMetadata: CheckpointMetadata = mergeMetadata(
+    metadata || {},
+    {
+      description: description || `Checkpoint${nodeId ? ` for node ${nodeId}` : toolId ? ` for tool ${toolId}` : ''}`,
+      customFields: mergeMetadata(metadata?.customFields || {}, { nodeId, toolId })
     }
-  };
+  );
 
   // 调用静态方法创建检查点
   return await CheckpointCoordinator.createCheckpoint(threadId, dependencies, checkpointMetadata);

@@ -24,7 +24,7 @@ import type { HumanRelayHandler } from '@modular-agent/types';
 import { LLMExecutionCoordinator } from './llm-execution-coordinator.js';
 import { enterSubgraph, exitSubgraph, getSubgraphInput, getSubgraphOutput } from '../handlers/subgraph-handler.js';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '@modular-agent/types';
-import { ExecutionError, ThreadInterruptedException, SystemExecutionError } from '@modular-agent/types';
+import { ExecutionError, SystemExecutionError } from '@modular-agent/types';
 import { executeHook } from '../handlers/hook-handlers/index.js';
 import { now, diffTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
 import { getNodeHandler } from '../handlers/node-handlers/index.js';

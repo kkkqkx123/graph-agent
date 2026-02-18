@@ -27,7 +27,6 @@ import { defaultVisibilityDeclarationStrategy } from '../types/tool-visibility.t
 import type { ThreadContext } from '../context/thread-context.js';
 import type { ToolService } from '../../services/tool-service.js';
 import type { LLMMessage } from '@modular-agent/types';
-import { MessageRole } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
 
 /**
@@ -36,16 +35,16 @@ import { now } from '@modular-agent/common-utils';
 export class ToolVisibilityCoordinator {
   /** 工具可见性上下文映射：threadId -> ToolVisibilityContext */
   private contexts: Map<string, ToolVisibilityContext> = new Map();
-  
+
   /** 工具服务 */
   private toolService: ToolService;
-  
+
   /** 声明策略 */
   private strategy: VisibilityDeclarationStrategy;
-  
+
   /** 批量声明定时器 */
   private batchTimers: Map<string, NodeJS.Timeout> = new Map();
-  
+
   /** 批量声明队列 */
   private batchQueues: Map<string, VisibilityUpdateRequest[]> = new Map();
 

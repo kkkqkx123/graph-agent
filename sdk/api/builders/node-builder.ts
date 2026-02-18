@@ -4,7 +4,7 @@
  */
 
 import type { Node, NodeConfig, NodeType } from '@modular-agent/types';
-import { generateId } from '@modular-agent/common-utils';
+import { generateId } from '../../utils/index.js';
 import { getContainer } from '../../core/di/index.js';
 import * as Identifiers from '../../core/di/service-identifiers.js';
 import { BaseBuilder } from './base-builder.js';

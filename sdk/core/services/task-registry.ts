@@ -14,7 +14,8 @@
  * - 提供管理器路由功能
  */
 
-import { generateId, now } from '@modular-agent/common-utils';
+import { generateId } from '../../utils/index.js';
+import { now } from '@modular-agent/common-utils';
 import type { ThreadContext } from '../execution/context/thread-context.js';
 import type { ThreadResult } from '@modular-agent/types';
 import { TaskStatus, type TaskInfo } from '../execution/types/task.types.js';

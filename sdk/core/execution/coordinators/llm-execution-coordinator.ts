@@ -21,16 +21,13 @@ import { LLMExecutor } from '../executors/llm-executor.js';
 import { type ToolService } from '../../services/tool-service.js';
 import type { EventManager } from '../../services/event-manager.js';
 import { safeEmit } from '../utils/event/event-emitter.js';
-import { EventType } from '@modular-agent/types';
-import { UserInteractionOperationType } from '@modular-agent/types';
 import type { ToolApprovalData } from '@modular-agent/types';
-import { now, generateId, getErrorOrNew } from '@modular-agent/common-utils';
+import { generateId } from '../../../utils/index.js';
+import { now, getErrorOrNew } from '@modular-agent/common-utils';
 import { ToolCallExecutor } from '../executors/tool-call-executor.js';
-import { ExecutionError, ThreadInterruptedException, SystemExecutionError, ErrorSeverity } from '@modular-agent/types';
+import { ExecutionError, SystemExecutionError } from '@modular-agent/types';
 import { CheckpointCoordinator } from './checkpoint-coordinator.js';
 import type { ExecutionContext } from '../context/execution-context.js';
-import { getContainer } from '../../di/index.js';
-import * as Identifiers from '../../di/service-identifiers.js';
 import type { InterruptionDetector } from '../managers/interruption-detector.js';
 import { InterruptionDetectorImpl } from '../managers/interruption-detector.js';
 import { throwIfAborted, getThreadInterruptedException } from '@modular-agent/common-utils';
@@ -113,7 +110,7 @@ export class LLMExecutionCoordinator {
     if (this.interruptionDetector) {
       return this.interruptionDetector.isAborted(threadId);
     }
-    
+
     // 向后兼容：如果没有提供 interruptionDetector，使用旧的方式
     if (!this.executionContext) {
       return false;
@@ -249,12 +246,12 @@ export class LLMExecutionCoordinator {
       const toolContextManager = this.executionContext.getToolContextManager();
       if (toolContextManager) {
         const availableToolIds = toolContextManager.getTools(threadId);
-        
+
         if (availableToolIds.size > 0) {
           const availableTools = Array.from(availableToolIds)
             .map((id: string) => this.toolService.getTool(id))
             .filter(Boolean);
-          
+
           // 直接转换为ToolSchema格式（由外部模块负责，符合设计文档）
           availableToolSchemas = availableTools.map(tool => ({
             id: tool.id,

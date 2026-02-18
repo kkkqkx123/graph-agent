@@ -4,11 +4,12 @@
  */
 
 // 通用工具函数
-export { generateId, isValidId, validateId } from './id-utils.js';
-export { generateSubgraphNamespace, generateNamespacedNodeId, generateNamespacedEdgeId } from './id-utils.js';
 export { now, timestampFromDate, timestampToDate, timestampToISOString, nowWithTimezone, diffTimestamp, formatDuration } from './timestamp-utils.js';
-export { initialVersion } from './version-utils.js';
-export { emptyMetadata, getMetadata, setMetadata, deleteMetadata, hasMetadata, mergeMetadata } from './metadata-utils.js';
 export { ok, err, tryCatchAsyncWithSignal, all, any } from './result-utils.js';
+
+// 简单的ID生成函数（仅用于common-utils内部）
+export function generateId(): string {
+  return crypto.randomUUID();
+}
 
 export * from './signal/index.js';

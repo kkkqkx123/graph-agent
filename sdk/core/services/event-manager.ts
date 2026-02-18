@@ -11,7 +11,8 @@
 
 import type { BaseEvent, EventType, EventListener } from '@modular-agent/types';
 import { ExecutionError, RuntimeValidationError } from '@modular-agent/types';
-import { now, generateId, getErrorOrNew } from '@modular-agent/common-utils';
+import { generateId } from '../../utils/index.js';
+import { now, getErrorOrNew } from '@modular-agent/common-utils';
 
 /**
  * 监听器包装器

@@ -16,7 +16,7 @@ import type {
 } from '@modular-agent/types';
 import { GraphData } from '../entities/graph-data.js';
 import { GraphValidator } from '../validation/graph-validator.js';
-import { generateSubgraphNamespace, generateNamespacedNodeId, generateNamespacedEdgeId, generateId } from '@modular-agent/common-utils';
+import { generateSubgraphNamespace, generateNamespacedNodeId, generateNamespacedEdgeId, generateId } from '../../utils/index.js';
 import { SUBGRAPH_METADATA_KEYS } from '@modular-agent/types';
 import { getContainer } from '../di/index.js';
 import * as Identifiers from '../di/service-identifiers.js';
