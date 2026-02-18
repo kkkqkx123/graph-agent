@@ -210,7 +210,7 @@ export class WorkflowBuilder extends BaseBuilder<WorkflowDefinition> {
       scriptType,
       risk
     };
-    return this.addNode(id, 'CODE', config, name);
+    return this.addNode(id, 'SCRIPT', config, name);
   }
 
   /**

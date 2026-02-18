@@ -17,7 +17,7 @@ import type { EventManager } from '../../core/services/event-manager.js';
 import type { CheckpointStateManager } from '../../core/execution/managers/checkpoint-state-manager.js';
 import type { ToolService } from '../../core/services/tool-service.js';
 import type { LLMExecutor } from '../../core/execution/executors/llm-executor.js';
-import type { CodeService } from '../../core/services/code-service.js';
+import type { ScriptService } from '../../core/services/script-service.js';
 import type { NodeTemplateRegistry } from '../../core/services/node-template-registry.js';
 import type { TriggerTemplateRegistry } from '../../core/services/trigger-template-registry.js';
 import type { GraphRegistry } from '../../core/services/graph-registry.js';
@@ -82,8 +82,8 @@ export class APIDependencyManager {
   /**
    * 获取代码服务
    */
-  getCodeService(): CodeService {
-    return this.executionContext.getCodeService();
+  getScriptService(): ScriptService {
+    return this.executionContext.getScriptService();
   }
   
   /**

@@ -32,13 +32,13 @@ export class ExecuteScriptCommand extends BaseCommand<ScriptExecutionResult> {
     };
 
     // 验证脚本（使用执行器验证）
-    const validation = this.dependencies.getCodeService().validateScriptWithExecutor(this.scriptName);
+    const validation = this.dependencies.getScriptService().validateScriptWithExecutor(this.scriptName);
     if (!validation.valid) {
       throw new Error(`脚本验证失败: ${validation.errors.join(', ')}`);
     }
 
     // 执行脚本
-    const result = await this.dependencies.getCodeService().execute(this.scriptName, executionOptions);
+    const result = await this.dependencies.getScriptService().execute(this.scriptName, executionOptions);
     const executionTime = diffTimestamp(startTime, now());
 
     // 处理 Result 类型，提取成功的结果或抛出错误

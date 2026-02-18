@@ -18,6 +18,20 @@
   - `TimeoutController`: 超时控制器
   - `SandboxManager`: 沙箱管理器
 
+## 命名说明
+
+本包使用 "Script" 而非 "Code" 来命名相关概念，因为：
+- **更准确**: 实际执行的是脚本，而不是通用的"代码"
+- **一致性**: 与 SDK 中的 `ScriptService`、`ScriptNode` 等命名保持一致
+- **清晰性**: 避免使用模糊的 "Code" 词汇
+
+相关命名映射：
+- `ScriptService` - 脚本服务（原 `CodeService`）
+- `ScriptExecutionError` - 脚本执行错误（原 `CodeExecutionError`）
+- `ScriptHandler` - 脚本处理器（原 `CodeHandler`）
+- `SCRIPT_NODE` - 脚本节点（原 `CODE_NODE`）
+- `ScriptNodeConfig` - 脚本节点配置（原 `CodeNodeConfig`）
+
 ## 安装
 
 ```bash
@@ -176,21 +190,21 @@ interface IScriptExecutor {
 4. 标准化结果
 5. 清理资源
 
-## 与 CodeService 集成
+## 与 ScriptService 集成
 
 ```typescript
-import { CodeService } from '@modular-agent/sdk';
+import { ScriptService } from '@modular-agent/sdk';
 import { ShellExecutor, PythonExecutor, JavaScriptExecutor } from '@modular-agent/script-executors';
 
-const codeService = new CodeService();
+const scriptService = new ScriptService();
 
 // 注册执行器
-codeService.registerExecutor('SHELL', new ShellExecutor());
-codeService.registerExecutor('PYTHON', new PythonExecutor());
-codeService.registerExecutor('JAVASCRIPT', new JavaScriptExecutor());
+scriptService.registerExecutor('SHELL', new ShellExecutor());
+scriptService.registerExecutor('PYTHON', new PythonExecutor());
+scriptService.registerExecutor('JAVASCRIPT', new JavaScriptExecutor());
 
 // 注册脚本
-codeService.registerScript({
+scriptService.registerScript({
   id: 'my-script',
   name: 'my-script',
   type: 'SHELL',
@@ -202,7 +216,7 @@ codeService.registerScript({
 });
 
 // 执行脚本
-const result = await codeService.execute('my-script');
+const result = await scriptService.execute('my-script');
 ```
 
 ## 测试

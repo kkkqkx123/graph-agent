@@ -64,7 +64,7 @@ export class ToolError extends SDKError {
 /**
  * 脚本执行错误类型
  */
-export class CodeExecutionError extends SDKError {
+export class ScriptExecutionError extends SDKError {
   constructor(
     message: string,
     public readonly scriptName?: string,

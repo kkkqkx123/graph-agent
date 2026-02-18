@@ -49,10 +49,10 @@ export const EventManager = Symbol('EventManager') as ServiceIdentifier<any>;
 export const ToolService = Symbol('ToolService') as ServiceIdentifier<any>;
 
 /**
- * CodeService - 代码服务
+ * ScriptService - 脚本服务
  * 管理脚本的注册和执行
  */
-export const CodeService = Symbol('CodeService') as ServiceIdentifier<any>;
+export const ScriptService = Symbol('ScriptService') as ServiceIdentifier<any>;
 
 /**
  * WorkflowRegistry - 工作流注册表

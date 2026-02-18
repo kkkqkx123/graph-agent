@@ -49,7 +49,7 @@ export const nodeHandlers: Record<NodeType, NodeHandler> = {
   ['START']: startHandler,
   ['END']: endHandler,
   ['VARIABLE']: variableHandler,
-  ['CODE']: codeHandler,
+  ['SCRIPT']: scriptHandler,
   ['FORK']: forkHandler,
   ['JOIN']: joinHandler,
   ['ROUTE']: routeHandler,

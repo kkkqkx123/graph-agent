@@ -8,7 +8,7 @@
 
 import type {
   NodeHook,
-  CodeNodeConfig
+  ScriptNodeConfig
 } from '@modular-agent/types';
 
 import { HookType } from '@modular-agent/types';
@@ -58,7 +58,7 @@ export function createThreadStateCheckHook(
  * // 应用层自定义验证逻辑
  * const customHook = createCustomValidationHook(
  *   async (context) => {
- *     const config = context.node.config as CodeNodeConfig;
+ *     const config = context.node.config as ScriptNodeConfig;
  *     // 实现自定义验证逻辑
  *     if (config.scriptName.includes('..')) {
  *       throw new ExecutionError('Invalid script path', context.node.id);
@@ -126,7 +126,7 @@ export function createAuditLoggingHook(
     weight: 50,
     eventPayload: {
       handler: async (context: HookExecutionContext) => {
-        const config = context.node.config as CodeNodeConfig;
+        const config = context.node.config as ScriptNodeConfig;
         
         await auditService.log({
           eventType: 'NODE_EXECUTION_ATTEMPT',

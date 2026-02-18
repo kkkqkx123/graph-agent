@@ -1,6 +1,6 @@
 /**
  * ScriptRegistryAPI - 脚本资源管理API
- * 封装CodeService，提供脚本注册、查询功能
+ * 封装ScriptService，提供脚本注册、查询功能
  */
 
 import {
@@ -42,7 +42,7 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    */
   protected async getResource(id: string): Promise<Script | null> {
     try {
-      return this.dependencies.getCodeService().getScript(id);
+      return this.dependencies.getScriptService().getScript(id);
     } catch (error) {
       if (error instanceof NotFoundError) {
         return null;
@@ -56,7 +56,7 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    * @returns 脚本定义数组
    */
   protected async getAllResources(): Promise<Script[]> {
-    return this.dependencies.getCodeService().listScripts();
+    return this.dependencies.getScriptService().listScripts();
   }
 
   /**
@@ -64,7 +64,7 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    * @param script 脚本定义
    */
   protected async createResource(script: Script): Promise<void> {
-    this.dependencies.getCodeService().registerScript(script);
+    this.dependencies.getScriptService().registerScript(script);
   }
 
   /**
@@ -73,7 +73,7 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    * @param updates 更新内容
    */
   protected async updateResource(id: string, updates: Partial<Script>): Promise<void> {
-    this.dependencies.getCodeService().updateScript(id, updates);
+    this.dependencies.getScriptService().updateScript(id, updates);
   }
 
   /**
@@ -81,14 +81,14 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    * @param id 脚本名称
    */
   protected async deleteResource(id: string): Promise<void> {
-    this.dependencies.getCodeService().unregisterScript(id);
+    this.dependencies.getScriptService().unregisterScript(id);
   }
 
   /**
    * 清空所有脚本
    */
   protected override async clearResources(): Promise<void> {
-    this.dependencies.getCodeService().clearScripts();
+    this.dependencies.getScriptService().clearScripts();
   }
 
   /**
@@ -195,7 +195,7 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    * @returns 脚本定义数组
    */
   async searchScripts(query: string): Promise<Script[]> {
-    return this.dependencies.getCodeService().searchScripts(query);
+    return this.dependencies.getScriptService().searchScripts(query);
   }
 
   /**
@@ -204,15 +204,15 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    * @returns 验证结果
    */
   async validateScript(scriptName: string): Promise<{ valid: boolean; errors: string[] }> {
-    return this.dependencies.getCodeService().validateScriptWithExecutor(scriptName);
+    return this.dependencies.getScriptService().validateScriptWithExecutor(scriptName);
   }
 
   /**
-   * 获取底层CodeService实例
-   * @returns CodeService实例
+   * 获取底层ScriptService实例
+   * @returns ScriptService实例
    */
   getService() {
-    return this.dependencies.getCodeService();
+    return this.dependencies.getScriptService();
   }
 
   /**
@@ -220,7 +220,7 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    * @param scriptName 脚本名称
    */
   async enableScript(scriptName: string): Promise<void> {
-    this.dependencies.getCodeService().enableScript(scriptName);
+    this.dependencies.getScriptService().enableScript(scriptName);
   }
 
   /**
@@ -228,7 +228,7 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    * @param scriptName 脚本名称
    */
   async disableScript(scriptName: string): Promise<void> {
-    this.dependencies.getCodeService().disableScript(scriptName);
+    this.dependencies.getScriptService().disableScript(scriptName);
   }
 
   /**
@@ -237,6 +237,6 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    * @returns 是否启用
    */
   async isScriptEnabled(scriptName: string): Promise<boolean> {
-    return this.dependencies.getCodeService().isScriptEnabled(scriptName);
+    return this.dependencies.getScriptService().isScriptEnabled(scriptName);
   }
 }

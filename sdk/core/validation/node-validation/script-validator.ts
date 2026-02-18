@@ -28,8 +28,8 @@ const codeNodeConfigSchema = z.object({
  * @param node 节点定义
  * @returns 验证结果
  */
-export function validateCodeNode(node: Node): Result<Node, ConfigurationValidationError[]> {
-  const typeResult = validateNodeType(node, 'CODE');
+export function validateScriptNode(node: Node): Result<Node, ConfigurationValidationError[]> {
+  const typeResult = validateNodeType(node, 'SCRIPT');
   if (typeResult.isErr()) {
     return typeResult;
   }
@@ -38,7 +38,7 @@ export function validateCodeNode(node: Node): Result<Node, ConfigurationValidati
     node.config,
     codeNodeConfigSchema,
     node.id,
-    'CODE'
+    'SCRIPT'
   );
   if (configResult.isErr()) {
     return configResult;

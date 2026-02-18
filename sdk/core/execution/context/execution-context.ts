@@ -36,7 +36,7 @@ import type { WorkflowRegistry } from '../../services/workflow-registry.js';
 import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { EventManager } from '../../services/event-manager.js';
 import type { ToolService } from '../../services/tool-service.js';
-import type { CodeService } from '../../services/code-service.js';
+import type { ScriptService } from '../../services/script-service.js';
 import type { LLMExecutor } from '../executors/llm-executor.js';
 import type { ErrorService } from '../../services/error-service.js';
 import type { TaskRegistry } from '../../services/task-registry.js';
@@ -61,7 +61,7 @@ export class ExecutionContext {
   private threadRegistry: ThreadRegistry;
   private eventManager: EventManager;
   private toolService: ToolService;
-  private codeService: CodeService;
+  private scriptService: ScriptService;
   private llmExecutor: LLMExecutor;
   private errorService: ErrorService;
   private taskRegistry: TaskRegistry;
@@ -82,7 +82,7 @@ export class ExecutionContext {
     threadRegistry: ThreadRegistry,
     eventManager: EventManager,
     toolService: ToolService,
-    codeService: CodeService,
+    scriptService: ScriptService,
     llmExecutor: LLMExecutor,
     errorService: ErrorService,
     taskRegistry: TaskRegistry,
@@ -101,7 +101,7 @@ export class ExecutionContext {
     this.threadRegistry = threadRegistry;
     this.eventManager = eventManager;
     this.toolService = toolService;
-    this.codeService = codeService;
+    this.scriptService = scriptService;
     this.llmExecutor = llmExecutor;
     this.errorService = errorService;
     this.taskRegistry = taskRegistry;
@@ -267,12 +267,12 @@ export class ExecutionContext {
   }
 
   /**
-   * 获取 CodeService
-   * @returns CodeService 实例
+   * 获取 ScriptService
+   * @returns ScriptService 实例
    */
-  getCodeService(): CodeService {
+  getScriptService(): ScriptService {
     this.ensureInitialized();
-    return this.codeService;
+    return this.scriptService;
   }
 
   /**

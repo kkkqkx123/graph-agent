@@ -45,7 +45,7 @@ function createMockExecutionContext(overrides?: Partial<HookExecutionContext>): 
     thread: mockThread,
     node: {
       id: 'test-node',
-      type: 'CODE',
+      type: 'SCRIPT',
       name: 'Test Node',
       config: {}
     },
@@ -330,7 +330,7 @@ describe('createAuditLoggingHook', () => {
       threadId: 'test-thread',
       nodeId: 'test-node',
       nodeName: 'Test Node',
-      nodeType: 'CODE',
+      nodeType: 'SCRIPT',
       userId: 'user-123',
       scriptName: 'test-script.js',
       riskLevel: 'high'

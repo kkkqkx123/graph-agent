@@ -241,7 +241,7 @@ class NodeTemplateRegistry {
       );
     }
 
-    if (!template.type || !['START', 'END', 'VARIABLE', 'FORK', 'JOIN', 'SUBGRAPH', 'CODE', 'LLM', 'tool', 'ADD_TOOL', 'USER_INTERACTION', 'ROUTE', 'CONTEXT_PROCESSOR', 'LOOP_START', 'LOOP_END', 'START_FROM_TRIGGER', 'CONTINUE_FROM_TRIGGER'].includes(template.type)) {
+    if (!template.type || !['START', 'END', 'VARIABLE', 'FORK', 'JOIN', 'SUBGRAPH', 'SCRIPT', 'LLM', 'tool', 'ADD_TOOL', 'USER_INTERACTION', 'ROUTE', 'CONTEXT_PROCESSOR', 'LOOP_START', 'LOOP_END', 'START_FROM_TRIGGER', 'CONTINUE_FROM_TRIGGER'].includes(template.type)) {
       throw new ConfigurationValidationError(
         `Invalid node type: ${template.type}`,
         {

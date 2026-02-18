@@ -20,7 +20,7 @@ import { GlobalMessageStorage } from '../services/global-message-storage.js';
 // 业务层服务
 import { EventManager } from '../services/event-manager.js';
 import { ToolService } from '../services/tool-service.js';
-import { CodeService } from '../services/code-service.js';
+import { ScriptService } from '../services/script-service.js';
 import { NodeTemplateRegistry } from '../services/node-template-registry.js';
 import { TriggerTemplateRegistry } from '../services/trigger-template-registry.js';
 import { TaskRegistry } from '../services/task-registry.js';
@@ -85,8 +85,8 @@ export function initializeContainer(): Container {
     .to(ToolService)
     .inSingletonScope();
 
-  container.bind(Identifiers.CodeService)
-    .to(CodeService)
+  container.bind(Identifiers.ScriptService)
+    .to(ScriptService)
     .inSingletonScope();
 
   container.bind(Identifiers.NodeTemplateRegistry)
@@ -180,7 +180,7 @@ export function initializeContainer(): Container {
       const threadRegistry = c.get(Identifiers.ThreadRegistry);
       const eventManager = c.get(Identifiers.EventManager);
       const toolService = c.get(Identifiers.ToolService);
-      const codeService = c.get(Identifiers.CodeService);
+      const scriptService = c.get(Identifiers.ScriptService);
       const llmExecutor = c.get(Identifiers.LLMExecutor);
       const errorService = c.get(Identifiers.ErrorService);
       const taskRegistry = c.get(Identifiers.TaskRegistry);

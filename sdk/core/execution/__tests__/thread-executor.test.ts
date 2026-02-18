@@ -184,7 +184,7 @@ describe('ThreadExecutor', () => {
       // 准备测试数据
       const mockNode: Node = {
         id: 'node-1',
-        type: 'CODE',
+        type: 'SCRIPT',
         name: 'Test Node',
         config: {}
       };
@@ -197,7 +197,7 @@ describe('ThreadExecutor', () => {
 
       const mockNodeResult: NodeExecutionResult = {
         nodeId: 'node-1',
-        nodeType: 'CODE',
+        nodeType: 'SCRIPT',
         status: 'COMPLETED',
         step: 1,
         startTime: Date.now(),
@@ -272,7 +272,7 @@ describe('ThreadExecutor', () => {
       // 准备测试数据
       const mockNode: Node = {
         id: 'node-1',
-        type: 'CODE',
+        type: 'SCRIPT',
         name: 'Test Node',
         config: {}
       };
@@ -301,7 +301,7 @@ describe('ThreadExecutor', () => {
       // 准备测试数据
       const mockNode: Node = {
         id: 'node-1',
-        type: 'CODE',
+        type: 'SCRIPT',
         name: 'Test Node',
         config: {}
       };
@@ -338,7 +338,7 @@ describe('ThreadExecutor', () => {
       // 准备测试数据
       const mockNode: Node = {
         id: 'node-1',
-        type: 'CODE',
+        type: 'SCRIPT',
         name: 'Test Node',
         config: {}
       };
@@ -351,7 +351,7 @@ describe('ThreadExecutor', () => {
 
       const mockNodeResult: NodeExecutionResult = {
         nodeId: 'node-1',
-        nodeType: 'CODE',
+        nodeType: 'SCRIPT',
         status: 'COMPLETED',
         step: 1,
         startTime: Date.now(),

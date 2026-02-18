@@ -18,7 +18,7 @@ import { validateNodeByType } from './node-validation/index.js';
 const nodeSchema: z.ZodType<Node> = z.object({
   id: z.string().min(1, 'Node ID is required'),
   type: z.custom<NodeType>((val): val is NodeType =>
-    ['START', 'END', 'VARIABLE', 'FORK', 'JOIN', 'SUBGRAPH', 'CODE', 'LLM', 'tool', 'ADD_TOOL', 'USER_INTERACTION', 'ROUTE', 'CONTEXT_PROCESSOR', 'LOOP_START', 'LOOP_END', 'START_FROM_TRIGGER', 'CONTINUE_FROM_TRIGGER'].includes(val as NodeType)
+    ['START', 'END', 'VARIABLE', 'FORK', 'JOIN', 'SUBGRAPH', 'SCRIPT', 'LLM', 'tool', 'ADD_TOOL', 'USER_INTERACTION', 'ROUTE', 'CONTEXT_PROCESSOR', 'LOOP_START', 'LOOP_END', 'START_FROM_TRIGGER', 'CONTINUE_FROM_TRIGGER'].includes(val as NodeType)
   ),
   name: z.string().min(1, 'Node name is required'),
   description: z.string().optional(),

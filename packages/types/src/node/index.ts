@@ -35,7 +35,7 @@ import type {
 } from './configs/loop-configs.js';
 
 import type {
-  CodeNodeConfig,
+  ScriptNodeConfig,
   LLMNodeConfig
 } from './configs/execution-configs.js';
 
@@ -58,7 +58,7 @@ export type NodeConfig =
   | VariableNodeConfig
   | ForkNodeConfig
   | JoinNodeConfig
-  | CodeNodeConfig
+  | ScriptNodeConfig
   | LLMNodeConfig
   | UserInteractionNodeConfig
   | RouteNodeConfig

@@ -8,7 +8,7 @@
  * - 记录执行历史供上层使用
  */
 
-import type { Node, CodeNodeConfig } from '@modular-agent/types';
+import type { Node, ScriptNodeConfig } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
 import { now, getErrorMessage } from '@modular-agent/common-utils';
 import { getContainer } from '../../../di/index.js';

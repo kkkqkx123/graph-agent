@@ -9,7 +9,7 @@ import { CodeRiskLevel } from '../../code-security.js';
 /**
  * 代码节点配置
  */
-export interface CodeNodeConfig {
+export interface ScriptNodeConfig {
   /** 脚本名称 */
   scriptName: string;
   /** 脚本语言(shell/cmd/powershell/python/javascript) */

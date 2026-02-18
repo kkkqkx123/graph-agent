@@ -16,7 +16,7 @@ import { validateForkNode } from './fork-validator.js';
 import { validateJoinNode } from './join-validator.js';
 import { validateLoopStartNode } from './loop-start-validator.js';
 import { validateLoopEndNode } from './loop-end-validator.js';
-import { validateCodeNode } from './code-validator.js';
+import { validateScriptNode } from './script-validator.js';
 import { validateContextProcessorNode } from './context-processor-validator.js';
 import { validateRouteNode } from './route-validator.js';
 import { validateVariableNode } from './variable-validator.js';
@@ -33,7 +33,7 @@ export { validateLoopStartNode } from './loop-start-validator.js';
 export { validateLoopEndNode } from './loop-end-validator.js';
 export { validateStartNode } from './start-validator.js';
 export { validateEndNode } from './end-validator.js';
-export { validateCodeNode } from './code-validator.js';
+export { validateScriptNode } from './script-validator.js';
 export { validateContextProcessorNode } from './context-processor-validator.js';
 export { validateRouteNode } from './route-validator.js';
 export { validateVariableNode } from './variable-validator.js';
@@ -63,8 +63,8 @@ export function validateNodeByType(node: Node): Result<Node, ConfigurationValida
       return validateLoopStartNode(node);
     case 'LOOP_END':
       return validateLoopEndNode(node);
-    case 'CODE':
-      return validateCodeNode(node);
+    case 'SCRIPT':
+      return validateScriptNode(node);
     case 'CONTEXT_PROCESSOR':
       return validateContextProcessorNode(node);
     case 'ROUTE':

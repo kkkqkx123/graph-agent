@@ -3,13 +3,13 @@
  * 提供统一的脚本管理和执行接口
  *
  * 本模块只导出类定义，不导出实例
- * 实例通过 SingletonRegistry 统一管理
+ * 实例通过 DI 容器统一管理
  */
 
 import type { Script, ScriptType, ScriptExecutionOptions, ScriptExecutionResult } from '@modular-agent/types';
 import type { ThreadContext } from '../execution/context/thread-context.js';
 import type { IScriptExecutor } from '@modular-agent/script-executors';
-import { CodeExecutionError, ScriptNotFoundError, ConfigurationValidationError } from '@modular-agent/types';
+import { ScriptExecutionError, ScriptNotFoundError, ConfigurationValidationError } from '@modular-agent/types';
 import { tryCatchAsyncWithSignal, all } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
@@ -18,7 +18,7 @@ import { ok, err } from '@modular-agent/common-utils';
  * 脚本服务类
  * 整合脚本注册表和执行器管理功能
  */
-class CodeService {
+class ScriptService {
   private scripts: Map<string, Script> = new Map();
   private executors: Map<ScriptType, IScriptExecutor> = new Map();
 
@@ -402,20 +402,20 @@ class CodeService {
    * @param scriptName 脚本名称
    * @param options 执行选项（覆盖脚本默认选项）
    * @param threadContext 线程上下文（可选，用于沙箱隔离）
-   * @returns Result<ScriptExecutionResult, CodeExecutionError>
+   * @returns Result<ScriptExecutionResult, ScriptExecutionError>
    */
-  async execute(
-    scriptName: string,
-    options: Partial<ScriptExecutionOptions> = {},
-    threadContext?: ThreadContext
-  ): Promise<Result<ScriptExecutionResult, CodeExecutionError>> {
+ async execute(
+   scriptName: string,
+   options: Partial<ScriptExecutionOptions> = {},
+   threadContext?: ThreadContext
+ ): Promise<Result<ScriptExecutionResult, ScriptExecutionError>> {
     // 获取脚本定义
     const script = this.getScript(scriptName);
 
     // 获取对应的执行器
     const executor = this.executors.get(script.type);
     if (!executor) {
-      return err(new CodeExecutionError(
+      return err(new ScriptExecutionError(
         `No executor found for script type '${script.type}'`,
         scriptName,
         script.type,
@@ -436,7 +436,7 @@ class CodeService {
     );
 
     if (result.isErr()) {
-      return err(this.convertToCodeExecutionError(
+      return err(this.convertToScriptExecutionError(
         result.error,
         scriptName,
         script.type,
@@ -448,18 +448,18 @@ class CodeService {
   }
 
   /**
-   * 批量执行脚本
-   * @param executions 执行任务数组
-   * @param threadContext 线程上下文（可选）
-   * @returns Result<ScriptExecutionResult[], CodeExecutionError>
-   */
+    * 批量执行脚本
+    * @param executions 执行任务数组
+    * @param threadContext 线程上下文（可选）
+    * @returns Result<ScriptExecutionResult[], ScriptExecutionError>
+    */
   async executeBatch(
     executions: Array<{
       scriptName: string;
       options?: Partial<ScriptExecutionOptions>;
     }>,
     threadContext?: ThreadContext
-  ): Promise<Result<ScriptExecutionResult[], CodeExecutionError>> {
+  ): Promise<Result<ScriptExecutionResult[], ScriptExecutionError>> {
     // 并行执行所有脚本
     const results = await Promise.all(
       executions.map(exec =>
@@ -472,28 +472,28 @@ class CodeService {
   }
 
   /**
-   * 转换错误为CodeExecutionError
-   *
-   * @param error 原始错误
-   * @param scriptName 脚本名称
-   * @param scriptType 脚本类型
-   * @param options 执行选项
-   * @returns CodeExecutionError
-   */
-  private convertToCodeExecutionError(
+    * 转换错误为ScriptExecutionError
+    *
+    * @param error 原始错误
+    * @param scriptName 脚本名称
+    * @param scriptType 脚本类型
+    * @param options 执行选项
+    * @returns ScriptExecutionError
+    */
+  private convertToScriptExecutionError(
     error: unknown,
     scriptName: string,
     scriptType: string,
     options: ScriptExecutionOptions
-  ): CodeExecutionError {
-    // 如果已经是CodeExecutionError，直接返回
-    if (error instanceof CodeExecutionError) {
+  ): ScriptExecutionError {
+    // 如果已经是ScriptExecutionError，直接返回
+    if (error instanceof ScriptExecutionError) {
       return error;
     }
 
     const message = error instanceof Error ? error.message : String(error);
 
-    return new CodeExecutionError(
+    return new ScriptExecutionError(
       `Script execution failed: ${message}`,
       scriptName,
       scriptType,
@@ -504,6 +504,6 @@ class CodeService {
 }
 
 /**
- * 导出CodeService类
+ * 导出ScriptService类
  */
-export { CodeService };
+export { ScriptService };

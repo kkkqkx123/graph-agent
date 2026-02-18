@@ -252,7 +252,7 @@ interface ExecutionContext {
 
 ---
 
-## 6. code-service.ts 重构方案
+## 6. script-service.ts 重构方案
 
 ### 6.1 职责调整
 
@@ -264,10 +264,10 @@ interface ExecutionContext {
 | 重试/超时逻辑 | 移除，由执行器处理 |
 | 错误转换 | 保留（轻量级包装） |
 
-### 6.2 新的 CodeService 结构
+### 6.2 新的 ScriptService 结构
 
 ```typescript
-class CodeService {
+class ScriptService {
   private scripts: Map<string, Script>;
   private executorRegistry: Map<ScriptType, IScriptExecutor>;
 
@@ -286,13 +286,13 @@ class CodeService {
     scriptName: string,
     options?: Partial<ScriptExecutionOptions>,
     context?: ExecutionContext
-  ): Promise<Result<ScriptExecutionResult, CodeExecutionError>>;
+  ): Promise<Result<ScriptExecutionResult, ScriptExecutionError>>;
   
   // 批量执行
   async executeBatch(
     executions: ExecutionTask[],
     context?: ExecutionContext
-  ): Promise<Result<ScriptExecutionResult[], CodeExecutionError>>;
+  ): Promise<Result<ScriptExecutionResult[], ScriptExecutionError>>;
 }
 ```
 
@@ -300,7 +300,7 @@ class CodeService {
 
 ```mermaid
 graph TD
-    A[sdk/core/services/code-service.ts] --> B[packages/script-executors]
+    A[sdk/core/services/script-service.ts] --> B[packages/script-executors]
     B --> C[packages/types]
     B --> D[packages/common-utils]
     A --> C
@@ -335,19 +335,19 @@ graph TD
 4. 实现 `CmdExecutor`
 5. 为每个执行器编写测试
 
-### 阶段 3: 重构 code-service.ts（第 5 周）
+### 阶段 3: 重构 script-service.ts（第 5 周）
 
 1. **添加依赖**
-   - 在 sdk/package.json 中添加 `script-executors` 依赖
+    - 在 sdk/package.json 中添加 `script-executors` 依赖
 
-2. **简化 CodeService**
-   - 移除执行逻辑
-   - 移除重试/超时逻辑
-   - 委托给执行器
+2. **简化 ScriptService**
+    - 移除执行逻辑
+    - 移除重试/超时逻辑
+    - 委托给执行器
 
 3. **更新测试**
-   - 修改现有测试
-   - 添加集成测试
+    - 修改现有测试
+    - 添加集成测试
 
 ### 阶段 4: 验证与文档（第 6 周）
 
