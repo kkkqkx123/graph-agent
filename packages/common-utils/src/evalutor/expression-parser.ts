@@ -1,46 +1,37 @@
 /**
  * ExpressionParser - 表达式解析器
- * 提供简易的条件表达式解析功能，支持直观的表达式语法
+ * 提供表达式解析功能，支持构建抽象语法树（AST）
  *
  * 支持的表达式格式：
- * - 等于：user.age == 18
- * - 不等于：status != 'active'
- * - 大于：score > 60
- * - 小于：score < 100
- * - 大于等于：age >= 18
- * - 小于等于：age <= 65
- * - 包含：name contains 'admin'
- * - 在数组中：role in ['admin', 'user']
- * - 逻辑与：age >= 18 && age <= 65
- * - 逻辑或：status == 'active' || status == 'pending'
- *
- * 数据源访问规则：
- * - 显式前缀（推荐）：input.xxx、output.xxx、variables.xxx - 从指定数据源获取
- * - 简单变量名：xxx - 仅从 variables 获取（语法糖，等价于 variables.xxx）
- * - 嵌套路径：user.name - 从 variables 获取（等价于 variables.user.name）
- *
- * 使用示例：
- * - evaluate("user.age > 18", context) - 判断用户年龄是否大于18（从 variables 获取）
- * - evaluate("input.status == 'active'", context) - 判断输入状态是否为active
- * - evaluate("output.result.success == true", context) - 判断输出结果是否成功
- * - evaluate("variables.tags in ['admin', 'user']", context) - 判断标签是否在数组中
- *
- * 注意事项：
- * - 为避免数据源冲突，建议使用显式前缀（input.、output.、variables.）
- * - 简单变量名只会从 variables 数据源查找，不会从 input 或 output 查找
- * - 嵌套路径默认从 variables 数据源查找，除非使用显式前缀
+ * - 比较操作：user.age == 18, score > 60, name contains 'admin'
+ * - 逻辑操作：age >= 18 && age <= 65, status == 'active' || status == 'pending'
+ * - NOT 操作：!user.isActive, !(age < 18)
+ * - 算术运算：user.age + 1, price * 0.9, count % 2
+ * - 字符串方法：user.name.startsWith('J'), user.email.endsWith('@example.com')
+ * - 三元运算符：age >= 18 ? 'adult' : 'minor'
  */
 
-import type { EvaluationContext } from '@modular-agent/types';
+import { validateExpression } from './security-validator.js';
 import { RuntimeValidationError } from '@modular-agent/types';
-import { validateExpression, validatePath } from './security-validator.js';
-import { resolvePath } from './path-resolver.js';
-import { getGlobalLogger } from '../logger/logger.js';
+import type { ASTNode } from './ast-types.js';
+import {
+  BooleanLiteralNode,
+  NumberLiteralNode,
+  StringLiteralNode,
+  NullLiteralNode,
+  ComparisonNode,
+  LogicalNode,
+  NotNode,
+  ArithmeticNode,
+  StringMethodNode,
+  TernaryNode
+} from './ast-types.js';
 
 /**
- * 解析表达式字符串
+ * 解析表达式字符串（向后兼容）
  * @param expression 表达式字符串
  * @returns 解析结果 { variablePath, operator, value }
+ * @deprecated 使用 parseAST 代替
  */
 export function parseExpression(expression: string): { variablePath: string; operator: string; value: any } | null {
   // 验证表达式安全性
@@ -130,9 +121,10 @@ export function parseValue(valueStr: string): any {
 }
 
 /**
- * 解析复合表达式（包含逻辑运算符）
+ * 解析复合表达式（向后兼容）
  * @param expression 表达式字符串
  * @returns 解析后的子表达式列表
+ * @deprecated 使用 parseAST 代替
  */
 export function parseCompoundExpression(expression: string): Array<{ expression: string; operator: '&&' | '||' }> {
   const result: Array<{ expression: string; operator: '&&' | '||' }> = [];
@@ -154,14 +146,14 @@ export function parseCompoundExpression(expression: string): Array<{ expression:
       current += char;
     } else if (depth === 0) {
       // 检查是否遇到逻辑运算符
-      if (trimmed.substr(i, 2) === '&&') {
+      if (trimmed.substring(i, i + 2) === '&&') {
         if (current.trim()) {
           result.push({ expression: current.trim(), operator: lastOperator });
         }
         lastOperator = '&&';
         current = '';
         i += 1; // 跳过第二个 &
-      } else if (trimmed.substr(i, 2) === '||') {
+      } else if (trimmed.substring(i, i + 2) === '||') {
         if (current.trim()) {
           result.push({ expression: current.trim(), operator: lastOperator });
         }
@@ -184,243 +176,234 @@ export function parseCompoundExpression(expression: string): Array<{ expression:
 }
 
 /**
- * 表达式求值器
+ * 解析表达式为 AST（抽象语法树）
+ * @param expression 表达式字符串
+ * @returns AST 节点
  */
-export class ExpressionEvaluator {
-  private logger = getGlobalLogger().child('ExpressionEvaluator', { pkg: 'common-utils' });
+export function parseAST(expression: string): ASTNode {
+  // 验证表达式安全性
+  validateExpression(expression);
 
-  /**
-   * 求值表达式
-   * @param expression 表达式字符串
-   * @param context 评估上下文
-   * @returns 求值结果
-   */
-  evaluate(expression: string, context: EvaluationContext): boolean {
-    // 检查是否为复合表达式（包含逻辑运算符）
-    if (expression.includes('&&') || expression.includes('||')) {
-      return this.evaluateCompoundExpression(expression, context);
-    }
+  const trimmed = expression.trim();
 
-    // 简单表达式
-    const parsed = parseExpression(expression);
-    if (!parsed) {
-      throw new RuntimeValidationError(
-        `Failed to parse expression: "${expression}" - invalid syntax or unsupported operator`,
-        {
-          operation: 'expression_parsing',
-          field: 'expression',
-          value: expression,
-          context: {
-            reason: 'Expression could not be parsed',
-            hint: 'Check for valid operators: ==, !=, >, <, >=, <=, contains, in'
-          }
-        }
-      );
-    }
-
-    return this.evaluateCondition(parsed, context, expression);
-  }
-
-  /**
-   * 求值复合表达式
-   */
-  private evaluateCompoundExpression(expression: string, context: EvaluationContext): boolean {
-    const subExpressions = parseCompoundExpression(expression);
-
-    if (subExpressions.length === 0) {
-      throw new RuntimeValidationError(
-        `Failed to parse compound expression: "${expression}" - no valid sub-expressions found`,
-        {
-          operation: 'compound_expression_parsing',
-          field: 'expression',
-          value: expression,
-          context: {
-            reason: 'Compound expression parsing returned empty result',
-            hint: 'Check for balanced parentheses and valid logical operators (&&, ||)'
-          }
-        }
-      );
-    }
-
-    const first = subExpressions[0];
-    if (!first) {
-      throw new RuntimeValidationError(
-        `Invalid compound expression structure: "${expression}" - first sub-expression is null`,
-        {
-          operation: 'compound_expression_parsing',
-          field: 'expression',
-          value: expression,
-          context: {
-            reason: 'First sub-expression is null',
-            subExpressionCount: subExpressions.length
-          }
-        }
-      );
-    }
-
-    let result = this.evaluate(first.expression, context);
-
-    for (let i = 1; i < subExpressions.length; i++) {
-      const subExpr = subExpressions[i];
-      if (!subExpr) {
-        continue;
-      }
-
-      const subResult = this.evaluate(subExpr.expression, context);
-
-      if (subExpr.operator === '&&') {
-        result = result && subResult;
-      } else {
-        result = result || subResult;
-      }
-    }
-
-    return result;
-  }
-
-  /**
-   * 求值单个条件
-   */
-  private evaluateCondition(
-    condition: { variablePath: string; operator: string; value: any },
-    context: EvaluationContext,
-    originalExpression?: string
-  ): boolean {
-    // 处理纯布尔值表达式（variablePath 为空）
-    if (!condition.variablePath) {
-      return condition.value === true;
-    }
-
-    const variableValue = this.getVariableValue(condition.variablePath, context);
-
-    // 处理变量引用
-    let compareValue = condition.value;
-    if (compareValue && typeof compareValue === 'object' && compareValue.__isVariableRef) {
-      compareValue = this.getVariableValue(compareValue.path, context);
-    }
-
-    // 如果变量不存在，记录警告日志但不返回 false，让比较操作符正常处理
-    if (variableValue === undefined) {
-      this.logger.warn(
-        `Variable not found in condition evaluation: ${condition.variablePath}`,
-        { variablePath: condition.variablePath, operator: condition.operator, compareValue }
-      );
-    }
-
-    switch (condition.operator) {
-      case '==':
-        return variableValue === compareValue;
-      case '!=':
-        return variableValue !== compareValue;
-      case '>':
-        if (typeof variableValue !== 'number' || typeof compareValue !== 'number') {
-          this.logger.warn(
-            `Type mismatch in comparison: ${condition.variablePath} (${typeof variableValue}) > ${typeof compareValue}`,
-            { variablePath: condition.variablePath, variableValue, compareValue }
-          );
-          return false;
-        }
-        return variableValue > compareValue;
-      case '<':
-        if (typeof variableValue !== 'number' || typeof compareValue !== 'number') {
-          this.logger.warn(
-            `Type mismatch in comparison: ${condition.variablePath} (${typeof variableValue}) < ${typeof compareValue}`,
-            { variablePath: condition.variablePath, variableValue, compareValue }
-          );
-          return false;
-        }
-        return variableValue < compareValue;
-      case '>=':
-        if (typeof variableValue !== 'number' || typeof compareValue !== 'number') {
-          this.logger.warn(
-            `Type mismatch in comparison: ${condition.variablePath} (${typeof variableValue}) >= ${typeof compareValue}`,
-            { variablePath: condition.variablePath, variableValue, compareValue }
-          );
-          return false;
-        }
-        return variableValue >= compareValue;
-      case '<=':
-        if (typeof variableValue !== 'number' || typeof compareValue !== 'number') {
-          this.logger.warn(
-            `Type mismatch in comparison: ${condition.variablePath} (${typeof variableValue}) <= ${typeof compareValue}`,
-            { variablePath: condition.variablePath, variableValue, compareValue }
-          );
-          return false;
-        }
-        return variableValue <= compareValue;
-      case 'contains':
-        return String(variableValue).includes(String(compareValue));
-      case 'in':
-        if (!Array.isArray(compareValue)) {
-          this.logger.warn(
-            `Right operand of 'in' operator must be an array: ${typeof compareValue}`,
-            { variablePath: condition.variablePath, compareValue }
-          );
-          return false;
-        }
-        return compareValue.includes(variableValue);
-      default:
-        throw new RuntimeValidationError(
-          `Unknown operator "${condition.operator}" in expression: "${originalExpression || condition.variablePath + ' ' + condition.operator + ' ' + JSON.stringify(compareValue)}"`,
-          {
-            operation: 'condition_evaluation',
-            field: 'operator',
-            value: condition.operator,
-            context: {
-              variablePath: condition.variablePath,
-              variableValue,
-              compareValue,
-              originalExpression,
-              hint: 'Supported operators: ==, !=, >, <, >=, <=, contains, in'
-            }
-          }
-        );
+  // 处理三元运算符（优先级最低）
+  const ternaryIndex = findTernaryOperator(trimmed);
+  if (ternaryIndex !== -1) {
+    const condition = trimmed.slice(0, ternaryIndex).trim();
+    const afterQuestion = trimmed.slice(ternaryIndex + 1).trim();
+    const colonIndex = findColonInTernary(afterQuestion);
+    
+    if (colonIndex !== -1) {
+      const consequent = afterQuestion.slice(0, colonIndex).trim();
+      const alternate = afterQuestion.slice(colonIndex + 1).trim();
+      
+      return {
+        type: 'ternary',
+        condition: parseAST(condition),
+        consequent: parseAST(consequent),
+        alternate: parseAST(alternate)
+      } as TernaryNode;
     }
   }
 
-  /**
-   * 获取变量值
-   *
-   * 数据源访问规则：
-   * - 显式前缀：input.xxx、output.xxx、variables.xxx - 从指定数据源获取
-   * - 简单变量名：xxx - 仅从 variables 获取（语法糖，等价于 variables.xxx）
-   * - 其他嵌套路径：user.name - 从 variables 获取（等价于 variables.user.name）
-   *
-   * @param variablePath 变量路径
-   * @param context 评估上下文
-   * @returns 变量值
-   */
-  private getVariableValue(variablePath: string, context: EvaluationContext): any {
-    // 验证路径安全性
-    validatePath(variablePath);
+  // 处理 NOT 操作
+  if (trimmed.startsWith('!')) {
+    const operand = trimmed.slice(1).trim();
+    return {
+      type: 'not',
+      operand: parseAST(operand)
+    } as NotNode;
+  }
 
-    // 判断是否为嵌套路径
-    const isNestedPath = variablePath.includes('.') || variablePath.includes('[');
-
-    if (isNestedPath) {
-      // 检查是否以 input. 开头
-      if (variablePath.startsWith('input.')) {
-        const subPath = variablePath.substring(6); // 移除 'input.'
-        return resolvePath(subPath, context.input);
+  // 处理括号表达式
+  if (trimmed.startsWith('(') && trimmed.endsWith(')')) {
+    // 检查括号是否匹配
+    let depth = 0;
+    for (let i = 0; i < trimmed.length; i++) {
+      if (trimmed[i] === '(') depth++;
+      if (trimmed[i] === ')') depth--;
+      if (depth === 0 && i < trimmed.length - 1) {
+        // 括号不匹配，不是完整的括号表达式
+        break;
       }
-
-      // 检查是否以 output. 开头
-      if (variablePath.startsWith('output.')) {
-        const subPath = variablePath.substring(7); // 移除 'output.'
-        return resolvePath(subPath, context.output);
-      }
-
-      // 检查是否以 variables. 开头
-      if (variablePath.startsWith('variables.')) {
-        const subPath = variablePath.substring(10); // 移除 'variables.'
-        return resolvePath(subPath, context.variables);
-      }
-
-      // 其他嵌套路径：从 variables 获取（等价于 variables.xxx）
-      return resolvePath(variablePath, context.variables);
-    } else {
-      // 简单变量名：仅从 variables 获取（语法糖，等价于 variables.xxx）
-      return context.variables[variablePath];
+    }
+    if (depth === 0) {
+      // 去掉外层括号，递归解析
+      return parseAST(trimmed.slice(1, -1));
     }
   }
+
+  // 处理字面量
+  if (trimmed === 'true') {
+    return { type: 'boolean', value: true } as BooleanLiteralNode;
+  }
+  if (trimmed === 'false') {
+    return { type: 'boolean', value: false } as BooleanLiteralNode;
+  }
+  if (trimmed === 'null') {
+    return { type: 'null', value: null } as NullLiteralNode;
+  }
+  if (/^-?\d+\.?\d*$/.test(trimmed)) {
+    return { type: 'number', value: parseFloat(trimmed) } as NumberLiteralNode;
+  }
+  if ((trimmed.startsWith("'") && trimmed.endsWith("'")) ||
+      (trimmed.startsWith('"') && trimmed.endsWith('"'))) {
+    return { type: 'string', value: trimmed.slice(1, -1) } as StringLiteralNode;
+  }
+
+  // 处理字符串方法
+  const stringMethodMatch = trimmed.match(/^(.+?)\.(startsWith|endsWith|length|toLowerCase|toUpperCase|trim)(?:\((.*?)\))?$/);
+  if (stringMethodMatch && stringMethodMatch[1] && stringMethodMatch[2]) {
+    const variablePath = stringMethodMatch[1].trim();
+    const method = stringMethodMatch[2] as any;
+    const argument = stringMethodMatch[3] ? parseValue(stringMethodMatch[3].trim()) : undefined;
+    
+    return {
+      type: 'stringMethod',
+      variablePath,
+      method,
+      argument
+    } as StringMethodNode;
+  }
+
+  // 查找最外层的逻辑运算符（|| 优先级低于 &&）
+  const orIndex = findTopLevelOperator(trimmed, '||');
+  if (orIndex !== -1) {
+    const left = trimmed.slice(0, orIndex).trim();
+    const right = trimmed.slice(orIndex + 2).trim();
+    return {
+      type: 'logical',
+      operator: '||',
+      left: parseAST(left),
+      right: parseAST(right)
+    } as LogicalNode;
+  }
+
+  const andIndex = findTopLevelOperator(trimmed, '&&');
+  if (andIndex !== -1) {
+    const left = trimmed.slice(0, andIndex).trim();
+    const right = trimmed.slice(andIndex + 2).trim();
+    return {
+      type: 'logical',
+      operator: '&&',
+      left: parseAST(left),
+      right: parseAST(right)
+    } as LogicalNode;
+  }
+
+  // 解析比较表达式（优先级高于算术运算）
+  const parsed = parseExpression(trimmed);
+  if (parsed && parsed.variablePath) {
+    return {
+      type: 'comparison',
+      variablePath: parsed.variablePath,
+      operator: parsed.operator as any,
+      value: parsed.value
+    } as ComparisonNode;
+  }
+
+  // 查找算术运算符（优先级：* / % > + -）
+  const mulDivModIndex = findTopLevelOperator(trimmed, ['*', '/', '%']);
+  if (mulDivModIndex !== -1) {
+    const operator = trimmed.substring(mulDivModIndex, mulDivModIndex + 1) as '*' | '/' | '%';
+    const left = trimmed.slice(0, mulDivModIndex).trim();
+    const right = trimmed.slice(mulDivModIndex + 1).trim();
+    return {
+      type: 'arithmetic',
+      operator,
+      left: parseAST(left),
+      right: parseAST(right)
+    } as ArithmeticNode;
+  }
+
+  const addSubIndex = findTopLevelOperator(trimmed, ['+', '-']);
+  if (addSubIndex !== -1) {
+    const operator = trimmed.substring(addSubIndex, addSubIndex + 1) as '+' | '-';
+    const left = trimmed.slice(0, addSubIndex).trim();
+    const right = trimmed.slice(addSubIndex + 1).trim();
+    return {
+      type: 'arithmetic',
+      operator,
+      left: parseAST(left),
+      right: parseAST(right)
+    } as ArithmeticNode;
+  }
+
+  // 如果都不是，可能是变量引用，当作比较表达式处理
+  if (trimmed && !trimmed.includes(' ')) {
+    return {
+      type: 'comparison',
+      variablePath: trimmed,
+      operator: '==',
+      value: true
+    } as ComparisonNode;
+  }
+
+  throw new RuntimeValidationError(
+    `Failed to parse expression: "${trimmed}"`,
+    {
+      operation: 'parse_expression',
+      field: 'expression',
+      value: trimmed
+    }
+  );
+}
+
+/**
+ * 查找最外层的逻辑运算符位置
+ * @param expression 表达式字符串
+ * @param operator 运算符或运算符数组
+ * @returns 运算符位置，如果不存在返回 -1
+ */
+function findTopLevelOperator(expression: string, operator: string | string[]): number {
+  let depth = 0;
+  const operators = Array.isArray(operator) ? operator : [operator];
+  
+  for (let i = 0; i < expression.length; i++) {
+    if (expression[i] === '(') depth++;
+    if (expression[i] === ')') depth--;
+    
+    if (depth === 0) {
+      for (const op of operators) {
+        if (expression.substring(i, i + op.length) === op) {
+          return i;
+        }
+      }
+    }
+  }
+  return -1;
+}
+
+/**
+ * 查找三元运算符的问号位置
+ * @param expression 表达式字符串
+ * @returns 问号位置，如果不存在返回 -1
+ */
+function findTernaryOperator(expression: string): number {
+  let depth = 0;
+  for (let i = 0; i < expression.length; i++) {
+    if (expression[i] === '(') depth++;
+    if (expression[i] === ')') depth--;
+    if (depth === 0 && expression[i] === '?') {
+      return i;
+    }
+  }
+  return -1;
+}
+
+/**
+ * 在三元运算符的问号后查找冒号位置
+ * @param expression 问号后的表达式
+ * @returns 冒号位置，如果不存在返回 -1
+ */
+function findColonInTernary(expression: string): number {
+  let depth = 0;
+  for (let i = 0; i < expression.length; i++) {
+    if (expression[i] === '(') depth++;
+    if (expression[i] === ')') depth--;
+    if (depth === 0 && expression[i] === ':') {
+      return i;
+    }
+  }
+  return -1;
 }

@@ -3,11 +3,37 @@
  * 提供条件表达式解析、求值和路径解析功能
  */
 
-// 条件评估器
-export { ConditionEvaluator, conditionEvaluator } from './condition-evaluator.js';
+// AST 类型定义
+export type {
+  ASTNode,
+  BooleanLiteralNode,
+  NumberLiteralNode,
+  StringLiteralNode,
+  NullLiteralNode,
+  ComparisonNode,
+  LogicalNode,
+  NotNode,
+  ArithmeticNode,
+  StringMethodNode,
+  TernaryNode
+} from './ast-types.js';
 
 // 表达式解析器
-export { ExpressionEvaluator, parseExpression, parseValue, parseCompoundExpression } from './expression-parser.js';
+export {
+  parseExpression,
+  parseValue,
+  parseCompoundExpression,
+  parseAST
+} from './expression-parser.js';
+
+// 表达式求值器
+export {
+  ExpressionEvaluator,
+  expressionEvaluator
+} from './expression-evaluator.js';
+
+// 条件评估器
+export { ConditionEvaluator, conditionEvaluator } from './condition-evaluator.js';
 
 // 路径解析器
 export { resolvePath, pathExists, setPath } from './path-resolver.js';

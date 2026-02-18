@@ -5,18 +5,17 @@
 
 import type { Condition, EvaluationContext } from '@modular-agent/types';
 import { RuntimeValidationError } from '@modular-agent/types';
-import { ExpressionEvaluator } from './expression-parser.js';
+import { expressionEvaluator } from './expression-evaluator.js';
 import { getGlobalLogger } from '../logger/logger.js';
 
 /**
  * 条件评估器实现
  */
 export class ConditionEvaluator {
-  private expressionEvaluator: ExpressionEvaluator;
   private logger = getGlobalLogger().child('ConditionEvaluator', { pkg: 'common-utils' });
 
   constructor() {
-    this.expressionEvaluator = new ExpressionEvaluator();
+    // 无需初始化，使用共享的 expressionEvaluator 单例
   }
 
   /**
@@ -35,7 +34,7 @@ export class ConditionEvaluator {
     }
 
     try {
-      return this.expressionEvaluator.evaluate(condition.expression, context);
+      return expressionEvaluator.evaluate(condition.expression, context);
     } catch (error) {
       // 区分语法错误和运行时评估失败
       if (error instanceof RuntimeValidationError) {
