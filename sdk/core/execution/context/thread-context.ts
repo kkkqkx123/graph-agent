@@ -23,6 +23,7 @@ import type { TriggerRuntimeState } from '@modular-agent/types';
 import type { StatefulToolFactory } from '@modular-agent/types';
 import type { LLMMessage } from '@modular-agent/types';
 import type { MessageRole } from '@modular-agent/types';
+import { ValidationError, ErrorSeverity } from '@modular-agent/types';
 import { ConversationManager } from '../managers/conversation-manager.js';
 import { VariableCoordinator } from '../coordinators/variable-coordinator.js';
 import { VariableStateManager } from '../managers/variable-state-manager.js';
@@ -683,7 +684,7 @@ export class ThreadContext implements LifecycleCapable {
   /**
    * 从快照恢复状态
    */
-  restoreFromSnapshot(snapshot: any): void {
+  async restoreFromSnapshot(snapshot: any): Promise<void> {
     if (snapshot.variableState) {
       this.variableStateManager.restoreFromSnapshot(snapshot.variableState);
     }
@@ -695,6 +696,29 @@ export class ThreadContext implements LifecycleCapable {
     }
     if (snapshot.toolVisibilityState) {
       this.toolVisibilityCoordinator.restoreSnapshot(this.thread.id, snapshot.toolVisibilityState);
+      
+      // 验证声明历史完整性
+      const validation = this.toolVisibilityCoordinator.validateDeclarationHistory(
+        this.thread.id,
+        this
+      );
+      
+      if (!validation.valid) {
+        // 抛出警告级别的验证错误
+        throw new ValidationError(
+          `Tool visibility declaration history validation failed: ${validation.errors.join(', ')}`,
+          undefined,
+          undefined,
+          { errors: validation.errors },
+          'warning'
+        );
+        
+        // 自动修复声明历史
+        await this.toolVisibilityCoordinator.repairDeclarationHistory(
+          this.thread.id,
+          this
+        );
+      }
     }
     // executionState 不从快照恢复，保持当前状态或重新初始化
   }

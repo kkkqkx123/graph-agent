@@ -46,35 +46,6 @@ export interface ToolVisibilityContext {
   initializedAt: number;
 }
 
-/**
- * 可见性声明策略配置
- */
-export interface VisibilityDeclarationStrategy {
-  /** 最小声明间隔（毫秒） */
-  minDeclarationInterval: number;
-  
-  /** 是否批量合并声明 */
-  batchDeclarations: boolean;
-  
-  /** 最大批量等待时间（毫秒） */
-  maxBatchWaitTime: number;
-  
-  /** 作用域切换时强制声明 */
-  forceDeclarationOnScopeChange: boolean;
-  
-  /** 定期刷新间隔（轮数） */
-  refreshInterval?: number;
-}
-
-/**
- * 默认可见性声明策略
- */
-export const defaultVisibilityDeclarationStrategy: VisibilityDeclarationStrategy = {
-  minDeclarationInterval: 1000,  // 1秒内不重复声明
-  batchDeclarations: true,        // 批量合并动态添加的工具
-  maxBatchWaitTime: 500,         // 最多等待500ms批量
-  forceDeclarationOnScopeChange: true  // 作用域切换必须声明
-};
 
 /**
  * 工具可见性变更类型

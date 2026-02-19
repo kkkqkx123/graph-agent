@@ -33,8 +33,6 @@ export {
 export {
   type ToolVisibilityContext,
   type VisibilityDeclaration,
-  type VisibilityDeclarationStrategy,
   type VisibilityChangeType,
-  type VisibilityUpdateRequest,
-  defaultVisibilityDeclarationStrategy
+  type VisibilityUpdateRequest
 } from './tool-visibility.types.js';

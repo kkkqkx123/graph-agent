@@ -21,11 +21,8 @@ import type { ToolScope } from '../managers/tool-context-manager.js';
 import type {
   ToolVisibilityContext,
   VisibilityDeclaration,
-  VisibilityDeclarationStrategy,
-  VisibilityChangeType,
-  VisibilityUpdateRequest
+  VisibilityChangeType
 } from '../types/tool-visibility.types.js';
-import { defaultVisibilityDeclarationStrategy } from '../types/tool-visibility.types.js';
 import type { ThreadContext } from '../context/thread-context.js';
 import type { ToolService } from '../../services/tool-service.js';
 import type { LLMMessage } from '@modular-agent/types';
@@ -41,38 +38,12 @@ export class ToolVisibilityCoordinator {
   /** 工具服务 */
   private toolService: ToolService;
 
-  /** 声明策略 */
-  private strategy: VisibilityDeclarationStrategy;
-
-  /** 批量声明定时器 */
-  private batchTimers: Map<string, NodeJS.Timeout> = new Map();
-
-  /** 批量声明队列 */
-  private batchQueues: Map<string, VisibilityUpdateRequest[]> = new Map();
-
-  /** 上次声明的工具集（用于去重）：threadId -> Set<toolId> */
-  private lastDeclaredTools: Map<string, Set<string>> = new Map();
-
-  /** 上次声明的时间戳（用于去重）：threadId -> timestamp */
-  private lastDeclarationTime: Map<string, number> = new Map();
-
-  /** 声明去重时间窗口（毫秒），默认5000ms */
-  private deduplicationWindow: number = 5000;
-
   /**
    * 构造函数
    * @param toolService 工具服务
-   * @param strategy 声明策略
-   * @param deduplicationWindow 声明去重时间窗口（毫秒）
    */
-  constructor(
-    toolService: ToolService,
-    strategy: VisibilityDeclarationStrategy = { ...defaultVisibilityDeclarationStrategy },
-    deduplicationWindow: number = 5000
-  ) {
+  constructor(toolService: ToolService) {
     this.toolService = toolService;
-    this.strategy = strategy;
-    this.deduplicationWindow = deduplicationWindow;
   }
 
   /**
@@ -182,9 +153,6 @@ export class ToolVisibilityCoordinator {
     const updatedContext = this.getContext(threadId)!;
     updatedContext.declarationHistory.push(declaration);
     updatedContext.lastDeclarationIndex = declaration.messageIndex;
-
-    // 更新去重记录
-    this.updateDeduplicationRecord(threadId, availableTools);
   }
 
   /**
@@ -204,27 +172,15 @@ export class ToolVisibilityCoordinator {
       return false;
     }
 
-    // 检查上次声明时间
-    const lastTime = this.lastDeclarationTime.get(threadId);
-    if (!lastTime) {
-      return false;
-    }
-
-    // 检查是否在去重时间窗口内
-    const currentTime = now();
-    if (currentTime - lastTime > this.deduplicationWindow) {
+    const context = this.getContext(threadId);
+    if (!context) {
       return false;
     }
 
     // 检查工具集是否相同
-    const lastTools = this.lastDeclaredTools.get(threadId);
-    if (!lastTools) {
-      return false;
-    }
-
     const currentToolSet = new Set(availableTools);
-    if (this.areToolSetsEqual(lastTools, currentToolSet)) {
-      return true; // 工具集相同且在时间窗口内，跳过声明
+    if (this.areToolSetsEqual(context.visibleTools, currentToolSet)) {
+      return true; // 工具集相同，跳过声明
     }
 
     return false;
@@ -249,16 +205,6 @@ export class ToolVisibilityCoordinator {
   }
 
   /**
-   * 更新去重记录
-   * @param threadId 线程ID
-   * @param availableTools 可用工具ID列表
-   */
-  private updateDeduplicationRecord(threadId: string, availableTools: string[]): void {
-    this.lastDeclaredTools.set(threadId, new Set(availableTools));
-    this.lastDeclarationTime.set(threadId, now());
-  }
-
-  /**
    * 动态添加工具
    * 生成增量可见性声明
    * @param threadContext 线程上下文
@@ -280,19 +226,14 @@ export class ToolVisibilityCoordinator {
     // 添加到可见工具集合
     toolIds.forEach(id => context.visibleTools.add(id));
 
-    // 如果启用批量声明，则加入队列
-    if (this.strategy.batchDeclarations && !this.strategy.forceDeclarationOnScopeChange) {
-      await this.enqueueBatchDeclaration(threadContext, toolIds, scope);
-    } else {
-      // 立即生成声明
-      await this.updateVisibilityOnScopeChange(
-        threadContext,
-        scope,
-        context.scopeId,
-        Array.from(context.visibleTools),
-        'add_tools'
-      );
-    }
+    // 立即生成声明
+    await this.updateVisibilityOnScopeChange(
+      threadContext,
+      scope,
+      context.scopeId,
+      Array.from(context.visibleTools),
+      'add_tools'
+    );
   }
 
   /**
@@ -303,6 +244,7 @@ export class ToolVisibilityCoordinator {
    * - 在消息操作（如 truncate, filter, clear）后调用此方法
    * - 确保工具可见性声明与当前消息状态一致
    * - SDK不提供默认的消息操作实现，由应用层定义
+   * - 仅在工具集发生变化时才生成新的声明
    *
    * @param threadContext 线程上下文
    */
@@ -314,11 +256,28 @@ export class ToolVisibilityCoordinator {
       throw new Error(`Tool visibility context not found for thread: ${threadId}`);
     }
 
+    // 检查是否需要刷新（工具集是否发生变化）
+    const currentTools = Array.from(context.visibleTools);
+    
+    // 获取上次声明的工具集
+    const lastDeclaration = context.declarationHistory.length > 0
+      ? context.declarationHistory[context.declarationHistory.length - 1]
+      : null;
+
+    // 如果上次声明存在且工具集相同，则不需要刷新
+    if (lastDeclaration) {
+      const lastTools = lastDeclaration.toolIds;
+      if (this.areToolSetsEqual(new Set(lastTools), new Set(currentTools))) {
+        return; // 工具集未变化，跳过刷新
+      }
+    }
+
+    // 工具集已变化，生成新的声明
     await this.updateVisibilityOnScopeChange(
       threadContext,
       context.currentScope,
       context.scopeId,
-      Array.from(context.visibleTools),
+      currentTools,
       'refresh'
     );
   }
@@ -412,88 +371,183 @@ ${toolDescriptions || '无可用工具'}
     return typeMap[changeType] || changeType;
   }
 
+
   /**
-   * 将批量声明加入队列
+   * 验证声明历史完整性
+   * @param threadId 线程ID
    * @param threadContext 线程上下文
-   * @param toolIds 工具ID列表
-   * @param scope 作用域
+   * @returns 验证结果
    */
-  private async enqueueBatchDeclaration(
-    threadContext: ThreadContext,
-    toolIds: string[],
-    scope: ToolScope
-  ): Promise<void> {
-    const threadId = threadContext.getThreadId();
-    const context = this.getContext(threadId)!;
+  validateDeclarationHistory(
+    threadId: string,
+    threadContext: ThreadContext
+  ): { valid: boolean; errors: string[] } {
+    const context = this.getContext(threadId);
+    if (!context) {
+      return { valid: false, errors: ['Context not found'] };
+    }
 
-    // 创建更新请求
-    const request: VisibilityUpdateRequest = {
-      scope,
-      scopeId: context.scopeId,
-      toolIds,
-      changeType: 'add_tools'
+    const errors: string[] = [];
+    const conversationHistory = threadContext.getConversationHistory();
+
+    // 检查每个声明记录
+    for (let i = 0; i < context.declarationHistory.length; i++) {
+      const declaration = context.declarationHistory[i]!;
+      
+      // 检查消息索引是否有效
+      if (declaration.messageIndex < 0 ||
+          declaration.messageIndex >= conversationHistory.length) {
+        errors.push(`Declaration ${i}: messageIndex ${declaration.messageIndex} out of range`);
+        continue;
+      }
+
+      // 检查消息是否为工具可见性声明
+      const message = conversationHistory[declaration.messageIndex];
+      if (!message || !message.metadata ||
+          message.metadata['type'] !== 'tool_visibility_declaration') {
+        errors.push(`Declaration ${i}: message at index ${declaration.messageIndex} is not a visibility declaration`);
+        continue;
+      }
+
+      // 检查作用域信息是否匹配
+      if (message.metadata['scope'] !== declaration.scope ||
+          message.metadata['scopeId'] !== declaration.scopeId) {
+        errors.push(`Declaration ${i}: scope mismatch in metadata`);
+      }
+    }
+
+    // 检查是否有孤立的声明消息（在历史中但不在记录中）
+    const declarationMessages = conversationHistory.filter(
+      msg => msg && msg.metadata && msg.metadata['type'] === 'tool_visibility_declaration'
+    );
+    
+    if (declarationMessages.length !== context.declarationHistory.length) {
+      errors.push(`Declaration count mismatch: ${declarationMessages.length} messages vs ${context.declarationHistory.length} records`);
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors
     };
-
-    // 加入队列
-    if (!this.batchQueues.has(threadId)) {
-      this.batchQueues.set(threadId, []);
-    }
-    this.batchQueues.get(threadId)!.push(request);
-
-    // 如果已有定时器，则不重复创建
-    if (this.batchTimers.has(threadId)) {
-      return;
-    }
-
-    // 创建定时器
-    const timer = setTimeout(async () => {
-      await this.processBatchDeclaration(threadContext);
-    }, this.strategy.maxBatchWaitTime);
-
-    this.batchTimers.set(threadId, timer);
   }
 
   /**
-   * 处理批量声明
+   * 消息操作后更新声明历史
+   * 当消息被截断、过滤或清空时调用此方法
+   * @param threadId 线程ID
    * @param threadContext 线程上下文
+   * @param operation 操作类型
    */
-  private async processBatchDeclaration(threadContext: ThreadContext): Promise<void> {
-    const threadId = threadContext.getThreadId();
+  async updateDeclarationHistoryAfterMessageOperation(
+    threadId: string,
+    threadContext: ThreadContext,
+    operation: 'truncate' | 'filter' | 'clear'
+  ): Promise<void> {
     const context = this.getContext(threadId);
-
     if (!context) {
       return;
     }
 
-    // 清除定时器
-    const timer = this.batchTimers.get(threadId);
-    if (timer) {
-      clearTimeout(timer);
-      this.batchTimers.delete(threadId);
-    }
+    const conversationHistory = threadContext.getConversationHistory();
 
-    // 获取队列中的所有请求
-    const queue = this.batchQueues.get(threadId) || [];
-    this.batchQueues.delete(threadId);
-
-    if (queue.length === 0) {
+    if (operation === 'clear') {
+      // 清空所有声明历史
+      context.declarationHistory = [];
+      context.lastDeclarationIndex = -1;
+      
+      // 重新生成初始声明
+      await this.updateVisibilityOnScopeChange(
+        threadContext,
+        context.currentScope,
+        context.scopeId,
+        Array.from(context.visibleTools),
+        'init'
+      );
       return;
     }
 
-    // 合并所有工具ID
-    const allToolIds = new Set<string>();
-    queue.forEach(req => {
-      req.toolIds.forEach(id => allToolIds.add(id));
-    });
+    if (operation === 'truncate' || operation === 'filter') {
+      // 移除超出范围的声明记录
+      const validDeclarations = context.declarationHistory.filter(
+        decl => decl.messageIndex < conversationHistory.length
+      );
+      
+      // 如果有声明被移除，需要重新生成最新的声明
+      if (validDeclarations.length !== context.declarationHistory.length) {
+        context.declarationHistory = validDeclarations;
+        
+        // 重新生成当前可见性声明
+        await this.updateVisibilityOnScopeChange(
+          threadContext,
+          context.currentScope,
+          context.scopeId,
+          Array.from(context.visibleTools),
+          'refresh'
+        );
+      }
+    }
+  }
 
-    // 生成声明
-    await this.updateVisibilityOnScopeChange(
-      threadContext,
-      context.currentScope,
-      context.scopeId,
-      Array.from(allToolIds),
-      'add_tools'
-    );
+  /**
+   * 自动修复声明历史
+   * 当验证失败时调用此方法
+   * @param threadId 线程ID
+   * @param threadContext 线程上下文
+   */
+  async repairDeclarationHistory(
+    threadId: string,
+    threadContext: ThreadContext
+  ): Promise<void> {
+    const context = this.getContext(threadId);
+    if (!context) {
+      return;
+    }
+
+    const conversationHistory = threadContext.getConversationHistory();
+    
+    // 1. 扫描对话历史中的所有工具可见性声明消息
+    const declarationMessages: Array<{ index: number; message: LLMMessage }> = [];
+    
+    for (let i = 0; i < conversationHistory.length; i++) {
+      const msg = conversationHistory[i];
+      if (msg && msg.metadata && msg.metadata['type'] === 'tool_visibility_declaration') {
+        declarationMessages.push({ index: i, message: msg });
+      }
+    }
+
+    // 2. 重建声明历史
+    const rebuiltHistory: VisibilityDeclaration[] = [];
+    
+    for (const { index, message } of declarationMessages) {
+      const metadata = message.metadata;
+      if (metadata) {
+        rebuiltHistory.push({
+          timestamp: metadata['timestamp'] || now(),
+          scope: metadata['scope'] || 'THREAD',
+          scopeId: metadata['scopeId'] || threadId,
+          toolIds: metadata['toolIds'] || [],
+          messageIndex: index,
+          changeType: metadata['changeType'] || 'refresh'
+        });
+      }
+    }
+
+    // 3. 更新上下文
+    context.declarationHistory = rebuiltHistory;
+    context.lastDeclarationIndex = rebuiltHistory.length > 0
+      ? rebuiltHistory[rebuiltHistory.length - 1]!.messageIndex
+      : -1;
+
+    // 4. 如果没有声明，生成初始声明
+    if (rebuiltHistory.length === 0) {
+      await this.updateVisibilityOnScopeChange(
+        threadContext,
+        context.currentScope,
+        context.scopeId,
+        Array.from(context.visibleTools),
+        'init'
+      );
+    }
   }
 
   /**
@@ -501,21 +555,6 @@ ${toolDescriptions || '无可用工具'}
    * @param threadId 线程ID
    */
   deleteContext(threadId: string): void {
-    // 清除批量定时器
-    const timer = this.batchTimers.get(threadId);
-    if (timer) {
-      clearTimeout(timer);
-      this.batchTimers.delete(threadId);
-    }
-
-    // 清除批量队列
-    this.batchQueues.delete(threadId);
-
-    // 清除去重记录
-    this.lastDeclaredTools.delete(threadId);
-    this.lastDeclarationTime.delete(threadId);
-
-    // 删除上下文
     this.contexts.delete(threadId);
   }
 
@@ -523,14 +562,6 @@ ${toolDescriptions || '无可用工具'}
    * 清空所有可见性上下文
    */
   clearAll(): void {
-    // 清除所有定时器
-    for (const timer of this.batchTimers.values()) {
-      clearTimeout(timer);
-    }
-    this.batchTimers.clear();
-    this.batchQueues.clear();
-    this.lastDeclaredTools.clear();
-    this.lastDeclarationTime.clear();
     this.contexts.clear();
   }
 
