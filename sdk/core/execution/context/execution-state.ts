@@ -120,9 +120,10 @@ export class ExecutionState {
   }
 
   /**
+   * 清理资源
    * 清空所有执行状态
    */
-  clear(): void {
+  cleanup(): void {
     this.subgraphStack = [];
   }
 

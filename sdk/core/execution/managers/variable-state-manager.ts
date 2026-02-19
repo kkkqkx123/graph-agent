@@ -397,20 +397,6 @@ export class VariableStateManager implements LifecycleCapable<{
   }
 
   /**
-   * 清空变量状态
-   * @deprecated 使用 cleanup() 方法代替
-   */
-  clear(): void {
-    this.variables = [];
-    this.variableScopes = {
-      global: {},
-      thread: {},
-      local: [],
-      loop: []
-    };
-  }
-
-  /**
    * 获取变量作用域结构
    * @returns 变量作用域结构
    */
@@ -424,26 +410,16 @@ export class VariableStateManager implements LifecycleCapable<{
   }
 
   /**
-   * 初始化管理器
-   * VariableStateManager在构造时已初始化，此方法为空实现
-   */
-  initialize(): void {
-    // VariableStateManager在构造时已初始化，无需额外操作
-  }
-
-  /**
    * 清理资源
    * 清空所有变量状态和作用域
    */
   cleanup(): void {
-    this.clear();
-  }
-
-  /**
-   * 检查是否已初始化
-   * @returns 始终返回true，因为VariableStateManager在构造时已初始化
-   */
-  isInitialized(): boolean {
-    return true;
+    this.variables = [];
+    this.variableScopes = {
+      global: {},
+      thread: {},
+      local: [],
+      loop: []
+    };
   }
 }

@@ -326,7 +326,7 @@ export class TriggerCoordinator {
    * 清空所有触发器状态
    */
   clear(): void {
-    this.stateManager.clear();
+    this.stateManager.cleanup();
   }
 
   /**

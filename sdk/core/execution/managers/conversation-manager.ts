@@ -181,33 +181,6 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
     return filteredIndices.map(idx => ({ ...this.messages[idx]! }));
   }
 
-  /**
-   * 清空消息历史
-   * @param keepSystemMessage 是否保留系统消息
-   */
-  clearMessages(keepSystemMessage: boolean = true): void {
-    if (keepSystemMessage && this.messages.length > 0) {
-      const firstMessage = this.messages[0]!;
-      if (firstMessage.role === 'system') {
-        // 保留系统消息
-        this.messages = [firstMessage];
-      } else {
-        // 清空所有消息
-        this.messages = [];
-      }
-    } else {
-      // 清空所有消息
-      this.messages = [];
-    }
-
-    // 重置标记映射
-    this.markMap = {
-      originalIndices: [],
-      batchBoundaries: [0],
-      boundaryToBatch: [0],
-      currentBatch: 0
-    };
-  }
 
   /**
    * 检查Token使用情况，触发消息操作事件
@@ -479,7 +452,13 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    */
   restoreFromSnapshot(snapshot: ConversationState): void {
     // 清空当前消息
-    this.clearMessages(false);
+    this.messages = [];
+    this.markMap = {
+      originalIndices: [],
+      batchBoundaries: [0],
+      boundaryToBatch: [0],
+      currentBatch: 0
+    };
 
     // 恢复消息历史
     this.addMessages(...snapshot.messages);
@@ -490,7 +469,13 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    * 清空消息历史和Token统计
    */
   cleanup(): void {
-    this.clearMessages(false);
+    this.messages = [];
+    this.markMap = {
+      originalIndices: [],
+      batchBoundaries: [0],
+      boundaryToBatch: [0],
+      currentBatch: 0
+    };
   }
 
   /**

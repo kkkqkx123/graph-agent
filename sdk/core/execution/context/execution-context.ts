@@ -72,7 +72,6 @@ export class ExecutionContext {
   private threadCascadeManager: ThreadCascadeManager;
   private toolContextManager: ToolContextManager;
   private threadLifecycleCoordinator: ThreadLifecycleCoordinator;
-  private initialized = false;
   private currentThreadId: string | null = null;
 
   constructor(
@@ -113,19 +112,6 @@ export class ExecutionContext {
   }
 
   /**
-   * 初始化上下文
-   * 按依赖顺序创建所有组件
-   */
-  initialize(): void {
-    if (this.initialized) {
-      return;
-    }
-    
-    // 所有服务已在构造函数中初始化
-    this.initialized = true;
-  }
-
-  /**
    * 注册组件
    * @param key 组件键名
    * @param instance 组件实例
@@ -140,7 +126,6 @@ export class ExecutionContext {
    * @returns WorkflowRegistry 实例
    */
   getWorkflowRegistry(): WorkflowRegistry {
-    this.ensureInitialized();
     return this.workflowRegistry;
   }
 
@@ -149,7 +134,6 @@ export class ExecutionContext {
    * @returns ThreadRegistry 实例
    */
   getThreadRegistry(): ThreadRegistry {
-    this.ensureInitialized();
     return this.threadRegistry;
   }
 
@@ -158,7 +142,6 @@ export class ExecutionContext {
    * @returns EventManager 实例
    */
   getEventManager(): EventManager {
-    this.ensureInitialized();
     return this.eventManager;
   }
 
@@ -167,7 +150,6 @@ export class ExecutionContext {
    * @returns CheckpointStateManager 实例
    */
   getCheckpointStateManager(): CheckpointStateManager {
-    this.ensureInitialized();
     return this.checkpointStateManager;
   }
 
@@ -177,7 +159,6 @@ export class ExecutionContext {
    * @deprecated 应该使用 getLifecycleCoordinator() 进行外部调用，Manager仅供内部使用
    */
   getThreadLifecycleManager(): ThreadLifecycleManager {
-    this.ensureInitialized();
     return this.threadLifecycleManager;
   }
 
@@ -186,7 +167,6 @@ export class ExecutionContext {
    * @returns ToolService 实例
    */
   getToolService(): ToolService {
-    this.ensureInitialized();
     return this.toolService;
   }
 
@@ -195,7 +175,6 @@ export class ExecutionContext {
    * @returns LLMExecutor 实例
    */
   getLlmExecutor(): LLMExecutor {
-    this.ensureInitialized();
     return this.llmExecutor;
   }
 
@@ -204,7 +183,6 @@ export class ExecutionContext {
    * @returns ErrorService 实例
    */
   getErrorService(): ErrorService {
-    this.ensureInitialized();
     return this.errorService;
   }
 
@@ -213,7 +191,6 @@ export class ExecutionContext {
    * @returns ToolContextManager 实例
    */
   getToolContextManager(): ToolContextManager {
-    this.ensureInitialized();
     return this.toolContextManager;
   }
 
@@ -222,7 +199,6 @@ export class ExecutionContext {
    * @returns ThreadLifecycleCoordinator 实例
    */
   getLifecycleCoordinator(): ThreadLifecycleCoordinator {
-    this.ensureInitialized();
     return this.threadLifecycleCoordinator;
   }
 
@@ -231,7 +207,6 @@ export class ExecutionContext {
    * @returns ThreadCascadeManager 实例
    */
   getCascadeManager(): ThreadCascadeManager {
-    this.ensureInitialized();
     return this.threadCascadeManager;
   }
 
@@ -240,7 +215,6 @@ export class ExecutionContext {
    * @returns TaskRegistry 实例
    */
   getTaskRegistry(): TaskRegistry {
-    this.ensureInitialized();
     return this.taskRegistry;
   }
 
@@ -249,7 +223,6 @@ export class ExecutionContext {
    * @returns GraphRegistry 实例
    */
   getGraphRegistry(): GraphRegistry {
-    this.ensureInitialized();
     return this.graphRegistry;
   }
 
@@ -258,7 +231,6 @@ export class ExecutionContext {
    * @returns ScriptService 实例
    */
   getScriptService(): ScriptService {
-    this.ensureInitialized();
     return this.scriptService;
   }
 
@@ -267,7 +239,6 @@ export class ExecutionContext {
    * @returns NodeTemplateRegistry 实例
    */
   getNodeTemplateRegistry(): NodeTemplateRegistry {
-    this.ensureInitialized();
     return this.nodeTemplateRegistry;
   }
 
@@ -276,7 +247,6 @@ export class ExecutionContext {
    * @returns TriggerTemplateRegistry 实例
    */
   getTriggerTemplateRegistry(): TriggerTemplateRegistry {
-    this.ensureInitialized();
     return this.triggerTemplateRegistry;
   }
 
@@ -293,7 +263,6 @@ export class ExecutionContext {
    * @returns HumanRelayHandler 实例，如果未设置则返回 undefined
    */
   getHumanRelayHandler(): any {
-    this.ensureInitialized();
     // 不再支持动态注册，返回 undefined
     return undefined;
   }
@@ -311,7 +280,6 @@ export class ExecutionContext {
    * @returns UserInteractionHandler 实例，如果未设置则返回 undefined
    */
   getUserInteractionHandler(): any {
-    this.ensureInitialized();
     // 不再支持动态注册，返回 undefined
     return undefined;
   }
@@ -322,17 +290,8 @@ export class ExecutionContext {
    * @returns 组件实例
    */
   get<T>(key: string): T {
-    this.ensureInitialized();
     // 不再支持通用获取，所有服务通过 DI 容器管理
     throw new Error('Generic get() is no longer supported. Use specific getter methods instead.');
-  }
-
-  /**
-   * 检查是否已初始化
-   * @returns 是否已初始化
-   */
-  isInitialized(): boolean {
-    return this.initialized;
   }
 
   /**
@@ -348,27 +307,15 @@ export class ExecutionContext {
    * 注意：全局单例（eventManager、workflowRegistry、threadRegistry）不会被清理
    */
   async destroy(): Promise<void> {
-    if (!this.initialized) {
-      return;
-    }
-
     // 清理检查点状态管理器
     await this.checkpointStateManager.cleanup();
 
     // 清理工具上下文管理器
     this.toolContextManager.clearAll();
 
-    // 重置初始化状态
-    this.initialized = false;
+    // 重置当前线程ID
     this.currentThreadId = null;
   }
-
-  /**
-   * 检查组件是否实现了LifecycleCapable接口
-   *
-   * @param component 组件实例
-   * @returns 是否实现了LifecycleCapable接口
-   */
 
   /**
    * 获取所有实现了LifecycleCapable接口的组件
@@ -379,20 +326,8 @@ export class ExecutionContext {
     // 返回所有实现了 LifecycleCapable 接口的组件
     return [
       { name: 'checkpointStateManager', manager: this.checkpointStateManager },
-      { name: 'threadLifecycleManager', manager: this.threadLifecycleManager },
-      { name: 'threadCascadeManager', manager: this.threadCascadeManager },
       { name: 'threadLifecycleCoordinator', manager: this.threadLifecycleCoordinator }
     ];
-  }
-
-  /**
-   * 确保上下文已初始化
-   * 如果未初始化，自动调用 initialize()
-   */
-  private ensureInitialized(): void {
-    if (!this.initialized) {
-      this.initialize();
-    }
   }
 
   /**

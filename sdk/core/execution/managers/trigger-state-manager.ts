@@ -223,14 +223,6 @@ export class TriggerStateManager implements LifecycleCapable<Map<ID, TriggerRunt
   }
 
   /**
-   * 清空所有状态
-   * @deprecated 使用 cleanup() 方法代替
-   */
-  clear(): void {
-    this.states.clear();
-  }
-
-  /**
    * 获取状态数量
    * @returns 状态数量
    */
@@ -239,26 +231,10 @@ export class TriggerStateManager implements LifecycleCapable<Map<ID, TriggerRunt
   }
 
   /**
-   * 初始化管理器
-   * TriggerStateManager在构造时已初始化，此方法为空实现
-   */
-  initialize(): void {
-    // TriggerStateManager在构造时已初始化，无需额外操作
-  }
-
-  /**
    * 清理资源
    * 清空所有触发器状态
    */
   cleanup(): void {
-    this.clear();
-  }
-
-  /**
-   * 检查是否已初始化
-   * @returns 始终返回true，因为TriggerStateManager在构造时已初始化
-   */
-  isInitialized(): boolean {
-    return true;
+    this.states.clear();
   }
 }

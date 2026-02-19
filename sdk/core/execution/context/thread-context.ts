@@ -644,13 +644,6 @@ export class ThreadContext implements LifecycleCapable {
   }
 
   /**
-   * 初始化管理器
-   */
-  initialize(): void {
-    // ThreadContext 在构造时已经初始化，此方法为空实现
-  }
-
-  /**
    * 清理资源
    */
   cleanup(): void {
@@ -667,7 +660,7 @@ export class ThreadContext implements LifecycleCapable {
     this.conversationManager.cleanup();
 
     // 5. 清理执行状态
-    this.executionState.clear();
+    this.executionState.cleanup();
 
     // 6. 清理工具可见性上下文
     this.toolVisibilityCoordinator.deleteContext(this.thread.id);
@@ -704,13 +697,6 @@ export class ThreadContext implements LifecycleCapable {
       this.toolVisibilityCoordinator.restoreSnapshot(this.thread.id, snapshot.toolVisibilityState);
     }
     // executionState 不从快照恢复，保持当前状态或重新初始化
-  }
-
-  /**
-   * 检查是否已初始化
-   */
-  isInitialized(): boolean {
-    return true; // ThreadContext 在构造时总是初始化的
   }
 
   /**

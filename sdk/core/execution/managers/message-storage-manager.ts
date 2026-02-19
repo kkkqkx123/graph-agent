@@ -110,14 +110,6 @@ export class MessageStorageManager implements LifecycleCapable<MessageStorageSta
   }
 
   /**
-   * 清空所有消息历史
-   */
-  clearAll(): void {
-    this.messages = [];
-    this.batchSnapshots.clear();
-  }
-
-  /**
    * 获取存储统计信息
    * @returns 统计信息
    */
@@ -174,6 +166,7 @@ export class MessageStorageManager implements LifecycleCapable<MessageStorageSta
    * 清空消息历史和批次快照
    */
   cleanup(): void {
-    this.clearAll();
+    this.messages = [];
+    this.batchSnapshots.clear();
   }
 }

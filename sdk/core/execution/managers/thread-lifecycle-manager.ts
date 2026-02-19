@@ -21,7 +21,6 @@
 import type { Thread, ThreadStatus, ThreadResult } from '@modular-agent/types';
 import type { EventManager } from '../../services/event-manager.js';
 import { MessageStorageManager } from './message-storage-manager.js';
-import { LifecycleCapable } from './lifecycle-capable.js';
 import { validateTransition } from '../utils/thread-state-validator.js';
 import {
   buildThreadStartedEvent,
@@ -42,7 +41,7 @@ import { now } from '@modular-agent/common-utils';
  *
  * 提供原子化的状态转换操作
  */
-export class ThreadLifecycleManager implements LifecycleCapable<void> {
+export class ThreadLifecycleManager {
   constructor(
     private eventManager: EventManager,
     private messageStorageManager: MessageStorageManager
@@ -246,33 +245,5 @@ export class ThreadLifecycleManager implements LifecycleCapable<void> {
     // 触发THREAD_STATE_CHANGED事件
     const stateChangedEvent = buildThreadStateChangedEvent(thread, previousStatus, 'CANCELLED');
     await emit(this.eventManager, stateChangedEvent);
-  }
-
-  // ============================================================
-  // LifecycleCapable 接口实现
-  // ============================================================
-
-  /**
-   * 清理资源
-   * ThreadLifecycleManager 是无状态的，无需清理
-   */
-  async cleanup(): Promise<void> {
-    // 无状态，无需清理
-  }
-
-  /**
-   * 创建状态快照
-   * ThreadLifecycleManager 是无状态的，返回空快照
-   */
-  createSnapshot(): void {
-    // 无状态，返回空快照
-  }
-
-  /**
-   * 从快照恢复状态
-   * ThreadLifecycleManager 是无状态的，无需恢复
-   */
-  async restoreFromSnapshot(_snapshot: void): Promise<void> {
-    // 无状态，无需恢复
   }
 }

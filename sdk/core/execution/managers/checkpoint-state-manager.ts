@@ -279,9 +279,10 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
   }
 
   /**
+   * 清理资源
    * 清空所有检查点
    */
-  async clearAll(): Promise<void> {
+  async cleanup(): Promise<void> {
     const checkpointIds = await this.storageCallback.listCheckpoints();
     for (const checkpointId of checkpointIds) {
       await this.storageCallback.deleteCheckpoint(checkpointId);
@@ -290,24 +291,8 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
   }
 
   /**
-   * 初始化管理器
-   * CheckpointStateManager在构造时已初始化，此方法为空实现
-   */
-  initialize(): void {
-    // CheckpointStateManager在构造时已初始化，无需额外操作
-  }
-
-  /**
-   * 清理资源
-   * 清空所有检查点
-   */
-  async cleanup(): Promise<void> {
-    await this.clearAll();
-  }
-
-  /**
    * 创建状态快照
-   * CheckpointStateManager本身不维护状态，此方法为空实现
+   * CheckpointStateManager本身不维护状态，返回空快照
    */
   createSnapshot(): void {
     // CheckpointStateManager本身不维护状态，无需快照
@@ -315,17 +300,9 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
 
   /**
    * 从快照恢复状态
-   * CheckpointStateManager本身不维护状态，此方法为空实现
+   * CheckpointStateManager本身不维护状态，无需恢复
    */
   restoreFromSnapshot(): void {
     // CheckpointStateManager本身不维护状态，无需恢复
-  }
-
-  /**
-   * 检查是否已初始化
-   * @returns 始终返回true，因为CheckpointStateManager在构造时已初始化
-   */
-  isInitialized(): boolean {
-    return true;
   }
 }

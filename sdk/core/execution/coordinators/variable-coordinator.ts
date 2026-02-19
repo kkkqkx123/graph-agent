@@ -306,7 +306,7 @@ export class VariableCoordinator {
    * 清空变量
    */
   clearVariables(): void {
-    this.stateManager.clear();
+    this.stateManager.cleanup();
   }
 
   /**

@@ -116,7 +116,7 @@ export async function contextProcessorHandler(
 
     // 6. 更新ConversationManager
     // 清空当前消息
-    conversationManager.clearMessages(false);
+    conversationManager.cleanup();
 
     // 重新添加所有消息
     for (const msg of result.messages) {

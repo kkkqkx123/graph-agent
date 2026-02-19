@@ -241,7 +241,6 @@ export function initializeContainer(): Container {
         toolContextManager,
         threadLifecycleCoordinator
       );
-      context.initialize();
       return context;
     })
     .inSingletonScope();
