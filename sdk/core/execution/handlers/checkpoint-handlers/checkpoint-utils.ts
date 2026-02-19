@@ -7,7 +7,6 @@ import type { ID } from '@modular-agent/types';
 import type { CheckpointMetadata } from '@modular-agent/types';
 import type { ThreadRegistry } from '../../../services/thread-registry.js';
 import type { WorkflowRegistry } from '../../../services/workflow-registry.js';
-import type { GlobalMessageStorage } from '../../../services/global-message-storage.js';
 import type { GraphRegistry } from '../../../services/graph-registry.js';
 import { CheckpointStateManager } from '../../managers/checkpoint-state-manager.js';
 import { CheckpointCoordinator } from '../../coordinators/checkpoint-coordinator.js';
@@ -39,8 +38,6 @@ export interface CheckpointDependencies {
   checkpointStateManager: CheckpointStateManager;
   /** 工作流注册表 */
   workflowRegistry: WorkflowRegistry;
-  /** 全局消息存储 */
-  globalMessageStorage: GlobalMessageStorage;
   /** 图注册表 */
   graphRegistry: GraphRegistry;
 }

@@ -15,7 +15,6 @@ import * as Identifiers from './service-identifiers.js';
 // 存储层服务
 import { GraphRegistry } from '../services/graph-registry.js';
 import { ThreadRegistry } from '../services/thread-registry.js';
-import { GlobalMessageStorage } from '../services/global-message-storage.js';
 
 // 业务层服务
 import { EventManager } from '../services/event-manager.js';
@@ -33,6 +32,7 @@ import { ThreadLifecycleManager } from '../execution/managers/thread-lifecycle-m
 import { ThreadCascadeManager } from '../execution/managers/thread-cascade-manager.js';
 import { CheckpointStateManager } from '../execution/managers/checkpoint-state-manager.js';
 import { ToolContextManager } from '../execution/managers/tool-context-manager.js';
+import { MessageStorageManager } from '../execution/managers/message-storage-manager.js';
 import { ExecutionContext } from '../execution/context/execution-context.js';
 import { ThreadBuilder } from '../execution/thread-builder.js';
 import { ThreadExecutor } from '../execution/thread-executor.js';
@@ -82,10 +82,6 @@ export function initializeContainer(): Container {
 
   container.bind(Identifiers.ThreadRegistry)
     .to(ThreadRegistry)
-    .inSingletonScope();
-
-  container.bind(Identifiers.GlobalMessageStorage)
-    .to(GlobalMessageStorage)
     .inSingletonScope();
 
   // ============================================================
@@ -150,11 +146,19 @@ export function initializeContainer(): Container {
     })
     .inSingletonScope();
 
+  container.bind(Identifiers.MessageStorageManager)
+    .toDynamicValue((c: any) => {
+      // MessageStorageManager 是线程隔离的，每个线程需要自己的实例
+      // 这里使用一个默认的 threadId，实际使用时应该由 ThreadContext 创建
+      return new MessageStorageManager('default');
+    })
+    .inSingletonScope();
+
   container.bind(Identifiers.ThreadLifecycleManager)
     .toDynamicValue((c: any) => {
       const eventManager = c.get(Identifiers.EventManager);
-      const globalMessageStorage = c.get(Identifiers.GlobalMessageStorage);
-      return new ThreadLifecycleManager(eventManager, globalMessageStorage);
+      const messageStorageManager = c.get(Identifiers.MessageStorageManager);
+      return new ThreadLifecycleManager(eventManager, messageStorageManager);
     })
     .inSingletonScope();
 
@@ -183,14 +187,14 @@ export function initializeContainer(): Container {
     .toDynamicValue((c: any) => {
       const eventManager = c.get(Identifiers.EventManager);
       const callback = getStorageCallback();
-      
+
       if (!callback) {
         throw new Error(
           'CheckpointStateManager requires a CheckpointStorageCallback implementation. ' +
           'Please provide it via SDK initialization options using setStorageCallback().'
         );
       }
-      
+
       return new CheckpointStateManager(callback, eventManager);
     })
     .inSingletonScope();
@@ -210,7 +214,6 @@ export function initializeContainer(): Container {
       const llmExecutor = c.get(Identifiers.LLMExecutor);
       const errorService = c.get(Identifiers.ErrorService);
       const taskRegistry = c.get(Identifiers.TaskRegistry);
-      const globalMessageStorage = c.get(Identifiers.GlobalMessageStorage);
       const graphRegistry = c.get(Identifiers.GraphRegistry);
       const nodeTemplateRegistry = c.get(Identifiers.NodeTemplateRegistry);
       const triggerTemplateRegistry = c.get(Identifiers.TriggerTemplateRegistry);
@@ -219,7 +222,7 @@ export function initializeContainer(): Container {
       const threadCascadeManager = c.get(Identifiers.ThreadCascadeManager);
       const toolContextManager = c.get(Identifiers.ToolContextManager);
       const threadLifecycleCoordinator = c.get(Identifiers.ThreadLifecycleCoordinator);
-      
+
       const context = new ExecutionContext(
         workflowRegistry,
         threadRegistry,
@@ -229,7 +232,6 @@ export function initializeContainer(): Container {
         llmExecutor,
         errorService,
         taskRegistry,
-        globalMessageStorage,
         graphRegistry,
         nodeTemplateRegistry,
         triggerTemplateRegistry,
@@ -266,8 +268,7 @@ export function initializeContainer(): Container {
   container.bind(Identifiers.ThreadLifecycleCoordinator)
     .toDynamicValue((c: any) => {
       const executionContext = c.get(Identifiers.ExecutionContext);
-      const globalMessageStorage = c.get(Identifiers.GlobalMessageStorage);
-      return new ThreadLifecycleCoordinator(executionContext, globalMessageStorage);
+      return new ThreadLifecycleCoordinator(executionContext);
     })
     .inSingletonScope();
 

@@ -27,7 +27,6 @@ import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager.js'
 import { ThreadCascadeManager } from '../managers/thread-cascade-manager.js';
 import { ExecutionContext } from '../context/execution-context.js';
 import { now } from '@modular-agent/common-utils';
-import type { GlobalMessageStorage } from '../../services/global-message-storage.js';
 import {
   buildThreadCompletedEvent,
   buildThreadFailedEvent,
@@ -41,16 +40,13 @@ import { LifecycleCapable } from '../managers/lifecycle-capable.js';
  *
  * 负责高层的流程编排和协调，组织多个组件完成复杂的Thread生命周期操作
  */
-export class ThreadLifecycleCoordinator implements LifecycleCapable<{ executionContext: ExecutionContext; globalMessageStorage: GlobalMessageStorage }> {
+export class ThreadLifecycleCoordinator implements LifecycleCapable<{ executionContext: ExecutionContext }> {
   private executionContext: ExecutionContext;
-  private globalMessageStorage: GlobalMessageStorage;
 
   constructor(
-    executionContext?: ExecutionContext,
-    globalMessageStorage?: GlobalMessageStorage
+    executionContext?: ExecutionContext
   ) {
     this.executionContext = executionContext || ExecutionContext.createDefault();
-    this.globalMessageStorage = globalMessageStorage || this.executionContext.getGlobalMessageStorage();
   }
 
   /**
@@ -230,7 +226,6 @@ export class ThreadLifecycleCoordinator implements LifecycleCapable<{ executionC
     // 如果是终止状态，设置结束时间并清理
     if (['COMPLETED', 'FAILED', 'CANCELLED', 'TIMEOUT'].includes(status)) {
       threadContext.setEndTime(now());
-      await this.globalMessageStorage.removeReference(threadId);
 
       // 触发相应的终止事件
       let event;
@@ -277,9 +272,6 @@ export class ThreadLifecycleCoordinator implements LifecycleCapable<{ executionC
     // 设置结束时间
     threadContext.setEndTime(now());
 
-    // 清理全局消息存储
-    await this.globalMessageStorage.removeReference(threadId);
-
     // 触发取消事件
     const cancelledEvent = buildThreadCancelledEvent(threadContext.thread, reason || 'forced_cancel');
     await emit(this.executionContext.getEventManager(), cancelledEvent);
@@ -291,29 +283,27 @@ export class ThreadLifecycleCoordinator implements LifecycleCapable<{ executionC
 
   /**
    * 清理资源
-   * ThreadLifecycleCoordinator 持有 ExecutionContext 和 GlobalMessageStorage 引用，但不需要清理
+   * ThreadLifecycleCoordinator 持有 ExecutionContext 引用，但不需要清理
    */
   async cleanup(): Promise<void> {
-    // 不需要清理，ExecutionContext 和 GlobalMessageStorage 由 DI 容器管理
+    // 不需要清理，ExecutionContext 由 DI 容器管理
   }
 
   /**
    * 创建状态快照
-   * ThreadLifecycleCoordinator 持有 ExecutionContext 和 GlobalMessageStorage 引用
+   * ThreadLifecycleCoordinator 持有 ExecutionContext 引用
    */
-  createSnapshot(): { executionContext: ExecutionContext; globalMessageStorage: GlobalMessageStorage } {
+  createSnapshot(): { executionContext: ExecutionContext } {
     return {
-      executionContext: this.executionContext,
-      globalMessageStorage: this.globalMessageStorage
+      executionContext: this.executionContext
     };
   }
 
   /**
    * 从快照恢复状态
-   * ThreadLifecycleCoordinator 从快照恢复 ExecutionContext 和 GlobalMessageStorage 引用
+   * ThreadLifecycleCoordinator 从快照恢复 ExecutionContext 引用
    */
-  async restoreFromSnapshot(snapshot: { executionContext: ExecutionContext; globalMessageStorage: GlobalMessageStorage }): Promise<void> {
+  async restoreFromSnapshot(snapshot: { executionContext: ExecutionContext }): Promise<void> {
     this.executionContext = snapshot.executionContext;
-    this.globalMessageStorage = snapshot.globalMessageStorage;
   }
 }

@@ -20,7 +20,7 @@
 
 import type { Thread, ThreadStatus, ThreadResult } from '@modular-agent/types';
 import type { EventManager } from '../../services/event-manager.js';
-import type { GlobalMessageStorage } from '../../services/global-message-storage.js';
+import { MessageStorageManager } from './message-storage-manager.js';
 import { LifecycleCapable } from './lifecycle-capable.js';
 import { validateTransition } from '../utils/thread-state-validator.js';
 import {
@@ -45,10 +45,11 @@ import { now } from '@modular-agent/common-utils';
 export class ThreadLifecycleManager implements LifecycleCapable<void> {
   constructor(
     private eventManager: EventManager,
-    private globalMessageStorage: GlobalMessageStorage
+    private messageStorageManager: MessageStorageManager
   ) {
-    // eventManager 和 globalMessageStorage 必须通过构造函数传入
+    // 所有依赖都通过构造函数注入，保持依赖注入的一致性
   }
+
 
   /**
    * 启动Thread
@@ -148,8 +149,8 @@ export class ThreadLifecycleManager implements LifecycleCapable<void> {
       if (!thread.endTime) {
         thread.endTime = now();
       }
-      // 清理全局消息存储中的消息历史
-      await this.globalMessageStorage.removeReference(thread.id);
+      // 清理消息存储
+      this.messageStorageManager.cleanup();
       // 触发THREAD_COMPLETED事件
       const completedEvent = buildThreadCompletedEvent(thread, result);
       await emit(this.eventManager, completedEvent);
@@ -165,8 +166,8 @@ export class ThreadLifecycleManager implements LifecycleCapable<void> {
     // 设置结束时间
     thread.endTime = now();
 
-    // 清理全局消息存储中的消息历史
-    await this.globalMessageStorage.removeReference(thread.id);
+    // 清理消息存储
+    this.messageStorageManager.cleanup();
 
     // 触发THREAD_COMPLETED事件
     const completedEvent = buildThreadCompletedEvent(thread, result);
@@ -199,8 +200,8 @@ export class ThreadLifecycleManager implements LifecycleCapable<void> {
     // 记录错误信息
     thread.errors.push(error.message);
 
-    // 清理全局消息存储中的消息历史
-    await this.globalMessageStorage.removeReference(thread.id);
+    // 清理消息存储
+    this.messageStorageManager.cleanup();
 
     // 触发THREAD_FAILED事件
     const failedEvent = buildThreadFailedEvent(thread, error);
@@ -235,8 +236,8 @@ export class ThreadLifecycleManager implements LifecycleCapable<void> {
     // 设置结束时间
     thread.endTime = now();
 
-    // 清理全局消息存储中的消息历史
-    await this.globalMessageStorage.removeReference(thread.id);
+    // 清理消息存储
+    this.messageStorageManager.cleanup();
 
     // 触发THREAD_CANCELLED事件
     const cancelledEvent = buildThreadCancelledEvent(thread, reason);

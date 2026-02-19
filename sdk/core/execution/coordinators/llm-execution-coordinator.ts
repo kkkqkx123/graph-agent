@@ -505,7 +505,6 @@ export class LLMExecutionCoordinator {
           threadRegistry: this.executionContext.getThreadRegistry(),
           checkpointStateManager: this.executionContext.getCheckpointStateManager(),
           workflowRegistry: this.executionContext.getWorkflowRegistry(),
-          globalMessageStorage: this.executionContext.getGlobalMessageStorage(),
           graphRegistry: this.executionContext.getGraphRegistry()
         };
         checkpointId = await CheckpointCoordinator.createCheckpoint(threadId, dependencies, {

@@ -26,12 +26,6 @@ export const GraphRegistry = Symbol('GraphRegistry') as ServiceIdentifier<any>;
  */
 export const ThreadRegistry = Symbol('ThreadRegistry') as ServiceIdentifier<any>;
 
-/**
- * GlobalMessageStorage - 全局消息存储
- * 管理全局消息存储
- */
-export const GlobalMessageStorage = Symbol('GlobalMessageStorage') as ServiceIdentifier<any>;
-
 // ============================================================
 // 业务层服务
 // ============================================================
@@ -135,6 +129,12 @@ export const CheckpointStateManager = Symbol('CheckpointStateManager') as Servic
  * 管理工具执行上下文
  */
 export const ToolContextManager = Symbol('ToolContextManager') as ServiceIdentifier<any>;
+
+/**
+ * MessageStorageManager - 消息存储管理器
+ * 管理线程的消息存储，线程隔离
+ */
+export const MessageStorageManager = Symbol('MessageStorageManager') as ServiceIdentifier<any>;
 
 /**
  * LLMExecutor - LLM 执行器

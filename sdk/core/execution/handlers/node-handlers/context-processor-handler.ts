@@ -17,7 +17,7 @@
 
 import type { Node, ContextProcessorNodeConfig } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
-import { ExecutionError, RuntimeValidationError, ValidationError } from '@modular-agent/types';
+import { RuntimeValidationError, ValidationError } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
 import { executeOperation } from '../../../utils/message-operation-utils.js';
 import type { MessageOperationContext } from '@modular-agent/types';
@@ -117,12 +117,12 @@ export async function contextProcessorHandler(
     // 6. 更新ConversationManager
     // 清空当前消息
     conversationManager.clearMessages(false);
-    
+
     // 重新添加所有消息
     for (const msg of result.messages) {
       await conversationManager.addMessage(msg);
     }
-    
+
     // 更新标记映射
     conversationManager.getIndexManager().setMarkMap(result.markMap);
 

@@ -40,7 +40,6 @@ import type { ScriptService } from '../../services/script-service.js';
 import type { LLMExecutor } from '../executors/llm-executor.js';
 import type { ErrorService } from '../../services/error-service.js';
 import type { TaskRegistry } from '../../services/task-registry.js';
-import type { GlobalMessageStorage } from '../../services/global-message-storage.js';
 import type { GraphRegistry } from '../../services/graph-registry.js';
 import type { NodeTemplateRegistry } from '../../services/node-template-registry.js';
 import type { TriggerTemplateRegistry } from '../../services/trigger-template-registry.js';
@@ -65,7 +64,6 @@ export class ExecutionContext {
   private llmExecutor: LLMExecutor;
   private errorService: ErrorService;
   private taskRegistry: TaskRegistry;
-  private globalMessageStorage: GlobalMessageStorage;
   private graphRegistry: GraphRegistry;
   private nodeTemplateRegistry: NodeTemplateRegistry;
   private triggerTemplateRegistry: TriggerTemplateRegistry;
@@ -86,7 +84,6 @@ export class ExecutionContext {
     llmExecutor: LLMExecutor,
     errorService: ErrorService,
     taskRegistry: TaskRegistry,
-    globalMessageStorage: GlobalMessageStorage,
     graphRegistry: GraphRegistry,
     nodeTemplateRegistry: NodeTemplateRegistry,
     triggerTemplateRegistry: TriggerTemplateRegistry,
@@ -105,7 +102,6 @@ export class ExecutionContext {
     this.llmExecutor = llmExecutor;
     this.errorService = errorService;
     this.taskRegistry = taskRegistry;
-    this.globalMessageStorage = globalMessageStorage;
     this.graphRegistry = graphRegistry;
     this.nodeTemplateRegistry = nodeTemplateRegistry;
     this.triggerTemplateRegistry = triggerTemplateRegistry;
@@ -237,15 +233,6 @@ export class ExecutionContext {
   getCascadeManager(): ThreadCascadeManager {
     this.ensureInitialized();
     return this.threadCascadeManager;
-  }
-
-  /**
-   * 获取 GlobalMessageStorage
-   * @returns GlobalMessageStorage 实例
-   */
-  getGlobalMessageStorage(): GlobalMessageStorage {
-    this.ensureInitialized();
-    return this.globalMessageStorage;
   }
 
   /**

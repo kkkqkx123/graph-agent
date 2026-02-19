@@ -32,7 +32,6 @@ import { ExecutionError, ConfigurationValidationError, RuntimeValidationError, S
 import { now, getErrorOrNew } from '@modular-agent/common-utils';
 import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { WorkflowRegistry } from '../../services/workflow-registry.js';
-import type { GlobalMessageStorage } from '../../services/global-message-storage.js';
 import { TriggerStateManager } from '../managers/trigger-state-manager.js';
 import { CheckpointStateManager } from '../managers/checkpoint-state-manager.js';
 import { convertToTrigger } from '@modular-agent/types';
@@ -40,6 +39,7 @@ import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-uti
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
 import { getContainer } from '../../di/index.js';
 import * as Identifiers from '../../di/service-identifiers.js';
+import { ExecutionContext } from '../context/execution-context.js';
 
 /**
  * TriggerCoordinator - 触发器协调器
@@ -61,20 +61,17 @@ export class TriggerCoordinator {
   private workflowRegistry: WorkflowRegistry;
   private stateManager: TriggerStateManager;
   private checkpointStateManager?: CheckpointStateManager;
-  private globalMessageStorage?: GlobalMessageStorage;
 
   constructor(
     threadRegistry: ThreadRegistry,
     workflowRegistry: WorkflowRegistry,
     stateManager: TriggerStateManager,
-    checkpointStateManager?: CheckpointStateManager,
-    globalMessageStorage?: GlobalMessageStorage
+    checkpointStateManager?: CheckpointStateManager
   ) {
     this.threadRegistry = threadRegistry;
     this.workflowRegistry = workflowRegistry;
     this.stateManager = stateManager;
     this.checkpointStateManager = checkpointStateManager;
-    this.globalMessageStorage = globalMessageStorage;
   }
 
   /**
@@ -272,14 +269,13 @@ export class TriggerCoordinator {
    */
   private async executeTrigger(trigger: Trigger): Promise<void> {
     // 触发前创建检查点（如果配置了）
-    if (trigger.createCheckpoint && this.checkpointStateManager && this.globalMessageStorage && trigger.threadId) {
+    if (trigger.createCheckpoint && this.checkpointStateManager && trigger.threadId) {
       try {
         const container = getContainer();
         const dependencies: CheckpointDependencies = {
           threadRegistry: this.threadRegistry,
           checkpointStateManager: this.checkpointStateManager,
           workflowRegistry: this.workflowRegistry,
-          globalMessageStorage: this.globalMessageStorage,
           graphRegistry: container.get(Identifiers.GraphRegistry)
         };
 
@@ -307,12 +303,13 @@ export class TriggerCoordinator {
     // 使用 trigger handler 函数执行触发动作
     const handler = getTriggerHandler(trigger.action.type);
 
-    // 创建一个临时的 ExecutionContext，包含 ThreadRegistry 和 WorkflowRegistry
-    const executionContext = {
-      getThreadRegistry: () => this.threadRegistry,
-      getWorkflowRegistry: () => this.workflowRegistry,
-      getCurrentThreadId: () => trigger.threadId || null,
-    };
+    // 从 DI 容器获取完整的 ExecutionContext 实例
+    const executionContext = ExecutionContext.createDefault();
+
+    // 设置当前线程 ID
+    if (trigger.threadId) {
+      executionContext.setCurrentThreadId(trigger.threadId);
+    }
 
     const result = await handler(trigger.action, trigger.id, executionContext);
 

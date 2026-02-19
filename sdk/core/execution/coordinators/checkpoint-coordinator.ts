@@ -8,7 +8,6 @@ import type { Thread } from '@modular-agent/types';
 import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot, MessageMarkMap } from '@modular-agent/types';
 import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { WorkflowRegistry } from '../../services/workflow-registry.js';
-import type { GlobalMessageStorage } from '../../services/global-message-storage.js';
 import type { GraphRegistry } from '../../services/graph-registry.js';
 import { CheckpointStateManager } from '../managers/checkpoint-state-manager.js';
 import { ConversationManager } from '../managers/conversation-manager.js';
@@ -26,7 +25,6 @@ export interface CheckpointDependencies {
   threadRegistry: ThreadRegistry;
   checkpointStateManager: CheckpointStateManager;
   workflowRegistry: WorkflowRegistry;
-  globalMessageStorage: GlobalMessageStorage;
   graphRegistry: GraphRegistry;
 }
 
@@ -46,7 +44,7 @@ export class CheckpointCoordinator {
     dependencies: CheckpointDependencies,
     metadata?: CheckpointMetadata
   ): Promise<string> {
-    const { threadRegistry, checkpointStateManager, workflowRegistry, globalMessageStorage } = dependencies;
+    const { threadRegistry, checkpointStateManager, workflowRegistry } = dependencies;
 
     // 步骤1：从 ThreadRegistry 获取 ThreadContext 对象
     const threadContext = threadRegistry.get(threadId);
@@ -70,17 +68,9 @@ export class CheckpointCoordinator {
     // 获取对话管理器
     const conversationManager = threadContext.getConversationManager();
 
-    // 存储完整消息历史到全局存储
-    globalMessageStorage.storeMessages(
-      threadId,
-      conversationManager.getAllMessages()
-    );
-
-    // 增加引用计数，防止消息被过早删除
-    await globalMessageStorage.addReference(threadId);
-
-    // 只保存索引状态和Token统计
+    // 保存完整消息历史和索引状态到检查点
     const conversationState = {
+      messages: conversationManager.getAllMessages(),
       markMap: conversationManager.getMarkMap(),
       tokenUsage: conversationManager.getTokenUsage(),
       currentRequestUsage: conversationManager.getCurrentRequestUsage()
@@ -132,7 +122,7 @@ export class CheckpointCoordinator {
     checkpointId: string,
     dependencies: CheckpointDependencies
   ): Promise<ThreadContext> {
-    const { threadRegistry, checkpointStateManager, workflowRegistry, globalMessageStorage, graphRegistry } = dependencies;
+    const { threadRegistry, checkpointStateManager, workflowRegistry, graphRegistry } = dependencies;
 
     // 步骤1：从 CheckpointStateManager 加载检查点
     const checkpoint = await checkpointStateManager.get(checkpointId);
@@ -183,17 +173,13 @@ export class CheckpointCoordinator {
       variableScopes: checkpoint.threadState.variableScopes
     });
 
-    // 步骤6：从全局存储获取完整消息历史
-    const messageHistory = globalMessageStorage.getMessages(checkpoint.threadId);
-    if (!messageHistory) {
-      throw new NotFoundError(`Message history not found`, 'MessageHistory', checkpoint.threadId);
-    }
-
-    // 步骤7：创建 ConversationManager
+    // 步骤6：创建 ConversationManager
     const conversationManager = new ConversationManager();
 
-    // 批量添加所有消息（包括不可见消息）
-    conversationManager.addMessages(...messageHistory);
+    // 步骤7：从检查点快照恢复完整消息历史
+    if (checkpoint.threadState.conversationState && checkpoint.threadState.conversationState.messages) {
+      conversationManager.addMessages(...checkpoint.threadState.conversationState.messages);
+    }
 
     // 步骤8：恢复索引状态
     if (checkpoint.threadState.conversationState) {

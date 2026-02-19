@@ -29,10 +29,10 @@ export interface ThreadStateSnapshot {
   nodeResults: Record<string, NodeExecutionResult>;
   /** 错误信息数组 */
   errors: any[];
-  /** 对话状态（仅存储索引信息，用于恢复 ConversationManager） */
+  /** 对话状态（存储完整消息历史和索引信息，用于恢复 ConversationManager） */
   conversationState: {
-    /** 消息数组状态 */
-    messageArrayState?: any;
+    /** 完整消息历史数组 */
+    messages: any[];
     /** 消息标记映射 */
     markMap: MessageMarkMap;
     /** Token使用统计 */

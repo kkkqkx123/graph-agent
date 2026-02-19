@@ -89,7 +89,7 @@ export async function continueFromTriggerHandler(
       };
       
       // 执行消息操作
-      const result = executeOperation(
+      const result = await executeOperation(
         operationContext,
         config.conversationHistoryCallback
       );
