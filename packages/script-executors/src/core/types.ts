@@ -30,48 +30,6 @@ export interface ExecutorConfig {
   exponentialBackoff?: boolean;
   /** 超时时间（毫秒） */
   timeout?: number;
-  /** 沙箱配置 */
-  sandbox?: SandboxConfig;
-  /** 资源限制 */
-  resourceLimits?: ResourceLimits;
-}
-
-/**
- * 资源限制
- */
-export interface ResourceLimits {
-  /** 内存限制（MB） */
-  memory?: number;
-  /** CPU限制（核心数） */
-  cpu?: number;
-  /** 磁盘限制（MB） */
-  disk?: number;
-}
-
-/**
- * 沙箱配置
- */
-export interface SandboxConfig {
-  /** 沙箱类型 */
-  type: 'docker' | 'nodejs' | 'python' | 'custom';
-  /** 沙箱镜像或环境 */
-  image?: string;
-  /** 资源限制 */
-  resourceLimits?: ResourceLimits;
-  /** 网络配置 */
-  network?: {
-    /** 是否启用网络 */
-    enabled: boolean;
-    /** 允许的域名列表 */
-    allowedDomains?: string[];
-  };
-  /** 文件系统访问配置 */
-  filesystem?: {
-    /** 允许访问的路径列表 */
-    allowedPaths?: string[];
-    /** 是否只读 */
-    readOnly?: boolean;
-  };
 }
 
 /**

@@ -71,40 +71,6 @@ describe('ShellExecutor', () => {
     expect(result.exitCode).toBe(1);
   });
 
-  it('应该验证脚本配置', () => {
-    const validScript: Script = {
-      id: 'test-4',
-      name: 'valid-script',
-      type: 'SHELL',
-      description: 'Valid script',
-      content: 'echo test',
-      options: {
-        timeout: 5000
-      }
-    };
-
-    const result = executor.validate(validScript);
-    expect(result.valid).toBe(true);
-    expect(result.errors).toHaveLength(0);
-  });
-
-  it('应该拒绝无效的脚本配置', () => {
-    const invalidScript: Script = {
-      id: 'test-5',
-      name: '',
-      type: 'SHELL',
-      description: '',
-      content: '',
-      options: {
-        timeout: 5000
-      }
-    };
-
-    const result = executor.validate(invalidScript);
-    expect(result.valid).toBe(false);
-    expect(result.errors.length).toBeGreaterThan(0);
-  });
-
   it('应该返回支持的脚本类型', () => {
     const types = executor.getSupportedTypes();
     expect(types).toEqual(['SHELL']);

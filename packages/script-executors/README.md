@@ -5,18 +5,19 @@
 ## 功能特性
 
 - **统一的执行器接口**: `IScriptExecutor` 接口定义了所有执行器必须实现的契约
-- **抽象基类**: `BaseScriptExecutor` 提供通用的执行逻辑（验证、重试、超时、沙箱）
+- **抽象基类**:
+  - `BaseScriptExecutor`: 提供通用的执行逻辑（重试、超时）
+  - `CommandLineExecutor`: 提供命令行执行的统一实现，封装 spawn 调用
+- **验证职责分离**: 脚本验证由 SDK 在配置加载时完成，执行器专注于执行
 - **内置执行器**: 提供开箱即用的脚本执行器实现
-  - `ShellExecutor`: Shell 脚本执行器
-  - `PythonExecutor`: Python 脚本执行器
-  - `JavaScriptExecutor`: JavaScript 脚本执行器
-  - `PowerShellExecutor`: PowerShell 脚本执行器
-  - `CmdExecutor`: Windows CMD 批处理执行器
+  - `ShellExecutor`: Shell 脚本执行器（使用 `sh -c`）
+  - `PythonExecutor`: Python 脚本执行器（使用 `python3 -c`）
+  - `JavaScriptExecutor`: JavaScript 脚本执行器（使用 `node -e`）
+  - `PowerShellExecutor`: PowerShell 脚本执行器（使用 `pwsh -Command`）
+  - `CmdExecutor`: Windows CMD 批处理执行器（使用 `cmd.exe /c`）
 - **通用组件**:
-  - `ParameterValidator`: 参数验证器
   - `RetryStrategy`: 重试策略
   - `TimeoutController`: 超时控制器
-  - `SandboxManager`: 沙箱管理器
 
 ## 命名说明
 
@@ -115,6 +116,8 @@ const jsScript: Script = {
 const result = await jsExecutor.execute(jsScript);
 ```
 
+**注意**: JavaScript 执行器使用 `node -e` 执行脚本，而非 vm 模块。这种方式更简单且与系统环境一致。
+
 ### 自定义执行器配置
 
 ```typescript
@@ -143,6 +146,8 @@ if (!validationResult.valid) {
 }
 ```
 
+**注意**: `validate()` 方法已废弃，脚本验证由 SDK 在配置加载时完成。此方法仅返回成功以保持接口兼容性。
+
 ### 获取支持的脚本类型
 
 ```typescript
@@ -151,6 +156,30 @@ console.log('Supported types:', supportedTypes);
 ```
 
 ## 架构设计
+
+### 继承层次
+
+```
+IScriptExecutor (接口)
+    ↓
+BaseScriptExecutor (抽象基类)
+    ├── 重试、超时控制
+    └── 结果标准化
+    ↓
+CommandLineExecutor<T> (抽象基类)
+    ├── 命令行执行逻辑
+    ├── 环境变量管理
+    ├── 工作目录管理
+    ├── 输出收集
+    └── 泛型类型支持
+    ↓
+具体执行器
+    ├── ShellExecutor
+    ├── CmdExecutor
+    ├── PowerShellExecutor
+    ├── PythonExecutor
+    └── JavaScriptExecutor
+```
 
 ### 核心接口
 
@@ -174,21 +203,44 @@ interface IScriptExecutor {
 
 ### 抽象基类
 
-`BaseScriptExecutor` 提供了以下功能：
+#### BaseScriptExecutor
 
-- **参数验证**: 使用 `ParameterValidator` 验证脚本配置
+提供通用的执行逻辑：
+
 - **重试机制**: 使用 `RetryStrategy` 管理重试逻辑
 - **超时控制**: 使用 `TimeoutController` 控制执行超时
-- **沙箱支持**: 使用 `SandboxManager` 管理沙箱环境
 - **结果标准化**: 统一的执行结果格式
+
+**注意**: 脚本验证由 SDK 在配置加载时完成，执行器不再重复验证。`validate()` 方法已废弃，仅返回成功以保持接口兼容性。
+
+#### CommandLineExecutor<T>
+
+提供命令行执行的统一实现：
+
+- **命令行执行**: 封装 `spawn` 调用
+- **环境变量管理**: 合并进程、脚本、上下文的环境变量
+- **工作目录管理**: 支持自定义工作目录
+- **输出收集**: 统一收集 stdout 和 stderr
+- **泛型类型支持**: 通过泛型参数提供类型安全的执行器类型
+- **自动类型推断**: 自动实现 `getSupportedTypes()` 和 `getExecutorType()`
 
 ### 执行流程
 
-1. 验证脚本配置
-2. 准备沙箱环境（如果启用）
-3. 执行脚本（带重试和超时）
+1. 准备执行环境（环境变量、工作目录）
+2. 执行命令（带重试和超时）
+3. 收集输出
 4. 标准化结果
 5. 清理资源
+
+**注意**: 脚本验证在配置加载时由 SDK 完成，不在执行流程中。
+
+### 设计优势
+
+1. **代码复用**: 所有命令行执行器共享 90%+ 的代码
+2. **类型安全**: 泛型设计确保类型正确性
+3. **易于扩展**: 新增执行器只需实现 `getCommandLineConfig()` 方法
+4. **统一行为**: 所有执行器具有一致的错误处理、重试、超时行为
+5. **职责分离**: 验证由 SDK 负责，执行器专注于执行，避免重复验证
 
 ## 与 ScriptService 集成
 

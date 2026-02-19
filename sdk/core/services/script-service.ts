@@ -372,6 +372,7 @@ class ScriptService {
 
   /**
    * 验证脚本（使用执行器）
+   * @deprecated 脚本验证由 SDK 在配置加载时完成，此方法仅检查执行器是否存在
    * @param scriptName 脚本名称
    * @returns 验证结果
    */
@@ -387,8 +388,8 @@ class ScriptService {
         };
       }
 
-      // 使用执行器的验证方法
-      return executor.validate(script);
+      // 脚本验证由 SDK 在配置加载时完成，这里只检查执行器是否存在
+      return { valid: true, errors: [] };
     } catch (error) {
       return {
         valid: false,
