@@ -19,9 +19,6 @@ export * from './evalutor/index.js';
 // 工具定义转换模块
 export * from './tool/index.js';
 
-// LLM相关基础设施
-export * from './llm/index.js';
-
 // 消息管理模块
 export * from './message/index.js';
 

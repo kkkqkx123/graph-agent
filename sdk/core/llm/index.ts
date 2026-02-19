@@ -8,30 +8,35 @@
 export { LLMWrapper } from './wrapper.js';
 export { ProfileManager } from './profile-manager.js';
 
-// 基础设施（从common-utils导入）
-export { ClientFactory } from '@modular-agent/common-utils';
-export { BaseLLMClient } from '@modular-agent/common-utils';
-export { MessageStream } from '@modular-agent/common-utils';
+// 基础设施
+export { ClientFactory } from './client-factory.js';
+export { BaseLLMClient } from './base-client.js';
+export { MessageStream } from './message-stream.js';
 
-// 事件类型（从common-utils导入）
+// 事件类型
 export {
   MessageStreamEventType,
   type MessageStreamEvent,
   type MessageStreamStreamEvent,
   type MessageStreamTextEvent,
-  type MessageStreamToolCallEvent,
+  type MessageStreamInputJsonEvent,
+  type MessageStreamMessageEvent,
+  type MessageStreamFinalMessageEvent,
   type MessageStreamErrorEvent,
   type MessageStreamAbortEvent,
   type MessageStreamEndEvent
-} from '@modular-agent/common-utils';
+} from './message-stream-events.js';
 
-// OpenAI客户端（从common-utils导入）
-export { OpenAIChatClient } from '@modular-agent/common-utils';
-export { OpenAIResponseClient } from '@modular-agent/common-utils';
+// 工具函数
+export * from './message-helper.js';
 
-// Anthropic客户端（从common-utils导入）
-export { AnthropicClient } from '@modular-agent/common-utils';
+// OpenAI客户端
+export { OpenAIChatClient } from './clients/openai-chat.js';
+export { OpenAIResponseClient } from './clients/openai-response.js';
 
-// Gemini客户端（从common-utils导入）
-export { GeminiNativeClient } from '@modular-agent/common-utils';
-export { GeminiOpenAIClient } from '@modular-agent/common-utils';
+// Anthropic客户端
+export { AnthropicClient } from './clients/anthropic.js';
+
+// Gemini客户端
+export { GeminiNativeClient } from './clients/gemini-native.js';
+export { GeminiOpenAIClient } from './clients/gemini-openai.js';

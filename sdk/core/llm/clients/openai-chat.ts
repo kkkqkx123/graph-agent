@@ -13,7 +13,7 @@ import type {
   LLMMessage,
   LLMToolCall
 } from '@modular-agent/types';
-import { convertToolsToOpenAIFormat } from '../../tool/index.js';
+import { convertToolsToOpenAIFormat } from '@modular-agent/common-utils';
 
 /**
  * OpenAI Chat客户端

@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { LLMWrapper } from '../wrapper.js';
 import type { LLMProfile, LLMRequest, LLMResult, LLMClient } from '@modular-agent/types';
 import { LLMError, ConfigurationError, AbortError } from '@modular-agent/types';
-import { MessageStream } from '@modular-agent/common-utils';
+import { MessageStream } from '../index.js';
 
 // Mock ProfileManager
 class MockProfileManager {

@@ -11,7 +11,7 @@ import type {
   LLMResult,
   LLMProfile
 } from '@modular-agent/types';
-import { HttpClient, SseTransport } from '../http/index.js';
+import { HttpClient, SseTransport } from '@modular-agent/common-utils';
 
 /**
  * LLM客户端抽象基类

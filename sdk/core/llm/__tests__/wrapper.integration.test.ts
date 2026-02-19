@@ -15,7 +15,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { LLMWrapper } from '../wrapper.js';
 import type { LLMProfile, LLMRequest, LLMResult, LLMClient } from '@modular-agent/types';
 import { LLMError, ConfigurationError, AbortError, ThreadInterruptedException } from '@modular-agent/types';
-import { MessageStream } from '@modular-agent/common-utils';
+import { MessageStream } from '../index.js';
 import { EventManager } from '../../services/event-manager.js';
 
 // 创建真实的 LLM 客户端模拟

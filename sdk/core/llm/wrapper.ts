@@ -11,14 +11,12 @@ import type {
   LLMProfile
 } from '@modular-agent/types';
 import { ProfileManager } from './profile-manager.js';
-import { ClientFactory, MessageStream, tryCatchAsyncWithSignal, isAbortError } from '@modular-agent/common-utils';
-import { ConfigurationError, LLMError, AbortError } from '@modular-agent/types';
-import { now, diffTimestamp, generateId } from '@modular-agent/common-utils';
+import { ClientFactory, MessageStream } from './index.js';
+import { tryCatchAsyncWithSignal, isAbortError, now, diffTimestamp, generateId, ok, err, getThreadInterruptedException } from '@modular-agent/common-utils';
+import { ConfigurationError, LLMError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
-import { ok, err } from '@modular-agent/common-utils';
 import type { EventManager } from '../services/event-manager.js';
 import { EventType } from '@modular-agent/types';
-import { getThreadInterruptedException } from '@modular-agent/common-utils';
 
 /**
  * LLM包装器类
@@ -65,20 +63,20 @@ export class LLMWrapper {
         }
       ));
     }
-    
+
     const client = this.clientFactory.createClient(profile);
     const startTime = now();
-    
+
     // 使用 tryCatchAsyncWithSignal 确保 signal 正确传递
     const result = await tryCatchAsyncWithSignal(
       (signal) => client.generate({ ...request, signal }),
       request.signal
     );
-    
+
     if (result.isErr()) {
       return err(this.convertToLLMError(result.error, profile));
     }
-    
+
     result.value.duration = diffTimestamp(startTime, now());
     return ok(result.value);
   }
@@ -103,10 +101,10 @@ export class LLMWrapper {
         }
       ));
     }
-    
+
     const client = this.clientFactory.createClient(profile);
     const startTime = now();
-    
+
     // 创建 MessageStream
     const stream = new MessageStream();
 
@@ -114,22 +112,22 @@ export class LLMWrapper {
     const result = await tryCatchAsyncWithSignal(
       async (signal) => {
         stream.setRequestId(generateId());
-        
+
         try {
           // 执行流式调用
           for await (const chunk of client.generateStream({ ...request, signal })) {
             chunk.duration = diffTimestamp(startTime, now());
-            
+
             // 推送文本内容到 MessageStream
             if (chunk.content) {
               stream.pushText(chunk.content);
             }
-            
+
             if (chunk.finishReason) {
               stream.setFinalResult(chunk);
             }
           }
-          
+
           // 正常完成时结束流
           stream.end();
         } catch (error) {
@@ -139,23 +137,23 @@ export class LLMWrapper {
           }
           throw error;
         }
-        
+
         return stream;
       },
       request.signal
     );
-    
+
     if (result.isErr()) {
       // 如果是中止错误，需要中止 MessageStream 以正确更新其内部状态
       if (isAbortError(result.error)) {
         stream.abort();
       }
-      
+
       // 触发 LLM 流错误事件
       this.emitStreamErrorEvent(request, result.error);
       return err(this.convertToLLMError(result.error, profile));
     }
-    
+
     return ok(result.value);
   }
 
@@ -246,7 +244,7 @@ export class LLMWrapper {
     if (error instanceof LLMError) {
       return error;
     }
-    
+
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorCode = error instanceof Error && ('code' in error || 'status' in error)
       ? (error as any).code || (error as any).status

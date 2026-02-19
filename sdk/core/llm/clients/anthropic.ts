@@ -13,8 +13,7 @@ import type {
   LLMMessage,
   LLMToolCall
 } from '@modular-agent/types';
-import { MessageRole } from '@modular-agent/types';
-import { convertToolsToAnthropicFormat } from '../../tool/index.js';
+import { convertToolsToAnthropicFormat } from '@modular-agent/common-utils';
 import { extractAndFilterSystemMessages } from '../message-helper.js';
 
 /**

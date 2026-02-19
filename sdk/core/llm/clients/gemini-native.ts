@@ -13,9 +13,8 @@ import type {
   LLMMessage,
   LLMToolCall
 } from '@modular-agent/types';
-import { MessageRole } from '@modular-agent/types';
-import { generateId } from '../../utils/index.js';
-import { convertToolsToGeminiFormat } from '../../tool/index.js';
+import { generateId } from '@modular-agent/common-utils';
+import { convertToolsToGeminiFormat } from '@modular-agent/common-utils';
 import { extractAndFilterSystemMessages } from '../message-helper.js';
 
 /**

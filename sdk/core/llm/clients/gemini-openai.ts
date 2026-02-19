@@ -14,9 +14,8 @@ import type {
   LLMMessage,
   LLMToolCall
 } from '@modular-agent/types';
-import { MessageRole } from '@modular-agent/types';
-import { generateId } from '../../utils/index.js';
-import { convertToolsToOpenAIFormat } from '../../tool/index.js';
+import { generateId } from '@modular-agent/common-utils';
+import { convertToolsToOpenAIFormat } from '@modular-agent/common-utils';
 
 /**
  * Gemini OpenAI兼容客户端

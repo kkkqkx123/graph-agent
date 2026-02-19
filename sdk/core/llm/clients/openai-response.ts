@@ -14,8 +14,7 @@ import type {
   LLMMessage,
   LLMToolCall
 } from '@modular-agent/types';
-import { MessageRole } from '@modular-agent/types';
-import { convertToolsToOpenAIFormat } from '../../tool/index.js';
+import { convertToolsToOpenAIFormat } from '@modular-agent/common-utils';
 
 /**
  * OpenAI Response客户端
