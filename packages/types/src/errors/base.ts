@@ -155,6 +155,9 @@ export class ExecutionError extends SDKError {
 
 /**
  * 资源未找到错误类型
+ *
+ * 注意：资源未找到通常是严重错误，会导致执行中断
+ * 如果需要记录警告但不中断执行，请使用 ContextualLogger.resourceNotFoundWarning()
  */
 export class NotFoundError extends SDKError {
   constructor(
@@ -168,6 +171,6 @@ export class NotFoundError extends SDKError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return 'warning';
+    return 'error';
   }
 }

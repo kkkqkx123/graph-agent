@@ -1,6 +1,9 @@
 /**
  * 网络相关错误类型定义
  * 定义网络、HTTP和LLM调用相关的错误类型
+ *
+ * 注意：这些错误默认为警告级别（warning），因为它们通常表示可重试的临时性错误
+ * 如果需要记录警告但不中断执行，请使用 ContextualLogger.networkWarning()
  */
 
 import { SDKError, ErrorSeverity } from './base.js';
@@ -9,6 +12,8 @@ import { SDKError, ErrorSeverity } from './base.js';
  * 网络错误类型
  * 表示通用的网络连接问题（如 DNS 解析失败、连接超时、网络不可达等）
  * 注意：HTTP 协议错误应使用 HttpError 及其子类
+ *
+ * 默认严重程度：warning（可重试的临时性错误）
  */
 export class NetworkError extends SDKError {
   constructor(
@@ -30,6 +35,8 @@ export class NetworkError extends SDKError {
  * 表示 HTTP 协议层面的错误（如 4xx, 5xx 状态码）
  * 具体的 HTTP 状态码错误类型定义在 packages/common-utils/src/http/errors.ts 中
  * 此类作为未定义状态码的回退逻辑
+ *
+ * 默认严重程度：warning（可重试的临时性错误）
  */
 export class HttpError extends SDKError {
   constructor(
@@ -64,6 +71,8 @@ export class HttpError extends SDKError {
  * - HTTP 500 (InternalServerError) → LLMError (statusCode: 500)
  * - 请求超时 (TimeoutError) → LLMError (statusCode: undefined)
  * - JSON 解析错误 (Error) → LLMError (statusCode: undefined)
+ *
+ * 默认严重程度：warning（可重试的临时性错误）
  */
 export class LLMError extends HttpError {
   constructor(
@@ -86,6 +95,8 @@ export class LLMError extends HttpError {
 
 /**
  * 熔断器打开错误类型
+ *
+ * 默认严重程度：warning（可重试的临时性错误）
  */
 export class CircuitBreakerOpenError extends SDKError {
   constructor(

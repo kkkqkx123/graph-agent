@@ -19,12 +19,11 @@ import type { ToolService } from '../../services/tool-service.js';
 import type { EventManager } from '../../services/event-manager.js';
 import type { Tool, ID } from '@modular-agent/types';
 import { safeEmit } from '../utils/event/event-emitter.js';
-import { EventType, MessageRole } from '@modular-agent/types';
 import { now, diffTimestamp } from '@modular-agent/common-utils';
 import type { ConversationManager } from '../managers/conversation-manager.js';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
-import { ThreadInterruptedException, SystemExecutionError, ToolError } from '@modular-agent/types';
+import { ThreadInterruptedException, SystemExecutionError } from '@modular-agent/types';
 import { MessageBuilder } from '../../messages/message-builder.js';
 import type { ToolVisibilityCoordinator } from '../coordinators/tool-visibility-coordinator.js';
 
@@ -112,7 +111,7 @@ export class ToolCallExecutor {
         if (!toolCall) {
           throw new Error(`Tool call at index ${index} is undefined`);
         }
-        
+
         const error = result.reason;
         const errorMessage = error instanceof Error ? error.message : String(error);
         const executionTime = 0;

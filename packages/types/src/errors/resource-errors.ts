@@ -1,6 +1,9 @@
 /**
  * 资源相关错误类型定义
  * 定义资源未找到相关的错误类型
+ *
+ * 注意：所有资源未找到错误默认为严重错误（error级别）
+ * 如果需要记录警告但不中断执行，请使用 ContextualLogger.resourceNotFoundWarning()
  */
 
 import { NotFoundError, ErrorSeverity } from './base.js';
@@ -22,7 +25,7 @@ export class WorkflowNotFoundError extends NotFoundError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return 'warning';
+    return 'error';
   }
 }
 
@@ -43,7 +46,7 @@ export class NodeNotFoundError extends NotFoundError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return 'warning';
+    return 'error';
   }
 }
 
@@ -64,7 +67,7 @@ export class ToolNotFoundError extends NotFoundError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return 'warning';
+    return 'error';
   }
 }
 
@@ -85,7 +88,7 @@ export class ScriptNotFoundError extends NotFoundError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return 'warning';
+    return 'error';
   }
 }
 
@@ -106,7 +109,7 @@ export class ThreadContextNotFoundError extends NotFoundError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return 'warning';
+    return 'error';
   }
 }
 
@@ -127,7 +130,7 @@ export class CheckpointNotFoundError extends NotFoundError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return 'warning';
+    return 'error';
   }
 }
 
@@ -148,7 +151,7 @@ export class TriggerTemplateNotFoundError extends NotFoundError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return 'warning';
+    return 'error';
   }
 }
 
@@ -169,6 +172,6 @@ export class NodeTemplateNotFoundError extends NotFoundError {
   }
 
   protected override getDefaultSeverity(): ErrorSeverity {
-    return 'warning';
+    return 'error';
   }
 }

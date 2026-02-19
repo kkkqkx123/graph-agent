@@ -32,6 +32,9 @@ import type { InterruptionDetector } from '../managers/interruption-detector.js'
 import { InterruptionDetectorImpl } from '../managers/interruption-detector.js';
 import { checkInterruption, shouldContinue, getInterruptionDescription } from '@modular-agent/common-utils';
 import type { InterruptionCheckResult } from '@modular-agent/common-utils';
+import { createContextualLogger } from '../../../utils/contextual-logger.js';
+
+const logger = createContextualLogger();
 
 /**
  * LLM 执行参数
@@ -517,16 +520,17 @@ export class LLMExecutionCoordinator {
           }
         });
       } catch (error) {
-        // 抛出系统执行错误（WARNING级别），由 ErrorService 统一处理
-        throw new SystemExecutionError(
+        // 记录警告日志，不中断执行
+        logger.warn(
           'Failed to create checkpoint for tool approval',
-          'LLMExecutionCoordinator',
-          'handleToolApproval',
+          {
+            operation: 'create_checkpoint',
+            toolCallId: toolCall.id,
+            threadId,
+            nodeId
+          },
           undefined,
-          undefined,
-          { toolCallId: toolCall.id },
-          getErrorOrNew(error),
-          'warning'
+          getErrorOrNew(error)
         );
       }
     }
@@ -576,16 +580,17 @@ export class LLMExecutionCoordinator {
           const checkpointStateManager = this.executionContext.getCheckpointStateManager();
           await checkpointStateManager.delete(checkpointId);
         } catch (error) {
-          // 抛出系统执行错误（WARNING级别），由 ErrorService 统一处理
-          throw new SystemExecutionError(
+          // 记录警告日志，不中断执行
+          logger.warn(
             'Failed to cleanup checkpoint',
-            'LLMExecutionCoordinator',
-            'handleToolApproval',
+            {
+              operation: 'cleanup_checkpoint',
+              checkpointId,
+              threadId,
+              nodeId
+            },
             undefined,
-            undefined,
-            { checkpointId },
-            getErrorOrNew(error),
-            'warning'
+            getErrorOrNew(error)
           );
         }
       }

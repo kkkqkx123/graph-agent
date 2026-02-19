@@ -19,6 +19,9 @@ import { type WorkflowRegistry } from '../services/workflow-registry.js';
 import { ExecutionContext } from './context/execution-context.js';
 import { getContainer } from '../di/container-config.js';
 import * as Identifiers from '../di/service-identifiers.js';
+import { createContextualLogger } from '../../utils/contextual-logger.js';
+
+const logger = createContextualLogger();
 
 /**
  * ThreadBuilder - Thread构建器
@@ -193,16 +196,14 @@ export class ThreadBuilder {
         // 注册状态到 TriggerStateManager
         triggerStateManager.register(state);
       } catch (error) {
-        // 抛出执行错误，标记为警告级别
-        throw new ExecutionError(
+        // 记录警告但不中断线程构建
+        logger.executionWarning(
           `Failed to register trigger state ${workflowTrigger.id}`,
-          undefined,
-          preprocessedGraph.workflowId,
+          workflowTrigger.id,
           {
-            triggerId: workflowTrigger.id,
+            workflowId: preprocessedGraph.workflowId,
             threadId: threadContext.getThreadId(),
-            operation: 'trigger_registration',
-            severity: 'warning'
+            operation: 'trigger_registration'
           },
           getErrorOrNew(error)
         );

@@ -20,7 +20,7 @@
 import type { LLMMessage, LLMUsage, TokenUsageHistory, TokenUsageStats } from '@modular-agent/types';
 import type { MessageMarkMap } from '@modular-agent/types';
 import { MessageRole } from '@modular-agent/types';
-import { ValidationError, RuntimeValidationError, ErrorSeverity } from '@modular-agent/types';
+import { RuntimeValidationError, ErrorSeverity } from '@modular-agent/types';
 import { TokenUsageTracker } from '../token-usage-tracker.js';
 import { getVisibleOriginalIndices, getVisibleMessages } from '../../utils/visible-range-calculator.js';
 import { startNewBatch, rollbackToBatch as rollbackBatch } from '../../utils/batch-management-utils.js';
@@ -38,6 +38,9 @@ import type { EventManager } from '../../services/event-manager.js';
 import type { TokenLimitExceededEvent } from '@modular-agent/types';
 import type { LifecycleCapable } from './lifecycle-capable.js';
 import { now } from '@modular-agent/common-utils';
+import { createContextualLogger } from '../../../utils/contextual-logger.js';
+
+const logger = createContextualLogger();
 
 /**
  * ConversationManager事件回调
@@ -341,13 +344,16 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
       await this.eventManager.emit(event);
     }
 
-    // 2. 抛出警告错误，由 ErrorService 统一处理
-    throw new ValidationError(
+    // 2. 记录警告日志
+    logger.warn(
       `Token limit exceeded: ${tokensUsed} > ${this.tokenUsageTracker['tokenLimit']}`,
-      'tokenLimit',
-      this.tokenUsageTracker['tokenLimit'],
-      { tokensUsed, tokenLimit: this.tokenUsageTracker['tokenLimit'] },
-      'warning'
+      {
+        tokensUsed,
+        tokenLimit: this.tokenUsageTracker['tokenLimit'],
+        workflowId: this.workflowId,
+        threadId: this.threadId,
+        operation: 'token_usage_check'
+      }
     );
   }
 

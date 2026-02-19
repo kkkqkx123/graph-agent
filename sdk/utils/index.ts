@@ -8,6 +8,10 @@ export { encodeText, encodeObject, resetEncoder } from './token-encoder.js';
 
 // 日志工具
 export { logger } from './logger.js';
+export {
+  ContextualLogger,
+  createContextualLogger
+} from './contextual-logger.js';
 
 // 元数据工具
 export { getMetadata, hasMetadata, mergeMetadata } from './metadata-utils.js';

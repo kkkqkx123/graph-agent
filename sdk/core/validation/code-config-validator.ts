@@ -6,10 +6,13 @@
 import { z } from 'zod';
 import type { Script, ScriptExecutionOptions, SandboxConfig } from '@modular-agent/types';
 import { ScriptType } from '@modular-agent/types';
-import { ConfigurationValidationError, ErrorSeverity } from '@modular-agent/types';
+import { ConfigurationValidationError } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 import { validateConfig } from './utils.js';
+import { createContextualLogger } from '../../utils/contextual-logger.js';
+
+const logger = createContextualLogger();
 
 /**
  * 沙箱配置schema
@@ -181,54 +184,46 @@ export class CodeConfigValidator {
    * @returns 验证结果
    */
   private validateContentCompatibility(scriptType: ScriptType, content: string): Result<void, ConfigurationValidationError[]> {
-    // 基本语法检查
+    // 基本语法检查（仅记录警告，不阻止执行）
     switch (scriptType) {
       case 'SHELL':
         if (!content.includes('#!/bin/bash') && !content.includes('#!/bin/sh')) {
-          return err([new ConfigurationValidationError(
+          logger.validationWarning(
             'Shell script may be missing shebang line',
-            {
-              configType: 'script',
-              field: 'content',
-              severity: 'warning'
-            }
-          )]);
+            'content',
+            content,
+            { configType: 'script', scriptType }
+          );
         }
         break;
       case 'POWERSHELL':
         if (!content.includes('#') && !content.includes('Write-Host')) {
-          return err([new ConfigurationValidationError(
+          logger.validationWarning(
             'PowerShell script may be missing proper syntax',
-            {
-              configType: 'script',
-              field: 'content',
-              severity: 'warning'
-            }
-          )]);
+            'content',
+            content,
+            { configType: 'script', scriptType }
+          );
         }
         break;
       case 'PYTHON':
         if (!content.includes('def ') && !content.includes('import ')) {
-          return err([new ConfigurationValidationError(
+          logger.validationWarning(
             'Python script may be missing proper syntax',
-            {
-              configType: 'script',
-              field: 'content',
-              severity: 'warning'
-            }
-          )]);
+            'content',
+            content,
+            { configType: 'script', scriptType }
+          );
         }
         break;
       case 'JAVASCRIPT':
         if (!content.includes('function') && !content.includes('const') && !content.includes('let')) {
-          return err([new ConfigurationValidationError(
+          logger.validationWarning(
             'JavaScript script may be missing proper syntax',
-            {
-              configType: 'script',
-              field: 'content',
-              severity: 'warning'
-            }
-          )]);
+            'content',
+            content,
+            { configType: 'script', scriptType }
+          );
         }
         break;
     }

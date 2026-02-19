@@ -25,6 +25,9 @@ import { getContainer } from '../di/container-config.js';
 import * as Identifiers from '../di/service-identifiers.js';
 import { getErrorMessage } from '@modular-agent/common-utils';
 import { checkWorkflowReferences } from '../execution/utils/workflow-reference-checker.js';
+import { createContextualLogger } from '../../utils/contextual-logger.js';
+
+const logger = createContextualLogger();
 
 /**
  * 工作流版本信息
@@ -517,15 +520,12 @@ export class WorkflowRegistry {
       }
 
       if (options?.force && checkResult.details.includes('active references')) {
-        // 抛出执行错误，标记为警告级别
-        throw new ExecutionError(
+        // 记录警告但不中断执行
+        logger.warn(
           'Deleting workflow with active references',
-          undefined,
-          workflowId,
           {
             workflowId,
-            operation: 'workflow_delete',
-            severity: 'warning'
+            operation: 'workflow_delete'
           }
         );
       }

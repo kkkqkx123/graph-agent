@@ -23,7 +23,6 @@ import type { TriggerRuntimeState } from '@modular-agent/types';
 import type { StatefulToolFactory } from '@modular-agent/types';
 import type { LLMMessage } from '@modular-agent/types';
 import type { MessageRole } from '@modular-agent/types';
-import { ValidationError, ErrorSeverity } from '@modular-agent/types';
 import { ConversationManager } from '../managers/conversation-manager.js';
 import { VariableCoordinator } from '../coordinators/variable-coordinator.js';
 import { VariableStateManager } from '../managers/variable-state-manager.js';
@@ -39,6 +38,8 @@ import type { ToolService } from '../../services/tool-service.js';
 import { LLMExecutor } from '../executors/llm-executor.js';
 import type { LifecycleCapable } from '../managers/lifecycle-capable.js';
 import { InterruptionManager } from '../managers/interruption-manager.js';
+import { createContextualLogger } from '../../../utils/contextual-logger.js';
+const logger = createContextualLogger();
 
 /**
  * ThreadContext - Thread 执行上下文
@@ -524,7 +525,7 @@ export class ThreadContext implements LifecycleCapable {
     this.variableCoordinator.enterLocalScope(this);
     // 再调用原有的执行状态管理
     this.executionState.enterSubgraph(workflowId, parentWorkflowId, input);
-    
+
     // 更新工具可见性
     const subgraphTools = this.getAvailableTools();
     await this.toolVisibilityCoordinator.updateVisibilityOnScopeChange(
@@ -544,7 +545,7 @@ export class ThreadContext implements LifecycleCapable {
     this.executionState.exitSubgraph();
     // 再退出本地作用域
     this.variableCoordinator.exitLocalScope(this);
-    
+
     // 恢复父作用域的工具可见性
     const parentScopeId = this.getWorkflowId();
     const parentTools = this.getAvailableTools();
@@ -696,23 +697,24 @@ export class ThreadContext implements LifecycleCapable {
     }
     if (snapshot.toolVisibilityState) {
       this.toolVisibilityCoordinator.restoreSnapshot(this.thread.id, snapshot.toolVisibilityState);
-      
+
       // 验证声明历史完整性
       const validation = this.toolVisibilityCoordinator.validateDeclarationHistory(
         this.thread.id,
         this
       );
-      
+
       if (!validation.valid) {
-        // 抛出警告级别的验证错误
-        throw new ValidationError(
+        // 记录警告并自动修复声明历史
+        logger.warn(
           `Tool visibility declaration history validation failed: ${validation.errors.join(', ')}`,
-          undefined,
-          undefined,
-          { errors: validation.errors },
-          'warning'
+          {
+            threadId: this.thread.id,
+            operation: 'validate_declaration_history',
+            errors: validation.errors
+          }
         );
-        
+
         // 自动修复声明历史
         await this.toolVisibilityCoordinator.repairDeclarationHistory(
           this.thread.id,
@@ -729,26 +731,6 @@ export class ThreadContext implements LifecycleCapable {
    */
   getConversationManager(): ConversationManager {
     return this.conversationManager;
-  }
-
-  /**
-   * 开始执行触发子工作流
-   * @param workflowId 子工作流ID
-   * @deprecated 此方法已废弃，请使用TriggeredSubworkflowManager管理triggered子工作流
-   */
-  startTriggeredSubgraphExecution(workflowId: string): void {
-    // 此方法已废弃，保留用于向后兼容
-    // 实际的triggered子工作流管理由TriggeredSubworkflowManager负责
-    console.warn('startTriggeredSubgraphExecution is deprecated. Use TriggeredSubworkflowManager instead.');
-  }
-
-  /**
-   * 结束执行触发子工作流
-   * @deprecated 此方法已废弃，请使用TriggeredSubworkflowManager管理triggered子工作流
-   */
-  endTriggeredSubgraphExecution(): void {
-    // 此方法已废弃，保留用于向后兼容
-    console.warn('endTriggeredSubgraphExecution is deprecated. Use TriggeredSubworkflowManager instead.');
   }
 
   /**
@@ -961,7 +943,7 @@ export class ThreadContext implements LifecycleCapable {
   async addDynamicTools(toolIds: string[]): Promise<void> {
     // 更新可用工具集合
     toolIds.forEach(id => this.availableTools.add(id));
-    
+
     // 生成可见性声明
     await this.toolVisibilityCoordinator.addToolsDynamically(
       this,

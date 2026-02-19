@@ -11,8 +11,11 @@ import type { NodeExecutionResult } from '@modular-agent/types';
 import type { NodeCustomEvent } from '@modular-agent/types';
 import type { CheckpointDependencies } from '../checkpoint-handlers/checkpoint-utils.js';
 import { createCheckpoint } from '../checkpoint-handlers/checkpoint-utils.js';
-import { ValidationError, RuntimeValidationError, ExecutionError, ErrorSeverity } from '@modular-agent/types';
+import { ExecutionError } from '@modular-agent/types';
 import { getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
+import { createContextualLogger } from '../../../../utils/contextual-logger.js';
+
+const logger = createContextualLogger();
 
 /**
  * Hook执行上下文接口
@@ -89,21 +92,18 @@ async function executeSingleHook(
           convertToEvaluationContext(evalContext)
         );
       } catch (error) {
-        // 抛出验证错误，标记为警告级别
-        throw new RuntimeValidationError(
+        // 记录警告但不中断执行
+        logger.warn(
           `Hook condition evaluation failed: ${getErrorMessage(error)}`,
           {
-            operation: 'evaluateCondition',
-            field: 'hook.condition',
-            value: error,
-            context: {
-              eventName: hook.eventName,
-              nodeId: context.node.id,
-              operation: 'hook_condition_evaluation'
-            },
-            severity: 'warning'
-          }
+            eventName: hook.eventName,
+            nodeId: context.node.id,
+            operation: 'hook_condition_evaluation'
+          },
+          { error }
         );
+        // 条件评估失败，跳过此 Hook
+        return;
       }
 
       if (!result) {
@@ -123,18 +123,18 @@ async function executeSingleHook(
           context.checkpointDependencies
         );
       } catch (error) {
-        // 抛出执行错误，标记为警告级别（检查点创建失败不影响主流程）
-        throw new ExecutionError(
+        // 记录警告日志，不中断执行
+        logger.warn(
           'Failed to create checkpoint for hook',
-          context.node.id,
-          context.thread.workflowId,
           {
             eventName: hook.eventName,
             nodeId: context.node.id,
+            threadId: context.thread.id,
+            workflowId: context.thread.workflowId,
             operation: 'checkpoint_creation'
           },
-          getErrorOrNew(error),
-          'warning'
+          undefined,
+          getErrorOrNew(error)
         );
       }
     }

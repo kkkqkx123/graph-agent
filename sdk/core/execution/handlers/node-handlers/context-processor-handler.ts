@@ -22,6 +22,9 @@ import { now } from '@modular-agent/common-utils';
 import { executeOperation } from '../../../utils/message-operation-utils.js';
 import type { MessageOperationContext } from '@modular-agent/types';
 import type { MessageOperationResult } from '@modular-agent/types';
+import { createContextualLogger } from '../../../../utils/contextual-logger.js';
+
+const logger = createContextualLogger();
 
 /**
  * 上下文处理器执行结果
@@ -98,16 +101,17 @@ export async function contextProcessorHandler(
           try {
             await context.toolVisibilityCoordinator.refreshDeclaration(context.threadContext);
           } catch (error) {
-            // 刷新失败抛出警告错误，不影响主流程
-            throw new ValidationError(
+            // 记录警告日志，不中断执行
+            logger.warn(
               `Failed to refresh tool visibility declaration after message operation: ${error instanceof Error ? error.message : String(error)}`,
-              'toolVisibilityDeclaration',
-              undefined,
               {
                 operation: config.operationConfig.operation,
-                originalError: error
+                nodeId: node.id,
+                threadId: thread.id,
+                workflowId: thread.workflowId
               },
-              'warning'
+              undefined,
+              error instanceof Error ? error : new Error(String(error))
             );
           }
         }
