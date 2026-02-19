@@ -450,8 +450,14 @@ export class ThreadContext implements LifecycleCapable {
   }
 
   /**
-   * 获取对话历史（未压缩的消息）
-   * @returns 对话历史数组
+   * 获取对话历史（可见消息）
+   *
+   * 说明：
+   * - 返回当前批次边界之后的可见消息
+   * - 这些消息会被发送给LLM
+   * - 不可见消息（批次边界之前的消息）仍被存储但不返回
+   *
+   * @returns 可见消息数组
    */
   getConversationHistory(): LLMMessage[] {
     return this.conversationManager.getMessages();

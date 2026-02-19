@@ -204,7 +204,13 @@ export class ToolVisibilityCoordinator {
 
   /**
    * 刷新可见性声明
-   * 用于定期刷新或上下文压缩后恢复
+   * 用于定期刷新或消息操作后恢复
+   *
+   * 说明：
+   * - 在消息操作（如 truncate, filter, clear）后调用此方法
+   * - 确保工具可见性声明与当前消息状态一致
+   * - SDK不提供默认的消息操作实现，由应用层定义
+   *
    * @param threadContext 线程上下文
    */
   async refreshDeclaration(threadContext: ThreadContext): Promise<void> {

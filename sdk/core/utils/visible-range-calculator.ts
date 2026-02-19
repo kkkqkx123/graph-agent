@@ -1,7 +1,12 @@
 /**
  * 可见范围计算器
  * 负责计算当前批次的消息可见范围，提供索引转换功能
- * 
+ *
+ * 核心概念：
+ * - 可见消息：当前批次边界之后的消息，会被发送给LLM
+ * - 不可见消息：当前批次边界之前的消息，仅存储但不发送给LLM
+ * - 批次边界：通过 startNewBatch() 设置，控制消息可见性
+ *
  * 所有函数都是纯函数，不持有任何状态
  */
 
@@ -91,24 +96,24 @@ export function getVisibleMessages(
 }
 
 /**
- * 获取已压缩消息
+ * 获取不可见消息（批次边界之前的消息）
  * @param messages 完整消息数组
  * @param markMap 消息标记映射
- * @returns 已压缩消息数组
+ * @returns 不可见消息数组
  */
-export function getCompressedMessages(
+export function getInvisibleMessages(
   messages: LLMMessage[],
   markMap: MessageMarkMap
 ): LLMMessage[] {
   const boundary = getCurrentBoundary(markMap);
-  const compressedIndices = markMap.originalIndices.filter(index => index < boundary);
-  return compressedIndices
+  const invisibleIndices = markMap.originalIndices.filter(index => index < boundary);
+  return invisibleIndices
     .map(index => messages[index])
     .filter((msg): msg is LLMMessage => msg !== undefined);
 }
 
 /**
- * 检查消息是否可见
+ * 检查消息是否可见（在当前批次边界之后）
  * @param originalIndex 原始消息索引
  * @param markMap 消息标记映射
  * @returns 如果消息可见返回 true，否则返回 false
@@ -130,11 +135,11 @@ export function getVisibleMessageCount(markMap: MessageMarkMap): number {
 }
 
 /**
- * 获取已压缩消息数量
+ * 获取不可见消息数量（批次边界之前的消息数量）
  * @param markMap 消息标记映射
- * @returns 已压缩消息数量
+ * @returns 不可见消息数量
  */
-export function getCompressedMessageCount(markMap: MessageMarkMap): number {
+export function getInvisibleMessageCount(markMap: MessageMarkMap): number {
   const boundary = getCurrentBoundary(markMap);
   return markMap.originalIndices.filter(index => index < boundary).length;
 }

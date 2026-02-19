@@ -4,8 +4,14 @@
  *
  * 设计原则：
  * - 使用统一的消息操作工具函数
- * - 支持批次管理和可见范围
+ * - 支持批次管理和可见范围控制
  * - 返回执行结果
+ *
+ * 核心概念：
+ * - 可见消息：当前批次边界之后的消息，会被发送给LLM
+ * - 不可见消息：当前批次边界之前的消息，仅存储但不发送给LLM
+ * - 消息操作：truncate（截断）、insert（插入）、replace（替换）、clear（清空）、filter（过滤）
+ * - 批次管理：通过 startNewBatch() 和 rollbackToBatch() 控制消息可见性
  */
 
 import type { Node, ContextProcessorNodeConfig } from '@modular-agent/types';
@@ -29,7 +35,7 @@ export interface ContextProcessorExecutionResult {
   stats?: {
     originalMessageCount: number;
     visibleMessageCount: number;
-    compressedMessageCount: number;
+    invisibleMessageCount: number;
   };
 }
 

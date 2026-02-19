@@ -1,7 +1,13 @@
 /**
  * 统一消息操作工具函数（批次感知）
  * 提供统一的消息操作接口，支持可见范围和批次管理
- * 
+ *
+ * 核心概念：
+ * - 可见消息：当前批次边界之后的消息，会被发送给LLM
+ * - 不可见消息：当前批次边界之前的消息，仅存储但不发送给LLM
+ * - 消息操作：truncate, insert, replace, clear, filter 等操作
+ * - 批次管理：通过 startNewBatch() 和 rollbackToBatch() 控制消息可见性
+ *
  * 所有函数都是纯函数，不持有任何状态
  */
 
@@ -584,16 +590,16 @@ function recalculateTypeIndices(
 function calculateStats(messages: LLMMessage[], markMap: MessageMarkMap): {
   originalMessageCount: number;
   visibleMessageCount: number;
-  compressedMessageCount: number;
+  invisibleMessageCount: number;
 } {
   const totalMessages = messages.length;
   const visibleMessageCount = getVisibleOriginalIndices(markMap).length;
-  const compressedMessageCount = totalMessages - visibleMessageCount;
+  const invisibleMessageCount = totalMessages - visibleMessageCount;
   
   return {
     originalMessageCount: totalMessages,
     visibleMessageCount,
-    compressedMessageCount
+    invisibleMessageCount
   };
 }
 

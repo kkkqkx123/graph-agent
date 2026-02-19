@@ -192,7 +192,7 @@ export class CheckpointCoordinator {
     // 步骤7：创建 ConversationManager
     const conversationManager = new ConversationManager();
 
-    // 批量添加所有消息（包括已压缩的）
+    // 批量添加所有消息（包括不可见消息）
     conversationManager.addMessages(...messageHistory);
 
     // 步骤8：恢复索引状态

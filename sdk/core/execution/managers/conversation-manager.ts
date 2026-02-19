@@ -6,6 +6,7 @@
  * 1. 消息历史管理
  * 2. Token统计和事件触发（委托给 TokenUsageTracker）
  * 3. 消息索引管理（使用工具函数）
+ * 4. 消息可见性管理（通过批次边界控制）
  *
  * 重要说明：
  * - ConversationManager只管理状态，不负责执行逻辑
@@ -13,6 +14,7 @@
  * - Token统计委托给TokenUsageTracker
  * - 消息索引管理使用工具函数
  * - 上下文压缩通过触发器+子工作流实现，不在此模块
+ * - 消息可见性通过批次边界控制，不可见消息仍被存储但不发送给LLM
  */
 
 import type { LLMMessage, LLMUsage, TokenUsageHistory, TokenUsageStats } from '@modular-agent/types';
@@ -33,7 +35,7 @@ import { now } from '@modular-agent/common-utils';
  * ConversationManager事件回调
  */
 export interface ConversationManagerOptions {
-  /** Token限制阈值，超过此值触发压缩事件 */
+  /** Token限制阈值，超过此值触发消息操作事件 */
   tokenLimit?: number;
   /** 事件管理器 */
   eventManager?: EventManager;
@@ -131,7 +133,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
     // 同步更新标记映射
     this.markMap.originalIndices.push(newIndex);
     this.markMap.typeIndices[message.role].push(newIndex);
-    
+
     // 同步更新类型索引
     this.typeIndexManager.addIndex(message.role, newIndex);
 
@@ -151,16 +153,16 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
   }
 
   /**
-   * 获取当前消息历史（未压缩的消息）
-   * @returns 消息数组的副本
+   * 获取当前可见消息（批次边界之后的消息）
+   * @returns 可见消息数组的副本
    */
   getMessages(): LLMMessage[] {
     return getVisibleMessages(this.messages, this.markMap);
   }
 
   /**
-   * 获取所有消息（包括压缩的）
-   * @returns 消息数组的副本
+   * 获取所有消息（包括不可见消息）
+   * @returns 所有消息数组的副本
    */
   getAllMessages(): LLMMessage[] {
     return [...this.messages];
@@ -210,13 +212,18 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
       boundaryToBatch: [0],
       currentBatch: 0
     };
-    
+
     // 重置类型索引管理器
     this.typeIndexManager.reset();
   }
 
   /**
-   * 检查Token使用情况，触发压缩事件
+   * 检查Token使用情况，触发消息操作事件
+   *
+   * 说明：
+   * - 当Token使用量超过阈值时，触发 TOKEN_LIMIT_EXCEEDED 事件
+   * - 应用层监听此事件并执行相应的消息操作（如 truncate, filter, clear，或回调新的消息数组）
+   * - SDK不提供默认的消息操作实现，由应用层根据业务需求定义
    */
   async checkTokenUsage(): Promise<void> {
     const tokensUsed = this.tokenUsageTracker.getTokenUsage(this.messages);
@@ -346,6 +353,13 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
 
   /**
    * 触发Token限制事件
+   *
+   * 说明：
+   * - 触发 TOKEN_LIMIT_EXCEEDED 事件，通知应用层Token使用量超过阈值
+   * - 应用层应监听此事件并执行相应的消息操作
+   * - 常见的消息操作包括：truncate（截断）、filter（过滤）、clear（清空）
+   * - 消息操作通过 CONTEXT_PROCESSOR 节点或触发子工作流实现
+   *
    * @param tokensUsed 当前使用的Token数量
    */
   private async triggerTokenLimitEvent(tokensUsed: number): Promise<void> {
@@ -475,7 +489,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
       batchBoundaries: [...this.markMap.batchBoundaries],
       boundaryToBatch: [...this.markMap.boundaryToBatch]
     };
-    
+
     // 复制类型索引管理器
     clonedManager.typeIndexManager = this.typeIndexManager.clone();
 
@@ -555,7 +569,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
     if (!this.availableTools || !this.toolService) {
       return null;
     }
-    
+
     // 只使用 initial 工具集合
     const initialToolIds = Array.from(this.availableTools.initial);
     if (initialToolIds.length === 0) {
@@ -578,7 +592,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
         content: `可用工具:\n${toolDescriptions}`
       };
     }
-    
+
     return null;
   }
 
@@ -589,7 +603,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
   startNewBatchWithInitialTools(boundaryIndex: number): void {
     // 开始新批次
     this.markMap = startNewBatch(this.markMap, boundaryIndex);
-    
+
     // 检查是否已存在工具描述消息
     if (!this.hasToolDescriptionMessage()) {
       // 添加初始工具描述消息
