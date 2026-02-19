@@ -20,6 +20,7 @@
 
 import type { LLMMessage } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
+import { Mutex } from 'async-mutex';
 
 /**
  * 批次消息快照
@@ -38,6 +39,9 @@ class GlobalMessageStorage {
   private referenceCounts: Map<string, number> = new Map();
   // 批次快照：threadId -> Map<batchId, snapshot>
   private batchSnapshots: Map<string, Map<number, BatchSnapshot>> = new Map();
+  
+  // 只为引用计数添加 Mutex，保护引用计数的原子性
+  private referenceMutex = new Mutex();
 
   /**
    * 存储消息历史
@@ -64,25 +68,35 @@ class GlobalMessageStorage {
   }
 
   /**
-   * 添加引用计数
+   * 添加引用计数（线程安全）
    * @param threadId 线程ID
    */
-  addReference(threadId: string): void {
-    const count = this.referenceCounts.get(threadId) || 0;
-    this.referenceCounts.set(threadId, count + 1);
+  async addReference(threadId: string): Promise<void> {
+    const release = await this.referenceMutex.acquire();
+    try {
+      const count = this.referenceCounts.get(threadId) || 0;
+      this.referenceCounts.set(threadId, count + 1);
+    } finally {
+      release();
+    }
   }
 
   /**
-   * 移除引用计数，自动清理不再使用的消息
+   * 移除引用计数，自动清理不再使用的消息（线程安全）
    * @param threadId 线程ID
    */
-  removeReference(threadId: string): void {
-    const count = this.referenceCounts.get(threadId) || 0;
-    if (count <= 1) {
-      this.cleanupThread(threadId);
-      this.referenceCounts.delete(threadId);
-    } else {
-      this.referenceCounts.set(threadId, count - 1);
+  async removeReference(threadId: string): Promise<void> {
+    const release = await this.referenceMutex.acquire();
+    try {
+      const count = this.referenceCounts.get(threadId) || 0;
+      if (count <= 1) {
+        this.cleanupThread(threadId);
+        this.referenceCounts.delete(threadId);
+      } else {
+        this.referenceCounts.set(threadId, count - 1);
+      }
+    } finally {
+      release();
     }
   }
 

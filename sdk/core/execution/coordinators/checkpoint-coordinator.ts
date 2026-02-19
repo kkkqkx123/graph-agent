@@ -77,7 +77,7 @@ export class CheckpointCoordinator {
     );
 
     // 增加引用计数，防止消息被过早删除
-    globalMessageStorage.addReference(threadId);
+    await globalMessageStorage.addReference(threadId);
 
     // 只保存索引状态和Token统计
     const conversationState = {

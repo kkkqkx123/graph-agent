@@ -28,12 +28,6 @@ export function startNewBatch(
   const newMarkMap: MessageMarkMap = {
     ...markMap,
     originalIndices: [...markMap.originalIndices],
-    typeIndices: {
-      system: [...markMap.typeIndices.system],
-      user: [...markMap.typeIndices.user],
-      assistant: [...markMap.typeIndices.assistant],
-      tool: [...markMap.typeIndices.tool]
-    },
     batchBoundaries: [...markMap.batchBoundaries],
     boundaryToBatch: [...markMap.boundaryToBatch]
   };
@@ -69,12 +63,6 @@ export function rollbackToBatch(
   const newMarkMap: MessageMarkMap = {
     ...markMap,
     originalIndices: [...markMap.originalIndices],
-    typeIndices: {
-      system: [...markMap.typeIndices.system],
-      user: [...markMap.typeIndices.user],
-      assistant: [...markMap.typeIndices.assistant],
-      tool: [...markMap.typeIndices.tool]
-    },
     batchBoundaries: markMap.batchBoundaries.slice(0, targetBoundaryIndex + 1),
     boundaryToBatch: markMap.boundaryToBatch.slice(0, targetBoundaryIndex + 1),
     currentBatch: targetBatch
@@ -115,12 +103,6 @@ export function mergeBatches(
   const newMarkMap: MessageMarkMap = {
     ...markMap,
     originalIndices: [...markMap.originalIndices],
-    typeIndices: {
-      system: [...markMap.typeIndices.system],
-      user: [...markMap.typeIndices.user],
-      assistant: [...markMap.typeIndices.assistant],
-      tool: [...markMap.typeIndices.tool]
-    },
     batchBoundaries: [
       ...markMap.batchBoundaries.slice(0, fromIndex + 1),
       ...markMap.batchBoundaries.slice(toIndex)

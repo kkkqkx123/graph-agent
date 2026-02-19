@@ -22,9 +22,18 @@ import type { MessageMarkMap } from '@modular-agent/types';
 import { MessageRole } from '@modular-agent/types';
 import { ValidationError, RuntimeValidationError, ErrorSeverity } from '@modular-agent/types';
 import { TokenUsageTracker } from '../token-usage-tracker.js';
-import { TypeIndexManager } from './type-index-manager.js';
 import { getVisibleOriginalIndices, getVisibleMessages } from '../../utils/visible-range-calculator.js';
 import { startNewBatch, rollbackToBatch as rollbackBatch } from '../../utils/batch-management-utils.js';
+import {
+  getIndicesByRole,
+  getRecentIndicesByRole,
+  getRangeIndicesByRole,
+  getCountByRole,
+  getVisibleIndicesByRole,
+  getVisibleRecentIndicesByRole,
+  getVisibleRangeIndicesByRole,
+  getVisibleCountByRole
+} from '../../utils/message-index-utils.js';
 import type { EventManager } from '../../services/event-manager.js';
 import type { TokenLimitExceededEvent } from '@modular-agent/types';
 import { EventType } from '@modular-agent/types';
@@ -80,7 +89,6 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
   private messages: LLMMessage[] = [];
   private tokenUsageTracker: TokenUsageTracker;
   private markMap: MessageMarkMap;
-  private typeIndexManager: TypeIndexManager;
   private eventManager?: EventManager;
   private workflowId?: string;
   private threadId?: string;
@@ -97,17 +105,10 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
     });
     this.markMap = {
       originalIndices: [],
-      typeIndices: {
-        system: [],
-        user: [],
-        assistant: [],
-        tool: []
-      },
       batchBoundaries: [0],
       boundaryToBatch: [0],
       currentBatch: 0
     };
-    this.typeIndexManager = new TypeIndexManager();
     this.eventManager = options.eventManager;
     this.workflowId = options.workflowId;
     this.threadId = options.threadId;
@@ -132,10 +133,6 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
 
     // 同步更新标记映射
     this.markMap.originalIndices.push(newIndex);
-    this.markMap.typeIndices[message.role].push(newIndex);
-
-    // 同步更新类型索引
-    this.typeIndexManager.addIndex(message.role, newIndex);
 
     return this.messages.length;
   }
@@ -185,37 +182,28 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    * @param keepSystemMessage 是否保留系统消息
    */
   clearMessages(keepSystemMessage: boolean = true): void {
-    if (keepSystemMessage && this.messages.length > 0) {
-      const firstMessage = this.messages[0]!;
-      if (firstMessage.role === 'system') {
-        // 保留系统消息
-        this.messages = [firstMessage];
-      } else {
-        // 清空所有消息
-        this.messages = [];
-      }
+  if (keepSystemMessage && this.messages.length > 0) {
+    const firstMessage = this.messages[0]!;
+    if (firstMessage.role === 'system') {
+      // 保留系统消息
+      this.messages = [firstMessage];
     } else {
       // 清空所有消息
       this.messages = [];
     }
-
-    // 重置标记映射
-    this.markMap = {
-      originalIndices: [],
-      typeIndices: {
-        system: [],
-        user: [],
-        assistant: [],
-        tool: []
-      },
-      batchBoundaries: [0],
-      boundaryToBatch: [0],
-      currentBatch: 0
-    };
-
-    // 重置类型索引管理器
-    this.typeIndexManager.reset();
+  } else {
+    // 清空所有消息
+    this.messages = [];
   }
+
+  // 重置标记映射
+  this.markMap = {
+    originalIndices: [],
+    batchBoundaries: [0],
+    boundaryToBatch: [0],
+    currentBatch: 0
+  };
+}
 
   /**
    * 检查Token使用情况，触发消息操作事件
@@ -315,7 +303,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    * @returns 消息数组
    */
   getMessagesByRole(role: MessageRole): LLMMessage[] {
-    const indices = this.typeIndexManager.getIndicesByRole(role);
+    const indices = getIndicesByRole(this.messages, role);
     return indices.map(index => ({ ...this.messages[index]! }));
   }
 
@@ -326,7 +314,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    * @returns 消息数组
    */
   getRecentMessagesByRole(role: MessageRole, n: number): LLMMessage[] {
-    const indices = this.typeIndexManager.getRecentIndicesByRole(role, n);
+    const indices = getRecentIndicesByRole(this.messages, role, n);
     return indices.map(index => ({ ...this.messages[index]! }));
   }
 
@@ -338,7 +326,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    * @returns 消息数组
    */
   getMessagesByRoleRange(role: MessageRole, start: number, end: number): LLMMessage[] {
-    const indices = this.typeIndexManager.getRangeIndicesByRole(role, start, end);
+    const indices = getRangeIndicesByRole(this.messages, role, start, end);
     return indices.map(index => ({ ...this.messages[index]! }));
   }
 
@@ -348,7 +336,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    * @returns 消息数量
    */
   getMessageCountByRole(role: MessageRole): number {
-    return this.typeIndexManager.getCountByRole(role);
+    return getCountByRole(this.messages, role);
   }
 
   /**
@@ -402,12 +390,6 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
     return {
       ...this.markMap,
       originalIndices: [...this.markMap.originalIndices],
-      typeIndices: {
-        system: [...this.markMap.typeIndices.system],
-        user: [...this.markMap.typeIndices.user],
-        assistant: [...this.markMap.typeIndices.assistant],
-        tool: [...this.markMap.typeIndices.tool]
-      },
       batchBoundaries: [...this.markMap.batchBoundaries],
       boundaryToBatch: [...this.markMap.boundaryToBatch]
     };
@@ -421,23 +403,9 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
     this.markMap = {
       ...markMap,
       originalIndices: [...markMap.originalIndices],
-      typeIndices: {
-        system: [...markMap.typeIndices.system],
-        user: [...markMap.typeIndices.user],
-        assistant: [...markMap.typeIndices.assistant],
-        tool: [...markMap.typeIndices.tool]
-      },
       batchBoundaries: [...markMap.batchBoundaries],
       boundaryToBatch: [...markMap.boundaryToBatch]
     };
-  }
-
-  /**
-   * 获取类型索引管理器实例（用于内部操作）
-   * @returns TypeIndexManager 实例
-   */
-  getTypeIndexManager(): TypeIndexManager {
-    return this.typeIndexManager;
   }
 
   /**
@@ -480,18 +448,9 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
     clonedManager.markMap = {
       ...this.markMap,
       originalIndices: [...this.markMap.originalIndices],
-      typeIndices: {
-        system: [...this.markMap.typeIndices.system],
-        user: [...this.markMap.typeIndices.user],
-        assistant: [...this.markMap.typeIndices.assistant],
-        tool: [...this.markMap.typeIndices.tool]
-      },
       batchBoundaries: [...this.markMap.batchBoundaries],
       boundaryToBatch: [...this.markMap.boundaryToBatch]
     };
-
-    // 复制类型索引管理器
-    clonedManager.typeIndexManager = this.typeIndexManager.clone();
 
     return clonedManager;
   }
@@ -535,8 +494,8 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    * @param indices 要移除的索引数组
    */
   removeMessageIndices(indices: number[]): void {
-    // 从类型索引中移除
-    this.typeIndexManager.removeIndices(indices);
+    // 类型索引通过计算得出，无需手动维护
+    // 此方法保留用于兼容性，但不再执行任何操作
   }
 
   /**
@@ -544,8 +503,8 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    * @param indices 要保留的索引数组
    */
   keepMessageIndices(indices: number[]): void {
-    // 从类型索引中保留
-    this.typeIndexManager.keepIndices(indices);
+    // 类型索引通过计算得出，无需手动维护
+    // 此方法保留用于兼容性，但不再执行任何操作
   }
 
   /**

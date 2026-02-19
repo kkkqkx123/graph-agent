@@ -133,6 +133,6 @@ export interface MessageOperationResult {
   stats: {
     originalMessageCount: number;
     visibleMessageCount: number;
-    compressedMessageCount: number;
+    invisibleMessageCount: number;
   };
 }

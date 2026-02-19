@@ -456,23 +456,9 @@ function updateMarkMapForKeptIndices(
   const newMarkMap: MessageMarkMap = {
     ...markMap,
     originalIndices: [...keptIndices],
-    typeIndices: {
-      system: [],
-      user: [],
-      assistant: [],
-      tool: []
-    },
     batchBoundaries: [...markMap.batchBoundaries],
     boundaryToBatch: [...markMap.boundaryToBatch]
   };
-  
-  // 重新计算类型索引
-  keptIndices.forEach(originalIndex => {
-    const role = markMap.typeIndices.system.includes(originalIndex) ? 'system' :
-                 markMap.typeIndices.user.includes(originalIndex) ? 'user' :
-                 markMap.typeIndices.assistant.includes(originalIndex) ? 'assistant' : 'tool';
-    newMarkMap.typeIndices[role].push(originalIndex);
-  });
   
   return newMarkMap;
 }
@@ -489,29 +475,20 @@ function updateMarkMapAfterInsert(
   const newMarkMap: MessageMarkMap = {
     ...markMap,
     originalIndices: [...markMap.originalIndices],
-    typeIndices: {
-      system: [...markMap.typeIndices.system],
-      user: [...markMap.typeIndices.user],
-      assistant: [...markMap.typeIndices.assistant],
-      tool: [...markMap.typeIndices.tool]
-    },
     batchBoundaries: [...markMap.batchBoundaries],
     boundaryToBatch: [...markMap.boundaryToBatch]
   };
   
   // 更新原始索引
-  newMarkMap.originalIndices = newMarkMap.originalIndices.map(idx => 
+  newMarkMap.originalIndices = newMarkMap.originalIndices.map(idx =>
     idx >= insertIndex ? idx + insertCount : idx
   );
   newMarkMap.originalIndices.push(...Array.from({ length: insertCount }, (_, i) => insertIndex + i));
   
   // 更新批次边界
-  newMarkMap.batchBoundaries = newMarkMap.batchBoundaries.map(boundary => 
+  newMarkMap.batchBoundaries = newMarkMap.batchBoundaries.map(boundary =>
     boundary >= insertIndex ? boundary + insertCount : boundary
   );
-  
-  // 更新类型索引
-  newMarkMap.typeIndices = recalculateTypeIndices(newMarkMap.originalIndices, messages);
   
   return newMarkMap;
 }
@@ -533,55 +510,13 @@ function rebuildMessagesArray(
  */
 function rebuildMarkMap(messages: LLMMessage[]): MessageMarkMap {
   const originalIndices = messages.map((_, idx) => idx);
-  const typeIndices = {
-    system: [] as number[],
-    user: [] as number[],
-    assistant: [] as number[],
-    tool: [] as number[]
-  };
-  
-  messages.forEach((msg, idx) => {
-    typeIndices[msg.role].push(idx);
-  });
   
   return {
     originalIndices,
-    typeIndices,
     batchBoundaries: [0],
     boundaryToBatch: [0],
     currentBatch: 0
   };
-}
-
-/**
- * 重新计算类型索引
- */
-function recalculateTypeIndices(
-  originalIndices: number[],
-  messages: LLMMessage[]
-): {
-  system: number[];
-  user: number[];
-  assistant: number[];
-  tool: number[];
-} {
-  const typeIndices = {
-    system: [] as number[],
-    user: [] as number[],
-    assistant: [] as number[],
-    tool: [] as number[]
-  };
-  
-  originalIndices.forEach(idx => {
-    if (idx < messages.length) {
-      const msg = messages[idx];
-      if (msg) {
-        typeIndices[msg.role].push(idx);
-      }
-    }
-  });
-  
-  return typeIndices;
 }
 
 /**

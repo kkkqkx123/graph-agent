@@ -430,12 +430,12 @@ export class MessageArrayManager {
   private calculateStats(state: MessageArrayState): {
     originalMessageCount: number;
     visibleMessageCount: number;
-    compressedMessageCount: number;
+    invisibleMessageCount: number;
   } {
     return {
       originalMessageCount: state.totalMessageCount,
       visibleMessageCount: state.messages.length,
-      compressedMessageCount: state.messages.length
+      invisibleMessageCount: state.totalMessageCount - state.messages.length
     };
   }
 
@@ -443,23 +443,8 @@ export class MessageArrayManager {
    * 创建消息标记映射
    */
   private createMarkMap(messages: Message[]): MessageMarkMap {
-    const typeIndices: Record<string, number[]> = {
-      system: [],
-      user: [],
-      assistant: [],
-      tool: []
-    };
-
-    messages.forEach((msg, index) => {
-      const roleArray = typeIndices[msg.role];
-      if (roleArray) {
-        roleArray.push(index);
-      }
-    });
-
     return {
       originalIndices: messages.map((_, index) => index),
-      typeIndices: typeIndices as any,
       batchBoundaries: [0],
       boundaryToBatch: [0],
       currentBatch: this.state.currentBatchIndex
