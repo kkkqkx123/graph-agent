@@ -184,7 +184,7 @@ export class TaskQueueManager {
       await this.handleTaskFailed(queueTask, error as Error, executionTime);
     } finally {
       // 释放执行器
-      this.threadPoolManager.releaseExecutor(executor);
+      await this.threadPoolManager.releaseExecutor(executor);
       
       // 继续处理队列
       this.processQueue();

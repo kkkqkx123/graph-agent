@@ -149,7 +149,7 @@ export class ThreadLifecycleManager implements LifecycleCapable<void> {
         thread.endTime = now();
       }
       // 清理全局消息存储中的消息历史
-      this.globalMessageStorage.removeReference(thread.id);
+      await this.globalMessageStorage.removeReference(thread.id);
       // 触发THREAD_COMPLETED事件
       const completedEvent = buildThreadCompletedEvent(thread, result);
       await emit(this.eventManager, completedEvent);
@@ -166,7 +166,7 @@ export class ThreadLifecycleManager implements LifecycleCapable<void> {
     thread.endTime = now();
 
     // 清理全局消息存储中的消息历史
-    this.globalMessageStorage.removeReference(thread.id);
+    await this.globalMessageStorage.removeReference(thread.id);
 
     // 触发THREAD_COMPLETED事件
     const completedEvent = buildThreadCompletedEvent(thread, result);
@@ -200,7 +200,7 @@ export class ThreadLifecycleManager implements LifecycleCapable<void> {
     thread.errors.push(error.message);
 
     // 清理全局消息存储中的消息历史
-    this.globalMessageStorage.removeReference(thread.id);
+    await this.globalMessageStorage.removeReference(thread.id);
 
     // 触发THREAD_FAILED事件
     const failedEvent = buildThreadFailedEvent(thread, error);
@@ -236,7 +236,7 @@ export class ThreadLifecycleManager implements LifecycleCapable<void> {
     thread.endTime = now();
 
     // 清理全局消息存储中的消息历史
-    this.globalMessageStorage.removeReference(thread.id);
+    await this.globalMessageStorage.removeReference(thread.id);
 
     // 触发THREAD_CANCELLED事件
     const cancelledEvent = buildThreadCancelledEvent(thread, reason);

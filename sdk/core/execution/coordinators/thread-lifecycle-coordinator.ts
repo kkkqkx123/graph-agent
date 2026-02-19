@@ -230,7 +230,7 @@ export class ThreadLifecycleCoordinator implements LifecycleCapable<{ executionC
     // 如果是终止状态，设置结束时间并清理
     if (['COMPLETED', 'FAILED', 'CANCELLED', 'TIMEOUT'].includes(status)) {
       threadContext.setEndTime(now());
-      this.globalMessageStorage.removeReference(threadId);
+      await this.globalMessageStorage.removeReference(threadId);
 
       // 触发相应的终止事件
       let event;
@@ -278,7 +278,7 @@ export class ThreadLifecycleCoordinator implements LifecycleCapable<{ executionC
     threadContext.setEndTime(now());
 
     // 清理全局消息存储
-    this.globalMessageStorage.removeReference(threadId);
+    await this.globalMessageStorage.removeReference(threadId);
 
     // 触发取消事件
     const cancelledEvent = buildThreadCancelledEvent(threadContext.thread, reason || 'forced_cancel');
