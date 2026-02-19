@@ -12,17 +12,50 @@
 
 import type { LLMMessage } from '@modular-agent/types';
 import type { MessageMarkMap } from '@modular-agent/types';
+import { ExecutionError } from '@modular-agent/types';
 
 /**
  * 获取当前批次的边界索引
  * @param markMap 消息标记映射
  * @returns 当前批次的边界索引
- * @throws Error 当当前批次不存在时抛出异常
+ * @throws ExecutionError 当当前批次不存在时抛出异常
  */
 export function getCurrentBoundary(markMap: MessageMarkMap): number {
+  // 验证标记映射的有效性
+  if (!markMap || !markMap.batchBoundaries || markMap.batchBoundaries.length === 0) {
+    throw new ExecutionError(
+      'Invalid MessageMarkMap: batchBoundaries is empty or undefined',
+      undefined,
+      undefined,
+      { markMap }
+    );
+  }
+
+  // 验证当前批次索引的有效性
+  if (markMap.currentBatch < 0 || markMap.currentBatch >= markMap.batchBoundaries.length) {
+    throw new ExecutionError(
+      `Invalid currentBatch index: ${markMap.currentBatch}. Valid range: 0 to ${markMap.batchBoundaries.length - 1}`,
+      undefined,
+      undefined,
+      {
+        currentBatch: markMap.currentBatch,
+        batchBoundariesLength: markMap.batchBoundaries.length,
+        availableBatches: markMap.batchBoundaries.map((b, i) => ({ batch: i, boundary: b }))
+      }
+    );
+  }
+
   const boundary = markMap.batchBoundaries[markMap.currentBatch];
   if (boundary === undefined) {
-    throw new Error(`Current batch ${markMap.currentBatch} not found in batch boundaries`);
+    throw new ExecutionError(
+      `Boundary at batch ${markMap.currentBatch} is undefined`,
+      undefined,
+      undefined,
+      {
+        currentBatch: markMap.currentBatch,
+        batchBoundaries: markMap.batchBoundaries
+      }
+    );
   }
   return boundary;
 }
@@ -42,19 +75,38 @@ export function getVisibleOriginalIndices(markMap: MessageMarkMap): number[] {
  * @param visibleIndex 可见消息索引
  * @param markMap 消息标记映射
  * @returns 原始消息索引
- * @throws Error 当可见索引越界时抛出异常
+ * @throws ExecutionError 当可见索引越界时抛出异常
  */
 export function visibleIndexToOriginal(
-  visibleIndex: number, 
+  visibleIndex: number,
   markMap: MessageMarkMap
 ): number {
   const visibleIndices = getVisibleOriginalIndices(markMap);
   if (visibleIndex < 0 || visibleIndex >= visibleIndices.length) {
-    throw new Error(`Visible index ${visibleIndex} out of bounds. Visible messages count: ${visibleIndices.length}`);
+    throw new ExecutionError(
+      `Visible index ${visibleIndex} out of bounds. Visible messages count: ${visibleIndices.length}`,
+      undefined,
+      undefined,
+      {
+        visibleIndex,
+        visibleMessageCount: visibleIndices.length,
+        currentBatch: markMap.currentBatch,
+        boundary: markMap.batchBoundaries[markMap.currentBatch]
+      }
+    );
   }
   const originalIndex = visibleIndices[visibleIndex];
   if (originalIndex === undefined) {
-    throw new Error(`Original index at visible position ${visibleIndex} is undefined`);
+    throw new ExecutionError(
+      `Original index at visible position ${visibleIndex} is undefined`,
+      undefined,
+      undefined,
+      {
+        visibleIndex,
+        visibleIndices,
+        markMap
+      }
+    );
   }
   return originalIndex;
 }

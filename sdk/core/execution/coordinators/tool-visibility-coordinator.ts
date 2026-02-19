@@ -7,12 +7,14 @@
  * 2. 生成结构化可见性声明
  * 3. 在作用域切换时触发声明更新
  * 4. 支持动态添加工具
+ * 5. 避免重复声明，优化token消耗
  *
  * 设计原则：
  * - 增量式声明：通过新增消息声明当前可用工具集
  * - 显式覆盖：新的声明覆盖旧的声明，形成"有效工具快照"
  * - 双重保障：提示词声明 + 执行拦截，确保安全性
  * - 保持KV缓存：不修改历史消息，避免KV缓存失效
+ * - 声明去重：避免短时间内重复声明相同工具集
  */
 
 import type { ToolScope } from '../managers/tool-context-manager.js';
@@ -48,17 +50,29 @@ export class ToolVisibilityCoordinator {
   /** 批量声明队列 */
   private batchQueues: Map<string, VisibilityUpdateRequest[]> = new Map();
 
+  /** 上次声明的工具集（用于去重）：threadId -> Set<toolId> */
+  private lastDeclaredTools: Map<string, Set<string>> = new Map();
+
+  /** 上次声明的时间戳（用于去重）：threadId -> timestamp */
+  private lastDeclarationTime: Map<string, number> = new Map();
+
+  /** 声明去重时间窗口（毫秒），默认5000ms */
+  private deduplicationWindow: number = 5000;
+
   /**
    * 构造函数
    * @param toolService 工具服务
    * @param strategy 声明策略
+   * @param deduplicationWindow 声明去重时间窗口（毫秒）
    */
   constructor(
     toolService: ToolService,
-    strategy: VisibilityDeclarationStrategy = { ...defaultVisibilityDeclarationStrategy }
+    strategy: VisibilityDeclarationStrategy = { ...defaultVisibilityDeclarationStrategy },
+    deduplicationWindow: number = 5000
   ) {
     this.toolService = toolService;
     this.strategy = strategy;
+    this.deduplicationWindow = deduplicationWindow;
   }
 
   /**
@@ -126,6 +140,11 @@ export class ToolVisibilityCoordinator {
       context.visibleTools = new Set(availableTools);
     }
 
+    // 检查是否需要跳过重复声明
+    if (this.shouldSkipDeclaration(threadId, availableTools, changeType)) {
+      return;
+    }
+
     // 生成声明消息
     const message = this.buildVisibilityDeclarationMessage(
       newScope,
@@ -163,6 +182,80 @@ export class ToolVisibilityCoordinator {
     const updatedContext = this.getContext(threadId)!;
     updatedContext.declarationHistory.push(declaration);
     updatedContext.lastDeclarationIndex = declaration.messageIndex;
+
+    // 更新去重记录
+    this.updateDeduplicationRecord(threadId, availableTools);
+  }
+
+  /**
+   * 检查是否应该跳过重复声明
+   * @param threadId 线程ID
+   * @param availableTools 可用工具ID列表
+   * @param changeType 变更类型
+   * @returns 是否应该跳过
+   */
+  private shouldSkipDeclaration(
+    threadId: string,
+    availableTools: string[],
+    changeType: VisibilityChangeType
+  ): boolean {
+    // 对于重要的变更类型（如 enter_scope, exit_scope），不跳过
+    if (changeType === 'enter_scope' || changeType === 'exit_scope') {
+      return false;
+    }
+
+    // 检查上次声明时间
+    const lastTime = this.lastDeclarationTime.get(threadId);
+    if (!lastTime) {
+      return false;
+    }
+
+    // 检查是否在去重时间窗口内
+    const currentTime = now();
+    if (currentTime - lastTime > this.deduplicationWindow) {
+      return false;
+    }
+
+    // 检查工具集是否相同
+    const lastTools = this.lastDeclaredTools.get(threadId);
+    if (!lastTools) {
+      return false;
+    }
+
+    const currentToolSet = new Set(availableTools);
+    if (this.areToolSetsEqual(lastTools, currentToolSet)) {
+      return true; // 工具集相同且在时间窗口内，跳过声明
+    }
+
+    return false;
+  }
+
+  /**
+   * 比较两个工具集是否相同
+   * @param set1 工具集1
+   * @param set2 工具集2
+   * @returns 是否相同
+   */
+  private areToolSetsEqual(set1: Set<string>, set2: Set<string>): boolean {
+    if (set1.size !== set2.size) {
+      return false;
+    }
+    for (const tool of set1) {
+      if (!set2.has(tool)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * 更新去重记录
+   * @param threadId 线程ID
+   * @param availableTools 可用工具ID列表
+   */
+  private updateDeduplicationRecord(threadId: string, availableTools: string[]): void {
+    this.lastDeclaredTools.set(threadId, new Set(availableTools));
+    this.lastDeclarationTime.set(threadId, now());
   }
 
   /**
@@ -418,6 +511,10 @@ ${toolDescriptions || '无可用工具'}
     // 清除批量队列
     this.batchQueues.delete(threadId);
 
+    // 清除去重记录
+    this.lastDeclaredTools.delete(threadId);
+    this.lastDeclarationTime.delete(threadId);
+
     // 删除上下文
     this.contexts.delete(threadId);
   }
@@ -432,6 +529,8 @@ ${toolDescriptions || '无可用工具'}
     }
     this.batchTimers.clear();
     this.batchQueues.clear();
+    this.lastDeclaredTools.clear();
+    this.lastDeclarationTime.clear();
     this.contexts.clear();
   }
 

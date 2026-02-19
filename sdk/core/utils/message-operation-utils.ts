@@ -29,34 +29,57 @@ import { startNewBatch } from './batch-management-utils.js';
 import { MessageArrayUtils } from './message-array-utils.js';
 
 /**
+ * 消息操作回调函数类型
+ * 用于在消息操作后执行自定义逻辑（如刷新工具可见性声明）
+ */
+export type MessageOperationCallback = (result: MessageOperationResult) => void | Promise<void>;
+
+/**
  * 执行消息操作
  * @param context 消息操作上下文
  * @param operation 操作配置
+ * @param callback 操作后回调函数（可选）
  * @returns 操作结果
  */
-export function executeOperation(
+export async function executeOperation(
   context: MessageOperationContext,
-  operation: MessageOperationConfig
-): MessageOperationResult {
+  operation: MessageOperationConfig,
+  callback?: MessageOperationCallback
+): Promise<MessageOperationResult> {
   const { messages, markMap, options = {} } = context;
   const visibleOnly = options.visibleOnly ?? true;
 
+  let result: MessageOperationResult;
+
   switch (operation.operation) {
     case 'TRUNCATE':
-      return executeTruncateOperation(messages, markMap, operation as TruncateMessageOperation, visibleOnly);
+      result = executeTruncateOperation(messages, markMap, operation as TruncateMessageOperation, visibleOnly);
+      break;
     case 'INSERT':
-      return executeInsertOperation(messages, markMap, operation as InsertMessageOperation, visibleOnly);
+      result = executeInsertOperation(messages, markMap, operation as InsertMessageOperation, visibleOnly);
+      break;
     case 'REPLACE':
-      return executeReplaceOperation(messages, markMap, operation as ReplaceMessageOperation, visibleOnly);
+      result = executeReplaceOperation(messages, markMap, operation as ReplaceMessageOperation, visibleOnly);
+      break;
     case 'CLEAR':
-      return executeClearOperation(messages, markMap, operation as ClearMessageOperation, visibleOnly);
+      result = executeClearOperation(messages, markMap, operation as ClearMessageOperation, visibleOnly);
+      break;
     case 'FILTER':
-      return executeFilterOperation(messages, markMap, operation as FilterMessageOperation, visibleOnly);
+      result = executeFilterOperation(messages, markMap, operation as FilterMessageOperation, visibleOnly);
+      break;
     case 'BATCH_MANAGEMENT':
-      return executeBatchManagementOperation(messages, markMap, operation as BatchManagementOperation);
+      result = executeBatchManagementOperation(messages, markMap, operation as BatchManagementOperation);
+      break;
     default:
       throw new Error(`Unsupported operation type: ${(operation as any).operation}`);
   }
+
+  // 执行操作后回调（如刷新工具可见性声明）
+  if (callback) {
+    await callback(result);
+  }
+
+  return result;
 }
 
 /**

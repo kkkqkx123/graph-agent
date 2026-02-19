@@ -19,9 +19,17 @@ export function startNewBatch(
   markMap: MessageMarkMap,
   boundaryIndex: number
 ): MessageMarkMap {
-  // 验证边界索引
+  // 验证边界索引范围
   if (boundaryIndex < 0 || boundaryIndex > markMap.originalIndices.length) {
     throw new ExecutionError(`Invalid boundary index: ${boundaryIndex}. Must be between 0 and ${markMap.originalIndices.length}`);
+  }
+
+  // 验证边界索引递增性
+  const lastBoundary = markMap.batchBoundaries[markMap.batchBoundaries.length - 1];
+  if (lastBoundary !== undefined && boundaryIndex < lastBoundary) {
+    throw new ExecutionError(
+      `Boundary index must be non-decreasing. Last boundary: ${lastBoundary}, new boundary: ${boundaryIndex}`
+    );
   }
 
   // 创建新的标记映射副本

@@ -38,6 +38,7 @@ import type { EventManager } from '../../services/event-manager.js';
 import type { TokenLimitExceededEvent } from '@modular-agent/types';
 import type { LifecycleCapable } from './lifecycle-capable.js';
 import { now } from '@modular-agent/common-utils';
+import { Mutex } from 'async-mutex';
 
 /**
  * ConversationManager事件回调
@@ -93,6 +94,9 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
   private threadId?: string;
   private toolService?: any;
   private availableTools?: ConversationManagerOptions['availableTools'];
+  
+  // 互斥锁，确保消息添加和索引更新的原子性
+  private messageMutex = new Mutex();
 
   /**
    * 构造函数
@@ -120,20 +124,31 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    * @param message 消息对象
    * @returns 添加后的消息数组长度
    */
-  addMessage(message: LLMMessage): number {
+  async addMessage(message: LLMMessage): Promise<number> {
     // 验证消息格式
     if (!message.role || !message.content) {
       throw new RuntimeValidationError('Invalid message format: role and content are required', { operation: 'addMessage', field: 'message' });
     }
 
-    // 将消息追加到数组末尾
-    this.messages.push({ ...message });
-    const newIndex = this.messages.length - 1;
+    // 使用互斥锁确保消息添加和索引更新的原子性
+    const release = await this.messageMutex.acquire();
+    try {
+      // 将消息追加到数组末尾
+      this.messages.push({ ...message });
+      const newIndex = this.messages.length - 1;
 
-    // 同步更新标记映射
-    this.markMap.originalIndices.push(newIndex);
+      // 同步更新标记映射
+      this.markMap.originalIndices.push(newIndex);
 
-    return this.messages.length;
+      // 验证索引一致性
+      if (this.markMap.originalIndices.length !== this.messages.length) {
+        throw new Error('Index synchronization error: originalIndices length does not match messages length');
+      }
+
+      return this.messages.length;
+    } finally {
+      release();
+    }
   }
 
   /**
@@ -141,9 +156,9 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    * @param messages 消息数组
    * @returns 添加后的消息数组长度
    */
-  addMessages(...messages: LLMMessage[]): number {
+  async addMessages(...messages: LLMMessage[]): Promise<number> {
     for (const message of messages) {
-      this.addMessage(message);
+      await this.addMessage(message);
     }
     return this.messages.length;
   }

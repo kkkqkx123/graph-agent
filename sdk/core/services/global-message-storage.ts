@@ -13,6 +13,7 @@
  * - 线程安全，支持并发访问
  * - 引用计数，自动清理不再使用的消息历史
  * - 批次版本控制，支持不同批次的消息快照
+ * - 所有修改操作使用互斥锁保护
  *
  * 本模块只导出类定义，不导出实例
  * 实例通过 SingletonRegistry 统一管理
@@ -40,17 +41,25 @@ class GlobalMessageStorage {
   // 批次快照：threadId -> Map<batchId, snapshot>
   private batchSnapshots: Map<string, Map<number, BatchSnapshot>> = new Map();
   
-  // 只为引用计数添加 Mutex，保护引用计数的原子性
+  // 引用计数互斥锁，保护引用计数的原子性
   private referenceMutex = new Mutex();
+  
+  // 存储操作互斥锁，保护所有修改操作的原子性
+  private storageMutex = new Mutex();
 
   /**
-   * 存储消息历史
+   * 存储消息历史（线程安全）
    * @param threadId 线程ID
    * @param messages 消息数组
    */
-  storeMessages(threadId: string, messages: LLMMessage[]): void {
-    // 深度复制消息数组，避免外部修改影响存储
-    this.messageHistories.set(threadId, messages.map(msg => ({ ...msg })));
+  async storeMessages(threadId: string, messages: LLMMessage[]): Promise<void> {
+    const release = await this.storageMutex.acquire();
+    try {
+      // 深度复制消息数组，避免外部修改影响存储
+      this.messageHistories.set(threadId, messages.map(msg => ({ ...msg })));
+    } finally {
+      release();
+    }
   }
 
   /**
@@ -101,31 +110,41 @@ class GlobalMessageStorage {
   }
 
   /**
-   * 清理线程的消息历史
+   * 清理线程的消息历史（线程安全）
    * @param threadId 线程ID
    */
-  cleanupThread(threadId: string): void {
-    this.messageHistories.delete(threadId);
-    this.referenceCounts.delete(threadId);
-    this.batchSnapshots.delete(threadId);
+  async cleanupThread(threadId: string): Promise<void> {
+    const release = await this.storageMutex.acquire();
+    try {
+      this.messageHistories.delete(threadId);
+      this.referenceCounts.delete(threadId);
+      this.batchSnapshots.delete(threadId);
+    } finally {
+      release();
+    }
   }
 
   /**
-   * 记录批次消息快照
+   * 记录批次消息快照（线程安全）
    * @param threadId 线程ID
    * @param batchId 批次ID
    * @param messages 当前消息列表
    */
-  saveBatchSnapshot(threadId: string, batchId: number, messages: LLMMessage[]): void {
-    if (!this.batchSnapshots.has(threadId)) {
-      this.batchSnapshots.set(threadId, new Map());
+  async saveBatchSnapshot(threadId: string, batchId: number, messages: LLMMessage[]): Promise<void> {
+    const release = await this.storageMutex.acquire();
+    try {
+      if (!this.batchSnapshots.has(threadId)) {
+        this.batchSnapshots.set(threadId, new Map());
+      }
+      const snapshots = this.batchSnapshots.get(threadId)!;
+      snapshots.set(batchId, {
+        batchId,
+        messages: messages.map(msg => ({ ...msg })),
+        timestamp: now()
+      });
+    } finally {
+      release();
     }
-    const snapshots = this.batchSnapshots.get(threadId)!;
-    snapshots.set(batchId, {
-      batchId,
-      messages: messages.map(msg => ({ ...msg })),
-      timestamp: now()
-    });
   }
 
   /**
@@ -147,31 +166,41 @@ class GlobalMessageStorage {
   }
 
   /**
-   * 清理指定线程的批次快照（用于回退操作）
+   * 清理指定线程的批次快照（用于回退操作，线程安全）
    * @param threadId 线程ID
    * @param keepBatchId 保留此批次及之前的快照，删除之后的快照
    */
-  cleanupBatchSnapshotsAfter(threadId: string, keepBatchId: number): void {
-    const snapshots = this.batchSnapshots.get(threadId);
-    if (!snapshots) {
-      return;
-    }
-    const batchesToRemove: number[] = [];
-    for (const [batchId] of snapshots) {
-      if (batchId > keepBatchId) {
-        batchesToRemove.push(batchId);
+  async cleanupBatchSnapshotsAfter(threadId: string, keepBatchId: number): Promise<void> {
+    const release = await this.storageMutex.acquire();
+    try {
+      const snapshots = this.batchSnapshots.get(threadId);
+      if (!snapshots) {
+        return;
       }
+      const batchesToRemove: number[] = [];
+      for (const [batchId] of snapshots) {
+        if (batchId > keepBatchId) {
+          batchesToRemove.push(batchId);
+        }
+      }
+      batchesToRemove.forEach(batchId => snapshots.delete(batchId));
+    } finally {
+      release();
     }
-    batchesToRemove.forEach(batchId => snapshots.delete(batchId));
   }
 
   /**
-   * 清空所有消息历史
+   * 清空所有消息历史（线程安全）
    */
-  clearAll(): void {
-    this.messageHistories.clear();
-    this.referenceCounts.clear();
-    this.batchSnapshots.clear();
+  async clearAll(): Promise<void> {
+    const release = await this.storageMutex.acquire();
+    try {
+      this.messageHistories.clear();
+      this.referenceCounts.clear();
+      this.batchSnapshots.clear();
+    } finally {
+      release();
+    }
   }
 
   /**

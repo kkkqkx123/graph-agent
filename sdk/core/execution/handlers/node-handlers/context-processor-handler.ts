@@ -6,6 +6,7 @@
  * - 使用统一的消息操作工具函数
  * - 支持批次管理和可见范围控制
  * - 返回执行结果
+ * - 消息操作后自动刷新工具可见性声明
  *
  * 核心概念：
  * - 可见消息：当前批次边界之后的消息，会被发送给LLM
@@ -16,10 +17,11 @@
 
 import type { Node, ContextProcessorNodeConfig } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
-import { ExecutionError, RuntimeValidationError } from '@modular-agent/types';
+import { ExecutionError, RuntimeValidationError, ValidationError } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
 import { executeOperation } from '../../../utils/message-operation-utils.js';
 import type { MessageOperationContext } from '@modular-agent/types';
+import type { MessageOperationResult } from '@modular-agent/types';
 
 /**
  * 上下文处理器执行结果
@@ -45,6 +47,10 @@ export interface ContextProcessorExecutionResult {
 export interface ContextProcessorHandlerContext {
   /** 对话管理器 */
   conversationManager: any; // 简化类型，实际应该使用具体的ConversationManager类型
+  /** 工具可见性协调器（可选） */
+  toolVisibilityCoordinator?: any;
+  /** 线程上下文（可选，用于刷新工具可见性声明） */
+  threadContext?: any;
 }
 
 /**
@@ -82,8 +88,31 @@ export async function contextProcessorHandler(
       options: config.operationOptions
     };
 
-    // 5. 执行消息操作
-    const result = executeOperation(operationContext, config.operationConfig);
+    // 5. 执行消息操作，并在操作后刷新工具可见性声明
+    const result = await executeOperation(
+      operationContext,
+      config.operationConfig,
+      async (operationResult: MessageOperationResult) => {
+        // 操作后回调：刷新工具可见性声明
+        if (context.toolVisibilityCoordinator && context.threadContext) {
+          try {
+            await context.toolVisibilityCoordinator.refreshDeclaration(context.threadContext);
+          } catch (error) {
+            // 刷新失败抛出警告错误，不影响主流程
+            throw new ValidationError(
+              `Failed to refresh tool visibility declaration after message operation: ${error instanceof Error ? error.message : String(error)}`,
+              'toolVisibilityDeclaration',
+              undefined,
+              {
+                operation: config.operationConfig.operation,
+                originalError: error
+              },
+              'warning'
+            );
+          }
+        }
+      }
+    );
 
     // 6. 更新ConversationManager
     // 清空当前消息
@@ -91,7 +120,7 @@ export async function contextProcessorHandler(
     
     // 重新添加所有消息
     for (const msg of result.messages) {
-      conversationManager.addMessage(msg);
+      await conversationManager.addMessage(msg);
     }
     
     // 更新标记映射
