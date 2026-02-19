@@ -36,7 +36,6 @@ import {
 } from '../../utils/message-index-utils.js';
 import type { EventManager } from '../../services/event-manager.js';
 import type { TokenLimitExceededEvent } from '@modular-agent/types';
-import { EventType } from '@modular-agent/types';
 import type { LifecycleCapable } from './lifecycle-capable.js';
 import { now } from '@modular-agent/common-utils';
 
@@ -182,28 +181,28 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    * @param keepSystemMessage 是否保留系统消息
    */
   clearMessages(keepSystemMessage: boolean = true): void {
-  if (keepSystemMessage && this.messages.length > 0) {
-    const firstMessage = this.messages[0]!;
-    if (firstMessage.role === 'system') {
-      // 保留系统消息
-      this.messages = [firstMessage];
+    if (keepSystemMessage && this.messages.length > 0) {
+      const firstMessage = this.messages[0]!;
+      if (firstMessage.role === 'system') {
+        // 保留系统消息
+        this.messages = [firstMessage];
+      } else {
+        // 清空所有消息
+        this.messages = [];
+      }
     } else {
       // 清空所有消息
       this.messages = [];
     }
-  } else {
-    // 清空所有消息
-    this.messages = [];
-  }
 
-  // 重置标记映射
-  this.markMap = {
-    originalIndices: [],
-    batchBoundaries: [0],
-    boundaryToBatch: [0],
-    currentBatch: 0
-  };
-}
+    // 重置标记映射
+    this.markMap = {
+      originalIndices: [],
+      batchBoundaries: [0],
+      boundaryToBatch: [0],
+      currentBatch: 0
+    };
+  }
 
   /**
    * 检查Token使用情况，触发消息操作事件
@@ -490,21 +489,45 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
   }
 
   /**
-   * 移除指定的消息索引
-   * @param indices 要移除的索引数组
+   * 获取指定类型的所有可见消息
+   * @param role 消息角色
+   * @returns 消息数组
    */
-  removeMessageIndices(indices: number[]): void {
-    // 类型索引通过计算得出，无需手动维护
-    // 此方法保留用于兼容性，但不再执行任何操作
+  getVisibleMessagesByRole(role: MessageRole): LLMMessage[] {
+    const indices = getVisibleIndicesByRole(this.messages, this.markMap, role);
+    return indices.map(index => ({ ...this.messages[index]! }));
   }
 
   /**
-   * 保留指定的消息索引
-   * @param indices 要保留的索引数组
+   * 获取指定类型的最近N条可见消息
+   * @param role 消息角色
+   * @param n 消息数量
+   * @returns 消息数组
    */
-  keepMessageIndices(indices: number[]): void {
-    // 类型索引通过计算得出，无需手动维护
-    // 此方法保留用于兼容性，但不再执行任何操作
+  getVisibleRecentMessagesByRole(role: MessageRole, n: number): LLMMessage[] {
+    const indices = getVisibleRecentIndicesByRole(this.messages, this.markMap, role, n);
+    return indices.map(index => ({ ...this.messages[index]! }));
+  }
+
+  /**
+   * 获取指定类型的索引范围可见消息
+   * @param role 消息角色
+   * @param start 起始位置（在类型数组中的位置）
+   * @param end 结束位置（在类型数组中的位置）
+   * @returns 消息数组
+   */
+  getVisibleMessagesByRoleRange(role: MessageRole, start: number, end: number): LLMMessage[] {
+    const indices = getVisibleRangeIndicesByRole(this.messages, this.markMap, role, start, end);
+    return indices.map(index => ({ ...this.messages[index]! }));
+  }
+
+  /**
+   * 获取指定类型的可见消息数量
+   * @param role 消息角色
+   * @returns 消息数量
+   */
+  getVisibleMessageCountByRole(role: MessageRole): number {
+    return getVisibleCountByRole(this.messages, this.markMap, role);
   }
 
   /**
