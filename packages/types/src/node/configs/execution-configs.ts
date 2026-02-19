@@ -43,7 +43,7 @@ export interface AddToolNodeConfig {
   /** 工具描述模板（可选，用于动态生成工具描述） */
   descriptionTemplate?: string;
   /** 工具作用域（可选，默认为THREAD） */
-  scope?: 'THREAD' | 'WORKFLOW' | 'GLOBAL';
+  scope?: 'GLOBAL' | 'THREAD' | 'LOCAL';
   /** 是否覆盖已存在的工具（默认false） */
   overwrite?: boolean;
   /** 工具元数据（可选） */

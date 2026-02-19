@@ -17,7 +17,7 @@ import type { ToolRegistry } from '../../tools/tool-registry.js';
 const addToolNodeConfigSchema = z.object({
   toolIds: z.array(z.string().min(1, 'Tool ID must not be empty')).min(1, 'At least one tool ID is required'),
   descriptionTemplate: z.string().optional(),
-  scope: z.enum(['THREAD', 'WORKFLOW', 'global']).optional(),
+  scope: z.enum(['GLOBAL', 'THREAD', 'LOCAL']).optional(),
   overwrite: z.boolean().optional(),
   metadata: z.record(z.string(), z.any()).optional()
 });

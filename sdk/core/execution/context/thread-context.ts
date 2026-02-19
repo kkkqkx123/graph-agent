@@ -528,7 +528,7 @@ export class ThreadContext implements LifecycleCapable {
     const subgraphTools = this.getAvailableTools();
     await this.toolVisibilityCoordinator.updateVisibilityOnScopeChange(
       this,
-      'WORKFLOW',
+      'LOCAL',
       workflowId,
       subgraphTools,
       'enter_scope'
@@ -549,7 +549,7 @@ export class ThreadContext implements LifecycleCapable {
     const parentTools = this.getAvailableTools();
     await this.toolVisibilityCoordinator.updateVisibilityOnScopeChange(
       this,
-      'WORKFLOW',
+      'LOCAL',
       parentScopeId,
       parentTools,
       'exit_scope'

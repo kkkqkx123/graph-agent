@@ -5,13 +5,13 @@
  * 核心职责：
  * 1. 管理工具的运行时上下文（工具ID、作用域、元数据）
  * 2. 提供线程隔离的工具管理
- * 3. 支持不同作用域的工具（THREAD、WORKFLOW、GLOBAL）
+ * 3. 支持不同作用域的工具（THREAD、LOCAL、GLOBAL）
  * 4. 提供原子化的工具操作
  *
  * 设计原则：
  * - 只管理工具上下文，不包含业务逻辑
  * - 线程隔离，每个线程有独立的工具上下文
- * - 支持多级作用域（THREAD、WORKFLOW、GLOBAL）
+ * - 支持多级作用域（THREAD、LOCAL、GLOBAL）
  * - 原子操作，保证工具上下文一致性
  */
 
@@ -21,7 +21,7 @@ import { now } from '@modular-agent/common-utils';
 /**
  * 工具作用域类型
  */
-export type ToolScope = 'THREAD' | 'WORKFLOW' | 'GLOBAL';
+export type ToolScope = 'GLOBAL' | 'THREAD' | 'LOCAL';
 
 /**
  * 工具元数据
@@ -43,8 +43,8 @@ export interface ToolMetadata {
 export interface ToolContext {
   /** 线程作用域工具 */
   threadTools: Map<string, ToolMetadata>;
-  /** 工作流作用域工具 */
-  workflowTools: Map<string, ToolMetadata>;
+  /** 本地作用域工具 */
+  localTools: Map<string, ToolMetadata>;
   /** 全局作用域工具 */
   globalTools: Map<string, ToolMetadata>;
 }
@@ -62,7 +62,7 @@ export interface ToolContext {
  * - 有状态设计：维护工具上下文
  * - 上下文管理：提供工具的增删改查操作
  * - 线程隔离：每个线程有独立的工具上下文
- * - 作用域支持：支持THREAD、WORKFLOW、GLOBAL三种作用域
+ * - 作用域支持：支持THREAD、LOCAL、GLOBAL三种作用域
  */
 export class ToolContextManager {
   /** 工具上下文映射：threadId -> ToolContext */
@@ -75,7 +75,7 @@ export class ToolContextManager {
     if (!this.contexts.has(threadId)) {
       this.contexts.set(threadId, {
         threadTools: new Map(),
-        workflowTools: new Map(),
+        localTools: new Map(),
         globalTools: new Map()
       });
     }
@@ -120,8 +120,8 @@ export class ToolContextManager {
         case 'THREAD':
           targetMap = context.threadTools;
           break;
-        case 'WORKFLOW':
-          targetMap = context.workflowTools;
+        case 'LOCAL':
+          targetMap = context.localTools;
           break;
         case 'GLOBAL':
           targetMap = context.globalTools;
@@ -161,8 +161,8 @@ export class ToolContextManager {
       switch (scope) {
         case 'THREAD':
           return new Set(context.threadTools.keys());
-        case 'WORKFLOW':
-          return new Set(context.workflowTools.keys());
+        case 'LOCAL':
+          return new Set(context.localTools.keys());
         case 'GLOBAL':
           return new Set(context.globalTools.keys());
       }
@@ -171,7 +171,7 @@ export class ToolContextManager {
     // 返回所有作用域的工具
     const allTools = new Set<string>();
     context.threadTools.forEach((_, toolId) => allTools.add(toolId));
-    context.workflowTools.forEach((_, toolId) => allTools.add(toolId));
+    context.localTools.forEach((_, toolId) => allTools.add(toolId));
     context.globalTools.forEach((_, toolId) => allTools.add(toolId));
 
     return allTools;
@@ -195,8 +195,8 @@ export class ToolContextManager {
       switch (scope) {
         case 'THREAD':
           return context.threadTools.get(toolId);
-        case 'WORKFLOW':
-          return context.workflowTools.get(toolId);
+        case 'LOCAL':
+          return context.localTools.get(toolId);
         case 'GLOBAL':
           return context.globalTools.get(toolId);
       }
@@ -205,7 +205,7 @@ export class ToolContextManager {
     // 搜索所有作用域
     return (
       context.threadTools.get(toolId) ||
-      context.workflowTools.get(toolId) ||
+      context.localTools.get(toolId) ||
       context.globalTools.get(toolId)
     );
   }
@@ -232,8 +232,8 @@ export class ToolContextManager {
         case 'THREAD':
           targetMap = context.threadTools;
           break;
-        case 'WORKFLOW':
-          targetMap = context.workflowTools;
+        case 'LOCAL':
+          targetMap = context.localTools;
           break;
         case 'GLOBAL':
           targetMap = context.globalTools;
@@ -251,7 +251,7 @@ export class ToolContextManager {
         if (context.threadTools.delete(toolId)) {
           removedCount++;
         }
-        if (context.workflowTools.delete(toolId)) {
+        if (context.localTools.delete(toolId)) {
           removedCount++;
         }
         if (context.globalTools.delete(toolId)) {
@@ -284,9 +284,9 @@ export class ToolContextManager {
           clearedCount = context.threadTools.size;
           context.threadTools.clear();
           break;
-        case 'WORKFLOW':
-          clearedCount = context.workflowTools.size;
-          context.workflowTools.clear();
+        case 'LOCAL':
+          clearedCount = context.localTools.size;
+          context.localTools.clear();
           break;
         case 'GLOBAL':
           clearedCount = context.globalTools.size;
@@ -294,9 +294,9 @@ export class ToolContextManager {
           break;
       }
     } else {
-      clearedCount = context.threadTools.size + context.workflowTools.size + context.globalTools.size;
+      clearedCount = context.threadTools.size + context.localTools.size + context.globalTools.size;
       context.threadTools.clear();
-      context.workflowTools.clear();
+      context.localTools.clear();
       context.globalTools.clear();
     }
 
@@ -321,8 +321,8 @@ export class ToolContextManager {
       switch (scope) {
         case 'THREAD':
           return context.threadTools.has(toolId);
-        case 'WORKFLOW':
-          return context.workflowTools.has(toolId);
+        case 'LOCAL':
+          return context.localTools.has(toolId);
         case 'GLOBAL':
           return context.globalTools.has(toolId);
       }
@@ -330,7 +330,7 @@ export class ToolContextManager {
 
     return (
       context.threadTools.has(toolId) ||
-      context.workflowTools.has(toolId) ||
+      context.localTools.has(toolId) ||
       context.globalTools.has(toolId)
     );
   }
@@ -349,7 +349,7 @@ export class ToolContextManager {
 
     return {
       threadTools: new Map(context.threadTools),
-      workflowTools: new Map(context.workflowTools),
+      localTools: new Map(context.localTools),
       globalTools: new Map(context.globalTools)
     };
   }
@@ -363,7 +363,7 @@ export class ToolContextManager {
   restoreSnapshot(threadId: string, snapshot: ToolContext): void {
     this.contexts.set(threadId, {
       threadTools: new Map(snapshot.threadTools),
-      workflowTools: new Map(snapshot.workflowTools),
+      localTools: new Map(snapshot.localTools),
       globalTools: new Map(snapshot.globalTools)
     });
   }

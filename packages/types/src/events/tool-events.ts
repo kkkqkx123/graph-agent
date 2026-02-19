@@ -62,7 +62,7 @@ export interface ToolAddedEvent extends BaseEvent {
   /** 工具ID列表 */
   toolIds: ID[];
   /** 作用域 */
-  scope: 'THREAD' | 'WORKFLOW';
+  scope: 'GLOBAL' | 'THREAD' | 'LOCAL';
   /** 成功添加的工具数量 */
   addedCount: number;
   /** 被跳过的工具数量 */
