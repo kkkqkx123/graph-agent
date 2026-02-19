@@ -33,7 +33,7 @@ import { handleNodeFailure, handleExecutionError } from './handlers/error-handle
 import { LLMExecutionCoordinator } from './coordinators/llm-execution-coordinator.js';
 import { ExecutionContext } from './context/execution-context.js';
 import { InterruptionDetector, InterruptionDetectorImpl } from './managers/interruption-detector.js';
-import { throwIfAborted, getThreadInterruptedException } from '@modular-agent/common-utils';
+import { checkInterruption, shouldContinue, getInterruptionDescription } from '@modular-agent/common-utils';
 
 /**
  * ThreadExecutor - Thread 执行器
@@ -89,25 +89,29 @@ export class ThreadExecutor {
    * 检查中断状态
    *
    * @param threadContext 线程上下文
-   * @throws ThreadInterruptedException 当检测到中断时抛出
+   * @returns 是否继续执行，true 表示继续，false 表示中断
    */
-  private async checkInterruption(threadContext: ThreadContext): Promise<void> {
+  private async checkInterruption(threadContext: ThreadContext): Promise<boolean> {
     const threadId = threadContext.getThreadId();
     const abortSignal = threadContext.getAbortSignal();
 
-    // 使用 AbortSignal 检查中断
-    throwIfAborted(abortSignal);
-
-    // 如果已中止，处理中断（创建检查点、触发事件）
-    const exception = getThreadInterruptedException(abortSignal);
-    if (exception && exception.interruptionType) {
+    // 使用返回值标记体系检查中断
+    const interruption = checkInterruption(abortSignal);
+    
+    if (!shouldContinue(interruption)) {
+      // 如果已中止，处理中断（创建检查点、触发事件）
+      const interruptionType = interruption.type === 'paused' ? 'PAUSE' : 'STOP';
       await this.nodeExecutionCoordinator.handleInterruption(
         threadId,
         threadContext.getCurrentNodeId(),
-        exception.interruptionType
+        interruptionType
       );
-      throw exception;
+      
+      // 返回 false 表示中断，不再抛出错误
+      return false;
     }
+    
+    return true;
   }
 
   /**
@@ -119,8 +123,12 @@ export class ThreadExecutor {
     try {
       // 执行主循环
       while (true) {
-        // 检查中断状态
-        await this.checkInterruption(threadContext);
+        // 检查中断状态，如果返回 false 表示中断
+        const shouldContinue = await this.checkInterruption(threadContext);
+        if (!shouldContinue) {
+          // 中断处理已完成，直接返回结果
+          break;
+        }
 
         // 获取当前节点
         const currentNode = this.getCurrentNode(threadContext);
@@ -148,13 +156,7 @@ export class ThreadExecutor {
 
       return this.createThreadResult(threadContext);
     } catch (error) {
-      // 处理线程中断异常
-      if (error instanceof ThreadInterruptedException) {
-        // 中断异常已经被协调器处理过，直接返回结果
-        return this.createThreadResult(threadContext);
-      }
-
-      // 处理其他错误
+      // 处理其他错误（不再处理中断错误，因为中断已通过返回值处理）
       await handleExecutionError(threadContext, error);
       return this.createThreadResult(threadContext);
     }

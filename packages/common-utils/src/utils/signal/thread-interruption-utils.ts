@@ -1,210 +1,227 @@
 /**
  * 线程中断工具函数
- * 提供线程中断异常的提取和处理功能
+ * 使用返回值标记体系替代错误体系处理控制流中断
  *
  * 设计原则：
- * - 统一使用 ThreadInterruptedException 作为中断错误
+ * - 使用返回值标记控制流状态（continue/paused/stopped）
+ * - 避免使用异常处理预期内的中断
  * - 提供类型安全的工具函数
- * - 简化错误处理逻辑
+ * - 保持与 AbortSignal 的兼容性
  */
 
-import { ThreadInterruptedException, AbortError } from '@modular-agent/types';
 import type { InterruptionType } from '@modular-agent/types';
-import { throwAbortReason } from './abort-utils.js';
+import type { InterruptionCheckResult, InterruptionInfo } from './interruption-types.js';
+import { getAbortReason } from './abort-utils.js';
 
 /**
- * 从 AbortSignal 中获取线程中断异常
+ * 检查 AbortSignal 并返回中断状态
  * @param signal AbortSignal
- * @returns ThreadInterruptedException 或 undefined
+ * @returns 中断检查结果
  */
-export function getThreadInterruptedException(
-  signal: AbortSignal
-): ThreadInterruptedException | undefined {
-  const reason = signal.reason;
-  return reason instanceof ThreadInterruptedException ? reason : undefined;
-}
-
-/**
- * 检查 AbortSignal 是否因线程中断而中止
- * @param signal AbortSignal
- * @returns 是否是线程中断
- */
-export function isThreadInterruption(signal: AbortSignal): boolean {
-  return getThreadInterruptedException(signal) !== undefined;
-}
-
-/**
- * 检查错误是否是线程中断异常
- * @param error 错误对象
- * @returns 是否是线程中断异常
- */
-export function isThreadInterruptedException(error: unknown): error is ThreadInterruptedException {
-  return error instanceof ThreadInterruptedException;
-}
-
-/**
- * 检查错误是否是任何类型的中断（线程中断或 AbortError）
- * @param error 错误对象
- * @returns 是否是中断错误
- */
-export function isInterruptionError(error: unknown): boolean {
-  return isThreadInterruptedException(error) || (error instanceof Error && error.name === 'AbortError');
-}
-
-/**
- * 从错误中提取线程中断异常
- * @param error 错误对象
- * @returns ThreadInterruptedException 或 undefined
- */
-export function extractThreadInterruption(error: unknown): ThreadInterruptedException | undefined {
-  if (isThreadInterruptedException(error)) {
-    return error;
+export function checkInterruption(signal?: AbortSignal): InterruptionCheckResult {
+  if (!signal) {
+    return { type: 'continue' };
   }
-  if (error instanceof Error && error.name === 'AbortError') {
-    // 如果是 AbortError，尝试从 message 中解析信息
-    // 这是为了兼容可能直接抛出 AbortError 的情况
-    return undefined;
+
+  if (!signal.aborted) {
+    return { type: 'continue' };
   }
-  return undefined;
+
+  const reason = getAbortReason(signal);
+  
+  // 检查是否是线程中断
+  if (reason && typeof reason === 'object' && 'interruptionType' in reason) {
+    const interruption = reason as any;
+    const type = interruption.interruptionType as InterruptionType;
+    const threadId = interruption.threadId as string | undefined;
+    const nodeId = interruption.nodeId as string | undefined;
+
+    if (type === 'PAUSE') {
+      return {
+        type: 'paused',
+        threadId,
+        nodeId: nodeId || 'unknown'
+      };
+    } else if (type === 'STOP') {
+      return {
+        type: 'stopped',
+        threadId,
+        nodeId: nodeId || 'unknown'
+      };
+    }
+  }
+
+  // 普通中止
+  return {
+    type: 'aborted',
+    reason
+  };
 }
 
 /**
- * 从 AbortSignal 中获取中断类型
- * @param signal AbortSignal
- * @returns 中断类型（PAUSE/STOP/null）
- */
-export function getInterruptionType(signal: AbortSignal): InterruptionType {
-  const exception = getThreadInterruptedException(signal);
-  return exception?.interruptionType ?? null;
-}
-
-/**
- * 从 AbortSignal 中获取线程 ID
- * @param signal AbortSignal
- * @returns 线程 ID 或 undefined
- */
-export function getThreadId(signal: AbortSignal): string | undefined {
-  const exception = getThreadInterruptedException(signal);
-  return exception?.threadId;
-}
-
-/**
- * 从 AbortSignal 中获取节点 ID
- * @param signal AbortSignal
- * @returns 节点 ID 或 undefined
- */
-export function getNodeId(signal: AbortSignal): string | undefined {
-  const exception = getThreadInterruptedException(signal);
-  return exception?.nodeId;
-}
-
-/**
- * 创建线程中断异常
- * @param interruptionType 中断类型
+ * 创建线程中断信息
+ * @param type 中断类型
  * @param threadId 线程 ID
  * @param nodeId 节点 ID
- * @returns ThreadInterruptedException
+ * @returns 中断信息
  */
-export function createThreadInterruptedException(
-  interruptionType: 'PAUSE' | 'STOP',
+export function createInterruptionInfo(
+  type: Exclude<InterruptionType, null>,
   threadId: string,
   nodeId: string
-): ThreadInterruptedException {
-  const message = `Thread ${interruptionType.toLowerCase()}`;
-  return new ThreadInterruptedException(
-    message,
-    interruptionType,
+): InterruptionInfo {
+  return {
+    type,
     threadId,
-    nodeId
-  );
+    nodeId,
+    timestamp: Date.now()
+  };
 }
 
 /**
- * 统一处理中断错误
- * 如果是线程中断异常，返回该异常；如果是 AbortError，尝试转换为线程中断异常
- * @param error 错误对象
- * @param threadId 线程 ID（用于转换 AbortError）
- * @param nodeId 节点 ID（用于转换 AbortError）
- * @returns ThreadInterruptedException 或 undefined
+ * 判断是否继续执行
+ * @param result 中断检查结果
+ * @returns 是否继续
  */
-export function normalizeInterruptionError(
-  error: unknown,
-  threadId?: string,
-  nodeId?: string
-): ThreadInterruptedException | undefined {
-  // 如果已经是线程中断异常，直接返回
-  if (isThreadInterruptedException(error)) {
-    return error;
-  }
+export function shouldContinue(result: InterruptionCheckResult): boolean {
+  return result.type === 'continue';
+}
 
-  // 如果是 AbortError，尝试转换为线程中断异常
-  if (error instanceof Error && error.name === 'AbortError') {
-    if (threadId && nodeId) {
-      // 默认转换为 STOP 类型
-      return createThreadInterruptedException('STOP', threadId, nodeId);
-    }
-  }
+/**
+ * 判断是否已中断
+ * @param result 中断检查结果
+ * @returns 是否中断
+ */
+export function isInterrupted(result: InterruptionCheckResult): boolean {
+  return result.type !== 'continue';
+}
 
+/**
+ * 获取中断类型
+ * @param result 中断检查结果
+ * @returns 中断类型或 null
+ */
+export function getInterruptionType(result: InterruptionCheckResult): InterruptionType {
+  if (result.type === 'paused') {
+    return 'PAUSE';
+  } else if (result.type === 'stopped') {
+    return 'STOP';
+  }
+  return null;
+}
+
+/**
+ * 获取节点 ID
+ * @param result 中断检查结果
+ * @returns 节点 ID 或 undefined
+ */
+export function getNodeId(result: InterruptionCheckResult): string | undefined {
+  if (result.type === 'paused' || result.type === 'stopped') {
+    return result.nodeId;
+  }
   return undefined;
 }
 
 /**
- * 检查 AbortSignal 并抛出线程中断异常
- * @param signal AbortSignal
- * @throws 当 signal 已中止时抛出 ThreadInterruptedException
+ * 获取线程 ID
+ * @param result 中断检查结果
+ * @returns 线程 ID 或 undefined
  */
-export function throwIfAborted(signal: AbortSignal): void {
-  if (signal.aborted) {
-    const exception = getThreadInterruptedException(signal);
-    if (exception) {
-      throw exception;
-    }
-    // 如果不是线程中断异常，使用 abort-utils 中的公共函数处理
-    throwAbortReason(signal);
+export function getThreadId(result: InterruptionCheckResult): string | undefined {
+  if (result.type === 'paused' || result.type === 'stopped') {
+    return result.threadId;
   }
-}
-
-/**
- * 包装异步函数，自动处理线程中断
- * @param fn 异步函数
- * @param signal AbortSignal
- * @returns 函数执行结果
- * @throws 当 signal 中止时抛出 ThreadInterruptedException
- */
-export async function withThreadInterruption<T>(
-  fn: () => Promise<T>,
-  signal: AbortSignal
-): Promise<T> {
-  throwIfAborted(signal);
-  return await fn();
-}
-
-/**
- * 包装异步函数，自动处理线程中断（支持传递 signal）
- * @param fn 异步函数（接收 AbortSignal 参数）
- * @param signal AbortSignal
- * @returns 函数执行结果
- * @throws 当 signal 中止时抛出 ThreadInterruptedException
- */
-export async function withThreadInterruptionArg<T>(
-  fn: (signal: AbortSignal) => Promise<T>,
-  signal: AbortSignal
-): Promise<T> {
-  throwIfAborted(signal);
-  return await fn(signal);
+  return undefined;
 }
 
 /**
  * 获取中断的友好描述
- * @param signal AbortSignal
+ * @param result 中断检查结果
  * @returns 中断描述字符串
  */
-export function getInterruptionDescription(signal: AbortSignal): string {
-  const exception = getThreadInterruptedException(signal);
-  if (!exception) {
-    return 'This operation was aborted';
+export function getInterruptionDescription(result: InterruptionCheckResult): string {
+  switch (result.type) {
+    case 'continue':
+      return 'Execution continuing';
+    case 'paused':
+      return `Thread paused at node: ${result.nodeId}`;
+    case 'stopped':
+      return `Thread stopped at node: ${result.nodeId}`;
+    case 'aborted':
+      return result.reason ? String(result.reason) : 'Operation aborted';
+    default:
+      return 'Unknown interruption state';
   }
+}
 
-  const type = exception.interruptionType?.toLowerCase() || 'interrupted';
-  return `Thread ${type} at node: ${exception.nodeId}`;
+/**
+ * 包装异步函数，自动处理中断检查
+ * @param fn 异步函数
+ * @param signal AbortSignal
+ * @returns 函数执行结果和状态
+ */
+export async function withInterruptionCheck<T>(
+  fn: () => Promise<T>,
+  signal?: AbortSignal
+): Promise<{ result: T; status: 'completed' } | { status: 'interrupted'; interruption: InterruptionCheckResult }> {
+  const interruption = checkInterruption(signal);
+  
+  if (!shouldContinue(interruption)) {
+    return {
+      status: 'interrupted',
+      interruption
+    };
+  }
+  
+  try {
+    const result = await fn();
+    return {
+      result,
+      status: 'completed'
+    };
+  } catch (error) {
+    // 如果函数内部抛出中断错误，转换为返回值
+    if (error instanceof Error && error.name === 'AbortError') {
+      const interruption = checkInterruption(signal);
+      return {
+        status: 'interrupted',
+        interruption
+      };
+    }
+    throw error;
+  }
+}
+
+/**
+ * 创建带中断检查的异步迭代器包装
+ * @param iterable 异步可迭代对象
+ * @param signal AbortSignal
+ * @returns 包装后的异步迭代器
+ */
+export async function* withInterruptionCheckIter<T>(
+  iterable: AsyncIterable<T>,
+  signal?: AbortSignal
+): AsyncGenerator<T | InterruptionCheckResult, void, unknown> {
+  const iterator = iterable[Symbol.asyncIterator]();
+  
+  try {
+    while (true) {
+      // 检查中断
+      const interruption = checkInterruption(signal);
+      if (!shouldContinue(interruption)) {
+        yield interruption;
+        return;
+      }
+      
+      const { value, done } = await iterator.next();
+      if (done) break;
+      
+      yield value;
+    }
+  } finally {
+    // 确保清理迭代器
+    if (iterator.return) {
+      await iterator.return();
+    }
+  }
 }

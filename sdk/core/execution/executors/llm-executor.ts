@@ -14,7 +14,8 @@
  * - 不处理工具调用，工具调用由 LLMCoordinator 协调
  */
 
-import { abortErrorToResult } from '@modular-agent/common-utils';
+import { isAbortError, checkInterruption, getInterruptionType, getThreadId, getNodeId } from '@modular-agent/common-utils';
+import type { InterruptionCheckResult } from '@modular-agent/common-utils';
 import type { LLMMessage, LLMResult } from '@modular-agent/types';
 import { LLMWrapper } from '../../llm/wrapper.js';
 import { ExecutionError, ThreadInterruptedException, LLMError } from '@modular-agent/types';
@@ -53,6 +54,13 @@ export interface LLMExecutionResult {
     arguments: string;
   }>;
 }
+
+/**
+ * LLM执行结果（包含中断状态）
+ */
+export type LLMExecutionResultWithInterruption =
+  | { success: true; result: LLMExecutionResult }
+  | { success: false; interruption: InterruptionCheckResult };
 
 /**
  * LLM执行器类（无状态单例）
@@ -96,28 +104,35 @@ export class LLMExecutor {
    * @param error 错误对象
    * @param profileId LLM profile ID
    * @param options 执行选项
-   * @throws ThreadInterruptedException 如果是 AbortError
-   * @throws ExecutionError 如果是其他错误
+   * @returns 执行结果（包含中断状态或错误）
    */
   private handleLLMError(
     error: LLMError,
     profileId: string,
     options?: { abortSignal?: AbortSignal, threadId?: string, nodeId?: string }
-  ): never {
+  ): LLMExecutionResultWithInterruption {
     // 检查是否是 AbortError
-    const abortResult = abortErrorToResult<LLMExecutionResult>(error);
-    if (abortResult.isErr()) {
-      const interruptError = abortResult.error;
-      // 更新中断异常的上下文信息
-      throw new ThreadInterruptedException(
-        interruptError.message,
-        interruptError.interruptionType,
-        options?.threadId || interruptError.threadId,
-        options?.nodeId || interruptError.nodeId
-      );
+    if (isAbortError(error)) {
+      const result = checkInterruption(options?.abortSignal);
+      // PAUSE/STOP 返回中断状态
+      if (result.type === 'paused' || result.type === 'stopped') {
+        return {
+          success: false,
+          interruption: result
+        };
+      }
+      // 普通中止（aborted）也返回中断状态
+      if (result.type === 'aborted') {
+        return {
+          success: false,
+          interruption: result
+        };
+      }
+      // 未中止（continue），抛出原始错误
+      throw error;
     }
 
-    // 转换为 ExecutionError
+    // 转换为 ExecutionError 并抛出
     throw new ExecutionError(
       `LLM call failed: ${error.message}`,
       options?.nodeId,
@@ -136,13 +151,13 @@ export class LLMExecutor {
    * @param messages 消息数组
    * @param requestData 请求数据
    * @param options 执行选项（包含 AbortSignal 和上下文信息）
-   * @returns LLM执行结果
+   * @returns LLM执行结果或中断状态
    */
   async executeLLMCall(
     messages: LLMMessage[],
     requestData: LLMExecutionRequestData,
     options?: { abortSignal?: AbortSignal, threadId?: string, nodeId?: string }
-  ): Promise<LLMExecutionResult> {
+  ): Promise<LLMExecutionResultWithInterruption> {
     // 构建LLM请求
     const llmRequest = {
       profileId: requestData.profileId,
@@ -161,7 +176,7 @@ export class LLMExecutor {
       const streamResult = await this.llmWrapper.generateStream(llmRequest);
 
       if (streamResult.isErr()) {
-        this.handleLLMError(streamResult.error, requestData.profileId, options);
+        return this.handleLLMError(streamResult.error, requestData.profileId, options);
       }
 
       const messageStream = streamResult.value;
@@ -185,7 +200,7 @@ export class LLMExecutor {
       const result = await this.llmWrapper.generate(llmRequest);
 
       if (result.isErr()) {
-        this.handleLLMError(result.error, requestData.profileId, options);
+        return this.handleLLMError(result.error, requestData.profileId, options);
       }
 
       finalResult = result.value;
@@ -203,14 +218,17 @@ export class LLMExecutor {
 
     // 构建返回结果
     return {
-      content: finalResult.content,
-      usage: finalResult.usage,
-      finishReason: finalResult.finishReason,
-      toolCalls: finalResult.toolCalls?.map(tc => ({
-        id: tc.id,
-        name: tc.function.name,
-        arguments: tc.function.arguments
-      }))
+      success: true,
+      result: {
+        content: finalResult.content,
+        usage: finalResult.usage,
+        finishReason: finalResult.finishReason,
+        toolCalls: finalResult.toolCalls?.map(tc => ({
+          id: tc.id,
+          name: tc.function.name,
+          arguments: tc.function.arguments
+        }))
+      }
     };
   }
 }

@@ -14,7 +14,7 @@
  * - 统一的错误处理
  */
 
-import { isAbortError, getThreadInterruptedException } from '@modular-agent/common-utils';
+import { isAbortError, checkInterruption, getInterruptionType, getThreadId, getNodeId } from '@modular-agent/common-utils';
 import type { ToolService } from '../../services/tool-service.js';
 import type { EventManager } from '../../services/event-manager.js';
 import type { Tool, ID } from '@modular-agent/types';
@@ -76,9 +76,14 @@ export class ToolCallExecutor {
   ): Promise<ToolExecutionResult[]> {
     // 检查中断信号
     if (options?.abortSignal && options.abortSignal.aborted) {
-      const reason = getThreadInterruptedException(options.abortSignal);
-      if (reason) {
-        throw reason;
+      const result = checkInterruption(options.abortSignal);
+      if (result.type === 'paused' || result.type === 'stopped') {
+        throw new ThreadInterruptedException(
+          'Tool execution interrupted',
+          result.type === 'paused' ? 'PAUSE' : 'STOP',
+          result.threadId || threadId || '',
+          result.nodeId || nodeId || ''
+        );
       }
       throw new ThreadInterruptedException('Tool execution aborted', 'STOP');
     }
@@ -306,19 +311,20 @@ export class ToolCallExecutor {
       const error = result.error;
       const errorMessage = error.message;
 
-      // 处理 AbortError，转换为 ThreadInterruptedException
+      // 处理 AbortError
       if (isAbortError(error)) {
-        const reason = getThreadInterruptedException(options?.abortSignal!);
-        if (reason) {
-          throw reason;
+        const result = checkInterruption(options?.abortSignal);
+        // 只有 PAUSE 或 STOP 才转换为 ThreadInterruptedException
+        if (result.type === 'paused' || result.type === 'stopped') {
+          throw new ThreadInterruptedException(
+            'Tool execution interrupted',
+            result.type === 'paused' ? 'PAUSE' : 'STOP',
+            result.threadId || threadId || '',
+            result.nodeId || nodeId || ''
+          );
         }
-        // 如果没有获取到 ThreadInterruptedException，创建一个新的
-        throw new ThreadInterruptedException(
-          'Tool execution aborted',
-          'STOP',
-          threadId || '',
-          nodeId || ''
-        );
+        // 普通中止（aborted）或未中止（continue），重新抛出原始错误
+        throw error;
       }
 
       // 使用 MessageBuilder 构建失败的工具结果消息

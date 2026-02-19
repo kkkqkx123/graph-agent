@@ -12,7 +12,7 @@ import type {
 } from '@modular-agent/types';
 import { ProfileManager } from './profile-manager.js';
 import { ClientFactory, MessageStream } from './index.js';
-import { tryCatchAsyncWithSignal, isAbortError, now, diffTimestamp, generateId, ok, err, getThreadInterruptedException } from '@modular-agent/common-utils';
+import { tryCatchAsyncWithSignal, isAbortError, now, diffTimestamp, generateId, ok, err, checkInterruption, getInterruptionDescription } from '@modular-agent/common-utils';
 import { ConfigurationError, LLMError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
 import type { EventManager } from '../services/event-manager.js';
@@ -280,9 +280,20 @@ export class LLMWrapper {
 
     // 检查是否是中止错误
     if (isAbortError(error)) {
-      const reason = request.signal
-        ? getThreadInterruptedException(request.signal)?.message || 'Stream aborted'
-        : 'Stream aborted';
+      let reason: string;
+      if (request.signal) {
+        const interruption = checkInterruption(request.signal);
+        reason = getInterruptionDescription(interruption);
+        // 如果是普通中止且 reason 是 DOMException 或 undefined，使用默认消息
+        if (interruption.type === 'aborted') {
+          if (!interruption.reason ||
+              (typeof interruption.reason === 'object' && interruption.reason.name === 'AbortError')) {
+            reason = 'Stream aborted';
+          }
+        }
+      } else {
+        reason = 'Stream aborted';
+      }
 
       this.eventManager.emit({
         type: 'LLM_STREAM_ABORTED' as EventType,

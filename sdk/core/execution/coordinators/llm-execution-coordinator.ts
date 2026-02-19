@@ -30,7 +30,8 @@ import { CheckpointCoordinator } from './checkpoint-coordinator.js';
 import type { ExecutionContext } from '../context/execution-context.js';
 import type { InterruptionDetector } from '../managers/interruption-detector.js';
 import { InterruptionDetectorImpl } from '../managers/interruption-detector.js';
-import { throwIfAborted, getThreadInterruptedException } from '@modular-agent/common-utils';
+import { checkInterruption, shouldContinue, getInterruptionDescription } from '@modular-agent/common-utils';
+import type { InterruptionCheckResult } from '@modular-agent/common-utils';
 
 /**
  * LLM 执行参数
@@ -142,41 +143,43 @@ export class LLMExecutionCoordinator {
     params: LLMExecutionParams,
     conversationState: ConversationManager
   ): Promise<LLMExecutionResponse> {
-    try {
-      // 执行完整的 LLM-工具调用循环
-      const content = await this.executeLLMLoop(params, conversationState);
+    // 执行完整的 LLM-工具调用循环
+    const result = await this.executeLLMLoop(params, conversationState);
 
-      return {
-        success: true,
-        content,
-        messages: conversationState.getMessages()
-      };
-    } catch (error) {
-      // ThreadInterruptedException 会自动向上传播，无需特殊处理
+    // 检查是否是中断状态
+    if (typeof result !== 'string') {
+      // 是中断状态
       return {
         success: false,
-        error: getErrorOrNew(error)
+        error: new Error(getInterruptionDescription(result))
       };
     }
+
+    // 正常返回
+    return {
+      success: true,
+      content: result,
+      messages: conversationState.getMessages()
+    };
   }
 
   /**
-   * 执行完整的 LLM-工具调用循环
-   *
-   * 核心职责：
-   * 1. 执行完整的 LLM-工具调用循环
-   * 2. 控制循环迭代次数
-   * 3. 管理 Token 使用监控
-   * 4. 处理对话状态
-   *
-   * @param params 执行参数
-   * @param conversationState 对话管理器
-   * @returns LLM 响应内容
-   */
-  private async executeLLMLoop(
-    params: LLMExecutionParams,
-    conversationState: ConversationManager
-  ): Promise<string> {
+  * 执行完整的 LLM-工具调用循环
+  *
+  * 核心职责：
+  * 1. 执行完整的 LLM-工具调用循环
+  * 2. 控制循环迭代次数
+  * 3. 管理 Token 使用监控
+  * 4. 处理对话状态
+  *
+  * @param params 执行参数
+  * @param conversationState 对话管理器
+  * @returns LLM 响应内容或中断状态
+  */
+ private async executeLLMLoop(
+   params: LLMExecutionParams,
+   conversationState: ConversationManager
+ ): Promise<string | InterruptionCheckResult> {
     const {
       prompt, profileId, parameters, tools,
       maxToolCallsPerRequest,
@@ -187,14 +190,11 @@ export class LLMExecutionCoordinator {
     const threadContext = this.executionContext?.getThreadRegistry().get(threadId);
     const abortSignal = threadContext?.getAbortSignal();
 
-    // 使用 AbortSignal 检查中断
+    // 使用返回值标记体系检查中断
     if (abortSignal) {
-      throwIfAborted(abortSignal);
-
-      // 如果已中止，抛出线程中断异常
-      const exception = getThreadInterruptedException(abortSignal);
-      if (exception && exception.interruptionType) {
-        throw exception;
+      const interruption = checkInterruption(abortSignal);
+      if (!shouldContinue(interruption)) {
+        return interruption;
       }
     }
 
@@ -264,11 +264,9 @@ export class LLMExecutionCoordinator {
 
     // 执行 LLM 调用前再次检查中断
     if (abortSignal) {
-      throwIfAborted(abortSignal);
-
-      const exception = getThreadInterruptedException(abortSignal);
-      if (exception && exception.interruptionType) {
-        throw exception;
+      const interruption = checkInterruption(abortSignal);
+      if (!shouldContinue(interruption)) {
+        return interruption;
       }
     }
 
@@ -284,9 +282,16 @@ export class LLMExecutionCoordinator {
       { abortSignal }
     );
 
+    // 检查是否是中断状态
+    if (!llmResult.success) {
+      return llmResult.interruption;
+    }
+
+    const result = llmResult.result;
+
     // 更新 Token 使用统计
-    if (llmResult.usage) {
-      conversationState.updateTokenUsage(llmResult.usage);
+    if (result.usage) {
+      conversationState.updateTokenUsage(result.usage);
     }
 
     // 完成当前请求的 Token 统计
@@ -295,8 +300,8 @@ export class LLMExecutionCoordinator {
     // 将 LLM 响应添加到对话历史
     const assistantMessage = {
       role: 'assistant' as MessageRole,
-      content: llmResult.content,
-      toolCalls: llmResult.toolCalls?.map((tc: any) => ({
+      content: result.content,
+      toolCalls: result.toolCalls?.map((tc: any) => ({
         id: tc.id,
         type: 'function' as const,
         function: {
@@ -320,12 +325,12 @@ export class LLMExecutionCoordinator {
     });
 
     // 检查是否有工具调用
-    if (llmResult.toolCalls && llmResult.toolCalls.length > 0) {
+    if (result.toolCalls && result.toolCalls.length > 0) {
       // 验证单次返回的工具调用数量
       const maxToolsPerResponse = maxToolCallsPerRequest ?? 3;
-      if (llmResult.toolCalls.length > maxToolsPerResponse) {
+      if (result.toolCalls.length > maxToolsPerResponse) {
         throw new ExecutionError(
-          `LLM returned ${llmResult.toolCalls.length} tool calls, ` +
+          `LLM returned ${result.toolCalls.length} tool calls, ` +
           `exceeds limit of ${maxToolsPerResponse}. ` +
           `Configure maxToolCallsPerRequest to adjust this limit.`,
           nodeId
@@ -334,11 +339,9 @@ export class LLMExecutionCoordinator {
 
       // 执行工具调用前检查中断
       if (abortSignal) {
-        throwIfAborted(abortSignal);
-
-        const exception = getThreadInterruptedException(abortSignal);
-        if (exception && exception.interruptionType) {
-          throw exception;
+        const interruption = checkInterruption(abortSignal);
+        if (!shouldContinue(interruption)) {
+          return interruption;
         }
       }
 
@@ -350,7 +353,7 @@ export class LLMExecutionCoordinator {
         threadContext?.toolVisibilityCoordinator
       );
       await this.executeToolCallsWithApproval(
-        llmResult.toolCalls,
+        result.toolCalls,
         conversationState,
         threadId,
         nodeId,
@@ -373,7 +376,7 @@ export class LLMExecutionCoordinator {
     });
 
     // 返回最终内容
-    return llmResult.content;
+    return result.content;
   }
 
   /**

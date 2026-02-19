@@ -35,7 +35,7 @@ import { resolveCheckpointConfig } from '../handlers/checkpoint-handlers/checkpo
 import { emit } from '../utils/event/event-emitter.js';
 import { buildThreadPausedEvent, buildThreadCancelledEvent } from '../utils/event/event-builder.js';
 import type { InterruptionDetector } from '../managers/interruption-detector.js';
-import { throwIfAborted, getThreadInterruptedException } from '@modular-agent/common-utils';
+import { checkInterruption, shouldContinue, getInterruptionDescription } from '@modular-agent/common-utils';
 
 /**
  * 节点执行协调器配置
@@ -182,14 +182,28 @@ export class NodeExecutionCoordinator {
     const threadId = threadContext.getThreadId();
     const abortSignal = threadContext.getAbortSignal();
 
-    // 使用 AbortSignal 检查中断
-    throwIfAborted(abortSignal);
-
-    // 如果已中止，处理中断（创建检查点、触发事件）
-    const exception = getThreadInterruptedException(abortSignal);
-    if (exception && exception.interruptionType) {
-      await this.handleInterruption(threadId, nodeId, exception.interruptionType);
-      throw exception;
+    // 使用返回值标记体系检查中断
+    const interruption = checkInterruption(abortSignal);
+    
+    if (!shouldContinue(interruption)) {
+      // 如果已中止，处理中断（创建检查点、触发事件）
+      const interruptionType = interruption.type === 'paused' ? 'PAUSE' : 'STOP';
+      await this.handleInterruption(threadId, nodeId, interruptionType);
+      
+      // 返回 CANCELLED 状态的结果，不抛出错误
+      const cancelledResult: NodeExecutionResult = {
+        nodeId,
+        nodeType,
+        status: 'CANCELLED',
+        step: threadContext.getNodeResults().length + 1,
+        error: getInterruptionDescription(interruption),
+        startTime: now(),
+        endTime: now(),
+        executionTime: 0
+      };
+      
+      threadContext.addNodeResult(cancelledResult);
+      return cancelledResult;
     }
 
     // 获取GraphNode以检查边界信息

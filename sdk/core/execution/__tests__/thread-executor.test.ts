@@ -75,14 +75,25 @@ describe('ThreadExecutor', () => {
   let mockGraph: Graph;
   let mockNavigator: GraphNavigator;
 
+  let mockEventManager: any;
+
   beforeEach(() => {
     // 重置所有 mock
     vi.clearAllMocks();
+
+    // 创建 mock EventManager
+    mockEventManager = {
+      emit: vi.fn(),
+      on: vi.fn(),
+      off: vi.fn(),
+      once: vi.fn()
+    };
 
     // 创建 mock Thread
     mockThread = {
       id: 'test-thread-id',
       workflowId: 'test-workflow-id',
+      workflowVersion: '1.0.0',
       status: 'RUNNING',
       currentNodeId: 'node-1',
       input: { test: 'input' },
@@ -93,17 +104,39 @@ describe('ThreadExecutor', () => {
       endTime: undefined,
       graph: {} as any,
       variables: [],
+      variableScopes: {
+        global: {},
+        thread: {},
+        local: [],
+        loop: []
+      },
       threadType: 'MAIN'
     };
 
     // 创建 mock Graph
     mockGraph = {
-      id: 'test-graph',
       nodes: new Map<string, GraphNode>(),
-      edges: [],
+      edges: new Map<string, any>(),
+      adjacencyList: new Map<string, Set<string>>(),
+      reverseAdjacencyList: new Map<string, Set<string>>(),
       startNodeId: 'node-1',
+      endNodeIds: new Set<string>(),
       getOutgoingEdges: vi.fn(),
-      getNode: vi.fn()
+      getNode: vi.fn(),
+      getEdge: vi.fn(),
+      getOutgoingNeighbors: vi.fn().mockReturnValue(new Set()),
+      getIncomingNeighbors: vi.fn().mockReturnValue(new Set()),
+      getIncomingEdges: vi.fn().mockReturnValue([]),
+      getEdgeBetween: vi.fn(),
+      hasNode: vi.fn().mockReturnValue(true),
+      hasEdge: vi.fn().mockReturnValue(false),
+      hasEdgeBetween: vi.fn().mockReturnValue(false),
+      getAllNodeIds: vi.fn().mockReturnValue([]),
+      getAllEdgeIds: vi.fn().mockReturnValue([]),
+      getNodeCount: vi.fn().mockReturnValue(0),
+      getEdgeCount: vi.fn().mockReturnValue(0),
+      getSourceNodes: vi.fn().mockReturnValue([]),
+      getSinkNodes: vi.fn().mockReturnValue([])
     };
 
     // 创建 mock Navigator
@@ -130,20 +163,23 @@ describe('ThreadExecutor', () => {
       thread: mockThread
     } as any;
 
+    // 创建 mock LLMExecutionCoordinator 实例
+    mockLLMExecutionCoordinator = new LLMExecutionCoordinator(
+     {} as any,
+     {} as any,
+     mockEventManager
+    );
+    mockLLMExecutionCoordinator.execute = vi.fn();
+    
     // 创建 mock NodeExecutionCoordinator 实例
     mockNodeExecutionCoordinator = new NodeExecutionCoordinator({
-      eventManager: mockEventManager,
-      llmCoordinator: mockLLMExecutionCoordinator
+     eventManager: mockEventManager,
+     llmCoordinator: mockLLMExecutionCoordinator
     });
     mockNodeExecutionCoordinator.executeNode = vi.fn();
     mockNodeExecutionCoordinator.handleInterruption = vi.fn();
-    
-    // 创建 mock LLMExecutionCoordinator 实例
-    mockLLMExecutionCoordinator = new LLMExecutionCoordinator();
-    mockLLMExecutionCoordinator.execute = vi.fn();
 
     // 创建 mock ExecutionContext
-    const mockExecutionContextInstance = new ExecutionContext();
     const mockExecutionContextConfig = {
       getEventManager: vi.fn().mockReturnValue({
         emit: vi.fn()
@@ -156,8 +192,7 @@ describe('ThreadExecutor', () => {
       getThreadRegistry: vi.fn().mockReturnValue({}),
       getToolContextManager: vi.fn().mockReturnValue({})
     };
-    Object.assign(mockExecutionContextInstance, mockExecutionContextConfig);
-    mockExecutionContext = mockExecutionContextInstance;
+    mockExecutionContext = mockExecutionContextConfig as any;
 
     // 创建 ThreadExecutor 实例
     threadExecutor = new ThreadExecutor(mockExecutionContext);
@@ -186,11 +221,16 @@ describe('ThreadExecutor', () => {
         id: 'node-1',
         type: 'SCRIPT',
         name: 'Test Node',
-        config: {}
+        config: {},
+        outgoingEdgeIds: [],
+        incomingEdgeIds: []
       };
 
       const mockGraphNode: GraphNode = {
         id: 'node-1',
+        type: 'SCRIPT',
+        name: 'Test Node',
+        workflowId: 'test-workflow-id',
         originalNode: mockNode,
         internalMetadata: {}
       };
@@ -229,11 +269,16 @@ describe('ThreadExecutor', () => {
         id: 'node-1',
         type: 'END',
         name: 'End Node',
-        config: {}
+        config: {},
+        outgoingEdgeIds: [],
+        incomingEdgeIds: []
       };
 
       const mockGraphNode: GraphNode = {
         id: 'node-1',
+        type: 'END',
+        name: 'End Node',
+        workflowId: 'test-workflow-id',
         originalNode: mockNode,
         internalMetadata: {}
       };
@@ -274,11 +319,16 @@ describe('ThreadExecutor', () => {
         id: 'node-1',
         type: 'SCRIPT',
         name: 'Test Node',
-        config: {}
+        config: {},
+        outgoingEdgeIds: [],
+        incomingEdgeIds: []
       };
 
       const mockGraphNode: GraphNode = {
         id: 'node-1',
+        type: 'SCRIPT',
+        name: 'Test Node',
+        workflowId: 'test-workflow-id',
         originalNode: mockNode,
         internalMetadata: {}
       };
@@ -303,11 +353,16 @@ describe('ThreadExecutor', () => {
         id: 'node-1',
         type: 'SCRIPT',
         name: 'Test Node',
-        config: {}
+        config: {},
+        outgoingEdgeIds: [],
+        incomingEdgeIds: []
       };
 
       const mockGraphNode: GraphNode = {
         id: 'node-1',
+        type: 'SCRIPT',
+        name: 'Test Node',
+        workflowId: 'test-workflow-id',
         originalNode: mockNode,
         internalMetadata: {}
       };
@@ -340,11 +395,16 @@ describe('ThreadExecutor', () => {
         id: 'node-1',
         type: 'SCRIPT',
         name: 'Test Node',
-        config: {}
+        config: {},
+        outgoingEdgeIds: [],
+        incomingEdgeIds: []
       };
 
       const mockGraphNode: GraphNode = {
         id: 'node-1',
+        type: 'SCRIPT',
+        name: 'Test Node',
+        workflowId: 'test-workflow-id',
         originalNode: mockNode,
         internalMetadata: {}
       };

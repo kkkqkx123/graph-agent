@@ -31,6 +31,7 @@ export * from './di/index.js';
 // AbortSignal 和线程中断工具
 export * from './utils/signal/abort-utils.js';
 export * from './utils/signal/thread-interruption-utils.js';
+export * from './utils/signal/interruption-types.js';
 
 // 日志系统（选择性导出以避免命名冲突）
 export {

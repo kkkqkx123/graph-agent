@@ -1,340 +1,283 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
-  getThreadInterruptedException,
-  isThreadInterruption,
-  isThreadInterruptedException,
-  isInterruptionError,
-  extractThreadInterruption,
+  checkInterruption,
+  shouldContinue,
+  isInterrupted,
   getInterruptionType,
   getThreadId,
   getNodeId,
-  createThreadInterruptedException,
-  normalizeInterruptionError,
-  throwIfAborted,
-  withThreadInterruption,
-  withThreadInterruptionArg,
+  createInterruptionInfo,
   getInterruptionDescription,
+  withInterruptionCheck,
 } from '../thread-interruption-utils';
 import { ThreadInterruptedException } from '@modular-agent/types';
 
 describe('thread-interruption-utils', () => {
-  describe('getThreadInterruptedException', () => {
-    it('should return ThreadInterruptedException when signal reason is an instance of ThreadInterruptedException', () => {
+  describe('checkInterruption', () => {
+    it('should return continue when signal is not aborted', () => {
+      const controller = new AbortController();
+      
+      const result = checkInterruption(controller.signal);
+      expect(result).toEqual({ type: 'continue' });
+    });
+
+    it('should return paused when signal has PAUSE interruption', () => {
+      const controller = new AbortController();
+      const threadInterrupt = new ThreadInterruptedException('Test interruption', 'PAUSE', 'thread-1', 'node-1');
+      controller.abort(threadInterrupt);
+      
+      const result = checkInterruption(controller.signal);
+      expect(result).toEqual({
+        type: 'paused',
+        threadId: 'thread-1',
+        nodeId: 'node-1'
+      });
+    });
+
+    it('should return stopped when signal has STOP interruption', () => {
       const controller = new AbortController();
       const threadInterrupt = new ThreadInterruptedException('Test interruption', 'STOP', 'thread-1', 'node-1');
       controller.abort(threadInterrupt);
       
-      const result = getThreadInterruptedException(controller.signal);
-      expect(result).toBe(threadInterrupt);
+      const result = checkInterruption(controller.signal);
+      expect(result).toEqual({
+        type: 'stopped',
+        threadId: 'thread-1',
+        nodeId: 'node-1'
+      });
     });
 
-    it('should return undefined when signal reason is not a ThreadInterruptedException', () => {
+    it('should return aborted when signal is aborted with other reason', () => {
       const controller = new AbortController();
       controller.abort(new Error('Regular error'));
       
-      const result = getThreadInterruptedException(controller.signal);
-      expect(result).toBeUndefined();
+      const result = checkInterruption(controller.signal);
+      expect(result.type).toBe('aborted');
+      expect(result.reason).toBeInstanceOf(Error);
     });
 
-    it('should return undefined when signal is not aborted', () => {
-      const controller = new AbortController();
-      
-      const result = getThreadInterruptedException(controller.signal);
-      expect(result).toBeUndefined();
-    });
-  });
-
-  describe('isThreadInterruption', () => {
-    it('should return true when signal has ThreadInterruptedException reason', () => {
-      const controller = new AbortController();
-      const threadInterrupt = new ThreadInterruptedException('Test interruption', 'STOP', 'thread-1', 'node-1');
-      controller.abort(threadInterrupt);
-      
-      expect(isThreadInterruption(controller.signal)).toBe(true);
-    });
-
-    it('should return false when signal does not have ThreadInterruptedException reason', () => {
-      const controller = new AbortController();
-      controller.abort(new Error('Regular error'));
-      
-      expect(isThreadInterruption(controller.signal)).toBe(false);
-    });
-
-    it('should return false when signal is not aborted', () => {
-      const controller = new AbortController();
-      
-      expect(isThreadInterruption(controller.signal)).toBe(false);
+    it('should return continue when signal is undefined', () => {
+      const result = checkInterruption(undefined);
+      expect(result).toEqual({ type: 'continue' });
     });
   });
 
-  describe('isThreadInterruptedException', () => {
-    it('should return true when error is ThreadInterruptedException', () => {
-      const threadInterrupt = new ThreadInterruptedException('Test interruption', 'STOP', 'thread-1', 'node-1');
-      
-      expect(isThreadInterruptedException(threadInterrupt)).toBe(true);
+  describe('shouldContinue', () => {
+    it('should return true for continue result', () => {
+      const result = { type: 'continue' as const };
+      expect(shouldContinue(result)).toBe(true);
     });
 
-    it('should return false when error is not ThreadInterruptedException', () => {
-      const error = new Error('Regular error');
-      
-      expect(isThreadInterruptedException(error)).toBe(false);
+    it('should return false for paused result', () => {
+      const result = { type: 'paused' as const, nodeId: 'node-1' };
+      expect(shouldContinue(result)).toBe(false);
     });
 
-    it('should return false when error is null or undefined', () => {
-      expect(isThreadInterruptedException(null)).toBe(false);
-      expect(isThreadInterruptedException(undefined)).toBe(false);
-    });
-  });
-
-  describe('isInterruptionError', () => {
-    it('should return true for ThreadInterruptedException', () => {
-      const threadInterrupt = new ThreadInterruptedException('Test interruption', 'STOP', 'thread-1', 'node-1');
-      
-      expect(isInterruptionError(threadInterrupt)).toBe(true);
+    it('should return false for stopped result', () => {
+      const result = { type: 'stopped' as const, nodeId: 'node-1' };
+      expect(shouldContinue(result)).toBe(false);
     });
 
-    it('should return true for AbortError', () => {
-      const abortError = new Error('AbortError');
-      abortError.name = 'AbortError';
-      
-      expect(isInterruptionError(abortError)).toBe(true);
-    });
-
-    it('should return false for regular error', () => {
-      const error = new Error('Regular error');
-      
-      expect(isInterruptionError(error)).toBe(false);
+    it('should return false for aborted result', () => {
+      const result = { type: 'aborted' as const, reason: 'test' };
+      expect(shouldContinue(result)).toBe(false);
     });
   });
 
-  describe('extractThreadInterruption', () => {
-    it('should return ThreadInterruptedException when error is ThreadInterruptedException', () => {
-      const threadInterrupt = new ThreadInterruptedException('Test interruption', 'STOP', 'thread-1', 'node-1');
-      const result = extractThreadInterruption(threadInterrupt);
-      
-      expect(result).toBe(threadInterrupt);
+  describe('isInterrupted', () => {
+    it('should return false for continue result', () => {
+      const result = { type: 'continue' as const };
+      expect(isInterrupted(result)).toBe(false);
     });
 
-    it('should return undefined for regular error', () => {
-      const error = new Error('Regular error');
-      const result = extractThreadInterruption(error);
-      
-      expect(result).toBeUndefined();
+    it('should return true for paused result', () => {
+      const result = { type: 'paused' as const, nodeId: 'node-1' };
+      expect(isInterrupted(result)).toBe(true);
     });
 
-    it('should return undefined for AbortError', () => {
-      const abortError = new Error('Operation aborted');
-      abortError.name = 'AbortError';
-      const result = extractThreadInterruption(abortError);
-      
-      expect(result).toBeUndefined();
+    it('should return true for stopped result', () => {
+      const result = { type: 'stopped' as const, nodeId: 'node-1' };
+      expect(isInterrupted(result)).toBe(true);
+    });
+
+    it('should return true for aborted result', () => {
+      const result = { type: 'aborted' as const, reason: 'test' };
+      expect(isInterrupted(result)).toBe(true);
     });
   });
 
   describe('getInterruptionType', () => {
-    it('should return interruption type from ThreadInterruptedException', () => {
-      const controller = new AbortController();
-      const threadInterrupt = new ThreadInterruptedException('Test interruption', 'PAUSE', 'thread-1', 'node-1');
-      controller.abort(threadInterrupt);
-      
-      expect(getInterruptionType(controller.signal)).toBe('PAUSE');
+    it('should return PAUSE for paused result', () => {
+      const result = { type: 'paused' as const, nodeId: 'node-1' };
+      expect(getInterruptionType(result)).toBe('PAUSE');
     });
 
-    it('should return null when signal does not have ThreadInterruptedException', () => {
-      const controller = new AbortController();
-      controller.abort(new Error('Regular error'));
-      
-      expect(getInterruptionType(controller.signal)).toBeNull();
+    it('should return STOP for stopped result', () => {
+      const result = { type: 'stopped' as const, nodeId: 'node-1' };
+      expect(getInterruptionType(result)).toBe('STOP');
     });
 
-    it('should return null when signal is not aborted', () => {
-      const controller = new AbortController();
-      
-      expect(getInterruptionType(controller.signal)).toBeNull();
+    it('should return null for continue result', () => {
+      const result = { type: 'continue' as const };
+      expect(getInterruptionType(result)).toBeNull();
+    });
+
+    it('should return null for aborted result', () => {
+      const result = { type: 'aborted' as const, reason: 'test' };
+      expect(getInterruptionType(result)).toBeNull();
     });
   });
 
   describe('getThreadId', () => {
-    it('should return thread ID from ThreadInterruptedException', () => {
-      const controller = new AbortController();
-      const threadInterrupt = new ThreadInterruptedException('Test interruption', 'STOP', 'thread-1', 'node-1');
-      controller.abort(threadInterrupt);
-      
-      expect(getThreadId(controller.signal)).toBe('thread-1');
+    it('should return thread ID for paused result', () => {
+      const result = { type: 'paused' as const, threadId: 'thread-1', nodeId: 'node-1' };
+      expect(getThreadId(result)).toBe('thread-1');
     });
 
-    it('should return undefined when signal does not have ThreadInterruptedException', () => {
-      const controller = new AbortController();
-      controller.abort(new Error('Regular error'));
-      
-      expect(getThreadId(controller.signal)).toBeUndefined();
+    it('should return thread ID for stopped result', () => {
+      const result = { type: 'stopped' as const, threadId: 'thread-1', nodeId: 'node-1' };
+      expect(getThreadId(result)).toBe('thread-1');
+    });
+
+    it('should return undefined for continue result', () => {
+      const result = { type: 'continue' as const };
+      expect(getThreadId(result)).toBeUndefined();
+    });
+
+    it('should return undefined for aborted result', () => {
+      const result = { type: 'aborted' as const, reason: 'test' };
+      expect(getThreadId(result)).toBeUndefined();
     });
   });
 
   describe('getNodeId', () => {
-    it('should return node ID from ThreadInterruptedException', () => {
-      const controller = new AbortController();
-      const threadInterrupt = new ThreadInterruptedException('Test interruption', 'STOP', 'thread-1', 'node-1');
-      controller.abort(threadInterrupt);
-      
-      expect(getNodeId(controller.signal)).toBe('node-1');
+    it('should return node ID for paused result', () => {
+      const result = { type: 'paused' as const, threadId: 'thread-1', nodeId: 'node-1' };
+      expect(getNodeId(result)).toBe('node-1');
     });
 
-    it('should return undefined when signal does not have ThreadInterruptedException', () => {
-      const controller = new AbortController();
-      controller.abort(new Error('Regular error'));
-      
-      expect(getNodeId(controller.signal)).toBeUndefined();
-    });
-  });
-
-  describe('createThreadInterruptedException', () => {
-    it('should create ThreadInterruptedException with correct properties', () => {
-      const exception = createThreadInterruptedException('PAUSE', 'thread-1', 'node-1');
-      
-      expect(exception).toBeInstanceOf(ThreadInterruptedException);
-      expect(exception.message).toBe('Thread pause');
-      expect(exception.interruptionType).toBe('PAUSE');
-      expect(exception.threadId).toBe('thread-1');
-      expect(exception.nodeId).toBe('node-1');
+    it('should return node ID for stopped result', () => {
+      const result = { type: 'stopped' as const, threadId: 'thread-1', nodeId: 'node-1' };
+      expect(getNodeId(result)).toBe('node-1');
     });
 
-    it('should create ThreadInterruptedException with STOP type', () => {
-      const exception = createThreadInterruptedException('STOP', 'thread-2', 'node-2');
-      
-      expect(exception.interruptionType).toBe('STOP');
-      expect(exception.message).toBe('Thread stop');
+    it('should return undefined for continue result', () => {
+      const result = { type: 'continue' as const };
+      expect(getNodeId(result)).toBeUndefined();
+    });
+
+    it('should return undefined for aborted result', () => {
+      const result = { type: 'aborted' as const, reason: 'test' };
+      expect(getNodeId(result)).toBeUndefined();
     });
   });
 
-  describe('normalizeInterruptionError', () => {
-    it('should return ThreadInterruptedException when error is already ThreadInterruptedException', () => {
-      const originalError = new ThreadInterruptedException('Test', 'STOP', 'thread-1', 'node-1');
-      const result = normalizeInterruptionError(originalError);
+  describe('createInterruptionInfo', () => {
+    it('should create interruption info with PAUSE type', () => {
+      const info = createInterruptionInfo('PAUSE', 'thread-1', 'node-1');
       
-      expect(result).toBe(originalError);
+      expect(info.type).toBe('PAUSE');
+      expect(info.threadId).toBe('thread-1');
+      expect(info.nodeId).toBe('node-1');
+      expect(info.timestamp).toBeDefined();
     });
 
-    it('should convert AbortError to ThreadInterruptedException when threadId and nodeId are provided', () => {
-      const abortError = new Error('Operation aborted');
-      abortError.name = 'AbortError';
-      const result = normalizeInterruptionError(abortError, 'thread-1', 'node-1');
+    it('should create interruption info with STOP type', () => {
+      const info = createInterruptionInfo('STOP', 'thread-2', 'node-2');
       
-      expect(result).toBeInstanceOf(ThreadInterruptedException);
-      expect(result.interruptionType).toBe('STOP'); // Default conversion
-      expect(result.threadId).toBe('thread-1');
-      expect(result.nodeId).toBe('node-1');
-    });
-
-    it('should return undefined when error is AbortError but threadId or nodeId is not provided', () => {
-      const abortError = new Error('Operation aborted');
-      abortError.name = 'AbortError';
-      const result = normalizeInterruptionError(abortError);
-      
-      expect(result).toBeUndefined();
-    });
-
-    it('should return undefined for regular error', () => {
-      const error = new Error('Regular error');
-      const result = normalizeInterruptionError(error);
-      
-      expect(result).toBeUndefined();
-    });
-  });
-
-  describe('throwIfAborted', () => {
-    it('should not throw when signal is not aborted', () => {
-      const controller = new AbortController();
-      
-      expect(() => throwIfAborted(controller.signal)).not.toThrow();
-    });
-
-    it('should throw ThreadInterruptedException when signal has ThreadInterruptedException reason', () => {
-      const controller = new AbortController();
-      const threadInterrupt = new ThreadInterruptedException('Test interruption', 'STOP', 'thread-1', 'node-1');
-      controller.abort(threadInterrupt);
-      
-      expect(() => throwIfAborted(controller.signal)).toThrow(threadInterrupt);
-    });
-
-    it('should throw general error when signal is aborted with other reason', () => {
-      const controller = new AbortController();
-      controller.abort(new Error('General abort'));
-      
-      expect(() => throwIfAborted(controller.signal)).toThrow('General abort');
-    });
-
-    it('should throw generic error when signal is aborted without reason', () => {
-      const controller = new AbortController();
-      controller.abort();
-      
-      expect(() => throwIfAborted(controller.signal)).toThrow('This operation was aborted');
-    });
-  });
-
-  describe('withThreadInterruption', () => {
-    it('should execute function when signal is not aborted', async () => {
-      const controller = new AbortController();
-      const mockFn = vi.fn().mockResolvedValue('success');
-      
-      const result = await withThreadInterruption(mockFn, controller.signal);
-      
-      expect(result).toBe('success');
-      expect(mockFn).toHaveBeenCalledTimes(1);
-    });
-
-    it('should throw ThreadInterruptedException when signal has ThreadInterruptedException reason', async () => {
-      const controller = new AbortController();
-      const threadInterrupt = new ThreadInterruptedException('Test interruption', 'STOP', 'thread-1', 'node-1');
-      controller.abort(threadInterrupt);
-      
-      const mockFn = vi.fn().mockResolvedValue('success');
-      
-      await expect(withThreadInterruption(mockFn, controller.signal)).rejects.toThrow(threadInterrupt);
-    });
-  });
-
-  describe('withThreadInterruptionArg', () => {
-    it('should execute function with signal when signal is not aborted', async () => {
-      const controller = new AbortController();
-      const mockFn = vi.fn().mockImplementation((signal) => Promise.resolve(signal));
-      
-      const result = await withThreadInterruptionArg(mockFn, controller.signal);
-      
-      expect(result).toBe(controller.signal);
-      expect(mockFn).toHaveBeenCalledWith(controller.signal);
-    });
-
-    it('should throw ThreadInterruptedException when signal has ThreadInterruptedException reason', async () => {
-      const controller = new AbortController();
-      const threadInterrupt = new ThreadInterruptedException('Test interruption', 'STOP', 'thread-1', 'node-1');
-      controller.abort(threadInterrupt);
-      
-      const mockFn = vi.fn().mockImplementation((signal) => Promise.resolve(signal));
-      
-      await expect(withThreadInterruptionArg(mockFn, controller.signal)).rejects.toThrow(threadInterrupt);
+      expect(info.type).toBe('STOP');
+      expect(info.threadId).toBe('thread-2');
+      expect(info.nodeId).toBe('node-2');
     });
   });
 
   describe('getInterruptionDescription', () => {
-    it('should return description from ThreadInterruptedException', () => {
+    it('should return description for paused result', () => {
+      const result = { type: 'paused' as const, nodeId: 'node-1' };
+      const description = getInterruptionDescription(result);
+      
+      expect(description).toBe('Thread paused at node: node-1');
+    });
+
+    it('should return description for stopped result', () => {
+      const result = { type: 'stopped' as const, nodeId: 'node-1' };
+      const description = getInterruptionDescription(result);
+      
+      expect(description).toBe('Thread stopped at node: node-1');
+    });
+
+    it('should return description for continue result', () => {
+      const result = { type: 'continue' as const };
+      const description = getInterruptionDescription(result);
+      
+      expect(description).toBe('Execution continuing');
+    });
+
+    it('should return description for aborted result', () => {
+      const result = { type: 'aborted' as const, reason: 'test reason' };
+      const description = getInterruptionDescription(result);
+      
+      expect(description).toBe('test reason');
+    });
+  });
+
+  describe('withInterruptionCheck', () => {
+    it('should execute function when signal is not aborted', async () => {
+      const controller = new AbortController();
+      const mockFn = vi.fn().mockResolvedValue('success');
+      
+      const result = await withInterruptionCheck(mockFn, controller.signal);
+      
+      expect(result).toEqual({ result: 'success', status: 'completed' });
+      expect(mockFn).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return interrupted when signal has PAUSE interruption', async () => {
       const controller = new AbortController();
       const threadInterrupt = new ThreadInterruptedException('Test interruption', 'PAUSE', 'thread-1', 'node-1');
       controller.abort(threadInterrupt);
       
-      const description = getInterruptionDescription(controller.signal);
+      const mockFn = vi.fn().mockResolvedValue('success');
       
-      expect(description).toBe('Thread pause at node: node-1');
+      const result = await withInterruptionCheck(mockFn, controller.signal);
+      
+      expect(result.status).toBe('interrupted');
+      expect(result.interruption.type).toBe('paused');
+      expect(mockFn).not.toHaveBeenCalled();
     });
 
-    it('should return generic description when signal does not have ThreadInterruptedException', () => {
+    it('should return interrupted when signal has STOP interruption', async () => {
       const controller = new AbortController();
-      controller.abort(new Error('Regular error'));
+      const threadInterrupt = new ThreadInterruptedException('Test interruption', 'STOP', 'thread-1', 'node-1');
+      controller.abort(threadInterrupt);
+      
+      const mockFn = vi.fn().mockResolvedValue('success');
+      
+      const result = await withInterruptionCheck(mockFn, controller.signal);
+      
+      expect(result.status).toBe('interrupted');
+      expect(result.interruption.type).toBe('stopped');
+      expect(mockFn).not.toHaveBeenCalled();
+    });
 
-      const description = getInterruptionDescription(controller.signal);
+    it('should handle AbortError from function', async () => {
+      const controller = new AbortController();
+      const abortError = new Error('AbortError');
+      abortError.name = 'AbortError';
+      const mockFn = vi.fn().mockRejectedValue(abortError);
+      
+      const result = await withInterruptionCheck(mockFn, controller.signal);
+      
+      // 当函数抛出 AbortError 时，应该返回 interrupted 状态
+      expect(result.status).toBe('interrupted');
+      expect(mockFn).toHaveBeenCalledTimes(1);
+    });
 
-      // 使用统一的错误消息 'This operation was aborted'
-      expect(description).toBe('This operation was aborted');
+    it('should throw non-abort errors', async () => {
+      const controller = new AbortController();
+      const mockFn = vi.fn().mockRejectedValue(new Error('Regular error'));
+      
+      await expect(withInterruptionCheck(mockFn, controller.signal)).rejects.toThrow('Regular error');
     });
   });
 });

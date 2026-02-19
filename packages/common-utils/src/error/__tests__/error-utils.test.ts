@@ -7,7 +7,6 @@ import {
   getErrorOrNew,
   createAbortError,
   isAbortError,
-  abortErrorToResult,
 } from '../error-utils.js';
 import { AbortError, ThreadInterruptedException } from '@modular-agent/types';
 
@@ -259,100 +258,4 @@ describe('error-utils', () => {
     });
   });
 
-  describe('abortErrorToResult', () => {
-    it('应该将包含 ThreadInterruptedException 的 AbortError 转换为 Err Result', () => {
-      const threadInterrupt = new ThreadInterruptedException(
-        'Thread interrupted',
-        'STOP',
-        'thread-1',
-        'node-1'
-      );
-      const abortError = new AbortError('Operation aborted', threadInterrupt);
-      
-      const result = abortErrorToResult<string>(abortError);
-      
-      expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error).toBe(threadInterrupt);
-        expect(result.error.interruptionType).toBe('STOP');
-        expect(result.error.threadId).toBe('thread-1');
-        expect(result.error.nodeId).toBe('node-1');
-      }
-    });
-
-    it('应该为没有 ThreadInterruptedException 的 AbortError 创建新的 ThreadInterruptedException', () => {
-      const abortError = new AbortError('Operation aborted');
-      
-      const result = abortErrorToResult<string>(abortError);
-      
-      expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error).toBeInstanceOf(ThreadInterruptedException);
-        expect(result.error.message).toBe('Operation aborted');
-        expect(result.error.interruptionType).toBe('STOP');
-      }
-    });
-
-    it('应该为非 AbortError 创建通用的 ThreadInterruptedException', () => {
-      const error = new Error('Regular error');
-      
-      const result = abortErrorToResult<string>(error);
-      
-      expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error).toBeInstanceOf(ThreadInterruptedException);
-        expect(result.error.message).toBe('Unknown abort error');
-        expect(result.error.interruptionType).toBe('STOP');
-      }
-    });
-
-    it('应该为字符串创建通用的 ThreadInterruptedException', () => {
-      const error = 'String error';
-      
-      const result = abortErrorToResult<string>(error);
-      
-      expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error).toBeInstanceOf(ThreadInterruptedException);
-        expect(result.error.message).toBe('Unknown abort error');
-        expect(result.error.interruptionType).toBe('STOP');
-      }
-    });
-
-    it('应该为 null 创建通用的 ThreadInterruptedException', () => {
-      const result = abortErrorToResult<string>(null);
-      
-      expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        expect(result.error).toBeInstanceOf(ThreadInterruptedException);
-        expect(result.error.message).toBe('Unknown abort error');
-        expect(result.error.interruptionType).toBe('STOP');
-      }
-    });
-
-    it('应该为嵌套的 AbortError 创建新的 ThreadInterruptedException（使用 AbortError 的消息）', () => {
-      const threadInterrupt = new ThreadInterruptedException(
-        'Thread interrupted',
-        'PAUSE',
-        'thread-2',
-        'node-2'
-      );
-      const abortError = new AbortError('Operation aborted', threadInterrupt);
-      const wrapperError = new Error('Wrapper error');
-      wrapperError.cause = abortError;
-      
-      const result = abortErrorToResult<string>(wrapperError);
-      
-      expect(result.isErr()).toBe(true);
-      if (result.isErr()) {
-        // isAbortError 检测到嵌套的 AbortError，但 abortErrorToResult 只检查 error.cause
-        // 由于 abortError.cause 是 ThreadInterruptedException，所以应该返回它
-        // 但实际上函数检查的是 wrapperError.cause（即 abortError）是否是 ThreadInterruptedException
-        // abortError 不是 ThreadInterruptedException，所以创建新的
-        expect(result.error).toBeInstanceOf(ThreadInterruptedException);
-        expect(result.error.message).toBe('Operation aborted');
-        expect(result.error.interruptionType).toBe('STOP');
-      }
-    });
-  });
 });

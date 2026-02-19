@@ -16,7 +16,7 @@
 
 import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { InterruptionType } from './interruption-manager.js';
-import { isAborted, getThreadInterruptedException } from '@modular-agent/common-utils';
+import { isAborted, checkInterruption, getInterruptionType as getInterruptionTypeFromResult } from '@modular-agent/common-utils';
 
 /**
  * 中断检测器接口
@@ -86,7 +86,7 @@ export class InterruptionDetectorImpl implements InterruptionDetector {
    */
   getInterruptionType(threadId: string): InterruptionType {
     const signal = this.getAbortSignal(threadId);
-    const exception = getThreadInterruptedException(signal);
-    return exception?.interruptionType ?? null;
+    const result = checkInterruption(signal);
+    return getInterruptionTypeFromResult(result);
   }
 }
