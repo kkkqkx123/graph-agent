@@ -5,6 +5,7 @@
  * 重构说明：
  * - 使用APIFactory统一管理API实例创建
  * - 简化配置，移除不必要的配置机制
+ * - 支持应用层提供 CheckpointStorageCallback 实现
  */
 
 import { APIFactory } from './api-factory.js';
@@ -13,6 +14,7 @@ import { getData } from '../types/execution-result.js';
 import type { SDKOptions } from '@modular-agent/types';
 import { logger } from '../../utils/index.js';
 import { getErrorMessage } from '@modular-agent/common-utils';
+import { setStorageCallback } from '../../core/di/container-config.js';
 
 /**
  * SDK主类 - 统一API入口（内部类，不导出）
@@ -26,6 +28,11 @@ class SDK {
    * @param options SDK配置选项
    */
   constructor(options?: SDKOptions) {
+    // 如果提供了存储回调，设置到 DI 容器
+    if (options?.checkpointStorageCallback) {
+      setStorageCallback(options.checkpointStorageCallback);
+    }
+    
     // 初始化API工厂
     this.factory = APIFactory.getInstance();
     // 初始化依赖管理器

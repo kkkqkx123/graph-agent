@@ -38,11 +38,26 @@ import { ThreadBuilder } from '../execution/thread-builder.js';
 import { ThreadExecutor } from '../execution/thread-executor.js';
 import { ThreadLifecycleCoordinator } from '../execution/coordinators/thread-lifecycle-coordinator.js';
 
-// 存储实现
-import { MemoryCheckpointStorage } from '../storage/memory-checkpoint-storage.js';
-
 /** 全局容器实例 */
 let container: Container | null = null;
+/** 应用层提供的存储回调 */
+let storageCallback: any = null;
+
+/**
+ * 设置存储回调
+ * @param callback 存储回调接口实现
+ */
+export function setStorageCallback(callback: any): void {
+  storageCallback = callback;
+}
+
+/**
+ * 获取存储回调
+ * @returns 存储回调接口实现
+ */
+export function getStorageCallback(): any {
+  return storageCallback;
+}
 
 /**
  * 初始化 DI 容器
@@ -161,11 +176,22 @@ export function initializeContainer(): Container {
     })
     .inSingletonScope();
 
+  // CheckpointStateManager 需要应用层提供 CheckpointStorageCallback 实现
+  // 应用层需要在初始化 SDK 时注入存储回调
+  // 这里使用工厂函数，允许应用层覆盖
   container.bind(Identifiers.CheckpointStateManager)
     .toDynamicValue((c: any) => {
-      const checkpointStorage = new MemoryCheckpointStorage();
       const eventManager = c.get(Identifiers.EventManager);
-      return new CheckpointStateManager(checkpointStorage, eventManager);
+      const callback = getStorageCallback();
+      
+      if (!callback) {
+        throw new Error(
+          'CheckpointStateManager requires a CheckpointStorageCallback implementation. ' +
+          'Please provide it via SDK initialization options using setStorageCallback().'
+        );
+      }
+      
+      return new CheckpointStateManager(callback, eventManager);
     })
     .inSingletonScope();
 
@@ -270,6 +296,7 @@ export function resetContainer(): void {
     container.clearAllCaches();
     container = null;
   }
+  storageCallback = null;
 }
 
 /**

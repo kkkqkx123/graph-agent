@@ -8,7 +8,6 @@ import { GenericResourceAPI } from '../generic-resource-api.js';
 import { CheckpointStateManager } from '../../../core/execution/managers/checkpoint-state-manager.js';
 import type { Checkpoint, CheckpointMetadata } from '@modular-agent/types';
 import type { CheckpointFilter } from '@modular-agent/types';
-import { MemoryCheckpointStorage } from '../../../core/storage/memory-checkpoint-storage.js';
 import { CheckpointCoordinator } from '../../../core/execution/coordinators/checkpoint-coordinator.js';
 import { getContainer } from '../../../core/di/index.js';
 import * as Identifiers from '../../../core/di/service-identifiers.js';
@@ -25,10 +24,10 @@ export class CheckpointResourceAPI extends GenericResourceAPI<Checkpoint, string
   constructor(eventManager?: EventManager) {
     super();
     
-    // 创建默认的检查点管理组件
-    const storage = new MemoryCheckpointStorage();
+    // 从 DI 容器获取 CheckpointStateManager
+    const container = getContainer();
+    this.stateManager = container.get(Identifiers.CheckpointStateManager);
     this.eventManager = eventManager;
-    this.stateManager = new CheckpointStateManager(storage, eventManager);
   }
 
   // ============================================================================

@@ -26,8 +26,8 @@ export interface SDKOptions {
   defaultTimeout?: number;
   /** 是否启用检查点 */
   enableCheckpoints?: boolean;
-  /** 检查点存储配置 */
-  checkpointStorage?: any;
+  /** 检查点存储回调接口（由应用层实现） */
+  checkpointStorageCallback?: any;
   /** 是否启用验证 */
   enableValidation?: boolean;
 }
@@ -46,8 +46,8 @@ export interface SDKDependencies {
   scriptRegistry?: any;
   /** 事件管理器 */
   eventManager?: any;
-  /** 检查点存储 */
-  checkpointStorage?: any;
+  /** 检查点存储回调接口（由应用层实现） */
+  checkpointStorageCallback?: any;
 }
 
 // ============================================================================

@@ -4,8 +4,9 @@
  */
 
 import type { Checkpoint } from '@modular-agent/types';
-import type { CheckpointStorage, CheckpointStorageMetadata, CleanupPolicy, CleanupResult } from '@modular-agent/types';
+import type { CheckpointStorageMetadata, CleanupPolicy, CleanupResult } from '@modular-agent/types';
 import type { EventManager } from '../../services/event-manager.js';
+import type { CheckpointStorageCallback } from '../../storage/checkpoint-storage-callback.js';
 import { LifecycleCapable } from './lifecycle-capable.js';
 import { serializeCheckpoint, deserializeCheckpoint } from '../utils/checkpoint-serializer.js';
 import { createCleanupStrategy } from '../utils/checkpoint-cleanup-policy.js';
@@ -31,18 +32,18 @@ function extractStorageMetadata(checkpoint: Checkpoint): CheckpointStorageMetada
  * 检查点状态管理器
  */
 export class CheckpointStateManager implements LifecycleCapable<void> {
-  private storage: CheckpointStorage;
+  private storageCallback: CheckpointStorageCallback;
   private cleanupPolicy?: CleanupPolicy;
   private checkpointSizes: Map<string, number> = new Map(); // checkpointId -> size in bytes
   private eventManager?: EventManager;
 
   /**
    * 构造函数
-   * @param storage 存储实现
+   * @param storageCallback 存储回调接口（由应用层实现）
    * @param eventManager 事件管理器（可选）
    */
-  constructor(storage: CheckpointStorage, eventManager?: EventManager) {
-    this.storage = storage;
+  constructor(storageCallback: CheckpointStorageCallback, eventManager?: EventManager) {
+    this.storageCallback = storageCallback;
     this.eventManager = eventManager;
   }
 
@@ -82,12 +83,12 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
     }
 
     // 获取所有检查点ID
-    const checkpointIds = await this.storage.list();
+    const checkpointIds = await this.storageCallback.listCheckpoints();
 
     // 获取所有检查点的元数据和大小
     const checkpointInfoArray: Array<{ checkpointId: string; metadata: CheckpointStorageMetadata }> = [];
     for (const checkpointId of checkpointIds) {
-      const data = await this.storage.load(checkpointId);
+      const data = await this.storageCallback.loadCheckpoint(checkpointId);
       if (data) {
         const checkpoint = deserializeCheckpoint(data);
         const metadata = extractStorageMetadata(checkpoint);
@@ -109,7 +110,7 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
     let freedSpaceBytes = 0;
     for (const checkpointId of toDeleteIds) {
       const size = this.checkpointSizes.get(checkpointId) || 0;
-      await this.storage.delete(checkpointId);
+      await this.storageCallback.deleteCheckpoint(checkpointId);
       freedSpaceBytes += size;
       this.checkpointSizes.delete(checkpointId);
     }
@@ -129,7 +130,7 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
    * @returns 删除的检查点数量
    */
   async cleanupThreadCheckpoints(threadId: string): Promise<number> {
-    const checkpointIds = await this.storage.list({ threadId });
+    const checkpointIds = await this.storageCallback.listCheckpoints({ threadId });
 
     for (const checkpointId of checkpointIds) {
       await this.delete(checkpointId, 'cleanup');
@@ -150,7 +151,7 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
       const data = serializeCheckpoint(checkpointData);
       const storageMetadata = extractStorageMetadata(checkpointData);
 
-      await this.storage.save(checkpointId, data, storageMetadata);
+      await this.storageCallback.saveCheckpoint(checkpointId, data, storageMetadata);
       this.checkpointSizes.set(checkpointId, data.length);
 
       // 触发检查点创建事件
@@ -201,7 +202,7 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
    * @returns 检查点对象
    */
   async get(checkpointId: string): Promise<Checkpoint | null> {
-    const data = await this.storage.load(checkpointId);
+    const data = await this.storageCallback.loadCheckpoint(checkpointId);
     if (!data) {
       return null;
     }
@@ -214,7 +215,7 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
    * @returns 检查点ID数组
    */
   async list(options?: import('@modular-agent/types').CheckpointListOptions): Promise<string[]> {
-    return this.storage.list(options);
+    return this.storageCallback.listCheckpoints(options);
   }
 
   /**
@@ -227,7 +228,7 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
       // 先获取检查点信息（用于触发事件）
       const checkpoint = await this.get(checkpointId);
 
-      await this.storage.delete(checkpointId);
+      await this.storageCallback.deleteCheckpoint(checkpointId);
       this.checkpointSizes.delete(checkpointId);
 
       // 触发检查点删除事件
@@ -281,9 +282,11 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
    * 清空所有检查点
    */
   async clearAll(): Promise<void> {
-    if (this.storage.clear) {
-      await this.storage.clear();
+    const checkpointIds = await this.storageCallback.listCheckpoints();
+    for (const checkpointId of checkpointIds) {
+      await this.storageCallback.deleteCheckpoint(checkpointId);
     }
+    this.checkpointSizes.clear();
   }
 
   /**
