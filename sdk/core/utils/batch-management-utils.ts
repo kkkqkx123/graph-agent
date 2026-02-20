@@ -113,11 +113,11 @@ export function mergeBatches(
     originalIndices: [...markMap.originalIndices],
     batchBoundaries: [
       ...markMap.batchBoundaries.slice(0, fromIndex + 1),
-      ...markMap.batchBoundaries.slice(toIndex)
+      ...markMap.batchBoundaries.slice(toIndex + 1)
     ],
     boundaryToBatch: [
       ...markMap.boundaryToBatch.slice(0, fromIndex + 1),
-      ...markMap.boundaryToBatch.slice(toIndex)
+      ...markMap.boundaryToBatch.slice(toIndex + 1)
     ],
     currentBatch: markMap.currentBatch
   };

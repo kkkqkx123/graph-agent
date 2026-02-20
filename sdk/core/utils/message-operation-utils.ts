@@ -25,7 +25,7 @@ import type {
   MessageMarkMap
 } from '@modular-agent/types';
 import { getCurrentBoundary, getVisibleOriginalIndices, visibleIndexToOriginal, getVisibleMessages } from './visible-range-calculator.js';
-import { startNewBatch } from './batch-management-utils.js';
+import { startNewBatch, rollbackToBatch } from './batch-management-utils.js';
 import { MessageArrayUtils } from './message-array-utils.js';
 
 /**
@@ -97,7 +97,9 @@ function executeTruncateOperation(
   
   // 如果只操作可见消息，先获取可见消息
   if (visibleOnly) {
+    const boundary = getCurrentBoundary(markMap);
     const visibleIndices = getVisibleOriginalIndices(markMap);
+    const invisibleIndices = markMap.originalIndices.filter(idx => idx < boundary);
     const visibleMessages = visibleIndices
       .map(idx => messages[idx])
       .filter((msg): msg is LLMMessage => msg !== undefined);
@@ -111,12 +113,17 @@ function executeTruncateOperation(
     
     // 计算需要保留的原始索引
     const keptVisibleIndices = getKeptVisibleIndices(visibleMessages, truncatedMessages);
-    const keptOriginalIndices = keptVisibleIndices
+    const keptVisibleOriginalIndices = keptVisibleIndices
       .map(idx => visibleIndices[idx])
       .filter((idx): idx is number => idx !== undefined);
     
+    // 合并不可见索引和保留的可见索引，保持原始顺序
+    const keptOriginalIndices = markMap.originalIndices.filter(idx =>
+      invisibleIndices.includes(idx) || keptVisibleOriginalIndices.includes(idx)
+    );
+    
     // 记录受影响的索引
-    affectedVisibleIndices = visibleIndices.filter(idx => !keptOriginalIndices.includes(idx));
+    affectedVisibleIndices = visibleIndices.filter(idx => !keptVisibleOriginalIndices.includes(idx));
     
     // 更新标记映射，只保留需要的消息
     workingMarkMap = updateMarkMapForKeptIndices(markMap, keptOriginalIndices);
@@ -277,32 +284,18 @@ function executeClearOperation(
   const keepToolDescription = false;
   
   if (visibleOnly) {
-    // 只清空可见消息
+    // 只清空可见消息，保留不可见消息
+    const boundary = getCurrentBoundary(markMap);
     const visibleIndices = getVisibleOriginalIndices(markMap);
-    const visibleMessages = visibleIndices
-      .map(idx => messages[idx])
-      .filter((msg): msg is LLMMessage => msg !== undefined);
+    const invisibleIndices = markMap.originalIndices.filter(idx => idx < boundary);
     
-    let clearedMessages = visibleMessages;
-    if (keepSystemMessage) {
-      clearedMessages = MessageArrayUtils.clearMessages(visibleMessages, true);
-    } else {
-      clearedMessages = [];
-    }
+    // 保留不可见消息的索引
+    const keptIndices = invisibleIndices;
     
-    // 记录受影响的索引
-    affectedVisibleIndices = visibleIndices.filter(idx => {
-      const msg = messages[idx];
-      if (keepSystemMessage && msg && msg.role === 'system') {
-        return false;
-      }
-      return true;
-    });
+    // 记录受影响的索引（所有可见索引）
+    affectedVisibleIndices = visibleIndices;
     
-    // 重建消息数组
-    const keptIndices = clearedMessages
-      .map(msg => messages.indexOf(msg))
-      .filter((idx): idx is number => idx !== -1);
+    // 重建消息数组（只保留不可见消息）
     workingMessages = rebuildMessagesArray(messages, keptIndices);
     workingMarkMap = updateMarkMapForKeptIndices(markMap, keptIndices);
   } else {
@@ -346,8 +339,10 @@ function executeFilterOperation(
   let affectedVisibleIndices: number[] = [];
   
   if (visibleOnly) {
-    // 只过滤可见消息
+    // 只过滤可见消息，保留不可见消息
+    const boundary = getCurrentBoundary(markMap);
     const visibleIndices = getVisibleOriginalIndices(markMap);
+    const invisibleIndices = markMap.originalIndices.filter(idx => idx < boundary);
     const visibleMessages = visibleIndices
       .map(idx => messages[idx])
       .filter((msg): msg is LLMMessage => msg !== undefined);
@@ -374,12 +369,17 @@ function executeFilterOperation(
       return msg !== undefined && !keptMessages.has(msg);
     });
     
-    // 重建消息数组
-    const keptIndices = filteredMessages
+    // 合并不可见索引和过滤后的可见索引
+    const keptVisibleIndices = filteredMessages
       .map(msg => messages.indexOf(msg))
       .filter((idx): idx is number => idx !== -1);
-    workingMessages = rebuildMessagesArray(messages, keptIndices);
-    workingMarkMap = updateMarkMapForKeptIndices(markMap, keptIndices);
+    const keptOriginalIndices = markMap.originalIndices.filter(idx =>
+      invisibleIndices.includes(idx) || keptVisibleIndices.includes(idx)
+    );
+    
+    // 重建消息数组
+    workingMessages = rebuildMessagesArray(messages, keptOriginalIndices);
+    workingMarkMap = updateMarkMapForKeptIndices(markMap, keptOriginalIndices);
   } else {
     // 过滤所有消息
     workingMessages = messages;
@@ -440,7 +440,6 @@ function executeBatchManagementOperation(
       if (operation.targetBatch === undefined) {
         throw new Error('targetBatch is required for ROLLBACK_TO_BATCH operation');
       }
-      const { rollbackToBatch } = require('./batch-management-utils');
       workingMarkMap = rollbackToBatch(workingMarkMap, operation.targetBatch);
       break;
       
