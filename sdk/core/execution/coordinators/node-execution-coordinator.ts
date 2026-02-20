@@ -65,31 +65,14 @@ export interface NodeExecutionCoordinatorConfig {
 
 /**
  * 节点执行协调器
+ *
+ * 设计说明：
+ * - 使用配置对象模式管理依赖，避免构造函数参数过多
+ * - 配置对象包含所有可选依赖，便于扩展和测试
+ * - 核心依赖（eventManager、llmCoordinator）为必需，其他为可选
  */
 export class NodeExecutionCoordinator {
-  private eventManager: EventManager;
-  private llmCoordinator: LLMExecutionCoordinator;
-  private userInteractionHandler?: UserInteractionHandler;
-  private humanRelayHandler?: HumanRelayHandler;
-  private checkpointDependencies?: CheckpointDependencies;
-  private globalCheckpointConfig?: any;
-  private threadRegistry?: any;
-  private interruptionDetector?: InterruptionDetector;
-  private toolContextManager?: any;
-  private toolService?: any;
-
-  constructor(config: NodeExecutionCoordinatorConfig) {
-    this.eventManager = config.eventManager;
-    this.llmCoordinator = config.llmCoordinator;
-    this.userInteractionHandler = config.userInteractionHandler;
-    this.humanRelayHandler = config.humanRelayHandler;
-    this.checkpointDependencies = config.checkpointDependencies;
-    this.globalCheckpointConfig = config.globalCheckpointConfig;
-    this.threadRegistry = config.threadRegistry;
-    this.interruptionDetector = config.interruptionDetector;
-    this.toolContextManager = config.toolContextManager;
-    this.toolService = config.toolService;
-  }
+  constructor(private config: NodeExecutionCoordinatorConfig) {}
 
   /**
    * 检查是否已中止
@@ -98,11 +81,11 @@ export class NodeExecutionCoordinator {
    * @returns 是否已中止
    */
   isAborted(threadId: string): boolean {
-    if (this.interruptionDetector) {
-      return this.interruptionDetector.isAborted(threadId);
+    if (this.config.interruptionDetector) {
+      return this.config.interruptionDetector.isAborted(threadId);
     }
 
-    const threadContext = this.threadRegistry.get(threadId);
+    const threadContext = this.config.threadRegistry?.get(threadId);
     if (!threadContext) {
       return false;
     }
@@ -118,17 +101,17 @@ export class NodeExecutionCoordinator {
    * @param type 中断类型（PAUSE 或 STOP）
    */
   async handleInterruption(threadId: string, nodeId: string, type: 'PAUSE' | 'STOP'): Promise<void> {
-    if (!this.threadRegistry) {
+    if (!this.config.threadRegistry) {
       return;
     }
 
-    const threadContext = this.threadRegistry.get(threadId);
+    const threadContext = this.config.threadRegistry.get(threadId);
     if (!threadContext) {
       return;
     }
 
     // 创建中断检查点
-    if (this.checkpointDependencies) {
+    if (this.config.checkpointDependencies) {
       try {
         await createCheckpoint(
           {
@@ -142,7 +125,7 @@ export class NodeExecutionCoordinator {
               }
             }
           },
-          this.checkpointDependencies
+          this.config.checkpointDependencies
         );
       } catch (error) {
         // 抛出系统执行错误，由 ErrorService 统一处理
@@ -161,12 +144,12 @@ export class NodeExecutionCoordinator {
     if (type === 'PAUSE') {
       threadContext.setStatus('PAUSED');
       const pausedEvent = buildThreadPausedEvent(threadContext.thread);
-      await emit(this.eventManager, pausedEvent);
+      await emit(this.config.eventManager, pausedEvent);
     } else if (type === 'STOP') {
       threadContext.setStatus('CANCELLED');
       threadContext.setEndTime(now());
       const cancelledEvent = buildThreadCancelledEvent(threadContext.thread, 'user_requested');
-      await emit(this.eventManager, cancelledEvent);
+      await emit(this.config.eventManager, cancelledEvent);
     }
   }
 
@@ -225,12 +208,12 @@ export class NodeExecutionCoordinator {
         nodeType,
         timestamp: now()
       };
-      await this.eventManager.emit(nodeStartedEvent);
+      await this.config.eventManager.emit(nodeStartedEvent);
 
       // 步骤2：节点执行前创建检查点（如果配置了）
-      if (this.checkpointDependencies) {
+      if (this.config.checkpointDependencies) {
         const configResult = resolveCheckpointConfig(
-          this.globalCheckpointConfig,
+          this.config.globalCheckpointConfig,
           node,
           undefined,
           undefined,
@@ -249,7 +232,7 @@ export class NodeExecutionCoordinator {
                 nodeId,
                 description: configResult.description || `Before node: ${node.name}`
               },
-              this.checkpointDependencies
+              this.config.checkpointDependencies
             );
           } catch (error) {
             // 抛出系统执行错误，由 ErrorService 统一处理
@@ -271,10 +254,10 @@ export class NodeExecutionCoordinator {
           {
             thread: threadContext.thread,
             node,
-            checkpointDependencies: this.checkpointDependencies
+            checkpointDependencies: this.config.checkpointDependencies
           },
           'BEFORE_EXECUTE',
-          (event) => this.eventManager.emit(event)
+          (event) => this.config.eventManager.emit(event)
         );
       }
 
@@ -291,17 +274,17 @@ export class NodeExecutionCoordinator {
             thread: threadContext.thread,
             node,
             result: nodeResult,
-            checkpointDependencies: this.checkpointDependencies
+            checkpointDependencies: this.config.checkpointDependencies
           },
           'AFTER_EXECUTE',
-          (event) => this.eventManager.emit(event)
+          (event) => this.config.eventManager.emit(event)
         );
       }
 
       // 步骤7：节点执行后创建检查点（如果配置了）
-      if (this.checkpointDependencies) {
+      if (this.config.checkpointDependencies) {
         const configResult = resolveCheckpointConfig(
-          this.globalCheckpointConfig,
+          this.config.globalCheckpointConfig,
           node,
           undefined,
           undefined,
@@ -320,7 +303,7 @@ export class NodeExecutionCoordinator {
                 nodeId,
                 description: configResult.description || `After node: ${node.name}`
               },
-              this.checkpointDependencies
+              this.config.checkpointDependencies
             );
           } catch (error) {
             // 抛出系统执行错误，由 ErrorService 统一处理
@@ -347,7 +330,7 @@ export class NodeExecutionCoordinator {
           executionTime: nodeResult.executionTime || 0,
           timestamp: now()
         };
-        await this.eventManager.emit(nodeCompletedEvent);
+        await this.config.eventManager.emit(nodeCompletedEvent);
       } else if (nodeResult.status === 'FAILED') {
         const nodeFailedEvent: NodeFailedEvent = {
           type: 'NODE_FAILED',
@@ -357,7 +340,7 @@ export class NodeExecutionCoordinator {
           error: nodeResult.error,
           timestamp: now()
         };
-        await this.eventManager.emit(nodeFailedEvent);
+        await this.config.eventManager.emit(nodeFailedEvent);
       }
 
       return nodeResult;
@@ -384,7 +367,7 @@ export class NodeExecutionCoordinator {
         error,
         timestamp: now()
       };
-      await this.eventManager.emit(nodeFailedEvent);
+      await this.config.eventManager.emit(nodeFailedEvent);
 
       return errorResult;
     }
@@ -418,7 +401,7 @@ export class NodeExecutionCoordinator {
         input,
         timestamp: now()
       };
-      await this.eventManager.emit(subgraphStartedEvent);
+      await this.config.eventManager.emit(subgraphStartedEvent);
     } else if (boundaryType === 'exit') {
       // 退出子图
       const subgraphContext = threadContext.getCurrentSubgraphContext();
@@ -435,7 +418,7 @@ export class NodeExecutionCoordinator {
           executionTime: diffTimestamp(subgraphContext.startTime, now()),
           timestamp: now()
         };
-        await this.eventManager.emit(subgraphCompletedEvent);
+        await this.config.eventManager.emit(subgraphCompletedEvent);
 
         await exitSubgraph(threadContext);
       }
@@ -457,7 +440,7 @@ export class NodeExecutionCoordinator {
     // 准备处理器上下文
     let handlerContext = {};
     if (node.type === 'USER_INTERACTION') {
-      if (!this.userInteractionHandler) {
+      if (!this.config.userInteractionHandler) {
         throw new ExecutionError(
           'UserInteractionHandler is not provided',
           node.id,
@@ -465,7 +448,7 @@ export class NodeExecutionCoordinator {
         );
       }
       handlerContext = {
-        userInteractionHandler: this.userInteractionHandler,
+        userInteractionHandler: this.config.userInteractionHandler,
         conversationManager: threadContext.getConversationManager()
       };
     } else if (node.type === 'CONTEXT_PROCESSOR') {
@@ -474,13 +457,13 @@ export class NodeExecutionCoordinator {
       };
     } else if (node.type === 'LLM') {
       handlerContext = {
-        llmCoordinator: this.llmCoordinator,
-        eventManager: this.eventManager,
+        llmCoordinator: this.config.llmCoordinator,
+        eventManager: this.config.eventManager,
         conversationManager: threadContext.getConversationManager(),
-        humanRelayHandler: this.humanRelayHandler
+        humanRelayHandler: this.config.humanRelayHandler
       };
     } else if (node.type === 'ADD_TOOL') {
-      if (!this.toolContextManager || !this.toolService) {
+      if (!this.config.toolContextManager || !this.config.toolService) {
         throw new ExecutionError(
           'ToolContextManager or ToolService is not provided',
           node.id,
@@ -488,9 +471,9 @@ export class NodeExecutionCoordinator {
         );
       }
       handlerContext = {
-        toolContextManager: this.toolContextManager,
-        toolService: this.toolService,
-        eventManager: this.eventManager,
+        toolContextManager: this.config.toolContextManager,
+        toolService: this.config.toolService,
+        eventManager: this.config.eventManager,
         threadContext: threadContext
       };
     }

@@ -32,14 +32,16 @@ import { ExecutionError, ConfigurationValidationError, RuntimeValidationError, S
 import { now, getErrorOrNew } from '@modular-agent/common-utils';
 import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { WorkflowRegistry } from '../../services/workflow-registry.js';
+import type { GraphRegistry } from '../../services/graph-registry.js';
 import { TriggerStateManager } from '../managers/trigger-state-manager.js';
 import { CheckpointStateManager } from '../managers/checkpoint-state-manager.js';
 import { convertToTrigger } from '@modular-agent/types';
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
-import { getContainer } from '../../di/index.js';
-import * as Identifiers from '../../di/service-identifiers.js';
 import { ExecutionContext } from '../context/execution-context.js';
+import { createContextualLogger } from '../../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ component: 'TriggerCoordinator' });
 
 /**
  * TriggerCoordinator - 触发器协调器
@@ -61,17 +63,23 @@ export class TriggerCoordinator {
   private workflowRegistry: WorkflowRegistry;
   private stateManager: TriggerStateManager;
   private checkpointStateManager?: CheckpointStateManager;
+  private graphRegistry?: GraphRegistry;
+  private executionContext?: ExecutionContext;
 
   constructor(
     threadRegistry: ThreadRegistry,
     workflowRegistry: WorkflowRegistry,
     stateManager: TriggerStateManager,
-    checkpointStateManager?: CheckpointStateManager
+    checkpointStateManager?: CheckpointStateManager,
+    graphRegistry?: GraphRegistry,
+    executionContext?: ExecutionContext
   ) {
     this.threadRegistry = threadRegistry;
     this.workflowRegistry = workflowRegistry;
     this.stateManager = stateManager;
     this.checkpointStateManager = checkpointStateManager;
+    this.graphRegistry = graphRegistry;
+    this.executionContext = executionContext;
   }
 
   /**
@@ -270,41 +278,45 @@ export class TriggerCoordinator {
   private async executeTrigger(trigger: Trigger): Promise<void> {
     // 触发前创建检查点（如果配置了）
     if (trigger.createCheckpoint && this.checkpointStateManager && trigger.threadId) {
-      try {
-        const container = getContainer();
-        const dependencies: CheckpointDependencies = {
-          threadRegistry: this.threadRegistry,
-          checkpointStateManager: this.checkpointStateManager,
-          workflowRegistry: this.workflowRegistry,
-          graphRegistry: container.get(Identifiers.GraphRegistry)
-        };
+      // 如果未提供 graphRegistry，跳过检查点创建
+      if (!this.graphRegistry) {
+        logger.warn(
+          'GraphRegistry not provided, skipping checkpoint creation',
+          { triggerName: trigger.name, triggerId: trigger.id }
+        );
+      } else {
+        try {
+          const dependencies: CheckpointDependencies = {
+            threadRegistry: this.threadRegistry,
+            checkpointStateManager: this.checkpointStateManager,
+            workflowRegistry: this.workflowRegistry,
+            graphRegistry: this.graphRegistry
+          };
 
-        await createCheckpoint(
-          {
-            threadId: trigger.threadId,
-            description: trigger.checkpointDescription || `Trigger: ${trigger.name}`
-          },
-          dependencies
-        );
-      } catch (error) {
-        // 抛出系统执行错误，由 ErrorService 统一处理
-        throw new SystemExecutionError(
-          `Failed to create checkpoint for trigger "${trigger.name}"`,
-          'TriggerCoordinator',
-          'executeTrigger',
-          undefined,
-          undefined,
-          { triggerName: trigger.name, originalError: getErrorOrNew(error) }
-        );
-        // 检查点创建失败不应影响触发器执行
+          await createCheckpoint(
+            {
+              threadId: trigger.threadId,
+              description: trigger.checkpointDescription || `Trigger: ${trigger.name}`
+            },
+            dependencies
+          );
+        } catch (error) {
+          // 检查点创建失败不应影响触发器执行，仅记录错误
+          logger.error(
+            'Failed to create checkpoint for trigger',
+            { triggerName: trigger.name, triggerId: trigger.id },
+            undefined,
+            getErrorOrNew(error)
+          );
+        }
       }
     }
 
     // 使用 trigger handler 函数执行触发动作
     const handler = getTriggerHandler(trigger.action.type);
 
-    // 从 DI 容器获取完整的 ExecutionContext 实例
-    const executionContext = ExecutionContext.createDefault();
+    // 使用注入的ExecutionContext，如果未提供则创建默认实例
+    const executionContext = this.executionContext || ExecutionContext.createDefault();
 
     // 设置当前线程 ID
     if (trigger.threadId) {
@@ -342,10 +354,19 @@ export class TriggerCoordinator {
       return undefined;
     }
 
-    // 获取处理后的图
-    const container = getContainer();
-    const graphRegistry = container.get(Identifiers.GraphRegistry);
-    const processedWorkflow = graphRegistry.get(targetWorkflowId);
+    // 使用注入的graphRegistry
+    if (!this.graphRegistry) {
+      throw new SystemExecutionError(
+        'GraphRegistry is required for trigger execution',
+        'TriggerCoordinator',
+        'getWorkflowTrigger',
+        undefined,
+        undefined,
+        { triggerId, workflowId: targetWorkflowId }
+      );
+    }
+
+    const processedWorkflow = this.graphRegistry.get(targetWorkflowId);
     if (!processedWorkflow || !processedWorkflow.triggers) {
       return undefined;
     }
