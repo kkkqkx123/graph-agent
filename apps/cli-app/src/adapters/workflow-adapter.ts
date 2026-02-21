@@ -3,19 +3,18 @@
  * 封装工作流相关的 SDK API 调用
  */
 
-import { resolve } from 'path';
-import { createLogger } from '../utils/logger.js';
+import { BaseAdapter } from './base-adapter.js';
 import { ConfigManager, type ConfigLoadOptions } from '../config/config-manager.js';
-
-const logger = createLogger();
+import { resolve } from 'path';
 
 /**
  * 工作流适配器
  */
-export class WorkflowAdapter {
+export class WorkflowAdapter extends BaseAdapter {
   private configManager: ConfigManager;
 
   constructor(configManager?: ConfigManager) {
+    super();
     this.configManager = configManager || new ConfigManager();
   }
 
@@ -29,24 +28,18 @@ export class WorkflowAdapter {
     filePath: string,
     parameters?: Record<string, any>
   ): Promise<any> {
-    try {
-      const { getSDK } = await import('@modular-agent/sdk');
-      const sdk = getSDK();
-      
+    return this.executeWithErrorHandling(async () => {
       // 使用 ConfigManager 加载配置
       const fullPath = resolve(process.cwd(), filePath);
       const workflow = await this.configManager.loadWorkflow(fullPath, parameters);
       
-      // 注册到 SDK
-      const api = sdk.workflows;
+      // 使用继承的 sdk 实例
+      const api = this.sdk.workflows;
       await api.create(workflow);
       
-      logger.success(`工作流已注册: ${workflow.id}`);
+      this.logger.success(`工作流已注册: ${workflow.id}`);
       return workflow;
-    } catch (error) {
-      logger.error(`注册工作流失败: ${error instanceof Error ? error.message : String(error)}`);
-      throw error;
-    }
+    }, '注册工作流');
   }
 
   /**
@@ -60,10 +53,7 @@ export class WorkflowAdapter {
     success: any[];
     failures: Array<{ filePath: string; error: string }>;
   }> {
-    try {
-      const { getSDK } = await import('@modular-agent/sdk');
-      const sdk = getSDK();
-      
+    return this.executeWithErrorHandling(async () => {
       // 使用 ConfigManager 批量加载配置
       const result = await this.configManager.loadWorkflows(options);
       
@@ -71,36 +61,31 @@ export class WorkflowAdapter {
       const failures = result.failures;
 
       // 注册成功加载的工作流
-      const api = sdk.workflows;
+      const api = this.sdk.workflows;
       for (const workflow of result.configs) {
         try {
           await api.create(workflow);
           success.push(workflow);
-          logger.success(`工作流已注册: ${workflow.id}`);
+          this.logger.success(`工作流已注册: ${workflow.id}`);
         } catch (error) {
           failures.push({
             filePath: workflow.id,
             error: error instanceof Error ? error.message : String(error)
           });
-          logger.error(`注册工作流失败: ${workflow.id}`);
+          this.logger.error(`注册工作流失败: ${workflow.id}`);
         }
       }
 
       return { success, failures };
-    } catch (error) {
-      logger.error(`批量注册工作流失败: ${error instanceof Error ? error.message : String(error)}`);
-      throw error;
-    }
+    }, '批量注册工作流');
   }
 
   /**
    * 列出所有工作流
    */
   async listWorkflows(filter?: any): Promise<any[]> {
-    try {
-      const { getSDK } = await import('@modular-agent/sdk');
-      const sdk = getSDK();
-      const api = sdk.workflows;
+    return this.executeWithErrorHandling(async () => {
+      const api = this.sdk.workflows;
       const result = await api.getAll();
       const workflows = (result as any).data || result;
 
@@ -116,20 +101,15 @@ export class WorkflowAdapter {
       }));
 
       return summaries;
-    } catch (error) {
-      logger.error(`列出工作流失败: ${error instanceof Error ? error.message : String(error)}`);
-      throw error;
-    }
+    }, '列出工作流');
   }
 
   /**
    * 获取工作流详情
    */
   async getWorkflow(id: string): Promise<any> {
-    try {
-      const { getSDK } = await import('@modular-agent/sdk');
-      const sdk = getSDK();
-      const api = sdk.workflows;
+    return this.executeWithErrorHandling(async () => {
+      const api = this.sdk.workflows;
       const result = await api.get(id);
       const workflow = (result as any).data || result;
 
@@ -138,27 +118,19 @@ export class WorkflowAdapter {
       }
 
       return workflow;
-    } catch (error) {
-      logger.error(`获取工作流详情失败: ${error instanceof Error ? error.message : String(error)}`);
-      throw error;
-    }
+    }, '获取工作流详情');
   }
 
   /**
    * 删除工作流
    */
   async deleteWorkflow(id: string): Promise<void> {
-    try {
-      const { getSDK } = await import('@modular-agent/sdk');
-      const sdk = getSDK();
-      const api = sdk.workflows;
+    return this.executeWithErrorHandling(async () => {
+      const api = this.sdk.workflows;
       await api.delete(id);
 
-      logger.success(`工作流已删除: ${id}`);
-    } catch (error) {
-      logger.error(`删除工作流失败: ${error instanceof Error ? error.message : String(error)}`);
-      throw error;
-    }
+      this.logger.success(`工作流已删除: ${id}`);
+    }, '删除工作流');
   }
 
 }

@@ -23,198 +23,229 @@ apps/cli-app/
 │   │   ├── workflow/       # 工作流相关命令
 │   │   ├── thread/         # 线程相关命令
 │   │   ├── checkpoint/     # 检查点相关命令
-│   │   ├── template/       # 模板相关命令
-│   │   └── common/         # 通用命令功能
+│   │   └── template/       # 模板相关命令
 │   ├── adapters/           # CLI 适配器层
+│   │   ├── base-adapter.ts       # 基础适配器类
 │   │   ├── workflow-adapter.ts
 │   │   ├── thread-adapter.ts
 │   │   ├── checkpoint-adapter.ts
 │   │   └── template-adapter.ts
 │   ├── utils/              # CLI 专用工具函数
 │   │   ├── logger.ts       # CLI 日志工具
-│   │   ├── validator.ts    # 输入验证工具
+│   │   ├── validator.ts    # 输入验证工具（可选）
 │   │   └── formatter.ts    # 输出格式化工具
 │   ├── types/              # CLI 专用类型定义
 │   │   └── cli-types.ts
 │   ├── config/             # 配置管理
-│   │   └── config-loader.ts
+│   │   ├── config-loader.ts
+│   │   └── config-manager.ts
 │   └── index.ts            # CLI 入口文件
-├── bin/
-│   └── modular-agent       # 可执行文件链接
+├── scripts/
+│   └── modular-agent.js    # 可执行脚本入口
 ├── package.json
 ├── tsconfig.json
 └── README.md
 ```
+
+**注意**: 可执行文件位于 `scripts/` 目录而非 `bin/` 目录，`package.json` 中的 bin 配置应指向 `./scripts/modular-agent.js`。
 
 ## 命令实现模式
 
 每个命令都将遵循相同的实现模式：
 
 ```typescript
-// 示例：src/commands/workflow/register.ts
+// 示例：src/commands/workflow/index.ts
 import { Command } from 'commander';
-import { WorkflowAdapter } from '../../adapters/workflow-adapter';
-import { createLogger } from '../../utils/logger';
-import { formatWorkflow } from '../../utils/formatter';
+import { WorkflowAdapter } from '../../adapters/workflow-adapter.js';
+import { createLogger } from '../../utils/logger.js';
+import { formatWorkflow } from '../../utils/formatter.js';
+import type { CommandOptions } from '../../types/cli-types.js';
 
-export function createWorkflowRegisterCommand(): Command {
-  const command = new Command('register');
-  
-  command
+const logger = createLogger();
+
+export function createWorkflowCommands(): Command {
+  const workflowCmd = new Command('workflow')
+    .description('管理工作流')
+    .alias('wf');
+
+  // 注册工作流命令
+  workflowCmd
+    .command('register <file>')
     .description('从文件注册工作流')
-    .argument('<file>', '工作流定义文件路径')
-    .option('-n, --name <name>', '工作流名称')
-    .option('-t, --tags <tags...>', '工作流标签')
     .option('-v, --verbose', '详细输出')
-    .action(async (filePath, options) => {
-      const logger = createLogger({ verbose: options.verbose });
-      const adapter = new WorkflowAdapter();
-      
+    .action(async (file, options: CommandOptions) => {
       try {
-        logger.info(`正在注册工作流: ${filePath}`);
+        logger.info(`正在注册工作流: ${file}`);
         
-        const result = await adapter.registerWorkflow(filePath, {
-          name: options.name,
-          tags: options.tags
-        });
-        
-        logger.success('工作流注册成功');
-        console.log(formatWorkflow(result, { verbose: options.verbose }));
+        const adapter = new WorkflowAdapter();
+        const workflow = await adapter.registerFromFile(file);
+
+        console.log(formatWorkflow(workflow, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`注册失败: ${(error as Error).message}`);
+        logger.error(`注册失败: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     });
-    
-  return command;
+
+  return workflowCmd;
 }
 ```
 
 ## 适配器层设计
 
-适配器层负责将 CLI 参数转换为 SDK API 调用：
+适配器层统一继承 `BaseAdapter`，负责将 CLI 参数转换为 SDK API 调用：
 
 ```typescript
-// 示例：src/adapters/workflow-adapter.ts
-import { 
-  WorkflowRegistryAPI, 
-  type WorkflowDefinition 
-} from '@modular-agent/sdk';
-import { readFile } from 'fs/promises';
-import { resolve } from 'path';
+// src/adapters/base-adapter.ts
+import { getSDK } from '@modular-agent/sdk';
+import { createLogger } from '../utils/logger.js';
 
-export class WorkflowAdapter {
-  private api: WorkflowRegistryAPI;
-  
+export class BaseAdapter {
+  protected logger: ReturnType<typeof createLogger>;
+  protected sdk: ReturnType<typeof getSDK>;
+
   constructor() {
-    // 从全局 SDK 实例获取 API
-    this.api = /* 获取 WorkflowRegistryAPI 实例 */;
+    this.logger = createLogger();
+    this.sdk = getSDK();
   }
-  
-  async registerWorkflow(
-    filePath: string, 
-    options?: { name?: string; tags?: string[] }
-  ): Promise<WorkflowDefinition> {
-    // 读取工作流定义文件
-    const fullPath = resolve(process.cwd(), filePath);
-    const content = await readFile(fullPath, 'utf-8');
-    
-    // 解析工作流定义
-    const workflowDef = this.parseWorkflowDefinition(content);
-    
-    // 应用选项
-    if (options?.name) {
-      workflowDef.name = options.name;
+
+  protected async executeWithErrorHandling<T>(
+    operation: () => Promise<T>,
+    context: string
+  ): Promise<T> {
+    try {
+      return await operation();
+    } catch (error) {
+      this.handleError(error, context);
     }
-    
-    if (options?.tags) {
-      workflowDef.tags = [...(workflowDef.tags || []), ...options.tags];
-    }
-    
-    // 调用 SDK API
-    return await this.api.create(workflowDef);
   }
-  
-  private parseWorkflowDefinition(content: string): WorkflowDefinition {
-    // 根据文件扩展名选择解析器
-    if (content.trim().startsWith('{')) {
-      // JSON
-      return JSON.parse(content);
-    } else if (content.includes('---')) {
-      // TOML
-      const toml = require('toml');
-      return toml.parse(content);
-    } else {
-      // TOML
-      const toml = require('@iarna/toml');
-      return toml.parse(content);
-    }
+
+  protected handleError(error: unknown, context: string): never {
+    const message = error instanceof Error ? error.message : String(error);
+    this.logger.error(`${context}: ${message}`);
+    throw error;
   }
 }
 ```
 
+```typescript
+// src/adapters/workflow-adapter.ts
+import { BaseAdapter } from './base-adapter.js';
+import { ConfigManager, type ConfigLoadOptions } from '../config/config-manager.js';
+import { resolve } from 'path';
+
+export class WorkflowAdapter extends BaseAdapter {
+  private configManager: ConfigManager;
+
+  constructor(configManager?: ConfigManager) {
+    super();
+    this.configManager = configManager || new ConfigManager();
+  }
+
+  async registerFromFile(
+    filePath: string,
+    parameters?: Record<string, any>
+  ): Promise<any> {
+    return this.executeWithErrorHandling(async () => {
+      // 使用 ConfigManager 加载配置
+      const fullPath = resolve(process.cwd(), filePath);
+      const workflow = await this.configManager.loadWorkflow(fullPath, parameters);
+      
+      // 使用继承的 sdk 实例
+      const api = this.sdk.workflows;
+      await api.create(workflow);
+      
+      this.logger.success(`工作流已注册: ${workflow.id}`);
+      return workflow;
+    }, '注册工作流');
+  }
+
+  // 其他方法...
+}
+```
+
+**重要**: 所有适配器都应继承 `BaseAdapter`，使用父类提供的 `sdk` 实例，避免重复导入 `getSDK`。
+
 ## 错误处理策略
 
-CLI 应用将实现统一的错误处理策略：
+CLI 应用通过 `BaseAdapter` 实现统一的错误处理策略：
 
 ```typescript
-// src/utils/error-handler.ts
-import { createLogger } from './logger';
-
-export class CLIErrorHandler {
-  private logger = createLogger();
-  
-  handleError(error: unknown, context: string = ''): never {
-    if (error instanceof Error) {
-      this.logger.error(`${context ? context + ': ' : ''}${error.message}`);
-      
-      // 在详细模式下输出堆栈跟踪
-      if (process.env.DEBUG || process.argv.includes('--verbose')) {
-        console.error('\n' + error.stack);
-      }
-    } else {
-      this.logger.error(`${context}: ${String(error)}`);
-    }
-    
-    process.exit(1);
+// src/adapters/base-adapter.ts
+protected async executeWithErrorHandling<T>(
+  operation: () => Promise<T>,
+  context: string
+): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    this.handleError(error, context);
   }
 }
 
-// 在命令中使用
-try {
-  // 执行命令逻辑
-} catch (error) {
-  new CLIErrorHandler().handleError(error, 'Workflow Registration');
+protected handleError(error: unknown, context: string): never {
+  const message = error instanceof Error ? error.message : String(error);
+  this.logger.error(`${context}: ${message}`);
+
+  if (error instanceof Error && error.stack) {
+    this.logger.debug(error.stack);
+  }
+
+  throw error;
+}
+```
+
+在命令中使用：
+
+```typescript
+// 适配器内部自动处理错误
+async someMethod(): Promise<void> {
+  return this.executeWithErrorHandling(async () => {
+    // 执行操作
+    await this.sdk.someApi.call();
+  }, '操作上下文');
 }
 ```
 
 ## 配置管理
 
-CLI 应用将支持多种配置来源：
+CLI 应用支持多种配置来源：
 
 ```typescript
 // src/config/config-loader.ts
 import { cosmiconfig } from 'cosmiconfig';
 import { z } from 'zod';
 
-// 定义配置模式
 const ConfigSchema = z.object({
-  apiUrl: z.string().optional(),
+  apiUrl: z.string().url().optional(),
   apiKey: z.string().optional(),
-  defaultTimeout: z.number().optional(),
-  verbose: z.boolean().optional()
+  defaultTimeout: z.number().positive().optional(),
+  verbose: z.boolean().optional(),
+  debug: z.boolean().optional(),
+  logLevel: z.enum(['error', 'warn', 'info', 'debug']).optional(),
+  outputFormat: z.enum(['json', 'table', 'plain']).optional(),
+  maxConcurrentThreads: z.number().positive().optional(),
 });
 
 export type CLIConfig = z.infer<typeof ConfigSchema>;
 
 export class ConfigLoader {
-  private explorer = cosmiconfig('modular-agent');
-  
+  private explorer = cosmiconfig('modular-agent', {
+    searchPlaces: [
+      'package.json',
+      '.modular-agentrc',
+      '.modular-agentrc.json',
+      '.modular-agentrc.ts',
+      '.modular-agentrc.js',
+      'modular-agent.config.js',
+      'modular-agent.config.ts',
+    ],
+  });
+
   async load(): Promise<CLIConfig> {
     const result = await this.explorer.search();
     
     if (result?.config) {
-      // 验证配置
       return ConfigSchema.parse(result.config);
     }
     
@@ -225,32 +256,36 @@ export class ConfigLoader {
 
 ## 输出格式化
 
-CLI 应用将支持多种输出格式：
+CLI 应用支持多种输出格式：
 
 ```typescript
 // src/utils/formatter.ts
-import { table } from 'table'; // 假设使用 table 包
 import chalk from 'chalk';
 
 export function formatWorkflow(workflow: any, options: { verbose?: boolean } = {}) {
   if (options.verbose) {
-    // 详细输出
     return JSON.stringify(workflow, null, 2);
   } else {
-    // 简洁输出
-    return `${chalk.blue(workflow.name)} (${workflow.id}) - ${workflow.status}`;
+    return `${chalk.blue(workflow.name)} (${workflow.id}) - ${formatStatus(workflow.status)}`;
   }
 }
 
-export function formatWorkflowList(workflows: any[], options: { table?: boolean } = {}) {
-  if (options.table) {
-    const data = [
-      ['ID', 'Name', 'Status', 'Created'],
-      ...workflows.map(w => [w.id, w.name, w.status, w.createdAt])
-    ];
-    return table(data);
-  } else {
-    return workflows.map(w => formatWorkflow(w)).join('\n');
+function formatStatus(status: string): string {
+  switch (status?.toLowerCase()) {
+    case 'running':
+    case 'active':
+      return chalk.green(status);
+    case 'paused':
+    case 'suspended':
+      return chalk.yellow(status);
+    case 'stopped':
+    case 'failed':
+      return chalk.red(status);
+    case 'completed':
+    case 'success':
+      return chalk.green.bold(status);
+    default:
+      return chalk.gray(status || 'unknown');
   }
 }
 ```
@@ -265,20 +300,26 @@ CLI 应用将采用分层测试策略：
 
 ```typescript
 // 示例测试
-describe('Workflow Register Command', () => {
+import { describe, it, expect, vi } from 'vitest';
+import { WorkflowAdapter } from '../src/adapters/workflow-adapter.js';
+
+describe('WorkflowAdapter', () => {
   it('should register workflow from file', async () => {
-    const mockAdapter = new MockWorkflowAdapter();
-    const command = createWorkflowRegisterCommand(mockAdapter);
+    const adapter = new WorkflowAdapter();
     
-    // 模拟文件内容
-    jest.spyOn(fs, 'readFile').mockResolvedValue(mockWorkflowContent);
+    // 模拟 SDK 和文件系统
+    vi.mock('@modular-agent/sdk', () => ({
+      getSDK: () => ({
+        workflows: {
+          create: vi.fn().mockResolvedValue({ id: 'test-workflow' })
+        }
+      })
+    }));
+
+    const result = await adapter.registerFromFile('./test.toml');
     
-    await command.parseAsync(['path/to/workflow.json']);
-    
-    expect(mockAdapter.registerWorkflow).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.any(Object)
-    );
+    expect(result).toBeDefined();
+    expect(result.id).toBe('test-workflow');
   });
 });
 ```
