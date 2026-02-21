@@ -1,14 +1,13 @@
 /**
  * 工具服务
- * 提供统一的工具执行接口
+ * 提供统一的工具执行接口和工具注册管理
  *
  * 本模块只导出类定义，不导出实例
  * 实例通过 SingletonRegistry 统一管理
  */
 
 import type { Tool } from '@modular-agent/types';
-import { ToolError, ToolNotFoundError, RuntimeValidationError } from '@modular-agent/types';
-import { ToolRegistry } from '../tools/tool-registry.js';
+import { ToolError, ToolNotFoundError, RuntimeValidationError, ConfigurationValidationError } from '@modular-agent/types';
 import type { IToolExecutor } from '@modular-agent/tool-executors';
 import type { ToolExecutionOptions, ToolExecutionResult } from '@modular-agent/types';
 import { StatelessExecutor } from '@modular-agent/tool-executors';
@@ -25,13 +24,12 @@ import { RuntimeValidator } from '../validation/tool-runtime-validator.js';
  * 工具服务类
  */
 class ToolService {
-  private registry: ToolRegistry;
+  private tools: Map<string, Tool> = new Map();
   private executors: Map<string, IToolExecutor> = new Map();
   private staticValidator: StaticValidator;
   private runtimeValidator: RuntimeValidator;
 
   constructor() {
-    this.registry = new ToolRegistry();
     this.staticValidator = new StaticValidator();
     this.runtimeValidator = new RuntimeValidator();
     this.initializeExecutors();
@@ -41,7 +39,7 @@ class ToolService {
    * 初始化执行器
    */
   private initializeExecutors(): void {
-    // 直接使用packages中的实现
+    // 直接使用 packages 中的实现
     this.executors.set('STATELESS', new StatelessExecutor());
     this.executors.set('STATEFUL', new StatefulExecutor());
     this.executors.set('REST', new RestExecutor());
@@ -51,6 +49,7 @@ class ToolService {
   /**
    * 注册工具
    * @param tool 工具定义
+   * @throws ConfigurationValidationError 如果工具定义无效或已存在
    */
   registerTool(tool: Tool): void {
     // 静态验证工具定义
@@ -58,7 +57,20 @@ class ToolService {
     if (result.isErr()) {
       throw result.error[0];
     }
-    this.registry.register(tool);
+
+    // 检查工具 ID 是否已存在
+    if (this.tools.has(tool.id)) {
+      throw new ConfigurationValidationError(
+        `Tool with id '${tool.id}' already exists`,
+        {
+          configType: 'tool',
+          field: 'id',
+          value: tool.id
+        }
+      );
+    }
+
+    this.tools.set(tool.id, tool);
   }
 
   /**
@@ -66,25 +78,34 @@ class ToolService {
    * @param tools 工具定义数组
    */
   registerTools(tools: Tool[]): void {
-    this.registry.registerBatch(tools);
+    for (const tool of tools) {
+      this.registerTool(tool);
+    }
   }
 
   /**
    * 注销工具
-   * @param toolId 工具ID
+   * @param toolId 工具 ID
+   * @throws ToolNotFoundError 如果工具不存在
    */
   unregisterTool(toolId: string): void {
-    this.registry.remove(toolId);
+    if (!this.tools.has(toolId)) {
+      throw new ToolNotFoundError(
+        `Tool with id '${toolId}' not found`,
+        toolId
+      );
+    }
+    this.tools.delete(toolId);
   }
 
   /**
    * 获取工具定义
-   * @param toolId 工具ID
+   * @param toolId 工具 ID
    * @returns 工具定义
-   * @throws NotFoundError 如果工具不存在
+   * @throws ToolNotFoundError 如果工具不存在
    */
   getTool(toolId: string): Tool {
-    const tool = this.registry.get(toolId);
+    const tool = this.tools.get(toolId);
     if (!tool) {
       throw new ToolNotFoundError(
         `Tool with id '${toolId}' not found`,
@@ -99,7 +120,7 @@ class ToolService {
    * @returns 工具定义数组
    */
   listTools(): Tool[] {
-    return this.registry.list();
+    return Array.from(this.tools.values());
   }
 
   /**
@@ -108,7 +129,7 @@ class ToolService {
    * @returns 工具定义数组
    */
   listToolsByType(type: string): Tool[] {
-    return this.registry.listByType(type);
+    return this.listTools().filter(tool => tool.type === type);
   }
 
   /**
@@ -117,7 +138,9 @@ class ToolService {
    * @returns 工具定义数组
    */
   listToolsByCategory(category: string): Tool[] {
-    return this.registry.listByCategory(category);
+    return this.listTools().filter(
+      tool => tool.metadata?.category === category
+    );
   }
 
   /**
@@ -126,24 +149,40 @@ class ToolService {
    * @returns 匹配的工具数组
    */
   searchTools(query: string): Tool[] {
-    return this.registry.search(query);
+    const lowerQuery = query.toLowerCase();
+    return this.listTools().filter(tool => {
+      return (
+        tool.id.toLowerCase().includes(lowerQuery) ||
+        tool.description.toLowerCase().includes(lowerQuery) ||
+        tool.metadata?.tags?.some(tag => tag.toLowerCase().includes(lowerQuery)) ||
+        tool.metadata?.category?.toLowerCase().includes(lowerQuery)
+      );
+    });
   }
 
   /**
    * 检查工具是否存在
-   * @param toolId 工具ID
+   * @param toolId 工具 ID
    * @returns 是否存在
    */
   hasTool(toolId: string): boolean {
-    return this.registry.has(toolId);
+    return this.tools.has(toolId);
+  }
+
+  /**
+   * 获取工具数量
+   * @returns 工具数量
+   */
+  size(): number {
+    return this.tools.size;
   }
 
   /**
    * 执行工具
-   * @param toolId 工具ID
+   * @param toolId 工具 ID
    * @param parameters 工具参数
    * @param options 执行选项
-   * @param threadId 线程ID（可选，用于有状态工具）
+   * @param threadId 线程 ID（可选，用于有状态工具）
    * @returns Result<ToolExecutionResult, ToolError>
    */
   async execute(
@@ -204,7 +243,7 @@ class ToolService {
   /**
    * 批量执行工具
    * @param executions 执行任务数组
-   * @param threadId 线程ID（可选，用于有状态工具）
+   * @param threadId 线程 ID（可选，用于有状态工具）
    * @returns Result<ToolExecutionResult[], ToolError>
    */
   async executeBatch(
@@ -228,7 +267,7 @@ class ToolService {
 
   /**
    * 验证工具参数（运行时验证）
-   * @param toolId 工具ID
+   * @param toolId 工具 ID
    * @param parameters 工具参数
    * @returns 验证结果
    */
@@ -261,12 +300,12 @@ class ToolService {
    * 清空所有工具
    */
   clear(): void {
-    this.registry.clear();
+    this.tools.clear();
   }
 
   /**
    * 清理指定线程的所有有状态工具实例
-   * @param threadId 线程ID
+   * @param threadId 线程 ID
    */
   cleanupThread(threadId: string): void {
     const statefulExecutor = this.executors.get('STATEFUL');
@@ -288,20 +327,23 @@ class ToolService {
 
   /**
    * 更新工具定义
-   * @param toolId 工具ID
+   * @param toolId 工具 ID
    * @param updates 更新内容
-   * @throws NotFoundError 如果工具不存在
+   * @throws ToolNotFoundError 如果工具不存在
    */
   updateTool(toolId: string, updates: Partial<Tool>): void {
     const tool = this.getTool(toolId);
     const updatedTool = { ...tool, ...updates };
-    this.registry.register(updatedTool);
+    // 先删除旧工具，再注册新工具（会重新验证）
+    this.tools.delete(toolId);
+    this.registerTool(updatedTool);
   }
+
   /**
-   * 转换错误为ToolError
+   * 转换错误为 ToolError
    *
    * @param error 原始错误
-   * @param toolName 工具名称
+   * @param toolId 工具 ID
    * @param toolType 工具类型
    * @param parameters 工具参数
    * @returns ToolError
@@ -312,7 +354,7 @@ class ToolService {
     toolType: string,
     parameters: Record<string, any>
   ): ToolError {
-    // 如果已经是ToolError，直接返回
+    // 如果已经是 ToolError，直接返回
     if (error instanceof ToolError) {
       return error;
     }
@@ -330,6 +372,6 @@ class ToolService {
 }
 
 /**
- * 导出ToolService类
+ * 导出 ToolService 类
  */
 export { ToolService };
