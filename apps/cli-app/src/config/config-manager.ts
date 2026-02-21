@@ -15,8 +15,10 @@ import {
   parseNodeTemplate,
   parseTriggerTemplate,
   parseScript,
+  parseLLMProfile,
   loadConfigContent
 } from '@modular-agent/sdk';
+import type { Tool } from '@modular-agent/types';
 import { readdir } from 'fs/promises';
 import { join, extname } from 'path';
 
@@ -229,6 +231,88 @@ export class ConfigManager {
   }
 
   /**
+   * 加载单个工具配置
+   * @param filePath 配置文件路径
+   * @returns 工具定义
+   */
+  async loadTool(filePath: string): Promise<Tool> {
+    const { content, format } = await loadConfigContent(filePath);
+    const config = format === 'toml'
+      ? await import('@iarna/toml').then(m => m.parse(content))
+      : JSON.parse(content);
+    return config as Tool;
+  }
+
+  /**
+   * 批量加载工具配置
+   * @param options 加载选项
+   * @returns 加载结果
+   */
+  async loadTools(
+    options: ConfigLoadOptions = {}
+  ): Promise<ConfigLoadResult<Tool>> {
+    const dir = options.configDir || join(this.configDir, 'tools');
+    const files = await this.scanConfigFiles(dir, options);
+    
+    const configs: Tool[] = [];
+    const failures: Array<{ filePath: string; error: string }> = [];
+
+    for (const file of files) {
+      try {
+        const tool = await this.loadTool(file);
+        configs.push(tool);
+      } catch (error) {
+        failures.push({
+          filePath: file,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+
+    return { configs, failures };
+  }
+
+  /**
+   * 加载单个 LLM Profile 配置
+   * @param filePath 配置文件路径
+   * @returns LLM Profile 定义
+   */
+  async loadLLMProfile(filePath: string): Promise<any> {
+    const { content, format } = await loadConfigContent(filePath);
+    return parseLLMProfile(content, format);
+  }
+
+  /**
+   * 批量加载 LLM Profile 配置
+   * @param options 加载选项
+   * @returns 加载结果
+   */
+  async loadLLMProfiles(
+    options: ConfigLoadOptions = {}
+  ): Promise<ConfigLoadResult<any>> {
+    const dir = options.configDir || join(this.configDir, 'llm-profiles');
+    const files = await this.scanConfigFiles(dir, options);
+    
+    const configs: any[] = [];
+    const failures: Array<{ filePath: string; error: string }> = [];
+
+    for (const file of files) {
+      try {
+        const { content, format } = await loadConfigContent(file);
+        const profile = parseLLMProfile(content, format);
+        configs.push(profile);
+      } catch (error) {
+        failures.push({
+          filePath: file,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+
+    return { configs, failures };
+  }
+
+  /**
    * 从注册表配置加载
    * @param registryPath 注册表文件路径
    * @param options 加载选项
@@ -328,6 +412,8 @@ export class ConfigManager {
       return parseTriggerTemplate(content, format);
     } else if (classPath.includes('script')) {
       return parseScript(content, format);
+    } else if (classPath.includes('llm_profile')) {
+      return parseLLMProfile(content, format);
     } else {
       // 默认解析为 JSON/TOML
       return format === 'toml'

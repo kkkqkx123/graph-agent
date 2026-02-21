@@ -13,6 +13,7 @@ import type { WorkflowDefinition } from '@modular-agent/types';
 import type { NodeTemplate } from '@modular-agent/types';
 import type { TriggerTemplate } from '@modular-agent/types';
 import type { Script } from '@modular-agent/types';
+import type { LLMProfile } from '@modular-agent/types';
 import { ConfigFormat, ConfigType } from './types.js';
 import type { ParsedConfig } from './types.js';
 import { ConfigParser } from './config-parser.js';
@@ -22,6 +23,7 @@ const workflowParser = new ConfigParser();
 const nodeTemplateParser = new ConfigParser();
 const triggerTemplateParser = new ConfigParser();
 const scriptParser = new ConfigParser();
+const llmProfileParser = new ConfigParser();
 
 /**
  * 解析工作流配置
@@ -175,5 +177,37 @@ export function parseBatchScripts(
   }
   return contents.map((content, index) =>
     parseScript(content, formats[index]!)
+  );
+}
+
+/**
+ * 解析 LLM Profile 配置
+ * @param content 配置文件内容
+ * @param format 配置格式
+ * @returns LLMProfile
+ */
+export function parseLLMProfile(
+  content: string,
+  format: ConfigFormat
+): LLMProfile {
+  const config = llmProfileParser.parse(content, format, 'llm_profile');
+  return config.config as LLMProfile;
+}
+
+/**
+ * 批量解析 LLM Profile 配置
+ * @param contents 配置内容数组
+ * @param formats 配置格式数组
+ * @returns LLMProfile 数组
+ */
+export function parseBatchLLMProfiles(
+  contents: string[],
+  formats: ConfigFormat[]
+): LLMProfile[] {
+  if (contents.length !== formats.length) {
+    throw new Error('contents 和 formats 数组长度必须一致');
+  }
+  return contents.map((content, index) =>
+    parseLLMProfile(content, formats[index]!)
   );
 }

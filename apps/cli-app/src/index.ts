@@ -11,6 +11,14 @@ import { createWorkflowCommands } from './commands/workflow/index.js';
 import { createThreadCommands } from './commands/thread/index.js';
 import { createCheckpointCommands } from './commands/checkpoint/index.js';
 import { createTemplateCommands } from './commands/template/index.js';
+import { createLLMProfileCommands } from './commands/llm-profile/index.js';
+import { createScriptCommands } from './commands/script/index.js';
+import { createToolCommands } from './commands/tool/index.js';
+import { createTriggerCommands } from './commands/trigger/index.js';
+import { createMessageCommands } from './commands/message/index.js';
+import { createVariableCommands } from './commands/variable/index.js';
+import { createEventCommands } from './commands/event/index.js';
+import { createHumanRelayCommands } from './commands/human-relay/index.js';
 
 // 创建日志记录器
 const logger = createLogger();
@@ -37,6 +45,30 @@ program.addCommand(createCheckpointCommands());
 
 // 添加模板命令组
 program.addCommand(createTemplateCommands());
+
+// 添加 LLM Profile 命令组
+program.addCommand(createLLMProfileCommands());
+
+// 添加脚本命令组
+program.addCommand(createScriptCommands());
+
+// 添加工具命令组
+program.addCommand(createToolCommands());
+
+// 添加触发器命令组
+program.addCommand(createTriggerCommands());
+
+// 添加消息命令组
+program.addCommand(createMessageCommands());
+
+// 添加变量命令组
+program.addCommand(createVariableCommands());
+
+// 添加事件命令组
+program.addCommand(createEventCommands());
+
+// 添加 Human Relay 命令组
+program.addCommand(createHumanRelayCommands());
 
 // 全局错误处理
 program.hook('postAction', (thisCommand) => {

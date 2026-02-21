@@ -351,8 +351,8 @@ export class CLIErrorHandler {
    * 获取错误对象
    */
   private getErrorObject(context: ErrorContext): Error | null {
-    if (context.additionalInfo?.error instanceof Error) {
-      return context.additionalInfo.error;
+    if (context.additionalInfo?.['error'] instanceof Error) {
+      return context.additionalInfo['error'];
     }
     return null;
   }

@@ -16,6 +16,10 @@ import { NodeRegistryAPI } from '../resources/templates/node-template-registry-a
 import { TriggerTemplateRegistryAPI } from '../resources/templates/trigger-template-registry-api.js';
 import { UserInteractionResourceAPI } from '../resources/user-interaction/user-interaction-resource-api.js';
 import { HumanRelayResourceAPI } from '../resources/human-relay/human-relay-resource-api.js';
+import { EventResourceAPI } from '../resources/events/event-resource-api.js';
+import { TriggerResourceAPI } from '../resources/triggers/trigger-resource-api.js';
+import { VariableResourceAPI } from '../resources/variables/variable-resource-api.js';
+import { MessageResourceAPI } from '../resources/messages/message-resource-api.js';
 import { APIDependencyManager } from './sdk-dependencies.js';
 
 /**
@@ -40,6 +44,14 @@ export interface AllAPIs {
   userInteractions: UserInteractionResourceAPI;
   /** Human Relay API */
   humanRelay: HumanRelayResourceAPI;
+  /** 事件API */
+  events: EventResourceAPI;
+  /** 触发器API */
+  triggers: TriggerResourceAPI;
+  /** 变量API */
+  variables: VariableResourceAPI;
+  /** 消息API */
+  messages: MessageResourceAPI;
 }
 
 /**
@@ -170,6 +182,38 @@ export class APIFactory {
   }
 
   /**
+   * 创建事件API
+   * @returns EventResourceAPI实例
+   */
+  public createEventAPI(): EventResourceAPI {
+    return this.createAPI('events', EventResourceAPI);
+  }
+
+  /**
+   * 创建触发器API
+   * @returns TriggerResourceAPI实例
+   */
+  public createTriggerAPI(): TriggerResourceAPI {
+    return this.createAPI('triggers', TriggerResourceAPI);
+  }
+
+  /**
+   * 创建变量API
+   * @returns VariableResourceAPI实例
+   */
+  public createVariableAPI(): VariableResourceAPI {
+    return this.createAPI('variables', VariableResourceAPI);
+  }
+
+  /**
+   * 创建消息API
+   * @returns MessageResourceAPI实例
+   */
+  public createMessageAPI(): MessageResourceAPI {
+    return this.createAPI('messages', MessageResourceAPI);
+  }
+
+  /**
    * 创建所有API实例
    * @returns 所有API实例
    */
@@ -183,7 +227,11 @@ export class APIFactory {
       nodeTemplates: this.createNodeTemplateAPI(),
       triggerTemplates: this.createTriggerTemplateAPI(),
       userInteractions: this.createUserInteractionAPI(),
-      humanRelay: this.createHumanRelayAPI()
+      humanRelay: this.createHumanRelayAPI(),
+      events: this.createEventAPI(),
+      triggers: this.createTriggerAPI(),
+      variables: this.createVariableAPI(),
+      messages: this.createMessageAPI()
     };
   }
 }

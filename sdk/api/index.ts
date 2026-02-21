@@ -56,7 +56,9 @@ export { LLMProfileRegistryAPI as ProfileRegistryAPI } from './resources/llm/llm
 // 新增资源管理API
 export { CheckpointResourceAPI } from './resources/checkpoints/checkpoint-resource-api.js';
 export {
-  MessageResourceAPI
+  MessageResourceAPI,
+  type MessageFilter,
+  type MessageStats
 } from './resources/messages/message-resource-api.js';
 export {
   VariableResourceAPI,
@@ -66,6 +68,16 @@ export { TriggerResourceAPI } from './resources/triggers/trigger-resource-api.js
 export {
   EventResourceAPI
 } from './resources/events/event-resource-api.js';
+export {
+  UserInteractionResourceAPI,
+  type UserInteractionConfig,
+  type UserInteractionFilter
+} from './resources/user-interaction/user-interaction-resource-api.js';
+export {
+  HumanRelayResourceAPI,
+  type HumanRelayConfig,
+  type HumanRelayFilter
+} from './resources/human-relay/human-relay-resource-api.js';
 
 // 通用资源API基类和工具
 export { GenericResourceAPI } from './resources/generic-resource-api.js';
@@ -168,6 +180,7 @@ export type { OffEventParams } from './operations/subscriptions/events/off-event
 export { WorkflowValidator as WorkflowValidatorAPI } from '../core/validation/index.js';
 export { CodeConfigValidator as CodeConfigValidatorAPI } from '../core/validation/index.js';
 export { StaticValidator as StaticValidatorAPI } from '../core/validation/index.js';
+export { StaticValidator } from '../core/validation/index.js';
 export { RuntimeValidator as RuntimeValidatorAPI } from '../core/validation/index.js';
 export { validateHook as validateHookAPI, validateHooks as validateHooksAPI } from '../core/validation/index.js';
 export {
@@ -292,6 +305,7 @@ export {
   parseNodeTemplate,
   parseTriggerTemplate,
   parseScript,
+  parseLLMProfile,
   loadConfigContent
 } from './config/index.js';
 

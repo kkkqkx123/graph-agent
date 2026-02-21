@@ -285,6 +285,6 @@ export function validateWithZod<T>(schema: z.ZodSchema<T>, data: unknown): { val
     return { valid: true, data: result.data };
   }
   
-  const errors = result.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+  const errors = (result.error as z.ZodError).issues.map((e: z.ZodIssue) => `${e.path.join('.')}: ${e.message}`).join(', ');
   return { valid: false, error: errors };
 }

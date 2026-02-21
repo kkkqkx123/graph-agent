@@ -70,7 +70,9 @@ export {
   parseTriggerTemplate,
   parseBatchTriggerTemplates,
   parseScript,
-  parseBatchScripts
+  parseBatchScripts,
+  parseLLMProfile,
+  parseBatchLLMProfiles
 } from './parsers.js';
 
 // 验证器

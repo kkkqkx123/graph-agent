@@ -103,6 +103,34 @@ class SDK {
   }
 
   /**
+   * 获取事件API
+   */
+  get events() {
+    return this.factory.createEventAPI();
+  }
+
+  /**
+   * 获取触发器API
+   */
+  get triggers() {
+    return this.factory.createTriggerAPI();
+  }
+
+  /**
+   * 获取变量API
+   */
+  get variables() {
+    return this.factory.createVariableAPI();
+  }
+
+  /**
+   * 获取消息API
+   */
+  get messages() {
+    return this.factory.createMessageAPI();
+  }
+
+  /**
    * 获取API工厂实例
    */
   getFactory(): APIFactory {
