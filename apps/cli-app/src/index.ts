@@ -85,3 +85,33 @@ program.parse(process.argv);
 if (!process.argv.slice(2).length) {
   program.outputHelp();
 }
+
+// 添加进程退出清理逻辑
+const cleanup = async () => {
+  logger.info('正在清理资源...');
+  
+  try {
+    // 动态导入终端模块（避免循环依赖）
+    const { TerminalManager } = await import('./terminal/terminal-manager.js');
+    const { CommunicationBridge } = await import('./terminal/communication-bridge.js');
+    
+    const terminalManager = new TerminalManager();
+    const communicationBridge = new CommunicationBridge();
+    
+    // 清理所有终端会话
+    await terminalManager.cleanupAll();
+    
+    // 清理所有通信桥接
+    communicationBridge.cleanupAll();
+    
+    logger.info('资源清理完成');
+  } catch (error) {
+    logger.error(`清理资源时出错: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  
+  process.exit(0);
+};
+
+// 监听退出信号
+process.on('SIGINT', cleanup);
+process.on('SIGTERM', cleanup);

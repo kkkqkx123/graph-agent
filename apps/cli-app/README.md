@@ -69,10 +69,22 @@ modular-agent workflow delete <id> [options]
 # 管理线程
 modular-agent thread
 
-# 执行工作流线程
+# 执行工作流线程（默认在独立终端中运行，不阻塞当前终端）
 modular-agent thread run <workflow-id> [options]
   -i, --input <json>       输入数据(JSON格式)
   -v, --verbose            详细输出
+  -b, --blocking           在当前终端中运行（阻塞方式）
+  --background             在后台运行（不显示终端窗口）
+  --log-file <path>        后台运行时的日志文件路径
+
+# 查看任务状态
+modular-agent thread status <task-id>
+
+# 取消任务执行
+modular-agent thread cancel <task-id>
+
+# 列出所有活跃终端
+modular-agent thread terminals
 
 # 暂停线程
 modular-agent thread pause <thread-id>
@@ -96,6 +108,59 @@ modular-agent thread show <thread-id> [options]
 modular-agent thread delete <thread-id> [options]
   -f, --force              强制删除，不提示确认
 ```
+
+#### 终端分离执行
+
+CLI 应用支持终端分离执行功能，允许工作流在独立的终端窗口中运行，而不阻塞主终端。
+
+**特性：**
+- 🚀 非阻塞执行 - 主终端保持可用，可同时执行多个任务
+- 🌍 跨平台支持 - 支持 Windows、macOS 和 Linux
+- 📊 任务管理 - 完整的任务状态监控和管理
+- 🔧 灵活配置 - 支持前台、后台和阻塞三种运行模式
+- 📝 日志记录 - 后台运行时自动记录日志
+
+**运行模式：**
+
+1. **前台模式（默认）** - 在独立的终端窗口中运行，可以看到实时输出
+2. **后台模式** - 在后台运行，不显示终端窗口，输出记录到日志文件
+3. **阻塞模式** - 在当前终端中运行，阻塞终端直到任务完成
+
+**使用示例：**
+
+```bash
+# 前台模式：在独立终端中运行（默认）
+modular-agent thread run my-workflow
+
+# 带输入数据运行
+modular-agent thread run my-workflow --input '{"name":"test"}'
+
+# 后台模式：在后台运行，不显示终端窗口
+modular-agent thread run my-workflow --background
+
+# 后台模式：指定日志文件路径
+modular-agent thread run my-workflow --background --log-file ./logs/my-task.log
+
+# 阻塞模式：在当前终端中运行
+modular-agent thread run my-workflow --blocking
+
+# 查看任务状态
+modular-agent thread status <task-id>
+
+# 取消任务
+modular-agent thread cancel <task-id>
+
+# 列出活跃终端
+modular-agent thread terminals
+```
+
+**后台运行说明：**
+
+- 后台运行时，任务输出会自动记录到日志文件
+- 默认日志文件路径：`logs/task-<task-id>.log`
+- 可以通过 `--log-file` 选项自定义日志文件路径
+- 日志目录会自动创建（如果不存在）
+- 查看日志文件可以了解任务的执行情况
 
 ### 检查点管理
 
@@ -220,6 +285,11 @@ apps/cli-app/
 │   │   ├── thread-adapter.ts
 │   │   ├── checkpoint-adapter.ts
 │   │   └── template-adapter.ts
+│   ├── terminal/           # 终端管理模块
+│   │   ├── types.ts        # 终端相关类型定义
+│   │   ├── terminal-manager.ts    # 终端管理器
+│   │   ├── task-executor.ts       # 任务执行器
+│   │   └── communication-bridge.ts # 通信桥接
 │   ├── utils/              # 工具函数
 │   │   ├── logger.ts       # 日志工具
 │   │   ├── validator.ts    # 输入验证工具
@@ -270,6 +340,11 @@ pnpm --filter @modular-agent/cli-app clean
 - `commander` - CLI 框架
 - `@modular-agent/sdk` - 核心 SDK
 - `@modular-agent/common-utils` - 公共工具
+
+### 终端管理依赖
+- `node-pty` - 伪终端创建和管理
+- `rxjs` - 响应式编程库，用于进程间通信
+- `uuid` - 唯一标识符生成
 
 ### 工具依赖
 - `cosmiconfig` - 配置文件加载
