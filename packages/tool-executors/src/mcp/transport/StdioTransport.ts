@@ -6,9 +6,28 @@
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import { Readable, Writable } from 'stream';
 import { EventEmitter } from 'events';
-import type { IMcpTransport, McpServerConfig, McpSessionInfo, McpMessage, McpSessionState } from '../types.js';
-import { McpSessionState as SessionState } from '../types.js';
+import type { IMcpTransport } from './types.js';
+import type { JSONRPCMessage, JSONRPCRequest, JSONRPCResponse, RequestId } from '../types-protocol.js';
 import { NetworkError, ConfigurationError } from '@modular-agent/types';
+import { createPackageLogger } from '@modular-agent/common-utils';
+
+const logger = createPackageLogger('mcp-transport');
+
+/**
+ * Stdio传输配置
+ */
+export interface StdioTransportConfig {
+  /** 服务器名称 */
+  name: string;
+  /** 命令 */
+  command: string;
+  /** 命令参数 */
+  args: string[];
+  /** 环境变量 */
+  env?: Record<string, string>;
+  /** 工作目录 */
+  cwd?: string;
+}
 
 /**
  * Stdio传输实现
@@ -17,34 +36,38 @@ export class StdioTransport extends EventEmitter implements IMcpTransport {
   private process: ChildProcessWithoutNullStreams | null = null;
   private reader: Readable | null = null;
   private writer: Writable | null = null;
-  private sessionId: string | null = null;
   private messageIdCounter = 0;
-  private pendingRequests = new Map<number, { resolve: (value: any) => void; reject: (error: any) => void }>();
-  private state: McpSessionState = 'DISCONNECTED';
-  private connectedAt: Date | null = null;
-  private lastActivityAt: Date | null = null;
-  private isDisposed = false;
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 3;
-  private reconnectDelay = 1000;
+  private pendingRequests = new Map<RequestId, {
+    resolve: (value: JSONRPCResponse) => void;
+    reject: (error: Error) => void;
+  }>();
+  private isStarted = false;
+  private isClosed = false;
 
-  constructor(private config: McpServerConfig) {
+  onclose?: () => void;
+  onerror?: (error: Error) => void;
+  onmessage?: (message: JSONRPCMessage) => void;
+  sessionId?: string;
+  setProtocolVersion?: (version: string) => void;
+
+  constructor(private config: StdioTransportConfig) {
     super();
   }
 
   /**
-   * 连接到MCP服务器
+   * 启动传输层
    */
-  async connect(): Promise<boolean> {
-    if (this.isDisposed) {
-      throw new NetworkError('Transport has been disposed');
+  async start(): Promise<void> {
+    if (this.isStarted) {
+      logger.warn('Transport already started');
+      return;
     }
 
-    if (this.state === 'CONNECTED' || this.state === 'READY') {
-      return true;
+    if (this.isClosed) {
+      throw new NetworkError('Transport has been closed');
     }
 
-    this.state = 'CONNECTING';
+    logger.info('Starting Stdio transport', { name: this.config.name });
 
     try {
       // 启动MCP服务器进程
@@ -59,45 +82,29 @@ export class StdioTransport extends EventEmitter implements IMcpTransport {
 
       // 设置错误处理
       this.process.stderr.on('data', (data) => {
-        console.error(`MCP Server Error [${this.config.name}]: ${data.toString()}`);
-        this.emit('error', new Error(data.toString()));
+        logger.error(`MCP Server Error [${this.config.name}]: ${data.toString()}`);
+        this.onerror?.(new Error(data.toString()));
       });
 
       this.process.on('error', (error) => {
-        console.error(`MCP Process Error [${this.config.name}]: ${error.message}`);
-        this.state = 'ERROR';
-        this.emit('error', error);
+        logger.error(`MCP Process Error [${this.config.name}]: ${error.message}`);
+        this.onerror?.(error);
       });
 
       this.process.on('close', (code) => {
-        console.log(`MCP Process closed [${this.config.name}] with code: ${code}`);
-        this.state = 'DISCONNECTED';
-        this.emit('close', code);
-        
-        // 尝试自动重连
-        if (!this.isDisposed && this.reconnectAttempts < this.maxReconnectAttempts) {
-          this.reconnectAttempts++;
-          setTimeout(() => this.connect(), this.reconnectDelay * this.reconnectAttempts);
-        }
+        logger.info(`MCP Process closed [${this.config.name}] with code: ${code}`);
+        this.handleConnectionError(new NetworkError('Process closed'));
       });
 
       // 开始读取消息
       this.startReadingMessages();
 
-      // 初始化会话
-      await this.initialize();
+      this.isStarted = true;
 
-      this.state = 'READY';
-      this.connectedAt = new Date();
-      this.lastActivityAt = new Date();
-      this.reconnectAttempts = 0;
-
-      return true;
+      logger.info('Stdio transport started');
     } catch (error) {
-      this.state = 'ERROR';
-      console.error(`Failed to connect to MCP server [${this.config.name}]: ${error}`);
-      await this.cleanup();
-      return false;
+      logger.error('Failed to start Stdio transport', { error });
+      throw error;
     }
   }
 
@@ -118,10 +125,10 @@ export class StdioTransport extends EventEmitter implements IMcpTransport {
       for (const line of lines) {
         if (line.trim()) {
           try {
-            const message: McpMessage = JSON.parse(line.trim());
+            const message: JSONRPCMessage = JSON.parse(line.trim());
             this.handleMessage(message);
           } catch (error) {
-            console.error(`Failed to parse MCP message: ${error}`);
+            logger.error('Failed to parse MCP message', { error, line });
           }
         }
       }
@@ -131,143 +138,122 @@ export class StdioTransport extends EventEmitter implements IMcpTransport {
   /**
    * 处理接收到的消息
    */
-  private handleMessage(message: McpMessage): void {
-    this.lastActivityAt = new Date();
+  private handleMessage(message: JSONRPCMessage): void {
+    logger.debug('Received message', { message });
 
-    if (message.id !== undefined) {
-      // 这是一个响应消息
-      const request = this.pendingRequests.get(message.id);
-      if (request) {
-        this.pendingRequests.delete(message.id);
-        if (message.error) {
-          request.reject(new Error(message.error.message || 'Unknown error'));
-        } else {
-          request.resolve(message.result);
-        }
+    // 通知外部监听器
+    this.onmessage?.(message);
+
+    // 处理响应消息
+    if ('id' in message && ('result' in message || 'error' in message)) {
+      const response = message as JSONRPCResponse;
+      const pending = this.pendingRequests.get(response.id);
+
+      if (pending) {
+        this.pendingRequests.delete(response.id);
+        pending.resolve(response);
       }
-    } else {
-      // 这可能是一个通知或其他消息
-      this.emit('notification', message);
     }
   }
 
   /**
-   * 发送消息到MCP服务器
+   * 处理连接错误
    */
-  async sendMessage(method: string, params?: any): Promise<any> {
-    if (this.isDisposed) {
-      throw new NetworkError('Transport has been disposed');
+  private handleConnectionError(error: Error): void {
+    logger.error('Connection error', { error });
+
+    // 拒绝所有待处理的请求
+    for (const [id, { reject }] of this.pendingRequests) {
+      reject(error);
     }
+    this.pendingRequests.clear();
 
-    if (this.state !== 'READY') {
-      throw new NetworkError(`Transport is not ready. Current state: ${this.state}`);
-    }
+    // 通知错误
+    this.onerror?.(error);
 
-    return new Promise((resolve, reject) => {
-      const id = ++this.messageIdCounter;
-      const message: McpMessage = {
-        jsonrpc: '2.0',
-        id,
-        method,
-        params
-      };
-
-      if (!this.writer) {
-        reject(new Error('Writer not available'));
-        return;
-      }
-
-      this.pendingRequests.set(id, { resolve, reject });
-
-      try {
-        this.writer.write(JSON.stringify(message) + '\n');
-      } catch (error) {
-        this.pendingRequests.delete(id);
-        reject(error);
-      }
-    });
+    // 通知关闭
+    this.onclose?.();
   }
 
   /**
-   * 初始化MCP会话
+   * 发送 JSON-RPC 消息
    */
-  private async initialize(): Promise<void> {
-    this.state = 'INITIALIZING';
+  async send(message: JSONRPCMessage, options?: any): Promise<void> {
+    if (this.isClosed) {
+      throw new NetworkError('Transport has been closed');
+    }
 
-    // 发送初始化请求
-    const result = await this.sendMessage('initialize', {
-      protocolVersion: '2.0',
-      capabilities: {
-        experimental: {},
-        tools: {
-          listChanged: false
-        }
-      }
-    });
+    if (!this.isStarted) {
+      throw new NetworkError('Transport not started. Call start() first.');
+    }
 
-    this.sessionId = result.serverInfo?.name || this.config.name;
+    // 如果是请求消息，添加到待处理列表
+    if ('id' in message && 'method' in message) {
+      const request = message as JSONRPCRequest;
 
-    // 发送initialized通知
-    await this.sendMessage('notifications/initialized', {});
+      // 生成响应 Promise
+      const responsePromise = new Promise<JSONRPCResponse>((resolve, reject) => {
+        this.pendingRequests.set(request.id, { resolve, reject });
+      });
+
+      // 发送请求
+      this.sendRequest(message);
+
+      // 等待响应
+      return responsePromise.then(() => {
+        // 响应已在 handleMessage 中处理
+      });
+    }
+
+    // 发送通知消息
+    this.sendRequest(message);
   }
 
   /**
-   * 列出可用的工具
+   * 发送请求到进程
    */
-  async listTools(): Promise<any[]> {
-    if (this.state !== 'READY') {
-      throw new NetworkError('Session is not ready');
+  private sendRequest(message: JSONRPCMessage): void {
+    if (!this.writer) {
+      throw new Error('Writer not available');
     }
 
-    const result = await this.sendMessage('tools/list');
-
-    if (result && Array.isArray(result.tools)) {
-      return result.tools;
+    try {
+      this.writer.write(JSON.stringify(message) + '\n');
+      logger.debug('Message sent', { message });
+    } catch (error) {
+      logger.error('Failed to send message', { error, message });
+      throw error;
     }
-
-    return [];
   }
 
   /**
-   * 调用MCP工具
+   * 关闭传输层
    */
-  async callTool(toolName: string, argumentsMap: Record<string, any>): Promise<any> {
-    if (this.state !== 'READY') {
-      throw new NetworkError('Session is not ready');
-    }
-
-    const result = await this.sendMessage('tools/call', {
-      name: toolName,
-      arguments: argumentsMap
-    });
-
-    return result;
-  }
-
-  /**
-   * 断开连接
-   */
-  async disconnect(): Promise<void> {
-    if (this.state === 'DISCONNECTED') {
+  async close(): Promise<void> {
+    if (this.isClosed) {
       return;
     }
 
-    await this.cleanup();
-  }
+    logger.info('Closing Stdio transport');
 
-  /**
-   * 清理资源
-   */
-  private async cleanup(): Promise<void> {
+    this.isClosed = true;
+    this.isStarted = false;
+
+    // 清理待处理的请求
+    for (const [id, { reject }] of this.pendingRequests) {
+      reject(new NetworkError('Transport closed'));
+    }
+    this.pendingRequests.clear();
+
+    // 清理进程
     if (this.writer) {
       try {
-        // 发送退出通知
         this.writer.write(JSON.stringify({
           jsonrpc: '2.0',
           method: 'notifications/exit'
         }) + '\n');
       } catch (error) {
-        console.error('Error sending exit notification:', error);
+        logger.error('Error sending exit notification', { error });
       }
     }
 
@@ -275,65 +261,16 @@ export class StdioTransport extends EventEmitter implements IMcpTransport {
       this.process.kill();
     }
 
-    // 清理待处理的请求
-    for (const [id, { reject }] of this.pendingRequests) {
-      reject(new NetworkError('Client disconnected'));
-    }
-    this.pendingRequests.clear();
+    // 通知关闭
+    this.onclose?.();
 
-    this.state = 'DISCONNECTED';
-    this.sessionId = null;
-    this.connectedAt = null;
+    logger.info('Stdio transport closed');
   }
 
   /**
-   * 检查是否已连接
+   * 生成下一个消息 ID
    */
-  isConnected(): boolean {
-    return this.state === 'READY';
-  }
-
-  /**
-   * 获取会话信息
-   */
-  getSessionInfo(): McpSessionInfo | null {
-    if (!this.sessionId) {
-      return null;
-    }
-
-    return {
-      sessionId: this.sessionId,
-      serverName: this.config.name,
-      state: this.state,
-      connectedAt: this.connectedAt || undefined,
-      lastActivityAt: this.lastActivityAt || undefined
-    };
-  }
-
-  /**
-   * 释放资源
-   */
-  async dispose(): Promise<void> {
-    this.isDisposed = true;
-    await this.disconnect();
-    this.removeAllListeners();
-  }
-
-  /**
-   * 健康检查
-   */
-  async healthCheck(): Promise<boolean> {
-    if (this.state !== 'READY') {
-      return false;
-    }
-
-    try {
-      // 发送ping请求
-      await this.sendMessage('ping', {});
-      return true;
-    } catch (error) {
-      console.error('Health check failed:', error);
-      return false;
-    }
+  private generateId(): RequestId {
+    return ++this.messageIdCounter;
   }
 }

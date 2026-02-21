@@ -14,7 +14,6 @@ export { ExecutorType, ExecutorConfig, ExecutorMetadata } from './core/types.js'
 // MCP执行器
 export { McpExecutor } from './mcp/McpExecutor.js';
 export { StdioTransport } from './mcp/transport/StdioTransport.js';
-export { SessionPool } from './mcp/session/SessionPool.js';
 export type {
   McpToolDefinition,
   McpToolResult,

@@ -1,22 +1,26 @@
 /**
  * MCP工具执行器
- * 执行MCP协议工具，支持会话池管理、健康检查、自动重连
+ * 执行MCP协议工具，支持会话管理、自动重连
+ * 支持多种传输层：Stdio 和 StreamableHTTP
  */
 
 import type { Tool } from '@modular-agent/types';
 import type { McpToolConfig } from '@modular-agent/types';
 import { NetworkError, ToolError, ConfigurationError } from '@modular-agent/types';
 import { BaseExecutor } from '../core/base/BaseExecutor.js';
-import { ExecutorType } from '../core/types.js';
-import { SessionPool } from './session/SessionPool.js';
 import type { McpServerConfig } from './types.js';
+import { Client } from './client/Client.js';
+import type { IMcpTransport } from './transport/types.js';
+import { StreamableHttpTransport } from './transport/StreamableHttpTransport.js';
+import { StdioTransport } from './transport/StdioTransport.js';
 
 /**
  * MCP工具执行器
  */
 export class McpExecutor extends BaseExecutor {
-  private sessionPool: SessionPool;
   private serverConfigs: Map<string, McpServerConfig> = new Map();
+  private clients: Map<string, Client> = new Map();
+  private transports: Map<string, IMcpTransport> = new Map();
 
   constructor(config?: {
     maxConnections?: number;
@@ -26,7 +30,7 @@ export class McpExecutor extends BaseExecutor {
     healthCheckInterval?: number;
   }) {
     super();
-    this.sessionPool = new SessionPool(config);
+    // 配置参数保留用于未来扩展
   }
 
   /**
@@ -58,17 +62,17 @@ export class McpExecutor extends BaseExecutor {
       // 获取或创建服务器配置
       const serverConfig = this.getOrCreateServerConfig(serverName, config);
 
-      // 获取传输层
-      const transport = await this.sessionPool.getTransport(serverName, serverConfig);
+      // 获取或创建客户端
+      const client = await this.getOrCreateClient(serverName, serverConfig);
 
       // 调用MCP工具
-      const result = await transport.callTool(mcpToolId, parameters);
+      const result = await client.callTool(mcpToolId, parameters);
 
       return {
         serverName,
         toolId: mcpToolId,
         result,
-        sessionInfo: transport.getSessionInfo()
+        capabilities: client.getCapabilities(),
       };
     } catch (error) {
       if (error instanceof NetworkError || error instanceof ConfigurationError) {
@@ -95,35 +99,125 @@ export class McpExecutor extends BaseExecutor {
     }
 
     // 创建新的服务器配置
+    const transportType = config.transportType || 'stdio';
     let serverConfig: McpServerConfig;
 
-    if (config.serverUrl) {
-      // 解析serverUrl
-      const [command, ...args] = config.serverUrl.split(' ');
+    if (transportType === 'http') {
+      // HTTP 传输配置
+      if (!config.serverUrl) {
+        throw new ConfigurationError(
+          `serverUrl is required for HTTP transport`,
+          'serverUrl',
+          { serverName }
+        );
+      }
+
       serverConfig = {
         name: serverName,
-        command: command || 'npx',
-        args,
-        env: Object.fromEntries(
-          Object.entries(process.env).filter(([, v]) => v !== undefined)
-        ) as Record<string, string>
+        command: config.serverUrl, // 使用 serverUrl 作为命令标识
+        args: [],
+        env: {},
+        transportType: 'http',
+        serverUrl: config.serverUrl,
+        sessionId: config.sessionId,
+        timeout: config.timeout,
+        maxRetries: config.maxRetries,
+        retryDelay: config.retryDelay,
+        enableCircuitBreaker: config.enableCircuitBreaker,
+        enableRateLimiter: config.enableRateLimiter,
       };
     } else {
-      // 默认配置
-      serverConfig = {
-        name: serverName,
-        command: 'npx',
-        args: ['-y', '@modelcontextprotocol/server-filesystem'],
-        env: Object.fromEntries(
-          Object.entries(process.env).filter(([, v]) => v !== undefined)
-        ) as Record<string, string>
-      };
+      // Stdio 传输配置
+      if (config.serverUrl) {
+        // 解析serverUrl
+        const [command, ...args] = config.serverUrl.split(' ');
+        serverConfig = {
+          name: serverName,
+          command: command || 'npx',
+          args,
+          env: config.env || Object.fromEntries(
+            Object.entries(process.env).filter(([, v]) => v !== undefined)
+          ) as Record<string, string>,
+          cwd: config.cwd,
+          transportType: 'stdio',
+        };
+      } else {
+        // 默认配置
+        serverConfig = {
+          name: serverName,
+          command: config.command || 'npx',
+          args: config.args || ['-y', '@modelcontextprotocol/server-filesystem'],
+          env: config.env || Object.fromEntries(
+            Object.entries(process.env).filter(([, v]) => v !== undefined)
+          ) as Record<string, string>,
+          cwd: config.cwd,
+          transportType: 'stdio',
+        };
+      }
     }
 
     // 缓存配置
     this.serverConfigs.set(serverName, serverConfig);
 
     return serverConfig;
+  }
+
+  /**
+   * 获取或创建客户端
+   */
+  private async getOrCreateClient(serverName: string, serverConfig: McpServerConfig): Promise<Client> {
+    // 如果已存在，直接返回
+    if (this.clients.has(serverName)) {
+      return this.clients.get(serverName)!;
+    }
+
+    // 创建传输层
+    const transportType = serverConfig.transportType || 'stdio';
+    let transport: IMcpTransport;
+
+    if (transportType === 'http') {
+      // 创建 StreamableHTTP 传输层
+      transport = new StreamableHttpTransport({
+        url: serverConfig.serverUrl!,
+        sessionId: serverConfig.sessionId,
+        timeout: serverConfig.timeout,
+        maxRetries: serverConfig.maxRetries,
+        retryDelay: serverConfig.retryDelay,
+        enableCircuitBreaker: serverConfig.enableCircuitBreaker,
+        enableRateLimiter: serverConfig.enableRateLimiter,
+      });
+    } else {
+      // 创建 Stdio 传输层
+      transport = new StdioTransport({
+        name: serverConfig.name,
+        command: serverConfig.command,
+        args: serverConfig.args,
+        env: serverConfig.env,
+        cwd: serverConfig.cwd,
+      });
+    }
+
+    // 启动传输层
+    await transport.start();
+
+    // 缓存传输层
+    this.transports.set(serverName, transport);
+
+    // 创建客户端
+    const client = new Client(transport, {
+      clientInfo: {
+        name: 'modular-agent',
+        version: '1.0.0',
+      },
+    });
+
+    // 连接到服务器
+    await client.connect();
+
+    // 缓存客户端
+    this.clients.set(serverName, client);
+
+    return client;
   }
 
   /**
@@ -139,57 +233,92 @@ export class McpExecutor extends BaseExecutor {
       );
     }
 
-    const transport = await this.sessionPool.getTransport(serverName, serverConfig);
-    
-    // 检查是否是StdioTransport
-    if ('listTools' in transport && typeof transport.listTools === 'function') {
-      return await transport.listTools();
-    }
-
-    return [];
+    const client = await this.getOrCreateClient(serverName, serverConfig);
+    return await client.listTools();
   }
 
   /**
    * 获取所有会话状态
    */
   getAllSessionStatus(): Map<string, any> {
-    return this.sessionPool.getAllSessionInfo();
+    const sessions = new Map();
+    for (const [name, client] of this.clients) {
+      sessions.set(name, {
+        serverName: name,
+        initialized: client.isInitialized(),
+        capabilities: client.getCapabilities(),
+      });
+    }
+    return sessions;
   }
 
   /**
    * 获取指定服务器的会话状态
    */
   getSessionStatus(serverName: string): any | null {
-    return this.sessionPool.getSessionInfo(serverName);
+    const client = this.clients.get(serverName);
+    if (!client) {
+      return null;
+    }
+
+    return {
+      serverName,
+      initialized: client.isInitialized(),
+      capabilities: client.getCapabilities(),
+    };
   }
 
   /**
    * 关闭指定服务器的会话
    */
   async closeSession(serverName: string): Promise<void> {
-    await this.sessionPool.close(serverName);
+    const client = this.clients.get(serverName);
+    if (client) {
+      await client.close();
+      this.clients.delete(serverName);
+    }
+
+    const transport = this.transports.get(serverName);
+    if (transport) {
+      await transport.close();
+      this.transports.delete(serverName);
+    }
+
+    this.serverConfigs.delete(serverName);
   }
 
   /**
    * 关闭所有会话
    */
   async closeAllSessions(): Promise<void> {
-    await this.sessionPool.closeAll();
+    // 关闭所有客户端
+    for (const [name, client] of this.clients) {
+      await client.close();
+    }
+    this.clients.clear();
+
+    // 关闭所有传输层
+    for (const [name, transport] of this.transports) {
+      await transport.close();
+    }
+    this.transports.clear();
+
+    // 清除配置
+    this.serverConfigs.clear();
   }
 
   /**
    * 获取连接数
    */
   getConnectionCount(): number {
-    return this.sessionPool.getConnectionCount();
+    return this.transports.size;
   }
 
   /**
    * 清理资源
    */
   async cleanup(): Promise<void> {
-    await this.sessionPool.destroy();
-    this.serverConfigs.clear();
+    await this.closeAllSessions();
   }
 
   /**
