@@ -1,67 +1,67 @@
 /**
- * ThreadRegistry - ThreadContext注册表
- * 负责ThreadContext的内存存储和基本查询
+ * ThreadRegistry - ThreadEntity注册表
+ * 负责ThreadEntity的内存存储和基本查询
  * 不负责状态转换、持久化、序列化
  *
  * 本模块只导出类定义，不导出实例
  * 实例通过 SingletonRegistry 统一管理
  */
 
-import { ThreadContext } from '../execution/context/thread-context.js';
+import { ThreadEntity } from '../entities/thread-entity.js';
 
 /**
- * ThreadRegistry - ThreadContext注册表
+ * ThreadRegistry - ThreadEntity注册表
  */
 export class ThreadRegistry {
-  private threadContexts: Map<string, ThreadContext> = new Map();
+  private threadEntities: Map<string, ThreadEntity> = new Map();
 
   /**
-   * 注册ThreadContext
-   * @param threadContext ThreadContext实例
+   * 注册ThreadEntity
+   * @param threadEntity ThreadEntity实例
    */
-  register(threadContext: ThreadContext): void {
-    this.threadContexts.set(threadContext.getThreadId(), threadContext);
+  register(threadEntity: ThreadEntity): void {
+    this.threadEntities.set(threadEntity.getThreadId(), threadEntity);
   }
 
   /**
-   * 获取ThreadContext
+   * 获取ThreadEntity
    * @param threadId 线程ID
-   * @returns ThreadContext实例或null
+   * @returns ThreadEntity实例或null
    */
-  get(threadId: string): ThreadContext | null {
-    return this.threadContexts.get(threadId) || null;
+  get(threadId: string): ThreadEntity | null {
+    return this.threadEntities.get(threadId) || null;
   }
 
   /**
-   * 删除ThreadContext
+   * 删除ThreadEntity
    * @param threadId 线程ID
    */
   delete(threadId: string): void {
-    this.threadContexts.delete(threadId);
+    this.threadEntities.delete(threadId);
   }
 
   /**
-   * 获取所有ThreadContext
-   * @returns ThreadContext数组
+   * 获取所有ThreadEntity
+   * @returns ThreadEntity数组
    */
-  getAll(): ThreadContext[] {
-    return Array.from(this.threadContexts.values());
+  getAll(): ThreadEntity[] {
+    return Array.from(this.threadEntities.values());
   }
 
   /**
-   * 清空所有ThreadContext
+   * 清空所有ThreadEntity
    */
   clear(): void {
-    this.threadContexts.clear();
+    this.threadEntities.clear();
   }
 
   /**
-   * 检查ThreadContext是否存在
+   * 检查ThreadEntity是否存在
    * @param threadId 线程ID
    * @returns 是否存在
    */
   has(threadId: string): boolean {
-    return this.threadContexts.has(threadId);
+    return this.threadEntities.has(threadId);
   }
 
   /**
@@ -70,8 +70,8 @@ export class ThreadRegistry {
    * @returns 是否活跃
    */
   isWorkflowActive(workflowId: string): boolean {
-    return this.getAll().some(threadContext =>
-      threadContext.getWorkflowId() === workflowId
+    return this.getAll().some(threadEntity =>
+      threadEntity.getWorkflowId() === workflowId
     );
   }
 }

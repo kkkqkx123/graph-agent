@@ -26,7 +26,7 @@
  * - accessor.get('loop.item') - 获取循环变量
  */
 
-import type { ThreadContext } from '../context/thread-context.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { VariableScope } from '@modular-agent/types';
 import { resolvePath } from '@modular-agent/common-utils';
 
@@ -47,9 +47,9 @@ export type VariableNamespace =
 export class VariableAccessor {
   /**
    * 构造函数
-   * @param threadContext Thread 上下文
+   * @param threadEntity Thread 实体
    */
-  constructor(private readonly threadContext: ThreadContext) { }
+  constructor(private readonly threadEntity: ThreadEntity) { }
 
   /**
    * 获取变量值
@@ -125,7 +125,7 @@ export class VariableAccessor {
    * @returns 值
    */
   private getFromInput(path: string): any {
-    const input = this.threadContext.getInput();
+    const input = this.threadEntity.getInput();
     if (!path) {
       return input;
     }
@@ -138,7 +138,7 @@ export class VariableAccessor {
    * @returns 值
    */
   private getFromOutput(path: string): any {
-    const output = this.threadContext.getOutput();
+    const output = this.threadEntity.getOutput();
     if (!path) {
       return output;
     }
@@ -152,7 +152,7 @@ export class VariableAccessor {
    * @returns 值
    */
   private getFromScope(path: string, scope: VariableScope): any {
-    const thread = this.threadContext.thread;
+    const thread = this.threadEntity.getThread();
     const scopes = thread.variableScopes;
 
     let scopeData: Record<string, any> | undefined;
@@ -218,7 +218,7 @@ export class VariableAccessor {
       return undefined;
     }
 
-    const rootValue = this.threadContext.getVariable(rootVarName);
+    const rootValue = this.threadEntity.getVariable(rootVarName);
 
     if (rootValue === undefined) {
       return undefined;

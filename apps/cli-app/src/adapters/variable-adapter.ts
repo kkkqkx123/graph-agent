@@ -33,7 +33,7 @@ export class VariableAdapter extends BaseAdapter {
       if (!threadContext) {
         throw new Error(`Thread not found: ${threadId}`);
       }
-      await threadContext.updateVariable(variableName, value);
+      await threadContext.setVariable(variableName, value);
       this.logger.success(`变量已设置: ${variableName}`);
     }, '设置变量');
   }

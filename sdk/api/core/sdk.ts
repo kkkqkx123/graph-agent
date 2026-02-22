@@ -209,8 +209,9 @@ class SDK {
 
     // 清理依赖管理器
     try {
-      const context = this.dependencies.getExecutionContext();
-      await context.destroy();
+      // DI容器会自动清理所有单例服务
+      const { resetContainer } = await import('../../core/di/index.js');
+      resetContainer();
     } catch (error) {
       logger.error('Failed to cleanup dependencies', { error: getErrorMessage(error) });
     }

@@ -7,7 +7,7 @@
  * - 提供完整的任务生命周期状态
  */
 
-import type { ThreadContext } from '../context/thread-context.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { ThreadResult } from '@modular-agent/types';
 
 /**
@@ -35,8 +35,8 @@ export type WorkerStatus =
 export interface TaskInfo {
   /** 任务ID */
   id: string;
-  /** 线程上下文 */
-  threadContext: ThreadContext;
+  /** 线程实体 */
+  threadEntity: ThreadEntity;
   /** 任务状态 */
   status: TaskStatus;
   /** 提交时间 */

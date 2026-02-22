@@ -53,10 +53,10 @@ export async function continueFromTriggerHandler(
 
   const config = node.config as ContinueFromTriggerNodeConfig;
   
-  // 获取主线程上下文（从context中）
-  const mainThreadContext = context?.mainThreadContext;
-  if (!mainThreadContext) {
-    throw new Error('Main thread context is required for CONTINUE_FROM_TRIGGER node');
+  // 获取主线程实体（从context中）
+  const mainThreadEntity = context?.mainThreadEntity;
+  if (!mainThreadEntity) {
+    throw new Error('Main thread entity is required for CONTINUE_FROM_TRIGGER node');
   }
 
   // 处理变量回调
@@ -64,13 +64,17 @@ export async function continueFromTriggerHandler(
     if (config.variableCallback.includeAll) {
       // 回传所有变量
       const allVariables = thread.variables || [];
-      mainThreadContext.setVariables(allVariables);
+      for (const v of allVariables) {
+        mainThreadEntity.setVariable(v.name, v.value);
+      }
     } else if (config.variableCallback.includeVariables) {
       // 选择性回传变量
-      const variablesToCallback = (thread.variables || []).filter(v => 
+      const variablesToCallback = (thread.variables || []).filter(v =>
         config.variableCallback?.includeVariables?.includes(v.name)
       );
-      mainThreadContext.setVariables(variablesToCallback);
+      for (const v of variablesToCallback) {
+        mainThreadEntity.setVariable(v.name, v.value);
+      }
     }
   }
 
@@ -101,7 +105,9 @@ export async function continueFromTriggerHandler(
       );
       
       // 将消息回传到主线程
-      mainThreadContext.addMessages(visibleMessages);
+      for (const msg of visibleMessages) {
+        mainThreadEntity.addMessage(msg);
+      }
     }
   }
 

@@ -14,15 +14,15 @@
  * - 提供任务状态查询和取消功能
  */
 
-import { ThreadContext } from '../context/thread-context.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { EventManager } from '../../services/event-manager.js';
 import type { ThreadRegistry } from '../../services/thread-registry.js';
+import type { ThreadExecutor } from '../thread-executor.js';
 import { EventType } from '@modular-agent/types';
 import { now, getErrorMessage } from '@modular-agent/common-utils';
 import { TaskRegistry, type TaskManager } from '../../services/task-registry.js';
 import { ThreadPoolManager } from './thread-pool-manager.js';
 import { TaskQueueManager } from './task-queue-manager.js';
-import { ExecutionContext } from '../context/execution-context.js';
 import { ThreadBuilder } from '../thread-builder.js';
 import { CallbackManager } from './callback-manager.js';
 import {
@@ -67,38 +67,37 @@ export class TriggeredSubworkflowManager implements TaskManager {
   private threadBuilder: ThreadBuilder;
 
   /**
-   * 执行上下文
-   */
-  private executionContext: ExecutionContext;
-
-  /**
    * 回调管理器
    */
   private callbackManager: CallbackManager<ExecutedSubgraphResult>;
 
   /**
    * 构造函数
-   * @param executionContext 执行上下文
+   * @param threadRegistry Thread注册表
+   * @param threadBuilder Thread构建器
+   * @param taskQueueManager 任务队列管理器
+   * @param eventManager 事件管理器
+   * @param executorFactory ThreadExecutor 工厂函数
    * @param config 配置
    */
-  constructor(executionContext: ExecutionContext, config?: SubworkflowManagerConfig) {
-    this.executionContext = executionContext;
-    this.eventManager = executionContext.getEventManager();
-    this.threadRegistry = executionContext.getThreadRegistry();
-    this.threadBuilder = new ThreadBuilder(executionContext.getWorkflowRegistry(), executionContext);
+  constructor(
+    threadRegistry: ThreadRegistry,
+    threadBuilder: ThreadBuilder,
+    taskQueueManager: TaskQueueManager,
+    eventManager: EventManager,
+    executorFactory: () => ThreadExecutor,
+    config?: SubworkflowManagerConfig
+  ) {
+    this.threadRegistry = threadRegistry;
+    this.threadBuilder = threadBuilder;
+    this.taskQueueManager = taskQueueManager;
+    this.eventManager = eventManager;
 
     // 获取全局任务注册表
     this.taskRegistry = TaskRegistry.getInstance();
 
     // 创建线程池管理器
-    this.threadPoolManager = new ThreadPoolManager(executionContext, config);
-
-    // 创建任务队列管理器
-    this.taskQueueManager = new TaskQueueManager(
-      this.taskRegistry,
-      this.threadPoolManager,
-      this.eventManager
-    );
+    this.threadPoolManager = new ThreadPoolManager(executorFactory, config);
 
     // 创建回调管理器
     this.callbackManager = new CallbackManager<ExecutedSubgraphResult>();
@@ -117,28 +116,28 @@ export class TriggeredSubworkflowManager implements TaskManager {
       throw new Error('subgraphId is required');
     }
 
-    if (!task.mainThreadContext) {
-      throw new Error('mainThreadContext is required');
+    if (!task.mainThreadEntity) {
+      throw new Error('mainThreadEntity is required');
     }
 
     // 准备输入数据
     const input = this.prepareInputData(task);
 
-    // 创建子工作流 ThreadContext
-    const subgraphContext = await this.createSubgraphContext(task, input);
+    // 创建子工作流 ThreadEntity
+    const subgraphEntity = await this.createSubgraphContext(task, input);
 
     // 注册到 ThreadRegistry
-    this.threadRegistry.register(subgraphContext);
+    this.threadRegistry.register(subgraphEntity);
 
     // 建立父子线程关系
-    const parentThreadId = task.mainThreadContext.getThreadId();
-    const childThreadId = subgraphContext.getThreadId();
-    task.mainThreadContext.registerChildThread(childThreadId);
-    subgraphContext.setParentThreadId(parentThreadId);
-    subgraphContext.setTriggeredSubworkflowId(task.subgraphId);
+    const parentThreadId = task.mainThreadEntity.getThreadId();
+    const childThreadId = subgraphEntity.getThreadId();
+    task.mainThreadEntity.registerChildThread(childThreadId);
+    subgraphEntity.setParentThreadId(parentThreadId);
+    subgraphEntity.setTriggeredSubworkflowId(task.subgraphId);
 
     // 触发开始事件
-    await this.emitStartedEvent(task, subgraphContext);
+    await this.emitStartedEvent(task, subgraphEntity);
 
     // 根据配置选择执行方式
     const waitForCompletion = task.config?.waitForCompletion !== false; // 默认为 true
@@ -146,10 +145,10 @@ export class TriggeredSubworkflowManager implements TaskManager {
 
     if (waitForCompletion) {
       // 同步执行
-      return await this.executeSync(subgraphContext, timeout);
+      return await this.executeSync(subgraphEntity, timeout);
     } else {
       // 异步执行
-      return this.executeAsync(subgraphContext, timeout);
+      return this.executeAsync(subgraphEntity, timeout);
     }
   }
 
@@ -161,8 +160,8 @@ export class TriggeredSubworkflowManager implements TaskManager {
   private prepareInputData(task: TriggeredSubgraphTask): Record<string, any> {
     return {
       triggerId: task.triggerId,
-      output: task.mainThreadContext.getOutput(),
-      input: task.mainThreadContext.getInput(),
+      output: task.mainThreadEntity.getOutput(),
+      input: task.mainThreadEntity.getInput(),
       ...task.input
     };
   }
@@ -171,63 +170,63 @@ export class TriggeredSubworkflowManager implements TaskManager {
    * 创建子工作流上下文
    * @param task 触发子工作流任务
    * @param input 输入数据
-   * @returns 子工作流上下文
+   * @returns 子工作流实体
    */
   private async createSubgraphContext(
     task: TriggeredSubgraphTask,
     input: Record<string, any>
-  ): Promise<ThreadContext> {
-    const subgraphContext = await this.threadBuilder.build(task.subgraphId, {
+  ): Promise<ThreadEntity> {
+    const subgraphEntity = await this.threadBuilder.build(task.subgraphId, {
       input
     });
 
     // 设置线程类型为 TRIGGERED
-    subgraphContext.setThreadType('TRIGGERED');
+    subgraphEntity.setThreadType('TRIGGERED');
 
-    return subgraphContext;
+    return subgraphEntity;
   }
 
   /**
    * 同步执行
-   * @param subgraphContext 子工作流上下文
+   * @param subgraphEntity 子工作流实体
    * @param timeout 超时时间
    * @returns 执行结果
    */
   private async executeSync(
-    subgraphContext: ThreadContext,
+    subgraphEntity: ThreadEntity,
     timeout: number
   ): Promise<ExecutedSubgraphResult> {
     // 先注册任务到全局 TaskRegistry
-    const taskId = this.taskRegistry.register(subgraphContext, this, timeout);
+    const taskId = this.taskRegistry.register(subgraphEntity, this, timeout);
 
     try {
-      const result = await this.taskQueueManager.submitSync(taskId, subgraphContext, timeout);
+      const result = await this.taskQueueManager.submitSync(taskId, subgraphEntity, timeout);
 
       // 注销父子关系
-      this.unregisterParentChildRelationship(subgraphContext);
+      this.unregisterParentChildRelationship(subgraphEntity);
 
       return result;
     } catch (error) {
       // 注销父子关系
-      this.unregisterParentChildRelationship(subgraphContext);
+      this.unregisterParentChildRelationship(subgraphEntity);
       throw error;
     }
   }
 
   /**
    * 异步执行
-   * @param subgraphContext 子工作流上下文
+   * @param subgraphEntity 子工作流实体
    * @param timeout 超时时间
    * @returns 任务提交结果
    */
   private executeAsync(
-    subgraphContext: ThreadContext,
+    subgraphEntity: ThreadEntity,
     timeout: number
   ): TaskSubmissionResult {
-    const threadId = subgraphContext.getThreadId();
+    const threadId = subgraphEntity.getThreadId();
 
     // 先注册任务到全局 TaskRegistry
-    const taskId = this.taskRegistry.register(subgraphContext, this, timeout);
+    const taskId = this.taskRegistry.register(subgraphEntity, this, timeout);
 
     // 创建 Promise 并注册回调
     const promise = new Promise<ExecutedSubgraphResult>((resolve, reject) => {
@@ -235,7 +234,7 @@ export class TriggeredSubworkflowManager implements TaskManager {
     });
 
     // 提交到任务队列（只提交一次）
-    const submissionResult = this.taskQueueManager.submitAsync(taskId, subgraphContext, timeout);
+    const submissionResult = this.taskQueueManager.submitAsync(taskId, subgraphEntity, timeout);
 
     // 通过 Promise 处理完成和失败
     promise
@@ -267,9 +266,9 @@ export class TriggeredSubworkflowManager implements TaskManager {
     this.emitCompletedEvent(threadId, result);
 
     // 注销父子关系
-    const subgraphContext = this.threadRegistry.get(threadId);
-    if (subgraphContext) {
-      this.unregisterParentChildRelationship(subgraphContext);
+    const subgraphEntity = this.threadRegistry.get(threadId);
+    if (subgraphEntity) {
+      this.unregisterParentChildRelationship(subgraphEntity);
     }
 
     // 清理回调
@@ -277,7 +276,7 @@ export class TriggeredSubworkflowManager implements TaskManager {
 
     // 清理 TaskRegistry 中的任务记录
     const taskInfo = this.taskRegistry.getAll().find(
-      t => t.threadContext.getThreadId() === threadId
+      t => t.threadEntity.getThreadId() === threadId
     );
     if (taskInfo) {
       this.taskRegistry.delete(taskInfo.id);
@@ -297,9 +296,9 @@ export class TriggeredSubworkflowManager implements TaskManager {
     this.emitFailedEvent(threadId, error);
 
     // 注销父子关系
-    const subgraphContext = this.threadRegistry.get(threadId);
-    if (subgraphContext) {
-      this.unregisterParentChildRelationship(subgraphContext);
+    const subgraphEntity = this.threadRegistry.get(threadId);
+    if (subgraphEntity) {
+      this.unregisterParentChildRelationship(subgraphEntity);
     }
 
     // 清理回调
@@ -307,7 +306,7 @@ export class TriggeredSubworkflowManager implements TaskManager {
 
     // 清理 TaskRegistry 中的任务记录
     const taskInfo = this.taskRegistry.getAll().find(
-      t => t.threadContext.getThreadId() === threadId
+      t => t.threadEntity.getThreadId() === threadId
     );
     if (taskInfo) {
       this.taskRegistry.delete(taskInfo.id);
@@ -316,16 +315,16 @@ export class TriggeredSubworkflowManager implements TaskManager {
 
   /**
    * 注销父子关系
-   * @param subgraphContext 子工作流上下文
+   * @param subgraphEntity 子工作流实体
    */
-  private unregisterParentChildRelationship(subgraphContext: ThreadContext): void {
-    const parentThreadId = subgraphContext.getParentThreadId();
-    const childThreadId = subgraphContext.getThreadId();
+  private unregisterParentChildRelationship(subgraphEntity: ThreadEntity): void {
+    const parentThreadId = subgraphEntity.getParentThreadId();
+    const childThreadId = subgraphEntity.getThreadId();
 
     if (parentThreadId) {
-      const parentContext = this.threadRegistry.get(parentThreadId);
-      if (parentContext) {
-        parentContext.unregisterChildThread(childThreadId);
+      const parentEntity = this.threadRegistry.get(parentThreadId);
+      if (parentEntity) {
+        parentEntity.unregisterChildThread(childThreadId);
       }
     }
   }
@@ -333,16 +332,16 @@ export class TriggeredSubworkflowManager implements TaskManager {
   /**
    * 触发开始事件
    * @param task 触发子工作流任务
-   * @param subgraphContext 子工作流上下文
+   * @param subgraphEntity 子工作流实体
    */
   private async emitStartedEvent(
     task: TriggeredSubgraphTask,
-    subgraphContext: ThreadContext
+    subgraphEntity: ThreadEntity
   ): Promise<void> {
     await this.eventManager.emit({
       type: 'TRIGGERED_SUBGRAPH_STARTED',
-      threadId: task.mainThreadContext.getThreadId(),
-      workflowId: task.mainThreadContext.getWorkflowId(),
+      threadId: task.mainThreadEntity.getThreadId(),
+      workflowId: task.mainThreadEntity.getWorkflowId(),
       subgraphId: task.subgraphId,
       triggerId: task.triggerId,
       input: task.input,
@@ -356,18 +355,18 @@ export class TriggeredSubworkflowManager implements TaskManager {
    * @param result 执行结果
    */
   private async emitCompletedEvent(threadId: string, result: ExecutedSubgraphResult): Promise<void> {
-    const subgraphContext = this.threadRegistry.get(threadId);
-    if (!subgraphContext) {
+    const subgraphEntity = this.threadRegistry.get(threadId);
+    if (!subgraphEntity) {
       return;
     }
 
     await this.eventManager.emit({
       type: 'TRIGGERED_SUBGRAPH_COMPLETED',
       threadId,
-      workflowId: subgraphContext.getWorkflowId(),
-      subgraphId: subgraphContext.getTriggeredSubworkflowId() || '',
+      workflowId: subgraphEntity.getWorkflowId(),
+      subgraphId: subgraphEntity.getTriggeredSubworkflowId() || '',
       triggerId: '',
-      output: subgraphContext.getOutput(),
+      output: subgraphEntity.getOutput(),
       executionTime: result.executionTime,
       timestamp: now()
     });
@@ -379,16 +378,16 @@ export class TriggeredSubworkflowManager implements TaskManager {
    * @param error 错误信息
    */
   private async emitFailedEvent(threadId: string, error: Error): Promise<void> {
-    const subgraphContext = this.threadRegistry.get(threadId);
-    if (!subgraphContext) {
+    const subgraphEntity = this.threadRegistry.get(threadId);
+    if (!subgraphEntity) {
       return;
     }
 
     await this.eventManager.emit({
       type: 'TRIGGERED_SUBGRAPH_FAILED',
       threadId,
-      workflowId: subgraphContext.getWorkflowId(),
-      subgraphId: subgraphContext.getTriggeredSubworkflowId() || '',
+      workflowId: subgraphEntity.getWorkflowId(),
+      subgraphId: subgraphEntity.getTriggeredSubworkflowId() || '',
       triggerId: '',
       error: getErrorMessage(error),
       timestamp: now()
@@ -416,7 +415,7 @@ export class TriggeredSubworkflowManager implements TaskManager {
       const taskInfo = this.taskRegistry.get(taskId);
       if (taskInfo) {
         // 注销父子关系
-        this.unregisterParentChildRelationship(taskInfo.threadContext);
+        this.unregisterParentChildRelationship(taskInfo.threadEntity);
       }
     }
 

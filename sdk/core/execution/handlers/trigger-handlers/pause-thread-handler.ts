@@ -7,7 +7,7 @@
 
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import { ValidationError, RuntimeValidationError } from '@modular-agent/types';
-import { ExecutionContext } from '../../context/execution-context.js';
+import type { ThreadLifecycleCoordinator } from '../../coordinators/thread-lifecycle-coordinator.js';
 import { getErrorMessage, now } from '@modular-agent/common-utils';
 
 /**
@@ -58,10 +58,9 @@ function createFailureResult(
 export async function pauseThreadHandler(
   action: TriggerAction,
   triggerId: string,
-  executionContext?: ExecutionContext
+  lifecycleCoordinator: ThreadLifecycleCoordinator
 ): Promise<TriggerExecutionResult> {
   const executionTime = now();
-  const context = executionContext || ExecutionContext.createDefault();
 
   try {
     const { threadId } = action.parameters;
@@ -75,7 +74,6 @@ export async function pauseThreadHandler(
     // 1. 设置暂停标志
     // 2. 等待执行器响应
     // 3. 更新线程状态
-    const lifecycleCoordinator = context.getLifecycleCoordinator();
     await lifecycleCoordinator.pauseThread(threadId);
 
     return createSuccessResult(

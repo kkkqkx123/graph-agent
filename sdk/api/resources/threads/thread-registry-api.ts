@@ -40,11 +40,11 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
    * @returns 线程实例，如果不存在则返回null
    */
   protected async getResource(id: string): Promise<Thread | null> {
-    const threadContext = this.dependencies.getThreadRegistry().get(id);
-    if (!threadContext) {
+    const threadEntity = this.dependencies.getThreadRegistry().get(id);
+    if (!threadEntity) {
       return null;
     }
-    return threadContext.thread;
+    return threadEntity.thread;
   }
 
   /**
@@ -52,7 +52,7 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
    * @returns 线程实例数组
    */
   protected async getAllResources(): Promise<Thread[]> {
-    return this.dependencies.getThreadRegistry().getAll().map((ctx: any) => ctx.thread);
+    return this.dependencies.getThreadRegistry().getAll().map((threadEntity: any) => threadEntity.thread);
   }
 
   /**

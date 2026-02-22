@@ -100,6 +100,20 @@ export class InterruptionManager {
   }
 
   /**
+   * 检查是否应该暂停
+   */
+  shouldPause(): boolean {
+    return this.interruptionType === 'PAUSE';
+  }
+
+  /**
+   * 检查是否应该停止
+   */
+  shouldStop(): boolean {
+    return this.interruptionType === 'STOP';
+  }
+
+  /**
    * 获取中止原因
    */
   getAbortReason(): ThreadInterruptedException | undefined {

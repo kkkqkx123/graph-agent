@@ -17,13 +17,13 @@ import { now } from '@modular-agent/common-utils';
  * 触发器处理器类型
  * @param action 触发动作
  * @param triggerId 触发器ID
- * @param executionContext 执行上下文（可选）
+ * @param dependencies 依赖项（可选）
  * @returns 执行结果
  */
 export type TriggerHandler = (
   action: TriggerAction,
   triggerId: string,
-  executionContext?: any
+  ...dependencies: any[]
 ) => Promise<TriggerExecutionResult>;
 
 // 导入各个触发器处理函数

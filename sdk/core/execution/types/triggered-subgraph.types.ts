@@ -8,7 +8,7 @@
  */
 
 import type { ID } from '@modular-agent/types';
-import type { ThreadContext } from '../context/thread-context.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { ThreadResult } from '@modular-agent/types';
 import { TaskStatus } from './task.types.js';
 
@@ -22,8 +22,8 @@ export interface TriggeredSubgraphTask {
   input: Record<string, any>;
   /** 触发器ID */
   triggerId: string;
-  /** 主工作流线程上下文 */
-  mainThreadContext: ThreadContext;
+  /** 主工作流线程实体 */
+  mainThreadEntity: ThreadEntity;
   /** 配置选项 */
   config?: {
     /**
@@ -45,8 +45,8 @@ export interface TriggeredSubgraphTask {
  * 执行单个触发子工作流的返回结果（同步执行）
  */
 export interface ExecutedSubgraphResult {
-  /** 子工作流上下文 */
-  subgraphContext: ThreadContext;
+  /** 子工作流实体 */
+  subgraphEntity: ThreadEntity;
   /** 执行结果 */
   threadResult: ThreadResult;
   /** 执行时间（毫秒） */
@@ -73,8 +73,8 @@ export interface TaskSubmissionResult {
 export interface QueueTask {
   /** 任务ID */
   taskId: string;
-  /** 线程上下文 */
-  threadContext: ThreadContext;
+  /** 线程实体 */
+  threadEntity: ThreadEntity;
   /** Promise resolve函数 */
   resolve: (value: ExecutedSubgraphResult) => void;
   /** Promise reject函数 */

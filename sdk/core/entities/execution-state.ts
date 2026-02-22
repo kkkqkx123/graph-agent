@@ -10,7 +10,7 @@ import { now } from '@modular-agent/common-utils';
 /**
  * 子图执行上下文
  */
-interface SubgraphContext {
+export interface SubgraphContext {
   /** 子工作流ID */
   workflowId: ID;
   /** 父工作流ID */

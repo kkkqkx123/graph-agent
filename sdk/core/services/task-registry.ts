@@ -16,7 +16,7 @@
 
 import { generateId } from '../../utils/index.js';
 import { now } from '@modular-agent/common-utils';
-import type { ThreadContext } from '../execution/context/thread-context.js';
+import type { ThreadEntity } from '../entities/thread-entity.js';
 import type { ThreadResult } from '@modular-agent/types';
 import { TaskStatus, type TaskInfo } from '../execution/types/task.types.js';
 
@@ -80,13 +80,13 @@ export class TaskRegistry {
 
   /**
    * 注册任务
-   * @param threadContext 线程上下文
+   * @param threadEntity 线程实体
    * @param manager 任务管理器
    * @param timeout 超时时间（毫秒）
    * @returns 任务ID
    */
   register(
-    threadContext: ThreadContext, 
+    threadEntity: ThreadEntity,
     manager: TaskManager,
     timeout?: number
   ): string {
@@ -94,7 +94,7 @@ export class TaskRegistry {
     
     const taskInfo: TaskInfo = {
       id: taskId,
-      threadContext,
+      threadEntity,
       status: 'QUEUED',
       submitTime: now(),
       timeout
@@ -236,7 +236,7 @@ export class TaskRegistry {
    * @returns 任务信息
    */
   getByThreadId(threadId: string): TaskInfo | null {
-    return this.getAll().find(task => task.threadContext.getThreadId() === threadId) || null;
+    return this.getAll().find(task => task.threadEntity.getThreadId() === threadId) || null;
   }
 
   /**

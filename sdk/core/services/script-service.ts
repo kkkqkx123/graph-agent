@@ -7,7 +7,7 @@
  */
 
 import type { Script, ScriptType, ScriptExecutionOptions, ScriptExecutionResult } from '@modular-agent/types';
-import type { ThreadContext } from '../execution/context/thread-context.js';
+import type { ThreadEntity } from '../entities/thread-entity.js';
 import type { IScriptExecutor } from '@modular-agent/script-executors';
 import { ScriptExecutionError, ScriptNotFoundError, ConfigurationValidationError } from '@modular-agent/types';
 import { tryCatchAsyncWithSignal, all } from '@modular-agent/common-utils';
@@ -402,14 +402,14 @@ class ScriptService {
    * 执行脚本
    * @param scriptName 脚本名称
    * @param options 执行选项（覆盖脚本默认选项）
-   * @param threadContext 线程上下文（可选，用于沙箱隔离）
+   * @param threadEntity 线程实体（可选，用于沙箱隔离）
    * @returns Result<ScriptExecutionResult, ScriptExecutionError>
    */
- async execute(
-   scriptName: string,
-   options: Partial<ScriptExecutionOptions> = {},
-   threadContext?: ThreadContext
- ): Promise<Result<ScriptExecutionResult, ScriptExecutionError>> {
+  async execute(
+    scriptName: string,
+    options: Partial<ScriptExecutionOptions> = {},
+    threadEntity?: ThreadEntity
+  ): Promise<Result<ScriptExecutionResult, ScriptExecutionError>> {
     // 获取脚本定义
     const script = this.getScript(scriptName);
 
@@ -451,7 +451,7 @@ class ScriptService {
   /**
     * 批量执行脚本
     * @param executions 执行任务数组
-    * @param threadContext 线程上下文（可选）
+    * @param threadEntity 线程实体（可选）
     * @returns Result<ScriptExecutionResult[], ScriptExecutionError>
     */
   async executeBatch(
@@ -459,12 +459,12 @@ class ScriptService {
       scriptName: string;
       options?: Partial<ScriptExecutionOptions>;
     }>,
-    threadContext?: ThreadContext
+    threadEntity?: ThreadEntity
   ): Promise<Result<ScriptExecutionResult[], ScriptExecutionError>> {
     // 并行执行所有脚本
     const results = await Promise.all(
       executions.map(exec =>
-        this.execute(exec.scriptName, exec.options, threadContext)
+        this.execute(exec.scriptName, exec.options, threadEntity)
       )
     );
 

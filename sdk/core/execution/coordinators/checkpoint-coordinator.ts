@@ -12,8 +12,7 @@ import type { GraphRegistry } from '../../services/graph-registry.js';
 import { CheckpointStateManager } from '../managers/checkpoint-state-manager.js';
 import { ConversationManager } from '../managers/conversation-manager.js';
 import { VariableStateManager } from '../managers/variable-state-manager.js';
-import { ThreadContext } from '../context/thread-context.js';
-import { ExecutionContext } from '../context/execution-context.js';
+import { ThreadEntity } from '../../entities/thread-entity.js';
 import { generateId } from '../../../utils/index.js';
 import { now } from '@modular-agent/common-utils';
 import { mergeMetadata } from '../../../utils/metadata-utils.js';
@@ -46,13 +45,13 @@ export class CheckpointCoordinator {
   ): Promise<string> {
     const { threadRegistry, checkpointStateManager, workflowRegistry } = dependencies;
 
-    // 步骤1：从 ThreadRegistry 获取 ThreadContext 对象
-    const threadContext = threadRegistry.get(threadId);
-    if (!threadContext) {
-      throw new ThreadContextNotFoundError(`ThreadContext not found`, threadId);
+    // 步骤1：从 ThreadRegistry 获取 ThreadEntity 对象
+    const threadEntity = threadRegistry.get(threadId);
+    if (!threadEntity) {
+      throw new ThreadContextNotFoundError(`ThreadEntity not found`, threadId);
     }
 
-    const thread = threadContext.thread;
+    const thread = threadEntity.thread;
 
     // 步骤2：提取 ThreadStateSnapshot
     // 使用 VariableStateManager 创建变量快照
@@ -66,18 +65,23 @@ export class CheckpointCoordinator {
     }
 
     // 获取对话管理器
-    const conversationManager = threadContext.getConversationManager();
+    const conversationManager = threadEntity.getConversationManager();
 
     // 保存完整消息历史和索引状态到检查点
-    const conversationState = {
+    const conversationState = conversationManager ? {
       messages: conversationManager.getAllMessages(),
       markMap: conversationManager.getMarkMap(),
       tokenUsage: conversationManager.getTokenUsage(),
       currentRequestUsage: conversationManager.getCurrentRequestUsage()
+    } : {
+      messages: [],
+      markMap: { currentBatch: 0, batchBoundaries: [0], originalIndices: [], boundaryToBatch: [] },
+      tokenUsage: { totalTokens: 0, promptTokens: 0, completionTokens: 0 },
+      currentRequestUsage: { totalTokens: 0, promptTokens: 0, completionTokens: 0 }
     };
 
     // 获取触发器状态快照
-    const triggerStateSnapshot = threadContext.getTriggerStateSnapshot();
+    const triggerStateSnapshot = threadEntity.getTriggerStateSnapshot();
 
     const threadState: ThreadStateSnapshot = {
       status: thread.status,
@@ -101,8 +105,8 @@ export class CheckpointCoordinator {
     // 步骤4：创建 Checkpoint 对象
     const checkpoint: Checkpoint = {
       id: checkpointId,
-      threadId: threadContext.getThreadId(),
-      workflowId: threadContext.getWorkflowId(),
+      threadId: threadEntity.getThreadId(),
+      workflowId: threadEntity.getWorkflowId(),
       timestamp,
       threadState,
       metadata
@@ -113,15 +117,15 @@ export class CheckpointCoordinator {
   }
 
   /**
-   * 从检查点恢复 ThreadContext 状态（静态方法）
+   * 从检查点恢复 ThreadEntity 状态（静态方法）
    * @param checkpointId 检查点ID
    * @param dependencies 依赖项
-   * @returns 恢复的 ThreadContext 对象
+   * @returns 恢复的 ThreadEntity 对象
    */
   static async restoreFromCheckpoint(
     checkpointId: string,
     dependencies: CheckpointDependencies
-  ): Promise<ThreadContext> {
+  ): Promise<ThreadEntity> {
     const { threadRegistry, checkpointStateManager, workflowRegistry, graphRegistry } = dependencies;
 
     // 步骤1：从 CheckpointStateManager 加载检查点
@@ -194,36 +198,29 @@ export class CheckpointCoordinator {
       );
     }
 
-    // 步骤9：创建 ThreadContext
-    const executionContext = ExecutionContext.createDefault();
-    const threadContext = new ThreadContext(
-      thread as Thread,
-      conversationManager,
-      threadRegistry,
-      workflowRegistry,
-      executionContext.getEventManager(),
-      executionContext.getToolService(),
-      executionContext.getLlmExecutor()
-    );
+    // 步骤9：创建 ThreadEntity
+    const { ExecutionState } = await import('../../entities/execution-state.js');
+    const executionState = new ExecutionState();
+    const threadEntity = new ThreadEntity(thread as Thread, executionState, conversationManager);
 
     // 步骤10：初始化工具可见性上下文
-    threadContext.initializeToolVisibility();
+    threadEntity.initializeToolVisibility();
 
     // 步骤11：恢复触发器状态
     if (checkpoint.threadState.triggerStates) {
-      threadContext.restoreTriggerState(checkpoint.threadState.triggerStates);
+      threadEntity.restoreTriggerState(checkpoint.threadState.triggerStates);
     }
 
     // 步骤12：恢复FORK/JOIN上下文（如果存在）
     if (checkpoint.threadState.forkJoinContext) {
-      threadContext.setForkId(checkpoint.threadState.forkJoinContext.forkId);
-      threadContext.setForkPathId(checkpoint.threadState.forkJoinContext.forkPathId);
+      threadEntity.setForkId(checkpoint.threadState.forkJoinContext.forkId);
+      threadEntity.setForkPathId(checkpoint.threadState.forkJoinContext.forkPathId);
     }
 
     // 步骤12：恢复Triggered子工作流上下文（如果存在）
     if (checkpoint.threadState.triggeredSubworkflowContext) {
-      threadContext.setParentThreadId(checkpoint.threadState.triggeredSubworkflowContext.parentThreadId);
-      threadContext.setTriggeredSubworkflowId(checkpoint.threadState.triggeredSubworkflowContext.triggeredSubworkflowId);
+      threadEntity.setParentThreadId(checkpoint.threadState.triggeredSubworkflowContext.parentThreadId);
+      threadEntity.setTriggeredSubworkflowId(checkpoint.threadState.triggeredSubworkflowContext.triggeredSubworkflowId);
     }
 
     // 步骤13：推断FORK/JOIN状态（如果需要）
@@ -250,21 +247,21 @@ export class CheckpointCoordinator {
         const childCheckpointId = await this.findChildCheckpoint(childThreadId, checkpointStateManager);
         if (childCheckpointId) {
           // 恢复子Thread
-          const childContext = await this.restoreFromCheckpoint(childCheckpointId, dependencies);
+          const childEntity = await this.restoreFromCheckpoint(childCheckpointId, dependencies);
           // 重建父子关系
-          childContext.setParentThreadId(threadContext.getThreadId());
+          childEntity.setParentThreadId(threadEntity.getThreadId());
           // 注册到ThreadRegistry
-          threadRegistry.register(childContext);
+          threadRegistry.register(childEntity);
           // 在主Thread中注册子Thread
-          threadContext.registerChildThread(childThreadId);
+          threadEntity.registerChildThread(childThreadId);
         }
       }
     }
 
     // 步骤12：注册到 ThreadRegistry
-    threadRegistry.register(threadContext);
+    threadRegistry.register(threadEntity);
 
-    return threadContext;
+    return threadEntity;
   }
 
   /**

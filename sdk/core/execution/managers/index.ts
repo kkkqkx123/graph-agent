@@ -36,6 +36,9 @@ export {
 export { InterruptionManager, type InterruptionType } from './interruption-manager.js';
 export { InterruptionDetector, InterruptionDetectorImpl } from './interruption-detector.js';
 
+// 工具可见性管理器
+export { ToolVisibilityManager } from './tool-visibility-manager.js';
+
 // 任务队列和线程池相关
 export { ThreadPoolManager } from './thread-pool-manager.js';
 export { TaskQueueManager } from './task-queue-manager.js';

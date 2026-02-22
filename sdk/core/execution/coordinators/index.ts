@@ -22,6 +22,7 @@ export { TriggerCoordinator } from './trigger-coordinator.js';
 export { LLMExecutionCoordinator } from './llm-execution-coordinator.js';
 export { ThreadLifecycleCoordinator } from './thread-lifecycle-coordinator.js';
 export { ThreadOperationCoordinator } from './thread-operation-coordinator.js';
+export { ThreadExecutionCoordinator } from './thread-execution-coordinator.js';
 export { VariableCoordinator } from './variable-coordinator.js';
 export { VariableAccessor, VariableNamespace } from '../utils/variable-accessor.js';
 export { ToolVisibilityCoordinator } from './tool-visibility-coordinator.js';

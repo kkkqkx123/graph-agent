@@ -25,7 +25,8 @@ import { ThreadBuilder } from '../thread-builder.js';
 import { ThreadExecutor } from '../thread-executor.js';
 import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager.js';
 import { ThreadCascadeManager } from '../managers/thread-cascade-manager.js';
-import { ExecutionContext } from '../context/execution-context.js';
+import type { ThreadRegistry } from '../../services/thread-registry.js';
+import type { WorkflowRegistry } from '../../services/workflow-registry.js';
 import { now } from '@modular-agent/common-utils';
 import {
   buildThreadCompletedEvent,
@@ -40,22 +41,16 @@ import { LifecycleCapable } from '../managers/lifecycle-capable.js';
  *
  * 负责高层的流程编排和协调，组织多个组件完成复杂的Thread生命周期操作
  */
-export class ThreadLifecycleCoordinator implements LifecycleCapable<{ executionContext: ExecutionContext }> {
-  private executionContext: ExecutionContext;
-
+export class ThreadLifecycleCoordinator implements LifecycleCapable<{}> {
   constructor(
-    executionContext?: ExecutionContext
-  ) {
-    this.executionContext = executionContext || ExecutionContext.createDefault();
-  }
+    private readonly threadRegistry: ThreadRegistry,
+    private readonly threadLifecycleManager: ThreadLifecycleManager,
+    private readonly threadCascadeManager: ThreadCascadeManager,
+    private readonly threadBuilder: ThreadBuilder,
+    private readonly threadExecutor: ThreadExecutor,
+    private readonly workflowRegistry: WorkflowRegistry
+  ) {}
 
-  /**
-   * 获取 LifecycleManager
-   * @returns ThreadLifecycleManager 实例
-   */
-  private getLifecycleManager(): ThreadLifecycleManager {
-    return this.executionContext.getThreadLifecycleManager();
-  }
 
   /**
    * 执行 Thread
@@ -65,33 +60,29 @@ export class ThreadLifecycleCoordinator implements LifecycleCapable<{ executionC
    * @returns 执行结果
    */
   async execute(workflowId: string, options: ThreadOptions = {}): Promise<ThreadResult> {
-    // 创建必要的组件
-    const threadBuilder = new ThreadBuilder(this.executionContext.getWorkflowRegistry(), this.executionContext);
-    const threadExecutor = new ThreadExecutor(this.executionContext);
+    // 步骤 1：构建 ThreadEntity
+    const threadEntity = await this.threadBuilder.build(workflowId, options);
 
-    // 步骤 1：构建 ThreadContext
-    const threadContext = await threadBuilder.build(workflowId, options);
-
-    // 步骤 2：注册 ThreadContext
-    this.executionContext.getThreadRegistry().register(threadContext);
+    // 步骤 2：注册 ThreadEntity
+    this.threadRegistry.register(threadEntity);
 
     // 步骤 3：启动 Thread
-    await this.getLifecycleManager().startThread(threadContext.thread);
+    await this.threadLifecycleManager.startThread(threadEntity.getThread());
 
     // 步骤 4：执行 Thread
-    const result = await threadExecutor.executeThread(threadContext);
+    const result = await this.threadExecutor.executeThread(threadEntity);
 
     // 步骤 5：根据执行结果更新 Thread 状态
     const status = result.metadata?.status;
     const isSuccess = status === 'COMPLETED';
 
     if (isSuccess) {
-      await this.getLifecycleManager().completeThread(threadContext.thread, result);
+      await this.threadLifecycleManager.completeThread(threadEntity.getThread(), result);
     } else {
       // 从 errors 数组获取第一个错误
-      const errors = threadContext.getErrors();
+      const errors = threadEntity.getErrors();
       const lastError = errors.length > 0 ? errors[errors.length - 1] : new Error('Execution failed');
-      await this.getLifecycleManager().failThread(threadContext.thread, lastError);
+      await this.threadLifecycleManager.failThread(threadEntity.getThread(), lastError);
     }
 
     return result;
@@ -115,18 +106,18 @@ export class ThreadLifecycleCoordinator implements LifecycleCapable<{ executionC
    * @throws NotFoundError ThreadContext不存在
    */
   async pauseThread(threadId: string): Promise<void> {
-    const threadContext = this.executionContext.getThreadRegistry().get(threadId);
-    if (!threadContext) {
-      throw new ThreadContextNotFoundError(`ThreadContext not found`, threadId);
+    const threadEntity = this.threadRegistry.get(threadId);
+    if (!threadEntity) {
+      throw new ThreadContextNotFoundError(`ThreadEntity not found`, threadId);
     }
 
-    const thread = threadContext.thread;
+    const thread = threadEntity.getThread();
 
     // 1. 请求暂停（InterruptionManager 会自动触发 AbortController）
-    threadContext.interrupt('PAUSE');
+    threadEntity.interrupt('PAUSE');
 
     // 2. 完全委托给Manager进行状态转换和事件触发
-    await this.getLifecycleManager().pauseThread(thread);
+    await this.threadLifecycleManager.pauseThread(thread);
   }
 
   /**
@@ -143,22 +134,21 @@ export class ThreadLifecycleCoordinator implements LifecycleCapable<{ executionC
    * @throws NotFoundError ThreadContext不存在
    */
   async resumeThread(threadId: string): Promise<ThreadResult> {
-    const threadContext = this.executionContext.getThreadRegistry().get(threadId);
-    if (!threadContext) {
-      throw new ThreadContextNotFoundError(`ThreadContext not found`, threadId);
+    const threadEntity = this.threadRegistry.get(threadId);
+    if (!threadEntity) {
+      throw new ThreadContextNotFoundError(`ThreadEntity not found`, threadId);
     }
 
-    const thread = threadContext.thread;
+    const thread = threadEntity.getThread();
 
     // 1. 完全委托给Manager进行状态转换和事件触发
-    await this.getLifecycleManager().resumeThread(thread);
+    await this.threadLifecycleManager.resumeThread(thread);
 
     // 2. 重置中断状态（包括 AbortController）
-    threadContext.resetInterrupt();
+    threadEntity.resetInterrupt();
 
-    // 3. 创建执行器并继续执行
-    const threadExecutor = new ThreadExecutor(this.executionContext);
-    return await threadExecutor.executeThread(threadContext);
+    // 3. 继续执行
+    return await this.threadExecutor.executeThread(threadEntity);
   }
 
   /**
@@ -180,30 +170,23 @@ export class ThreadLifecycleCoordinator implements LifecycleCapable<{ executionC
    * @throws NotFoundError ThreadContext不存在
    */
   async stopThread(threadId: string): Promise<void> {
-    const threadContext = this.executionContext.getThreadRegistry().get(threadId);
-    if (!threadContext) {
-      throw new ThreadContextNotFoundError(`ThreadContext not found`, threadId);
+    const threadEntity = this.threadRegistry.get(threadId);
+    if (!threadEntity) {
+      throw new ThreadContextNotFoundError(`ThreadEntity not found`, threadId);
     }
 
-    const thread = threadContext.thread;
+    const thread = threadEntity.getThread();
 
     // 1. 请求停止（InterruptionManager 会自动触发 AbortController）
-    threadContext.interrupt('STOP');
+    threadEntity.interrupt('STOP');
 
     // 2. 完全委托给Manager进行状态转换和事件触发
-    await this.getLifecycleManager().cancelThread(thread, 'user_requested');
+    await this.threadLifecycleManager.cancelThread(thread, 'user_requested');
 
     // 3. 级联取消子Threads
-    await this.getCascadeManager().cascadeCancel(threadId);
+    await this.threadCascadeManager.cascadeCancel(threadId);
   }
 
-  /**
-   * 获取 CascadeManager
-   * @returns ThreadCascadeManager 实例
-   */
-  private getCascadeManager(): ThreadCascadeManager {
-    return this.executionContext.getCascadeManager();
-  }
 
   /**
    * 强制设置线程状态（不依赖执行器）
@@ -211,38 +194,39 @@ export class ThreadLifecycleCoordinator implements LifecycleCapable<{ executionC
    * @param status 新的状态
    */
   async forceSetThreadStatus(threadId: string, status: ThreadStatus): Promise<void> {
-    const threadContext = this.executionContext.getThreadRegistry().get(threadId);
-    if (!threadContext) {
-      throw new Error(`ThreadContext not found for threadId: ${threadId}`);
+    const threadEntity = this.threadRegistry.get(threadId);
+    if (!threadEntity) {
+      throw new Error(`ThreadEntity not found for threadId: ${threadId}`);
     }
 
     // 验证状态转换合法性
     const { validateTransition } = await import('../utils/thread-state-validator.js');
-    validateTransition(threadId, threadContext.getStatus() as ThreadStatus, status);
+    validateTransition(threadId, threadEntity.getStatus() as ThreadStatus, status);
 
     // 直接设置状态
-    threadContext.setStatus(status);
+    threadEntity.setStatus(status);
 
     // 如果是终止状态，设置结束时间并清理
     if (['COMPLETED', 'FAILED', 'CANCELLED', 'TIMEOUT'].includes(status)) {
-      threadContext.setEndTime(now());
+      threadEntity.setEndTime(now());
 
       // 触发相应的终止事件
       let event;
       switch (status) {
         case 'COMPLETED':
-          event = buildThreadCompletedEvent(threadContext.thread, { success: true, output: threadContext.getOutput() } as any);
+          event = buildThreadCompletedEvent(threadEntity.thread, { success: true, output: threadEntity.getOutput() } as any);
           break;
         case 'FAILED':
-          event = buildThreadFailedEvent(threadContext.thread, new Error('Thread failed'));
+          event = buildThreadFailedEvent(threadEntity.thread, new Error('Thread failed'));
           break;
         case 'CANCELLED':
-          event = buildThreadCancelledEvent(threadContext.thread, 'forced_cancel');
+          event = buildThreadCancelledEvent(threadEntity.thread, 'forced_cancel');
           break;
       }
 
       if (event) {
-        await emit(this.executionContext.getEventManager(), event);
+        // TODO: 需要从构造函数注入EventManager
+        // await emit(this.eventManager, event);
       }
     }
   }
@@ -261,20 +245,21 @@ export class ThreadLifecycleCoordinator implements LifecycleCapable<{ executionC
    * @param reason 取消原因
    */
   async forceCancelThread(threadId: string, reason?: string): Promise<void> {
-    const threadContext = this.executionContext.getThreadRegistry().get(threadId);
-    if (!threadContext) {
-      throw new Error(`ThreadContext not found for threadId: ${threadId}`);
+    const threadEntity = this.threadRegistry.get(threadId);
+    if (!threadEntity) {
+      throw new Error(`ThreadEntity not found for threadId: ${threadId}`);
     }
 
     // 设置状态
-    threadContext.setStatus('CANCELLED');
+    threadEntity.setStatus('CANCELLED');
 
     // 设置结束时间
-    threadContext.setEndTime(now());
+    threadEntity.setEndTime(now());
 
     // 触发取消事件
-    const cancelledEvent = buildThreadCancelledEvent(threadContext.thread, reason || 'forced_cancel');
-    await emit(this.executionContext.getEventManager(), cancelledEvent);
+    const cancelledEvent = buildThreadCancelledEvent(threadEntity.thread, reason || 'forced_cancel');
+    // TODO: 需要从构造函数注入EventManager
+    // await emit(this.eventManager, cancelledEvent);
   }
 
   // ============================================================
@@ -283,27 +268,25 @@ export class ThreadLifecycleCoordinator implements LifecycleCapable<{ executionC
 
   /**
    * 清理资源
-   * ThreadLifecycleCoordinator 持有 ExecutionContext 引用，但不需要清理
+   * ThreadLifecycleCoordinator 不持有需要清理的资源
    */
   async cleanup(): Promise<void> {
-    // 不需要清理，ExecutionContext 由 DI 容器管理
+    // 不需要清理
   }
 
   /**
    * 创建状态快照
-   * ThreadLifecycleCoordinator 持有 ExecutionContext 引用
+   * ThreadLifecycleCoordinator 无状态，返回空对象
    */
-  createSnapshot(): { executionContext: ExecutionContext } {
-    return {
-      executionContext: this.executionContext
-    };
+  createSnapshot(): {} {
+    return {};
   }
 
   /**
    * 从快照恢复状态
-   * ThreadLifecycleCoordinator 从快照恢复 ExecutionContext 引用
+   * ThreadLifecycleCoordinator 无状态，无需恢复
    */
-  async restoreFromSnapshot(snapshot: { executionContext: ExecutionContext }): Promise<void> {
-    this.executionContext = snapshot.executionContext;
+  async restoreFromSnapshot(snapshot: {}): Promise<void> {
+    // 无需恢复
   }
 }

@@ -1,24 +1,22 @@
 /**
  * ThreadBuilder - Thread构建器
- * 负责从WorkflowRegistry获取WorkflowDefinition并创建ThreadContext实例
+ * 负责从WorkflowRegistry获取WorkflowDefinition并创建ThreadEntity实例
  * 提供Thread模板缓存和深拷贝支持
  * 支持使用预处理后的图和图导航
- *
- * 使用 ExecutionContext 获取 WorkflowRegistry
  */
 
 import type { PreprocessedGraph } from '@modular-agent/types';
 import type { Thread, ThreadOptions, ThreadStatus } from '@modular-agent/types';
-import { ConversationManager } from './managers/conversation-manager.js';
-import { ThreadContext } from './context/thread-context.js';
+import { ThreadEntity } from '../entities/thread-entity.js';
+import { ExecutionState } from '../entities/execution-state.js';
 import { generateId, now as getCurrentTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
 import { VariableCoordinator } from './coordinators/variable-coordinator.js';
 import { VariableStateManager } from './managers/variable-state-manager.js';
 import { ExecutionError, RuntimeValidationError } from '@modular-agent/types';
-import { type WorkflowRegistry } from '../services/workflow-registry.js';
-import { ExecutionContext } from './context/execution-context.js';
-import { getContainer } from '../di/container-config.js';
-import * as Identifiers from '../di/service-identifiers.js';
+import type { WorkflowRegistry } from '../services/workflow-registry.js';
+import type { EventManager } from '../services/event-manager.js';
+import type { ToolService } from '../services/tool-service.js';
+import type { GraphRegistry } from '../services/graph-registry.js';
 import { createContextualLogger } from '../../utils/contextual-logger.js';
 
 const logger = createContextualLogger();
@@ -27,15 +25,24 @@ const logger = createContextualLogger();
  * ThreadBuilder - Thread构建器
  */
 export class ThreadBuilder {
-  private threadTemplates: Map<string, ThreadContext> = new Map();
+  private threadTemplates: Map<string, ThreadEntity> = new Map();
   private variableCoordinator: VariableCoordinator;
   private variableStateManager: VariableStateManager;
   private workflowRegistry: WorkflowRegistry;
-  private executionContext: ExecutionContext;
+  private eventManager: EventManager;
+  private toolService: ToolService;
+  private graphRegistry: GraphRegistry;
 
-  constructor(workflowRegistryParam?: WorkflowRegistry, executionContext?: ExecutionContext) {
-    this.executionContext = executionContext || ExecutionContext.createDefault();
-    this.workflowRegistry = workflowRegistryParam || this.executionContext.getWorkflowRegistry();
+  constructor(
+    workflowRegistry: WorkflowRegistry,
+    eventManager: EventManager,
+    toolService: ToolService,
+    graphRegistry: GraphRegistry
+  ) {
+    this.workflowRegistry = workflowRegistry;
+    this.eventManager = eventManager;
+    this.toolService = toolService;
+    this.graphRegistry = graphRegistry;
 
     // 初始化变量状态管理器
     this.variableStateManager = new VariableStateManager();
@@ -43,23 +50,20 @@ export class ThreadBuilder {
     // 初始化变量协调器
     this.variableCoordinator = new VariableCoordinator(
       this.variableStateManager,
-      this.executionContext.getEventManager()
+      this.eventManager
     );
   }
 
   /**
-   * 从WorkflowRegistry获取工作流并构建ThreadContext
+   * 从WorkflowRegistry获取工作流并构建ThreadEntity
    * 统一使用PreprocessedGraph路径
    * @param workflowId 工作流ID
    * @param options 线程选项
-   * @returns ThreadContext实例
+   * @returns ThreadEntity实例
    */
-  async build(workflowId: string, options: ThreadOptions = {}): Promise<ThreadContext> {
+  async build(workflowId: string, options: ThreadOptions = {}): Promise<ThreadEntity> {
     // 从 graph-registry 获取已预处理的图
-    // 预处理逻辑已移到 workflow-registry，注册时自动处理
-    const container = getContainer();
-    const graphRegistry = container.get(Identifiers.GraphRegistry) as any;
-    const preprocessedGraph = graphRegistry.get(workflowId);
+    const preprocessedGraph = this.graphRegistry.get(workflowId);
 
     if (!preprocessedGraph) {
       throw new ExecutionError(
@@ -74,13 +78,13 @@ export class ThreadBuilder {
   }
 
   /**
-   * 从PreprocessedGraph构建ThreadContext（内部方法）
+   * 从PreprocessedGraph构建ThreadEntity（内部方法）
    * 使用预处理后的图和图导航
    * @param preprocessedGraph 预处理后的图
    * @param options 线程选项
-   * @returns ThreadContext实例
+   * @returns ThreadEntity实例
    */
-  private async buildFromPreprocessedGraph(preprocessedGraph: PreprocessedGraph, options: ThreadOptions = {}): Promise<ThreadContext> {
+  private async buildFromPreprocessedGraph(preprocessedGraph: PreprocessedGraph, options: ThreadOptions = {}): Promise<ThreadEntity> {
     // 步骤1：验证预处理后的图
     if (!preprocessedGraph.nodes || preprocessedGraph.nodes.size === 0) {
       throw new RuntimeValidationError('Preprocessed graph must have at least one node', { field: 'graph.nodes' });
@@ -103,7 +107,7 @@ export class ThreadBuilder {
     const threadId = generateId();
     const now = getCurrentTimestamp();
 
-    const thread: Partial<Thread> = {
+    const thread: Thread = {
       id: threadId,
       workflowId: preprocessedGraph.workflowId,
       workflowVersion: preprocessedGraph.workflowVersion,
@@ -127,97 +131,24 @@ export class ThreadBuilder {
     };
 
     // 步骤4：从 PreprocessedGraph 初始化变量
-    this.variableCoordinator.initializeFromWorkflow(thread as Thread, preprocessedGraph.variables || []);
+    this.variableCoordinator.initializeFromWorkflow(thread, preprocessedGraph.variables || []);
 
-    // 步骤5：创建 ConversationManager 实例
-    const conversationManager = new ConversationManager({
-      tokenLimit: options.tokenLimit || 4000,
-      eventManager: this.executionContext.getEventManager(),
-      workflowId: preprocessedGraph.workflowId,
-      threadId: threadId,
-      toolService: this.executionContext.getToolService(),
-      availableTools: preprocessedGraph.availableTools
-    });
+    // 步骤5：创建 ExecutionState
+    const executionState = new ExecutionState();
 
-    // 步骤6：创建 ThreadContext
-    const threadContext = new ThreadContext(
-      thread as Thread,
-      conversationManager,
-      this.executionContext.getThreadRegistry(),
-      this.workflowRegistry,
-      this.executionContext.getEventManager(),
-      this.executionContext.get('toolService'),
-      this.executionContext.get('llmExecutor')
-    );
+    // 步骤6：创建 ThreadEntity
+    const threadEntity = new ThreadEntity(thread, executionState);
 
-    // 步骤7：初始化变量
-    threadContext.initializeVariables();
-
-    // 步骤8：初始化工具可见性上下文
-    threadContext.initializeToolVisibility();
-
-    // 步骤9：注册工作流触发器到 ThreadContext 的 TriggerManager
-    this.registerWorkflowTriggers(threadContext, preprocessedGraph);
-
-    return threadContext;
+    return threadEntity;
   }
 
   /**
-   * 注册工作流触发器到 ThreadContext 的 TriggerStateManager
-   * 初始化触发器的运行时状态，而不是存储触发器定义副本
-   * @param threadContext ThreadContext 实例
-   * @param preprocessedGraph 预处理后的图
-   */
-  private registerWorkflowTriggers(threadContext: ThreadContext, preprocessedGraph: PreprocessedGraph): void {
-    // 检查预处理后的图是否有触发器定义
-    if (!preprocessedGraph.triggers || preprocessedGraph.triggers.length === 0) {
-      return;
-    }
-
-    // 使用 ThreadContext 的 TriggerStateManager（每个 Thread 独立）
-    const triggerStateManager = threadContext.triggerStateManager;
-
-    // 确保工作流 ID 已设置
-    triggerStateManager.setWorkflowId(preprocessedGraph.workflowId);
-
-    // 初始化所有触发器的运行时状态
-    for (const workflowTrigger of preprocessedGraph.triggers) {
-      try {
-        // 创建运行时状态
-        const state = {
-          triggerId: workflowTrigger.id,
-          threadId: threadContext.getThreadId(),
-          workflowId: preprocessedGraph.workflowId,
-          status: (workflowTrigger.enabled !== false ? 'enabled' : 'disabled') as 'enabled' | 'disabled',
-          triggerCount: 0,
-          updatedAt: getCurrentTimestamp()
-        };
-
-        // 注册状态到 TriggerStateManager
-        triggerStateManager.register(state);
-      } catch (error) {
-        // 记录警告但不中断线程构建
-        logger.executionWarning(
-          `Failed to register trigger state ${workflowTrigger.id}`,
-          workflowTrigger.id,
-          {
-            workflowId: preprocessedGraph.workflowId,
-            threadId: threadContext.getThreadId(),
-            operation: 'trigger_registration'
-          },
-          getErrorOrNew(error)
-        );
-      }
-    }
-  }
-
-  /**
-   * 从缓存模板构建ThreadContext
+   * 从缓存模板构建ThreadEntity
    * @param templateId 模板ID
    * @param options 线程选项
-   * @returns ThreadContext实例
+   * @returns ThreadEntity实例
    */
-  async buildFromTemplate(templateId: string, options: ThreadOptions = {}): Promise<ThreadContext> {
+  async buildFromTemplate(templateId: string, options: ThreadOptions = {}): Promise<ThreadEntity> {
     const template = this.threadTemplates.get(templateId);
     if (!template) {
       throw new RuntimeValidationError(`Thread template not found: ${templateId}`, { field: 'templateId', value: templateId });
@@ -228,21 +159,22 @@ export class ThreadBuilder {
   }
 
   /**
-   * 创建ThreadContext副本
-   * @param sourceThreadContext 源ThreadContext
-   * @returns ThreadContext副本
+   * 创建ThreadEntity副本
+   * @param sourceThreadEntity 源ThreadEntity
+   * @returns ThreadEntity副本
    */
-  async createCopy(sourceThreadContext: ThreadContext): Promise<ThreadContext> {
-    const sourceThread = sourceThreadContext.thread;
+  async createCopy(sourceThreadEntity: ThreadEntity): Promise<ThreadEntity> {
+    const sourceThread = sourceThreadEntity.getThread();
     const copiedThreadId = generateId();
     const now = getCurrentTimestamp();
 
-    const copiedThread: Partial<Thread> = {
+    const copiedThread: Thread = {
       id: copiedThreadId,
       workflowId: sourceThread.workflowId,
       workflowVersion: sourceThread.workflowVersion,
       status: 'CREATED' as ThreadStatus,
       currentNodeId: sourceThread.currentNodeId,
+      graph: sourceThread.graph,
       variables: sourceThread.variables.map((v: any) => ({ ...v })),
       // 四级作用域：global 通过引用共享，thread 深拷贝，local 和 loop 清空
       variableScopes: {
@@ -267,40 +199,23 @@ export class ThreadBuilder {
       }
     };
 
-    // 复制 ConversationManager 实例
-    const copiedConversationManager = sourceThreadContext.conversationManager.clone();
+    // 创建 ExecutionState
+    const executionState = new ExecutionState();
 
-    // 获取 ThreadRegistry 和 WorkflowRegistry
-    const threadRegistry = this.executionContext.getThreadRegistry();
+    // 创建并返回 ThreadEntity
+    const copiedThreadEntity = new ThreadEntity(copiedThread, executionState);
 
-    // 创建并返回 ThreadContext
-    const copiedThreadContext = new ThreadContext(
-      copiedThread as Thread,
-      copiedConversationManager,
-      threadRegistry,
-      this.workflowRegistry,
-      this.executionContext.getEventManager(),
-      this.executionContext.get('toolService'),
-      this.executionContext.get('llmExecutor')
-    );
-
-    // 初始化变量
-    copiedThreadContext.initializeVariables();
-
-    // 初始化工具可见性上下文
-    copiedThreadContext.initializeToolVisibility();
-
-    return copiedThreadContext;
+    return copiedThreadEntity;
   }
 
   /**
-   * 创建Fork子ThreadContext
-   * @param parentThreadContext 父ThreadContext
+   * 创建Fork子ThreadEntity
+   * @param parentThreadEntity 父ThreadEntity
    * @param forkConfig Fork配置
-   * @returns Fork子ThreadContext
+   * @returns Fork子ThreadEntity
    */
-  async createFork(parentThreadContext: ThreadContext, forkConfig: any): Promise<ThreadContext> {
-    const parentThread = parentThreadContext.thread;
+  async createFork(parentThreadEntity: ThreadEntity, forkConfig: any): Promise<ThreadEntity> {
+    const parentThread = parentThreadEntity.getThread();
     const forkThreadId = generateId();
     const now = getCurrentTimestamp();
 
@@ -314,12 +229,13 @@ export class ThreadBuilder {
       // global 变量不复制到子线程，而是通过引用共享
     }
 
-    const forkThread: Partial<Thread> = {
+    const forkThread: Thread = {
       id: forkThreadId,
       workflowId: parentThread.workflowId,
       workflowVersion: parentThread.workflowVersion,
       status: 'CREATED' as ThreadStatus,
       currentNodeId: forkConfig.startNodeId || parentThread.currentNodeId,
+      graph: parentThread.graph,
       variables: threadVariables,
       // 四级作用域：global 通过引用共享，thread 深拷贝，local 和 loop 清空
       variableScopes: {
@@ -343,30 +259,13 @@ export class ThreadBuilder {
       }
     };
 
-    // 复制 ConversationManager 实例
-    const forkConversationManager = parentThreadContext.conversationManager.clone();
+    // 创建 ExecutionState
+    const executionState = new ExecutionState();
 
-    // 获取 ThreadRegistry 和 WorkflowRegistry
-    const threadRegistry = this.executionContext.getThreadRegistry();
+    // 创建并返回 ThreadEntity
+    const forkThreadEntity = new ThreadEntity(forkThread, executionState);
 
-    // 创建并返回 ThreadContext
-    const forkThreadContext = new ThreadContext(
-      forkThread as Thread,
-      forkConversationManager,
-      threadRegistry,
-      this.workflowRegistry,
-      this.executionContext.getEventManager(),
-      this.executionContext.get('toolService'),
-      this.executionContext.get('llmExecutor')
-    );
-
-    // 初始化变量
-    forkThreadContext.initializeVariables();
-
-    // 初始化工具可见性上下文
-    forkThreadContext.initializeToolVisibility();
-
-    return forkThreadContext;
+    return forkThreadEntity;
   }
 
   /**

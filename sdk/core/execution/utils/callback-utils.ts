@@ -79,8 +79,8 @@ export function mergeResults(results: ExecutedThreadResult[]): Record<string, an
   results.forEach((result, index) => {
     merged['results'].push({
       index,
-      threadId: result.threadContext.getThreadId(),
-      output: result.threadContext.getOutput(),
+      threadId: result.threadEntity.getThreadId(),
+      output: result.threadEntity.getOutput(),
       executionTime: result.executionTime
     });
   });

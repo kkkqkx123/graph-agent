@@ -19,9 +19,11 @@ import { type ThreadRegistry } from '../../services/thread-registry.js';
 import { ThreadBuilder } from '../thread-builder.js';
 import type { EventManager } from '../../services/event-manager.js';
 import type { WorkflowRegistry } from '../../services/workflow-registry.js';
+import type { ToolService } from '../../services/tool-service.js';
+import type { GraphRegistry } from '../../services/graph-registry.js';
 import { ThreadContextNotFoundError } from '@modular-agent/types';
 import { fork, join, copy } from '../utils/thread-operations.js';
-import { ExecutionContext } from '../context/execution-context.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 
 /**
  * Thread 操作协调器类
@@ -40,13 +42,21 @@ export class ThreadOperationCoordinator {
   private threadRegistry: ThreadRegistry;
   private workflowRegistry: WorkflowRegistry;
   private eventManager: EventManager;
-  private executionContext: ExecutionContext;
+  private toolService: ToolService;
+  private graphRegistry: GraphRegistry;
 
-  constructor(executionContext?: ExecutionContext) {
-    this.executionContext = executionContext || ExecutionContext.createDefault();
-    this.threadRegistry = this.executionContext.getThreadRegistry();
-    this.workflowRegistry = this.executionContext.getWorkflowRegistry();
-    this.eventManager = this.executionContext.getEventManager();
+  constructor(
+    threadRegistry: ThreadRegistry,
+    workflowRegistry: WorkflowRegistry,
+    eventManager: EventManager,
+    toolService: ToolService,
+    graphRegistry: GraphRegistry
+  ) {
+    this.threadRegistry = threadRegistry;
+    this.workflowRegistry = workflowRegistry;
+    this.eventManager = eventManager;
+    this.toolService = toolService;
+    this.graphRegistry = graphRegistry;
   }
 
   /**
@@ -57,21 +67,21 @@ export class ThreadOperationCoordinator {
    * @returns 子线程 ID 数组
    */
   async fork(parentThreadId: string, forkConfig: ForkConfig): Promise<string[]> {
-    // 步骤 1：获取父线程上下文
-    const parentThreadContext = this.threadRegistry.get(parentThreadId);
-    if (!parentThreadContext) {
+    // 步骤 1：获取父线程实体
+    const parentThreadEntity = this.threadRegistry.get(parentThreadId);
+    if (!parentThreadEntity) {
       throw new ThreadContextNotFoundError(`Parent thread not found: ${parentThreadId}`, parentThreadId);
     }
 
     // 步骤 2：使用 ThreadOperations 创建子线程（事件触发在内部处理）
-    const threadBuilder = new ThreadBuilder(this.workflowRegistry);
-    const childThreadContext = await fork(parentThreadContext, forkConfig, threadBuilder, this.eventManager);
+    const threadBuilder = new ThreadBuilder(this.workflowRegistry, this.eventManager, this.toolService, this.graphRegistry);
+    const childThreadEntity = await fork(parentThreadEntity, forkConfig, threadBuilder, this.eventManager);
 
     // 步骤 3：注册子线程
-    this.threadRegistry.register(childThreadContext);
+    this.threadRegistry.register(childThreadEntity);
 
     // 步骤 4：返回子线程 ID 数组
-    return [childThreadContext.getThreadId()];
+    return [childThreadEntity.getThreadId()];
   }
 
   /**
@@ -91,9 +101,9 @@ export class ThreadOperationCoordinator {
     timeout: number = 60,
     mainPathId: string
   ): Promise<JoinResult> {
-    // 步骤 1：获取父线程上下文
-    const parentThreadContext = this.threadRegistry.get(parentThreadId);
-    if (!parentThreadContext) {
+    // 步骤 1：获取父线程实体
+    const parentThreadEntity = this.threadRegistry.get(parentThreadId);
+    if (!parentThreadEntity) {
       throw new ThreadContextNotFoundError(`Parent thread not found: ${parentThreadId}`, parentThreadId);
     }
 
@@ -119,20 +129,20 @@ export class ThreadOperationCoordinator {
    * @returns 副本线程 ID
    */
   async copy(sourceThreadId: string): Promise<string> {
-    // 步骤 1：获取源线程上下文
-    const sourceThreadContext = this.threadRegistry.get(sourceThreadId);
-    if (!sourceThreadContext) {
+    // 步骤 1：获取源线程实体
+    const sourceThreadEntity = this.threadRegistry.get(sourceThreadId);
+    if (!sourceThreadEntity) {
       throw new ThreadContextNotFoundError(`Source thread not found: ${sourceThreadId}`, sourceThreadId);
     }
 
     // 步骤 2：使用 ThreadOperations 创建副本（事件触发在内部处理）
-    const threadBuilder = new ThreadBuilder(this.workflowRegistry);
-    const copiedThreadContext = await copy(sourceThreadContext, threadBuilder, this.eventManager);
+    const threadBuilder = new ThreadBuilder(this.workflowRegistry, this.eventManager, this.toolService, this.graphRegistry);
+    const copiedThreadEntity = await copy(sourceThreadEntity, threadBuilder, this.eventManager);
 
     // 步骤 3：注册副本线程
-    this.threadRegistry.register(copiedThreadContext);
+    this.threadRegistry.register(copiedThreadEntity);
 
     // 步骤 4：返回副本线程 ID
-    return copiedThreadContext.getThreadId();
+    return copiedThreadEntity.getThreadId();
   }
 }

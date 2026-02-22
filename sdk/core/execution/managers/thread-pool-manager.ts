@@ -1,12 +1,12 @@
 /**
  * ThreadPoolManager - 线程池管理器
  * 用于资源管理，管理 ThreadExecutor 实例的生命周期，而非多个调用者操作一个thread
- * 
+ *
  * 职责：
  * - 管理 ThreadExecutor 实例的创建、分配和回收
  * - 实现动态扩缩容
  * - 维护空闲执行器队列和忙碌执行器集合
- * 
+ *
  * 设计原则：
  * - 有状态多实例，由TriggeredSubworkflowManager持有
  * - 动态扩缩容，根据负载创建新执行器
@@ -14,7 +14,6 @@
  */
 
 import { ThreadExecutor } from '../thread-executor.js';
-import { ExecutionContext } from '../context/execution-context.js';
 import { type ExecutorWrapper, type PoolStats } from '../types/task.types.js';
 import { type SubworkflowManagerConfig } from '../types/triggered-subgraph.types.js';
 import { now } from '@modular-agent/common-utils';
@@ -48,9 +47,9 @@ export class ThreadPoolManager {
   }> = [];
 
   /**
-   * 执行上下文
+   * ThreadExecutor 工厂函数
    */
-  private executionContext: ExecutionContext;
+  private executorFactory: () => ThreadExecutor;
 
   /**
    * 配置
@@ -69,11 +68,11 @@ export class ThreadPoolManager {
 
   /**
    * 构造函数
-   * @param executionContext 执行上下文
+   * @param executorFactory ThreadExecutor 工厂函数
    * @param config 配置
    */
-  constructor(executionContext: ExecutionContext, config?: SubworkflowManagerConfig) {
-    this.executionContext = executionContext;
+  constructor(executorFactory: () => ThreadExecutor, config?: SubworkflowManagerConfig) {
+    this.executorFactory = executorFactory;
     this.config = {
       minExecutors: config?.minExecutors || 1,
       maxExecutors: config?.maxExecutors || 10,
@@ -104,7 +103,9 @@ export class ThreadPoolManager {
    */
   private createExecutor(): ExecutorWrapper {
     const executorId = `executor-${now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const executor = new ThreadExecutor(this.executionContext);
+    
+    // 使用工厂函数创建 ThreadExecutor
+    const executor = this.executorFactory();
 
     const wrapper: ExecutorWrapper = {
       executorId,

@@ -4,7 +4,7 @@
  */
 
 import { getSDK } from '@modular-agent/sdk';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { createLogger } from '../utils/logger.js';
 import type { TerminalSession, TaskExecutionResult, TaskStatus } from './types.js';
 
@@ -38,7 +38,7 @@ export class TaskExecutor {
     input: Record<string, unknown>,
     terminal: TerminalSession
   ): Promise<TaskExecutionResult> {
-    const taskId = uuidv4();
+    const taskId = randomUUID();
     
     // 初始化任务状态
     const taskStatus: TaskStatus = {

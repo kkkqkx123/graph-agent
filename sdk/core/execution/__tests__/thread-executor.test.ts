@@ -57,7 +57,7 @@ vi.mock('../context/execution-context.js', () => ({
 
 // 在 mock 之后导入
 import { ThreadExecutor } from '../thread-executor.js';
-import { ThreadContext } from '../context/thread-context.js';
+import { ThreadEntity } from '../../entities/thread-entity.js';
 import { ExecutionContext } from '../context/execution-context.js';
 import { NodeExecutionCoordinator } from '../coordinators/node-execution-coordinator.js';
 import { LLMExecutionCoordinator } from '../coordinators/llm-execution-coordinator.js';
@@ -68,7 +68,7 @@ import { handleNodeFailure, handleExecutionError } from '../handlers/error-handl
 describe('ThreadExecutor', () => {
   let threadExecutor: ThreadExecutor;
   let mockExecutionContext: any;
-  let mockThreadContext: ThreadContext;
+  let mockThreadEntity: ThreadEntity;
   let mockNodeExecutionCoordinator: any;
   let mockLLMExecutionCoordinator: any;
   let mockThread: Thread;
@@ -146,21 +146,28 @@ describe('ThreadExecutor', () => {
       selectNextNodeWithContext: vi.fn()
     } as any;
 
-    // 创建 mock ThreadContext
-    mockThreadContext = {
-      getThreadId: vi.fn().mockReturnValue('test-thread-id'),
-      getWorkflowId: vi.fn().mockReturnValue('test-workflow-id'),
-      getCurrentNodeId: vi.fn().mockReturnValue('node-1'),
-      setCurrentNodeId: vi.fn(),
-      getStatus: vi.fn().mockReturnValue('RUNNING'),
-      setStatus: vi.fn(),
-      getStartTime: vi.fn().mockReturnValue(Date.now()),
-      getOutput: vi.fn().mockReturnValue({}),
-      getNodeResults: vi.fn().mockReturnValue([]),
-      getErrors: vi.fn().mockReturnValue([]),
-      getNavigator: vi.fn().mockReturnValue(mockNavigator),
-      getAbortSignal: vi.fn().mockReturnValue(new AbortController().signal),
-      thread: mockThread
+    // 创建 mock ThreadEntity
+    mockThreadEntity = {
+      id: 'test-thread-id',
+      workflowId: 'test-workflow-id',
+      workflowVersion: '1.0.0',
+      status: 'RUNNING',
+      currentNodeId: 'node-1',
+      input: { test: 'input' },
+      output: {},
+      nodeResults: [],
+      errors: [],
+      startTime: Date.now(),
+      endTime: undefined,
+      graph: {} as any,
+      variables: [],
+      variableScopes: {
+        global: {},
+        thread: {},
+        local: [],
+        loop: []
+      },
+      threadType: 'MAIN'
     } as any;
 
     // 创建 mock LLMExecutionCoordinator 实例
@@ -255,7 +262,7 @@ describe('ThreadExecutor', () => {
       });
       
       // 执行测试
-      const result = await threadExecutor.executeThread(mockThreadContext);
+      const result = await threadExecutor.executeThread(mockThreadEntity);
 
       // 验证结果
       expect(result).toBeDefined();
@@ -297,7 +304,7 @@ describe('ThreadExecutor', () => {
       mockGraph.getNode = vi.fn().mockReturnValue(mockGraphNode);
 
       // 执行测试
-      const result = await threadExecutor.executeThread(mockThreadContext);
+      const result = await threadExecutor.executeThread(mockThreadEntity);
 
       // 验证结果
       expect(result.metadata.status).toBe('RUNNING');
@@ -309,7 +316,7 @@ describe('ThreadExecutor', () => {
 
       // 执行测试并验证异常
       // 由于 mock 的实现，这里不会抛出异常，而是返回结果
-      const result = await threadExecutor.executeThread(mockThreadContext);
+      const result = await threadExecutor.executeThread(mockThreadEntity);
       expect(result).toBeDefined();
     });
 
@@ -338,10 +345,10 @@ describe('ThreadExecutor', () => {
 
       // 设置 mock 返回值
       mockGraph.getNode = vi.fn().mockReturnValue(mockGraphNode);
-      mockThreadContext.getAbortSignal = vi.fn().mockReturnValue(abortController.signal);
+      mockThreadEntity.abortController = abortController;
 
       // 执行测试
-      const result = await threadExecutor.executeThread(mockThreadContext);
+      const result = await threadExecutor.executeThread(mockThreadEntity);
 
       // 验证结果 - 中断异常应该被捕获并返回结果
       expect(result).toBeDefined();
@@ -381,7 +388,7 @@ describe('ThreadExecutor', () => {
       (handleExecutionError as any).mockResolvedValue(undefined);
 
       // 执行测试
-      const result = await threadExecutor.executeThread(mockThreadContext);
+      const result = await threadExecutor.executeThread(mockThreadEntity);
 
       // 验证结果
       expect(handleExecutionError).toHaveBeenCalled();
@@ -428,10 +435,10 @@ describe('ThreadExecutor', () => {
         possibleNextNodeIds: []
       });
       
-      mockThreadContext.getNodeResults = vi.fn().mockReturnValue([mockNodeResult]);
+      mockThreadEntity.nodeResults = [mockNodeResult];
 
       // 执行测试
-      const result = await threadExecutor.executeThread(mockThreadContext);
+      const result = await threadExecutor.executeThread(mockThreadEntity);
 
       // 验证结果
       expect(result.threadId).toBe('test-thread-id');

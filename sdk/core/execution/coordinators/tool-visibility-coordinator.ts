@@ -23,7 +23,7 @@ import type {
   VisibilityDeclaration,
   VisibilityChangeType
 } from '../types/tool-visibility.types.js';
-import type { ThreadContext } from '../context/thread-context.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { ToolService } from '../../services/tool-service.js';
 import type { LLMMessage } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
@@ -85,20 +85,20 @@ export class ToolVisibilityCoordinator {
   /**
    * 作用域切换时更新可见性
    * 生成并添加新的可见性声明消息
-   * @param threadContext 线程上下文
+   * @param threadEntity 线程实体
    * @param newScope 新的作用域
    * @param newScopeId 新的作用域ID
    * @param availableTools 可用工具ID列表
    * @param changeType 变更类型
    */
   async updateVisibilityOnScopeChange(
-    threadContext: ThreadContext,
+    threadEntity: ThreadEntity,
     newScope: ToolScope,
     newScopeId: string,
     availableTools: string[],
     changeType: VisibilityChangeType = 'enter_scope'
   ): Promise<void> {
-    const threadId = threadContext.getThreadId();
+    const threadId = threadEntity.getThreadId();
     const context = this.getContext(threadId);
 
     if (!context) {
@@ -138,7 +138,7 @@ export class ToolVisibilityCoordinator {
       }
     };
 
-    threadContext.addMessageToConversation(llmMessage);
+    threadEntity.addMessageToConversation(llmMessage);
 
     // 更新声明历史
     const declaration: VisibilityDeclaration = {
@@ -146,7 +146,7 @@ export class ToolVisibilityCoordinator {
       scope: newScope,
       scopeId: newScopeId,
       toolIds: [...availableTools],
-      messageIndex: threadContext.getConversationHistory().length - 1,
+      messageIndex: threadEntity.getConversationHistory().length - 1,
       changeType
     };
 
@@ -212,11 +212,11 @@ export class ToolVisibilityCoordinator {
    * @param scope 作用域
    */
   async addToolsDynamically(
-    threadContext: ThreadContext,
+    threadEntity: ThreadEntity,
     toolIds: string[],
     scope: ToolScope
   ): Promise<void> {
-    const threadId = threadContext.getThreadId();
+    const threadId = threadEntity.getThreadId();
     const context = this.getContext(threadId);
 
     if (!context) {
@@ -228,7 +228,7 @@ export class ToolVisibilityCoordinator {
 
     // 立即生成声明
     await this.updateVisibilityOnScopeChange(
-      threadContext,
+      threadEntity,
       scope,
       context.scopeId,
       Array.from(context.visibleTools),
@@ -248,8 +248,8 @@ export class ToolVisibilityCoordinator {
    *
    * @param threadContext 线程上下文
    */
-  async refreshDeclaration(threadContext: ThreadContext): Promise<void> {
-    const threadId = threadContext.getThreadId();
+  async refreshDeclaration(threadEntity: ThreadEntity): Promise<void> {
+    const threadId = threadEntity.getThreadId();
     const context = this.getContext(threadId);
 
     if (!context) {
@@ -274,7 +274,7 @@ export class ToolVisibilityCoordinator {
 
     // 工具集已变化，生成新的声明
     await this.updateVisibilityOnScopeChange(
-      threadContext,
+      threadEntity,
       context.currentScope,
       context.scopeId,
       currentTools,
@@ -380,7 +380,7 @@ ${toolDescriptions || '无可用工具'}
    */
   validateDeclarationHistory(
     threadId: string,
-    threadContext: ThreadContext
+    threadEntity: ThreadEntity
   ): { valid: boolean; errors: string[] } {
     const context = this.getContext(threadId);
     if (!context) {
@@ -388,7 +388,7 @@ ${toolDescriptions || '无可用工具'}
     }
 
     const errors: string[] = [];
-    const conversationHistory = threadContext.getConversationHistory();
+    const conversationHistory = threadEntity.getConversationHistory();
 
     // 检查每个声明记录
     for (let i = 0; i < context.declarationHistory.length; i++) {
@@ -440,7 +440,7 @@ ${toolDescriptions || '无可用工具'}
    */
   async updateDeclarationHistoryAfterMessageOperation(
     threadId: string,
-    threadContext: ThreadContext,
+    threadEntity: ThreadEntity,
     operation: 'truncate' | 'filter' | 'clear'
   ): Promise<void> {
     const context = this.getContext(threadId);
@@ -448,7 +448,7 @@ ${toolDescriptions || '无可用工具'}
       return;
     }
 
-    const conversationHistory = threadContext.getConversationHistory();
+    const conversationHistory = threadEntity.getConversationHistory();
 
     if (operation === 'clear') {
       // 清空所有声明历史
@@ -457,7 +457,7 @@ ${toolDescriptions || '无可用工具'}
       
       // 重新生成初始声明
       await this.updateVisibilityOnScopeChange(
-        threadContext,
+        threadEntity,
         context.currentScope,
         context.scopeId,
         Array.from(context.visibleTools),
@@ -478,7 +478,7 @@ ${toolDescriptions || '无可用工具'}
         
         // 重新生成当前可见性声明
         await this.updateVisibilityOnScopeChange(
-          threadContext,
+          threadEntity,
           context.currentScope,
           context.scopeId,
           Array.from(context.visibleTools),
@@ -496,14 +496,14 @@ ${toolDescriptions || '无可用工具'}
    */
   async repairDeclarationHistory(
     threadId: string,
-    threadContext: ThreadContext
+    threadEntity: ThreadEntity
   ): Promise<void> {
     const context = this.getContext(threadId);
     if (!context) {
       return;
     }
 
-    const conversationHistory = threadContext.getConversationHistory();
+    const conversationHistory = threadEntity.getConversationHistory();
     
     // 1. 扫描对话历史中的所有工具可见性声明消息
     const declarationMessages: Array<{ index: number; message: LLMMessage }> = [];
@@ -541,7 +541,7 @@ ${toolDescriptions || '无可用工具'}
     // 4. 如果没有声明，生成初始声明
     if (rebuiltHistory.length === 0) {
       await this.updateVisibilityOnScopeChange(
-        threadContext,
+        threadEntity,
         context.currentScope,
         context.scopeId,
         Array.from(context.visibleTools),

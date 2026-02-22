@@ -7,7 +7,8 @@ import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types
 import type { NodeExecutionResult } from '@modular-agent/types';
 import { ValidationError, NotFoundError, RuntimeValidationError, ThreadContextNotFoundError } from '@modular-agent/types';
 import { EventType } from '@modular-agent/types';
-import { ExecutionContext } from '../../context/execution-context.js';
+import type { ThreadRegistry } from '../../../services/thread-registry.js';
+import type { EventManager } from '../../../services/event-manager.js';
 import { getErrorMessage, now } from '@modular-agent/common-utils';
 
 /**
@@ -57,10 +58,10 @@ function createFailureResult(
 export async function skipNodeHandler(
   action: TriggerAction,
   triggerId: string,
-  executionContext?: ExecutionContext
+  threadRegistry: ThreadRegistry,
+  eventManager: EventManager
 ): Promise<TriggerExecutionResult> {
   const executionTime = now();
-  const context = executionContext || ExecutionContext.createDefault();
 
   try {
     const { threadId, nodeId } = action.parameters;
@@ -73,15 +74,14 @@ export async function skipNodeHandler(
       throw new ValidationError('nodeId is required for SKIP_NODE action', 'parameters.nodeId');
     }
 
-    // 从ThreadRegistry获取ThreadContext
-    const threadRegistry = context.getThreadRegistry();
-    const threadContext = threadRegistry.get(threadId);
+    // 从ThreadRegistry获取ThreadEntity
+    const threadEntity = threadRegistry.get(threadId);
 
-    if (!threadContext) {
-      throw new ThreadContextNotFoundError(`ThreadContext not found: ${threadId}`, threadId);
+    if (!threadEntity) {
+      throw new ThreadContextNotFoundError(`ThreadEntity not found: ${threadId}`, threadId);
     }
 
-    const thread = threadContext.thread;
+    const thread = threadEntity.getThread();
 
     // 标记节点为跳过状态
     const result: NodeExecutionResult = {
@@ -95,12 +95,11 @@ export async function skipNodeHandler(
     thread.nodeResults.push(result);
 
     // 触发NODE_COMPLETED事件（状态为SKIPPED）
-    const eventManager = context.getEventManager();
     const completedEvent = {
       type: 'NODE_COMPLETED' as EventType,
       timestamp: now(),
-      workflowId: threadContext.getWorkflowId(),
-      threadId: threadContext.getThreadId(),
+      workflowId: threadEntity.getWorkflowId(),
+      threadId: threadEntity.getThreadId(),
       nodeId,
       output: null,
       executionTime: 0

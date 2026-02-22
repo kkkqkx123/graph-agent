@@ -5,7 +5,7 @@
 
 import * as pty from 'node-pty';
 import { spawn } from 'child_process';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { createLogger } from '../utils/logger.js';
 import type { TerminalOptions, TerminalSession, TerminalEvent } from './types.js';
 
@@ -27,7 +27,7 @@ export class TerminalManager {
    * @returns 终端会话对象
    */
   createTerminal(options: TerminalOptions = {}): TerminalSession {
-    const sessionId = uuidv4();
+    const sessionId = randomUUID();
     const shell = options.shell || this.getDefaultShell();
     
     try {

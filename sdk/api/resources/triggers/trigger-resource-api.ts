@@ -34,11 +34,11 @@ export class TriggerResourceAPI extends GenericResourceAPI<Trigger, string, Trig
    * @returns 触发器对象，如果不存在则返回null
    */
   protected async getResource(id: string): Promise<Trigger | null> {
-    // 触发器通常通过线程上下文获取，这里需要遍历所有线程
-    const threadContexts = this.registry.getAll();
-    for (const context of threadContexts) {
-      const triggers = context.triggerManager.getAll();
-      const trigger = triggers.find(t => t.id === id);
+    // 触发器通常通过线程实体获取，这里需要遍历所有线程
+    const threadEntities = this.registry.getAll();
+    for (const threadEntity of threadEntities) {
+      const triggers = threadEntity.triggerManager?.getAll() || [];
+      const trigger = triggers.find((t: Trigger) => t.id === id);
       if (trigger) {
         return trigger;
       }
@@ -51,11 +51,11 @@ export class TriggerResourceAPI extends GenericResourceAPI<Trigger, string, Trig
    * @returns 触发器数组
    */
   protected async getAllResources(): Promise<Trigger[]> {
-    const threadContexts = this.registry.getAll();
+    const threadEntities = this.registry.getAll();
     const allTriggers: Trigger[] = [];
     
-    for (const context of threadContexts) {
-      const triggers = context.triggerManager.getAll();
+    for (const threadEntity of threadEntities) {
+      const triggers = threadEntity.triggerManager?.getAll() || [];
       allTriggers.push(...triggers);
     }
     
@@ -117,7 +117,7 @@ export class TriggerResourceAPI extends GenericResourceAPI<Trigger, string, Trig
 
     // 应用过滤条件
     if (filter) {
-      triggers = triggers.filter(t => this.applyFilter([t], filter).length > 0);
+      triggers = triggers.filter((t: Trigger) => this.applyFilter([t], filter).length > 0);
     }
 
     return triggers;

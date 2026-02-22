@@ -27,7 +27,7 @@ import { now, getErrorOrNew } from '@modular-agent/common-utils';
 import { ToolCallExecutor } from '../executors/tool-call-executor.js';
 import { ExecutionError, SystemExecutionError } from '@modular-agent/types';
 import { CheckpointCoordinator } from './checkpoint-coordinator.js';
-import type { ExecutionContext } from '../context/execution-context.js';
+import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { InterruptionDetector } from '../managers/interruption-detector.js';
 import { InterruptionDetectorImpl } from '../managers/interruption-detector.js';
 import { checkInterruption, shouldContinue, getInterruptionDescription } from '@modular-agent/common-utils';
@@ -87,20 +87,36 @@ export interface LLMExecutionResponse {
  */
 export class LLMExecutionCoordinator {
   private interruptionDetector?: InterruptionDetector;
+  private threadRegistry?: ThreadRegistry;
+  private checkpointStateManager?: any;
+  private workflowRegistry?: any;
+  private graphRegistry?: any;
+  private toolContextManager?: any;
+  private toolVisibilityCoordinator?: any;
 
   constructor(
     private llmExecutor: LLMExecutor,
     private toolService: ToolService,
     private eventManager: EventManager,
-    private executionContext?: ExecutionContext,
-    interruptionDetector?: InterruptionDetector
+    threadRegistry?: ThreadRegistry,
+    interruptionDetector?: InterruptionDetector,
+    checkpointStateManager?: any,
+    workflowRegistry?: any,
+    graphRegistry?: any,
+    toolContextManager?: any,
+    toolVisibilityCoordinator?: any
   ) {
+    this.threadRegistry = threadRegistry;
+    this.checkpointStateManager = checkpointStateManager;
+    this.workflowRegistry = workflowRegistry;
+    this.graphRegistry = graphRegistry;
+    this.toolContextManager = toolContextManager;
+    this.toolVisibilityCoordinator = toolVisibilityCoordinator;
+    
     if (interruptionDetector) {
       this.interruptionDetector = interruptionDetector;
-    } else if (executionContext) {
-      this.interruptionDetector = new InterruptionDetectorImpl(
-        executionContext.getThreadRegistry()
-      );
+    } else if (threadRegistry) {
+      this.interruptionDetector = new InterruptionDetectorImpl(threadRegistry);
     }
   }
 
@@ -116,16 +132,16 @@ export class LLMExecutionCoordinator {
     }
 
     // 向后兼容：如果没有提供 interruptionDetector，使用旧的方式
-    if (!this.executionContext) {
+    if (!this.threadRegistry) {
       return false;
     }
 
-    const threadContext = this.executionContext.getThreadRegistry().get(threadId);
-    if (!threadContext) {
+    const threadEntity = this.threadRegistry.get(threadId);
+    if (!threadEntity) {
       return false;
     }
 
-    return threadContext.getAbortSignal().aborted;
+    return threadEntity.getAbortSignal().aborted;
   }
 
   /**
@@ -190,8 +206,8 @@ export class LLMExecutionCoordinator {
     } = params;
 
     // 获取 AbortSignal
-    const threadContext = this.executionContext?.getThreadRegistry().get(threadId);
-    const abortSignal = threadContext?.getAbortSignal();
+    const threadEntity = this.threadRegistry?.get(threadId);
+    const abortSignal = threadEntity?.getAbortSignal();
 
     // 使用返回值标记体系检查中断
     if (abortSignal) {
@@ -245,14 +261,13 @@ export class LLMExecutionCoordinator {
 
     // 从工具上下文管理器获取可用工具
     let availableToolSchemas = tools;
-    if (this.executionContext) {
-      const toolContextManager = this.executionContext.getToolContextManager();
-      if (toolContextManager) {
-        const availableToolIds = toolContextManager.getTools(threadId);
+    if (this.toolContextManager) {
+      if (this.toolContextManager) {
+        const availableToolIds = this.toolContextManager.getTools(threadId);
 
         if (availableToolIds.size > 0) {
-          const availableTools = Array.from(availableToolIds)
-            .map((id: string) => this.toolService.getTool(id))
+          const availableTools = Array.from(availableToolIds as Set<string>)
+            .map((id) => this.toolService.getTool(id) as any)
             .filter(Boolean);
 
           // 直接转换为ToolSchema格式（由外部模块负责，符合设计文档）
@@ -353,7 +368,7 @@ export class LLMExecutionCoordinator {
         this.toolService,
         this.eventManager,
         undefined,
-        threadContext?.toolVisibilityCoordinator
+        this.toolVisibilityCoordinator
       );
       await this.executeToolCallsWithApproval(
         result.toolCalls,
@@ -502,13 +517,13 @@ export class LLMExecutionCoordinator {
 
     // 如果有执行上下文，创建检查点以支持长时间审批
     let checkpointId: string | undefined;
-    if (this.executionContext) {
+    if (this.threadRegistry && this.checkpointStateManager && this.workflowRegistry && this.graphRegistry) {
       try {
         const dependencies = {
-          threadRegistry: this.executionContext.getThreadRegistry(),
-          checkpointStateManager: this.executionContext.getCheckpointStateManager(),
-          workflowRegistry: this.executionContext.getWorkflowRegistry(),
-          graphRegistry: this.executionContext.getGraphRegistry()
+          threadRegistry: this.threadRegistry,
+          checkpointStateManager: this.checkpointStateManager,
+          workflowRegistry: this.workflowRegistry,
+          graphRegistry: this.graphRegistry
         };
         checkpointId = await CheckpointCoordinator.createCheckpoint(threadId, dependencies, {
           description: 'Waiting for tool approval',
@@ -575,9 +590,9 @@ export class LLMExecutionCoordinator {
       return approvalResult;
     } finally {
       // 清理检查点（如果存在）
-      if (checkpointId && this.executionContext) {
+      if (checkpointId && this.checkpointStateManager) {
         try {
-          const checkpointStateManager = this.executionContext.getCheckpointStateManager();
+          const checkpointStateManager = this.checkpointStateManager;
           await checkpointStateManager.delete(checkpointId);
         } catch (error) {
           // 记录警告日志，不中断执行

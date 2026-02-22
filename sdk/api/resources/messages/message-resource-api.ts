@@ -60,11 +60,11 @@ export class MessageResourceAPI extends GenericResourceAPI<LLMMessage, string, M
    * @returns 消息对象，如果不存在则返回null
    */
   protected async getResource(id: string): Promise<LLMMessage | null> {
-    // 消息通常通过线程上下文获取，这里需要遍历所有线程
-    const threadContexts = this.registry.getAll();
-    for (const context of threadContexts) {
-      const messages = context.conversationManager.getMessages();
-      const message = messages.find((m, index) => `${context.getThreadId()}-${index}` === id);
+    // 消息通常通过线程实体获取，这里需要遍历所有线程
+    const threadEntities = this.registry.getAll();
+    for (const threadEntity of threadEntities) {
+      const messages = threadEntity.messages || [];
+      const message = messages.find((m: LLMMessage, index: number) => `${threadEntity.id}-${index}` === id);
       if (message) {
         return message;
       }
@@ -77,11 +77,11 @@ export class MessageResourceAPI extends GenericResourceAPI<LLMMessage, string, M
    * @returns 消息数组
    */
   protected async getAllResources(): Promise<LLMMessage[]> {
-    const threadContexts = this.registry.getAll();
+    const threadEntities = this.registry.getAll();
     const allMessages: LLMMessage[] = [];
     
-    for (const context of threadContexts) {
-      const messages = context.conversationManager.getMessages();
+    for (const threadEntity of threadEntities) {
+      const messages = threadEntity.messages || [];
       allMessages.push(...messages);
     }
     
@@ -148,12 +148,12 @@ export class MessageResourceAPI extends GenericResourceAPI<LLMMessage, string, M
     offset?: number,
     orderBy: 'asc' | 'desc' = 'asc'
   ): Promise<LLMMessage[]> {
-    const threadContext = this.registry.get(threadId);
-    if (!threadContext) {
+    const threadEntity = this.registry.get(threadId);
+    if (!threadEntity) {
       throw new ThreadContextNotFoundError(`Thread not found: ${threadId}`, threadId);
     }
 
-    let messages = threadContext.conversationManager.getMessages();
+    let messages = threadEntity.messages || [];
 
     // 应用排序
     if (orderBy === 'desc') {
@@ -177,12 +177,13 @@ export class MessageResourceAPI extends GenericResourceAPI<LLMMessage, string, M
    * @returns 消息数组
    */
   async getRecentMessages(threadId: string, count: number): Promise<LLMMessage[]> {
-    const threadContext = this.registry.get(threadId);
-    if (!threadContext) {
+    const threadEntity = this.registry.get(threadId);
+    if (!threadEntity) {
       throw new ThreadContextNotFoundError(`Thread not found: ${threadId}`, threadId);
     }
 
-    return threadContext.conversationManager.getRecentMessages(count);
+    const messages = threadEntity.messages || [];
+    return messages.slice(-count);
   }
 
   /**
@@ -192,13 +193,13 @@ export class MessageResourceAPI extends GenericResourceAPI<LLMMessage, string, M
    * @returns 匹配的消息数组
    */
   async searchMessages(threadId: string, query: string): Promise<LLMMessage[]> {
-    const threadContext = this.registry.get(threadId);
-    if (!threadContext) {
+    const threadEntity = this.registry.get(threadId);
+    if (!threadEntity) {
       throw new ThreadContextNotFoundError(`Thread not found: ${threadId}`, threadId);
     }
 
-    const messages = threadContext.conversationManager.getMessages();
-    return messages.filter(message => {
+    const messages = threadEntity.messages || [];
+    return messages.filter((message: LLMMessage) => {
       const content = typeof message.content === 'string'
         ? message.content
         : JSON.stringify(message.content);
@@ -212,12 +213,12 @@ export class MessageResourceAPI extends GenericResourceAPI<LLMMessage, string, M
    * @returns 统计信息
    */
   async getMessageStats(threadId: string): Promise<MessageStats> {
-    const threadContext = this.registry.get(threadId);
-    if (!threadContext) {
+    const threadEntity = this.registry.get(threadId);
+    if (!threadEntity) {
       throw new ThreadContextNotFoundError(`Thread not found: ${threadId}`, threadId);
     }
 
-    const messages = threadContext.conversationManager.getMessages();
+    const messages = threadEntity.messages || [];
 
     const stats: MessageStats = {
       total: messages.length,
@@ -246,16 +247,16 @@ export class MessageResourceAPI extends GenericResourceAPI<LLMMessage, string, M
     byThread: Record<string, number>;
     byRole: Record<string, number>;
   }> {
-    const threadContexts = this.registry.getAll();
+    const threadEntities = this.registry.getAll();
     const stats = {
       total: 0,
       byThread: {} as Record<string, number>,
       byRole: {} as Record<string, number>
     };
 
-    for (const context of threadContexts) {
-      const messages = context.conversationManager.getMessages();
-      const threadId = context.thread.id;
+    for (const threadEntity of threadEntities) {
+      const messages = threadEntity.messages || [];
+      const threadId = threadEntity.id;
       
       stats.byThread[threadId] = messages.length;
       stats.total += messages.length;

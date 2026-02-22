@@ -7,10 +7,11 @@
  * - 保证API层不会以错误的方式获取各类实例
  * - 规范化依赖管理
  * - 所有方法返回具体类型，确保类型安全
- * - 统一通过ExecutionContext获取依赖
+ * - 统一通过DI容器获取依赖
  */
 
-import { ExecutionContext } from '../../core/execution/context/execution-context.js';
+import { getContainer } from '../../core/di/index.js';
+import * as Identifiers from '../../core/di/service-identifiers.js';
 import type { WorkflowRegistry } from '../../core/services/workflow-registry.js';
 import type { ThreadRegistry } from '../../core/services/thread-registry.js';
 import type { EventManager } from '../../core/services/event-manager.js';
@@ -27,98 +28,90 @@ import type { GraphRegistry } from '../../core/services/graph-registry.js';
  * 通过DI容器管理所有依赖实例
  */
 export class APIDependencyManager {
-  private executionContext: ExecutionContext;
+  private container = getContainer();
   
   /**
    * 构造函数
-   * 创建默认的ExecutionContext
    */
   constructor() {
-    this.executionContext = ExecutionContext.createDefault();
+    // 容器已在外部初始化
   }
   
   /**
    * 获取工作流注册表
    */
   getWorkflowRegistry(): WorkflowRegistry {
-    return this.executionContext.getWorkflowRegistry();
+    return this.container.get(Identifiers.WorkflowRegistry);
   }
   
   /**
    * 获取线程注册表
    */
   getThreadRegistry(): ThreadRegistry {
-    return this.executionContext.getThreadRegistry();
+    return this.container.get(Identifiers.ThreadRegistry);
   }
   
   /**
    * 获取事件管理器
    */
   getEventManager(): EventManager {
-    return this.executionContext.getEventManager();
+    return this.container.get(Identifiers.EventManager);
   }
   
   /**
    * 获取检查点状态管理器
    */
   getCheckpointStateManager(): CheckpointStateManager {
-    return this.executionContext.getCheckpointStateManager();
+    return this.container.get(Identifiers.CheckpointStateManager);
   }
   
   /**
    * 获取工具服务
    */
   getToolService(): ToolService {
-    return this.executionContext.getToolService();
+    return this.container.get(Identifiers.ToolService);
   }
   
   /**
    * 获取LLM执行器
    */
   getLlmExecutor(): LLMExecutor {
-    return this.executionContext.getLlmExecutor();
+    return this.container.get(Identifiers.LLMExecutor);
   }
   
   /**
    * 获取代码服务
    */
   getScriptService(): ScriptService {
-    return this.executionContext.getScriptService();
+    return this.container.get(Identifiers.ScriptService);
   }
   
   /**
    * 获取节点模板注册表
    */
   getNodeTemplateRegistry(): NodeTemplateRegistry {
-    return this.executionContext.getNodeTemplateRegistry();
+    return this.container.get(Identifiers.NodeTemplateRegistry);
   }
   
   /**
    * 获取触发器模板注册表
    */
   getTriggerTemplateRegistry(): TriggerTemplateRegistry {
-    return this.executionContext.getTriggerTemplateRegistry();
+    return this.container.get(Identifiers.TriggerTemplateRegistry);
   }
   
   /**
    * 获取图注册表
    */
   getGraphRegistry(): GraphRegistry {
-    return this.executionContext.getGraphRegistry();
-  }
-  
-  /**
-   * 获取底层ExecutionContext实例（用于高级用例）
-   */
-  getExecutionContext(): ExecutionContext {
-    return this.executionContext;
+    return this.container.get(Identifiers.GraphRegistry);
   }
   
   /**
    * 获取线程生命周期协调器
    */
   getThreadLifecycleCoordinator(): import('../../core/execution/coordinators/thread-lifecycle-coordinator.js').ThreadLifecycleCoordinator {
-    return this.executionContext.getLifecycleCoordinator();
+    return this.container.get(Identifiers.ThreadLifecycleCoordinator);
   }
   
   /**

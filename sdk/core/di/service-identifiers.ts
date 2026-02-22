@@ -83,20 +83,14 @@ export const ErrorService = Symbol('ErrorService') as ServiceIdentifier<any>;
 // ============================================================
 
 /**
- * ExecutionContext - 执行上下文
- * 管理执行组件的创建和访问
- */
-export const ExecutionContext = Symbol('ExecutionContext') as ServiceIdentifier<any>;
-
-/**
  * ThreadBuilder - 线程构建器
- * 从工作流定义构建 ThreadContext 实例
+ * 从工作流定义构建 ThreadEntity 实例
  */
 export const ThreadBuilder = Symbol('ThreadBuilder') as ServiceIdentifier<any>;
 
 /**
  * ThreadExecutor - 线程执行器
- * 执行单个 ThreadContext 实例
+ * 执行单个 ThreadEntity 实例
  */
 export const ThreadExecutor = Symbol('ThreadExecutor') as ServiceIdentifier<any>;
 
@@ -131,6 +125,12 @@ export const CheckpointStateManager = Symbol('CheckpointStateManager') as Servic
 export const ToolContextManager = Symbol('ToolContextManager') as ServiceIdentifier<any>;
 
 /**
+ * ToolVisibilityManager - 工具可见性管理器
+ * 管理工具的可见性状态
+ */
+export const ToolVisibilityManager = Symbol('ToolVisibilityManager') as ServiceIdentifier<any>;
+
+/**
  * MessageStorageManager - 消息存储管理器
  * 管理线程的消息存储，线程隔离
  */
@@ -145,6 +145,12 @@ export const LLMExecutor = Symbol('LLMExecutor') as ServiceIdentifier<any>;
 // ============================================================
 // API 层服务
 // ============================================================
+
+/**
+ * ExecutionContext - 执行上下文
+ * 提供全局执行上下文
+ */
+export const ExecutionContext = Symbol('ExecutionContext') as ServiceIdentifier<any>;
 
 /**
  * APIDependencyManager - API 依赖管理器

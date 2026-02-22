@@ -3,11 +3,8 @@
  * 提供Thread执行引擎、节点处理函数、路由器和事件管理器
  */
 
-// 执行上下文
-export { ThreadContext, ExecutionState } from './context/index.js';
-
-// 执行上下文（依赖注入容器）
-export { ExecutionContext } from './context/execution-context.js';
+// 执行实体
+export { ThreadEntity, ExecutionState, type SubgraphContext } from '../entities/index.js';
 
 // 主要执行引擎
 export { ThreadExecutor } from './thread-executor.js';

@@ -33,7 +33,7 @@ import { ThreadCascadeManager } from '../execution/managers/thread-cascade-manag
 import { CheckpointStateManager } from '../execution/managers/checkpoint-state-manager.js';
 import { ToolContextManager } from '../execution/managers/tool-context-manager.js';
 import { MessageStorageManager } from '../execution/managers/message-storage-manager.js';
-import { ExecutionContext } from '../execution/context/execution-context.js';
+import { ToolVisibilityManager } from '../execution/managers/tool-visibility-manager.js';
 import { ThreadBuilder } from '../execution/thread-builder.js';
 import { ThreadExecutor } from '../execution/thread-executor.js';
 import { ThreadLifecycleCoordinator } from '../execution/coordinators/thread-lifecycle-coordinator.js';
@@ -166,6 +166,10 @@ export function initializeContainer(): Container {
     .to(ToolContextManager)
     .inSingletonScope();
 
+  container.bind(Identifiers.ToolVisibilityManager)
+    .to(ToolVisibilityManager)
+    .inSingletonScope();
+
   // ============================================================
   // 第六层：依赖第五层的执行层服务
   // ============================================================
@@ -200,12 +204,11 @@ export function initializeContainer(): Container {
     .inSingletonScope();
 
   // ============================================================
-  // 第七层：ExecutionContext（依赖所有服务）
+  // 第七层：ThreadExecutor（依赖所有服务）
   // ============================================================
 
-  container.bind(Identifiers.ExecutionContext)
+  container.bind(Identifiers.ThreadExecutor)
     .toDynamicValue((c: any) => {
-      // 通过构造函数注入所有依赖
       const workflowRegistry = c.get(Identifiers.WorkflowRegistry);
       const threadRegistry = c.get(Identifiers.ThreadRegistry);
       const eventManager = c.get(Identifiers.EventManager);
@@ -217,13 +220,13 @@ export function initializeContainer(): Container {
       const graphRegistry = c.get(Identifiers.GraphRegistry);
       const nodeTemplateRegistry = c.get(Identifiers.NodeTemplateRegistry);
       const triggerTemplateRegistry = c.get(Identifiers.TriggerTemplateRegistry);
-      const checkpointStateManager = c.get(Identifiers.CheckpointStateManager);
       const threadLifecycleManager = c.get(Identifiers.ThreadLifecycleManager);
       const threadCascadeManager = c.get(Identifiers.ThreadCascadeManager);
-      const toolContextManager = c.get(Identifiers.ToolContextManager);
+      const checkpointStateManager = c.get(Identifiers.CheckpointStateManager);
+      const toolVisibilityManager = c.get(Identifiers.ToolVisibilityManager);
       const threadLifecycleCoordinator = c.get(Identifiers.ThreadLifecycleCoordinator);
 
-      const context = new ExecutionContext(
+      return new ThreadExecutor(
         workflowRegistry,
         threadRegistry,
         eventManager,
@@ -235,39 +238,50 @@ export function initializeContainer(): Container {
         graphRegistry,
         nodeTemplateRegistry,
         triggerTemplateRegistry,
-        checkpointStateManager,
         threadLifecycleManager,
         threadCascadeManager,
-        toolContextManager,
+        checkpointStateManager,
+        toolVisibilityManager,
         threadLifecycleCoordinator
       );
-      return context;
     })
     .inSingletonScope();
 
   // ============================================================
-  // 第八层：依赖 ExecutionContext 的执行层服务
+  // 第八层：ThreadLifecycleCoordinator
+  // ============================================================
+
+  container.bind(Identifiers.ThreadLifecycleCoordinator)
+    .toDynamicValue((c: any) => {
+      const threadRegistry = c.get(Identifiers.ThreadRegistry);
+      const threadLifecycleManager = c.get(Identifiers.ThreadLifecycleManager);
+      const threadCascadeManager = c.get(Identifiers.ThreadCascadeManager);
+      const threadExecutor = c.get(Identifiers.ThreadExecutor);
+      const workflowRegistry = c.get(Identifiers.WorkflowRegistry);
+      const threadBuilder = c.get(Identifiers.ThreadBuilder);
+
+      return new ThreadLifecycleCoordinator(
+        threadRegistry,
+        threadLifecycleManager,
+        threadCascadeManager,
+        threadBuilder,
+        threadExecutor,
+        workflowRegistry
+      );
+    })
+    .inSingletonScope();
+
+  // ============================================================
+  // 第九层：ThreadBuilder
   // ============================================================
 
   container.bind(Identifiers.ThreadBuilder)
     .toDynamicValue((c: any) => {
       const workflowRegistry = c.get(Identifiers.WorkflowRegistry);
-      const executionContext = c.get(Identifiers.ExecutionContext);
-      return new ThreadBuilder(workflowRegistry, executionContext);
-    })
-    .inSingletonScope();
-
-  container.bind(Identifiers.ThreadExecutor)
-    .toDynamicValue((c: any) => {
-      const executionContext = c.get(Identifiers.ExecutionContext);
-      return new ThreadExecutor(executionContext);
-    })
-    .inSingletonScope();
-
-  container.bind(Identifiers.ThreadLifecycleCoordinator)
-    .toDynamicValue((c: any) => {
-      const executionContext = c.get(Identifiers.ExecutionContext);
-      return new ThreadLifecycleCoordinator(executionContext);
+      const eventManager = c.get(Identifiers.EventManager);
+      const toolService = c.get(Identifiers.ToolService);
+      const graphRegistry = c.get(Identifiers.GraphRegistry);
+      return new ThreadBuilder(workflowRegistry, eventManager, toolService, graphRegistry);
     })
     .inSingletonScope();
 

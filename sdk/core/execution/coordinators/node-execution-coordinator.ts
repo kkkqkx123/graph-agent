@@ -15,12 +15,15 @@
  * - 提供清晰的节点执行接口
  */
 
-import { ThreadContext } from '../context/thread-context.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { Node } from '@modular-agent/types';
 import type { NodeExecutionResult } from '@modular-agent/types';
 import type { EventManager } from '../../services/event-manager.js';
 import type { UserInteractionHandler } from '@modular-agent/types';
 import type { HumanRelayHandler } from '@modular-agent/types';
+import type { ConversationManager } from '../managers/conversation-manager.js';
+import type { InterruptionManager } from '../managers/interruption-manager.js';
+import type { GraphNavigator } from '../../graph/graph-navigator.js';
 import { LLMExecutionCoordinator } from './llm-execution-coordinator.js';
 import { enterSubgraph, exitSubgraph, getSubgraphInput, getSubgraphOutput } from '../handlers/subgraph-handler.js';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '@modular-agent/types';
@@ -45,6 +48,12 @@ export interface NodeExecutionCoordinatorConfig {
   eventManager: EventManager;
   /** LLM 执行协调器 */
   llmCoordinator: LLMExecutionCoordinator;
+  /** 对话管理器 */
+  conversationManager: ConversationManager;
+  /** 中断管理器 */
+  interruptionManager: InterruptionManager;
+  /** 图导航器 */
+  navigator: GraphNavigator;
   /** 用户交互处理器（可选） */
   userInteractionHandler?: UserInteractionHandler;
   /** 人工中继处理器（可选） */
@@ -72,7 +81,7 @@ export interface NodeExecutionCoordinatorConfig {
  * - 核心依赖（eventManager、llmCoordinator）为必需，其他为可选
  */
 export class NodeExecutionCoordinator {
-  constructor(private config: NodeExecutionCoordinatorConfig) {}
+  constructor(private config: NodeExecutionCoordinatorConfig) { }
 
   /**
    * 检查是否已中止
@@ -155,55 +164,54 @@ export class NodeExecutionCoordinator {
 
   /**
    * 执行节点
-   * @param threadContext 线程上下文
+   * @param threadEntity 线程实体
    * @param node 节点定义
    * @returns 节点执行结果
    */
-  async executeNode(threadContext: ThreadContext, node: Node): Promise<NodeExecutionResult> {
+  async executeNode(threadEntity: ThreadEntity, node: Node): Promise<NodeExecutionResult> {
     const nodeId = node.id;
     const nodeType = node.type;
-    const threadId = threadContext.getThreadId();
-    const abortSignal = threadContext.getAbortSignal();
+    const threadId = threadEntity.getThreadId();
+    const abortSignal = this.config.interruptionManager.getAbortSignal();
 
     // 使用返回值标记体系检查中断
     const interruption = checkInterruption(abortSignal);
-    
+
     if (!shouldContinue(interruption)) {
       // 如果已中止，处理中断（创建检查点、触发事件）
       const interruptionType = interruption.type === 'paused' ? 'PAUSE' : 'STOP';
       await this.handleInterruption(threadId, nodeId, interruptionType);
-      
+
       // 返回 CANCELLED 状态的结果，不抛出错误
       const cancelledResult: NodeExecutionResult = {
         nodeId,
         nodeType,
         status: 'CANCELLED',
-        step: threadContext.getNodeResults().length + 1,
+        step: threadEntity.getNodeResults().length + 1,
         error: getInterruptionDescription(interruption),
         startTime: now(),
         endTime: now(),
         executionTime: 0
       };
-      
-      threadContext.addNodeResult(cancelledResult);
+
+      threadEntity.addNodeResult(cancelledResult);
       return cancelledResult;
     }
 
     // 获取GraphNode以检查边界信息
-    const navigator = threadContext.getNavigator();
-    const graphNode = navigator.getGraph().getNode(nodeId);
+    const graphNode = this.config.navigator.getGraph().getNode(nodeId);
 
     // 检查是否是子图边界节点
     if (graphNode?.internalMetadata?.[SUBGRAPH_METADATA_KEYS.BOUNDARY_TYPE]) {
-      await this.handleSubgraphBoundary(threadContext, graphNode);
+      await this.handleSubgraphBoundary(threadEntity, graphNode);
     }
 
     try {
       // 步骤1：触发节点开始事件
       const nodeStartedEvent: NodeStartedEvent = {
         type: 'NODE_STARTED',
-        threadId: threadContext.getThreadId(),
-        workflowId: threadContext.getWorkflowId(),
+        threadId: threadEntity.getThreadId(),
+        workflowId: threadEntity.getWorkflowId(),
         nodeId,
         nodeType,
         timestamp: now()
@@ -228,7 +236,7 @@ export class NodeExecutionCoordinator {
           try {
             await createCheckpoint(
               {
-                threadId: threadContext.getThreadId(),
+                threadId: threadEntity.getThreadId(),
                 nodeId,
                 description: configResult.description || `Before node: ${node.name}`
               },
@@ -252,7 +260,7 @@ export class NodeExecutionCoordinator {
       if (node.hooks && node.hooks.length > 0) {
         await executeHook(
           {
-            thread: threadContext.thread,
+            thread: threadEntity.getThread(),
             node,
             checkpointDependencies: this.config.checkpointDependencies
           },
@@ -262,16 +270,16 @@ export class NodeExecutionCoordinator {
       }
 
       // 步骤4：执行节点逻辑
-      const nodeResult = await this.executeNodeLogic(threadContext, node);
+      const nodeResult = await this.executeNodeLogic(threadEntity, node);
 
       // 步骤5：记录节点执行结果
-      threadContext.addNodeResult(nodeResult);
+      threadEntity.addNodeResult(nodeResult);
 
       // 步骤6：执行AFTER_EXECUTE类型的Hook
       if (node.hooks && node.hooks.length > 0) {
         await executeHook(
           {
-            thread: threadContext.thread,
+            thread: threadEntity.getThread(),
             node,
             result: nodeResult,
             checkpointDependencies: this.config.checkpointDependencies
@@ -299,7 +307,7 @@ export class NodeExecutionCoordinator {
           try {
             await createCheckpoint(
               {
-                threadId: threadContext.getThreadId(),
+                threadId: threadEntity.getThreadId(),
                 nodeId,
                 description: configResult.description || `After node: ${node.name}`
               },
@@ -323,10 +331,10 @@ export class NodeExecutionCoordinator {
       if (nodeResult.status === 'COMPLETED') {
         const nodeCompletedEvent: NodeCompletedEvent = {
           type: 'NODE_COMPLETED' as const,
-          threadId: threadContext.getThreadId(),
-          workflowId: threadContext.getWorkflowId(),
+          threadId: threadEntity.getThreadId(),
+          workflowId: threadEntity.getWorkflowId(),
           nodeId,
-          output: threadContext.thread.output,
+          output: threadEntity.getThread().output,
           executionTime: nodeResult.executionTime || 0,
           timestamp: now()
         };
@@ -334,8 +342,8 @@ export class NodeExecutionCoordinator {
       } else if (nodeResult.status === 'FAILED') {
         const nodeFailedEvent: NodeFailedEvent = {
           type: 'NODE_FAILED',
-          threadId: threadContext.getThreadId(),
-          workflowId: threadContext.getWorkflowId(),
+          threadId: threadEntity.getThreadId(),
+          workflowId: threadEntity.getWorkflowId(),
           nodeId,
           error: nodeResult.error,
           timestamp: now()
@@ -350,19 +358,19 @@ export class NodeExecutionCoordinator {
         nodeId,
         nodeType,
         status: 'FAILED',
-        step: threadContext.getNodeResults().length + 1,
+        step: threadEntity.getNodeResults().length + 1,
         error,
         startTime: now(),
         endTime: now(),
         executionTime: 0
       };
 
-      threadContext.addNodeResult(errorResult);
+      threadEntity.addNodeResult(errorResult);
 
       const nodeFailedEvent: NodeFailedEvent = {
         type: 'NODE_FAILED',
-        threadId: threadContext.getThreadId(),
-        workflowId: threadContext.getWorkflowId(),
+        threadId: threadEntity.getThreadId(),
+        workflowId: threadEntity.getWorkflowId(),
         nodeId,
         error,
         timestamp: now()
@@ -375,17 +383,17 @@ export class NodeExecutionCoordinator {
 
   /**
    * 处理子图边界
-   * @param threadContext 线程上下文
+   * @param threadEntity 线程实体
    * @param graphNode 图节点
    */
-  private async handleSubgraphBoundary(threadContext: ThreadContext, graphNode: any): Promise<void> {
+  private async handleSubgraphBoundary(threadEntity: ThreadEntity, graphNode: any): Promise<void> {
     const boundaryType = graphNode.internalMetadata[SUBGRAPH_METADATA_KEYS.BOUNDARY_TYPE] as SubgraphBoundaryType;
 
     if (boundaryType === 'entry') {
       // 进入子图
-      const input = getSubgraphInput(threadContext);
+      const input = getSubgraphInput(threadEntity);
       await enterSubgraph(
-        threadContext,
+        threadEntity,
         graphNode.workflowId,
         graphNode.parentWorkflowId!,
         input
@@ -394,8 +402,8 @@ export class NodeExecutionCoordinator {
       // 触发子图开始事件
       const subgraphStartedEvent: SubgraphStartedEvent = {
         type: 'SUBGRAPH_STARTED',
-        threadId: threadContext.getThreadId(),
-        workflowId: threadContext.getWorkflowId(),
+        threadId: threadEntity.getThreadId(),
+        workflowId: threadEntity.getWorkflowId(),
         subgraphId: graphNode.workflowId,
         parentWorkflowId: graphNode.parentWorkflowId!,
         input,
@@ -404,15 +412,15 @@ export class NodeExecutionCoordinator {
       await this.config.eventManager.emit(subgraphStartedEvent);
     } else if (boundaryType === 'exit') {
       // 退出子图
-      const subgraphContext = threadContext.getCurrentSubgraphContext();
+      const subgraphContext = threadEntity.getCurrentSubgraphContext();
       if (subgraphContext) {
-        const output = getSubgraphOutput(threadContext);
+        const output = getSubgraphOutput(threadEntity);
 
         // 触发子图完成事件
         const subgraphCompletedEvent: SubgraphCompletedEvent = {
           type: 'SUBGRAPH_COMPLETED',
-          threadId: threadContext.getThreadId(),
-          workflowId: threadContext.getWorkflowId(),
+          threadId: threadEntity.getThreadId(),
+          workflowId: threadEntity.getWorkflowId(),
           subgraphId: subgraphContext.workflowId,
           output,
           executionTime: diffTimestamp(subgraphContext.startTime, now()),
@@ -420,7 +428,7 @@ export class NodeExecutionCoordinator {
         };
         await this.config.eventManager.emit(subgraphCompletedEvent);
 
-        await exitSubgraph(threadContext);
+        await exitSubgraph(threadEntity);
       }
     }
   }
@@ -431,7 +439,7 @@ export class NodeExecutionCoordinator {
    * @param node 节点定义
    * @returns 节点执行结果
    */
-  private async executeNodeLogic(threadContext: ThreadContext, node: Node): Promise<NodeExecutionResult> {
+  private async executeNodeLogic(threadEntity: ThreadEntity, node: Node): Promise<NodeExecutionResult> {
     const startTime = now();
 
     // 1. 使用Node Handler函数执行（配置已在工作流注册时通过静态验证）
@@ -444,22 +452,22 @@ export class NodeExecutionCoordinator {
         throw new ExecutionError(
           'UserInteractionHandler is not provided',
           node.id,
-          threadContext.getWorkflowId()
+          threadEntity.getWorkflowId()
         );
       }
       handlerContext = {
         userInteractionHandler: this.config.userInteractionHandler,
-        conversationManager: threadContext.getConversationManager()
+        conversationManager: this.config.conversationManager
       };
     } else if (node.type === 'CONTEXT_PROCESSOR') {
       handlerContext = {
-        conversationManager: threadContext.getConversationManager()
+        conversationManager: this.config.conversationManager
       };
     } else if (node.type === 'LLM') {
       handlerContext = {
         llmCoordinator: this.config.llmCoordinator,
         eventManager: this.config.eventManager,
-        conversationManager: threadContext.getConversationManager(),
+        conversationManager: this.config.conversationManager,
         humanRelayHandler: this.config.humanRelayHandler
       };
     } else if (node.type === 'ADD_TOOL') {
@@ -467,18 +475,18 @@ export class NodeExecutionCoordinator {
         throw new ExecutionError(
           'ToolContextManager or ToolService is not provided',
           node.id,
-          threadContext.getWorkflowId()
+          threadEntity.getWorkflowId()
         );
       }
       handlerContext = {
         toolContextManager: this.config.toolContextManager,
         toolService: this.config.toolService,
         eventManager: this.config.eventManager,
-        threadContext: threadContext
+        threadContext: threadEntity
       };
     }
 
-    const output = await handler(threadContext.thread, node, handlerContext);
+    const output = await handler(threadEntity.getThread(), node, handlerContext);
 
     // 2. 构建执行结果
     const endTime = now();
@@ -486,13 +494,10 @@ export class NodeExecutionCoordinator {
       nodeId: node.id,
       nodeType: node.type,
       status: output.status || 'COMPLETED',
-      step: threadContext.thread.nodeResults.length + 1,
+      step: threadEntity.getThread().nodeResults.length + 1,
       startTime,
       endTime,
       executionTime: diffTimestamp(startTime, endTime)
     };
   }
-
-
-
 }

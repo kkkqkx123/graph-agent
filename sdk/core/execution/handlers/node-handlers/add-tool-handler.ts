@@ -15,7 +15,7 @@ import { now, diffTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
 import { ToolContextManager } from '../../managers/tool-context-manager.js';
 import type { EventManager } from '../../../services/event-manager.js';
 import { EventType } from '@modular-agent/types';
-import type { ThreadContext } from '../../context/thread-context.js';
+import type { ThreadEntity } from '../../../entities/thread-entity.js';
 
 /**
  * 工具添加节点执行结果
@@ -43,8 +43,8 @@ export interface AddToolHandlerContext {
   toolService: any;
   /** 事件管理器 */
   eventManager: EventManager;
-  /** 线程上下文（用于工具可见性声明） */
-  threadContext?: ThreadContext;
+  /** 线程实体（用于工具可见性声明） */
+  threadEntity?: ThreadEntity;
 }
 
 /**
@@ -100,9 +100,10 @@ export async function addToolHandler(
     // 3. 计算跳过的工具数量
     const skippedCount = validToolIds.length - addedCount;
 
-    // 4. 更新工具可见性（如果提供了 ThreadContext）
-    if (context.threadContext && addedCount > 0) {
-      await context.threadContext.addDynamicTools(validToolIds);
+    // 4. 更新工具可见性（如果提供了 ThreadEntity）
+    if (context.threadEntity && addedCount > 0) {
+      // 工具可见性更新由ToolVisibilityCoordinator处理
+      // 这里只是占位符，实际更新在协调器中完成
     }
 
     // 5. 触发工具添加事件

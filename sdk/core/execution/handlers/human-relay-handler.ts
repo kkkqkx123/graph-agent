@@ -22,7 +22,7 @@
 import type { LLMMessage } from '@modular-agent/types';
 import type { HumanRelayRequest, HumanRelayResponse, HumanRelayExecutionResult, HumanRelayHandler, HumanRelayContext } from '@modular-agent/types';
 import type { EventManager } from '../../services/event-manager.js';
-import type { ThreadContext } from '../context/thread-context.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import { EventType, MessageRole } from '@modular-agent/types';
 import { generateId, now, diffTimestamp, getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
 
@@ -36,8 +36,8 @@ export interface HumanRelayTask {
   prompt: string;
   /** 超时时间（毫秒） */
   timeout: number;
-  /** 线程上下文 */
-  threadContext: ThreadContext;
+  /** 线程实体 */
+  threadEntity: ThreadEntity;
   /** 请求ID */
   requestId: string;
   /** 节点ID */
@@ -56,8 +56,8 @@ export function createHumanRelayRequest(task: HumanRelayTask): HumanRelayRequest
     prompt: task.prompt,
     timeout: task.timeout,
     metadata: {
-      workflowId: task.threadContext.getWorkflowId(),
-      threadId: task.threadContext.getThreadId(),
+      workflowId: task.threadEntity.getWorkflowId(),
+      threadId: task.threadEntity.getThreadId(),
       nodeId: task.nodeId
     }
   };
@@ -79,17 +79,17 @@ export function createHumanRelayContext(
   };
 
   return {
-    threadId: task.threadContext.getThreadId(),
-    workflowId: task.threadContext.getWorkflowId(),
+    threadId: task.threadEntity.getThreadId(),
+    workflowId: task.threadEntity.getWorkflowId(),
     nodeId: task.nodeId,
     getVariable: (variableName: string, scope?: string) => {
-      return task.threadContext.getVariable(variableName);
+      return task.threadEntity.getVariable(variableName);
     },
     setVariable: async (variableName: string, value: any, scope?: string) => {
-      await task.threadContext.updateVariable(variableName, value);
+      task.threadEntity.setVariable(variableName, value);
     },
     getVariables: (scope?: string) => {
-      return task.threadContext.getAllVariables();
+      return task.threadEntity.getAllVariables();
     },
     timeout: task.timeout,
     cancelToken
@@ -110,8 +110,8 @@ export async function emitHumanRelayRequestedEvent(
   await eventManager.emit({
     type: 'HUMAN_RELAY_REQUESTED',
     timestamp: now(),
-    workflowId: task.threadContext.getWorkflowId(),
-    threadId: task.threadContext.getThreadId(),
+    workflowId: task.threadEntity.getWorkflowId(),
+    threadId: task.threadEntity.getThreadId(),
     nodeId: task.nodeId,
     requestId: request.requestId,
     prompt: request.prompt,
@@ -134,8 +134,8 @@ export async function emitHumanRelayRespondedEvent(
   await eventManager.emit({
     type: 'HUMAN_RELAY_RESPONDED',
     timestamp: now(),
-    workflowId: task.threadContext.getWorkflowId(),
-    threadId: task.threadContext.getThreadId(),
+    workflowId: task.threadEntity.getWorkflowId(),
+    threadId: task.threadEntity.getThreadId(),
     requestId: response.requestId,
     content: response.content
   });
@@ -157,8 +157,8 @@ export async function emitHumanRelayProcessedEvent(
   await eventManager.emit({
     type: 'HUMAN_RELAY_PROCESSED',
     timestamp: now(),
-    workflowId: task.threadContext.getWorkflowId(),
-    threadId: task.threadContext.getThreadId(),
+    workflowId: task.threadEntity.getWorkflowId(),
+    threadId: task.threadEntity.getThreadId(),
     requestId: task.requestId,
     message: {
       role: message.role,
@@ -182,8 +182,8 @@ export async function emitHumanRelayFailedEvent(
   await eventManager.emit({
     type: 'HUMAN_RELAY_FAILED',
     timestamp: now(),
-    workflowId: task.threadContext.getWorkflowId(),
-    threadId: task.threadContext.getThreadId(),
+    workflowId: task.threadEntity.getWorkflowId(),
+    threadId: task.threadEntity.getThreadId(),
     requestId: task.requestId,
     reason: getErrorMessage(error)
   });
@@ -264,7 +264,7 @@ export async function executeHumanRelay(
   messages: LLMMessage[],
   prompt: string,
   timeout: number,
-  threadContext: ThreadContext,
+  threadEntity: ThreadEntity,
   eventManager: EventManager,
   humanRelayHandler: HumanRelayHandler,
   nodeId: string
@@ -276,7 +276,7 @@ export async function executeHumanRelay(
     messages,
     prompt,
     timeout,
-    threadContext,
+    threadEntity,
     requestId,
     nodeId
   };

@@ -17,7 +17,10 @@
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import type { ExecuteTriggeredSubgraphActionConfig } from '@modular-agent/types';
 import { RuntimeValidationError, ThreadContextNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
-import { ExecutionContext } from '../../context/execution-context.js';
+import type { ThreadRegistry } from '../../../services/thread-registry.js';
+import type { EventManager } from '../../../services/event-manager.js';
+import type { ThreadBuilder } from '../../thread-builder.js';
+import type { TaskQueueManager } from '../../managers/task-queue-manager.js';
 import { getErrorMessage, now, diffTimestamp } from '@modular-agent/common-utils';
 import { TriggeredSubworkflowManager } from '../../managers/triggered-subworkflow-manager.js';
 import type { TriggeredSubgraphTask } from '../../types/triggered-subgraph.types.js';
@@ -106,10 +109,13 @@ function createFailureResult(
 export async function executeTriggeredSubgraphHandler(
   action: TriggerAction,
   triggerId: string,
-  executionContext?: ExecutionContext
+  threadRegistry: ThreadRegistry,
+  eventManager: EventManager,
+  threadBuilder: ThreadBuilder,
+  taskQueueManager: TaskQueueManager,
+  currentThreadId?: string
 ): Promise<TriggerExecutionResult> {
   const startTime = now();
-  const context = executionContext || ExecutionContext.createDefault();
 
   try {
     const parameters = action.parameters as ExecuteTriggeredSubgraphActionConfig;
@@ -121,18 +127,17 @@ export async function executeTriggeredSubgraphHandler(
       throw new RuntimeValidationError('Missing required parameter: triggeredWorkflowId', { operation: 'handle', field: 'triggeredWorkflowId' });
     }
 
-    // 获取主工作流线程上下文
-    const threadRegistry = context.getThreadRegistry();
-    const threadId = context.getCurrentThreadId();
+    // 获取主工作流线程实体
+    const threadId = currentThreadId;
 
     if (!threadId) {
-      throw new ThreadContextNotFoundError('Current thread ID not found in execution context', 'current');
+      throw new ThreadContextNotFoundError('Current thread ID not provided', 'current');
     }
 
-    const mainThreadContext = threadRegistry.get(threadId);
+    const mainThreadEntity = threadRegistry.get(threadId);
 
-    if (!mainThreadContext) {
-      throw new ThreadContextNotFoundError(`Main thread context not found: ${threadId}`, threadId);
+    if (!mainThreadEntity) {
+      throw new ThreadContextNotFoundError(`Main thread entity not found: ${threadId}`, threadId);
     }
 
     // 从 graph-registry 获取已预处理的图
@@ -147,26 +152,34 @@ export async function executeTriggeredSubgraphHandler(
     // 准备输入数据（仅包含触发事件相关的数据）
     const input: Record<string, any> = {
       triggerId,
-      output: mainThreadContext.getOutput(),
-      input: mainThreadContext.getInput()
+      output: mainThreadEntity.getOutput(),
+      input: mainThreadEntity.getInput()
     };
 
     // 创建 TriggeredSubworkflowManager
-    const manager = new TriggeredSubworkflowManager(context, {
-      minExecutors: 1,
-      maxExecutors: 10,
-      idleTimeout: 30000,
-      maxQueueSize: 100,
-      taskRetentionTime: 60 * 60 * 1000,
-      defaultTimeout: timeout || 30000
-    });
+    const executorFactory = () => container.get(Identifiers.ThreadExecutor);
+    const manager = new TriggeredSubworkflowManager(
+      threadRegistry,
+      threadBuilder,
+      taskQueueManager,
+      eventManager,
+      executorFactory,
+      {
+        minExecutors: 1,
+        maxExecutors: 10,
+        idleTimeout: 30000,
+        maxQueueSize: 100,
+        taskRetentionTime: 60 * 60 * 1000,
+        defaultTimeout: timeout || 30000
+      }
+    );
 
     // 创建触发子工作流任务
     const task: TriggeredSubgraphTask = {
       subgraphId: triggeredWorkflowId,
       input,
       triggerId,
-      mainThreadContext,
+      mainThreadEntity,
       config: {
         waitForCompletion,
         timeout,
@@ -189,7 +202,7 @@ export async function executeTriggeredSubgraphHandler(
         {
           triggeredWorkflowId,
           input,
-          output: syncResult.subgraphContext.getOutput(),
+          output: syncResult.subgraphEntity.getOutput(),
           executionTime: syncResult.executionTime,
         },
         executionTime

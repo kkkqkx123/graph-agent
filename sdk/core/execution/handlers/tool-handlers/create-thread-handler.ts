@@ -15,8 +15,13 @@
  * - 支持同步和异步执行模式
  */
 
-import type { ThreadContext } from '../../context/thread-context.js';
-import type { ExecutionContext } from '../../context/execution-context.js';
+import type { ThreadEntity } from '../../../entities/thread-entity.js';
+import type { ThreadRegistry } from '../../../services/thread-registry.js';
+import type { TaskRegistry } from '../../../services/task-registry.js';
+import type { EventManager } from '../../../services/event-manager.js';
+import type { ThreadBuilder } from '../../thread-builder.js';
+import type { TaskQueueManager } from '../../managers/task-queue-manager.js';
+import type { ThreadExecutor } from '../../thread-executor.js';
 import { DynamicThreadManager } from '../../managers/dynamic-thread-manager.js';
 import {
   type CreateDynamicThreadRequest,
@@ -26,6 +31,8 @@ import {
 } from '../../types/dynamic-thread.types.js';
 import { getErrorMessage, getErrorOrNew, now, diffTimestamp } from '@modular-agent/common-utils';
 import { ToolError } from '@modular-agent/types';
+import { getContainer } from '../../../di/index.js';
+import * as Identifiers from '../../../di/service-identifiers.js';
 
 /**
  * 工具执行结果接口
@@ -65,7 +72,12 @@ export interface CreateThreadRequest {
 export async function createThreadHandler(
   action: CreateThreadRequest,
   triggerId: string,
-  executionContext: ExecutionContext
+  threadRegistry: ThreadRegistry,
+  taskRegistry: TaskRegistry,
+  eventManager: EventManager,
+  threadBuilder: ThreadBuilder,
+  taskQueueManager: TaskQueueManager,
+  currentThreadId?: string
 ): Promise<ToolExecutionResult> {
   const startTime = now();
 
@@ -75,31 +87,37 @@ export async function createThreadHandler(
       throw new ToolError('workflowId is required', 'create-thread');
     }
 
-    // 获取主线程ThreadContext
-    const threadRegistry = executionContext.getThreadRegistry();
-    const currentThreadId = executionContext.getCurrentThreadId();
+    // 获取主线程ThreadEntity
     if (!currentThreadId) {
-      throw new ToolError('Current thread ID not found', 'create-thread');
+      throw new ToolError('Current thread ID not provided', 'create-thread');
     }
-    const mainThreadContext = threadRegistry.get(currentThreadId);
+    const mainThreadEntity = threadRegistry.get(currentThreadId);
 
-    if (!mainThreadContext) {
-      throw new ToolError('Main thread context not found', 'create-thread');
+    if (!mainThreadEntity) {
+      throw new ToolError('Main thread entity not found', 'create-thread');
     }
 
     // 准备输入数据
     const input = action.input || {};
 
     // 创建DynamicThreadManager
-    const taskRegistry = executionContext.getTaskRegistry();
-    const dynamicThreadManager = new DynamicThreadManager(executionContext, taskRegistry);
+    const container = getContainer();
+    const executorFactory = () => container.get(Identifiers.ThreadExecutor);
+    const dynamicThreadManager = new DynamicThreadManager(
+      threadRegistry,
+      threadBuilder,
+      taskRegistry,
+      taskQueueManager,
+      eventManager,
+      executorFactory
+    );
 
     // 创建线程请求
     const request: CreateDynamicThreadRequest = {
       workflowId: action.workflowId,
       input,
       triggerId: action.triggerId || triggerId,
-      mainThreadContext,
+      mainThreadEntity,
       config: action.config
     };
 
@@ -110,7 +128,7 @@ export async function createThreadHandler(
     const executionTime = diffTimestamp(startTime, now());
 
     // 判断是同步执行还是异步执行
-    if ('threadContext' in result) {
+    if ('threadEntity' in result) {
       // 同步执行结果
       const syncResult = result as ExecutedThreadResult;
       return {
@@ -119,7 +137,7 @@ export async function createThreadHandler(
           message: 'Dynamic thread execution completed',
           workflowId: action.workflowId,
           input,
-          output: syncResult.threadContext.getOutput(),
+          output: syncResult.threadEntity.getOutput(),
           waitForCompletion: true,
           executed: true,
           completed: true,
@@ -167,7 +185,11 @@ export async function createThreadHandler(
 export async function cancelThreadHandler(
   action: { threadId: string },
   triggerId: string,
-  executionContext: ExecutionContext
+  threadRegistry: ThreadRegistry,
+  taskRegistry: TaskRegistry,
+  eventManager: EventManager,
+  threadBuilder: ThreadBuilder,
+  taskQueueManager: TaskQueueManager
 ): Promise<ToolExecutionResult> {
   const startTime = now();
 
@@ -178,8 +200,16 @@ export async function cancelThreadHandler(
     }
   
       // 创建DynamicThreadManager
-      const taskRegistry = executionContext.getTaskRegistry();
-      const dynamicThreadManager = new DynamicThreadManager(executionContext, taskRegistry);
+      const container = getContainer();
+      const executorFactory = () => container.get(Identifiers.ThreadExecutor);
+      const dynamicThreadManager = new DynamicThreadManager(
+        threadRegistry,
+        threadBuilder,
+        taskRegistry,
+        taskQueueManager,
+        eventManager,
+        executorFactory
+      );
 
     // 取消线程
     const success = dynamicThreadManager.cancelDynamicThread(action.threadId);
@@ -217,7 +247,11 @@ export async function cancelThreadHandler(
 export async function getThreadStatusHandler(
   action: { threadId: string },
   triggerId: string,
-  executionContext: ExecutionContext
+  threadRegistry: ThreadRegistry,
+  taskRegistry: TaskRegistry,
+  eventManager: EventManager,
+  threadBuilder: ThreadBuilder,
+  taskQueueManager: TaskQueueManager
 ): Promise<ToolExecutionResult> {
   const startTime = now();
 
@@ -228,8 +262,16 @@ export async function getThreadStatusHandler(
     }
   
       // 创建DynamicThreadManager
-      const taskRegistry = executionContext.getTaskRegistry();
-      const dynamicThreadManager = new DynamicThreadManager(executionContext, taskRegistry);
+      const container = getContainer();
+      const executorFactory = () => container.get(Identifiers.ThreadExecutor);
+      const dynamicThreadManager = new DynamicThreadManager(
+        threadRegistry,
+        threadBuilder,
+        taskRegistry,
+        taskQueueManager,
+        eventManager,
+        executorFactory
+      );
 
     // 查询线程状态
     const threadStatus = dynamicThreadManager.getThreadStatus(action.threadId);

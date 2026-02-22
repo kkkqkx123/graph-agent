@@ -14,61 +14,61 @@
  * - 使用纯函数，无内部状态
  */
 
-import { ThreadContext } from '../context/thread-context.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import { now } from '@modular-agent/common-utils';
 
 /**
  * 进入子图
- * @param threadContext 线程上下文
+ * @param threadEntity 线程实体
  * @param workflowId 子图工作流ID
  * @param parentWorkflowId 父工作流ID
  * @param input 子图输入
  */
 export async function enterSubgraph(
-  threadContext: ThreadContext,
+  threadEntity: ThreadEntity,
   workflowId: string,
   parentWorkflowId: string,
   input: any
 ): Promise<void> {
-  await threadContext.enterSubgraph(workflowId, parentWorkflowId, input);
+  await threadEntity.enterSubgraph(workflowId, parentWorkflowId, input);
 }
 
 /**
  * 退出子图
- * @param threadContext 线程上下文
+ * @param threadEntity 线程实体
  */
-export async function exitSubgraph(threadContext: ThreadContext): Promise<void> {
-  await threadContext.exitSubgraph();
+export async function exitSubgraph(threadEntity: ThreadEntity): Promise<void> {
+  await threadEntity.exitSubgraph();
 }
 
 /**
  * 获取子图输入
- * @param threadContext 线程上下文
+ * @param threadEntity 线程实体
  * @returns 子图输入数据（使用变量系统）
  */
-export function getSubgraphInput(threadContext: ThreadContext): any {
+export function getSubgraphInput(threadEntity: ThreadEntity): any {
   // 使用变量系统获取输入数据
-  return threadContext.getAllVariables();
+  return threadEntity.getAllVariables();
 }
 
 /**
  * 获取子图输出
- * @param threadContext 线程上下文
+ * @param threadEntity 线程实体
  * @returns 子图输出数据
  */
-export function getSubgraphOutput(threadContext: ThreadContext): any {
-  const subgraphContext = threadContext.getCurrentSubgraphContext();
+export function getSubgraphOutput(threadEntity: ThreadEntity): any {
+  const subgraphContext = threadEntity.getCurrentSubgraphContext();
   if (!subgraphContext) return {};
 
   // 获取子图的END节点输出
-  const navigator = threadContext.getNavigator();
+  const navigator = threadEntity.getNavigator();
   const endNodes = navigator.getGraph().endNodeIds;
 
   for (const endNodeId of endNodes) {
     const graphNode = navigator.getGraph().getNode(endNodeId);
     if (graphNode?.workflowId === subgraphContext.workflowId) {
       // 找到子图的END节点，获取其输出
-      const nodeResult = threadContext.getNodeResults()
+      const nodeResult = threadEntity.getNodeResults()
         .find(r => r.nodeId === endNodeId);
       return nodeResult?.data || {};
     }

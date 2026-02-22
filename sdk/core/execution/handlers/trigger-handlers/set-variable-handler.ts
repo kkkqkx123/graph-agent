@@ -5,7 +5,7 @@
 
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import { NotFoundError, ValidationError, RuntimeValidationError, ThreadContextNotFoundError } from '@modular-agent/types';
-import { ExecutionContext } from '../../context/execution-context.js';
+import type { ThreadRegistry } from '../../../services/thread-registry.js';
 import { now, diffTimestamp } from '@modular-agent/common-utils';
 
 /**
@@ -55,10 +55,9 @@ function createFailureResult(
 export async function setVariableHandler(
   action: TriggerAction,
   triggerId: string,
-  executionContext?: ExecutionContext
+  threadRegistry: ThreadRegistry
 ): Promise<TriggerExecutionResult> {
   const startTime = now();
-  const context = executionContext || ExecutionContext.createDefault();
 
   try {
     const { threadId, variables } = action.parameters;
@@ -67,17 +66,16 @@ export async function setVariableHandler(
       throw new RuntimeValidationError('Missing required parameters: threadId and variables', { operation: 'handle' });
     }
 
-    // 获取ThreadContext
-    const threadRegistry = context.getThreadRegistry();
-    const threadContext = threadRegistry.get(threadId);
+    // 获取ThreadEntity
+    const threadEntity = threadRegistry.get(threadId);
 
-    if (!threadContext) {
-      throw new ThreadContextNotFoundError(`ThreadContext not found: ${threadId}`, threadId);
+    if (!threadEntity) {
+      throw new ThreadContextNotFoundError(`ThreadEntity not found: ${threadId}`, threadId);
     }
 
-    // 使用ThreadContext的updateVariable方法更新已定义的变量
+    // 使用ThreadEntity的setVariable方法更新变量
     for (const [name, value] of Object.entries(variables)) {
-      threadContext.updateVariable(name, value);
+      threadEntity.setVariable(name, value);
     }
 
     const executionTime = diffTimestamp(startTime, now());

@@ -15,7 +15,7 @@
  * - 委托模式：使用VariableStateManager进行原子状态操作
  */
 
-import type { ThreadContext } from '../context/thread-context.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { Thread } from '@modular-agent/types';
 import type { VariableScope } from '@modular-agent/types';
 import type { EventManager } from '../../services/event-manager.js';
@@ -61,11 +61,11 @@ export class VariableCoordinator {
    * 获取变量值（按作用域优先级查找）
    * 优先级：loop > local > thread > global
    * 支持按需初始化：thread、local、loop作用域的变量在首次访问时初始化
-   * @param threadContext ThreadContext 实例
+   * @param threadEntity ThreadEntity 实例
    * @param name 变量名称
    * @returns 变量值
    */
-  getVariable(threadContext: ThreadContext, name: string): any {
+  getVariable(threadEntity: ThreadEntity, name: string): any {
     const scopes = this.stateManager.getVariableScopes();
 
     // 1. 循环作用域（最高优先级）
@@ -145,12 +145,12 @@ export class VariableCoordinator {
 
   /**
    * 更新已定义变量的值
-   * @param threadContext ThreadContext 实例
+   * @param threadEntity ThreadEntity 实例
    * @param name 变量名称
    * @param value 新的变量值
    * @param explicitScope 显式指定作用域（可选）
    */
-  async updateVariable(threadContext: ThreadContext, name: string, value: any, explicitScope?: VariableScope): Promise<void> {
+  async updateVariable(threadEntity: ThreadEntity, name: string, value: any, explicitScope?: VariableScope): Promise<void> {
     const variableDef = this.stateManager.getVariableDefinition(name);
 
     if (!variableDef) {
@@ -202,69 +202,69 @@ export class VariableCoordinator {
     this.stateManager.setVariableValue(name, value, targetScope);
 
     // 触发变量变更事件
-    await this.emitVariableChangedEvent(threadContext, name, value, targetScope);
+    await this.emitVariableChangedEvent(threadEntity, name, value, targetScope);
   }
 
   /**
    * 检查变量是否存在
-   * @param threadContext ThreadContext 实例
+   * @param threadEntity ThreadEntity 实例
    * @param name 变量名称
    * @returns 是否存在
    */
-  hasVariable(threadContext: ThreadContext, name: string): boolean {
-    return this.getVariable(threadContext, name) !== undefined;
+  hasVariable(threadEntity: ThreadEntity, name: string): boolean {
+    return this.getVariable(threadEntity, name) !== undefined;
   }
 
   /**
    * 获取所有变量（按作用域优先级合并）
-   * @param threadContext ThreadContext 实例
+   * @param threadEntity ThreadEntity 实例
    * @returns 所有变量的键值对
    */
-  getAllVariables(threadContext: ThreadContext): Record<string, any> {
+  getAllVariables(threadEntity: ThreadEntity): Record<string, any> {
     return this.stateManager.getAllVariables();
   }
 
   /**
    * 获取指定作用域的变量
-   * @param threadContext ThreadContext 实例
+   * @param threadEntity ThreadEntity 实例
    * @param scope 变量作用域
    * @returns 指定作用域的变量键值对
    */
-  getVariablesByScope(threadContext: ThreadContext, scope: VariableScope): Record<string, any> {
+  getVariablesByScope(threadEntity: ThreadEntity, scope: VariableScope): Record<string, any> {
     return this.stateManager.getVariablesByScope(scope);
   }
 
   /**
    * 进入本地作用域
    * 自动初始化该作用域的变量
-   * @param threadContext ThreadContext 实例
+   * @param threadEntity ThreadEntity 实例
    */
-  enterLocalScope(threadContext: ThreadContext): void {
+  enterLocalScope(threadEntity: ThreadEntity): void {
     this.stateManager.enterLocalScope();
   }
 
   /**
    * 退出本地作用域
-   * @param threadContext ThreadContext 实例
+   * @param threadEntity ThreadEntity 实例
    */
-  exitLocalScope(threadContext: ThreadContext): void {
+  exitLocalScope(threadEntity: ThreadEntity): void {
     this.stateManager.exitLocalScope();
   }
 
   /**
    * 进入循环作用域
    * 自动初始化该作用域的变量
-   * @param threadContext ThreadContext 实例
+   * @param threadEntity ThreadEntity 实例
    */
-  enterLoopScope(threadContext: ThreadContext): void {
+  enterLoopScope(threadEntity: ThreadEntity): void {
     this.stateManager.enterLoopScope();
   }
 
   /**
    * 退出循环作用域
-   * @param threadContext ThreadContext 实例
+   * @param threadEntity ThreadEntity 实例
    */
-  exitLoopScope(threadContext: ThreadContext): void {
+  exitLoopScope(threadEntity: ThreadEntity): void {
     this.stateManager.exitLoopScope();
   }
 
@@ -315,46 +315,46 @@ export class VariableCoordinator {
    * @param threadContext Thread 上下文
    * @returns VariableAccessor 实例
    */
-  createAccessor(threadContext: ThreadContext): VariableAccessor {
-    return new VariableAccessor(threadContext);
+  createAccessor(threadEntity: ThreadEntity): VariableAccessor {
+    return new VariableAccessor(threadEntity);
   }
 
   /**
    * 通过路径获取变量值
    * 支持嵌套路径和命名空间
-   * @param threadContext Thread 上下文
+   * @param threadEntity Thread 实体
    * @param path 变量路径
    * @returns 变量值
    *
    * @example
    * // 简单变量
-   * getVariableByPath(context, 'userName')
+   * getVariableByPath(entity, 'userName')
    *
    * // 嵌套路径
-   * getVariableByPath(context, 'user.profile.name')
+   * getVariableByPath(entity, 'user.profile.name')
    *
    * // 命名空间
-   * getVariableByPath(context, 'input.userName')
-   * getVariableByPath(context, 'output.result')
-   * getVariableByPath(context, 'global.config')
-   * getVariableByPath(context, 'thread.state')
-   * getVariableByPath(context, 'subgraph.temp')
-   * getVariableByPath(context, 'loop.item')
+   * getVariableByPath(entity, 'input.userName')
+   * getVariableByPath(entity, 'output.result')
+   * getVariableByPath(entity, 'global.config')
+   * getVariableByPath(entity, 'thread.state')
+   * getVariableByPath(entity, 'subgraph.temp')
+   * getVariableByPath(entity, 'loop.item')
    */
-  getVariableByPath(threadContext: ThreadContext, path: string): any {
-    const accessor = this.createAccessor(threadContext);
+  getVariableByPath(threadEntity: ThreadEntity, path: string): any {
+    const accessor = this.createAccessor(threadEntity);
     return accessor.get(path);
   }
 
   /**
    * 触发变量变更事件
-   * @param threadContext ThreadContext 实例
+   * @param threadEntity ThreadEntity 实例
    * @param name 变量名称
    * @param value 新值
    * @param scope 作用域
    */
   private async emitVariableChangedEvent(
-    threadContext: ThreadContext,
+    threadEntity: ThreadEntity,
     name: string,
     value: any,
     scope: VariableScope
@@ -367,8 +367,8 @@ export class VariableCoordinator {
       const event = {
         type: 'VARIABLE_CHANGED' as EventType,
         timestamp: now(),
-        workflowId: this.workflowId || threadContext.getWorkflowId(),
-        threadId: this.threadId || threadContext.getThreadId(),
+        workflowId: this.workflowId || threadEntity.getWorkflowId(),
+        threadId: this.threadId || threadEntity.getThreadId(),
         variableName: name,
         variableValue: value,
         variableScope: scope

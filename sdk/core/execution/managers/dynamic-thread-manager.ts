@@ -14,14 +14,14 @@
  * - 提供完整的事件通知机制
  */
 
-import type { ThreadContext } from '../context/thread-context.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { EventManager } from '../../services/event-manager.js';
 import type { ThreadRegistry } from '../../services/thread-registry.js';
+import type { ThreadExecutor } from '../thread-executor.js';
 import { now, diffTimestamp, getErrorMessage } from '@modular-agent/common-utils';
 import { TaskRegistry, type TaskManager } from '../../services/task-registry.js';
 import { ThreadPoolManager } from './thread-pool-manager.js';
 import { TaskQueueManager } from './task-queue-manager.js';
-import { ExecutionContext } from '../context/execution-context.js';
 import { ThreadBuilder } from '../thread-builder.js';
 import { CallbackManager } from './callback-manager.js';
 import {
@@ -71,11 +71,6 @@ export class DynamicThreadManager implements TaskManager {
   private threadBuilder: ThreadBuilder;
 
   /**
-   * 执行上下文
-   */
-  private executionContext: ExecutionContext;
-
-  /**
    * 回调管理器
    */
   private callbackManager: CallbackManager<ExecutedThreadResult>;
@@ -87,30 +82,31 @@ export class DynamicThreadManager implements TaskManager {
 
   /**
    * 构造函数
-   * @param executionContext 执行上下文
-   * @param taskRegistry 任务注册表（通过构造函数注入）
+   * @param threadRegistry Thread注册表
+   * @param threadBuilder Thread构建器
+   * @param taskRegistry 任务注册表
+   * @param taskQueueManager 任务队列管理器
+   * @param eventManager 事件管理器
+   * @param executorFactory ThreadExecutor 工厂函数
    * @param config 配置
    */
   constructor(
-    executionContext: ExecutionContext,
+    threadRegistry: ThreadRegistry,
+    threadBuilder: ThreadBuilder,
     taskRegistry: TaskRegistry,
+    taskQueueManager: TaskQueueManager,
+    eventManager: EventManager,
+    executorFactory: () => ThreadExecutor,
     config?: any
   ) {
-    this.executionContext = executionContext;
+    this.threadRegistry = threadRegistry;
+    this.threadBuilder = threadBuilder;
     this.taskRegistry = taskRegistry;
-    this.eventManager = executionContext.getEventManager();
-    this.threadRegistry = executionContext.getThreadRegistry();
-    this.threadBuilder = new ThreadBuilder(executionContext.getWorkflowRegistry(), executionContext);
+    this.taskQueueManager = taskQueueManager;
+    this.eventManager = eventManager;
 
     // 创建线程池管理器
-    this.threadPoolManager = new ThreadPoolManager(executionContext, config);
-
-    // 创建任务队列管理器
-    this.taskQueueManager = new TaskQueueManager(
-      this.taskRegistry,
-      this.threadPoolManager,
-      this.eventManager
-    );
+    this.threadPoolManager = new ThreadPoolManager(executorFactory, config);
 
     // 创建回调管理器
     this.callbackManager = new CallbackManager<ExecutedThreadResult>();
@@ -129,29 +125,29 @@ export class DynamicThreadManager implements TaskManager {
       throw new Error('workflowId is required');
     }
 
-    if (!request.mainThreadContext) {
-      throw new Error('mainThreadContext is required');
+    if (!request.mainThreadEntity) {
+      throw new Error('mainThreadEntity is required');
     }
 
     // 准备输入数据
     const input = this.prepareInputData(request);
 
-    // 创建子线程 ThreadContext
-    const childThreadContext = await this.createChildThreadContext(request, input);
+    // 创建子线程 ThreadEntity
+    const childThreadEntity = await this.createChildThreadContext(request, input);
 
     // 注册到 ThreadRegistry
-    this.threadRegistry.register(childThreadContext);
+    this.threadRegistry.register(childThreadEntity);
 
     // 建立父子线程关系
-    const parentThreadId = request.mainThreadContext.getThreadId();
-    const childThreadId = childThreadContext.getThreadId();
-    request.mainThreadContext.registerChildThread(childThreadId);
-    childThreadContext.setParentThreadId(parentThreadId);
+    const parentThreadId = request.mainThreadEntity.getThreadId();
+    const childThreadId = childThreadEntity.getThreadId();
+    request.mainThreadEntity.registerChildThread(childThreadId);
+    childThreadEntity.setParentThreadId(parentThreadId);
 
     // 创建动态线程信息
     const dynamicThreadInfo: DynamicThreadInfo = {
       id: childThreadId,
-      threadContext: childThreadContext,
+      threadEntity: childThreadEntity,
       status: 'QUEUED',
       submitTime: now(),
       parentThreadId
@@ -159,7 +155,7 @@ export class DynamicThreadManager implements TaskManager {
     this.dynamicThreads.set(childThreadId, dynamicThreadInfo);
 
     // 触发开始事件
-    await this.emitStartedEvent(request, childThreadContext);
+    await this.emitStartedEvent(request, childThreadEntity);
 
     // 根据配置选择执行方式
     const waitForCompletion = request.config?.waitForCompletion !== false; // 默认为 true
@@ -167,10 +163,10 @@ export class DynamicThreadManager implements TaskManager {
 
     if (waitForCompletion) {
       // 同步执行
-      return await this.executeSync(childThreadContext, timeout);
+      return await this.executeSync(childThreadEntity, timeout);
     } else {
       // 异步执行
-      return this.executeAsync(childThreadContext, timeout);
+      return this.executeAsync(childThreadEntity, timeout);
     }
   }
 
@@ -182,8 +178,8 @@ export class DynamicThreadManager implements TaskManager {
   private prepareInputData(request: CreateDynamicThreadRequest): Record<string, any> {
     return {
       triggerId: request.triggerId,
-      output: request.mainThreadContext.getOutput(),
-      input: request.mainThreadContext.getInput(),
+      output: request.mainThreadEntity.getOutput(),
+      input: request.mainThreadEntity.getInput(),
       ...request.input
     };
   }
@@ -192,36 +188,36 @@ export class DynamicThreadManager implements TaskManager {
    * 创建子线程上下文
    * @param request 创建请求
    * @param input 输入数据
-   * @returns 子线程上下文
+   * @returns 子线程实体
    */
   private async createChildThreadContext(
     request: CreateDynamicThreadRequest,
     input: Record<string, any>
-  ): Promise<ThreadContext> {
-    const childThreadContext = await this.threadBuilder.build(request.workflowId, {
+  ): Promise<ThreadEntity> {
+    const childThreadEntity = await this.threadBuilder.build(request.workflowId, {
       input
     });
 
     // 设置线程类型为 DYNAMIC_CHILD
-    childThreadContext.setThreadType('DYNAMIC_CHILD');
+    childThreadEntity.setThreadType('DYNAMIC_CHILD');
 
-    return childThreadContext;
+    return childThreadEntity;
   }
 
   /**
    * 同步执行
-   * @param childThreadContext 子线程上下文
+   * @param childThreadEntity 子线程实体
    * @param timeout 超时时间
    * @returns 执行结果
    */
   private async executeSync(
-    childThreadContext: ThreadContext,
+    childThreadEntity: ThreadEntity,
     timeout: number
   ): Promise<ExecutedThreadResult> {
-    const threadId = childThreadContext.getThreadId();
+    const threadId = childThreadEntity.getThreadId();
 
     // 先注册任务到全局 TaskRegistry
-    const taskId = this.taskRegistry.register(childThreadContext, this, timeout);
+    const taskId = this.taskRegistry.register(childThreadEntity, this, timeout);
 
     try {
       // 创建 Promise
@@ -231,13 +227,13 @@ export class DynamicThreadManager implements TaskManager {
       });
 
       // 提交到任务队列
-      this.taskQueueManager.submitSync(taskId, childThreadContext, timeout);
+      this.taskQueueManager.submitSync(taskId, childThreadEntity, timeout);
 
       // 等待完成
       const result = await promise;
 
       // 注销父子关系
-      this.unregisterParentChildRelationship(childThreadContext);
+      this.unregisterParentChildRelationship(childThreadEntity);
 
       // 清理回调
       this.callbackManager.cleanupCallback(threadId);
@@ -245,7 +241,7 @@ export class DynamicThreadManager implements TaskManager {
       return result;
     } catch (error) {
       // 注销父子关系
-      this.unregisterParentChildRelationship(childThreadContext);
+      this.unregisterParentChildRelationship(childThreadEntity);
 
       // 清理回调
       this.callbackManager.cleanupCallback(threadId);
@@ -256,18 +252,18 @@ export class DynamicThreadManager implements TaskManager {
 
   /**
    * 异步执行
-   * @param childThreadContext 子线程上下文
+   * @param childThreadEntity 子线程实体
    * @param timeout 超时时间
    * @returns 任务提交结果
    */
   private executeAsync(
-    childThreadContext: ThreadContext,
+    childThreadEntity: ThreadEntity,
     timeout: number
   ): ThreadSubmissionResult {
-    const threadId = childThreadContext.getThreadId();
+    const threadId = childThreadEntity.getThreadId();
 
     // 先注册任务到全局 TaskRegistry
-    const taskId = this.taskRegistry.register(childThreadContext, this, timeout);
+    const taskId = this.taskRegistry.register(childThreadEntity, this, timeout);
 
     // 创建 Promise
     const promise = new Promise<ExecutedThreadResult>((resolve, reject) => {
@@ -276,7 +272,7 @@ export class DynamicThreadManager implements TaskManager {
     });
 
     // 提交到任务队列
-    const submissionResult = this.taskQueueManager.submitAsync(taskId, childThreadContext, timeout);
+    const submissionResult = this.taskQueueManager.submitAsync(taskId, childThreadEntity, timeout);
 
     // 异步执行完成后处理
     promise
@@ -318,9 +314,9 @@ export class DynamicThreadManager implements TaskManager {
     this.emitCompletedEvent(threadId, result);
 
     // 注销父子关系
-    const childThreadContext = this.threadRegistry.get(threadId);
-    if (childThreadContext) {
-      this.unregisterParentChildRelationship(childThreadContext);
+    const childThreadEntity = this.threadRegistry.get(threadId);
+    if (childThreadEntity) {
+      this.unregisterParentChildRelationship(childThreadEntity);
     }
 
     // 清理回调
@@ -348,9 +344,9 @@ export class DynamicThreadManager implements TaskManager {
     this.emitFailedEvent(threadId, error);
 
     // 注销父子关系
-    const childThreadContext = this.threadRegistry.get(threadId);
-    if (childThreadContext) {
-      this.unregisterParentChildRelationship(childThreadContext);
+    const childThreadEntity = this.threadRegistry.get(threadId);
+    if (childThreadEntity) {
+      this.unregisterParentChildRelationship(childThreadEntity);
     }
 
     // 清理回调
@@ -395,9 +391,9 @@ export class DynamicThreadManager implements TaskManager {
       this.emitCancelledEvent(threadId);
 
       // 注销父子关系
-      const childThreadContext = this.threadRegistry.get(threadId);
-      if (childThreadContext) {
-        this.unregisterParentChildRelationship(childThreadContext);
+      const childThreadEntity = this.threadRegistry.get(threadId);
+      if (childThreadEntity) {
+        this.unregisterParentChildRelationship(childThreadEntity);
       }
 
       // 清理回调
@@ -438,16 +434,16 @@ export class DynamicThreadManager implements TaskManager {
 
   /**
    * 注销父子关系
-   * @param childThreadContext 子线程上下文
+   * @param childThreadEntity 子线程实体
    */
-  private unregisterParentChildRelationship(childThreadContext: ThreadContext): void {
-    const parentThreadId = childThreadContext.getParentThreadId();
-    const childThreadId = childThreadContext.getThreadId();
+  private unregisterParentChildRelationship(childThreadEntity: ThreadEntity): void {
+    const parentThreadId = childThreadEntity.getParentThreadId();
+    const childThreadId = childThreadEntity.getThreadId();
 
     if (parentThreadId) {
-      const parentContext = this.threadRegistry.get(parentThreadId);
-      if (parentContext) {
-        parentContext.unregisterChildThread(childThreadId);
+      const parentEntity = this.threadRegistry.get(parentThreadId);
+      if (parentEntity) {
+        parentEntity.unregisterChildThread(childThreadId);
       }
     }
   }
@@ -455,16 +451,16 @@ export class DynamicThreadManager implements TaskManager {
   /**
    * 触发开始事件
    * @param request 创建请求
-   * @param childThreadContext 子线程上下文
+   * @param childThreadEntity 子线程实体
    */
   private async emitStartedEvent(
     request: CreateDynamicThreadRequest,
-    childThreadContext: ThreadContext
+    childThreadEntity: ThreadEntity
   ): Promise<void> {
     await this.eventManager.emit({
       type: 'DYNAMIC_THREAD_SUBMITTED',
-      threadId: request.mainThreadContext.getThreadId(),
-      workflowId: request.mainThreadContext.getWorkflowId(),
+      threadId: request.mainThreadEntity.getThreadId(),
+      workflowId: request.mainThreadEntity.getWorkflowId(),
       subgraphId: request.workflowId,
       triggerId: request.triggerId,
       input: request.input,
@@ -478,18 +474,18 @@ export class DynamicThreadManager implements TaskManager {
    * @param result 执行结果
    */
   private async emitCompletedEvent(threadId: string, result: ExecutedThreadResult): Promise<void> {
-    const childThreadContext = this.threadRegistry.get(threadId);
-    if (!childThreadContext) {
+    const childThreadEntity = this.threadRegistry.get(threadId);
+    if (!childThreadEntity) {
       return;
     }
 
     await this.eventManager.emit({
       type: 'DYNAMIC_THREAD_COMPLETED',
       threadId,
-      workflowId: childThreadContext.getWorkflowId(),
-      subgraphId: childThreadContext.getTriggeredSubworkflowId() || '',
+      workflowId: childThreadEntity.getWorkflowId(),
+      subgraphId: childThreadEntity.getTriggeredSubworkflowId() || '',
       triggerId: '',
-      output: childThreadContext.getOutput(),
+      output: childThreadEntity.getOutput(),
       executionTime: result.executionTime,
       timestamp: now()
     });
@@ -501,16 +497,16 @@ export class DynamicThreadManager implements TaskManager {
    * @param error 错误信息
    */
   private async emitFailedEvent(threadId: string, error: Error): Promise<void> {
-    const childThreadContext = this.threadRegistry.get(threadId);
-    if (!childThreadContext) {
+    const childThreadEntity = this.threadRegistry.get(threadId);
+    if (!childThreadEntity) {
       return;
     }
 
     await this.eventManager.emit({
       type: 'DYNAMIC_THREAD_FAILED',
       threadId,
-      workflowId: childThreadContext.getWorkflowId(),
-      subgraphId: childThreadContext.getTriggeredSubworkflowId() || '',
+      workflowId: childThreadEntity.getWorkflowId(),
+      subgraphId: childThreadEntity.getTriggeredSubworkflowId() || '',
       triggerId: '',
       error: getErrorMessage(error),
       timestamp: now()
@@ -522,16 +518,16 @@ export class DynamicThreadManager implements TaskManager {
    * @param threadId 线程ID
    */
   private async emitCancelledEvent(threadId: string): Promise<void> {
-    const childThreadContext = this.threadRegistry.get(threadId);
-    if (!childThreadContext) {
+    const childThreadEntity = this.threadRegistry.get(threadId);
+    if (!childThreadEntity) {
       return;
     }
 
     await this.eventManager.emit({
       type: 'DYNAMIC_THREAD_CANCELLED',
       threadId,
-      workflowId: childThreadContext.getWorkflowId(),
-      subgraphId: childThreadContext.getTriggeredSubworkflowId() || '',
+      workflowId: childThreadEntity.getWorkflowId(),
+      subgraphId: childThreadEntity.getTriggeredSubworkflowId() || '',
       triggerId: '',
       timestamp: now()
     });

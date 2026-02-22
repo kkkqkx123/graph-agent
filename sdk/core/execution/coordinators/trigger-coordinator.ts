@@ -23,7 +23,8 @@ import type {
   Trigger,
   TriggerStatus,
   WorkflowTrigger,
-  TriggerRuntimeState
+  TriggerRuntimeState,
+  TriggerExecutionResult
 } from '@modular-agent/types';
 import type { BaseEvent, NodeCustomEvent } from '@modular-agent/types';
 import type { ID } from '@modular-agent/types';
@@ -38,7 +39,10 @@ import { CheckpointStateManager } from '../managers/checkpoint-state-manager.js'
 import { convertToTrigger } from '@modular-agent/types';
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
-import { ExecutionContext } from '../context/execution-context.js';
+import type { EventManager } from '../../services/event-manager.js';
+import type { ThreadBuilder } from '../thread-builder.js';
+import type { TaskQueueManager } from '../managers/task-queue-manager.js';
+import type { ThreadLifecycleCoordinator } from './thread-lifecycle-coordinator.js';
 import { createContextualLogger } from '../../../utils/contextual-logger.js';
 
 const logger = createContextualLogger({ component: 'TriggerCoordinator' });
@@ -64,7 +68,10 @@ export class TriggerCoordinator {
   private stateManager: TriggerStateManager;
   private checkpointStateManager?: CheckpointStateManager;
   private graphRegistry?: GraphRegistry;
-  private executionContext?: ExecutionContext;
+  private eventManager?: EventManager;
+  private threadBuilder?: ThreadBuilder;
+  private taskQueueManager?: TaskQueueManager;
+  private threadLifecycleCoordinator?: ThreadLifecycleCoordinator;
 
   constructor(
     threadRegistry: ThreadRegistry,
@@ -72,14 +79,20 @@ export class TriggerCoordinator {
     stateManager: TriggerStateManager,
     checkpointStateManager?: CheckpointStateManager,
     graphRegistry?: GraphRegistry,
-    executionContext?: ExecutionContext
+    eventManager?: EventManager,
+    threadBuilder?: ThreadBuilder,
+    taskQueueManager?: TaskQueueManager,
+    threadLifecycleCoordinator?: ThreadLifecycleCoordinator
   ) {
     this.threadRegistry = threadRegistry;
     this.workflowRegistry = workflowRegistry;
     this.stateManager = stateManager;
     this.checkpointStateManager = checkpointStateManager;
     this.graphRegistry = graphRegistry;
-    this.executionContext = executionContext;
+    this.eventManager = eventManager;
+    this.threadBuilder = threadBuilder;
+    this.taskQueueManager = taskQueueManager;
+    this.threadLifecycleCoordinator = threadLifecycleCoordinator;
   }
 
   /**
@@ -315,15 +328,53 @@ export class TriggerCoordinator {
     // 使用 trigger handler 函数执行触发动作
     const handler = getTriggerHandler(trigger.action.type);
 
-    // 使用注入的ExecutionContext，如果未提供则创建默认实例
-    const executionContext = this.executionContext || ExecutionContext.createDefault();
-
-    // 设置当前线程 ID
-    if (trigger.threadId) {
-      executionContext.setCurrentThreadId(trigger.threadId);
+    // 根据不同的handler类型传递不同的依赖
+    let result: TriggerExecutionResult;
+    
+    switch (trigger.action.type) {
+      case 'stop_thread':
+      case 'pause_thread':
+      case 'resume_thread':
+        if (!this.threadLifecycleCoordinator) {
+          throw new SystemExecutionError('ThreadLifecycleCoordinator not provided');
+        }
+        result = await handler(trigger.action, trigger.id, this.threadLifecycleCoordinator);
+        break;
+      
+      case 'skip_node':
+        if (!this.threadRegistry || !this.eventManager) {
+          throw new SystemExecutionError('ThreadRegistry or EventManager not provided');
+        }
+        result = await handler(trigger.action, trigger.id, this.threadRegistry, this.eventManager);
+        break;
+      
+      case 'set_variable':
+        if (!this.threadRegistry) {
+          throw new SystemExecutionError('ThreadRegistry not provided');
+        }
+        result = await handler(trigger.action, trigger.id, this.threadRegistry);
+        break;
+      
+      case 'execute_triggered_subgraph':
+        if (!this.threadRegistry || !this.eventManager || !this.threadBuilder || !this.taskQueueManager) {
+          throw new SystemExecutionError('Required dependencies not provided for execute_triggered_subgraph');
+        }
+        result = await handler(
+          trigger.action,
+          trigger.id,
+          this.threadRegistry,
+          this.eventManager,
+          this.threadBuilder,
+          this.taskQueueManager,
+          trigger.threadId
+        );
+        break;
+      
+      default:
+        // 对于其他handler，使用向后兼容的方式
+        result = await handler(trigger.action, trigger.id);
+        break;
     }
-
-    const result = await handler(trigger.action, trigger.id, executionContext);
 
     // 更新触发器状态
     this.stateManager.incrementTriggerCount(trigger.id);

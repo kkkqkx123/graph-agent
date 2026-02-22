@@ -15,7 +15,7 @@
  * - severity 驱动：仅 ERROR 级别错误停止执行，WARNING 和 INFO 级别继续执行
  */
 
-import { ThreadContext } from '../context/thread-context.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { Node } from '@modular-agent/types';
 import type { NodeExecutionResult } from '@modular-agent/types';
 import { ErrorContext, SDKError, ErrorSeverity } from '@modular-agent/types';
@@ -47,12 +47,12 @@ function standardizeErrorWithSeverity(error: Error, context: ErrorContext): SDKE
 /**
  * 处理节点执行失败
  * 核心简化：仅当 severity 为 ERROR 时才停止执行
- * @param threadContext 线程上下文
+ * @param threadEntity 线程实体
  * @param node 节点定义
  * @param nodeResult 节点执行结果
  */
 export async function handleNodeFailure(
-  threadContext: ThreadContext,
+  threadEntity: ThreadEntity,
   node: Node,
   nodeResult: NodeExecutionResult
 ): Promise<void> {
@@ -60,8 +60,8 @@ export async function handleNodeFailure(
 
   // 标准化错误以确保有 severity
   const context: ErrorContext = {
-    threadId: threadContext.getThreadId(),
-    workflowId: threadContext.getWorkflowId(),
+    threadId: threadEntity.getThreadId(),
+    workflowId: threadEntity.getWorkflowId(),
     nodeId: node.id,
     operation: 'node_execution'
   };
@@ -69,7 +69,7 @@ export async function handleNodeFailure(
   const standardizedError = standardizeErrorWithSeverity(error, context);
 
   // 记录错误到线程上下文
-  threadContext.addError(standardizedError);
+  threadEntity.addError(standardizedError);
 
   // 使用 ErrorService 处理错误（记录日志和触发事件）
   const container = getContainer();
@@ -78,9 +78,9 @@ export async function handleNodeFailure(
 
   // 核心简化：仅当 severity 为 ERROR 时才停止执行
   if (standardizedError.severity === 'error') {
-    threadContext.setStatus('FAILED');
-    threadContext.thread.endTime = now();
-    threadContext.interrupt('STOP');
+    threadEntity.setStatus('FAILED');
+    threadEntity.getThread().endTime = now();
+    threadEntity.interrupt('STOP');
   }
   // WARNING 和 INFO 级别自动继续执行
 }
@@ -88,16 +88,16 @@ export async function handleNodeFailure(
 /**
  * 处理执行错误
  * 核心简化：仅当 severity 为 ERROR 时才停止执行
- * @param threadContext 线程上下文
+ * @param threadEntity 线程实体
  * @param error 错误信息
  */
 export async function handleExecutionError(
-  threadContext: ThreadContext,
+  threadEntity: ThreadEntity,
   error: any
 ): Promise<void> {
   const context: ErrorContext = {
-    threadId: threadContext.getThreadId(),
-    workflowId: threadContext.getWorkflowId(),
+    threadId: threadEntity.getThreadId(),
+    workflowId: threadEntity.getWorkflowId(),
     operation: 'execution'
   };
 
@@ -105,7 +105,7 @@ export async function handleExecutionError(
   const standardizedError = standardizeErrorWithSeverity(error, context);
 
   // 记录错误到线程上下文
-  threadContext.addError(standardizedError);
+  threadEntity.addError(standardizedError);
 
   // 使用 ErrorService 处理错误（记录日志和触发事件）
   const container = getContainer();
@@ -114,9 +114,9 @@ export async function handleExecutionError(
 
   // 核心简化：仅当 severity 为 ERROR 时才停止执行
   if (standardizedError.severity === 'error') {
-    threadContext.setStatus('FAILED');
-    threadContext.thread.endTime = now();
-    threadContext.interrupt('STOP');
+    threadEntity.setStatus('FAILED');
+    threadEntity.getThread().endTime = now();
+    threadEntity.interrupt('STOP');
   }
   // WARNING 和 INFO 级别自动继续执行
 }

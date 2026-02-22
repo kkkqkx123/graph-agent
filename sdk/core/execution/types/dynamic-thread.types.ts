@@ -7,7 +7,7 @@
  * - 提供完整的动态线程生命周期状态
  */
 
-import type { ThreadContext } from '../context/thread-context.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { ThreadResult } from '@modular-agent/types';
 import { TaskStatus } from './task.types.js';
 
@@ -17,8 +17,8 @@ import { TaskStatus } from './task.types.js';
 export interface DynamicThreadInfo {
   /** 线程ID */
   id: string;
-  /** 线程上下文 */
-  threadContext: ThreadContext;
+  /** 线程实体 */
+  threadEntity: ThreadEntity;
   /** 线程状态 */
   status: TaskStatus;
   /** 提交时间 */
@@ -55,8 +55,8 @@ export interface CallbackInfo {
  * 同步执行结果接口
  */
 export interface ExecutedThreadResult {
-  /** 线程上下文 */
-  threadContext: ThreadContext;
+  /** 线程实体 */
+  threadEntity: ThreadEntity;
   /** 线程执行结果 */
   threadResult: ThreadResult;
   /** 执行时间（毫秒） */
@@ -130,8 +130,8 @@ export interface CreateDynamicThreadRequest {
   input: Record<string, any>;
   /** 触发器ID */
   triggerId: string;
-  /** 主线程上下文 */
-  mainThreadContext: ThreadContext;
+  /** 主线程实体 */
+  mainThreadEntity: ThreadEntity;
   /** 配置选项 */
   config?: DynamicThreadConfig;
 }

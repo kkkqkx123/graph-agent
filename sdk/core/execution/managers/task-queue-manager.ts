@@ -18,7 +18,7 @@ import { TaskRegistry } from '../../services/task-registry.js';
 import { ThreadPoolManager } from './thread-pool-manager.js';
 import type { EventManager } from '../../services/event-manager.js';
 import { EventType } from '@modular-agent/types';
-import type { ThreadContext } from '../context/thread-context.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { ThreadResult } from '@modular-agent/types';
 import { TaskStatus } from '../types/task.types.js';
 import { type QueueTask, type ExecutedSubgraphResult, type TaskSubmissionResult } from '../types/triggered-subgraph.types.js';
@@ -77,15 +77,15 @@ export class TaskQueueManager {
   /**
    * 提交同步任务
    * @param taskId 任务ID（已由管理器注册）
-   * @param threadContext 线程上下文
+   * @param threadEntity 线程实体
    * @param timeout 超时时间（毫秒）
    * @returns 执行结果
    */
-  async submitSync(taskId: string, threadContext: ThreadContext, timeout?: number): Promise<ExecutedSubgraphResult> {
+  async submitSync(taskId: string, threadEntity: ThreadEntity, timeout?: number): Promise<ExecutedSubgraphResult> {
     return new Promise((resolve, reject) => {
       const queueTask: QueueTask = {
         taskId,
-        threadContext,
+        threadEntity,
         resolve: resolve as any,
         reject,
         submitTime: now(),
@@ -102,14 +102,14 @@ export class TaskQueueManager {
   /**
    * 提交异步任务
    * @param taskId 任务ID（已由管理器注册）
-   * @param threadContext 线程上下文
+   * @param threadEntity 线程实体
    * @param timeout 超时时间（毫秒）
    * @returns 任务提交结果
    */
-  submitAsync(taskId: string, threadContext: ThreadContext, timeout?: number): TaskSubmissionResult {
+  submitAsync(taskId: string, threadEntity: ThreadEntity, timeout?: number): TaskSubmissionResult {
     const queueTask: QueueTask = {
       taskId,
-      threadContext,
+      threadEntity,
       resolve: () => {}, // 异步任务不需要 resolve
       reject: () => {}, // 异步任务不需要 reject
       submitTime: now(),
@@ -171,7 +171,7 @@ export class TaskQueueManager {
     
     try {
       // 执行线程
-      const threadResult = await executor.executeThread(queueTask.threadContext);
+      const threadResult = await executor.executeThread(queueTask.threadEntity);
       
       const executionTime = diffTimestamp(startTime, now());
       
@@ -211,11 +211,11 @@ export class TaskQueueManager {
     // 触发完成事件
     await this.eventManager.emit({
       type: 'TRIGGERED_SUBGRAPH_COMPLETED',
-      threadId: queueTask.threadContext.getThreadId(),
-      workflowId: queueTask.threadContext.getWorkflowId(),
-      subgraphId: queueTask.threadContext.getTriggeredSubworkflowId() || '',
+      threadId: queueTask.threadEntity.getThreadId(),
+      workflowId: queueTask.threadEntity.getWorkflowId(),
+      subgraphId: queueTask.threadEntity.getTriggeredSubworkflowId() || '',
       triggerId: '',
-      output: queueTask.threadContext.getOutput(),
+      output: queueTask.threadEntity.getOutput(),
       executionTime,
       timestamp: now()
     });
@@ -223,7 +223,7 @@ export class TaskQueueManager {
     // 如果是同步任务，调用 resolve
     if (queueTask.resolve) {
       const result: ExecutedSubgraphResult = {
-        subgraphContext: queueTask.threadContext,
+        subgraphEntity: queueTask.threadEntity,
         threadResult,
         executionTime
       };
@@ -251,9 +251,9 @@ export class TaskQueueManager {
     // 触发失败事件
     await this.eventManager.emit({
       type: 'TRIGGERED_SUBGRAPH_FAILED',
-      threadId: queueTask.threadContext.getThreadId(),
-      workflowId: queueTask.threadContext.getWorkflowId(),
-      subgraphId: queueTask.threadContext.getTriggeredSubworkflowId() || '',
+      threadId: queueTask.threadEntity.getThreadId(),
+      workflowId: queueTask.threadEntity.getWorkflowId(),
+      subgraphId: queueTask.threadEntity.getTriggeredSubworkflowId() || '',
       triggerId: '',
       error: getErrorMessage(error),
       executionTime,
@@ -285,9 +285,9 @@ export class TaskQueueManager {
       // 触发取消事件（使用 FAILED 事件类型，因为 CANCELLED 事件类型不存在）
       this.eventManager.emit({
         type: 'TRIGGERED_SUBGRAPH_FAILED',
-        threadId: queueTask.threadContext.getThreadId(),
-        workflowId: queueTask.threadContext.getWorkflowId(),
-        subgraphId: queueTask.threadContext.getTriggeredSubworkflowId() || '',
+        threadId: queueTask.threadEntity.getThreadId(),
+        workflowId: queueTask.threadEntity.getWorkflowId(),
+        subgraphId: queueTask.threadEntity.getTriggeredSubworkflowId() || '',
         triggerId: '',
         error: 'Task cancelled',
         executionTime: 0,

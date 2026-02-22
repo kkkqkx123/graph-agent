@@ -5,7 +5,7 @@
 
 import type { WorkflowRegistry } from '../../services/workflow-registry.js';
 import type { ThreadRegistry } from '../../services/thread-registry.js';
-import type { ThreadContext } from '../context/thread-context.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { WorkflowTrigger } from '@modular-agent/types';
 import type { TriggerReference } from '@modular-agent/types';
 import type { WorkflowReference, WorkflowReferenceInfo } from '@modular-agent/types';
@@ -145,23 +145,23 @@ function checkThreadReferences(
   // 详细检查：仅对活跃工作流进行详细遍历
   const allThreads = threadRegistry.getAll();
 
-  for (const threadContext of allThreads) {
+  for (const threadEntity of allThreads) {
     // 检查主线程是否使用该工作流
-    if (threadContext.getWorkflowId() === workflowId) {
-      references.push(createMainWorkflowReference(threadContext));
+    if (threadEntity.getWorkflowId() === workflowId) {
+      references.push(createMainWorkflowReference(threadEntity));
     }
 
     // 检查触发的子工作流上下文
-    const triggeredSubworkflowId = threadContext.getTriggeredSubworkflowId();
+    const triggeredSubworkflowId = threadEntity.getTriggeredSubworkflowId();
     if (triggeredSubworkflowId === workflowId) {
-      references.push(createTriggeredSubworkflowReference(threadContext));
+      references.push(createTriggeredSubworkflowReference(threadEntity));
     }
 
     // 检查子图执行栈引用（新增）
-    const subgraphStack = threadContext.getSubgraphStack();
+    const subgraphStack = threadEntity.getSubgraphStack();
     for (const context of subgraphStack) {
       if (context.workflowId === workflowId) {
-        references.push(createSubgraphStackReference(threadContext, context));
+        references.push(createSubgraphStackReference(threadEntity, context));
       }
     }
   }
@@ -172,15 +172,15 @@ function checkThreadReferences(
 /**
  * 创建主工作流引用
  */
-function createMainWorkflowReference(threadContext: ThreadContext): WorkflowReference {
+function createMainWorkflowReference(threadEntity: ThreadEntity): WorkflowReference {
   return {
     type: 'thread',
-    sourceId: threadContext.getThreadId(),
-    sourceName: `Thread ${threadContext.getThreadId()}`,
+    sourceId: threadEntity.getThreadId(),
+    sourceName: `Thread ${threadEntity.getThreadId()}`,
     isRuntimeReference: true,
     details: {
-      threadStatus: threadContext.getStatus(),
-      threadType: threadContext.getThreadType(),
+      threadStatus: threadEntity.getStatus(),
+      threadType: threadEntity.getThreadType(),
       referenceType: 'main-workflow'
     }
   };
@@ -189,15 +189,15 @@ function createMainWorkflowReference(threadContext: ThreadContext): WorkflowRefe
 /**
  * 创建触发的子工作流引用
  */
-function createTriggeredSubworkflowReference(threadContext: ThreadContext): WorkflowReference {
+function createTriggeredSubworkflowReference(threadEntity: ThreadEntity): WorkflowReference {
   return {
     type: 'thread',
-    sourceId: threadContext.getThreadId(),
-    sourceName: `Thread ${threadContext.getThreadId()} (Triggered Subworkflow)`,
+    sourceId: threadEntity.getThreadId(),
+    sourceName: `Thread ${threadEntity.getThreadId()} (Triggered Subworkflow)`,
     isRuntimeReference: true,
     details: {
-      threadStatus: threadContext.getStatus(),
-      threadType: threadContext.getThreadType(),
+      threadStatus: threadEntity.getStatus(),
+      threadType: threadEntity.getThreadType(),
       contextType: 'triggered-subworkflow'
     }
   };
@@ -206,15 +206,15 @@ function createTriggeredSubworkflowReference(threadContext: ThreadContext): Work
 /**
  * 创建子图执行栈引用
  */
-function createSubgraphStackReference(threadContext: ThreadContext, context: any): WorkflowReference {
+function createSubgraphStackReference(threadEntity: ThreadEntity, context: any): WorkflowReference {
   return {
     type: 'thread',
-    sourceId: threadContext.getThreadId(),
-    sourceName: `Thread ${threadContext.getThreadId()} (Subgraph Stack)`,
+    sourceId: threadEntity.getThreadId(),
+    sourceName: `Thread ${threadEntity.getThreadId()} (Subgraph Stack)`,
     isRuntimeReference: true,
     details: {
-      threadStatus: threadContext.getStatus(),
-      threadType: threadContext.getThreadType(),
+      threadStatus: threadEntity.getStatus(),
+      threadType: threadEntity.getThreadType(),
       contextType: 'subgraph-stack',
       depth: context.depth,
       parentWorkflowId: context.parentWorkflowId

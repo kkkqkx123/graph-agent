@@ -5,7 +5,7 @@
  */
 
 import type { Thread } from '@modular-agent/types';
-import type { ThreadContext } from '../context/thread-context.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { ThreadBuilder } from '../thread-builder.js';
 import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { EventManager } from '../../services/event-manager.js';
@@ -60,17 +60,17 @@ export interface JoinResult {
 
 /**
  * Fork 操作 - 创建子 thread
- * @param parentThreadContext 父线程上下文
+ * @param parentThreadEntity 父线程实体
  * @param forkConfig Fork 配置
  * @param threadBuilder Thread 构建器
- * @returns 子线程上下文
+ * @returns 子线程实体
  */
 export async function fork(
-  parentThreadContext: ThreadContext,
+  parentThreadEntity: ThreadEntity,
   forkConfig: ForkConfig,
   threadBuilder: ThreadBuilder,
   eventManager?: EventManager
-): Promise<ThreadContext> {
+): Promise<ThreadEntity> {
   // 步骤1：验证 Fork 配置
   if (!forkConfig.forkId) {
     throw new RuntimeValidationError('Fork config must have forkId', {
@@ -85,17 +85,17 @@ export async function fork(
   }
 
   // 触发THREAD_FORK_STARTED事件
-  const forkStartedEvent = buildThreadForkStartedEvent(parentThreadContext, forkConfig);
+  const forkStartedEvent = buildThreadForkStartedEvent(parentThreadEntity, forkConfig);
   await safeEmit(eventManager, forkStartedEvent);
 
   // 步骤2：创建子线程
-  const childThreadContext = await threadBuilder.createFork(parentThreadContext, forkConfig);
+  const childThreadEntity = await threadBuilder.createFork(parentThreadEntity, forkConfig);
 
   // 触发THREAD_FORK_COMPLETED事件
-  const forkCompletedEvent = buildThreadForkCompletedEvent(parentThreadContext, [childThreadContext.getThreadId()]);
+  const forkCompletedEvent = buildThreadForkCompletedEvent(parentThreadEntity, [childThreadEntity.getThreadId()]);
   await safeEmit(eventManager, forkCompletedEvent);
 
-  return childThreadContext;
+  return childThreadEntity;
 }
 
 /**
@@ -140,9 +140,9 @@ export async function join(
 
   // 触发THREAD_JOIN_STARTED事件
   if (eventManager && parentThreadId) {
-    const parentThreadContext = threadRegistry.get(parentThreadId);
-    if (parentThreadContext) {
-      const joinStartedEvent = buildThreadJoinStartedEvent(parentThreadContext, childThreadIds, joinStrategy);
+    const parentThreadEntity = threadRegistry.get(parentThreadId);
+    if (parentThreadEntity) {
+      const joinStartedEvent = buildThreadJoinStartedEvent(parentThreadEntity, childThreadIds, joinStrategy);
       await safeEmit(eventManager, joinStartedEvent);
     }
   }
@@ -178,8 +178,8 @@ export async function join(
 
   // 步骤5：合并主线程对话历史到父线程
   if (parentThreadId && mainPathId) {
-    const parentThreadContext = threadRegistry.get(parentThreadId);
-    if (parentThreadContext) {
+    const parentThreadEntity = threadRegistry.get(parentThreadId);
+    if (parentThreadEntity) {
       // 找到对应mainPathId的子线程
       const mainThread = completedThreads.find(thread =>
         thread.forkJoinContext?.forkPathId === mainPathId
@@ -194,10 +194,10 @@ export async function join(
         );
       }
 
-      const mainThreadContext = threadRegistry.get(mainThread.id);
-      if (!mainThreadContext) {
+      const mainThreadEntity = threadRegistry.get(mainThread.id);
+      if (!mainThreadEntity) {
         throw new ExecutionError(
-          `Main thread context not found for threadId: ${mainThread.id}`,
+          `Main thread entity not found for threadId: ${mainThread.id}`,
           undefined,
           parentThreadId,
           { mainPathId, mainThreadId: mainThread.id }
@@ -206,12 +206,30 @@ export async function join(
 
       try {
         // 使用 MessageArrayUtils 克隆主线程的消息并合并到父线程
-        const mainMessages = mainThreadContext.conversationManager.getMessages();
+        const mainConversationManager = mainThreadEntity.getConversationManager();
+        if (!mainConversationManager) {
+          throw new ExecutionError(
+            `Main thread conversation manager not found`,
+            undefined,
+            mainThreadEntity.getThreadId()
+          );
+        }
+        
+        const parentConversationManager = parentThreadEntity.getConversationManager();
+        if (!parentConversationManager) {
+          throw new ExecutionError(
+            `Parent thread conversation manager not found`,
+            undefined,
+            parentThreadEntity.getThreadId()
+          );
+        }
+        
+        const mainMessages = mainConversationManager.getMessages();
         const clonedMessages = MessageArrayUtils.cloneMessages(mainMessages);
         
         // 将克隆的消息添加到父线程
         for (const msg of clonedMessages) {
-          parentThreadContext.conversationManager.addMessage(msg);
+          parentConversationManager.addMessage(msg);
         }
       } catch (error) {
         throw new ExecutionError(
@@ -236,32 +254,32 @@ export async function join(
 
 /**
  * Copy 操作 - 创建 thread 副本
- * @param sourceThreadContext 源线程上下文
+ * @param sourceThreadEntity 源线程实体
  * @param threadBuilder Thread 构建器
- * @returns 副本线程上下文
+ * @returns 副本线程实体
  */
 export async function copy(
-  sourceThreadContext: ThreadContext,
+  sourceThreadEntity: ThreadEntity,
   threadBuilder: ThreadBuilder,
   eventManager?: EventManager
-): Promise<ThreadContext> {
+): Promise<ThreadEntity> {
   // 步骤1：验证源 thread 存在
-  if (!sourceThreadContext) {
-    throw new ExecutionError(`Source thread context is null or undefined`, undefined, '');
+  if (!sourceThreadEntity) {
+    throw new ExecutionError(`Source thread entity is null or undefined`, undefined, '');
   }
 
   // 触发THREAD_COPY_STARTED事件
-  const copyStartedEvent = buildThreadCopyStartedEvent(sourceThreadContext);
+  const copyStartedEvent = buildThreadCopyStartedEvent(sourceThreadEntity);
   await safeEmit(eventManager, copyStartedEvent);
 
   // 步骤2：调用 ThreadBuilder 复制 thread
-  const copiedThreadContext = await threadBuilder.createCopy(sourceThreadContext);
+  const copiedThreadEntity = await threadBuilder.createCopy(sourceThreadEntity);
 
   // 触发THREAD_COPY_COMPLETED事件
-  const copyCompletedEvent = buildThreadCopyCompletedEvent(sourceThreadContext, copiedThreadContext.getThreadId());
+  const copyCompletedEvent = buildThreadCopyCompletedEvent(sourceThreadEntity, copiedThreadEntity.getThreadId());
   await safeEmit(eventManager, copyCompletedEvent);
 
-  return copiedThreadContext;
+  return copiedThreadEntity;
 }
 
 /**
@@ -305,9 +323,9 @@ async function waitForCompletion(
       await waitForMultipleThreadsCompleted(eventManager, childThreadIds, timeout);
       // 收集所有完成的线程
       for (const threadId of childThreadIds) {
-        const threadContext = threadRegistry.get(threadId);
-        if (threadContext) {
-          const thread = threadContext.thread;
+        const threadEntity = threadRegistry.get(threadId);
+        if (threadEntity) {
+          const thread = threadEntity.getThread();
           if (thread.status === 'COMPLETED') {
             completedThreads.push(thread);
           } else if (thread.status === 'FAILED' || thread.status === 'CANCELLED') {
@@ -323,9 +341,9 @@ async function waitForCompletion(
       const completedThreadId = await waitForAnyThreadCompleted(eventManager, childThreadIds, timeout);
       // 收集完成的线程
       for (const threadId of childThreadIds) {
-        const threadContext = threadRegistry.get(threadId);
-        if (threadContext) {
-          const thread = threadContext.thread;
+        const threadEntity = threadRegistry.get(threadId);
+        if (threadEntity) {
+          const thread = threadEntity.getThread();
           if (thread.status === 'COMPLETED') {
             completedThreads.push(thread);
           } else if (thread.status === 'FAILED' || thread.status === 'CANCELLED') {
@@ -341,9 +359,9 @@ async function waitForCompletion(
       await waitForMultipleThreadsCompleted(eventManager, childThreadIds, timeout);
       // 收集所有失败的线程
       for (const threadId of childThreadIds) {
-        const threadContext = threadRegistry.get(threadId);
-        if (threadContext) {
-          const thread = threadContext.thread;
+        const threadEntity = threadRegistry.get(threadId);
+        if (threadEntity) {
+          const thread = threadEntity.getThread();
           if (thread.status === 'FAILED' || thread.status === 'CANCELLED') {
             failedThreads.push(thread);
           } else if (thread.status === 'COMPLETED') {
@@ -359,9 +377,9 @@ async function waitForCompletion(
       const result = await waitForAnyThreadCompletion(eventManager, childThreadIds, timeout);
       // 收集所有线程状态
       for (const threadId of childThreadIds) {
-        const threadContext = threadRegistry.get(threadId);
-        if (threadContext) {
-          const thread = threadContext.thread;
+        const threadEntity = threadRegistry.get(threadId);
+        if (threadEntity) {
+          const thread = threadEntity.getThread();
           if (thread.status === 'COMPLETED') {
             completedThreads.push(thread);
           } else if (thread.status === 'FAILED' || thread.status === 'CANCELLED') {
@@ -377,9 +395,9 @@ async function waitForCompletion(
       await waitForAnyThreadCompleted(eventManager, childThreadIds, timeout);
       // 收集所有线程状态
       for (const threadId of childThreadIds) {
-        const threadContext = threadRegistry.get(threadId);
-        if (threadContext) {
-          const thread = threadContext.thread;
+        const threadEntity = threadRegistry.get(threadId);
+        if (threadEntity) {
+          const thread = threadEntity.getThread();
           if (thread.status === 'COMPLETED') {
             completedThreads.push(thread);
           } else if (thread.status === 'FAILED' || thread.status === 'CANCELLED') {
@@ -396,10 +414,10 @@ async function waitForCompletion(
 
   // 触发THREAD_JOIN_CONDITION_MET事件
   if (eventManager && parentThreadId && conditionMet) {
-    const parentThreadContext = threadRegistry.get(parentThreadId);
-    if (parentThreadContext) {
+    const parentThreadEntity = threadRegistry.get(parentThreadId);
+    if (parentThreadEntity) {
       const joinConditionMetEvent = buildThreadJoinConditionMetEvent(
-        parentThreadContext,
+        parentThreadEntity,
         childThreadIds,
         joinStrategy
       );
@@ -435,12 +453,12 @@ async function waitForCompletionByPolling(
   while (pendingThreads.size > 0) {
     // 检查子 thread 状态
     for (const threadId of Array.from(pendingThreads)) {
-      const threadContext = threadRegistry.get(threadId);
-      if (!threadContext) {
+      const threadEntity = threadRegistry.get(threadId);
+      if (!threadEntity) {
         continue;
       }
 
-      const thread = threadContext.thread;
+      const thread = threadEntity.getThread();
       if (thread.status === 'COMPLETED') {
         completedThreads.push(thread);
         pendingThreads.delete(threadId);
@@ -462,10 +480,10 @@ async function waitForCompletionByPolling(
 
   // 触发THREAD_JOIN_CONDITION_MET事件
   if (eventManager && parentThreadId && conditionMet) {
-    const parentThreadContext = threadRegistry.get(parentThreadId);
-    if (parentThreadContext) {
+    const parentThreadEntity = threadRegistry.get(parentThreadId);
+    if (parentThreadEntity) {
       const joinConditionMetEvent = buildThreadJoinConditionMetEvent(
-        parentThreadContext,
+        parentThreadEntity,
         childThreadIds,
         joinStrategy
       );

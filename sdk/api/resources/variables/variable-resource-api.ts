@@ -170,10 +170,9 @@ export class VariableResourceAPI extends GenericResourceAPI<any, string, Variabl
       byType: {} as Record<string, number>
     };
 
-    for (const context of threadContexts) {
-      const thread = context.thread;
-      const threadId = thread.id;
-      const variables = thread.variableScopes.thread;
+    for (const threadEntity of threadContexts) {
+      const threadId = threadEntity.id;
+      const variables = threadEntity.thread.variableScopes.thread;
       
       stats.byThread[threadId] = Object.keys(variables).length;
       stats.totalVariables += Object.keys(variables).length;
