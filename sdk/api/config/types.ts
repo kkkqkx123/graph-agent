@@ -80,14 +80,41 @@ export type ScriptConfigFile = Script;
 export type LLMProfileConfigFile = LLMProfile;
 
 /**
+ * 提示词模板配置文件格式
+ */
+export interface PromptTemplateConfigFile {
+  /** 模板ID */
+  id: string;
+  /** 模板名称 */
+  name?: string;
+  /** 模板描述 */
+  description?: string;
+  /** 模板类别 */
+  category?: 'system' | 'rules' | 'user-command' | 'tools' | 'composite';
+  /** 模板内容（覆盖默认模板） */
+  content?: string;
+  /** 变量定义（合并到默认模板） */
+  variables?: Array<{
+    name: string;
+    type: 'string' | 'number' | 'boolean' | 'object';
+    required: boolean;
+    description?: string;
+    defaultValue?: any;
+  }>;
+  /** 引用的片段ID列表（合并到默认模板） */
+  fragments?: string[];
+}
+
+/**
  * 配置类型
  */
 export type ConfigType =
-  | 'workflow'         /** 工作流配置 */
-  | 'node_template'    /** 节点模板配置 */
-  | 'trigger_template' /** 触发器模板配置 */
-  | 'script'           /** 脚本配置 */
-  | 'llm_profile';     /** LLM Profile配置 */
+  | 'workflow'           /** 工作流配置 */
+  | 'node_template'      /** 节点模板配置 */
+  | 'trigger_template'   /** 触发器模板配置 */
+  | 'script'             /** 脚本配置 */
+  | 'llm_profile'        /** LLM Profile配置 */
+  | 'prompt_template';   /** 提示词模板配置 */
 
 /**
  * 通用配置文件类型
@@ -97,7 +124,8 @@ export type ConfigFile =
   | NodeTemplateConfigFile
   | TriggerTemplateConfigFile
   | ScriptConfigFile
-  | LLMProfileConfigFile;
+  | LLMProfileConfigFile
+  | PromptTemplateConfigFile;
 
 /**
  * 解析后的配置对象（通用版本）
@@ -113,6 +141,7 @@ export interface ParsedConfig<T extends ConfigType = ConfigType> {
   T extends 'trigger_template' ? TriggerTemplateConfigFile :
   T extends 'script' ? ScriptConfigFile :
   T extends 'llm_profile' ? LLMProfileConfigFile :
+  T extends 'prompt_template' ? PromptTemplateConfigFile :
   ConfigFile;
   /** 原始内容 */
   rawContent: string;
@@ -124,6 +153,7 @@ export type ParsedNodeTemplateConfig = ParsedConfig<'node_template'>;
 export type ParsedTriggerTemplateConfig = ParsedConfig<'trigger_template'>;
 export type ParsedScriptConfig = ParsedConfig<'script'>;
 export type ParsedLLMProfileConfig = ParsedConfig<'llm_profile'>;
+export type ParsedPromptTemplateConfig = ParsedConfig<'prompt_template'>;
 
 /**
  * 配置解析器接口

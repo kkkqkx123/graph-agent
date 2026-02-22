@@ -1,0 +1,39 @@
+{
+    "name": "@modular-agent/prompt-templates",
+    "version": "1.0.0",
+    "description": "纯静态提示词模板定义包，提供类型定义和模板内容常量",
+    "type": "module",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        },
+        "./types": {
+            "types": "./dist/types/index.d.ts",
+            "import": "./dist/types/index.js"
+        },
+        "./templates": {
+            "types": "./dist/templates/index.d.ts",
+            "import": "./dist/templates/index.js"
+        },
+        "./fragments": {
+            "types": "./dist/fragments/index.d.ts",
+            "import": "./dist/fragments/index.js"
+        },
+        "./constants": {
+            "types": "./dist/constants/index.d.ts",
+            "import": "./dist/constants/index.js"
+        }
+    },
+    "scripts": {
+        "build": "tsc",
+        "test": "vitest run --reporter=verbose",
+        "test:watch": "vitest --watch",
+        "test:coverage": "vitest run --coverage",
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {},
+    "devDependencies": {}
+}

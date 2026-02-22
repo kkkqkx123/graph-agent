@@ -30,7 +30,10 @@
     "emitDecoratorMetadata": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "baseUrl": "."
+    "baseUrl": ".",
+    "paths": {
+      "@modular-agent/*": ["packages/*/src", "sdk/*/src"]
+    }
   },
   "include": [
     "apps/**/*",

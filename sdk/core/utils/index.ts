@@ -13,3 +13,12 @@ export * from './batch-management-utils.js';
 
 // 消息操作工具
 export * from './message-operation-utils.js';
+
+// 模板渲染工具
+export * from './template-renderer.js';
+
+// 工具描述生成工具
+export * from './tool-description-generator.js';
+
+// 工具参数描述工具
+export * from './tool-parameters-describer.js';

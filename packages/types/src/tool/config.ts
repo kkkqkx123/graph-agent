@@ -28,6 +28,10 @@ export interface ToolProperty {
   required?: string[];
   /** 额外属性定义 */
   additionalProperties?: boolean | ToolProperty;
+  
+  // 数组结构
+  /** 数组元素类型定义 */
+  items?: ToolProperty;
 }
 
 /**

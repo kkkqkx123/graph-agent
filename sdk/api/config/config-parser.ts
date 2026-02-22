@@ -21,7 +21,8 @@ import {
   validateNodeTemplate,
   validateScript,
   validateTriggerTemplate,
-  validateLLMProfile
+  validateLLMProfile,
+  validatePromptTemplate
 } from './processors/index.js';
 
 /**
@@ -86,6 +87,8 @@ export class ConfigParser implements IConfigParser {
         return validateTriggerTemplate(config as ParsedConfig<'trigger_template'>);
       case 'llm_profile':
         return validateLLMProfile(config as ParsedConfig<'llm_profile'>);
+      case 'prompt_template':
+        return validatePromptTemplate(config as ParsedConfig<'prompt_template'>);
       default:
         throw new ConfigurationError(
           `未找到配置类型 ${config.configType} 的处理器`,

@@ -22,6 +22,7 @@ export {
   TriggerTemplateConfigFile,
   ScriptConfigFile,
   LLMProfileConfigFile,
+  PromptTemplateConfigFile,
   ConfigFile,
   ParsedConfig,
   ParsedWorkflowConfig,
@@ -29,6 +30,7 @@ export {
   ParsedTriggerTemplateConfig,
   ParsedScriptConfig,
   ParsedLLMProfileConfig,
+  ParsedPromptTemplateConfig,
   IConfigParser,
   IConfigTransformer
 } from './types.js';
@@ -93,6 +95,7 @@ export { validateNodeTemplateConfig } from './validators/node-template-validator
 export { validateTriggerTemplateConfig } from './validators/trigger-template-validator.js';
 export { validateScriptConfig } from './validators/script-validator.js';
 export { validateLLMProfileConfig } from './validators/llm-profile-validator.js';
+export { validatePromptTemplateConfig } from './validators/prompt-template-validator.js';
 
 // 批量验证函数导出
 export {
@@ -110,5 +113,15 @@ export {
   validateNodeTemplate,
   validateScript,
   validateTriggerTemplate,
-  validateLLMProfile
+  validateLLMProfile,
+  validatePromptTemplate,
+  transformPromptTemplate,
+  loadAndTransformPromptTemplate
 } from './processors/index.js';
+
+// 提示词模板加载器导出
+export {
+  loadPromptTemplateConfig,
+  mergePromptTemplateConfig,
+  loadAndMergePromptTemplate
+} from './prompt-template-loader.js';

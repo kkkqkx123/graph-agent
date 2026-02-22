@@ -29,3 +29,10 @@ export {
 export {
   validateLLMProfile
 } from './llm-profile.js';
+
+// PromptTemplate处理函数
+export {
+  validatePromptTemplate,
+  transformPromptTemplate,
+  loadAndTransformPromptTemplate
+} from './prompt-template.js';

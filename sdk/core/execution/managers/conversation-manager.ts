@@ -39,6 +39,7 @@ import type { LifecycleCapable } from './lifecycle-capable.js';
 import { createContextualLogger } from '../../../utils/contextual-logger.js';
 import { emit } from '../utils/event/event-emitter.js';
 import { buildTokenLimitExceededEvent } from '../utils/event/event-builder.js';
+import { generateToolListDescription } from '../../utils/tool-description-generator.js';
 
 const logger = createContextualLogger();
 
@@ -552,15 +553,13 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
       return null;
     }
 
-    // 构建工具描述
-    const toolDescriptions = initialToolIds
-      .map(id => {
-        const tool = this.toolService.getTool(id);
-        if (!tool) return null;
-        return `- ${tool.name}: ${tool.description}`;
-      })
-      .filter(Boolean)
-      .join('\n');
+    // 获取工具对象列表
+    const tools = initialToolIds
+      .map(id => this.toolService.getTool(id))
+      .filter(Boolean);
+
+    // 使用工具描述生成器生成工具列表描述
+    const toolDescriptions = generateToolListDescription(tools, 'list');
 
     if (toolDescriptions.length > 0) {
       return {
