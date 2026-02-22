@@ -20,6 +20,7 @@ export {
     buildVariableChangedEvent,
     buildMessageAddedEvent,
     buildTokenUsageWarningEvent,
+    buildTokenLimitExceededEvent,
     buildConversationStateChangedEvent,
     buildToolCallStartedEvent,
     buildToolCallCompletedEvent,
@@ -32,7 +33,12 @@ export {
     buildThreadCopyCompletedEvent,
     buildTriggeredSubgraphStartedEvent,
     buildTriggeredSubgraphCompletedEvent,
-    buildTriggeredSubgraphFailedEvent
+    buildTriggeredSubgraphFailedEvent,
+    buildCheckpointCreatedEvent,
+    buildCheckpointFailedEvent,
+    buildCheckpointDeletedEvent,
+    buildUserInteractionRequestedEvent,
+    buildUserInteractionProcessedEvent
 } from './event-builder.js';
 
 // 事件触发工具函数

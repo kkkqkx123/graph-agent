@@ -18,8 +18,7 @@ import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { EventManager } from '../../services/event-manager.js';
 import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { ThreadExecutor } from '../thread-executor.js';
-import { EventType } from '@modular-agent/types';
-import { now, getErrorMessage } from '@modular-agent/common-utils';
+import { getErrorOrNew } from '@modular-agent/common-utils';
 import { TaskRegistry, type TaskManager } from '../../services/task-registry.js';
 import { ThreadPoolManager } from './thread-pool-manager.js';
 import { TaskQueueManager } from './task-queue-manager.js';
@@ -31,6 +30,12 @@ import {
   type TaskSubmissionResult,
   type SubworkflowManagerConfig
 } from '../types/triggered-subgraph.types.js';
+import { emit } from '../utils/event/event-emitter.js';
+import {
+  buildTriggeredSubgraphStartedEvent,
+  buildTriggeredSubgraphCompletedEvent,
+  buildTriggeredSubgraphFailedEvent
+} from '../utils/event/event-builder.js';
 
 /**
  * TriggeredSubworkflowManager - 触发子工作流管理器
@@ -338,15 +343,13 @@ export class TriggeredSubworkflowManager implements TaskManager {
     task: TriggeredSubgraphTask,
     subgraphEntity: ThreadEntity
   ): Promise<void> {
-    await this.eventManager.emit({
-      type: 'TRIGGERED_SUBGRAPH_STARTED',
-      threadId: task.mainThreadEntity.getThreadId(),
-      workflowId: task.mainThreadEntity.getWorkflowId(),
-      subgraphId: task.subgraphId,
-      triggerId: task.triggerId,
-      input: task.input,
-      timestamp: now()
-    });
+    const startedEvent = buildTriggeredSubgraphStartedEvent(
+      task.mainThreadEntity,
+      task.subgraphId,
+      task.triggerId,
+      task.input
+    );
+    await emit(this.eventManager, startedEvent);
   }
 
   /**
@@ -360,16 +363,14 @@ export class TriggeredSubworkflowManager implements TaskManager {
       return;
     }
 
-    await this.eventManager.emit({
-      type: 'TRIGGERED_SUBGRAPH_COMPLETED',
-      threadId,
-      workflowId: subgraphEntity.getWorkflowId(),
-      subgraphId: subgraphEntity.getTriggeredSubworkflowId() || '',
-      triggerId: '',
-      output: subgraphEntity.getOutput(),
-      executionTime: result.executionTime,
-      timestamp: now()
-    });
+    const completedEvent = buildTriggeredSubgraphCompletedEvent(
+      subgraphEntity,
+      subgraphEntity.getTriggeredSubworkflowId() || '',
+      '',
+      subgraphEntity.getOutput(),
+      result.executionTime
+    );
+    await emit(this.eventManager, completedEvent);
   }
 
   /**
@@ -383,15 +384,13 @@ export class TriggeredSubworkflowManager implements TaskManager {
       return;
     }
 
-    await this.eventManager.emit({
-      type: 'TRIGGERED_SUBGRAPH_FAILED',
-      threadId,
-      workflowId: subgraphEntity.getWorkflowId(),
-      subgraphId: subgraphEntity.getTriggeredSubworkflowId() || '',
-      triggerId: '',
-      error: getErrorMessage(error),
-      timestamp: now()
-    });
+    const failedEvent = buildTriggeredSubgraphFailedEvent(
+      subgraphEntity,
+      subgraphEntity.getTriggeredSubworkflowId() || '',
+      '',
+      getErrorOrNew(error)
+    );
+    await emit(this.eventManager, failedEvent);
   }
 
   /**

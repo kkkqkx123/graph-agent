@@ -164,7 +164,9 @@ export class EventResourceAPI extends GenericResourceAPI<BaseEvent, string, Even
       stats.byThread[event.threadId] = (stats.byThread[event.threadId] || 0) + 1;
 
       // 按工作流统计
-      stats.byWorkflow[event.workflowId] = (stats.byWorkflow[event.workflowId] || 0) + 1;
+      if (event.workflowId) {
+        stats.byWorkflow[event.workflowId] = (stats.byWorkflow[event.workflowId] || 0) + 1;
+      }
     }
 
     return stats;
@@ -217,8 +219,8 @@ export class EventResourceAPI extends GenericResourceAPI<BaseEvent, string, Even
         searchableFields.push((event as any).nodeId);
       }
 
-      return searchableFields.some(field => 
-        field.toLowerCase().includes(query.toLowerCase())
+      return searchableFields.some(field =>
+        field && field.toLowerCase().includes(query.toLowerCase())
       );
     });
   }
@@ -280,7 +282,9 @@ export class EventResourceAPI extends GenericResourceAPI<BaseEvent, string, Even
     const stats: Record<string, number> = {};
 
     for (const event of this.eventHistory) {
-      stats[event.workflowId] = (stats[event.workflowId] || 0) + 1;
+      if (event.workflowId) {
+        stats[event.workflowId] = (stats[event.workflowId] || 0) + 1;
+      }
     }
 
     return stats;

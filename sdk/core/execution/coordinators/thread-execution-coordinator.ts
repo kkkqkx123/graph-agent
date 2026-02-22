@@ -12,7 +12,6 @@ import type { InterruptionManager } from '../managers/interruption-manager.js';
 import type { ToolVisibilityCoordinator } from './tool-visibility-coordinator.js';
 import type { NodeExecutionCoordinator } from './node-execution-coordinator.js';
 import type { GraphNavigator } from '../../graph/graph-navigator.js';
-import type { Node } from '@modular-agent/types';
 import { ThreadInterruptedException } from '@modular-agent/types';
 
 /**
@@ -39,7 +38,7 @@ export class ThreadExecutionCoordinator {
     private readonly toolVisibilityCoordinator: ToolVisibilityCoordinator,
     private readonly nodeExecutionCoordinator: NodeExecutionCoordinator,
     private readonly navigator: GraphNavigator
-  ) {}
+  ) { }
 
   /**
    * 执行Thread

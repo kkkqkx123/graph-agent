@@ -40,23 +40,14 @@ import type { ThreadEntity } from '../../entities/thread-entity.js';
  */
 export class ThreadOperationCoordinator {
   private threadRegistry: ThreadRegistry;
-  private workflowRegistry: WorkflowRegistry;
   private eventManager: EventManager;
-  private toolService: ToolService;
-  private graphRegistry: GraphRegistry;
 
   constructor(
     threadRegistry: ThreadRegistry,
-    workflowRegistry: WorkflowRegistry,
     eventManager: EventManager,
-    toolService: ToolService,
-    graphRegistry: GraphRegistry
   ) {
     this.threadRegistry = threadRegistry;
-    this.workflowRegistry = workflowRegistry;
     this.eventManager = eventManager;
-    this.toolService = toolService;
-    this.graphRegistry = graphRegistry;
   }
 
   /**
@@ -74,7 +65,7 @@ export class ThreadOperationCoordinator {
     }
 
     // 步骤 2：使用 ThreadOperations 创建子线程（事件触发在内部处理）
-    const threadBuilder = new ThreadBuilder(this.workflowRegistry, this.eventManager, this.toolService, this.graphRegistry);
+    const threadBuilder = new ThreadBuilder();
     const childThreadEntity = await fork(parentThreadEntity, forkConfig, threadBuilder, this.eventManager);
 
     // 步骤 3：注册子线程
@@ -136,7 +127,7 @@ export class ThreadOperationCoordinator {
     }
 
     // 步骤 2：使用 ThreadOperations 创建副本（事件触发在内部处理）
-    const threadBuilder = new ThreadBuilder(this.workflowRegistry, this.eventManager, this.toolService, this.graphRegistry);
+    const threadBuilder = new ThreadBuilder();
     const copiedThreadEntity = await copy(sourceThreadEntity, threadBuilder, this.eventManager);
 
     // 步骤 3：注册副本线程

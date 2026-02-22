@@ -35,10 +35,10 @@ import {
   getVisibleCountByRole
 } from '../../utils/message-index-utils.js';
 import type { EventManager } from '../../services/event-manager.js';
-import type { TokenLimitExceededEvent } from '@modular-agent/types';
 import type { LifecycleCapable } from './lifecycle-capable.js';
-import { now } from '@modular-agent/common-utils';
 import { createContextualLogger } from '../../../utils/contextual-logger.js';
+import { emit } from '../utils/event/event-emitter.js';
+import { buildTokenLimitExceededEvent } from '../utils/event/event-builder.js';
 
 const logger = createContextualLogger();
 
@@ -333,15 +333,13 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
   private async triggerTokenLimitEvent(tokensUsed: number): Promise<void> {
     // 1. 通过 EventManager 发送事件
     if (this.eventManager && this.workflowId && this.threadId) {
-      const event: TokenLimitExceededEvent = {
-        type: 'TOKEN_LIMIT_EXCEEDED',
-        timestamp: now(),
-        workflowId: this.workflowId,
-        threadId: this.threadId,
+      const event = buildTokenLimitExceededEvent(
+        this.threadId!,
         tokensUsed,
-        tokenLimit: this.tokenUsageTracker['tokenLimit']
-      };
-      await this.eventManager.emit(event);
+        this.tokenUsageTracker['tokenLimit'],
+        this.workflowId!
+      );
+      await emit(this.eventManager, event);
     }
 
     // 2. 记录警告日志

@@ -10,10 +10,15 @@ import type { CheckpointStorageCallback } from '../../storage/checkpoint-storage
 import { LifecycleCapable } from './lifecycle-capable.js';
 import { serializeCheckpoint, deserializeCheckpoint } from '../utils/checkpoint-serializer.js';
 import { createCleanupStrategy } from '../utils/checkpoint-cleanup-policy.js';
-import { now, getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
+import { getErrorOrNew } from '@modular-agent/common-utils';
 import { safeEmit } from '../utils/event/event-emitter.js';
 import { SystemExecutionError } from '@modular-agent/types';
 import { mergeMetadata } from '../../../utils/metadata-utils.js';
+import {
+  buildCheckpointCreatedEvent,
+  buildCheckpointFailedEvent,
+  buildCheckpointDeletedEvent
+} from '../utils/event/event-builder.js';
 
 /**
  * 从检查点提取存储元数据
@@ -155,14 +160,13 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
       this.checkpointSizes.set(checkpointId, data.length);
 
       // 触发检查点创建事件
-      await safeEmit(this.eventManager, {
-        type: 'CHECKPOINT_CREATED',
-        timestamp: now(),
-        workflowId: checkpointData.workflowId,
-        threadId: checkpointData.threadId,
+      const createdEvent = buildCheckpointCreatedEvent(
+        checkpointData.threadId,
         checkpointId,
-        description: checkpointData.metadata?.description
-      });
+        checkpointData.workflowId,
+        checkpointData.metadata?.description
+      );
+      await safeEmit(this.eventManager, createdEvent);
 
       // 执行清理策略（如果配置了）
       if (this.cleanupPolicy) {
@@ -184,14 +188,14 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
       return checkpointId;
     } catch (error) {
       // 触发检查点失败事件
-      await safeEmit(this.eventManager, {
-        type: 'CHECKPOINT_FAILED',
-        timestamp: now(),
-        workflowId: checkpointData.workflowId,
-        threadId: checkpointData.threadId,
-        operation: 'create',
-        error: getErrorMessage(error)
-      });
+      const failedEvent = buildCheckpointFailedEvent(
+        checkpointData.threadId,
+        'create',
+        getErrorOrNew(error),
+        checkpointData.id,
+        checkpointData.workflowId
+      );
+      await safeEmit(this.eventManager, failedEvent);
       throw error;
     }
   }
@@ -233,26 +237,23 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
 
       // 触发检查点删除事件
       if (checkpoint) {
-        await safeEmit(this.eventManager, {
-          type: 'CHECKPOINT_DELETED',
-          timestamp: now(),
-          workflowId: checkpoint.workflowId,
-          threadId: checkpoint.threadId,
+        const deletedEvent = buildCheckpointDeletedEvent(
+          checkpoint.threadId,
           checkpointId,
+          checkpoint.workflowId,
           reason
-        });
+        );
+        await safeEmit(this.eventManager, deletedEvent);
       }
     } catch (error) {
       // 触发检查点失败事件
-      await safeEmit(this.eventManager, {
-        type: 'CHECKPOINT_FAILED',
-        timestamp: now(),
-        workflowId: '',
-        threadId: '',
-        checkpointId,
-        operation: 'delete',
-        error: getErrorMessage(error)
-      });
+      const failedEvent = buildCheckpointFailedEvent(
+        '',
+        'delete',
+        getErrorOrNew(error),
+        checkpointId
+      );
+      await safeEmit(this.eventManager, failedEvent);
       throw error;
     }
   }

@@ -26,7 +26,6 @@ import type { InterruptionManager } from '../managers/interruption-manager.js';
 import type { GraphNavigator } from '../../graph/graph-navigator.js';
 import { LLMExecutionCoordinator } from './llm-execution-coordinator.js';
 import { enterSubgraph, exitSubgraph, getSubgraphInput, getSubgraphOutput } from '../handlers/subgraph-handler.js';
-import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '@modular-agent/types';
 import { ExecutionError, SystemExecutionError } from '@modular-agent/types';
 import { executeHook } from '../handlers/hook-handlers/index.js';
 import { now, diffTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
@@ -36,7 +35,15 @@ import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/che
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
 import { resolveCheckpointConfig } from '../handlers/checkpoint-handlers/checkpoint-config-resolver.js';
 import { emit } from '../utils/event/event-emitter.js';
-import { buildThreadPausedEvent, buildThreadCancelledEvent } from '../utils/event/event-builder.js';
+import {
+  buildThreadPausedEvent,
+  buildThreadCancelledEvent,
+  buildNodeStartedEvent,
+  buildNodeCompletedEvent,
+  buildNodeFailedEvent,
+  buildSubgraphStartedEvent,
+  buildSubgraphCompletedEvent
+} from '../utils/event/event-builder.js';
 import type { InterruptionDetector } from '../managers/interruption-detector.js';
 import { checkInterruption, shouldContinue, getInterruptionDescription } from '@modular-agent/common-utils';
 
@@ -208,15 +215,8 @@ export class NodeExecutionCoordinator {
 
     try {
       // 步骤1：触发节点开始事件
-      const nodeStartedEvent: NodeStartedEvent = {
-        type: 'NODE_STARTED',
-        threadId: threadEntity.getThreadId(),
-        workflowId: threadEntity.getWorkflowId(),
-        nodeId,
-        nodeType,
-        timestamp: now()
-      };
-      await this.config.eventManager.emit(nodeStartedEvent);
+      const nodeStartedEvent = buildNodeStartedEvent(threadEntity, nodeId, nodeType);
+      await emit(this.config.eventManager, nodeStartedEvent);
 
       // 步骤2：节点执行前创建检查点（如果配置了）
       if (this.config.checkpointDependencies) {
@@ -329,26 +329,16 @@ export class NodeExecutionCoordinator {
 
       // 步骤8：触发节点完成事件
       if (nodeResult.status === 'COMPLETED') {
-        const nodeCompletedEvent: NodeCompletedEvent = {
-          type: 'NODE_COMPLETED' as const,
-          threadId: threadEntity.getThreadId(),
-          workflowId: threadEntity.getWorkflowId(),
+        const nodeCompletedEvent = buildNodeCompletedEvent(
+          threadEntity,
           nodeId,
-          output: threadEntity.getThread().output,
-          executionTime: nodeResult.executionTime || 0,
-          timestamp: now()
-        };
-        await this.config.eventManager.emit(nodeCompletedEvent);
+          threadEntity.getThread().output,
+          nodeResult.executionTime || 0
+        );
+        await emit(this.config.eventManager, nodeCompletedEvent);
       } else if (nodeResult.status === 'FAILED') {
-        const nodeFailedEvent: NodeFailedEvent = {
-          type: 'NODE_FAILED',
-          threadId: threadEntity.getThreadId(),
-          workflowId: threadEntity.getWorkflowId(),
-          nodeId,
-          error: nodeResult.error,
-          timestamp: now()
-        };
-        await this.config.eventManager.emit(nodeFailedEvent);
+        const nodeFailedEvent = buildNodeFailedEvent(threadEntity, nodeId, getErrorOrNew(nodeResult.error));
+        await emit(this.config.eventManager, nodeFailedEvent);
       }
 
       return nodeResult;
@@ -367,15 +357,8 @@ export class NodeExecutionCoordinator {
 
       threadEntity.addNodeResult(errorResult);
 
-      const nodeFailedEvent: NodeFailedEvent = {
-        type: 'NODE_FAILED',
-        threadId: threadEntity.getThreadId(),
-        workflowId: threadEntity.getWorkflowId(),
-        nodeId,
-        error,
-        timestamp: now()
-      };
-      await this.config.eventManager.emit(nodeFailedEvent);
+      const nodeFailedEvent = buildNodeFailedEvent(threadEntity, nodeId, getErrorOrNew(error));
+      await emit(this.config.eventManager, nodeFailedEvent);
 
       return errorResult;
     }
@@ -400,16 +383,13 @@ export class NodeExecutionCoordinator {
       );
 
       // 触发子图开始事件
-      const subgraphStartedEvent: SubgraphStartedEvent = {
-        type: 'SUBGRAPH_STARTED',
-        threadId: threadEntity.getThreadId(),
-        workflowId: threadEntity.getWorkflowId(),
-        subgraphId: graphNode.workflowId,
-        parentWorkflowId: graphNode.parentWorkflowId!,
-        input,
-        timestamp: now()
-      };
-      await this.config.eventManager.emit(subgraphStartedEvent);
+      const subgraphStartedEvent = buildSubgraphStartedEvent(
+        threadEntity,
+        graphNode.workflowId,
+        graphNode.parentWorkflowId!,
+        input
+      );
+      await emit(this.config.eventManager, subgraphStartedEvent);
     } else if (boundaryType === 'exit') {
       // 退出子图
       const subgraphContext = threadEntity.getCurrentSubgraphContext();
@@ -417,16 +397,13 @@ export class NodeExecutionCoordinator {
         const output = getSubgraphOutput(threadEntity);
 
         // 触发子图完成事件
-        const subgraphCompletedEvent: SubgraphCompletedEvent = {
-          type: 'SUBGRAPH_COMPLETED',
-          threadId: threadEntity.getThreadId(),
-          workflowId: threadEntity.getWorkflowId(),
-          subgraphId: subgraphContext.workflowId,
+        const subgraphCompletedEvent = buildSubgraphCompletedEvent(
+          threadEntity,
+          subgraphContext.workflowId,
           output,
-          executionTime: diffTimestamp(subgraphContext.startTime, now()),
-          timestamp: now()
-        };
-        await this.config.eventManager.emit(subgraphCompletedEvent);
+          diffTimestamp(subgraphContext.startTime, now())
+        );
+        await emit(this.config.eventManager, subgraphCompletedEvent);
 
         await exitSubgraph(threadEntity);
       }

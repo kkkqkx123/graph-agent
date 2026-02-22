@@ -9,7 +9,7 @@
  * 设计原则：
  * - 无状态设计，不持有任何状态
  * - 所有状态通过参数传入
- * - 可以作为单例存在
+ * - 由 DI 容器管理生命周期
  * - 由 LLMCoordinator 调用
  * - 不处理工具调用，工具调用由 LLMCoordinator 协调
  */
@@ -63,37 +63,17 @@ export type LLMExecutionResultWithInterruption =
   | { success: false; interruption: InterruptionCheckResult };
 
 /**
- * LLM执行器类（无状态单例）
- * 
+ * LLM执行器类（无状态）
+ *
  * 提供方法来执行LLM调用，不持有任何状态
  * 所有状态通过参数传入，结果通过返回值传出
+ * 由 DI 容器管理生命周期
  */
 export class LLMExecutor {
-  private static instance: LLMExecutor;
   private llmWrapper: LLMWrapper;
 
-  private constructor(eventManager?: EventManager) {
+  constructor(eventManager: EventManager) {
     this.llmWrapper = new LLMWrapper(eventManager);
-  }
-
-  /**
-   * 获取单例实例
-   * @param eventManager 事件管理器（可选）
-   * @returns LLMExecutor 实例
-   */
-  static getInstance(eventManager?: EventManager): LLMExecutor {
-    if (!LLMExecutor.instance) {
-      LLMExecutor.instance = new LLMExecutor(eventManager);
-    }
-    return LLMExecutor.instance;
-  }
-
-  /**
-   * 设置事件管理器
-   * @param eventManager 事件管理器
-   */
-  setEventManager(eventManager: EventManager): void {
-    this.llmWrapper.setEventManager(eventManager);
   }
 
   /**

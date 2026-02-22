@@ -26,6 +26,7 @@ import type {
   VariableChangedEvent,
   MessageAddedEvent,
   TokenUsageWarningEvent,
+  TokenLimitExceededEvent,
   ConversationStateChangedEvent,
   ToolCallStartedEvent,
   ToolCallCompletedEvent,
@@ -38,9 +39,13 @@ import type {
   ThreadCopyCompletedEvent,
   TriggeredSubgraphStartedEvent,
   TriggeredSubgraphCompletedEvent,
-  TriggeredSubgraphFailedEvent
+  TriggeredSubgraphFailedEvent,
+  CheckpointCreatedEvent,
+  CheckpointFailedEvent,
+  CheckpointDeletedEvent,
+  UserInteractionRequestedEvent,
+  UserInteractionProcessedEvent
 } from '@modular-agent/types';
-import { EventType } from '@modular-agent/types';
 
 /**
  * 构建线程开始事件
@@ -253,128 +258,174 @@ export function buildVariableChangedEvent(
  * 构建消息添加事件
  */
 export function buildMessageAddedEvent(
-  threadContext: any,
-  nodeId: string | undefined,
+  threadId: string,
   role: string,
-  content: string
+  content: string,
+  nodeId?: string,
+  workflowId?: string
 ): MessageAddedEvent {
-  return {
+  const event: MessageAddedEvent = {
     type: 'MESSAGE_ADDED',
     timestamp: now(),
-    workflowId: threadContext.getWorkflowId(),
-    threadId: threadContext.getThreadId(),
+    threadId,
     nodeId,
     role,
     content
   };
+  if (workflowId) {
+    (event as any).workflowId = workflowId;
+  }
+  return event;
 }
 
 /**
  * 构建Token使用警告事件
  */
 export function buildTokenUsageWarningEvent(
-  threadContext: any,
+  threadId: string,
   tokensUsed: number,
   tokenLimit: number,
-  usagePercentage: number
+  usagePercentage: number,
+  workflowId?: string
 ): TokenUsageWarningEvent {
-  return {
+  const event: TokenUsageWarningEvent = {
     type: 'TOKEN_USAGE_WARNING',
     timestamp: now(),
-    workflowId: threadContext.getWorkflowId(),
-    threadId: threadContext.getThreadId(),
+    threadId,
     tokensUsed,
     tokenLimit,
     usagePercentage
   };
+  if (workflowId) {
+    (event as any).workflowId = workflowId;
+  }
+  return event;
+}
+
+/**
+ * 构建Token超限事件
+ */
+export function buildTokenLimitExceededEvent(
+  threadId: string,
+  tokensUsed: number,
+  tokenLimit: number,
+  workflowId?: string
+): TokenLimitExceededEvent {
+  const event: TokenLimitExceededEvent = {
+    type: 'TOKEN_LIMIT_EXCEEDED',
+    timestamp: now(),
+    threadId,
+    tokensUsed,
+    tokenLimit
+  };
+  if (workflowId) {
+    (event as any).workflowId = workflowId;
+  }
+  return event;
 }
 
 /**
  * 构建对话状态变更事件
  */
 export function buildConversationStateChangedEvent(
-  threadContext: any,
-  nodeId: string | undefined,
+  threadId: string,
   messageCount: number,
-  tokenUsage: number
+  tokenUsage: number,
+  nodeId?: string,
+  workflowId?: string
 ): ConversationStateChangedEvent {
-  return {
+  const event: ConversationStateChangedEvent = {
     type: 'CONVERSATION_STATE_CHANGED',
     timestamp: now(),
-    workflowId: threadContext.getWorkflowId(),
-    threadId: threadContext.getThreadId(),
+    threadId,
     nodeId,
     messageCount,
     tokenUsage
   };
+  if (workflowId) {
+    (event as any).workflowId = workflowId;
+  }
+  return event;
 }
 
 /**
  * 构建工具调用开始事件
  */
 export function buildToolCallStartedEvent(
-  threadContext: any,
+  threadId: string,
   nodeId: string,
   toolId: ID,
   toolName?: string,
-  toolArguments?: string
+  toolArguments?: string,
+  workflowId?: string
 ): ToolCallStartedEvent {
-  return {
+  const event: ToolCallStartedEvent = {
     type: 'TOOL_CALL_STARTED',
     timestamp: now(),
-    workflowId: threadContext.getWorkflowId(),
-    threadId: threadContext.getThreadId(),
+    threadId,
     nodeId,
     toolId,
     toolName,
     toolArguments: toolArguments || ''
   };
+  if (workflowId) {
+    (event as any).workflowId = workflowId;
+  }
+  return event;
 }
 
 /**
  * 构建工具调用完成事件
  */
 export function buildToolCallCompletedEvent(
-  threadContext: any,
+  threadId: string,
   nodeId: string,
   toolId: ID,
   toolName?: string,
   toolResult?: any,
-  executionTime?: number
+  executionTime?: number,
+  workflowId?: string
 ): ToolCallCompletedEvent {
-  return {
+  const event: ToolCallCompletedEvent = {
     type: 'TOOL_CALL_COMPLETED',
     timestamp: now(),
-    workflowId: threadContext.getWorkflowId(),
-    threadId: threadContext.getThreadId(),
+    threadId,
     nodeId,
     toolId,
     toolName,
     toolResult,
     executionTime: executionTime || 0
   };
+  if (workflowId) {
+    (event as any).workflowId = workflowId;
+  }
+  return event;
 }
 
 /**
  * 构建工具调用失败事件
  */
 export function buildToolCallFailedEvent(
-  threadContext: any,
+  threadId: string,
   nodeId: string,
   toolId: ID,
   toolName?: string,
-  error?: Error
+  error?: Error,
+  workflowId?: string
 ): ToolCallFailedEvent {
-  return {
+  const event: ToolCallFailedEvent = {
     type: 'TOOL_CALL_FAILED',
     timestamp: now(),
-    workflowId: threadContext.getWorkflowId(),
-    threadId: threadContext.getThreadId(),
+    threadId,
     nodeId,
     toolId,
     toolName,
     error: error?.message || 'Unknown error'
   };
+  if (workflowId) {
+    (event as any).workflowId = workflowId;
+  }
+  return event;
 }
 
 /**
@@ -541,4 +592,118 @@ export function buildTriggeredSubgraphFailedEvent(
     triggerId,
     error: error.message
   };
+}
+
+/**
+ * 构建检查点创建事件
+ */
+export function buildCheckpointCreatedEvent(
+  threadId: string,
+  checkpointId: ID,
+  workflowId?: string,
+  description?: string
+): CheckpointCreatedEvent {
+  return {
+    type: 'CHECKPOINT_CREATED',
+    timestamp: now(),
+    ...(workflowId && { workflowId }),
+    threadId,
+    checkpointId,
+    description
+  };
+}
+
+/**
+ * 构建检查点失败事件
+ */
+export function buildCheckpointFailedEvent(
+  threadId: string,
+  operation: 'create' | 'restore' | 'delete',
+  error?: Error,
+  checkpointId?: ID,
+  workflowId?: string
+): CheckpointFailedEvent {
+  const event: CheckpointFailedEvent = {
+    type: 'CHECKPOINT_FAILED',
+    timestamp: now(),
+    threadId,
+    checkpointId,
+    operation,
+    error: error?.message || 'Unknown error'
+  };
+  if (workflowId) {
+    (event as any).workflowId = workflowId;
+  }
+  return event;
+}
+
+/**
+ * 构建检查点删除事件
+ */
+export function buildCheckpointDeletedEvent(
+  threadId: string,
+  checkpointId: ID,
+  workflowId?: string,
+  reason?: 'manual' | 'cleanup' | 'policy'
+): CheckpointDeletedEvent {
+  return {
+    type: 'CHECKPOINT_DELETED',
+    timestamp: now(),
+    ...(workflowId && { workflowId }),
+    threadId,
+    checkpointId,
+    reason
+  };
+}
+
+/**
+ * 构建用户交互请求事件
+ */
+export function buildUserInteractionRequestedEvent(
+  threadId: string,
+  nodeId: ID,
+  interactionId: ID,
+  operationType: string,
+  prompt: string,
+  timeout: number,
+  workflowId?: string
+): UserInteractionRequestedEvent {
+  const event: UserInteractionRequestedEvent = {
+    type: 'USER_INTERACTION_REQUESTED',
+    timestamp: now(),
+    threadId,
+    nodeId,
+    interactionId,
+    operationType,
+    prompt,
+    timeout
+  };
+  if (workflowId) {
+    (event as any).workflowId = workflowId;
+  }
+  return event;
+}
+
+/**
+ * 构建用户交互处理完成事件
+ */
+export function buildUserInteractionProcessedEvent(
+  threadId: string,
+  interactionId: ID,
+  operationType: string,
+  results: any,
+  workflowId?: string
+): UserInteractionProcessedEvent {
+  const event: UserInteractionProcessedEvent = {
+    type: 'USER_INTERACTION_PROCESSED',
+    timestamp: now(),
+    threadId,
+    interactionId,
+    operationType,
+    results
+  };
+  if (workflowId) {
+    (event as any).workflowId = workflowId;
+  }
+  return event;
 }

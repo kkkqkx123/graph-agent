@@ -17,12 +17,15 @@ import { ThreadExecutor } from '../thread-executor.js';
 import { TaskRegistry } from '../../services/task-registry.js';
 import { ThreadPoolManager } from './thread-pool-manager.js';
 import type { EventManager } from '../../services/event-manager.js';
-import { EventType } from '@modular-agent/types';
 import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { ThreadResult } from '@modular-agent/types';
-import { TaskStatus } from '../types/task.types.js';
 import { type QueueTask, type ExecutedSubgraphResult, type TaskSubmissionResult } from '../types/triggered-subgraph.types.js';
-import { now, diffTimestamp, getErrorMessage } from '@modular-agent/common-utils';
+import { now, diffTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
+import { emit } from '../utils/event/event-emitter.js';
+import {
+  buildTriggeredSubgraphCompletedEvent,
+  buildTriggeredSubgraphFailedEvent
+} from '../utils/event/event-builder.js';
 
 /**
  * TaskQueueManager - 任务队列管理器
@@ -93,7 +96,7 @@ export class TaskQueueManager {
       };
 
       this.pendingQueue.push(queueTask);
-      
+
       // 触发队列处理
       this.processQueue();
     });
@@ -110,14 +113,14 @@ export class TaskQueueManager {
     const queueTask: QueueTask = {
       taskId,
       threadEntity,
-      resolve: () => {}, // 异步任务不需要 resolve
-      reject: () => {}, // 异步任务不需要 reject
+      resolve: () => { }, // 异步任务不需要 resolve
+      reject: () => { }, // 异步任务不需要 reject
       submitTime: now(),
       timeout
     };
 
     this.pendingQueue.push(queueTask);
-    
+
     // 触发队列处理
     this.processQueue();
 
@@ -143,14 +146,14 @@ export class TaskQueueManager {
       while (this.pendingQueue.length > 0) {
         // 从队列取出第一个任务
         const queueTask = this.pendingQueue.shift()!;
-        
+
         // 分配执行器
         const executor = await this.threadPoolManager.allocateExecutor();
-        
+
         // 更新任务状态
         this.taskRegistry.updateStatusToRunning(queueTask.taskId);
         this.runningTasks.set(queueTask.taskId, queueTask);
-        
+
         // 执行任务
         this.executeTask(executor, queueTask);
       }
@@ -168,24 +171,24 @@ export class TaskQueueManager {
    */
   private async executeTask(executor: ThreadExecutor, queueTask: QueueTask): Promise<void> {
     const startTime = now();
-    
+
     try {
       // 执行线程
       const threadResult = await executor.executeThread(queueTask.threadEntity);
-      
+
       const executionTime = diffTimestamp(startTime, now());
-      
+
       // 处理任务完成
       await this.handleTaskCompleted(queueTask, threadResult, executionTime);
     } catch (error) {
       const executionTime = diffTimestamp(startTime, now());
-      
+
       // 处理任务失败
       await this.handleTaskFailed(queueTask, error as Error, executionTime);
     } finally {
       // 释放执行器
       await this.threadPoolManager.releaseExecutor(executor);
-      
+
       // 继续处理队列
       this.processQueue();
     }
@@ -204,22 +207,20 @@ export class TaskQueueManager {
   ): Promise<void> {
     // 更新任务注册表
     this.taskRegistry.updateStatusToCompleted(queueTask.taskId, threadResult);
-    
+
     // 从运行中任务移除
     this.runningTasks.delete(queueTask.taskId);
-    
+
     // 触发完成事件
-    await this.eventManager.emit({
-      type: 'TRIGGERED_SUBGRAPH_COMPLETED',
-      threadId: queueTask.threadEntity.getThreadId(),
-      workflowId: queueTask.threadEntity.getWorkflowId(),
-      subgraphId: queueTask.threadEntity.getTriggeredSubworkflowId() || '',
-      triggerId: '',
-      output: queueTask.threadEntity.getOutput(),
-      executionTime,
-      timestamp: now()
-    });
-    
+    const completedEvent = buildTriggeredSubgraphCompletedEvent(
+      queueTask.threadEntity,
+      queueTask.threadEntity.getTriggeredSubworkflowId() || '',
+      '',
+      queueTask.threadEntity.getOutput(),
+      executionTime
+    );
+    await emit(this.eventManager, completedEvent);
+
     // 如果是同步任务，调用 resolve
     if (queueTask.resolve) {
       const result: ExecutedSubgraphResult = {
@@ -244,22 +245,19 @@ export class TaskQueueManager {
   ): Promise<void> {
     // 更新任务注册表
     this.taskRegistry.updateStatusToFailed(queueTask.taskId, error);
-    
+
     // 从运行中任务移除
     this.runningTasks.delete(queueTask.taskId);
-    
+
     // 触发失败事件
-    await this.eventManager.emit({
-      type: 'TRIGGERED_SUBGRAPH_FAILED',
-      threadId: queueTask.threadEntity.getThreadId(),
-      workflowId: queueTask.threadEntity.getWorkflowId(),
-      subgraphId: queueTask.threadEntity.getTriggeredSubworkflowId() || '',
-      triggerId: '',
-      error: getErrorMessage(error),
-      executionTime,
-      timestamp: now()
-    });
-    
+    const failedEvent = buildTriggeredSubgraphFailedEvent(
+      queueTask.threadEntity,
+      queueTask.threadEntity.getTriggeredSubworkflowId() || '',
+      '',
+      getErrorOrNew(error)
+    );
+    await emit(this.eventManager, failedEvent);
+
     // 如果是同步任务，调用 reject
     if (queueTask.reject) {
       queueTask.reject(error);
@@ -279,21 +277,18 @@ export class TaskQueueManager {
       if (!queueTask) {
         return false;
       }
-      
+
       this.taskRegistry.updateStatusToCancelled(taskId);
-      
+
       // 触发取消事件（使用 FAILED 事件类型，因为 CANCELLED 事件类型不存在）
-      this.eventManager.emit({
-        type: 'TRIGGERED_SUBGRAPH_FAILED',
-        threadId: queueTask.threadEntity.getThreadId(),
-        workflowId: queueTask.threadEntity.getWorkflowId(),
-        subgraphId: queueTask.threadEntity.getTriggeredSubworkflowId() || '',
-        triggerId: '',
-        error: 'Task cancelled',
-        executionTime: 0,
-        timestamp: now()
-      });
-      
+      const cancelledEvent = buildTriggeredSubgraphFailedEvent(
+        queueTask.threadEntity,
+        queueTask.threadEntity.getTriggeredSubworkflowId() || '',
+        '',
+        new Error('Task cancelled')
+      );
+      emit(this.eventManager, cancelledEvent);
+
       return true;
     }
 
@@ -337,7 +332,7 @@ export class TaskQueueManager {
     for (const queueTask of this.pendingQueue) {
       this.taskRegistry.updateStatusToCancelled(queueTask.taskId);
     }
-    
+
     this.pendingQueue = [];
   }
 }

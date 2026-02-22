@@ -117,8 +117,8 @@ export interface BaseEvent {
   type: EventType;
   /** 时间戳 */
   timestamp: Timestamp;
-  /** 工作流ID */
-  workflowId: ID;
+  /** 工作流ID（可选） */
+  workflowId?: ID;
   /** 线程ID */
   threadId: ID;
   /** 事件元数据 */

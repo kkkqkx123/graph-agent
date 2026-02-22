@@ -25,7 +25,7 @@ import type { ToolApprovalData } from '@modular-agent/types';
 import { generateId } from '../../../utils/index.js';
 import { now, getErrorOrNew } from '@modular-agent/common-utils';
 import { ToolCallExecutor } from '../executors/tool-call-executor.js';
-import { ExecutionError, SystemExecutionError } from '@modular-agent/types';
+import { ExecutionError } from '@modular-agent/types';
 import { CheckpointCoordinator } from './checkpoint-coordinator.js';
 import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { InterruptionDetector } from '../managers/interruption-detector.js';
@@ -33,6 +33,13 @@ import { InterruptionDetectorImpl } from '../managers/interruption-detector.js';
 import { checkInterruption, shouldContinue, getInterruptionDescription } from '@modular-agent/common-utils';
 import type { InterruptionCheckResult } from '@modular-agent/common-utils';
 import { createContextualLogger } from '../../../utils/contextual-logger.js';
+import {
+  buildMessageAddedEvent,
+  buildTokenUsageWarningEvent,
+  buildConversationStateChangedEvent,
+  buildUserInteractionRequestedEvent,
+  buildUserInteractionProcessedEvent
+} from '../utils/event/event-builder.js';
 
 const logger = createContextualLogger();
 
@@ -98,6 +105,7 @@ export class LLMExecutionCoordinator {
     private llmExecutor: LLMExecutor,
     private toolService: ToolService,
     private eventManager: EventManager,
+    private toolCallExecutor: ToolCallExecutor,
     threadRegistry?: ThreadRegistry,
     interruptionDetector?: InterruptionDetector,
     checkpointStateManager?: any,
@@ -112,7 +120,7 @@ export class LLMExecutionCoordinator {
     this.graphRegistry = graphRegistry;
     this.toolContextManager = toolContextManager;
     this.toolVisibilityCoordinator = toolVisibilityCoordinator;
-    
+
     if (interruptionDetector) {
       this.interruptionDetector = interruptionDetector;
     } else if (threadRegistry) {
@@ -195,10 +203,10 @@ export class LLMExecutionCoordinator {
   * @param conversationState 对话管理器
   * @returns LLM 响应内容或中断状态
   */
- private async executeLLMLoop(
-   params: LLMExecutionParams,
-   conversationState: ConversationManager
- ): Promise<string | InterruptionCheckResult> {
+  private async executeLLMLoop(
+    params: LLMExecutionParams,
+    conversationState: ConversationManager
+  ): Promise<string | InterruptionCheckResult> {
     const {
       prompt, profileId, parameters, tools,
       maxToolCallsPerRequest,
@@ -225,16 +233,14 @@ export class LLMExecutionCoordinator {
     conversationState.addMessage(userMessage);
 
     // 触发消息添加事件
-    await safeEmit(this.eventManager, {
-      type: 'MESSAGE_ADDED',
-      timestamp: now(),
-      workflowId: '',
-      threadId: threadId || '',
+    const userMessageEvent = buildMessageAddedEvent(
+      threadId || '',
+      '',
       nodeId,
-      role: userMessage.role,
-      content: userMessage.content,
-      toolCalls: undefined
-    });
+      userMessage.role,
+      userMessage.content
+    );
+    await safeEmit(this.eventManager, userMessageEvent);
 
     // 检查 Token 使用情况
     await conversationState.checkTokenUsage();
@@ -247,15 +253,13 @@ export class LLMExecutionCoordinator {
 
       // 当使用量超过 80% 时触发警告
       if (usagePercentage > 80) {
-        await safeEmit(this.eventManager, {
-          type: 'TOKEN_USAGE_WARNING',
-          timestamp: now(),
-          workflowId: '',
-          threadId: threadId || '',
-          tokensUsed: tokenUsage.totalTokens,
+        const warningEvent = buildTokenUsageWarningEvent(
+          threadId || '',
+          tokenUsage.totalTokens,
           tokenLimit,
           usagePercentage
-        });
+        );
+        await safeEmit(this.eventManager, warningEvent);
       }
     }
 
@@ -302,7 +306,7 @@ export class LLMExecutionCoordinator {
 
     // 检查是否是中断状态
     if (!llmResult.success) {
-      return llmResult.interruption;
+      return (llmResult as { success: false; interruption: InterruptionCheckResult }).interruption;
     }
 
     const result = llmResult.result;
@@ -331,16 +335,14 @@ export class LLMExecutionCoordinator {
     conversationState.addMessage(assistantMessage);
 
     // 触发消息添加事件
-    await safeEmit(this.eventManager, {
-      type: 'MESSAGE_ADDED',
-      timestamp: now(),
-      workflowId: '',
-      threadId: threadId || '',
+    const assistantMessageEvent = buildMessageAddedEvent(
+      threadId || '',
+      '',
       nodeId,
-      role: assistantMessage.role,
-      content: assistantMessage.content,
-      toolCalls: assistantMessage.toolCalls
-    });
+      assistantMessage.role,
+      assistantMessage.content
+    );
+    await safeEmit(this.eventManager, assistantMessageEvent);
 
     // 检查是否有工具调用
     if (result.toolCalls && result.toolCalls.length > 0) {
@@ -363,35 +365,27 @@ export class LLMExecutionCoordinator {
         }
       }
 
-      // 创建工具调用执行器并执行工具调用（传递 AbortSignal）
-      const toolCallExecutor = new ToolCallExecutor(
-        this.toolService,
-        this.eventManager,
-        undefined,
-        this.toolVisibilityCoordinator
-      );
+      // 使用注入的工具调用执行器执行工具调用（传递 AbortSignal）
       await this.executeToolCallsWithApproval(
         result.toolCalls,
         conversationState,
         threadId,
         nodeId,
         params.workflowConfig,
-        toolCallExecutor,
+        this.toolCallExecutor,
         { abortSignal }
       );
     }
 
     // 触发对话状态变化事件
     const finalTokenUsage = conversationState.getTokenUsage();
-    await safeEmit(this.eventManager, {
-      type: 'CONVERSATION_STATE_CHANGED',
-      timestamp: now(),
-      workflowId: '',
-      threadId: threadId || '',
-      nodeId,
-      messageCount: conversationState.getMessages().length,
-      tokenUsage: finalTokenUsage?.totalTokens || 0
-    });
+    const stateChangedEvent = buildConversationStateChangedEvent(
+      threadId || '',
+      conversationState.getMessages().length,
+      finalTokenUsage?.totalTokens || 0,
+      nodeId
+    );
+    await safeEmit(this.eventManager, stateChangedEvent);
 
     // 返回最终内容
     return result.content;
@@ -552,20 +546,15 @@ export class LLMExecutionCoordinator {
 
     try {
       // 触发USER_INTERACTION_REQUESTED事件
-      await safeEmit(this.eventManager, {
-        type: 'USER_INTERACTION_REQUESTED',
-        timestamp: now(),
-        workflowId: '',
+      const requestedEvent = buildUserInteractionRequestedEvent(
         threadId,
         nodeId,
         interactionId,
-        operationType: 'TOOL_APPROVAL',
-        prompt: `是否批准调用工具 "${toolCall.id}"?`,
-        timeout: approvalConfig?.approvalTimeout || 0, // 使用配置的超时时间，默认无限等待
-        metadata: {
-          toolApproval: toolApprovalData
-        }
-      });
+        'TOOL_APPROVAL',
+        `是否批准调用工具 "${toolCall.id}"?`,
+        approvalConfig?.approvalTimeout || 0
+      );
+      await safeEmit(this.eventManager, requestedEvent);
 
       // 等待USER_INTERACTION_RESPONDED事件
       const response = await this.waitForUserInteractionResponse(
@@ -577,15 +566,13 @@ export class LLMExecutionCoordinator {
       const approvalResult = response.inputData as ToolApprovalData;
 
       // 触发USER_INTERACTION_PROCESSED事件
-      await safeEmit(this.eventManager, {
-        type: 'USER_INTERACTION_PROCESSED',
-        timestamp: now(),
-        workflowId: '',
+      const processedEvent = buildUserInteractionProcessedEvent(
         threadId,
         interactionId,
-        operationType: 'TOOL_APPROVAL',
-        results: approvalResult
-      });
+        'TOOL_APPROVAL',
+        approvalResult
+      );
+      await safeEmit(this.eventManager, processedEvent);
 
       return approvalResult;
     } finally {

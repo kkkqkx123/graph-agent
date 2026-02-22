@@ -19,11 +19,12 @@ import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { Thread } from '@modular-agent/types';
 import type { VariableScope } from '@modular-agent/types';
 import type { EventManager } from '../../services/event-manager.js';
-import { EventType } from '@modular-agent/types';
-import { now, getErrorOrNew } from '@modular-agent/common-utils';
+import { getErrorOrNew } from '@modular-agent/common-utils';
 import { RuntimeValidationError, SystemExecutionError } from '@modular-agent/types';
 import { VariableStateManager } from '../managers/variable-state-manager.js';
 import { VariableAccessor } from '../utils/variable-accessor.js';
+import { safeEmit } from '../utils/event/event-emitter.js';
+import { buildVariableChangedEvent } from '../utils/event/event-builder.js';
 
 /**
  * VariableCoordinator - 变量协调器
@@ -364,16 +365,8 @@ export class VariableCoordinator {
     }
 
     try {
-      const event = {
-        type: 'VARIABLE_CHANGED' as EventType,
-        timestamp: now(),
-        workflowId: this.workflowId || threadEntity.getWorkflowId(),
-        threadId: this.threadId || threadEntity.getThreadId(),
-        variableName: name,
-        variableValue: value,
-        variableScope: scope
-      };
-      await this.eventManager.emit(event);
+      const event = buildVariableChangedEvent(threadEntity, name, value, scope);
+      await safeEmit(this.eventManager, event);
     } catch (error) {
       // 抛出系统执行错误，由 ErrorService 统一处理
       throw new SystemExecutionError(

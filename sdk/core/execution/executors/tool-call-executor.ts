@@ -26,6 +26,12 @@ import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-uti
 import { ThreadInterruptedException, SystemExecutionError } from '@modular-agent/types';
 import { MessageBuilder } from '../../messages/message-builder.js';
 import type { ToolVisibilityCoordinator } from '../coordinators/tool-visibility-coordinator.js';
+import {
+  buildMessageAddedEvent,
+  buildToolCallStartedEvent,
+  buildToolCallCompletedEvent,
+  buildToolCallFailedEvent
+} from '../utils/event/event-builder.js';
 
 /**
  * 工具执行结果
@@ -130,29 +136,25 @@ export class ToolCallExecutor {
 
         // 触发消息添加事件
         if (this.eventManager) {
-          safeEmit(this.eventManager, {
-            type: 'MESSAGE_ADDED',
-            timestamp: now(),
-            workflowId: '',
-            threadId: threadId || '',
-            nodeId,
-            role: toolMessage.role,
-            content: typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
-            toolCalls: undefined
-          });
+          const messageEvent = buildMessageAddedEvent(
+            threadId || '',
+            toolMessage.role,
+            typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
+            nodeId
+          );
+          safeEmit(this.eventManager, messageEvent);
         }
 
         // 触发工具调用失败事件
         if (this.eventManager) {
-          safeEmit(this.eventManager, {
-            type: 'TOOL_CALL_FAILED',
-            timestamp: now(),
-            workflowId: '',
-            threadId: threadId || '',
-            nodeId: nodeId || '',
-            toolId: toolCall.name,
-            error: errorMessage
-          });
+          const failedEvent = buildToolCallFailedEvent(
+            threadId || '',
+            nodeId || '',
+            toolCall.name,
+            toolCall.name,
+            new Error(errorMessage)
+          );
+          safeEmit(this.eventManager, failedEvent);
         }
 
         return {
@@ -213,29 +215,25 @@ export class ToolCallExecutor {
 
         // 触发消息添加事件
         if (this.eventManager) {
-          await safeEmit(this.eventManager, {
-            type: 'MESSAGE_ADDED',
-            timestamp: now(),
-            workflowId: '',
-            threadId: threadId || '',
-            nodeId,
-            role: toolMessage.role,
-            content: typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
-            toolCalls: undefined
-          });
+          const messageEvent = buildMessageAddedEvent(
+            threadId || '',
+            toolMessage.role,
+            typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
+            nodeId
+          );
+          await safeEmit(this.eventManager, messageEvent);
         }
 
         // 触发工具调用失败事件
         if (this.eventManager) {
-          await safeEmit(this.eventManager, {
-            type: 'TOOL_CALL_FAILED',
-            timestamp: now(),
-            workflowId: '',
-            threadId: threadId || '',
-            nodeId: nodeId || '',
-            toolId: toolCall.name,
-            error: errorMessage
-          });
+          const failedEvent = buildToolCallFailedEvent(
+            threadId || '',
+            nodeId || '',
+            toolCall.name,
+            toolCall.name,
+            new Error(errorMessage)
+          );
+          await safeEmit(this.eventManager, failedEvent);
         }
 
         return {
@@ -277,15 +275,14 @@ export class ToolCallExecutor {
 
     // 触发工具调用开始事件
     if (this.eventManager) {
-      await safeEmit(this.eventManager, {
-        type: 'TOOL_CALL_STARTED',
-        timestamp: now(),
-        workflowId: '',
-        threadId: threadId || '',
-        nodeId: nodeId || '',
-        toolId: toolCall.name,
-        toolArguments: toolCall.arguments
-      });
+      const startedEvent = buildToolCallStartedEvent(
+        threadId || '',
+        nodeId || '',
+        toolCall.name,
+        toolCall.name,
+        toolCall.arguments
+      );
+      await safeEmit(this.eventManager, startedEvent);
     }
 
     // 构建执行选项，支持从工具配置中读取
@@ -340,29 +337,25 @@ export class ToolCallExecutor {
 
       // 触发消息添加事件
       if (this.eventManager) {
-        await safeEmit(this.eventManager, {
-          type: 'MESSAGE_ADDED',
-          timestamp: now(),
-          workflowId: '',
-          threadId: threadId || '',
-          nodeId,
-          role: toolMessage.role,
-          content: typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
-          toolCalls: undefined
-        });
+        const messageEvent = buildMessageAddedEvent(
+          threadId || '',
+          toolMessage.role,
+          typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
+          nodeId
+        );
+        await safeEmit(this.eventManager, messageEvent);
       }
 
       // 触发工具调用失败事件
       if (this.eventManager) {
-        await safeEmit(this.eventManager, {
-          type: 'TOOL_CALL_FAILED',
-          timestamp: now(),
-          workflowId: '',
-          threadId: threadId || '',
-          nodeId: nodeId || '',
-          toolId: toolCall.name,
-          error: errorMessage
-        });
+        const failedEvent = buildToolCallFailedEvent(
+          threadId || '',
+          nodeId || '',
+          toolCall.name,
+          toolCall.name,
+          new Error(errorMessage)
+        );
+        await safeEmit(this.eventManager, failedEvent);
       }
 
       return {
@@ -392,16 +385,13 @@ export class ToolCallExecutor {
 
     // 触发消息添加事件
     if (this.eventManager) {
-      await safeEmit(this.eventManager, {
-        type: 'MESSAGE_ADDED',
-        timestamp: now(),
-        workflowId: '',
-        threadId: threadId || '',
-        nodeId,
-        role: toolMessage.role,
-        content: typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
-        toolCalls: undefined
-      });
+      const messageEvent = buildMessageAddedEvent(
+        threadId || '',
+        toolMessage.role,
+        typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
+        nodeId
+      );
+      await safeEmit(this.eventManager, messageEvent);
     }
 
     // 工具调用后创建检查点（如果配置了）
@@ -433,16 +423,15 @@ export class ToolCallExecutor {
 
     // 触发工具调用完成事件
     if (this.eventManager) {
-      await safeEmit(this.eventManager, {
-        type: 'TOOL_CALL_COMPLETED',
-        timestamp: now(),
-        workflowId: '',
-        threadId: threadId || '',
-        nodeId: nodeId || '',
-        toolId: toolCall.name,
-        toolResult: serviceResult.result,
+      const completedEvent = buildToolCallCompletedEvent(
+        threadId || '',
+        nodeId || '',
+        toolCall.name,
+        toolCall.name,
+        serviceResult.result,
         executionTime
-      });
+      );
+      await safeEmit(this.eventManager, completedEvent);
     }
 
     return {

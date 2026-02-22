@@ -21,6 +21,12 @@ import type { ServiceIdentifier } from '@modular-agent/common-utils';
 export const GraphRegistry = Symbol('GraphRegistry') as ServiceIdentifier<any>;
 
 /**
+ * GraphNavigator - 图导航器
+ * 提供图的导航和遍历功能
+ */
+export const GraphNavigator = Symbol('GraphNavigator') as ServiceIdentifier<any>;
+
+/**
  * ThreadRegistry - 线程注册表
  * 管理 ThreadContext 的内存存储
  */
@@ -141,6 +147,92 @@ export const MessageStorageManager = Symbol('MessageStorageManager') as ServiceI
  * 执行 LLM 节点
  */
 export const LLMExecutor = Symbol('LLMExecutor') as ServiceIdentifier<any>;
+
+/**
+ * ToolCallExecutor - 工具调用执行器
+ * 专门处理工具调用执行
+ */
+export const ToolCallExecutor = Symbol('ToolCallExecutor') as ServiceIdentifier<any>;
+
+// ============================================================
+// 执行层 - Coordinators（协调器）
+// ============================================================
+
+/**
+ * ThreadExecutionCoordinator - 线程执行协调器
+ * 协调线程的执行流程，编排各个组件完成执行任务
+ */
+export const ThreadExecutionCoordinator = Symbol('ThreadExecutionCoordinator') as ServiceIdentifier<any>;
+
+/**
+ * VariableCoordinator - 变量协调器
+ * 负责变量的协调逻辑，包括验证、按需初始化、事件触发等
+ */
+export const VariableCoordinator = Symbol('VariableCoordinator') as ServiceIdentifier<any>;
+
+/**
+ * TriggerCoordinator - 触发器协调器
+ * 负责触发器的注册、注销和执行触发动作
+ */
+export const TriggerCoordinator = Symbol('TriggerCoordinator') as ServiceIdentifier<any>;
+
+/**
+ * NodeExecutionCoordinator - 节点执行协调器
+ * 负责协调节点的执行流程，包括事件触发、Hook执行、子图处理等
+ */
+export const NodeExecutionCoordinator = Symbol('NodeExecutionCoordinator') as ServiceIdentifier<any>;
+
+/**
+ * LLMExecutionCoordinator - LLM执行协调器
+ * 负责协调LLM调用和工具调用的完整流程
+ */
+export const LLMExecutionCoordinator = Symbol('LLMExecutionCoordinator') as ServiceIdentifier<any>;
+
+/**
+ * ToolVisibilityCoordinator - 工具可见性协调器
+ * 管理工具的运行时可见性，生成可见性声明消息
+ */
+export const ToolVisibilityCoordinator = Symbol('ToolVisibilityCoordinator') as ServiceIdentifier<any>;
+
+/**
+ * ThreadOperationCoordinator - 线程操作协调器
+ * 负责协调Thread的结构操作（Fork/Join/Copy）
+ */
+export const ThreadOperationCoordinator = Symbol('ThreadOperationCoordinator') as ServiceIdentifier<any>;
+
+/**
+ * CheckpointCoordinator - 检查点协调器
+ * 协调完整的检查点流程
+ */
+export const CheckpointCoordinator = Symbol('CheckpointCoordinator') as ServiceIdentifier<any>;
+
+// ============================================================
+// 执行层 - Managers（管理器）
+// ============================================================
+
+/**
+ * ConversationManager - 对话管理器
+ * 管理消息历史和消息索引
+ */
+export const ConversationManager = Symbol('ConversationManager') as ServiceIdentifier<any>;
+
+/**
+ * VariableStateManager - 变量状态管理器
+ * 专门管理变量的运行时状态
+ */
+export const VariableStateManager = Symbol('VariableStateManager') as ServiceIdentifier<any>;
+
+/**
+ * TriggerStateManager - 触发器状态管理器
+ * 专门管理触发器的运行时状态
+ */
+export const TriggerStateManager = Symbol('TriggerStateManager') as ServiceIdentifier<any>;
+
+/**
+ * InterruptionManager - 中断管理器
+ * 统一管理线程中断状态和操作
+ */
+export const InterruptionManager = Symbol('InterruptionManager') as ServiceIdentifier<any>;
 
 // ============================================================
 // API 层服务

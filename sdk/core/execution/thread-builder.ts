@@ -10,13 +10,10 @@ import type { Thread, ThreadOptions, ThreadStatus } from '@modular-agent/types';
 import { ThreadEntity } from '../entities/thread-entity.js';
 import { ExecutionState } from '../entities/execution-state.js';
 import { generateId, now as getCurrentTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
-import { VariableCoordinator } from './coordinators/variable-coordinator.js';
-import { VariableStateManager } from './managers/variable-state-manager.js';
 import { ExecutionError, RuntimeValidationError } from '@modular-agent/types';
-import type { WorkflowRegistry } from '../services/workflow-registry.js';
-import type { EventManager } from '../services/event-manager.js';
-import type { ToolService } from '../services/tool-service.js';
 import type { GraphRegistry } from '../services/graph-registry.js';
+import { getContainer } from '../di/index.js';
+import * as Identifiers from '../di/service-identifiers.js';
 import { createContextualLogger } from '../../utils/contextual-logger.js';
 
 const logger = createContextualLogger();
@@ -26,32 +23,31 @@ const logger = createContextualLogger();
  */
 export class ThreadBuilder {
   private threadTemplates: Map<string, ThreadEntity> = new Map();
-  private variableCoordinator: VariableCoordinator;
-  private variableStateManager: VariableStateManager;
-  private workflowRegistry: WorkflowRegistry;
-  private eventManager: EventManager;
-  private toolService: ToolService;
-  private graphRegistry: GraphRegistry;
 
-  constructor(
-    workflowRegistry: WorkflowRegistry,
-    eventManager: EventManager,
-    toolService: ToolService,
-    graphRegistry: GraphRegistry
-  ) {
-    this.workflowRegistry = workflowRegistry;
-    this.eventManager = eventManager;
-    this.toolService = toolService;
-    this.graphRegistry = graphRegistry;
+  constructor() {}
 
-    // 初始化变量状态管理器
-    this.variableStateManager = new VariableStateManager();
+  /**
+   * 获取图注册表（从DI容器）
+   */
+  private getGraphRegistry(): GraphRegistry {
+    const container = getContainer();
+    return container.get(Identifiers.GraphRegistry);
+  }
 
-    // 初始化变量协调器
-    this.variableCoordinator = new VariableCoordinator(
-      this.variableStateManager,
-      this.eventManager
-    );
+  /**
+   * 获取变量协调器（从DI容器）
+   */
+  private getVariableCoordinator(): any {
+    const container = getContainer();
+    return container.get(Identifiers.VariableCoordinator);
+  }
+
+  /**
+   * 获取变量状态管理器（从DI容器）
+   */
+  private getVariableStateManager(): any {
+    const container = getContainer();
+    return container.get(Identifiers.VariableStateManager);
   }
 
   /**
@@ -63,7 +59,7 @@ export class ThreadBuilder {
    */
   async build(workflowId: string, options: ThreadOptions = {}): Promise<ThreadEntity> {
     // 从 graph-registry 获取已预处理的图
-    const preprocessedGraph = this.graphRegistry.get(workflowId);
+    const preprocessedGraph = this.getGraphRegistry().get(workflowId);
 
     if (!preprocessedGraph) {
       throw new ExecutionError(
@@ -131,7 +127,7 @@ export class ThreadBuilder {
     };
 
     // 步骤4：从 PreprocessedGraph 初始化变量
-    this.variableCoordinator.initializeFromWorkflow(thread, preprocessedGraph.variables || []);
+    this.getVariableCoordinator().initializeFromWorkflow(thread, preprocessedGraph.variables || []);
 
     // 步骤5：创建 ExecutionState
     const executionState = new ExecutionState();

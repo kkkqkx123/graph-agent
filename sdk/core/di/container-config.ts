@@ -28,6 +28,7 @@ import { WorkflowRegistry } from '../services/workflow-registry.js';
 
 // 执行层服务
 import { LLMExecutor } from '../execution/executors/llm-executor.js';
+import { ToolCallExecutor } from '../execution/executors/tool-call-executor.js';
 import { ThreadLifecycleManager } from '../execution/managers/thread-lifecycle-manager.js';
 import { ThreadCascadeManager } from '../execution/managers/thread-cascade-manager.js';
 import { CheckpointStateManager } from '../execution/managers/checkpoint-state-manager.js';
@@ -37,6 +38,22 @@ import { ToolVisibilityManager } from '../execution/managers/tool-visibility-man
 import { ThreadBuilder } from '../execution/thread-builder.js';
 import { ThreadExecutor } from '../execution/thread-executor.js';
 import { ThreadLifecycleCoordinator } from '../execution/coordinators/thread-lifecycle-coordinator.js';
+
+// 执行层 - Coordinators（协调器）
+import { ThreadExecutionCoordinator } from '../execution/coordinators/thread-execution-coordinator.js';
+import { VariableCoordinator } from '../execution/coordinators/variable-coordinator.js';
+import { TriggerCoordinator } from '../execution/coordinators/trigger-coordinator.js';
+import { NodeExecutionCoordinator } from '../execution/coordinators/node-execution-coordinator.js';
+import { LLMExecutionCoordinator } from '../execution/coordinators/llm-execution-coordinator.js';
+import { ToolVisibilityCoordinator } from '../execution/coordinators/tool-visibility-coordinator.js';
+import { ThreadOperationCoordinator } from '../execution/coordinators/thread-operation-coordinator.js';
+import { CheckpointCoordinator } from '../execution/coordinators/checkpoint-coordinator.js';
+
+// 执行层 - Managers（管理器）
+import { ConversationManager } from '../execution/managers/conversation-manager.js';
+import { VariableStateManager } from '../execution/managers/variable-state-manager.js';
+import { TriggerStateManager } from '../execution/managers/trigger-state-manager.js';
+import { InterruptionManager } from '../execution/managers/interruption-manager.js';
 
 /** 全局容器实例 */
 let container: Container | null = null;
@@ -142,7 +159,23 @@ export function initializeContainer(): Container {
   container.bind(Identifiers.LLMExecutor)
     .toDynamicValue((c: any) => {
       const eventManager = c.get(Identifiers.EventManager);
-      return LLMExecutor.getInstance(eventManager);
+      return new LLMExecutor(eventManager);
+    })
+    .inSingletonScope();
+
+  container.bind(Identifiers.ToolCallExecutor)
+    .toDynamicValue((c: any) => {
+      return new ToolCallExecutor(
+        c.get(Identifiers.ToolService),
+        c.get(Identifiers.EventManager),
+        {
+          threadRegistry: c.get(Identifiers.ThreadRegistry),
+          checkpointStateManager: c.get(Identifiers.CheckpointStateManager),
+          workflowRegistry: c.get(Identifiers.WorkflowRegistry),
+          graphRegistry: c.get(Identifiers.GraphRegistry)
+        },
+        c.get(Identifiers.ToolVisibilityCoordinator)
+      );
     })
     .inSingletonScope();
 
@@ -208,43 +241,7 @@ export function initializeContainer(): Container {
   // ============================================================
 
   container.bind(Identifiers.ThreadExecutor)
-    .toDynamicValue((c: any) => {
-      const workflowRegistry = c.get(Identifiers.WorkflowRegistry);
-      const threadRegistry = c.get(Identifiers.ThreadRegistry);
-      const eventManager = c.get(Identifiers.EventManager);
-      const toolService = c.get(Identifiers.ToolService);
-      const scriptService = c.get(Identifiers.ScriptService);
-      const llmExecutor = c.get(Identifiers.LLMExecutor);
-      const errorService = c.get(Identifiers.ErrorService);
-      const taskRegistry = c.get(Identifiers.TaskRegistry);
-      const graphRegistry = c.get(Identifiers.GraphRegistry);
-      const nodeTemplateRegistry = c.get(Identifiers.NodeTemplateRegistry);
-      const triggerTemplateRegistry = c.get(Identifiers.TriggerTemplateRegistry);
-      const threadLifecycleManager = c.get(Identifiers.ThreadLifecycleManager);
-      const threadCascadeManager = c.get(Identifiers.ThreadCascadeManager);
-      const checkpointStateManager = c.get(Identifiers.CheckpointStateManager);
-      const toolVisibilityManager = c.get(Identifiers.ToolVisibilityManager);
-      const threadLifecycleCoordinator = c.get(Identifiers.ThreadLifecycleCoordinator);
-
-      return new ThreadExecutor(
-        workflowRegistry,
-        threadRegistry,
-        eventManager,
-        toolService,
-        scriptService,
-        llmExecutor,
-        errorService,
-        taskRegistry,
-        graphRegistry,
-        nodeTemplateRegistry,
-        triggerTemplateRegistry,
-        threadLifecycleManager,
-        threadCascadeManager,
-        checkpointStateManager,
-        toolVisibilityManager,
-        threadLifecycleCoordinator
-      );
-    })
+    .to(ThreadExecutor)
     .inSingletonScope();
 
   // ============================================================
@@ -276,12 +273,186 @@ export function initializeContainer(): Container {
   // ============================================================
 
   container.bind(Identifiers.ThreadBuilder)
+    .to(ThreadBuilder)
+    .inSingletonScope();
+
+  // ============================================================
+  // 第十层：执行层基础Managers（无依赖或简单依赖）
+  // ============================================================
+
+  container.bind(Identifiers.VariableStateManager)
+    .to(VariableStateManager)
+    .inSingletonScope();
+
+  container.bind(Identifiers.TriggerStateManager)
     .toDynamicValue((c: any) => {
-      const workflowRegistry = c.get(Identifiers.WorkflowRegistry);
+      // TriggerStateManager需要threadId，使用工厂模式
+      return {
+        create: (threadId: string) => new TriggerStateManager(threadId)
+      };
+    })
+    .inSingletonScope();
+
+  container.bind(Identifiers.InterruptionManager)
+    .toDynamicValue((c: any) => {
+      // InterruptionManager需要threadId和nodeId，使用工厂模式
+      return {
+        create: (threadId: string, nodeId: string) => new InterruptionManager(threadId, nodeId)
+      };
+    })
+    .inSingletonScope();
+
+  // ============================================================
+  // 第十一层：执行层Coordinators（高优先级）
+  // ============================================================
+
+  // VariableCoordinator - 依赖VariableStateManager和EventManager
+  container.bind(Identifiers.VariableCoordinator)
+    .toDynamicValue((c: any) => {
+      const stateManager = c.get(Identifiers.VariableStateManager);
+      const eventManager = c.get(Identifiers.EventManager);
+      return new VariableCoordinator(stateManager, eventManager);
+    })
+    .inSingletonScope();
+
+  // ToolVisibilityCoordinator - 依赖ToolService
+  container.bind(Identifiers.ToolVisibilityCoordinator)
+    .toDynamicValue((c: any) => {
+      const toolService = c.get(Identifiers.ToolService);
+      return new ToolVisibilityCoordinator(toolService);
+    })
+    .inSingletonScope();
+
+  // LLMExecutionCoordinator - 依赖LLMExecutor、ToolService、EventManager、ToolCallExecutor
+  container.bind(Identifiers.LLMExecutionCoordinator)
+    .toDynamicValue((c: any) => {
+      const llmExecutor = c.get(Identifiers.LLMExecutor);
+      const toolService = c.get(Identifiers.ToolService);
+      const eventManager = c.get(Identifiers.EventManager);
+      const toolCallExecutor = c.get(Identifiers.ToolCallExecutor);
+      return new LLMExecutionCoordinator(llmExecutor, toolService, eventManager, toolCallExecutor);
+    })
+    .inSingletonScope();
+
+  // ConversationManager - 依赖EventManager、ToolService
+  container.bind(Identifiers.ConversationManager)
+    .toDynamicValue((c: any) => {
       const eventManager = c.get(Identifiers.EventManager);
       const toolService = c.get(Identifiers.ToolService);
-      const graphRegistry = c.get(Identifiers.GraphRegistry);
-      return new ThreadBuilder(workflowRegistry, eventManager, toolService, graphRegistry);
+      const options = {
+        eventManager,
+        toolService
+      };
+      return new ConversationManager(options);
+    })
+    .inSingletonScope();
+
+  // NodeExecutionCoordinator - 依赖多个服务和协调器
+  container.bind(Identifiers.NodeExecutionCoordinator)
+    .toDynamicValue((c: any) => {
+      const config = {
+        eventManager: c.get(Identifiers.EventManager),
+        llmCoordinator: c.get(Identifiers.LLMExecutionCoordinator),
+        conversationManager: c.get(Identifiers.ConversationManager),
+        interruptionManager: c.get(Identifiers.InterruptionManager),
+        navigator: c.get(Identifiers.GraphRegistry),
+        toolService: c.get(Identifiers.ToolService),
+        toolContextManager: c.get(Identifiers.ToolContextManager),
+        checkpointDependencies: {
+          threadRegistry: c.get(Identifiers.ThreadRegistry),
+          checkpointStateManager: c.get(Identifiers.CheckpointStateManager),
+          workflowRegistry: c.get(Identifiers.WorkflowRegistry),
+          graphRegistry: c.get(Identifiers.GraphRegistry)
+        }
+      };
+      return new NodeExecutionCoordinator(config);
+    })
+    .inSingletonScope();
+
+  // TriggerCoordinator - 依赖多个服务和协调器
+  container.bind(Identifiers.TriggerCoordinator)
+    .toDynamicValue((c: any) => {
+      return new TriggerCoordinator(
+        c.get(Identifiers.ThreadRegistry),
+        c.get(Identifiers.WorkflowRegistry),
+        c.get(Identifiers.TriggerStateManager),
+        c.get(Identifiers.CheckpointStateManager),
+        c.get(Identifiers.GraphRegistry),
+        c.get(Identifiers.EventManager),
+        c.get(Identifiers.ThreadBuilder),
+        c.get(Identifiers.TaskRegistry),
+        c.get(Identifiers.ThreadLifecycleCoordinator)
+      );
+    })
+    .inSingletonScope();
+
+  // ThreadExecutionCoordinator - 依赖多个协调器和管理器
+  container.bind(Identifiers.ThreadExecutionCoordinator)
+    .toDynamicValue((c: any) => {
+      // 注意：ThreadExecutionCoordinator需要ThreadEntity作为参数
+      // 这里提供一个工厂方法来创建实例
+      return {
+        create: (threadEntity: any) => {
+          return new ThreadExecutionCoordinator(
+            threadEntity,
+            c.get(Identifiers.VariableCoordinator),
+            c.get(Identifiers.TriggerCoordinator),
+            c.get(Identifiers.ConversationManager),
+            c.get(Identifiers.InterruptionManager),
+            c.get(Identifiers.ToolVisibilityCoordinator),
+            c.get(Identifiers.NodeExecutionCoordinator),
+            c.get(Identifiers.GraphRegistry)
+          );
+        }
+      };
+    })
+    .inSingletonScope();
+
+  // ============================================================
+  // 第十二层：执行层Coordinators（中低优先级）
+  // ============================================================
+
+  // ThreadOperationCoordinator - 依赖多个服务
+  container.bind(Identifiers.ThreadOperationCoordinator)
+    .toDynamicValue((c: any) => {
+      return new ThreadOperationCoordinator(
+        c.get(Identifiers.ThreadRegistry),
+        c.get(Identifiers.WorkflowRegistry),
+        c.get(Identifiers.EventManager),
+        c.get(Identifiers.ToolService),
+        c.get(Identifiers.GraphRegistry)
+      );
+    })
+    .inSingletonScope();
+
+  // CheckpointCoordinator - 使用静态方法，不需要实例化
+  // 提供一个工厂方法来获取依赖对象
+  container.bind(Identifiers.CheckpointCoordinator)
+    .toDynamicValue((c: any) => {
+      return {
+        dependencies: {
+          threadRegistry: c.get(Identifiers.ThreadRegistry),
+          checkpointStateManager: c.get(Identifiers.CheckpointStateManager),
+          workflowRegistry: c.get(Identifiers.WorkflowRegistry),
+          graphRegistry: c.get(Identifiers.GraphRegistry)
+        },
+        createCheckpoint: (threadId: string, metadata?: any) => {
+          return CheckpointCoordinator.createCheckpoint(threadId, {
+            threadRegistry: c.get(Identifiers.ThreadRegistry),
+            checkpointStateManager: c.get(Identifiers.CheckpointStateManager),
+            workflowRegistry: c.get(Identifiers.WorkflowRegistry),
+            graphRegistry: c.get(Identifiers.GraphRegistry)
+          }, metadata);
+        },
+        restoreFromCheckpoint: (checkpointId: string) => {
+          return CheckpointCoordinator.restoreFromCheckpoint(checkpointId, {
+            threadRegistry: c.get(Identifiers.ThreadRegistry),
+            checkpointStateManager: c.get(Identifiers.CheckpointStateManager),
+            workflowRegistry: c.get(Identifiers.WorkflowRegistry),
+            graphRegistry: c.get(Identifiers.GraphRegistry)
+          });
+        }
+      };
     })
     .inSingletonScope();
 

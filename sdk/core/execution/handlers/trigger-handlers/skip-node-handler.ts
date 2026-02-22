@@ -5,11 +5,11 @@
 
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import type { NodeExecutionResult } from '@modular-agent/types';
-import { ValidationError, NotFoundError, RuntimeValidationError, ThreadContextNotFoundError } from '@modular-agent/types';
-import { EventType } from '@modular-agent/types';
+import { ValidationError, ThreadContextNotFoundError } from '@modular-agent/types';
 import type { ThreadRegistry } from '../../../services/thread-registry.js';
 import type { EventManager } from '../../../services/event-manager.js';
 import { getErrorMessage, now } from '@modular-agent/common-utils';
+import { buildNodeCompletedEvent } from '../../utils/event/index.js';
 
 /**
  * 创建成功结果
@@ -95,15 +95,7 @@ export async function skipNodeHandler(
     thread.nodeResults.push(result);
 
     // 触发NODE_COMPLETED事件（状态为SKIPPED）
-    const completedEvent = {
-      type: 'NODE_COMPLETED' as EventType,
-      timestamp: now(),
-      workflowId: threadEntity.getWorkflowId(),
-      threadId: threadEntity.getThreadId(),
-      nodeId,
-      output: null,
-      executionTime: 0
-    };
+    const completedEvent = buildNodeCompletedEvent(threadEntity, nodeId, null, 0);
     await eventManager.emit(completedEvent);
 
     return createSuccessResult(
