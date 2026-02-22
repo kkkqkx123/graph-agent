@@ -9,7 +9,7 @@
  */
 
 import type { Tool, ToolProperty } from '@modular-agent/types';
-import { renderTemplate } from './template-renderer.js';
+import { renderTemplate } from '@modular-agent/common-utils';
 import {
   TOOL_PARAMETERS_SCHEMA_TEMPLATE,
   PARAMETER_DESCRIPTION_LINE_TEMPLATE

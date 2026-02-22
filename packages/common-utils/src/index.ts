@@ -10,6 +10,9 @@ export * from './http/index.js';
 // 工具函数
 export * from './utils/index.js';
 
+// 模板渲染器
+export * from './template/template-renderer.js';
+
 // 错误处理工具
 export * from './error/index.js';
 

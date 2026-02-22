@@ -10,7 +10,7 @@
  */
 
 import type { Tool } from '@modular-agent/types';
-import { renderTemplate } from './template-renderer.js';
+import { renderTemplate } from '@modular-agent/common-utils';
 import {
   TOOL_DESCRIPTION_TABLE_TEMPLATE,
   TOOL_DESCRIPTION_SINGLE_LINE_TEMPLATE,

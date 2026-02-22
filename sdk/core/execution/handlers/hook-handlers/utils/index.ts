@@ -11,9 +11,7 @@ export {
 
 export {
   generateHookEventData,
-  resolvePayloadTemplate,
-  resolveTemplateVariable,
-  getVariableValue
+  resolvePayloadTemplate
 } from './payload-generator.js';
 
 export {

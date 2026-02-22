@@ -5,7 +5,7 @@
 
 import type { NodeHook } from '@modular-agent/types';
 import type { HookEvaluationContext } from './context-builder.js';
-import { resolvePath } from '@modular-agent/common-utils';
+import { renderTemplate } from '@modular-agent/common-utils';
 
 /**
  * 生成事件载荷
@@ -62,24 +62,14 @@ export function resolvePayloadTemplate(
 }
 
 /**
- * 解析模板变量
+ * 解析模板变量并尝试类型转换
  * @param template 模板字符串
  * @param evalContext 评估上下文
- * @returns 解析后的值
+ * @returns 解析后的值（可能转换为数字或布尔值）
  */
-export function resolveTemplateVariable(template: string, evalContext: HookEvaluationContext): any {
-  // 匹配 {{variable}} 格式的模板变量
-  const regex = /\{\{([^}]+)\}\}/g;
-  const matches = template.matchAll(regex);
-
-  let result = template;
-  for (const match of matches) {
-    if (match[1]) {
-      const variablePath = match[1].trim();
-      const value = getVariableValue(variablePath, evalContext);
-      result = result.replace(match[0], String(value ?? ''));
-    }
-  }
+function resolveTemplateVariable(template: string, evalContext: HookEvaluationContext): any {
+  // 使用统一的模板渲染器
+  const result = renderTemplate(template, evalContext);
 
   // 尝试将结果转换为数字或布尔值
   if (result === 'true') return true;
@@ -87,15 +77,4 @@ export function resolveTemplateVariable(template: string, evalContext: HookEvalu
   if (/^-?\d+\.?\d*$/.test(result)) return parseFloat(result);
 
   return result;
-}
-
-/**
- * 获取变量值
- * 使用统一的路径解析逻辑
- * @param path 变量路径
- * @param evalContext 评估上下文
- * @returns 变量值
- */
-export function getVariableValue(path: string, evalContext: HookEvaluationContext): any {
-  return resolvePath(path, evalContext);
 }

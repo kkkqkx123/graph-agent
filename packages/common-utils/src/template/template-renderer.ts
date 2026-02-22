@@ -9,7 +9,7 @@
  * - 提供安全的变量值获取
  */
 
-import { resolvePath } from '@modular-agent/common-utils';
+import { resolvePath } from '../evalutor/path-resolver.js';
 
 /**
  * 获取变量值
@@ -108,7 +108,7 @@ export function validateTemplateVariables(template: string, variables: Record<st
   while ((match = placeholderRegex.exec(template)) !== null) {
     const variableName = match[1]?.trim();
     if (!variableName) continue;
-    
+
     const value = getVariableValue(variableName, variables);
 
     if (value === undefined || value === null) {
