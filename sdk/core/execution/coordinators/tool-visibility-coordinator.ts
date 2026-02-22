@@ -1,15 +1,18 @@
 /**
  * ToolVisibilityCoordinator - 工具可见性协调器
- * 管理工具的运行时可见性，生成可见性声明消息
+ * 协调工具可见性变更流程，生成可见性声明消息
  *
  * 核心职责：
- * 1. 管理工具可见性上下文
+ * 1. 协调工具可见性变更流程
  * 2. 生成结构化可见性声明
  * 3. 在作用域切换时触发声明更新
  * 4. 支持动态添加工具
  * 5. 避免重复声明，优化token消耗
  *
  * 设计原则：
+ * - 无状态设计：不维护任何状态，所有状态通过管理器访问
+ * - 协调逻辑：封装可见性变更的协调逻辑
+ * - 依赖注入：通过构造函数接收依赖的管理器和服务
  * - 增量式声明：通过新增消息声明当前可用工具集
  * - 显式覆盖：新的声明覆盖旧的声明，形成"有效工具快照"
  * - 双重保障：提示词声明 + 执行拦截，确保安全性
@@ -27,23 +30,34 @@ import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { ToolService } from '../../services/tool-service.js';
 import type { LLMMessage } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
+import { ToolVisibilityManager } from '../managers/tool-visibility-manager.js';
+import { ToolVisibilityMessageBuilder } from '../utils/tool-visibility-message-builder.js';
 
 /**
  * ToolVisibilityCoordinator - 工具可见性协调器
  */
 export class ToolVisibilityCoordinator {
-  /** 工具可见性上下文映射：threadId -> ToolVisibilityContext */
-  private contexts: Map<string, ToolVisibilityContext> = new Map();
+  /** 工具可见性管理器（有状态） */
+  private visibilityManager: ToolVisibilityManager;
 
   /** 工具服务 */
   private toolService: ToolService;
 
+  /** 消息构建器 */
+  private messageBuilder: ToolVisibilityMessageBuilder;
+
   /**
    * 构造函数
    * @param toolService 工具服务
+   * @param visibilityManager 工具可见性管理器
    */
-  constructor(toolService: ToolService) {
+  constructor(
+    toolService: ToolService,
+    visibilityManager?: ToolVisibilityManager
+  ) {
     this.toolService = toolService;
+    this.visibilityManager = visibilityManager || new ToolVisibilityManager();
+    this.messageBuilder = new ToolVisibilityMessageBuilder(toolService);
   }
 
   /**
@@ -52,25 +66,14 @@ export class ToolVisibilityCoordinator {
    * @param initialTools 初始工具ID列表
    * @param scope 初始作用域
    * @param scopeId 作用域ID
-   * @returns 工具可见性上下文
    */
   initializeContext(
     threadId: string,
     initialTools: string[],
     scope: ToolScope = 'THREAD',
     scopeId: string = threadId
-  ): ToolVisibilityContext {
-    const context: ToolVisibilityContext = {
-      currentScope: scope,
-      scopeId,
-      visibleTools: new Set(initialTools),
-      declarationHistory: [],
-      lastDeclarationIndex: -1,
-      initializedAt: now()
-    };
-
-    this.contexts.set(threadId, context);
-    return context;
+  ): void {
+    this.visibilityManager.initializeContext(threadId, initialTools, scope, scopeId);
   }
 
   /**
@@ -79,7 +82,7 @@ export class ToolVisibilityCoordinator {
    * @returns 工具可见性上下文，如果不存在则返回undefined
    */
   getContext(threadId: string): ToolVisibilityContext | undefined {
-    return this.contexts.get(threadId);
+    return this.visibilityManager.getContext(threadId);
   }
 
   /**
@@ -105,10 +108,8 @@ export class ToolVisibilityCoordinator {
       // 如果上下文不存在，先初始化
       this.initializeContext(threadId, availableTools, newScope, newScopeId);
     } else {
-      // 更新上下文
-      context.currentScope = newScope;
-      context.scopeId = newScopeId;
-      context.visibleTools = new Set(availableTools);
+      // 更新管理器中的状态
+      this.visibilityManager.updateVisibility(threadId, availableTools, newScope, newScopeId);
     }
 
     // 检查是否需要跳过重复声明
@@ -117,7 +118,7 @@ export class ToolVisibilityCoordinator {
     }
 
     // 生成声明消息
-    const message = this.buildVisibilityDeclarationMessage(
+    const message = this.messageBuilder.buildVisibilityDeclarationMessage(
       newScope,
       newScopeId,
       availableTools,
@@ -128,14 +129,12 @@ export class ToolVisibilityCoordinator {
     const llmMessage: LLMMessage = {
       role: 'system',
       content: message,
-      metadata: {
-        type: 'tool_visibility_declaration',
-        timestamp: now(),
-        scope: newScope,
-        scopeId: newScopeId,
-        toolIds: availableTools,
+      metadata: this.messageBuilder.buildVisibilityDeclarationMetadata(
+        newScope,
+        newScopeId,
+        availableTools,
         changeType
-      }
+      )
     };
 
     threadEntity.addMessageToConversation(llmMessage);
@@ -207,7 +206,7 @@ export class ToolVisibilityCoordinator {
   /**
    * 动态添加工具
    * 生成增量可见性声明
-   * @param threadContext 线程上下文
+   * @param threadEntity 线程实体
    * @param toolIds 工具ID列表
    * @param scope 作用域
    */
@@ -223,8 +222,8 @@ export class ToolVisibilityCoordinator {
       throw new Error(`Tool visibility context not found for thread: ${threadId}`);
     }
 
-    // 添加到可见工具集合
-    toolIds.forEach(id => context.visibleTools.add(id));
+    // 添加到管理器中的可见工具集合
+    this.visibilityManager.addTools(threadId, toolIds);
 
     // 立即生成声明
     await this.updateVisibilityOnScopeChange(
@@ -246,7 +245,7 @@ export class ToolVisibilityCoordinator {
    * - SDK不提供默认的消息操作实现，由应用层定义
    * - 仅在工具集发生变化时才生成新的声明
    *
-   * @param threadContext 线程上下文
+   * @param threadEntity 线程实体
    */
   async refreshDeclaration(threadEntity: ThreadEntity): Promise<void> {
     const threadId = threadEntity.getThreadId();
@@ -283,65 +282,12 @@ export class ToolVisibilityCoordinator {
   }
 
   /**
-   * 构建可见性声明消息内容
-   * @param scope 作用域
-   * @param scopeId 作用域ID
-   * @param toolIds 工具ID列表
-   * @param changeType 变更类型
-   * @returns 声明消息内容
-   */
-  buildVisibilityDeclarationMessage(
-    scope: ToolScope,
-    scopeId: string,
-    toolIds: string[],
-    changeType: VisibilityChangeType
-  ): string {
-    const timestamp = new Date().toISOString();
-    const changeTypeText = this.getChangeTypeText(changeType);
-
-    // 构建工具描述表格
-    const toolDescriptions = toolIds
-      .map(id => {
-        const tool = this.toolService.getTool(id);
-        if (!tool) return null;
-        return `| ${tool.name} | ${id} | ${tool.description} |`;
-      })
-      .filter(Boolean)
-      .join('\n');
-
-    const message = `## 工具可见性声明
-
-**生效时间**：${timestamp}
-**当前作用域**：${scope}(${scopeId})
-**变更类型**：${changeTypeText}
-
-### 当前可用工具清单
-
-| 工具名称 | 工具ID | 说明 |
-|----------|--------|------|
-${toolDescriptions || '无可用工具'}
-
-### 重要提示
-
-1. **仅可使用上述清单中的工具**，其他工具调用将被拒绝
-2. 工具参数必须符合schema定义
-3. 如需更多工具，请完成当前任务后退出当前作用域
-`;
-
-    return message;
-  }
-
-  /**
    * 获取当前有效工具集（用于执行拦截）
    * @param threadId 线程ID
    * @returns 当前可见工具集合
    */
   getEffectiveVisibleTools(threadId: string): Set<string> {
-    const context = this.getContext(threadId);
-    if (!context) {
-      return new Set();
-    }
-    return new Set(context.visibleTools);
+    return this.visibilityManager.getVisibleTools(threadId);
   }
 
   /**
@@ -351,31 +297,13 @@ ${toolDescriptions || '无可用工具'}
    * @returns 是否可见
    */
   isToolVisible(threadId: string, toolId: string): boolean {
-    const visibleTools = this.getEffectiveVisibleTools(threadId);
-    return visibleTools.has(toolId);
+    return this.visibilityManager.isToolVisible(threadId, toolId);
   }
-
-  /**
-   * 获取变更类型文本
-   * @param changeType 变更类型
-   * @returns 变更类型文本
-   */
-  private getChangeTypeText(changeType: VisibilityChangeType): string {
-    const typeMap: Record<VisibilityChangeType, string> = {
-      init: '初始化',
-      enter_scope: '进入作用域',
-      add_tools: '新增工具',
-      exit_scope: '退出作用域',
-      refresh: '刷新声明'
-    };
-    return typeMap[changeType] || changeType;
-  }
-
 
   /**
    * 验证声明历史完整性
    * @param threadId 线程ID
-   * @param threadContext 线程上下文
+   * @param threadEntity 线程实体
    * @returns 验证结果
    */
   validateDeclarationHistory(
@@ -435,7 +363,7 @@ ${toolDescriptions || '无可用工具'}
    * 消息操作后更新声明历史
    * 当消息被截断、过滤或清空时调用此方法
    * @param threadId 线程ID
-   * @param threadContext 线程上下文
+   * @param threadEntity 线程实体
    * @param operation 操作类型
    */
   async updateDeclarationHistoryAfterMessageOperation(
@@ -492,7 +420,7 @@ ${toolDescriptions || '无可用工具'}
    * 自动修复声明历史
    * 当验证失败时调用此方法
    * @param threadId 线程ID
-   * @param threadContext 线程上下文
+   * @param threadEntity 线程实体
    */
   async repairDeclarationHistory(
     threadId: string,
@@ -555,14 +483,16 @@ ${toolDescriptions || '无可用工具'}
    * @param threadId 线程ID
    */
   deleteContext(threadId: string): void {
-    this.contexts.delete(threadId);
+    this.visibilityManager.deleteContext(threadId);
   }
 
   /**
    * 清空所有可见性上下文
    */
   clearAll(): void {
-    this.contexts.clear();
+    // 注意：ToolVisibilityManager 没有 clearAll 方法，需要添加或使用 cleanup
+    // 暂时使��� cleanup
+    this.visibilityManager.cleanup();
   }
 
   /**
@@ -571,16 +501,7 @@ ${toolDescriptions || '无可用工具'}
    * @returns 可见性上下文快照
    */
   getSnapshot(threadId: string): ToolVisibilityContext | undefined {
-    const context = this.contexts.get(threadId);
-    if (!context) {
-      return undefined;
-    }
-
-    return {
-      ...context,
-      visibleTools: new Set(context.visibleTools),
-      declarationHistory: [...context.declarationHistory]
-    };
+    return this.visibilityManager.getSnapshot(threadId);
   }
 
   /**
@@ -589,10 +510,6 @@ ${toolDescriptions || '无可用工具'}
    * @param snapshot 可见性上下文快照
    */
   restoreSnapshot(threadId: string, snapshot: ToolVisibilityContext): void {
-    this.contexts.set(threadId, {
-      ...snapshot,
-      visibleTools: new Set(snapshot.visibleTools),
-      declarationHistory: [...snapshot.declarationHistory]
-    });
+    this.visibilityManager.restoreSnapshot(threadId, snapshot);
   }
 }

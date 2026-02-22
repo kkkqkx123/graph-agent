@@ -315,11 +315,12 @@ export function initializeContainer(): Container {
     })
     .inSingletonScope();
 
-  // ToolVisibilityCoordinator - 依赖ToolService
+  // ToolVisibilityCoordinator - 依赖ToolService和ToolVisibilityManager
   container.bind(Identifiers.ToolVisibilityCoordinator)
     .toDynamicValue((c: any) => {
       const toolService = c.get(Identifiers.ToolService);
-      return new ToolVisibilityCoordinator(toolService);
+      const visibilityManager = c.get(Identifiers.ToolVisibilityManager);
+      return new ToolVisibilityCoordinator(toolService, visibilityManager);
     })
     .inSingletonScope();
 
@@ -418,9 +419,6 @@ export function initializeContainer(): Container {
       return new ThreadOperationCoordinator(
         c.get(Identifiers.ThreadRegistry),
         c.get(Identifiers.WorkflowRegistry),
-        c.get(Identifiers.EventManager),
-        c.get(Identifiers.ToolService),
-        c.get(Identifiers.GraphRegistry)
       );
     })
     .inSingletonScope();
