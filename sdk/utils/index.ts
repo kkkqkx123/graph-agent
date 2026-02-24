@@ -1,10 +1,19 @@
 /**
  * sdk模块的全局工具函数
- * 这里动态导入的实例统一由 SDK 模块的主索引文件初始化
  */
 
 // Token编码工具
-export { encodeText, encodeObject, resetEncoder } from './token-encoder.js';
+export {
+  encodeText,
+  encodeObject,
+  resetEncoder,
+  TokenizerManager,
+  StreamingTokenCounter,
+  countMessageTokens
+} from './token-encoder.js';
+
+// TOML解析工具
+export { TomlParserManager } from './toml-parser-manager.js';
 
 // 日志工具
 export { logger } from './logger.js';

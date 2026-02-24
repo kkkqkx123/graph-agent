@@ -3,7 +3,7 @@
  * 负责解析TOML格式的配置文件
  *
  * 设计原则：
- * - 使用 SDK 全局实例管理器获取 TOML 解析器
+ * - 使用 TomlParserManager 获取 TOML 解析器
  * - 提供清晰的错误信息
  * - 统一的错误处理
  * - 保持同步接口，避免影响现有代码
@@ -11,7 +11,7 @@
 
 import type { WorkflowConfigFile } from './types.js';
 import { ConfigurationError } from '@modular-agent/types';
-import { globalInstanceManager } from '../../index.js';
+import { TomlParserManager } from '../../utils/toml-parser-manager.js';
 import { isError } from '@modular-agent/common-utils';
 
 /**
@@ -20,7 +20,7 @@ import { isError } from '@modular-agent/common-utils';
  * @throws {ConfigurationError} 当未找到 TOML 解析库时抛出
  */
 function getTomlParser(): any {
-  return globalInstanceManager.getTomlParser();
+  return TomlParserManager.getInstance();
 }
 
 /**
