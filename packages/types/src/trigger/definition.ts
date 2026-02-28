@@ -3,8 +3,7 @@
  */
 
 import type { ID, Timestamp, Metadata } from '../common.js';
-import { EventType } from '../events/index.js';
-import type { TriggerType, TriggerStatus } from './state.js';
+import type { TriggerStatus } from './state.js';
 import type { TriggerCondition, TriggerAction } from './config.js';
 
 /**
@@ -17,8 +16,6 @@ export interface Trigger {
   name: string;
   /** 触发器描述 */
   description?: string;
-  /** 触发器类型 */
-  type: TriggerType;
   /** 触发条件 */
   condition: TriggerCondition;
   /** 触发动作 */

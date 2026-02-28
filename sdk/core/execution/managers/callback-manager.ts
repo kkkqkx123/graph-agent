@@ -14,7 +14,6 @@
  */
 
 import type { CallbackInfo, DynamicThreadEvent } from '../types/dynamic-thread.types.js';
-import { DynamicThreadEventType } from '../types/dynamic-thread.types.js';
 import { now } from '@modular-agent/common-utils';
 
 /**

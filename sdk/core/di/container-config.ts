@@ -44,6 +44,7 @@ import { ThreadExecutionCoordinator } from '../execution/coordinators/thread-exe
 import { VariableCoordinator } from '../execution/coordinators/variable-coordinator.js';
 import { TriggerCoordinator } from '../execution/coordinators/trigger-coordinator.js';
 import { NodeExecutionCoordinator } from '../execution/coordinators/node-execution-coordinator.js';
+import { TriggeredSubworkflowManager } from '../services/triggered-subworkflow-manager.js';
 import { LLMExecutionCoordinator } from '../execution/coordinators/llm-execution-coordinator.js';
 import { ToolVisibilityCoordinator } from '../execution/coordinators/tool-visibility-coordinator.js';
 import { ThreadOperationCoordinator } from '../execution/coordinators/thread-operation-coordinator.js';
@@ -383,6 +384,30 @@ export function initializeContainer(): Container {
         c.get(Identifiers.ThreadBuilder),
         c.get(Identifiers.TaskRegistry),
         c.get(Identifiers.ThreadLifecycleCoordinator)
+      );
+    })
+    .inSingletonScope();
+
+  // TriggeredSubworkflowManager - 依赖多个服务和管理器
+  // 作为单例服务,所有触发子工作流共享同一个 Manager 实例
+  container.bind(Identifiers.TriggeredSubworkflowManager)
+    .toDynamicValue((c: any) => {
+      const config = {
+        minExecutors: 1,
+        maxExecutors: 10,
+        idleTimeout: 30000,
+        maxQueueSize: 100,
+        taskRetentionTime: 60 * 60 * 1000,
+        defaultTimeout: 30000
+      };
+
+      return new TriggeredSubworkflowManager(
+        c.get(Identifiers.ThreadRegistry),
+        c.get(Identifiers.ThreadBuilder),
+        c.get(Identifiers.TaskRegistry),
+        c.get(Identifiers.EventManager),
+        () => c.get(Identifiers.ThreadExecutor),
+        config
       );
     })
     .inSingletonScope();

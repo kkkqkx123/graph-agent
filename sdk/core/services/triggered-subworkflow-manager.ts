@@ -1,44 +1,42 @@
 /**
- * TriggeredSubworkflowManager - 触发子工作流管理器
- * 
+ * TriggeredSubworkflowManager - 触发子工作流管理器（全局单例服务）
+ *
  * 职责：
  * - 管理triggered子工作流的完整生命周期
  * - 协调子工作流的创建和执行
  * - 使用任务队列和线程池管理执行
  * - 支持同步和异步执行模式
- * 
- * 设计原则：
- * - 有状态多实例，由Handler创建
- * - 使用任务队列和线程池管理执行
- * - 支持同步和异步执行模式
  * - 提供任务状态查询和取消功能
+ *
+ * 设计原则：
+ * - 全局单例服务，通过 DI 容器管理
+ * - 管理跨线程共享的资源（线程池、任务队列）
+ * - 无线程隔离，所有触发子工作流共享同一个实例
+ * - 实现 TaskManager 接口，与 TaskRegistry 配合使用
  */
 
-import type { ThreadEntity } from '../../entities/thread-entity.js';
-import type { EventManager } from '../../services/event-manager.js';
-import type { ThreadRegistry } from '../../services/thread-registry.js';
-import type { ThreadExecutor } from '../thread-executor.js';
-import { getErrorOrNew } from '@modular-agent/common-utils';
-import { TaskRegistry, type TaskManager } from '../../services/task-registry.js';
-import { ThreadPoolManager } from './thread-pool-manager.js';
-import { TaskQueueManager } from './task-queue-manager.js';
-import { ThreadBuilder } from '../thread-builder.js';
-import { CallbackManager } from './callback-manager.js';
+import type { ThreadEntity } from '../entities/thread-entity.js';
+import type { ThreadExecutor } from '../execution/thread-executor.js';
+import { getErrorOrNew, now } from '@modular-agent/common-utils';
+import { TaskRegistry, type TaskManager } from './task-registry.js';
+import { ThreadPoolManager } from '../execution/managers/thread-pool-manager.js';
+import { TaskQueueManager } from '../execution/managers/task-queue-manager.js';
+import { CallbackManager } from '../execution/managers/callback-manager.js';
 import {
   type TriggeredSubgraphTask,
   type ExecutedSubgraphResult,
   type TaskSubmissionResult,
   type SubworkflowManagerConfig
-} from '../types/triggered-subgraph.types.js';
-import { emit } from '../utils/event/event-emitter.js';
+} from '../execution/types/triggered-subgraph.types.js';
+import { emit } from '../execution/utils/event/event-emitter.js';
 import {
   buildTriggeredSubgraphStartedEvent,
   buildTriggeredSubgraphCompletedEvent,
   buildTriggeredSubgraphFailedEvent
-} from '../utils/event/event-builder.js';
+} from '../execution/utils/event/event-builder.js';
 
 /**
- * TriggeredSubworkflowManager - 触发子工作流管理器
+ * TriggeredSubworkflowManager - 触发子工作流管理器（全局单例服务）
  */
 export class TriggeredSubworkflowManager implements TaskManager {
   /**
@@ -59,22 +57,28 @@ export class TriggeredSubworkflowManager implements TaskManager {
   /**
    * 事件管理器
    */
-  private eventManager: EventManager;
+  private eventManager: any;
 
   /**
    * Thread 注册表
    */
-  private threadRegistry: ThreadRegistry;
+  private threadRegistry: any;
 
   /**
    * Thread 构建器
    */
-  private threadBuilder: ThreadBuilder;
+  private threadBuilder: any;
 
   /**
    * 回调管理器
    */
   private callbackManager: CallbackManager<ExecutedSubgraphResult>;
+
+  /**
+   * 活跃任务映射
+   * 用于跟踪和管理异步执行的任务,防止内存泄漏
+   */
+  private activeTasks: Map<string, { taskId: string; threadId: string; submitTime: number; timeout: number }> = new Map();
 
   /**
    * 构造函数
@@ -86,10 +90,10 @@ export class TriggeredSubworkflowManager implements TaskManager {
    * @param config 配置
    */
   constructor(
-    threadRegistry: ThreadRegistry,
-    threadBuilder: ThreadBuilder,
+    threadRegistry: any,
+    threadBuilder: any,
     taskQueueManager: TaskQueueManager,
-    eventManager: EventManager,
+    eventManager: any,
     executorFactory: () => ThreadExecutor,
     config?: SubworkflowManagerConfig
   ) {
@@ -233,22 +237,24 @@ export class TriggeredSubworkflowManager implements TaskManager {
     // 先注册任务到全局 TaskRegistry
     const taskId = this.taskRegistry.register(subgraphEntity, this, timeout);
 
-    // 创建 Promise 并注册回调
-    const promise = new Promise<ExecutedSubgraphResult>((resolve, reject) => {
-      this.callbackManager.registerCallback(threadId, resolve, reject);
-    });
-
-    // 提交到任务队列（只提交一次）
+    // 提交到任务队列
     const submissionResult = this.taskQueueManager.submitAsync(taskId, subgraphEntity, timeout);
 
-    // 通过 Promise 处理完成和失败
-    promise
-      .then((result) => {
-        this.handleSubgraphCompleted(threadId, result);
-      })
-      .catch((error) => {
-        this.handleSubgraphFailed(threadId, error);
-      });
+    // 直接注册回调,不创建 Promise
+    // 这样可以避免 Promise 引用无法被清理导致的内存泄漏
+    this.callbackManager.registerCallback(
+      threadId,
+      (result) => this.handleSubgraphCompleted(threadId, result),
+      (error) => this.handleSubgraphFailed(threadId, error)
+    );
+
+    // 存储任务信息以便后续清理
+    this.activeTasks.set(threadId, {
+      taskId,
+      threadId,
+      submitTime: now(),
+      timeout
+    });
 
     return {
       taskId: submissionResult.taskId,
@@ -264,9 +270,6 @@ export class TriggeredSubworkflowManager implements TaskManager {
    * @param result 执行结果
    */
   private handleSubgraphCompleted(threadId: string, result: ExecutedSubgraphResult): void {
-    // 触发回调
-    this.callbackManager.triggerCallback(threadId, result);
-
     // 触发完成事件
     this.emitCompletedEvent(threadId, result);
 
@@ -276,9 +279,6 @@ export class TriggeredSubworkflowManager implements TaskManager {
       this.unregisterParentChildRelationship(subgraphEntity);
     }
 
-    // 清理回调
-    this.callbackManager.cleanupCallback(threadId);
-
     // 清理 TaskRegistry 中的任务记录
     const taskInfo = this.taskRegistry.getAll().find(
       t => t.threadEntity.getThreadId() === threadId
@@ -286,6 +286,13 @@ export class TriggeredSubworkflowManager implements TaskManager {
     if (taskInfo) {
       this.taskRegistry.delete(taskInfo.id);
     }
+
+    // 清理活跃任务信息
+    this.activeTasks.delete(threadId);
+
+    // 最后触发回调（内部会清理回调）
+    // triggerCallback 内部已经会清理回调，不需要再调用 cleanupCallback
+    this.callbackManager.triggerCallback(threadId, result);
   }
 
   /**
@@ -294,9 +301,6 @@ export class TriggeredSubworkflowManager implements TaskManager {
    * @param error 错误信息
    */
   private handleSubgraphFailed(threadId: string, error: Error): void {
-    // 触发错误回调
-    this.callbackManager.triggerErrorCallback(threadId, error);
-
     // 触发失败事件
     this.emitFailedEvent(threadId, error);
 
@@ -306,9 +310,6 @@ export class TriggeredSubworkflowManager implements TaskManager {
       this.unregisterParentChildRelationship(subgraphEntity);
     }
 
-    // 清理回调
-    this.callbackManager.cleanupCallback(threadId);
-
     // 清理 TaskRegistry 中的任务记录
     const taskInfo = this.taskRegistry.getAll().find(
       t => t.threadEntity.getThreadId() === threadId
@@ -316,6 +317,13 @@ export class TriggeredSubworkflowManager implements TaskManager {
     if (taskInfo) {
       this.taskRegistry.delete(taskInfo.id);
     }
+
+    // 清理活跃任务信息
+    this.activeTasks.delete(threadId);
+
+    // 最后触发错误回调（内部会清理回调）
+    // triggerErrorCallback 内部已经会清理回调，不需要再调用 cleanupCallback
+    this.callbackManager.triggerErrorCallback(threadId, error);
   }
 
   /**
@@ -449,6 +457,18 @@ export class TriggeredSubworkflowManager implements TaskManager {
    * 关闭管理器
    */
   async shutdown(): Promise<void> {
+    // 取消所有活跃任务
+    for (const [threadId, task] of this.activeTasks.entries()) {
+      try {
+        await this.cancelTask(task.taskId);
+      } catch (error) {
+        console.error(`Failed to cancel task ${task.taskId}:`, error);
+      }
+    }
+
+    // 清理活跃任务信息
+    this.activeTasks.clear();
+
     // 清理回调管理器
     this.callbackManager.cleanup();
 

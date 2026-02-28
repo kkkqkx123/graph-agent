@@ -65,6 +65,10 @@ export interface ExecuteTriggeredSubgraphActionConfig {
   triggeredWorkflowId: ID;
   /** 是否等待完成（默认true，同步执行） */
   waitForCompletion?: boolean;
+  /** 超时时间（毫秒） */
+  timeout?: number;
+  /** 是否记录历史 */
+  recordHistory?: boolean;
 }
 
 /**

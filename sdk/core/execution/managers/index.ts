@@ -42,7 +42,6 @@ export { ToolVisibilityManager } from './tool-visibility-manager.js';
 // 任务队列和线程池相关
 export { ThreadPoolManager } from './thread-pool-manager.js';
 export { TaskQueueManager } from './task-queue-manager.js';
-export { TriggeredSubworkflowManager } from './triggered-subworkflow-manager.js';
 
 // 动态线程相关
 export { CallbackManager, type GenericCallbackInfo } from './callback-manager.js';

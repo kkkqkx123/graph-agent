@@ -261,3 +261,9 @@ export const APIFactory = Symbol('APIFactory') as ServiceIdentifier<any>;
  * 提供统一的 API 入口
  */
 export const SDK = Symbol('SDK') as ServiceIdentifier<any>;
+
+/**
+ * TriggeredSubworkflowManager - 触发子工作流管理器
+ * 管理触发子工作流的执行
+ */
+export const TriggeredSubworkflowManager = Symbol('TriggeredSubworkflowManager') as ServiceIdentifier<any>;

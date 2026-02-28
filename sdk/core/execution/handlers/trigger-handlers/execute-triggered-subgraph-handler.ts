@@ -22,7 +22,7 @@ import type { EventManager } from '../../../services/event-manager.js';
 import type { ThreadBuilder } from '../../thread-builder.js';
 import type { TaskQueueManager } from '../../managers/task-queue-manager.js';
 import { getErrorMessage, now, diffTimestamp } from '@modular-agent/common-utils';
-import { TriggeredSubworkflowManager } from '../../managers/triggered-subworkflow-manager.js';
+import { TriggeredSubworkflowManager } from '../../../services/triggered-subworkflow-manager.js';
 import type { TriggeredSubgraphTask } from '../../types/triggered-subgraph.types.js';
 import { getContainer } from '../../../di/index.js';
 import * as Identifiers from '../../../di/service-identifiers.js';
@@ -120,8 +120,8 @@ export async function executeTriggeredSubgraphHandler(
   try {
     const parameters = action.parameters as ExecuteTriggeredSubgraphActionConfig;
     const { triggeredWorkflowId, waitForCompletion = true } = parameters;
-    const timeout = (parameters as any).timeout;
-    const recordHistory = (parameters as any).recordHistory;
+    const timeout = parameters.timeout;
+    const recordHistory = parameters.recordHistory;
 
     if (!triggeredWorkflowId) {
       throw new RuntimeValidationError('Missing required parameter: triggeredWorkflowId', { operation: 'handle', field: 'triggeredWorkflowId' });
@@ -156,23 +156,9 @@ export async function executeTriggeredSubgraphHandler(
       input: mainThreadEntity.getInput()
     };
 
-    // 创建 TriggeredSubworkflowManager
-    const executorFactory = () => container.get(Identifiers.ThreadExecutor);
-    const manager = new TriggeredSubworkflowManager(
-      threadRegistry,
-      threadBuilder,
-      taskQueueManager,
-      eventManager,
-      executorFactory,
-      {
-        minExecutors: 1,
-        maxExecutors: 10,
-        idleTimeout: 30000,
-        maxQueueSize: 100,
-        taskRetentionTime: 60 * 60 * 1000,
-        defaultTimeout: timeout || 30000
-      }
-    );
+    // 从 DI 容器获取共享的 TriggeredSubworkflowManager 实例
+    // 避免每次调用都创建新的 Manager 实例,防止资源浪费和资源耗尽
+    const manager = container.get(Identifiers.TriggeredSubworkflowManager);
 
     // 创建触发子工作流任务
     const task: TriggeredSubgraphTask = {

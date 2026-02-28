@@ -5,13 +5,6 @@
 import type { ID, Timestamp } from '../common.js';
 
 /**
- * 触发器类型
- */
-export type TriggerType =
-  /** 事件触发器 - 监听 SDK 现有事件 */
-  'event';
-
-/**
  * 触发器状态
  */
 export type TriggerStatus =

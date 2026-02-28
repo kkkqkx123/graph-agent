@@ -3,7 +3,7 @@
  */
 
 import type { ID } from '../common.js';
-import type { BaseEvent, EventType } from './base.js';
+import type { BaseEvent } from './base.js';
 
 /**
  * 消息添加事件类型

@@ -9,7 +9,6 @@ import type {
   IdMapping,
   SubgraphRelationship,
   WorkflowTrigger,
-  TriggerReference
 } from '@modular-agent/types';
 import { GraphData } from '../entities/graph-data.js';
 import { updateIdReferences } from './utils/node-config-updaters.js';
