@@ -25,6 +25,7 @@ import { TriggerTemplateRegistry } from '../services/trigger-template-registry.j
 import { TaskRegistry } from '../services/task-registry.js';
 import { ErrorService } from '../services/error-service.js';
 import { WorkflowRegistry } from '../services/workflow-registry.js';
+import { ThreadPoolService } from '../services/thread-pool-service.js';
 
 // 执行层服务
 import { LLMExecutor } from '../execution/executors/llm-executor.js';
@@ -128,6 +129,22 @@ export function initializeContainer(): Container {
 
   container.bind(Identifiers.TaskRegistry)
     .toDynamicValue(() => TaskRegistry.getInstance())
+    .inSingletonScope();
+
+  // ThreadPoolService 需要 executorFactory，使用工厂函数创建
+  container.bind(Identifiers.ThreadPoolService)
+    .toDynamicValue((c: any) => {
+      const config = {
+        minExecutors: 1,
+        maxExecutors: 10,
+        idleTimeout: 30000,
+        maxQueueSize: 100,
+        taskRetentionTime: 60 * 60 * 1000,
+        defaultTimeout: 30000
+      };
+
+      return ThreadPoolService.getInstance(() => c.get(Identifiers.ThreadExecutor), config);
+    })
     .inSingletonScope();
 
   // ============================================================
@@ -278,7 +295,7 @@ export function initializeContainer(): Container {
     .inSingletonScope();
 
   // ============================================================
-  // 第十层：执行层基础Managers（无依赖或简单依赖）
+  // 第十层：执行层基础 Managers（无依赖或简单依赖）
   // ============================================================
 
   container.bind(Identifiers.VariableStateManager)
@@ -287,7 +304,7 @@ export function initializeContainer(): Container {
 
   container.bind(Identifiers.TriggerStateManager)
     .toDynamicValue((c: any) => {
-      // TriggerStateManager需要threadId，使用工厂模式
+      // TriggerStateManager 需要 threadId，使用工厂模式
       return {
         create: (threadId: string) => new TriggerStateManager(threadId)
       };
@@ -296,7 +313,7 @@ export function initializeContainer(): Container {
 
   container.bind(Identifiers.InterruptionManager)
     .toDynamicValue((c: any) => {
-      // InterruptionManager需要threadId和nodeId，使用工厂模式
+      // InterruptionManager 需要 threadId 和 nodeId，使用工厂模式
       return {
         create: (threadId: string, nodeId: string) => new InterruptionManager(threadId, nodeId)
       };
@@ -304,10 +321,10 @@ export function initializeContainer(): Container {
     .inSingletonScope();
 
   // ============================================================
-  // 第十一层：执行层Coordinators（高优先级）
+  // 第十一层：执行层 Coordinators（高优先级）
   // ============================================================
 
-  // VariableCoordinator - 依赖VariableStateManager和EventManager
+  // VariableCoordinator - 依赖 VariableStateManager 和 EventManager
   container.bind(Identifiers.VariableCoordinator)
     .toDynamicValue((c: any) => {
       const stateManager = c.get(Identifiers.VariableStateManager);
@@ -316,7 +333,7 @@ export function initializeContainer(): Container {
     })
     .inSingletonScope();
 
-  // ToolVisibilityCoordinator - 依赖ToolService和ToolVisibilityManager
+  // ToolVisibilityCoordinator - 依赖 ToolService 和 ToolVisibilityManager
   container.bind(Identifiers.ToolVisibilityCoordinator)
     .toDynamicValue((c: any) => {
       const toolService = c.get(Identifiers.ToolService);
@@ -325,7 +342,7 @@ export function initializeContainer(): Container {
     })
     .inSingletonScope();
 
-  // LLMExecutionCoordinator - 依赖LLMExecutor、ToolService、EventManager、ToolCallExecutor
+  // LLMExecutionCoordinator - 依赖 LLMExecutor、ToolService、EventManager、ToolCallExecutor
   container.bind(Identifiers.LLMExecutionCoordinator)
     .toDynamicValue((c: any) => {
       const llmExecutor = c.get(Identifiers.LLMExecutor);
@@ -336,7 +353,7 @@ export function initializeContainer(): Container {
     })
     .inSingletonScope();
 
-  // ConversationManager - 依赖EventManager、ToolService
+  // ConversationManager - 依赖 EventManager、ToolService
   container.bind(Identifiers.ConversationManager)
     .toDynamicValue((c: any) => {
       const eventManager = c.get(Identifiers.EventManager);
@@ -389,25 +406,15 @@ export function initializeContainer(): Container {
     .inSingletonScope();
 
   // TriggeredSubworkflowManager - 依赖多个服务和管理器
-  // 作为单例服务,所有触发子工作流共享同一个 Manager 实例
+  // 作为单例服务，所有触发子工作流共享同一个 Manager 实例
   container.bind(Identifiers.TriggeredSubworkflowManager)
     .toDynamicValue((c: any) => {
-      const config = {
-        minExecutors: 1,
-        maxExecutors: 10,
-        idleTimeout: 30000,
-        maxQueueSize: 100,
-        taskRetentionTime: 60 * 60 * 1000,
-        defaultTimeout: 30000
-      };
-
       return new TriggeredSubworkflowManager(
         c.get(Identifiers.ThreadRegistry),
         c.get(Identifiers.ThreadBuilder),
         c.get(Identifiers.TaskRegistry),
         c.get(Identifiers.EventManager),
-        () => c.get(Identifiers.ThreadExecutor),
-        config
+        c.get(Identifiers.ThreadPoolService)
       );
     })
     .inSingletonScope();
@@ -415,7 +422,7 @@ export function initializeContainer(): Container {
   // ThreadExecutionCoordinator - 依赖多个协调器和管理器
   container.bind(Identifiers.ThreadExecutionCoordinator)
     .toDynamicValue((c: any) => {
-      // 注意：ThreadExecutionCoordinator需要ThreadEntity作为参数
+      // 注意：ThreadExecutionCoordinator 需要 ThreadEntity 作为参数
       // 这里提供一个工厂方法来创建实例
       return {
         create: (threadEntity: any) => {
@@ -435,7 +442,7 @@ export function initializeContainer(): Container {
     .inSingletonScope();
 
   // ============================================================
-  // 第十二层：执行层Coordinators（中低优先级）
+  // 第十二层：执行层 Coordinators（中低优先级）
   // ============================================================
 
   // ThreadOperationCoordinator - 依赖多个服务

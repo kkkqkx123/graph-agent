@@ -1,30 +1,33 @@
 /**
- * ThreadPoolManager - 线程池管理器
- * 用于资源管理，管理 ThreadExecutor 实例的生命周期，而非多个调用者操作一个 thread
+ * ThreadPoolService - 线程池服务（全局单例服务）
  *
  * 职责：
  * - 管理 ThreadExecutor 实例的创建、分配和回收
  * - 实现动态扩缩容
  * - 维护空闲执行器队列和忙碌执行器集合
+ * - 为整个系统提供统一的线程池资源管理
  *
  * 设计原则：
- * - 有状态多实例，由 TriggeredSubworkflowManager 持有
+ * - 全局单例服务，通过 DI 容器管理
+ * - 所有触发子工作流和动态线程共享同一个线程池实例
  * - 动态扩缩容，根据负载创建新执行器
  * - 空闲超时回收，避免资源浪费
- * 
+ *
  * 注意：JavaScript 是单线程事件循环模型，所有状态修改都在事件循环的原子执行单元内完成，
  * 不需要额外的锁机制。项目中的"线程"只是逻辑概念（执行实例），而非真正的 OS 线程。
  */
 
-import { ThreadExecutor } from '../thread-executor.js';
-import { type ExecutorWrapper, type PoolStats } from '../types/task.types.js';
-import { type SubworkflowManagerConfig } from '../types/triggered-subgraph.types.js';
+import { ThreadExecutor } from '../execution/thread-executor.js';
+import { type ExecutorWrapper, type PoolStats } from '../execution/types/task.types.js';
+import { type SubworkflowManagerConfig } from '../execution/types/triggered-subgraph.types.js';
 import { now } from '@modular-agent/common-utils';
 
 /**
- * ThreadPoolManager - 线程池管理器
+ * ThreadPoolService - 线程池服务（全局单例）
  */
-export class ThreadPoolManager {
+export class ThreadPoolService {
+  private static instance: ThreadPoolService | null = null;
+
   /**
    * 所有执行器
    */
@@ -64,11 +67,9 @@ export class ThreadPoolManager {
   private isShutdown: boolean = false;
 
   /**
-   * 构造函数
-   * @param executorFactory ThreadExecutor 工厂函数
-   * @param config 配置
+   * 私有构造函数，防止直接实例化
    */
-  constructor(executorFactory: () => ThreadExecutor, config?: SubworkflowManagerConfig) {
+  private constructor(executorFactory: () => ThreadExecutor, config?: SubworkflowManagerConfig) {
     this.executorFactory = executorFactory;
     this.config = {
       minExecutors: config?.minExecutors || 1,
@@ -81,6 +82,29 @@ export class ThreadPoolManager {
 
     // 初始化最小数量的执行器
     this.initializeMinExecutors();
+  }
+
+  /**
+   * 获取单例实例
+   * @param executorFactory ThreadExecutor 工厂函数
+   * @param config 配置
+   * @returns 单例实例
+   */
+  static getInstance(executorFactory: () => ThreadExecutor, config?: SubworkflowManagerConfig): ThreadPoolService {
+    if (!ThreadPoolService.instance) {
+      ThreadPoolService.instance = new ThreadPoolService(executorFactory, config);
+    }
+    return ThreadPoolService.instance;
+  }
+
+  /**
+   * 重置单例实例（用于测试）
+   */
+  static resetInstance(): void {
+    if (ThreadPoolService.instance) {
+      ThreadPoolService.instance.shutdown();
+      ThreadPoolService.instance = null;
+    }
   }
 
   /**
@@ -116,14 +140,14 @@ export class ThreadPoolManager {
 
   /**
    * 分配执行器
-   * 
+   *
    * JavaScript 事件循环保证串行执行，不需要锁保护
-   * 
+   *
    * @returns 执行器实例
    */
   async allocateExecutor(): Promise<any> {
     if (this.isShutdown) {
-      throw new Error('ThreadPoolManager is shutdown');
+      throw new Error('ThreadPoolService is shutdown');
     }
 
     // 检查是否有空闲执行器
@@ -166,9 +190,9 @@ export class ThreadPoolManager {
 
   /**
    * 释放执行器
-   * 
+   *
    * JavaScript 事件循环保证串行执行，不需要锁保护
-   * 
+   *
    * @param executor 执行器实例
    */
   async releaseExecutor(executor: any): Promise<void> {
@@ -296,7 +320,7 @@ export class ThreadPoolManager {
 
     // 拒绝所有等待的 Promise
     for (const waiting of this.waitingPromises) {
-      waiting.reject(new Error('ThreadPoolManager is shutdown'));
+      waiting.reject(new Error('ThreadPoolService is shutdown'));
     }
     this.waitingPromises = [];
 

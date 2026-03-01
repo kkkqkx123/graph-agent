@@ -198,7 +198,7 @@ export class TriggerResourceAPI extends GenericResourceAPI<Trigger, string, Trig
         stats.disabled++;
       }
 
-      const type = trigger.type || 'unknown';
+      const type = trigger.condition.eventType || 'unknown';
       stats.byType[type] = (stats.byType[type] || 0) + 1;
     }
 

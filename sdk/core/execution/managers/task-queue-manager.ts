@@ -15,7 +15,7 @@
 
 import { ThreadExecutor } from '../thread-executor.js';
 import { TaskRegistry } from '../../services/task-registry.js';
-import { ThreadPoolManager } from './thread-pool-manager.js';
+import { ThreadPoolService } from '../../services/thread-pool-service.js';
 import type { EventManager } from '../../services/event-manager.js';
 import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { ThreadResult } from '@modular-agent/types';
@@ -47,9 +47,9 @@ export class TaskQueueManager {
   private taskRegistry: TaskRegistry;
 
   /**
-   * 线程池管理器
+   * 线程池服务
    */
-  private threadPoolManager: ThreadPoolManager;
+  private threadPoolService: ThreadPoolService;
 
   /**
    * 事件管理器
@@ -64,16 +64,16 @@ export class TaskQueueManager {
   /**
    * 构造函数
    * @param taskRegistry 任务注册表
-   * @param threadPoolManager 线程池管理器
+   * @param threadPoolService 线程池服务
    * @param eventManager 事件管理器
    */
   constructor(
     taskRegistry: TaskRegistry,
-    threadPoolManager: ThreadPoolManager,
+    threadPoolService: ThreadPoolService,
     eventManager: EventManager
   ) {
     this.taskRegistry = taskRegistry;
-    this.threadPoolManager = threadPoolManager;
+    this.threadPoolService = threadPoolService;
     this.eventManager = eventManager;
   }
 
@@ -148,7 +148,7 @@ export class TaskQueueManager {
         const queueTask = this.pendingQueue.shift()!;
 
         // 分配执行器
-        const executor = await this.threadPoolManager.allocateExecutor();
+        const executor = await this.threadPoolService.allocateExecutor();
 
         // 更新任务状态
         this.taskRegistry.updateStatusToRunning(queueTask.taskId);
@@ -187,7 +187,7 @@ export class TaskQueueManager {
       await this.handleTaskFailed(queueTask, error as Error, executionTime);
     } finally {
       // 释放执行器
-      await this.threadPoolManager.releaseExecutor(executor);
+      await this.threadPoolService.releaseExecutor(executor);
 
       // 继续处理队列
       this.processQueue();

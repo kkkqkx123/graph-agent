@@ -4,9 +4,9 @@
  *
  * 职责：
  * - 接收工具调用请求
- * - 解析参数并创建DynamicThreadManager
- * - 调用DynamicThreadManager创建动态线程
- * - 处理返回结果并转换为ToolExecutionResult
+ * - 解析参数并创建 DynamicThreadManager
+ * - 调用 DynamicThreadManager 创建动态线程
+ * - 处理返回结果并转换为 ToolExecutionResult
  *
  * 设计原则：
  * - 无状态函数式设计
@@ -23,6 +23,7 @@ import type { ThreadBuilder } from '../../thread-builder.js';
 import type { TaskQueueManager } from '../../managers/task-queue-manager.js';
 import type { ThreadExecutor } from '../../thread-executor.js';
 import { DynamicThreadManager } from '../../managers/dynamic-thread-manager.js';
+import { ThreadPoolService } from '../../../services/thread-pool-service.js';
 import {
   type CreateDynamicThreadRequest,
   type ExecutedThreadResult,
@@ -52,11 +53,11 @@ export interface ToolExecutionResult {
  * 创建线程请求参数接口
  */
 export interface CreateThreadRequest {
-  /** 工作流ID */
+  /** 工作流 ID */
   workflowId: string;
   /** 输入数据 */
   input?: Record<string, any>;
-  /** 触发器ID */
+  /** 触发器 ID */
   triggerId?: string;
   /** 配置选项 */
   config?: DynamicThreadConfig;
@@ -65,7 +66,7 @@ export interface CreateThreadRequest {
 /**
  * 创建动态线程
  * @param action 工具调用动作
- * @param triggerId 触发器ID
+ * @param triggerId 触发器 ID
  * @param executionContext 执行上下文
  * @returns 工具执行结果
  */
@@ -87,7 +88,7 @@ export async function createThreadHandler(
       throw new ToolError('workflowId is required', 'create-thread');
     }
 
-    // 获取主线程ThreadEntity
+    // 获取主线程 ThreadEntity
     if (!currentThreadId) {
       throw new ToolError('Current thread ID not provided', 'create-thread');
     }
@@ -100,16 +101,16 @@ export async function createThreadHandler(
     // 准备输入数据
     const input = action.input || {};
 
-    // 创建DynamicThreadManager
+    // 创建 DynamicThreadManager
     const container = getContainer();
-    const executorFactory = () => container.get(Identifiers.ThreadExecutor);
+    const threadPoolService = container.get(Identifiers.ThreadPoolService);
     const dynamicThreadManager = new DynamicThreadManager(
       threadRegistry,
       threadBuilder,
       taskRegistry,
       taskQueueManager,
       eventManager,
-      executorFactory
+      threadPoolService
     );
 
     // 创建线程请求
@@ -121,7 +122,7 @@ export async function createThreadHandler(
       config: action.config
     };
 
-    // 调用DynamicThreadManager创建线程
+    // 调用 DynamicThreadManager 创建线程
     const result = await dynamicThreadManager.createDynamicThread(request);
 
     // 处理返回结果
@@ -178,7 +179,7 @@ export async function createThreadHandler(
 /**
  * 取消动态线程
  * @param action 工具调用动作
- * @param triggerId 触发器ID
+ * @param triggerId 触发器 ID
  * @param executionContext 执行上下文
  * @returns 工具执行结果
  */
@@ -198,18 +199,18 @@ export async function cancelThreadHandler(
     if (!action.threadId) {
       throw new ToolError('threadId is required', 'cancel-thread');
     }
-  
-      // 创建DynamicThreadManager
-      const container = getContainer();
-      const executorFactory = () => container.get(Identifiers.ThreadExecutor);
-      const dynamicThreadManager = new DynamicThreadManager(
-        threadRegistry,
-        threadBuilder,
-        taskRegistry,
-        taskQueueManager,
-        eventManager,
-        executorFactory
-      );
+
+    // 创建 DynamicThreadManager
+    const container = getContainer();
+    const threadPoolService = container.get(Identifiers.ThreadPoolService);
+    const dynamicThreadManager = new DynamicThreadManager(
+      threadRegistry,
+      threadBuilder,
+      taskRegistry,
+      taskQueueManager,
+      eventManager,
+      threadPoolService
+    );
 
     // 取消线程
     const success = dynamicThreadManager.cancelDynamicThread(action.threadId);
@@ -240,7 +241,7 @@ export async function cancelThreadHandler(
 /**
  * 查询动态线程状态
  * @param action 工具调用动作
- * @param triggerId 触发器ID
+ * @param triggerId 触发器 ID
  * @param executionContext 执行上下文
  * @returns 工具执行结果
  */
@@ -260,18 +261,18 @@ export async function getThreadStatusHandler(
     if (!action.threadId) {
       throw new ToolError('threadId is required', 'get-thread-status');
     }
-  
-      // 创建DynamicThreadManager
-      const container = getContainer();
-      const executorFactory = () => container.get(Identifiers.ThreadExecutor);
-      const dynamicThreadManager = new DynamicThreadManager(
-        threadRegistry,
-        threadBuilder,
-        taskRegistry,
-        taskQueueManager,
-        eventManager,
-        executorFactory
-      );
+
+    // 创建 DynamicThreadManager
+    const container = getContainer();
+    const threadPoolService = container.get(Identifiers.ThreadPoolService);
+    const dynamicThreadManager = new DynamicThreadManager(
+      threadRegistry,
+      threadBuilder,
+      taskRegistry,
+      taskQueueManager,
+      eventManager,
+      threadPoolService
+    );
 
     // 查询线程状态
     const threadStatus = dynamicThreadManager.getThreadStatus(action.threadId);

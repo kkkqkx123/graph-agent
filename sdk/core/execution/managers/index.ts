@@ -39,8 +39,7 @@ export { InterruptionDetector, InterruptionDetectorImpl } from './interruption-d
 // 工具可见性管理器
 export { ToolVisibilityManager } from './tool-visibility-manager.js';
 
-// 任务队列和线程池相关
-export { ThreadPoolManager } from './thread-pool-manager.js';
+// 任务队列相关
 export { TaskQueueManager } from './task-queue-manager.js';
 
 // 动态线程相关

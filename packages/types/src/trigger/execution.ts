@@ -5,7 +5,6 @@
 import type { ID, Timestamp, Metadata } from '../common.js';
 import type { TriggerAction } from './config.js';
 import type { Trigger, WorkflowTrigger } from './definition.js';
-import { TriggerStatus, TriggerType } from './state.js';
 
 /**
  * 触发器执行结果接口
@@ -41,7 +40,6 @@ export function convertToTrigger(
     id: workflowTrigger.id,
     name: workflowTrigger.name,
     description: workflowTrigger.description,
-    type: 'event',
     condition: workflowTrigger.condition,
     action: workflowTrigger.action,
     status: workflowTrigger.enabled !== false ? 'enabled' : 'disabled',
@@ -50,6 +48,8 @@ export function convertToTrigger(
     triggerCount: 0,
     createdAt: Date.now(),
     updatedAt: Date.now(),
-    metadata: workflowTrigger.metadata
+    metadata: workflowTrigger.metadata,
+    createCheckpoint: workflowTrigger.createCheckpoint,
+    checkpointDescription: workflowTrigger.checkpointDescription
   };
 }

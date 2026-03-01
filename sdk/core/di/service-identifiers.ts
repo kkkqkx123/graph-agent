@@ -267,3 +267,9 @@ export const SDK = Symbol('SDK') as ServiceIdentifier<any>;
  * 管理触发子工作流的执行
  */
 export const TriggeredSubworkflowManager = Symbol('TriggeredSubworkflowManager') as ServiceIdentifier<any>;
+
+/**
+ * ThreadPoolService - 线程池服务
+ * 管理 ThreadExecutor 实例池，提供全局线程池资源管理
+ */
+export const ThreadPoolService = Symbol('ThreadPoolService') as ServiceIdentifier<any>;

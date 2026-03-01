@@ -1,15 +1,15 @@
 /**
  * DynamicThreadManager - 动态线程管理器
- * 
+ *
  * 职责：
  * - 创建和管理动态子线程
  * - 处理子线程完成回调
  * - 提供同步和异步执行模式
  * - 管理动态线程的生命周期
- * 
+ *
  * 设计原则：
- * - 有状态多实例，由Handler创建
- * - 复用现有的TaskQueue和ThreadPool基础设施
+ * - 有状态多实例，由 Handler 创建
+ * - 复用现有的 TaskQueue 和 ThreadPool 基础设施
  * - 支持同步和异步执行模式
  * - 提供完整的事件通知机制
  */
@@ -20,7 +20,7 @@ import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { ThreadExecutor } from '../thread-executor.js';
 import { now, diffTimestamp, getErrorMessage } from '@modular-agent/common-utils';
 import { TaskRegistry, type TaskManager } from '../../services/task-registry.js';
-import { ThreadPoolManager } from './thread-pool-manager.js';
+import { ThreadPoolService } from '../../services/thread-pool-service.js';
 import { TaskQueueManager } from './task-queue-manager.js';
 import { ThreadBuilder } from '../thread-builder.js';
 import { CallbackManager } from './callback-manager.js';
@@ -46,9 +46,9 @@ export class DynamicThreadManager implements TaskManager {
   private taskRegistry: TaskRegistry;
 
   /**
-   * 线程池管理器
+   * 线程池服务
    */
-  private threadPoolManager: ThreadPoolManager;
+  private threadPoolService: ThreadPoolService;
 
   /**
    * 任务队列管理器
@@ -82,13 +82,12 @@ export class DynamicThreadManager implements TaskManager {
 
   /**
    * 构造函数
-   * @param threadRegistry Thread注册表
-   * @param threadBuilder Thread构建器
+   * @param threadRegistry Thread 注册表
+   * @param threadBuilder Thread 构建器
    * @param taskRegistry 任务注册表
    * @param taskQueueManager 任务队列管理器
    * @param eventManager 事件管理器
-   * @param executorFactory ThreadExecutor 工厂函数
-   * @param config 配置
+   * @param threadPoolService 线程池服务
    */
   constructor(
     threadRegistry: ThreadRegistry,
@@ -96,17 +95,14 @@ export class DynamicThreadManager implements TaskManager {
     taskRegistry: TaskRegistry,
     taskQueueManager: TaskQueueManager,
     eventManager: EventManager,
-    executorFactory: () => ThreadExecutor,
-    config?: any
+    threadPoolService: ThreadPoolService
   ) {
     this.threadRegistry = threadRegistry;
     this.threadBuilder = threadBuilder;
     this.taskRegistry = taskRegistry;
     this.taskQueueManager = taskQueueManager;
     this.eventManager = eventManager;
-
-    // 创建线程池管理器
-    this.threadPoolManager = new ThreadPoolManager(executorFactory, config);
+    this.threadPoolService = threadPoolService;
 
     // 创建回调管理器
     this.callbackManager = new CallbackManager<ExecutedThreadResult>();
@@ -159,7 +155,7 @@ export class DynamicThreadManager implements TaskManager {
 
     // 根据配置选择执行方式
     const waitForCompletion = request.config?.waitForCompletion !== false; // 默认为 true
-    const timeout = request.config?.timeout || this.threadPoolManager.getConfig().defaultTimeout;
+    const timeout = request.config?.timeout || this.threadPoolService.getConfig().defaultTimeout;
 
     if (waitForCompletion) {
       // 同步执行
@@ -295,7 +291,7 @@ export class DynamicThreadManager implements TaskManager {
 
   /**
    * 处理线程完成
-   * @param threadId 线程ID
+   * @param threadId 线程 ID
    * @param result 执行结果
    */
   private handleThreadCompleted(threadId: string, result: ExecutedThreadResult): void {
@@ -325,7 +321,7 @@ export class DynamicThreadManager implements TaskManager {
 
   /**
    * 处理线程失败
-   * @param threadId 线程ID
+   * @param threadId 线程 ID
    * @param error 错误信息
    */
   private handleThreadFailed(threadId: string, error: Error): void {
@@ -355,7 +351,7 @@ export class DynamicThreadManager implements TaskManager {
 
   /**
    * 查询任务状态（实现 TaskManager 接口）
-   * @param taskId 任务ID
+   * @param taskId 任务 ID
    * @returns 任务信息
    */
   getTaskStatus(taskId: string) {
@@ -364,7 +360,7 @@ export class DynamicThreadManager implements TaskManager {
 
   /**
    * 取消任务（实现 TaskManager 接口）
-   * @param taskId 任务ID
+   * @param taskId 任务 ID
    * @returns 是否取消成功
    */
   async cancelTask(taskId: string): Promise<boolean> {
@@ -373,7 +369,7 @@ export class DynamicThreadManager implements TaskManager {
 
   /**
    * 取消动态线程
-   * @param threadId 线程ID
+   * @param threadId 线程 ID
    * @returns 是否取消成功
    */
   cancelDynamicThread(threadId: string): boolean {
@@ -405,7 +401,7 @@ export class DynamicThreadManager implements TaskManager {
 
   /**
    * 查询动态线程状态
-   * @param threadId 线程ID
+   * @param threadId 线程 ID
    * @returns 线程状态信息
    */
   getThreadStatus(threadId: string): DynamicThreadInfo | undefined {
@@ -414,7 +410,7 @@ export class DynamicThreadManager implements TaskManager {
 
   /**
    * 添加事件监听器
-   * @param threadId 线程ID
+   * @param threadId 线程 ID
    * @param listener 事件监听器
    * @returns 是否添加成功
    */
@@ -424,7 +420,7 @@ export class DynamicThreadManager implements TaskManager {
 
   /**
    * 移除事件监听器
-   * @param threadId 线程ID
+   * @param threadId 线程 ID
    * @param listener 事件监听器
    * @returns 是否移除成功
    */
@@ -470,7 +466,7 @@ export class DynamicThreadManager implements TaskManager {
 
   /**
    * 触发完成事件
-   * @param threadId 线程ID
+   * @param threadId 线程 ID
    * @param result 执行结果
    */
   private async emitCompletedEvent(threadId: string, result: ExecutedThreadResult): Promise<void> {
@@ -493,7 +489,7 @@ export class DynamicThreadManager implements TaskManager {
 
   /**
    * 触发失败事件
-   * @param threadId 线程ID
+   * @param threadId 线程 ID
    * @param error 错误信息
    */
   private async emitFailedEvent(threadId: string, error: Error): Promise<void> {
@@ -515,7 +511,7 @@ export class DynamicThreadManager implements TaskManager {
 
   /**
    * 触发取消事件
-   * @param threadId 线程ID
+   * @param threadId 线程 ID
    */
   private async emitCancelledEvent(threadId: string): Promise<void> {
     const childThreadEntity = this.threadRegistry.get(threadId);
