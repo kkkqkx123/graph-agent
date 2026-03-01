@@ -1,6 +1,6 @@
 /**
  * ThreadPoolManager - 线程池管理器
- * 用于资源管理，管理 ThreadExecutor 实例的生命周期，而非多个调用者操作一个thread
+ * 用于资源管理，管理 ThreadExecutor 实例的生命周期，而非多个调用者操作一个 thread
  *
  * 职责：
  * - 管理 ThreadExecutor 实例的创建、分配和回收
@@ -8,16 +8,18 @@
  * - 维护空闲执行器队列和忙碌执行器集合
  *
  * 设计原则：
- * - 有状态多实例，由TriggeredSubworkflowManager持有
+ * - 有状态多实例，由 TriggeredSubworkflowManager 持有
  * - 动态扩缩容，根据负载创建新执行器
  * - 空闲超时回收，避免资源浪费
+ * 
+ * 注意：JavaScript 是单线程事件循环模型，所有状态修改都在事件循环的原子执行单元内完成，
+ * 不需要额外的锁机制。项目中的"线程"只是逻辑概念（执行实例），而非真正的 OS 线程。
  */
 
 import { ThreadExecutor } from '../thread-executor.js';
 import { type ExecutorWrapper, type PoolStats } from '../types/task.types.js';
 import { type SubworkflowManagerConfig } from '../types/triggered-subgraph.types.js';
 import { now } from '@modular-agent/common-utils';
-import { Mutex } from 'async-mutex';
 
 /**
  * ThreadPoolManager - 线程池管理器
@@ -62,11 +64,6 @@ export class ThreadPoolManager {
   private isShutdown: boolean = false;
 
   /**
-   * 轻量级锁保护状态转换
-   */
-  private stateLock = new Mutex();
-
-  /**
    * 构造函数
    * @param executorFactory ThreadExecutor 工厂函数
    * @param config 配置
@@ -103,7 +100,7 @@ export class ThreadPoolManager {
    */
   private createExecutor(): ExecutorWrapper {
     const executorId = `executor-${now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     // 使用工厂函数创建 ThreadExecutor
     const executor = this.executorFactory();
 
@@ -118,112 +115,108 @@ export class ThreadPoolManager {
   }
 
   /**
-   * 分配执行器（线程安全）
+   * 分配执行器
+   * 
+   * JavaScript 事件循环保证串行执行，不需要锁保护
+   * 
    * @returns 执行器实例
    */
   async allocateExecutor(): Promise<any> {
-    const release = await this.stateLock.acquire();
-    try {
-      if (this.isShutdown) {
-        throw new Error('ThreadPoolManager is shutdown');
-      }
-
-      // 检查是否有空闲执行器
-      if (this.idleExecutors.length > 0) {
-        const executorId = this.idleExecutors.shift()!;
-        const wrapper = this.allExecutors.get(executorId)!;
-
-        // 清除空闲超时定时器
-        if (wrapper.idleTimer) {
-          clearTimeout(wrapper.idleTimer);
-          wrapper.idleTimer = undefined;
-        }
-
-        // 更新状态
-        wrapper.status = 'BUSY';
-        wrapper.lastUsedTime = now();
-        this.busyExecutors.add(executorId);
-
-        return wrapper.executor;
-      }
-
-      // 检查是否可以创建新执行器
-      if (this.allExecutors.size < this.config.maxExecutors) {
-        const wrapper = this.createExecutor();
-        this.allExecutors.set(wrapper.executorId, wrapper);
-
-        // 更新状态
-        wrapper.status = 'BUSY';
-        wrapper.lastUsedTime = now();
-        this.busyExecutors.add(wrapper.executorId);
-
-        return wrapper.executor;
-      }
-
-      // 等待空闲执行器（在锁外等待）
-      return new Promise((resolve, reject) => {
-        this.waitingPromises.push({ resolve, reject });
-      });
-    } finally {
-      release();
+    if (this.isShutdown) {
+      throw new Error('ThreadPoolManager is shutdown');
     }
+
+    // 检查是否有空闲执行器
+    if (this.idleExecutors.length > 0) {
+      const executorId = this.idleExecutors.shift()!;
+      const wrapper = this.allExecutors.get(executorId)!;
+
+      // 清除空闲超时定时器
+      if (wrapper.idleTimer) {
+        clearTimeout(wrapper.idleTimer);
+        wrapper.idleTimer = undefined;
+      }
+
+      // 更新状态
+      wrapper.status = 'BUSY';
+      wrapper.lastUsedTime = now();
+      this.busyExecutors.add(executorId);
+
+      return wrapper.executor;
+    }
+
+    // 检查是否可以创建新执行器
+    if (this.allExecutors.size < this.config.maxExecutors) {
+      const wrapper = this.createExecutor();
+      this.allExecutors.set(wrapper.executorId, wrapper);
+
+      // 更新状态
+      wrapper.status = 'BUSY';
+      wrapper.lastUsedTime = now();
+      this.busyExecutors.add(wrapper.executorId);
+
+      return wrapper.executor;
+    }
+
+    // 等待空闲执行器
+    return new Promise((resolve, reject) => {
+      this.waitingPromises.push({ resolve, reject });
+    });
   }
 
   /**
-   * 释放执行器（线程安全）
+   * 释放执行器
+   * 
+   * JavaScript 事件循环保证串行执行，不需要锁保护
+   * 
    * @param executor 执行器实例
    */
   async releaseExecutor(executor: any): Promise<void> {
-    const release = await this.stateLock.acquire();
-    try {
-      if (this.isShutdown) {
-        return;
-      }
-
-      // 查找执行器包装
-      let executorId: string | undefined;
-      for (const [id, wrapper] of this.allExecutors.entries()) {
-        if (wrapper.executor === executor) {
-          executorId = id;
-          break;
-        }
-      }
-
-      if (!executorId) {
-        console.warn('Executor not found in pool');
-        return;
-      }
-
-      const wrapper = this.allExecutors.get(executorId)!;
-
-      // 从忙碌集合移除
-      this.busyExecutors.delete(executorId);
-
-      // 检查是否有等待的 Promise
-      if (this.waitingPromises.length > 0) {
-        const waiting = this.waitingPromises.shift()!;
-        wrapper.status = 'BUSY';
-        wrapper.lastUsedTime = now();
-        this.busyExecutors.add(executorId);
-        waiting.resolve(wrapper.executor);
-        return;
-      }
-
-      // 加入空闲队列
-      wrapper.status = 'IDLE';
-      wrapper.lastUsedTime = now();
-      this.idleExecutors.push(executorId);
-
-      // 设置空闲超时定时器
-      this.scheduleIdleTimeout(executorId);
-    } finally {
-      release();
+    if (this.isShutdown) {
+      return;
     }
+
+    // 查找执行器包装
+    let executorId: string | undefined;
+    for (const [id, wrapper] of this.allExecutors.entries()) {
+      if (wrapper.executor === executor) {
+        executorId = id;
+        break;
+      }
+    }
+
+    if (!executorId) {
+      console.warn('Executor not found in pool');
+      return;
+    }
+
+    const wrapper = this.allExecutors.get(executorId)!;
+
+    // 从忙碌集合移除
+    this.busyExecutors.delete(executorId);
+
+    // 检查是否有等待的 Promise
+    if (this.waitingPromises.length > 0) {
+      const waiting = this.waitingPromises.shift()!;
+      wrapper.status = 'BUSY';
+      wrapper.lastUsedTime = now();
+      this.busyExecutors.add(executorId);
+      waiting.resolve(wrapper.executor);
+      return;
+    }
+
+    // 加入空闲队列
+    wrapper.status = 'IDLE';
+    wrapper.lastUsedTime = now();
+    this.idleExecutors.push(executorId);
+
+    // 设置空闲超时定时器
+    this.scheduleIdleTimeout(executorId);
   }
 
   /**
    * 安排空闲超时
-   * @param executorId 执行器ID
+   * @param executorId 执行器 ID
    */
   private scheduleIdleTimeout(executorId: string): void {
     const wrapper = this.allExecutors.get(executorId);
@@ -240,37 +233,32 @@ export class ThreadPoolManager {
   }
 
   /**
-   * 销毁执行器（线程安全）
-   * @param executorId 执行器ID
+   * 销毁执行器
+   * @param executorId 执行器 ID
    */
   private async destroyExecutor(executorId: string): Promise<void> {
-    const release = await this.stateLock.acquire();
-    try {
-      const wrapper = this.allExecutors.get(executorId);
-      if (!wrapper) {
-        return;
-      }
+    const wrapper = this.allExecutors.get(executorId);
+    if (!wrapper) {
+      return;
+    }
 
-      // 清除定时器
-      if (wrapper.idleTimer) {
-        clearTimeout(wrapper.idleTimer);
-      }
+    // 清除定时器
+    if (wrapper.idleTimer) {
+      clearTimeout(wrapper.idleTimer);
+    }
 
-      // 从空闲队列移除
-      const index = this.idleExecutors.indexOf(executorId);
-      if (index > -1) {
-        this.idleExecutors.splice(index, 1);
-      }
+    // 从空闲队列移除
+    const index = this.idleExecutors.indexOf(executorId);
+    if (index > -1) {
+      this.idleExecutors.splice(index, 1);
+    }
 
-      // 从所有执行器移除
-      this.allExecutors.delete(executorId);
+    // 从所有执行器移除
+    this.allExecutors.delete(executorId);
 
-      // 清理资源（如果执行器有 cleanup 方法）
-      if (typeof wrapper.executor.cleanup === 'function') {
-        wrapper.executor.cleanup();
-      }
-    } finally {
-      release();
+    // 清理资源（如果执行器有 cleanup 方法）
+    if (typeof wrapper.executor.cleanup === 'function') {
+      wrapper.executor.cleanup();
     }
   }
 
@@ -297,25 +285,20 @@ export class ThreadPoolManager {
   }
 
   /**
-   * 关闭线程池（线程安全）
+   * 关闭线程池
    */
   async shutdown(): Promise<void> {
-    const release = await this.stateLock.acquire();
-    try {
-      if (this.isShutdown) {
-        return;
-      }
-
-      this.isShutdown = true;
-
-      // 拒绝所有等待的 Promise
-      for (const waiting of this.waitingPromises) {
-        waiting.reject(new Error('ThreadPoolManager is shutdown'));
-      }
-      this.waitingPromises = [];
-    } finally {
-      release();
+    if (this.isShutdown) {
+      return;
     }
+
+    this.isShutdown = true;
+
+    // 拒绝所有等待的 Promise
+    for (const waiting of this.waitingPromises) {
+      waiting.reject(new Error('ThreadPoolManager is shutdown'));
+    }
+    this.waitingPromises = [];
 
     // 等待所有忙碌执行器完成
     while (this.busyExecutors.size > 0) {
