@@ -33,7 +33,7 @@ export type WorkerStatus =
  * 任务信息接口
  */
 export interface TaskInfo {
-  /** 任务ID */
+  /** 任务 ID */
   id: string;
   /** 线程实体 */
   threadEntity: ThreadEntity;
@@ -89,16 +89,32 @@ export interface PoolStats {
  * 执行器包装接口（内部使用）
  */
 export interface ExecutorWrapper {
-  /** 执行器ID */
+  /** 执行器 ID */
   executorId: string;
   /** 执行器实例 */
   executor: any;
   /** 执行器状态 */
   status: WorkerStatus;
-  /** 当前任务ID（如果正在执行） */
+  /** 当前任务 ID（如果正在执行） */
   currentTaskId?: string;
   /** 最后使用时间 */
   lastUsedTime: number;
   /** 空闲超时定时器 */
   idleTimer?: NodeJS.Timeout;
+}
+
+/**
+ * 线程池配置接口
+ *
+ * 用于配置 ThreadPoolService 的行为
+ */
+export interface ThreadPoolConfig {
+  /** 最小执行器数 */
+  minExecutors?: number;
+  /** 最大执行器数 */
+  maxExecutors?: number;
+  /** 空闲超时时间（毫秒），超过此时间空闲执行器将被回收 */
+  idleTimeout?: number;
+  /** 默认超时时间（毫秒） */
+  defaultTimeout?: number;
 }

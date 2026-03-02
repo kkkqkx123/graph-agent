@@ -22,8 +22,7 @@ import type { EventManager } from '../../../services/event-manager.js';
 import type { ThreadBuilder } from '../../thread-builder.js';
 import type { TaskQueueManager } from '../../managers/task-queue-manager.js';
 import { getErrorMessage, now, diffTimestamp } from '@modular-agent/common-utils';
-import { TriggeredSubworkflowManager } from '../../../services/triggered-subworkflow-manager.js';
-import type { TriggeredSubgraphTask } from '../../types/triggered-subgraph.types.js';
+import type { TriggeredSubgraphTask } from '../../types/triggered-subworkflow.types.js';
 import { getContainer } from '../../../di/index.js';
 import * as Identifiers from '../../../di/service-identifiers.js';
 

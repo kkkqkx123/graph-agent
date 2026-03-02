@@ -18,8 +18,7 @@
  */
 
 import { ThreadExecutor } from '../execution/thread-executor.js';
-import { type ExecutorWrapper, type PoolStats } from '../execution/types/task.types.js';
-import { type SubworkflowManagerConfig } from '../execution/types/triggered-subgraph.types.js';
+import { type ExecutorWrapper, type PoolStats, type ThreadPoolConfig } from '../execution/types/task.types.js';
 import { now } from '@modular-agent/common-utils';
 import { SystemExecutionError } from '@modular-agent/types';
 
@@ -60,7 +59,7 @@ export class ThreadPoolService {
   /**
    * 配置
    */
-  private config: Required<SubworkflowManagerConfig>;
+  private config: Required<ThreadPoolConfig>;
 
   /**
    * 是否已关闭
@@ -70,14 +69,12 @@ export class ThreadPoolService {
   /**
    * 私有构造函数，防止直接实例化
    */
-  private constructor(executorFactory: () => ThreadExecutor, config?: SubworkflowManagerConfig) {
+  private constructor(executorFactory: () => ThreadExecutor, config?: ThreadPoolConfig) {
     this.executorFactory = executorFactory;
     this.config = {
       minExecutors: config?.minExecutors || 1,
       maxExecutors: config?.maxExecutors || 10,
       idleTimeout: config?.idleTimeout || 30000,
-      maxQueueSize: config?.maxQueueSize || 100,
-      taskRetentionTime: config?.taskRetentionTime || 60 * 60 * 1000,
       defaultTimeout: config?.defaultTimeout || 30000
     };
 
@@ -91,7 +88,7 @@ export class ThreadPoolService {
    * @param config 配置
    * @returns 单例实例
    */
-  static getInstance(executorFactory: () => ThreadExecutor, config?: SubworkflowManagerConfig): ThreadPoolService {
+  static getInstance(executorFactory: () => ThreadExecutor, config?: ThreadPoolConfig): ThreadPoolService {
     if (!ThreadPoolService.instance) {
       ThreadPoolService.instance = new ThreadPoolService(executorFactory, config);
     }
@@ -309,7 +306,7 @@ export class ThreadPoolService {
    * 获取配置
    * @returns 配置
    */
-  getConfig(): Required<SubworkflowManagerConfig> {
+  getConfig(): Required<ThreadPoolConfig> {
     return this.config;
   }
 

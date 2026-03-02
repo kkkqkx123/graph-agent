@@ -8,16 +8,16 @@ export {
   type TaskInfo,
   type QueueStats,
   type PoolStats,
-  type ExecutorWrapper
+  type ExecutorWrapper,
+  type ThreadPoolConfig
 } from './task.types.js';
 
 export {
   type TriggeredSubgraphTask,
   type ExecutedSubgraphResult,
   type TaskSubmissionResult,
-  type QueueTask,
-  type SubworkflowManagerConfig
-} from './triggered-subgraph.types.js';
+  type QueueTask
+} from './triggered-subworkflow.types.js';
 
 export {
   type DynamicThreadInfo,

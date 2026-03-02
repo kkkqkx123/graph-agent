@@ -16,7 +16,6 @@
  */
 
 import type { ThreadEntity } from '../entities/thread-entity.js';
-import type { ThreadExecutor } from '../execution/thread-executor.js';
 import { getErrorOrNew, now } from '@modular-agent/common-utils';
 import { TaskRegistry, type TaskManager } from './task-registry.js';
 import { ThreadPoolService } from './thread-pool-service.js';
@@ -26,8 +25,7 @@ import {
   type TriggeredSubgraphTask,
   type ExecutedSubgraphResult,
   type TaskSubmissionResult,
-  type SubworkflowManagerConfig
-} from '../execution/types/triggered-subgraph.types.js';
+} from '../execution/types/triggered-subworkflow.types.js';
 import { emit } from '../execution/utils/event/event-emitter.js';
 import {
   buildTriggeredSubgraphStartedEvent,

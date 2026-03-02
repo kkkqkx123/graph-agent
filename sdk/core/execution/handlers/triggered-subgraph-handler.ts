@@ -18,11 +18,9 @@
 import type { ID } from '@modular-agent/types';
 import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { EventManager } from '../../services/event-manager.js';
-import { EventType } from '@modular-agent/types';
-import type { ThreadResult } from '@modular-agent/types';
 import { now, diffTimestamp, getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
 import { createSubgraphMetadata } from './subgraph-handler.js';
-import type { TriggeredSubgraphTask, ExecutedSubgraphResult } from '../types/triggered-subgraph.types.js';
+import type { TriggeredSubgraphTask, ExecutedSubgraphResult } from '../types/triggered-subworkflow.types.js';
 
 /**
  * 子工作流执行器接口
@@ -151,19 +149,19 @@ export async function executeSingleTriggeredSubgraph(
   eventManager: EventManager
 ): Promise<ExecutedSubgraphResult> {
   const startTime = now();
-  
+
   try {
     // 创建子工作流上下文
     const subgraphEntity = await createSubgraphContext(task, contextFactory);
-    
+
     // 触发子工作流开始事件
     await emitSubgraphStartedEvent(task.mainThreadEntity, task, eventManager);
-    
+
     // 执行子工作流
     const threadResult = await subgraphExecutor.executeThread(subgraphEntity);
-    
+
     const executionTime = diffTimestamp(startTime, now());
-    
+
     // 触发子工作流完成事件
     await emitSubgraphCompletedEvent(
       task.mainThreadEntity,
@@ -172,7 +170,7 @@ export async function executeSingleTriggeredSubgraph(
       executionTime,
       eventManager
     );
-    
+
     return {
       subgraphEntity,
       threadResult,
@@ -180,7 +178,7 @@ export async function executeSingleTriggeredSubgraph(
     };
   } catch (error) {
     const executionTime = diffTimestamp(startTime, now());
-    
+
     // 触发子工作流失败事件
     await emitSubgraphFailedEvent(
       task.mainThreadEntity,
@@ -189,7 +187,7 @@ export async function executeSingleTriggeredSubgraph(
       executionTime,
       eventManager
     );
-    
+
     // 重新抛出错误，让调用者处理
     throw error;
   }

@@ -1,6 +1,6 @@
 /**
  * 触发子工作流相关类型定义
- * 
+ *
  * 设计原则：
  * - 简洁明了的类型定义
  * - 支持同步和异步执行模式
@@ -16,11 +16,11 @@ import { TaskStatus } from './task.types.js';
  * 触发子工作流任务接口
  */
 export interface TriggeredSubgraphTask {
-  /** 子工作流ID */
+  /** 子工作流 ID */
   subgraphId: ID;
   /** 输入数据 */
   input: Record<string, any>;
-  /** 触发器ID */
+  /** 触发器 ID */
   triggerId: string;
   /** 主工作流线程实体 */
   mainThreadEntity: ThreadEntity;
@@ -57,7 +57,7 @@ export interface ExecutedSubgraphResult {
  * 任务提交结果（异步执行）
  */
 export interface TaskSubmissionResult {
-  /** 任务ID */
+  /** 任务 ID */
   taskId: string;
   /** 任务状态 */
   status: TaskStatus;
@@ -71,34 +71,16 @@ export interface TaskSubmissionResult {
  * 队列任务接口（内部使用）
  */
 export interface QueueTask {
-  /** 任务ID */
+  /** 任务 ID */
   taskId: string;
   /** 线程实体 */
   threadEntity: ThreadEntity;
-  /** Promise resolve函数 */
+  /** Promise resolve 函数 */
   resolve: (value: ExecutedSubgraphResult) => void;
-  /** Promise reject函数 */
+  /** Promise reject 函数 */
   reject: (error: Error) => void;
   /** 提交时间 */
   submitTime: number;
   /** 超时时间（毫秒） */
   timeout?: number;
-}
-
-/**
- * 子工作流管理器配置接口
- */
-export interface SubworkflowManagerConfig {
-  /** 最小执行器数 */
-  minExecutors?: number;
-  /** 最大执行器数 */
-  maxExecutors?: number;
-  /** 空闲超时时间（毫秒），超过此时间空闲执行器将被回收 */
-  idleTimeout?: number;
-  /** 最大队列长度 */
-  maxQueueSize?: number;
-  /** 任务保留时间（毫秒），已完成任务保留时间 */
-  taskRetentionTime?: number;
-  /** 默认超时时间（毫秒） */
-  defaultTimeout?: number;
 }

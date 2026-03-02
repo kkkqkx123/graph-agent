@@ -138,8 +138,6 @@ export function initializeContainer(): Container {
         minExecutors: 1,
         maxExecutors: 10,
         idleTimeout: 30000,
-        maxQueueSize: 100,
-        taskRetentionTime: 60 * 60 * 1000,
         defaultTimeout: 30000
       };
 

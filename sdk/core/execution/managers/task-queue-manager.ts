@@ -19,7 +19,7 @@ import { ThreadPoolService } from '../../services/thread-pool-service.js';
 import type { EventManager } from '../../services/event-manager.js';
 import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { ThreadResult } from '@modular-agent/types';
-import { type QueueTask, type ExecutedSubgraphResult, type TaskSubmissionResult } from '../types/triggered-subgraph.types.js';
+import { type QueueTask, type ExecutedSubgraphResult, type TaskSubmissionResult } from '../types/triggered-subworkflow.types.js';
 import { now, diffTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
 import { emit } from '../utils/event/event-emitter.js';
 import {
