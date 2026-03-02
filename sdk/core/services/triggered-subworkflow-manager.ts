@@ -34,6 +34,7 @@ import {
   buildTriggeredSubgraphCompletedEvent,
   buildTriggeredSubgraphFailedEvent
 } from '../execution/utils/event/event-builder.js';
+import { RuntimeValidationError } from '@modular-agent/types';
 
 /**
  * TriggeredSubworkflowManager - 触发子工作流管理器（全局单例服务）
@@ -118,11 +119,17 @@ export class TriggeredSubworkflowManager implements TaskManager {
   ): Promise<ExecutedSubgraphResult | TaskSubmissionResult> {
     // 验证参数
     if (!task.subgraphId) {
-      throw new Error('subgraphId is required');
+      throw new RuntimeValidationError('subgraphId is required', {
+        operation: 'executeTriggeredSubgraph',
+        field: 'subgraphId'
+      });
     }
 
     if (!task.mainThreadEntity) {
-      throw new Error('mainThreadEntity is required');
+      throw new RuntimeValidationError('mainThreadEntity is required', {
+        operation: 'executeTriggeredSubgraph',
+        field: 'mainThreadEntity'
+      });
     }
 
     // 准备输入数据

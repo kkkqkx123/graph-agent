@@ -21,6 +21,7 @@ import { ThreadExecutor } from '../execution/thread-executor.js';
 import { type ExecutorWrapper, type PoolStats } from '../execution/types/task.types.js';
 import { type SubworkflowManagerConfig } from '../execution/types/triggered-subgraph.types.js';
 import { now } from '@modular-agent/common-utils';
+import { SystemExecutionError } from '@modular-agent/types';
 
 /**
  * ThreadPoolService - 线程池服务（全局单例）
@@ -147,7 +148,11 @@ export class ThreadPoolService {
    */
   async allocateExecutor(): Promise<any> {
     if (this.isShutdown) {
-      throw new Error('ThreadPoolService is shutdown');
+      throw new SystemExecutionError(
+        'ThreadPoolService is shutdown',
+        'ThreadPoolService',
+        'allocateExecutor'
+      );
     }
 
     // 检查是否有空闲执行器
@@ -320,7 +325,11 @@ export class ThreadPoolService {
 
     // 拒绝所有等待的 Promise
     for (const waiting of this.waitingPromises) {
-      waiting.reject(new Error('ThreadPoolService is shutdown'));
+      waiting.reject(new SystemExecutionError(
+        'ThreadPoolService is shutdown',
+        'ThreadPoolService',
+        'shutdown'
+      ));
     }
     this.waitingPromises = [];
 
