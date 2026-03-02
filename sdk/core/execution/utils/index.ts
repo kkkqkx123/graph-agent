@@ -121,3 +121,9 @@ export {
   createCachedCallback,
   cleanupCache
 } from './callback-utils.js';
+
+// 检查点差异计算器
+export { CheckpointDiffCalculator } from './checkpoint-diff-calculator.js';
+
+// 增量检查点恢复器
+export { DeltaCheckpointRestorer, type DeltaRestorerDependencies } from './checkpoint-delta-restorer.js';

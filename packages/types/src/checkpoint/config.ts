@@ -19,6 +19,27 @@ export interface CheckpointMetadata {
 }
 
 /**
+ * 增量存储策略配置
+ */
+export interface DeltaStorageConfig {
+  /** 是否启用增量存储 */
+  enabled: boolean;
+  /** 基线检查点间隔（每N个检查点创建一个基线） */
+  baselineInterval: number;
+  /** 最大增量链长度（超过则创建新基线） */
+  maxDeltaChainLength: number;
+}
+
+/**
+ * 默认增量存储配置
+ */
+export const DEFAULT_DELTA_STORAGE_CONFIG: DeltaStorageConfig = {
+  enabled: true,
+  baselineInterval: 10,
+  maxDeltaChainLength: 20,
+};
+
+/**
  * 检查点触发类型
  */
 export type CheckpointTriggerType =
