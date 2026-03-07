@@ -58,7 +58,12 @@ export async function emit(
   event: Event
 ): Promise<void> {
   if (!eventManager) {
-    throw new Error('EventManager is not available');
+    throw new ExecutionError(
+      'EventManager is not available',
+      undefined,
+      undefined,
+      { service: 'EventManager', operation: 'event_emit' }
+    );
   }
 
   await eventManager.emit(event);
@@ -209,7 +214,12 @@ export async function emitAndWaitForCallback(
   timeout: number = 30000
 ): Promise<void> {
   if (!eventManager) {
-    throw new Error('EventManager is not available');
+    throw new ExecutionError(
+      'EventManager is not available',
+      undefined,
+      undefined,
+      { service: 'EventManager', operation: 'emit_and_wait_for_callback' }
+    );
   }
 
   // 触发事件

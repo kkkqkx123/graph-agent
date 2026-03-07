@@ -334,12 +334,12 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
   private async triggerTokenLimitEvent(tokensUsed: number): Promise<void> {
     // 1. 通过 EventManager 发送事件
     if (this.eventManager && this.workflowId && this.threadId) {
-      const event = buildTokenLimitExceededEvent(
-        this.threadId!,
+      const event = buildTokenLimitExceededEvent({
+        threadId: this.threadId!,
         tokensUsed,
-        this.tokenUsageTracker['tokenLimit'],
-        this.workflowId!
-      );
+        tokenLimit: this.tokenUsageTracker['tokenLimit'],
+        workflowId: this.workflowId!
+      });
       await emit(this.eventManager, event);
     }
 

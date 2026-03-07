@@ -95,7 +95,13 @@ export async function skipNodeHandler(
     thread.nodeResults.push(result);
 
     // 触发NODE_COMPLETED事件（状态为SKIPPED）
-    const completedEvent = buildNodeCompletedEvent(threadEntity, nodeId, null, 0);
+    const completedEvent = buildNodeCompletedEvent({
+      threadId: threadEntity.thread.id,
+      workflowId: threadEntity.thread.workflowId,
+      nodeId,
+      output: null,
+      executionTime: 0
+    });
     await eventManager.emit(completedEvent);
 
     return createSuccessResult(

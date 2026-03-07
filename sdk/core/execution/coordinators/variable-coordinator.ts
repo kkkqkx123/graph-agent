@@ -365,7 +365,13 @@ export class VariableCoordinator {
     }
 
     try {
-      const event = buildVariableChangedEvent(threadEntity, name, value, scope);
+      const event = buildVariableChangedEvent({
+        threadId: threadEntity.thread.id,
+        workflowId: threadEntity.thread.workflowId,
+        variableName: name,
+        variableValue: value,
+        variableScope: scope
+      });
       await safeEmit(this.eventManager, event);
     } catch (error) {
       // 抛出系统执行错误，由 ErrorService 统一处理

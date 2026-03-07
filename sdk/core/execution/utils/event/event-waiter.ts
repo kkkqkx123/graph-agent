@@ -16,7 +16,7 @@
  */
 
 import type { EventManager } from '../../../services/event-manager.js';
-import { EventType } from '@modular-agent/types';
+import { EventType, TimeoutError } from '@modular-agent/types';
 import { now, diffTimestamp } from '@modular-agent/common-utils';
 
 /**
@@ -316,7 +316,11 @@ export async function waitForCondition(
     await new Promise(resolve => setTimeout(resolve, checkInterval));
   }
 
-  throw new Error(`Condition not met within ${timeout}ms`);
+  throw new TimeoutError(
+    `Condition not met within ${timeout}ms`,
+    timeout,
+    { operation: 'wait_for_condition' }
+  );
 }
 
 /**
@@ -343,7 +347,11 @@ export async function waitForAllConditions(
     await new Promise(resolve => setTimeout(resolve, checkInterval));
   }
 
-  throw new Error(`Not all conditions met within ${timeout}ms`);
+  throw new TimeoutError(
+    `Not all conditions met within ${timeout}ms`,
+    timeout,
+    { operation: 'wait_for_all_conditions', conditionCount: conditions.length }
+  );
 }
 
 /**
@@ -373,5 +381,9 @@ export async function waitForAnyCondition(
     await new Promise(resolve => setTimeout(resolve, checkInterval));
   }
 
-  throw new Error(`No condition met within ${timeout}ms`);
+  throw new TimeoutError(
+    `No condition met within ${timeout}ms`,
+    timeout,
+    { operation: 'wait_for_any_condition', conditionCount: conditions.length }
+  );
 }

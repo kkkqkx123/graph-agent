@@ -36,6 +36,7 @@ import {
   buildUserInteractionProcessedEvent
 } from '../utils/event/event-builder.js';
 import { LLMContextFactory, type LLMContextFactoryConfig } from '../factories/llm-context-factory.js';
+import { ToolCallExecutor } from '../executors/tool-call-executor.js';
 
 const logger = createContextualLogger();
 
@@ -86,42 +87,37 @@ export interface LLMExecutionResponse {
  * 设计原则：
  * - 简化的协调逻辑
  * - 职责分离：每个组件只负责自己的职责
- * - 依赖注入
+ * - 使用 LLMContextFactory 管理依赖
  */
 export class LLMExecutionCoordinator {
-  private interruptionDetector?: InterruptionDetector;
-  private threadRegistry?: ThreadRegistry;
-  private checkpointStateManager?: any;
-  private workflowRegistry?: any;
-  private graphRegistry?: any;
-  private toolContextManager?: any;
-  private toolVisibilityCoordinator?: any;
+  /** 上下文工厂 */
+  private contextFactory: LLMContextFactory;
 
-  constructor(
-    private llmExecutor: LLMExecutor,
-    private toolService: ToolService,
-    private eventManager: EventManager,
-    private toolCallExecutor: ToolCallExecutor,
-    threadRegistry?: ThreadRegistry,
-    interruptionDetector?: InterruptionDetector,
-    checkpointStateManager?: any,
-    workflowRegistry?: any,
-    graphRegistry?: any,
-    toolContextManager?: any,
-    toolVisibilityCoordinator?: any
-  ) {
-    this.threadRegistry = threadRegistry;
-    this.checkpointStateManager = checkpointStateManager;
-    this.workflowRegistry = workflowRegistry;
-    this.graphRegistry = graphRegistry;
-    this.toolContextManager = toolContextManager;
-    this.toolVisibilityCoordinator = toolVisibilityCoordinator;
+  /** 中断检测器（延迟初始化） */
+  private interruptionDetector?: any;
 
-    if (interruptionDetector) {
-      this.interruptionDetector = interruptionDetector;
-    } else if (threadRegistry) {
-      this.interruptionDetector = new InterruptionDetectorImpl(threadRegistry);
+  /**
+   * 构造函数（使用工厂配置）
+   *
+   * @param config 工厂配置
+   */
+  constructor(config: LLMContextFactoryConfig) {
+    // 创建上下文工厂
+    this.contextFactory = new LLMContextFactory(config);
+
+    // 延迟初始化中断检测器
+    if (config.interruptionDetector) {
+      this.interruptionDetector = config.interruptionDetector;
+    } else if (config.threadRegistry) {
+      this.interruptionDetector = new InterruptionDetectorImpl(config.threadRegistry);
     }
+  }
+
+  /**
+   * 获取上下文工厂（供外部访问依赖）
+   */
+  getContextFactory(): LLMContextFactory {
+    return this.contextFactory;
   }
 
   /**
@@ -136,11 +132,12 @@ export class LLMExecutionCoordinator {
     }
 
     // 向后兼容：如果没有提供 interruptionDetector，使用旧的方式
-    if (!this.threadRegistry) {
+    const threadRegistry = this.contextFactory.getThreadRegistry();
+    if (!threadRegistry) {
       return false;
     }
 
-    const threadEntity = this.threadRegistry.get(threadId);
+    const threadEntity = threadRegistry.get(threadId);
     if (!threadEntity) {
       return false;
     }
@@ -210,7 +207,8 @@ export class LLMExecutionCoordinator {
     } = params;
 
     // 获取 AbortSignal
-    const threadEntity = this.threadRegistry?.get(threadId);
+    const threadRegistry = this.contextFactory.getThreadRegistry();
+    const threadEntity = threadRegistry?.get(threadId);
     const abortSignal = threadEntity?.getAbortSignal();
 
     // 使用返回值标记体系检查中断
@@ -229,14 +227,13 @@ export class LLMExecutionCoordinator {
     conversationState.addMessage(userMessage);
 
     // 触发消息添加事件
-    const userMessageEvent = buildMessageAddedEvent(
-      threadId || '',
-      '',
-      nodeId,
-      userMessage.role,
-      userMessage.content
-    );
-    await safeEmit(this.eventManager, userMessageEvent);
+    const userMessageEvent = buildMessageAddedEvent({
+      threadId: threadId || '',
+      role: userMessage.role,
+      content: userMessage.content,
+      nodeId
+    });
+    await safeEmit(this.contextFactory.getEventManager(), userMessageEvent);
 
     // 检查 Token 使用情况
     await conversationState.checkTokenUsage();
@@ -249,25 +246,27 @@ export class LLMExecutionCoordinator {
 
       // 当使用量超过 80% 时触发警告
       if (usagePercentage > 80) {
-        const warningEvent = buildTokenUsageWarningEvent(
-          threadId || '',
-          tokenUsage.totalTokens,
+        const warningEvent = buildTokenUsageWarningEvent({
+          threadId: threadId || '',
+          tokensUsed: tokenUsage.totalTokens,
           tokenLimit,
           usagePercentage
-        );
-        await safeEmit(this.eventManager, warningEvent);
+        });
+        await safeEmit(this.contextFactory.getEventManager(), warningEvent);
       }
     }
 
     // 从工具上下文管理器获取可用工具
     let availableToolSchemas = tools;
-    if (this.toolContextManager) {
-      if (this.toolContextManager) {
-        const availableToolIds = this.toolContextManager.getTools(threadId);
+    const toolContextManager = this.contextFactory.getToolContextManager();
+    if (toolContextManager) {
+      if (toolContextManager) {
+        const availableToolIds = toolContextManager.getTools(threadId);
 
         if (availableToolIds.size > 0) {
+          const toolService = this.contextFactory.getToolService();
           const availableTools = Array.from(availableToolIds as Set<string>)
-            .map((id) => this.toolService.getTool(id) as any)
+            .map((id) => toolService.getTool(id) as any)
             .filter(Boolean);
 
           // 直接转换为ToolSchema格式（由外部模块负责，符合设计文档）
@@ -289,7 +288,7 @@ export class LLMExecutionCoordinator {
     }
 
     // 执行 LLM 调用（传递 AbortSignal）
-    const llmResult = await this.llmExecutor.executeLLMCall(
+    const llmResult = await this.contextFactory.getLLMExecutor().executeLLMCall(
       conversationState.getMessages(),
       {
         prompt,
@@ -331,14 +330,13 @@ export class LLMExecutionCoordinator {
     conversationState.addMessage(assistantMessage);
 
     // 触发消息添加事件
-    const assistantMessageEvent = buildMessageAddedEvent(
-      threadId || '',
-      '',
-      nodeId,
-      assistantMessage.role,
-      assistantMessage.content
-    );
-    await safeEmit(this.eventManager, assistantMessageEvent);
+    const assistantMessageEvent = buildMessageAddedEvent({
+      threadId: threadId || '',
+      role: assistantMessage.role,
+      content: assistantMessage.content,
+      nodeId
+    });
+    await safeEmit(this.contextFactory.getEventManager(), assistantMessageEvent);
 
     // 检查是否有工具调用
     if (result.toolCalls && result.toolCalls.length > 0) {
@@ -368,20 +366,20 @@ export class LLMExecutionCoordinator {
         threadId,
         nodeId,
         params.workflowConfig,
-        this.toolCallExecutor,
+        this.contextFactory.getToolCallExecutor(),
         { abortSignal }
       );
     }
 
     // 触发对话状态变化事件
     const finalTokenUsage = conversationState.getTokenUsage();
-    const stateChangedEvent = buildConversationStateChangedEvent(
-      threadId || '',
-      conversationState.getMessages().length,
-      finalTokenUsage?.totalTokens || 0,
+    const stateChangedEvent = buildConversationStateChangedEvent({
+      threadId: threadId || '',
+      messageCount: conversationState.getMessages().length,
+      tokenUsage: finalTokenUsage?.totalTokens || 0,
       nodeId
-    );
-    await safeEmit(this.eventManager, stateChangedEvent);
+    });
+    await safeEmit(this.contextFactory.getEventManager(), stateChangedEvent);
 
     // 返回最终内容
     return result.content;
@@ -495,7 +493,7 @@ export class LLMExecutionCoordinator {
     conversationState: ConversationManager
   ): Promise<ToolApprovalData> {
     const interactionId = generateId();
-    const tool = this.toolService.getTool(toolCall.id);
+    const tool = this.contextFactory.getToolService().getTool(toolCall.id);
 
     // 创建工具审批请求
     const toolApprovalData: ToolApprovalData = {
@@ -507,23 +505,26 @@ export class LLMExecutionCoordinator {
 
     // 如果有执行上下文，创建检查点以支持长时间审批
     let checkpointId: string | undefined;
-    if (this.threadRegistry && this.checkpointStateManager && this.workflowRegistry && this.graphRegistry) {
+    if (this.contextFactory.hasToolApprovalSupport()) {
       try {
-        const dependencies = {
-          threadRegistry: this.threadRegistry,
-          checkpointStateManager: this.checkpointStateManager,
-          workflowRegistry: this.workflowRegistry,
-          graphRegistry: this.graphRegistry
-        };
-        checkpointId = await CheckpointCoordinator.createCheckpoint(threadId, dependencies, {
-          description: 'Waiting for tool approval',
-          customFields: {
-            toolApprovalState: {
-              pendingToolCall: toolCall,
-              interactionId
+        const approvalContext = this.contextFactory.createToolApprovalContext(threadId, nodeId);
+        if (approvalContext.workflowRegistry && approvalContext.graphRegistry) {
+          const dependencies = {
+            threadRegistry: approvalContext.threadRegistry,
+            checkpointStateManager: approvalContext.checkpointStateManager,
+            workflowRegistry: approvalContext.workflowRegistry,
+            graphRegistry: approvalContext.graphRegistry
+          };
+          checkpointId = await CheckpointCoordinator.createCheckpoint(threadId, dependencies, {
+            description: 'Waiting for tool approval',
+            customFields: {
+              toolApprovalState: {
+                pendingToolCall: toolCall,
+                interactionId
+              }
             }
-          }
-        });
+          });
+        }
       } catch (error) {
         // 记录警告日志，不中断执行
         logger.warn(
@@ -542,15 +543,15 @@ export class LLMExecutionCoordinator {
 
     try {
       // 触发USER_INTERACTION_REQUESTED事件
-      const requestedEvent = buildUserInteractionRequestedEvent(
+      const requestedEvent = buildUserInteractionRequestedEvent({
         threadId,
         nodeId,
         interactionId,
-        'TOOL_APPROVAL',
-        `是否批准调用工具 "${toolCall.id}"?`,
-        approvalConfig?.approvalTimeout || 0
-      );
-      await safeEmit(this.eventManager, requestedEvent);
+        operationType: 'TOOL_APPROVAL',
+        prompt: `是否批准调用工具 "${toolCall.id}"?`,
+        timeout: approvalConfig?.approvalTimeout || 0
+      });
+      await safeEmit(this.contextFactory.getEventManager(), requestedEvent);
 
       // 等待USER_INTERACTION_RESPONDED事件
       const response = await this.waitForUserInteractionResponse(
@@ -562,20 +563,20 @@ export class LLMExecutionCoordinator {
       const approvalResult = response.inputData as ToolApprovalData;
 
       // 触发USER_INTERACTION_PROCESSED事件
-      const processedEvent = buildUserInteractionProcessedEvent(
+      const processedEvent = buildUserInteractionProcessedEvent({
         threadId,
         interactionId,
-        'TOOL_APPROVAL',
-        approvalResult
-      );
-      await safeEmit(this.eventManager, processedEvent);
+        operationType: 'TOOL_APPROVAL',
+        results: approvalResult
+      });
+      await safeEmit(this.contextFactory.getEventManager(), processedEvent);
 
       return approvalResult;
     } finally {
       // 清理检查点（如果存在）
-      if (checkpointId && this.checkpointStateManager) {
+      const checkpointStateManager = this.contextFactory.getCheckpointStateManager();
+      if (checkpointId && checkpointStateManager) {
         try {
-          const checkpointStateManager = this.checkpointStateManager;
           await checkpointStateManager.delete(checkpointId);
         } catch (error) {
           // 记录警告日志，不中断执行
@@ -608,13 +609,14 @@ export class LLMExecutionCoordinator {
   ): Promise<any> {
     return new Promise((resolve, reject) => {
       let timeoutId: NodeJS.Timeout | null = null;
+      const eventManager = this.contextFactory.getEventManager();
 
       const handler = (event: any) => {
         if (event.interactionId === interactionId) {
           if (timeoutId) {
             clearTimeout(timeoutId);
           }
-          this.eventManager.off('USER_INTERACTION_RESPONDED', handler);
+          eventManager.off('USER_INTERACTION_RESPONDED', handler);
           resolve(event);
         }
       };
@@ -622,12 +624,12 @@ export class LLMExecutionCoordinator {
       // 只有当 timeoutMs > 0 时才设置超时
       if (timeoutMs > 0) {
         timeoutId = setTimeout(() => {
-          this.eventManager.off('USER_INTERACTION_RESPONDED', handler);
+          eventManager.off('USER_INTERACTION_RESPONDED', handler);
           reject(new Error(`User interaction timeout after ${timeoutMs}ms`));
         }, timeoutMs);
       }
 
-      this.eventManager.on('USER_INTERACTION_RESPONDED', handler);
+      eventManager.on('USER_INTERACTION_RESPONDED', handler);
     });
   }
 

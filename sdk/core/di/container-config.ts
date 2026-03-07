@@ -352,7 +352,12 @@ export function initializeContainer(): Container {
       const toolService = c.get(Identifiers.ToolService);
       const eventManager = c.get(Identifiers.EventManager);
       const toolCallExecutor = c.get(Identifiers.ToolCallExecutor);
-      return new LLMExecutionCoordinator(llmExecutor, toolService, eventManager, toolCallExecutor);
+      return new LLMExecutionCoordinator({
+        llmExecutor,
+        toolService,
+        eventManager,
+        toolCallExecutor
+      });
     })
     .inSingletonScope();
 
@@ -415,17 +420,17 @@ export function initializeContainer(): Container {
   // TriggerCoordinator - 依赖多个服务和协调器
   container.bind(Identifiers.TriggerCoordinator)
     .toDynamicValue((c: any) => {
-      return new TriggerCoordinator(
-        c.get(Identifiers.ThreadRegistry),
-        c.get(Identifiers.WorkflowRegistry),
-        c.get(Identifiers.TriggerStateManager),
-        c.get(Identifiers.CheckpointStateManager),
-        c.get(Identifiers.GraphRegistry),
-        c.get(Identifiers.EventManager),
-        c.get(Identifiers.ThreadBuilder),
-        c.get(Identifiers.TaskRegistry),
-        c.get(Identifiers.ThreadLifecycleCoordinator)
-      );
+      return new TriggerCoordinator({
+        threadRegistry: c.get(Identifiers.ThreadRegistry),
+        workflowRegistry: c.get(Identifiers.WorkflowRegistry),
+        stateManager: c.get(Identifiers.TriggerStateManager),
+        checkpointStateManager: c.get(Identifiers.CheckpointStateManager),
+        graphRegistry: c.get(Identifiers.GraphRegistry),
+        eventManager: c.get(Identifiers.EventManager),
+        threadBuilder: c.get(Identifiers.ThreadBuilder),
+        taskQueueManager: c.get(Identifiers.TaskRegistry),
+        threadLifecycleCoordinator: c.get(Identifiers.ThreadLifecycleCoordinator)
+      });
     })
     .inSingletonScope();
 

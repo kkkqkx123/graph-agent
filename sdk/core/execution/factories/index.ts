@@ -5,9 +5,20 @@
  *
  * 包含的工厂：
  * - NodeHandlerContextFactory: 节点处理器上下文工厂
+ * - LLMContextFactory: LLM 执行上下文工厂
  */
 
 export {
   NodeHandlerContextFactory,
   type NodeHandlerContextFactoryConfig
 } from './node-handler-context-factory.js';
+
+export {
+  LLMContextFactory,
+  type LLMContextFactoryConfig,
+  type ToolApprovalContext,
+  type InterruptionContext,
+  type ToolExecutionContext,
+  type LLMCallContext,
+  type ToolVisibilityContext
+} from './llm-context-factory.js';

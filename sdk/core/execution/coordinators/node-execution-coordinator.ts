@@ -261,7 +261,12 @@ export class NodeExecutionCoordinator {
 
     try {
       // 步骤1：触发节点开始事件
-      const nodeStartedEvent = buildNodeStartedEvent(threadEntity, nodeId, nodeType);
+      const nodeStartedEvent = buildNodeStartedEvent({
+        threadId: threadEntity.getThreadId(),
+        workflowId: threadEntity.getWorkflowId(),
+        nodeId,
+        nodeType
+      });
       await emit(this.eventManager, nodeStartedEvent);
 
       // 步骤2：节点执行前创建检查点（如果配置了）
@@ -375,15 +380,21 @@ export class NodeExecutionCoordinator {
 
       // 步骤8：触发节点完成事件
       if (nodeResult.status === 'COMPLETED') {
-        const nodeCompletedEvent = buildNodeCompletedEvent(
-          threadEntity,
+        const nodeCompletedEvent = buildNodeCompletedEvent({
+          threadId: threadEntity.getThreadId(),
+          workflowId: threadEntity.getWorkflowId(),
           nodeId,
-          threadEntity.getThread().output,
-          nodeResult.executionTime || 0
-        );
+          output: threadEntity.getThread().output,
+          executionTime: nodeResult.executionTime || 0
+        });
         await emit(this.eventManager, nodeCompletedEvent);
       } else if (nodeResult.status === 'FAILED') {
-        const nodeFailedEvent = buildNodeFailedEvent(threadEntity, nodeId, getErrorOrNew(nodeResult.error));
+        const nodeFailedEvent = buildNodeFailedEvent({
+          threadId: threadEntity.getThreadId(),
+          workflowId: threadEntity.getWorkflowId(),
+          nodeId,
+          error: getErrorOrNew(nodeResult.error)
+        });
         await emit(this.eventManager, nodeFailedEvent);
       }
 
@@ -403,7 +414,12 @@ export class NodeExecutionCoordinator {
 
       threadEntity.addNodeResult(errorResult);
 
-      const nodeFailedEvent = buildNodeFailedEvent(threadEntity, nodeId, getErrorOrNew(error));
+      const nodeFailedEvent = buildNodeFailedEvent({
+        threadId: threadEntity.getThreadId(),
+        workflowId: threadEntity.getWorkflowId(),
+        nodeId,
+        error: getErrorOrNew(error)
+      });
       await emit(this.eventManager, nodeFailedEvent);
 
       return errorResult;
@@ -429,12 +445,13 @@ export class NodeExecutionCoordinator {
       );
 
       // 触发子图开始事件
-      const subgraphStartedEvent = buildSubgraphStartedEvent(
-        threadEntity,
-        graphNode.workflowId,
-        graphNode.parentWorkflowId!,
+      const subgraphStartedEvent = buildSubgraphStartedEvent({
+        threadId: threadEntity.getThreadId(),
+        workflowId: threadEntity.getWorkflowId(),
+        subgraphId: graphNode.workflowId,
+        parentWorkflowId: graphNode.parentWorkflowId!,
         input
-      );
+      });
       await emit(this.eventManager, subgraphStartedEvent);
     } else if (boundaryType === 'exit') {
       // 退出子图
@@ -443,12 +460,13 @@ export class NodeExecutionCoordinator {
         const output = getSubgraphOutput(threadEntity);
 
         // 触发子图完成事件
-        const subgraphCompletedEvent = buildSubgraphCompletedEvent(
-          threadEntity,
-          subgraphContext.workflowId,
+        const subgraphCompletedEvent = buildSubgraphCompletedEvent({
+          threadId: threadEntity.getThreadId(),
+          workflowId: threadEntity.getWorkflowId(),
+          subgraphId: subgraphContext.workflowId,
           output,
-          diffTimestamp(subgraphContext.startTime, now())
-        );
+          executionTime: diffTimestamp(subgraphContext.startTime, now())
+        });
         await emit(this.eventManager, subgraphCompletedEvent);
 
         await exitSubgraph(threadEntity);

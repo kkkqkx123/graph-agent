@@ -5,7 +5,7 @@
  * 设计原则：
  * - 无状态设计：不维护可变状态
  * - 协调逻辑：封装触发器定义和运行时状态的协调逻辑
- * - 依赖注入：通过构造函数接收依赖的管理器
+ * - 依赖注入：通过 TriggerHandlerContextFactory 管理依赖
  *
  * 职责：
  * - 触发器的注册、注销、启用、禁用
@@ -31,19 +31,18 @@ import type { ID } from '@modular-agent/types';
 import { getTriggerHandler } from '../handlers/trigger-handlers/index.js';
 import { ExecutionError, ConfigurationValidationError, RuntimeValidationError, SystemExecutionError } from '@modular-agent/types';
 import { now, getErrorOrNew } from '@modular-agent/common-utils';
-import type { ThreadRegistry } from '../../services/thread-registry.js';
-import type { WorkflowRegistry } from '../../services/workflow-registry.js';
-import type { GraphRegistry } from '../../services/graph-registry.js';
-import { TriggerStateManager } from '../managers/trigger-state-manager.js';
-import { CheckpointStateManager } from '../managers/checkpoint-state-manager.js';
-import { convertToTrigger } from '@modular-agent/types';
-import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
-import type { EventManager } from '../../services/event-manager.js';
-import type { ThreadBuilder } from '../thread-builder.js';
-import type { TaskQueueManager } from '../managers/task-queue-manager.js';
-import type { ThreadLifecycleCoordinator } from './thread-lifecycle-coordinator.js';
+import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
+import { convertToTrigger } from '@modular-agent/types';
 import { createContextualLogger } from '../../../utils/contextual-logger.js';
+import {
+  TriggerHandlerContextFactory,
+  type TriggerHandlerContextFactoryConfig,
+  type LifecycleTriggerContext,
+  type SkipNodeTriggerContext,
+  type SetVariableTriggerContext,
+  type ExecuteSubgraphTriggerContext
+} from '../factories/trigger-handler-context-factory.js';
 
 const logger = createContextualLogger({ component: 'TriggerCoordinator' });
 
@@ -59,40 +58,27 @@ const logger = createContextualLogger({ component: 'TriggerCoordinator' });
  * 设计原则：
  * - 无状态设计：不维护可变状态
  * - 协调逻辑：封装触发器定义和运行时状态的协调逻辑
- * - 依赖注入：通过构造函数接收依赖的管理器
+ * - 使用 TriggerHandlerContextFactory 管理依赖
  * - WorkflowRegistry 作为触发器定义的单一信息源
  */
 export class TriggerCoordinator {
-  private threadRegistry: ThreadRegistry;
-  private workflowRegistry: WorkflowRegistry;
-  private stateManager: TriggerStateManager;
-  private checkpointStateManager?: CheckpointStateManager;
-  private graphRegistry?: GraphRegistry;
-  private eventManager?: EventManager;
-  private threadBuilder?: ThreadBuilder;
-  private taskQueueManager?: TaskQueueManager;
-  private threadLifecycleCoordinator?: ThreadLifecycleCoordinator;
+  /** 上下文工厂 */
+  private contextFactory: TriggerHandlerContextFactory;
 
-  constructor(
-    threadRegistry: ThreadRegistry,
-    workflowRegistry: WorkflowRegistry,
-    stateManager: TriggerStateManager,
-    checkpointStateManager?: CheckpointStateManager,
-    graphRegistry?: GraphRegistry,
-    eventManager?: EventManager,
-    threadBuilder?: ThreadBuilder,
-    taskQueueManager?: TaskQueueManager,
-    threadLifecycleCoordinator?: ThreadLifecycleCoordinator
-  ) {
-    this.threadRegistry = threadRegistry;
-    this.workflowRegistry = workflowRegistry;
-    this.stateManager = stateManager;
-    this.checkpointStateManager = checkpointStateManager;
-    this.graphRegistry = graphRegistry;
-    this.eventManager = eventManager;
-    this.threadBuilder = threadBuilder;
-    this.taskQueueManager = taskQueueManager;
-    this.threadLifecycleCoordinator = threadLifecycleCoordinator;
+  /**
+   * 构造函数（使用工厂配置）
+   *
+   * @param config 工厂配置
+   */
+  constructor(config: TriggerHandlerContextFactoryConfig) {
+    this.contextFactory = new TriggerHandlerContextFactory(config);
+  }
+
+  /**
+   * 获取上下文工厂（供外部访问依赖）
+   */
+  getContextFactory(): TriggerHandlerContextFactory {
+    return this.contextFactory;
   }
 
   /**
@@ -127,15 +113,17 @@ export class TriggerCoordinator {
       });
     }
 
+    const stateManager = this.contextFactory.getStateManager();
+
     // 检查是否已存在
-    if (this.stateManager.hasState(workflowTrigger.id)) {
+    if (stateManager.hasState(workflowTrigger.id)) {
       throw new RuntimeValidationError(`触发器状态 ${workflowTrigger.id} 已存在`, { operation: 'registerTrigger', field: 'trigger.id', value: workflowTrigger.id });
     }
 
     // 创建运行时状态
     const state: TriggerRuntimeState = {
       triggerId: workflowTrigger.id,
-      threadId: this.stateManager.getThreadId(),
+      threadId: stateManager.getThreadId(),
       workflowId: workflowId,
       status: workflowTrigger.enabled !== false ? 'enabled' as TriggerStatus : 'disabled' as TriggerStatus,
       triggerCount: 0,
@@ -143,7 +131,7 @@ export class TriggerCoordinator {
     };
 
     // 注册状态
-    this.stateManager.register(state);
+    stateManager.register(state);
   }
 
   /**
@@ -151,12 +139,13 @@ export class TriggerCoordinator {
    * @param triggerId 触发器 ID
    */
   unregister(triggerId: ID): void {
-    if (!this.stateManager.hasState(triggerId)) {
+    const stateManager = this.contextFactory.getStateManager();
+    if (!stateManager.hasState(triggerId)) {
       throw new ExecutionError(`触发器状态 ${triggerId} 不存在`, undefined, undefined, { triggerId });
     }
 
     // 删除状态
-    this.stateManager.deleteState(triggerId);
+    stateManager.deleteState(triggerId);
   }
 
   /**
@@ -164,17 +153,18 @@ export class TriggerCoordinator {
    * @param triggerId 触发器 ID
    */
   enable(triggerId: ID): void {
-    if (!this.stateManager.hasState(triggerId)) {
+    const stateManager = this.contextFactory.getStateManager();
+    if (!stateManager.hasState(triggerId)) {
       throw new ExecutionError(`触发器状态 ${triggerId} 不存在`, undefined, undefined, { triggerId });
     }
 
-    const state = this.stateManager.getState(triggerId);
+    const state = stateManager.getState(triggerId);
     if (state && state.status !== 'disabled' as TriggerStatus) {
       return;
     }
 
     // 更新状态
-    this.stateManager.updateStatus(triggerId, 'enabled' as TriggerStatus);
+    stateManager.updateStatus(triggerId, 'enabled' as TriggerStatus);
   }
 
   /**
@@ -182,17 +172,18 @@ export class TriggerCoordinator {
    * @param triggerId 触发器 ID
    */
   disable(triggerId: ID): void {
-    if (!this.stateManager.hasState(triggerId)) {
+    const stateManager = this.contextFactory.getStateManager();
+    if (!stateManager.hasState(triggerId)) {
       throw new ExecutionError(`触发器状态 ${triggerId} 不存在`, undefined, undefined, { triggerId });
     }
 
-    const state = this.stateManager.getState(triggerId);
+    const state = stateManager.getState(triggerId);
     if (state && state.status !== 'enabled' as TriggerStatus) {
       return;
     }
 
     // 更新状态
-    this.stateManager.updateStatus(triggerId, 'disabled' as TriggerStatus);
+    stateManager.updateStatus(triggerId, 'disabled' as TriggerStatus);
   }
 
   /**
@@ -201,8 +192,9 @@ export class TriggerCoordinator {
    * @returns 触发器，如果不存在则返回 undefined
    */
   get(triggerId: ID): Trigger | undefined {
+    const stateManager = this.contextFactory.getStateManager();
     // 获取状态
-    const state = this.stateManager.getState(triggerId);
+    const state = stateManager.getState(triggerId);
     if (!state) {
       return undefined;
     }
@@ -222,8 +214,9 @@ export class TriggerCoordinator {
    * @returns 触发器数组
    */
   getAll(): Trigger[] {
+    const stateManager = this.contextFactory.getStateManager();
     // 获取所有状态
-    const allStates = this.stateManager.getAllStates();
+    const allStates = stateManager.getAllStates();
     const triggers: Trigger[] = [];
 
     // 为每个状态获取定义并合并
@@ -289,10 +282,13 @@ export class TriggerCoordinator {
    * @param trigger 触发器
    */
   private async executeTrigger(trigger: Trigger): Promise<void> {
+    const { checkpointStateManager, graphRegistry, threadRegistry, workflowRegistry, threadLifecycleCoordinator, eventManager, threadBuilder, taskQueueManager } = this.contextFactory.getDependencies();
+    const stateManager = this.contextFactory.getStateManager();
+
     // 触发前创建检查点（如果配置了）
-    if (trigger.createCheckpoint && this.checkpointStateManager && trigger.threadId) {
+    if (trigger.createCheckpoint && checkpointStateManager && trigger.threadId) {
       // 如果未提供 graphRegistry，跳过检查点创建
-      if (!this.graphRegistry) {
+      if (!graphRegistry) {
         logger.warn(
           'GraphRegistry not provided, skipping checkpoint creation',
           { triggerName: trigger.name, triggerId: trigger.id }
@@ -300,10 +296,10 @@ export class TriggerCoordinator {
       } else {
         try {
           const dependencies: CheckpointDependencies = {
-            threadRegistry: this.threadRegistry,
-            checkpointStateManager: this.checkpointStateManager,
-            workflowRegistry: this.workflowRegistry,
-            graphRegistry: this.graphRegistry
+            threadRegistry: threadRegistry!,
+            checkpointStateManager: checkpointStateManager,
+            workflowRegistry: workflowRegistry!,
+            graphRegistry: graphRegistry
           };
 
           await createCheckpoint(
@@ -330,46 +326,46 @@ export class TriggerCoordinator {
 
     // 根据不同的handler类型传递不同的依赖
     let result: TriggerExecutionResult;
-    
+
     switch (trigger.action.type) {
       case 'stop_thread':
       case 'pause_thread':
       case 'resume_thread':
-        if (!this.threadLifecycleCoordinator) {
+        if (!threadLifecycleCoordinator) {
           throw new SystemExecutionError('ThreadLifecycleCoordinator not provided');
         }
-        result = await handler(trigger.action, trigger.id, this.threadLifecycleCoordinator);
+        result = await handler(trigger.action, trigger.id, threadLifecycleCoordinator);
         break;
-      
+
       case 'skip_node':
-        if (!this.threadRegistry || !this.eventManager) {
+        if (!threadRegistry || !eventManager) {
           throw new SystemExecutionError('ThreadRegistry or EventManager not provided');
         }
-        result = await handler(trigger.action, trigger.id, this.threadRegistry, this.eventManager);
+        result = await handler(trigger.action, trigger.id, threadRegistry, eventManager);
         break;
-      
+
       case 'set_variable':
-        if (!this.threadRegistry) {
+        if (!threadRegistry) {
           throw new SystemExecutionError('ThreadRegistry not provided');
         }
-        result = await handler(trigger.action, trigger.id, this.threadRegistry);
+        result = await handler(trigger.action, trigger.id, threadRegistry);
         break;
-      
+
       case 'execute_triggered_subgraph':
-        if (!this.threadRegistry || !this.eventManager || !this.threadBuilder || !this.taskQueueManager) {
+        if (!threadRegistry || !eventManager || !threadBuilder || !taskQueueManager) {
           throw new SystemExecutionError('Required dependencies not provided for execute_triggered_subgraph');
         }
         result = await handler(
           trigger.action,
           trigger.id,
-          this.threadRegistry,
-          this.eventManager,
-          this.threadBuilder,
-          this.taskQueueManager,
+          threadRegistry,
+          eventManager,
+          threadBuilder,
+          taskQueueManager,
           trigger.threadId
         );
         break;
-      
+
       default:
         // 对于其他handler，使用向后兼容的方式
         result = await handler(trigger.action, trigger.id);
@@ -377,11 +373,11 @@ export class TriggerCoordinator {
     }
 
     // 更新触发器状态
-    this.stateManager.incrementTriggerCount(trigger.id);
+    stateManager.incrementTriggerCount(trigger.id);
 
     // 如果是一次性触发器，禁用它
     if (trigger.maxTriggers === 1) {
-      this.stateManager.updateStatus(trigger.id, 'disabled' as TriggerStatus);
+      stateManager.updateStatus(trigger.id, 'disabled' as TriggerStatus);
     }
   }
 
@@ -389,7 +385,8 @@ export class TriggerCoordinator {
    * 清空所有触发器状态
    */
   clear(): void {
-    this.stateManager.cleanup();
+    const stateManager = this.contextFactory.getStateManager();
+    stateManager.cleanup();
   }
 
   /**
@@ -399,14 +396,17 @@ export class TriggerCoordinator {
    * @returns 工作流触发器定义，如果不存在则返回 undefined
    */
   private getWorkflowTrigger(triggerId: ID, workflowId?: ID): WorkflowTrigger | undefined {
+    const stateManager = this.contextFactory.getStateManager();
+    const { graphRegistry } = this.contextFactory.getDependencies();
+
     // 如果没有提供 workflowId，从状态管理器获取
-    const targetWorkflowId = workflowId || this.stateManager.getWorkflowId();
+    const targetWorkflowId = workflowId || stateManager.getWorkflowId();
     if (!targetWorkflowId) {
       return undefined;
     }
 
     // 使用注入的graphRegistry
-    if (!this.graphRegistry) {
+    if (!graphRegistry) {
       throw new SystemExecutionError(
         'GraphRegistry is required for trigger execution',
         'TriggerCoordinator',
@@ -417,7 +417,7 @@ export class TriggerCoordinator {
       );
     }
 
-    const processedWorkflow = this.graphRegistry.get(targetWorkflowId);
+    const processedWorkflow = graphRegistry.get(targetWorkflowId);
     if (!processedWorkflow || !processedWorkflow.triggers) {
       return undefined;
     }
@@ -433,8 +433,9 @@ export class TriggerCoordinator {
    * @returns 完整的触发器
    */
   private mergeTrigger(workflowTrigger: WorkflowTrigger, state: TriggerRuntimeState): Trigger {
+    const stateManager = this.contextFactory.getStateManager();
     // 使用 convertToTrigger 转换为 Trigger
-    const workflowId = this.stateManager.getWorkflowId();
+    const workflowId = stateManager.getWorkflowId();
     const trigger = convertToTrigger(workflowTrigger, workflowId!);
 
     // 合并运行时状态

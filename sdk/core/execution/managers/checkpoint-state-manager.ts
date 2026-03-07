@@ -160,12 +160,12 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
       this.checkpointSizes.set(checkpointId, data.length);
 
       // 触发检查点创建事件
-      const createdEvent = buildCheckpointCreatedEvent(
-        checkpointData.threadId,
+      const createdEvent = buildCheckpointCreatedEvent({
+        threadId: checkpointData.threadId,
         checkpointId,
-        checkpointData.workflowId,
-        checkpointData.metadata?.description
-      );
+        workflowId: checkpointData.workflowId,
+        description: checkpointData.metadata?.description
+      });
       await safeEmit(this.eventManager, createdEvent);
 
       // 执行清理策略（如果配置了）
@@ -188,13 +188,13 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
       return checkpointId;
     } catch (error) {
       // 触发检查点失败事件
-      const failedEvent = buildCheckpointFailedEvent(
-        checkpointData.threadId,
-        'create',
-        getErrorOrNew(error),
-        checkpointData.id,
-        checkpointData.workflowId
-      );
+      const failedEvent = buildCheckpointFailedEvent({
+        threadId: checkpointData.threadId,
+        operation: 'create',
+        error: getErrorOrNew(error),
+        checkpointId: checkpointData.id,
+        workflowId: checkpointData.workflowId
+      });
       await safeEmit(this.eventManager, failedEvent);
       throw error;
     }
@@ -237,22 +237,22 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
 
       // 触发检查点删除事件
       if (checkpoint) {
-        const deletedEvent = buildCheckpointDeletedEvent(
-          checkpoint.threadId,
+        const deletedEvent = buildCheckpointDeletedEvent({
+          threadId: checkpoint.threadId,
           checkpointId,
-          checkpoint.workflowId,
+          workflowId: checkpoint.workflowId,
           reason
-        );
+        });
         await safeEmit(this.eventManager, deletedEvent);
       }
     } catch (error) {
       // 触发检查点失败事件
-      const failedEvent = buildCheckpointFailedEvent(
-        '',
-        'delete',
-        getErrorOrNew(error),
+      const failedEvent = buildCheckpointFailedEvent({
+        threadId: '',
+        operation: 'delete',
+        error: getErrorOrNew(error),
         checkpointId
-      );
+      });
       await safeEmit(this.eventManager, failedEvent);
       throw error;
     }

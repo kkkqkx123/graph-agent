@@ -85,14 +85,24 @@ export async function fork(
   }
 
   // 触发THREAD_FORK_STARTED事件
-  const forkStartedEvent = buildThreadForkStartedEvent(parentThreadEntity, forkConfig);
+  const forkStartedEvent = buildThreadForkStartedEvent({
+    threadId: parentThreadEntity.thread.id,
+    workflowId: parentThreadEntity.thread.workflowId,
+    parentThreadId: parentThreadEntity.getThreadId(),
+    forkConfig
+  });
   await safeEmit(eventManager, forkStartedEvent);
 
   // 步骤2：创建子线程
   const childThreadEntity = await threadBuilder.createFork(parentThreadEntity, forkConfig);
 
   // 触发THREAD_FORK_COMPLETED事件
-  const forkCompletedEvent = buildThreadForkCompletedEvent(parentThreadEntity, [childThreadEntity.getThreadId()]);
+  const forkCompletedEvent = buildThreadForkCompletedEvent({
+    threadId: parentThreadEntity.thread.id,
+    workflowId: parentThreadEntity.thread.workflowId,
+    parentThreadId: parentThreadEntity.getThreadId(),
+    childThreadIds: [childThreadEntity.getThreadId()]
+  });
   await safeEmit(eventManager, forkCompletedEvent);
 
   return childThreadEntity;
@@ -142,7 +152,13 @@ export async function join(
   if (eventManager && parentThreadId) {
     const parentThreadEntity = threadRegistry.get(parentThreadId);
     if (parentThreadEntity) {
-      const joinStartedEvent = buildThreadJoinStartedEvent(parentThreadEntity, childThreadIds, joinStrategy);
+      const joinStartedEvent = buildThreadJoinStartedEvent({
+        threadId: parentThreadEntity.thread.id,
+        workflowId: parentThreadEntity.thread.workflowId,
+        parentThreadId: parentThreadEntity.getThreadId(),
+        childThreadIds,
+        joinStrategy
+      });
       await safeEmit(eventManager, joinStartedEvent);
     }
   }
@@ -269,14 +285,23 @@ export async function copy(
   }
 
   // 触发THREAD_COPY_STARTED事件
-  const copyStartedEvent = buildThreadCopyStartedEvent(sourceThreadEntity);
+  const copyStartedEvent = buildThreadCopyStartedEvent({
+    threadId: sourceThreadEntity.thread.id,
+    workflowId: sourceThreadEntity.thread.workflowId,
+    sourceThreadId: sourceThreadEntity.thread.id
+  });
   await safeEmit(eventManager, copyStartedEvent);
 
   // 步骤2：调用 ThreadBuilder 复制 thread
   const copiedThreadEntity = await threadBuilder.createCopy(sourceThreadEntity);
 
   // 触发THREAD_COPY_COMPLETED事件
-  const copyCompletedEvent = buildThreadCopyCompletedEvent(sourceThreadEntity, copiedThreadEntity.getThreadId());
+  const copyCompletedEvent = buildThreadCopyCompletedEvent({
+    threadId: sourceThreadEntity.thread.id,
+    workflowId: sourceThreadEntity.thread.workflowId,
+    sourceThreadId: sourceThreadEntity.thread.id,
+    copiedThreadId: copiedThreadEntity.getThreadId()
+  });
   await safeEmit(eventManager, copyCompletedEvent);
 
   return copiedThreadEntity;
@@ -416,11 +441,13 @@ async function waitForCompletion(
   if (eventManager && parentThreadId && conditionMet) {
     const parentThreadEntity = threadRegistry.get(parentThreadId);
     if (parentThreadEntity) {
-      const joinConditionMetEvent = buildThreadJoinConditionMetEvent(
-        parentThreadEntity,
+      const joinConditionMetEvent = buildThreadJoinConditionMetEvent({
+        threadId: parentThreadEntity.thread.id,
+        workflowId: parentThreadEntity.thread.workflowId,
+        parentThreadId: parentThreadEntity.getThreadId(),
         childThreadIds,
-        joinStrategy
-      );
+        condition: joinStrategy
+      });
       await safeEmit(eventManager, joinConditionMetEvent);
     }
   }
@@ -482,11 +509,13 @@ async function waitForCompletionByPolling(
   if (eventManager && parentThreadId && conditionMet) {
     const parentThreadEntity = threadRegistry.get(parentThreadId);
     if (parentThreadEntity) {
-      const joinConditionMetEvent = buildThreadJoinConditionMetEvent(
-        parentThreadEntity,
+      const joinConditionMetEvent = buildThreadJoinConditionMetEvent({
+        threadId: parentThreadEntity.thread.id,
+        workflowId: parentThreadEntity.thread.workflowId,
+        parentThreadId: parentThreadEntity.getThreadId(),
         childThreadIds,
-        joinStrategy
-      );
+        condition: joinStrategy
+      });
       await safeEmit(eventManager, joinConditionMetEvent);
     }
   }

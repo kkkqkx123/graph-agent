@@ -352,12 +352,13 @@ export class TriggeredSubworkflowManager implements TaskManager {
     task: TriggeredSubgraphTask,
     subgraphEntity: ThreadEntity
   ): Promise<void> {
-    const startedEvent = buildTriggeredSubgraphStartedEvent(
-      task.mainThreadEntity,
-      task.subgraphId,
-      task.triggerId,
-      task.input
-    );
+    const startedEvent = buildTriggeredSubgraphStartedEvent({
+      threadId: task.mainThreadEntity.thread.id,
+      workflowId: task.mainThreadEntity.thread.workflowId,
+      subgraphId: task.subgraphId,
+      triggerId: task.triggerId,
+      input: task.input
+    });
     await emit(this.eventManager, startedEvent);
   }
 
@@ -372,13 +373,14 @@ export class TriggeredSubworkflowManager implements TaskManager {
       return;
     }
 
-    const completedEvent = buildTriggeredSubgraphCompletedEvent(
-      subgraphEntity,
-      subgraphEntity.getTriggeredSubworkflowId() || '',
-      '',
-      subgraphEntity.getOutput(),
-      result.executionTime
-    );
+    const completedEvent = buildTriggeredSubgraphCompletedEvent({
+      threadId: subgraphEntity.thread.id,
+      workflowId: subgraphEntity.thread.workflowId,
+      subgraphId: subgraphEntity.getTriggeredSubworkflowId() || '',
+      triggerId: '',
+      output: subgraphEntity.getOutput(),
+      executionTime: result.executionTime
+    });
     await emit(this.eventManager, completedEvent);
   }
 
@@ -393,12 +395,13 @@ export class TriggeredSubworkflowManager implements TaskManager {
       return;
     }
 
-    const failedEvent = buildTriggeredSubgraphFailedEvent(
-      subgraphEntity,
-      subgraphEntity.getTriggeredSubworkflowId() || '',
-      '',
-      getErrorOrNew(error)
-    );
+    const failedEvent = buildTriggeredSubgraphFailedEvent({
+      threadId: subgraphEntity.thread.id,
+      workflowId: subgraphEntity.thread.workflowId,
+      subgraphId: subgraphEntity.getTriggeredSubworkflowId() || '',
+      triggerId: '',
+      error: getErrorOrNew(error)
+    });
     await emit(this.eventManager, failedEvent);
   }
 

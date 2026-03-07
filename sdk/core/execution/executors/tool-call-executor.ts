@@ -178,12 +178,12 @@ export class ToolCallExecutor {
 
         // 触发消息添加事件
         if (this.eventManager) {
-          const messageEvent = buildMessageAddedEvent(
-            threadId || '',
-            toolMessage.role,
-            typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
+          const messageEvent = buildMessageAddedEvent({
+            threadId: threadId || '',
+            role: toolMessage.role,
+            content: typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
             nodeId
-          );
+          });
           safeEmit(this.eventManager, messageEvent);
         }
 
@@ -266,12 +266,12 @@ export class ToolCallExecutor {
 
         // 触发消息添加事件
         if (this.eventManager) {
-          const messageEvent = buildMessageAddedEvent(
-            threadId || '',
-            toolMessage.role,
-            typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
+          const messageEvent = buildMessageAddedEvent({
+            threadId: threadId || '',
+            role: toolMessage.role,
+            content: typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
             nodeId
-          );
+          });
           await safeEmit(this.eventManager, messageEvent);
         }
 
@@ -392,12 +392,12 @@ export class ToolCallExecutor {
 
       // 触发消息添加事件
       if (this.eventManager) {
-        const messageEvent = buildMessageAddedEvent(
-          threadId || '',
-          toolMessage.role,
-          typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
+        const messageEvent = buildMessageAddedEvent({
+          threadId: threadId || '',
+          role: toolMessage.role,
+          content: typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
           nodeId
-        );
+        });
         await safeEmit(this.eventManager, messageEvent);
       }
 
@@ -442,12 +442,12 @@ export class ToolCallExecutor {
 
     // 触发消息添加事件
     if (this.eventManager) {
-      const messageEvent = buildMessageAddedEvent(
-        threadId || '',
-        toolMessage.role,
-        typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
+      const messageEvent = buildMessageAddedEvent({
+        threadId: threadId || '',
+        role: toolMessage.role,
+        content: typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
         nodeId
-      );
+      });
       await safeEmit(this.eventManager, messageEvent);
     }
 
