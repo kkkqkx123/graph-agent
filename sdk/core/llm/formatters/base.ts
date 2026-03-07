@@ -8,13 +8,11 @@
 import type { LLMRequest, LLMResult, LLMProfile, LLMMessage, LLMToolCall } from '@modular-agent/types';
 import type { ToolSchema } from '@modular-agent/types';
 import type {
-  HttpRequestOptions,
-  StreamChunk,
   FormatterConfig,
   BuildRequestResult,
-  ParseResponseResult,
   ParseStreamChunkResult
 } from './types.js';
+import { ToolCallParser, type ToolCallParseOptions } from './tool-call-parser.js';
 
 /**
  * 格式转换器抽象基类
@@ -434,5 +432,61 @@ export abstract class BaseFormatter {
     }
 
     return Object.keys(options).length > 0 ? options : undefined;
+  }
+
+  // ==================== 多格式工具调用解析方法（委托给ToolCallParser） ====================
+
+  /**
+   * 从XML格式文本中解析工具调用
+   *
+   * 支持格式：
+   * ```xml
+   * <tool_use>
+   *   <tool_name>tool_name</tool_name>
+   *   <parameters>
+   *     <param1>value1</param1>
+   *     <param2>value2</param2>
+   *   </parameters>
+   * </tool_use>
+   * ```
+   *
+   * @param xmlText 包含XML工具调用的文本
+   * @returns 解析出的工具调用数组（已转换为标准LLMToolCall格式）
+   */
+  parseXMLToolCalls(xmlText: string): LLMToolCall[] {
+    return ToolCallParser.parseXMLToolCalls(xmlText);
+  }
+
+  /**
+   * 从JSON格式文本中解析工具调用
+   *
+   * 支持格式：
+   * ```
+   * <<<TOOL_CALL>>>
+   * {"tool": "tool_name", "parameters": {...}}
+   * <<<END_TOOL_CALL>>>
+   * ```
+   *
+   * @param text 包含JSON工具调用的文本
+   * @param options 解析选项
+   * @returns 解析出的工具调用数组（已转换为标准LLMToolCall格式）
+   */
+  parseJSONToolCalls(text: string, options?: ToolCallParseOptions): LLMToolCall[] {
+    return ToolCallParser.parseJSONToolCalls(text, options);
+  }
+
+  /**
+   * 从文本中尝试解析工具调用（自动检测格式）
+   *
+   * 按以下顺序尝试：
+   * 1. XML格式
+   * 2. JSON格式
+   *
+   * @param text 包含工具调用的文本
+   * @param options 解析选项
+   * @returns 解析出的工具调用数组
+   */
+  parseToolCallsFromText(text: string, options?: ToolCallParseOptions): LLMToolCall[] {
+    return ToolCallParser.parseFromText(text, options);
   }
 }

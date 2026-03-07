@@ -14,6 +14,10 @@ export interface ToolCallStartedEvent extends BaseEvent {
   nodeId: ID;
   /** 工具ID */
   toolId: ID;
+  /** 工具调用任务ID（用于追踪单个工具调用） */
+  taskId?: string;
+  /** 批次ID（一批并行工具调用的标识） */
+  batchId?: string;
   /** 工具名称 */
   toolName?: string;
   /** 工具参数 */
@@ -29,6 +33,10 @@ export interface ToolCallCompletedEvent extends BaseEvent {
   nodeId: ID;
   /** 工具ID */
   toolId: ID;
+  /** 工具调用任务ID（用于追踪单个工具调用） */
+  taskId?: string;
+  /** 批次ID（一批并行工具调用的标识） */
+  batchId?: string;
   /** 工具名称 */
   toolName?: string;
   /** 工具结果 */
@@ -46,6 +54,10 @@ export interface ToolCallFailedEvent extends BaseEvent {
   nodeId: ID;
   /** 工具ID */
   toolId: ID;
+  /** 工具调用任务ID（用于追踪单个工具调用） */
+  taskId?: string;
+  /** 批次ID（一批并行工具调用的标识） */
+  batchId?: string;
   /** 工具名称 */
   toolName?: string;
   /** 错误信息 */

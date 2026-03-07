@@ -19,7 +19,7 @@ import type { ToolService } from '../../services/tool-service.js';
 import type { EventManager } from '../../services/event-manager.js';
 import type { Tool, ID } from '@modular-agent/types';
 import { safeEmit } from '../utils/event/event-emitter.js';
-import { now, diffTimestamp } from '@modular-agent/common-utils';
+import { now, diffTimestamp, generateId } from '@modular-agent/common-utils';
 import type { ConversationManager } from '../managers/conversation-manager.js';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
@@ -32,6 +32,29 @@ import {
   buildToolCallCompletedEvent,
   buildToolCallFailedEvent
 } from '../utils/event/event-builder.js';
+
+/**
+ * 工具调用任务信息
+ * 用于追踪单个工具调用的生命周期
+ */
+export interface ToolCallTaskInfo {
+  /** 任务ID（唯一标识） */
+  taskId: string;
+  /** 批次ID（同一批并行调用的标识） */
+  batchId: string;
+  /** 工具调用ID（来自LLM响应） */
+  toolCallId: string;
+  /** 工具名称 */
+  toolName: string;
+  /** 开始时间 */
+  startTime: number;
+  /** 结束时间 */
+  endTime?: number;
+  /** 状态 */
+  status: 'running' | 'completed' | 'failed';
+  /** 错误信息（如果失败） */
+  error?: string;
+}
 
 /**
  * 工具执行结果
@@ -93,6 +116,23 @@ export class ToolCallExecutor {
       throw new ThreadInterruptedException('Tool execution aborted', 'STOP');
     }
 
+    // 生成批次ID（用于追踪这一批并行工具调用）
+    const batchId = `batch_${generateId()}`;
+
+    // 为每个工具调用预生成任务ID和任务信息
+    const taskInfos: Map<string, ToolCallTaskInfo> = new Map();
+    for (const toolCall of toolCalls) {
+      const taskId = `task_${generateId()}`;
+      taskInfos.set(toolCall.id, {
+        taskId,
+        batchId,
+        toolCallId: toolCall.id,
+        toolName: toolCall.name,
+        startTime: now(),
+        status: 'running'
+      });
+    }
+
     // 使用 Promise.allSettled 并行执行所有工具调用
     // 即使部分工具调用失败，其他工具调用也能继续执行
     const executionPromises = toolCalls.map(toolCall =>
@@ -101,6 +141,8 @@ export class ToolCallExecutor {
         conversationState,
         threadId,
         nodeId,
+        batchId,
+        taskInfos.get(toolCall.id)!,
         options
       )
     );
@@ -145,15 +187,20 @@ export class ToolCallExecutor {
           safeEmit(this.eventManager, messageEvent);
         }
 
+        // 从taskInfos获取任务信息
+        const taskInfo = taskInfos.get(toolCall.id)!;
+
         // 触发工具调用失败事件
         if (this.eventManager) {
-          const failedEvent = buildToolCallFailedEvent(
-            threadId || '',
-            nodeId || '',
-            toolCall.name,
-            toolCall.name,
-            new Error(errorMessage)
-          );
+          const failedEvent = buildToolCallFailedEvent({
+            threadId: threadId || '',
+            nodeId: nodeId || '',
+            toolId: toolCall.name,
+            toolName: toolCall.name,
+            error: new Error(errorMessage),
+            taskId: taskInfo.taskId,
+            batchId: taskInfo.batchId
+          });
           safeEmit(this.eventManager, failedEvent);
         }
 
@@ -175,17 +222,21 @@ export class ToolCallExecutor {
    * @param conversationState 对话管理器
    * @param threadId 线程ID
    * @param nodeId 节点ID
+   * @param batchId 批次ID（用于追踪并行调用）
+   * @param taskInfo 任务信息（包含预生成的taskId等）
    * @param options 执行选项（包含 AbortSignal）
    * @returns 执行结果
    */
   private async executeSingleToolCall(
     toolCall: { id: string; name: string; arguments: string },
     conversationState: ConversationManager,
-    threadId?: string,
-    nodeId?: string,
+    threadId: string | undefined,
+    nodeId: string | undefined,
+    batchId: string,
+    taskInfo: ToolCallTaskInfo,
     options?: { abortSignal?: AbortSignal }
   ): Promise<ToolExecutionResult> {
-    const startTime = now();
+    const startTime = taskInfo.startTime;
 
     // 获取工具配置
     let toolConfig: Tool | undefined;
@@ -226,13 +277,15 @@ export class ToolCallExecutor {
 
         // 触发工具调用失败事件
         if (this.eventManager) {
-          const failedEvent = buildToolCallFailedEvent(
-            threadId || '',
-            nodeId || '',
-            toolCall.name,
-            toolCall.name,
-            new Error(errorMessage)
-          );
+          const failedEvent = buildToolCallFailedEvent({
+            threadId: threadId || '',
+            nodeId: nodeId || '',
+            toolId: toolCall.name,
+            toolName: toolCall.name,
+            error: new Error(errorMessage),
+            taskId: taskInfo.taskId,
+            batchId
+          });
           await safeEmit(this.eventManager, failedEvent);
         }
 
@@ -275,13 +328,15 @@ export class ToolCallExecutor {
 
     // 触发工具调用开始事件
     if (this.eventManager) {
-      const startedEvent = buildToolCallStartedEvent(
-        threadId || '',
-        nodeId || '',
-        toolCall.name,
-        toolCall.name,
-        toolCall.arguments
-      );
+      const startedEvent = buildToolCallStartedEvent({
+        threadId: threadId || '',
+        nodeId: nodeId || '',
+        toolId: toolCall.name,
+        toolName: toolCall.name,
+        toolArguments: toolCall.arguments,
+        taskId: taskInfo.taskId,
+        batchId
+      });
       await safeEmit(this.eventManager, startedEvent);
     }
 
@@ -348,13 +403,15 @@ export class ToolCallExecutor {
 
       // 触发工具调用失败事件
       if (this.eventManager) {
-        const failedEvent = buildToolCallFailedEvent(
-          threadId || '',
-          nodeId || '',
-          toolCall.name,
-          toolCall.name,
-          new Error(errorMessage)
-        );
+        const failedEvent = buildToolCallFailedEvent({
+          threadId: threadId || '',
+          nodeId: nodeId || '',
+          toolId: toolCall.name,
+          toolName: toolCall.name,
+          error: new Error(errorMessage),
+          taskId: taskInfo.taskId,
+          batchId
+        });
         await safeEmit(this.eventManager, failedEvent);
       }
 
@@ -423,14 +480,16 @@ export class ToolCallExecutor {
 
     // 触发工具调用完成事件
     if (this.eventManager) {
-      const completedEvent = buildToolCallCompletedEvent(
-        threadId || '',
-        nodeId || '',
-        toolCall.name,
-        toolCall.name,
-        serviceResult.result,
-        executionTime
-      );
+      const completedEvent = buildToolCallCompletedEvent({
+        threadId: threadId || '',
+        nodeId: nodeId || '',
+        toolId: toolCall.name,
+        toolName: toolCall.name,
+        toolResult: serviceResult.result,
+        executionTime,
+        taskId: taskInfo.taskId,
+        batchId
+      });
       await safeEmit(this.eventManager, completedEvent);
     }
 

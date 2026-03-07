@@ -20,6 +20,14 @@ export type {
 // 基类导出
 export { BaseFormatter } from './base.js';
 
+// 工具调用解析器导出
+export {
+  ToolCallParser,
+  type ToolCallParseOptions,
+  type XMLToolCall,
+  type JSONToolCall
+} from './tool-call-parser.js';
+
 // OpenAI 格式转换器
 export { OpenAIChatFormatter } from './openai-chat.js';
 export { OpenAIResponseFormatter } from './openai-response.js';

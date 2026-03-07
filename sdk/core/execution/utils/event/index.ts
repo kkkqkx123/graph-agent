@@ -41,6 +41,13 @@ export {
     buildUserInteractionProcessedEvent
 } from './event-builder.js';
 
+// 工具调用事件参数类型
+export type {
+    BuildToolCallStartedEventParams,
+    BuildToolCallCompletedEventParams,
+    BuildToolCallFailedEventParams
+} from './event-builder.js';
+
 // 事件触发工具函数
 export {
     safeEmit,

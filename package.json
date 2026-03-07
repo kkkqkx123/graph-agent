@@ -11,9 +11,8 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
-    "test": "turbo run test",
+    "test": "node scripts/test.mjs",
     "lint": "turbo run lint",
-    "format": "turbo run format",
     "clean": "turbo run clean && rimraf node_modules",
     "typecheck": "turbo run typecheck",
     "postinstall": "pnpm typecheck"

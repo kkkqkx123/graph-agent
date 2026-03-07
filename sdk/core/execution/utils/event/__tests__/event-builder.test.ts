@@ -272,7 +272,7 @@ describe('EventBuilder', () => {
 
     describe('buildMessageAddedEvent', () => {
       it('应该正确构建消息添加事件（带节点ID）', () => {
-        const event = buildMessageAddedEvent(mockThreadContext, 'node-1', 'user', 'Hello');
+        const event = buildMessageAddedEvent('thread-1', 'user', 'Hello', 'node-1', 'workflow-1');
 
         expect(event.type).toBe('MESSAGE_ADDED');
         expect(event.threadId).toBe('thread-1');
@@ -284,11 +284,10 @@ describe('EventBuilder', () => {
       });
 
       it('应该正确构建消息添加事件（无节点ID）', () => {
-        const event = buildMessageAddedEvent(mockThreadContext, undefined, 'assistant', 'Hi there');
+        const event = buildMessageAddedEvent('thread-1', 'assistant', 'Hi there');
 
         expect(event.type).toBe('MESSAGE_ADDED');
         expect(event.threadId).toBe('thread-1');
-        expect(event.workflowId).toBe('workflow-1');
         expect(event.nodeId).toBeUndefined();
         expect(event.role).toBe('assistant');
         expect(event.content).toBe('Hi there');
@@ -298,7 +297,7 @@ describe('EventBuilder', () => {
 
     describe('buildTokenUsageWarningEvent', () => {
       it('应该正确构建Token使用警告事件', () => {
-        const event = buildTokenUsageWarningEvent(mockThreadContext, 9000, 10000, 90);
+        const event = buildTokenUsageWarningEvent('thread-1', 9000, 10000, 90, 'workflow-1');
 
         expect(event.type).toBe('TOKEN_USAGE_WARNING');
         expect(event.threadId).toBe('thread-1');
@@ -312,11 +311,10 @@ describe('EventBuilder', () => {
 
     describe('buildConversationStateChangedEvent', () => {
       it('应该正确构建对话状态变更事件', () => {
-        const event = buildConversationStateChangedEvent(mockThreadContext, 'node-1', 10, 5000);
+        const event = buildConversationStateChangedEvent('thread-1', 10, 5000, 'node-1');
 
         expect(event.type).toBe('CONVERSATION_STATE_CHANGED');
         expect(event.threadId).toBe('thread-1');
-        expect(event.workflowId).toBe('workflow-1');
         expect(event.nodeId).toBe('node-1');
         expect(event.messageCount).toBe(10);
         expect(event.tokenUsage).toBe(5000);
@@ -328,13 +326,16 @@ describe('EventBuilder', () => {
   describe('工具调用事件构建函数', () => {
     describe('buildToolCallStartedEvent', () => {
       it('应该正确构建工具调用开始事件（完整参数）', () => {
-        const event = buildToolCallStartedEvent(
-          mockThreadContext,
-          'node-1',
-          'tool-1' as ID,
-          'search',
-          '{"query":"test"}'
-        );
+        const event = buildToolCallStartedEvent({
+          threadId: 'thread-1',
+          nodeId: 'node-1',
+          toolId: 'tool-1' as ID,
+          taskId: 'task-1',
+          batchId: 'batch-1',
+          toolName: 'search',
+          toolArguments: '{"query":"test"}',
+          workflowId: 'workflow-1'
+        });
 
         expect(event.type).toBe('TOOL_CALL_STARTED');
         expect(event.threadId).toBe('thread-1');
@@ -343,19 +344,30 @@ describe('EventBuilder', () => {
         expect(event.toolId).toBe('tool-1');
         expect(event.toolName).toBe('search');
         expect(event.toolArguments).toBe('{"query":"test"}');
+        expect(event.taskId).toBe('task-1');
+        expect(event.batchId).toBe('batch-1');
         expect(event.timestamp).toBeDefined();
       });
 
       it('应该正确构建工具调用开始事件（最小参数）', () => {
-        const event = buildToolCallStartedEvent(mockThreadContext, 'node-1', 'tool-1' as ID);
+        const event = buildToolCallStartedEvent({
+          threadId: 'thread-1',
+          nodeId: 'node-1',
+          toolId: 'tool-1' as ID,
+          taskId: 'task-1',
+          batchId: 'batch-1',
+          toolName: '',
+          toolArguments: ''
+        });
 
         expect(event.type).toBe('TOOL_CALL_STARTED');
         expect(event.threadId).toBe('thread-1');
-        expect(event.workflowId).toBe('workflow-1');
         expect(event.nodeId).toBe('node-1');
         expect(event.toolId).toBe('tool-1');
-        expect(event.toolName).toBeUndefined();
+        expect(event.toolName).toBe('');
         expect(event.toolArguments).toBe('');
+        expect(event.taskId).toBe('task-1');
+        expect(event.batchId).toBe('batch-1');
         expect(event.timestamp).toBeDefined();
       });
     });
@@ -363,14 +375,17 @@ describe('EventBuilder', () => {
     describe('buildToolCallCompletedEvent', () => {
       it('应该正确构建工具调用完成事件（完整参数）', () => {
         const result = { data: 'tool result' };
-        const event = buildToolCallCompletedEvent(
-          mockThreadContext,
-          'node-1',
-          'tool-1' as ID,
-          'search',
-          result,
-          200
-        );
+        const event = buildToolCallCompletedEvent({
+          threadId: 'thread-1',
+          nodeId: 'node-1',
+          toolId: 'tool-1' as ID,
+          taskId: 'task-1',
+          batchId: 'batch-1',
+          toolName: 'search',
+          toolResult: result,
+          executionTime: 200,
+          workflowId: 'workflow-1'
+        });
 
         expect(event.type).toBe('TOOL_CALL_COMPLETED');
         expect(event.threadId).toBe('thread-1');
@@ -380,33 +395,48 @@ describe('EventBuilder', () => {
         expect(event.toolName).toBe('search');
         expect(event.toolResult).toEqual(result);
         expect(event.executionTime).toBe(200);
+        expect(event.taskId).toBe('task-1');
+        expect(event.batchId).toBe('batch-1');
         expect(event.timestamp).toBeDefined();
       });
 
       it('应该正确构建工具调用完成事件（最小参数）', () => {
-        const event = buildToolCallCompletedEvent(mockThreadContext, 'node-1', 'tool-1' as ID);
+        const event = buildToolCallCompletedEvent({
+          threadId: 'thread-1',
+          nodeId: 'node-1',
+          toolId: 'tool-1' as ID,
+          taskId: 'task-1',
+          batchId: 'batch-1',
+          toolName: '',
+          toolResult: undefined,
+          executionTime: 0
+        });
 
         expect(event.type).toBe('TOOL_CALL_COMPLETED');
         expect(event.threadId).toBe('thread-1');
-        expect(event.workflowId).toBe('workflow-1');
         expect(event.nodeId).toBe('node-1');
         expect(event.toolId).toBe('tool-1');
-        expect(event.toolName).toBeUndefined();
+        expect(event.toolName).toBe('');
         expect(event.toolResult).toBeUndefined();
         expect(event.executionTime).toBe(0);
+        expect(event.taskId).toBe('task-1');
+        expect(event.batchId).toBe('batch-1');
         expect(event.timestamp).toBeDefined();
       });
     });
 
     describe('buildToolCallFailedEvent', () => {
       it('应该正确构建工具调用失败事件（带错误）', () => {
-        const event = buildToolCallFailedEvent(
-          mockThreadContext,
-          'node-1',
-          'tool-1' as ID,
-          'search',
-          mockError
-        );
+        const event = buildToolCallFailedEvent({
+          threadId: 'thread-1',
+          nodeId: 'node-1',
+          toolId: 'tool-1' as ID,
+          taskId: 'task-1',
+          batchId: 'batch-1',
+          toolName: 'search',
+          error: mockError,
+          workflowId: 'workflow-1'
+        });
 
         expect(event.type).toBe('TOOL_CALL_FAILED');
         expect(event.threadId).toBe('thread-1');
@@ -415,19 +445,30 @@ describe('EventBuilder', () => {
         expect(event.toolId).toBe('tool-1');
         expect(event.toolName).toBe('search');
         expect(event.error).toBe('Test error');
+        expect(event.taskId).toBe('task-1');
+        expect(event.batchId).toBe('batch-1');
         expect(event.timestamp).toBeDefined();
       });
 
       it('应该正确构建工具调用失败事件（无错误）', () => {
-        const event = buildToolCallFailedEvent(mockThreadContext, 'node-1', 'tool-1' as ID);
+        const event = buildToolCallFailedEvent({
+          threadId: 'thread-1',
+          nodeId: 'node-1',
+          toolId: 'tool-1' as ID,
+          taskId: 'task-1',
+          batchId: 'batch-1',
+          toolName: '',
+          error: new Error('Unknown error')
+        });
 
         expect(event.type).toBe('TOOL_CALL_FAILED');
         expect(event.threadId).toBe('thread-1');
-        expect(event.workflowId).toBe('workflow-1');
         expect(event.nodeId).toBe('node-1');
         expect(event.toolId).toBe('tool-1');
-        expect(event.toolName).toBeUndefined();
+        expect(event.toolName).toBe('');
         expect(event.error).toBe('Unknown error');
+        expect(event.taskId).toBe('task-1');
+        expect(event.batchId).toBe('batch-1');
         expect(event.timestamp).toBeDefined();
       });
     });

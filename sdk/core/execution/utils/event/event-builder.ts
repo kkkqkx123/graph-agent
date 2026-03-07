@@ -349,83 +349,107 @@ export function buildConversationStateChangedEvent(
 }
 
 /**
+ * 工具调用开始事件参数
+ */
+export interface BuildToolCallStartedEventParams {
+  threadId: string;
+  nodeId: string;
+  toolId: ID;
+  taskId: string;
+  batchId: string;
+  toolName: string;
+  toolArguments: string;
+  workflowId?: string;
+}
+
+/**
  * 构建工具调用开始事件
  */
 export function buildToolCallStartedEvent(
-  threadId: string,
-  nodeId: string,
-  toolId: ID,
-  toolName?: string,
-  toolArguments?: string,
-  workflowId?: string
+  params: BuildToolCallStartedEventParams
 ): ToolCallStartedEvent {
-  const event: ToolCallStartedEvent = {
+  return {
     type: 'TOOL_CALL_STARTED',
     timestamp: now(),
-    threadId,
-    nodeId,
-    toolId,
-    toolName,
-    toolArguments: toolArguments || ''
+    threadId: params.threadId,
+    nodeId: params.nodeId,
+    toolId: params.toolId,
+    toolName: params.toolName,
+    toolArguments: params.toolArguments,
+    taskId: params.taskId,
+    batchId: params.batchId,
+    ...(params.workflowId && { workflowId: params.workflowId })
   };
-  if (workflowId) {
-    (event as any).workflowId = workflowId;
-  }
-  return event;
+}
+
+/**
+ * 工具调用完成事件参数
+ */
+export interface BuildToolCallCompletedEventParams {
+  threadId: string;
+  nodeId: string;
+  toolId: ID;
+  taskId: string;
+  batchId: string;
+  toolName: string;
+  toolResult: any;
+  executionTime: number;
+  workflowId?: string;
 }
 
 /**
  * 构建工具调用完成事件
  */
 export function buildToolCallCompletedEvent(
-  threadId: string,
-  nodeId: string,
-  toolId: ID,
-  toolName?: string,
-  toolResult?: any,
-  executionTime?: number,
-  workflowId?: string
+  params: BuildToolCallCompletedEventParams
 ): ToolCallCompletedEvent {
-  const event: ToolCallCompletedEvent = {
+  return {
     type: 'TOOL_CALL_COMPLETED',
     timestamp: now(),
-    threadId,
-    nodeId,
-    toolId,
-    toolName,
-    toolResult,
-    executionTime: executionTime || 0
+    threadId: params.threadId,
+    nodeId: params.nodeId,
+    toolId: params.toolId,
+    toolName: params.toolName,
+    toolResult: params.toolResult,
+    executionTime: params.executionTime,
+    taskId: params.taskId,
+    batchId: params.batchId,
+    ...(params.workflowId && { workflowId: params.workflowId })
   };
-  if (workflowId) {
-    (event as any).workflowId = workflowId;
-  }
-  return event;
+}
+
+/**
+ * 工具调用失败事件参数
+ */
+export interface BuildToolCallFailedEventParams {
+  threadId: string;
+  nodeId: string;
+  toolId: ID;
+  taskId: string;
+  batchId: string;
+  toolName: string;
+  error: Error;
+  workflowId?: string;
 }
 
 /**
  * 构建工具调用失败事件
  */
 export function buildToolCallFailedEvent(
-  threadId: string,
-  nodeId: string,
-  toolId: ID,
-  toolName?: string,
-  error?: Error,
-  workflowId?: string
+  params: BuildToolCallFailedEventParams
 ): ToolCallFailedEvent {
-  const event: ToolCallFailedEvent = {
+  return {
     type: 'TOOL_CALL_FAILED',
     timestamp: now(),
-    threadId,
-    nodeId,
-    toolId,
-    toolName,
-    error: error?.message || 'Unknown error'
+    threadId: params.threadId,
+    nodeId: params.nodeId,
+    toolId: params.toolId,
+    toolName: params.toolName,
+    error: params.error.message || 'Unknown error',
+    taskId: params.taskId,
+    batchId: params.batchId,
+    ...(params.workflowId && { workflowId: params.workflowId })
   };
-  if (workflowId) {
-    (event as any).workflowId = workflowId;
-  }
-  return event;
 }
 
 /**
