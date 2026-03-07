@@ -32,19 +32,37 @@ export class AnthropicFormatter extends BaseFormatter {
   buildRequest(request: LLMRequest, config: FormatterConfig): BuildRequestResult {
     const body = this.buildRequestBody(request, config);
 
+    // 构建请求头
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'anthropic-version': config.profile.metadata?.['apiVersion'] || this.apiVersion,
+      'anthropic-dangerous-direct-browser-access': 'false',
+      ...config.profile.headers
+    };
+
+    // 添加认证头 (支持 x-api-key 和 Authorization Bearer 两种方式)
+    if (config.profile.apiKey) {
+      Object.assign(headers, this.buildAuthHeader(config.profile.apiKey, config, 'x-api-key'));
+    }
+
+    // 添加自定义请求头
+    Object.assign(headers, this.buildCustomHeaders(config));
+
+    // 应用自定义请求体
+    const finalBody = this.applyCustomBody(body, config);
+
+    // 构建查询参数
+    const queryString = this.buildQueryString(config);
+
     return {
       httpRequest: {
-        url: '/v1/messages',
+        url: `/v1/messages${queryString}`,
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'anthropic-version': config.profile.metadata?.['apiVersion'] || this.apiVersion,
-          'anthropic-dangerous-direct-browser-access': 'false',
-          ...config.profile.headers
-        },
-        body
+        headers,
+        body: finalBody,
+        timeout: config.timeout
       },
-      transformedBody: body
+      transformedBody: finalBody
     };
   }
 

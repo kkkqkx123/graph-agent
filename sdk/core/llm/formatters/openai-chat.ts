@@ -26,17 +26,35 @@ export class OpenAIChatFormatter extends BaseFormatter {
   buildRequest(request: LLMRequest, config: FormatterConfig): BuildRequestResult {
     const body = this.buildRequestBody(request, config);
 
+    // 构建请求头
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...config.profile.headers
+    };
+
+    // 添加认证头 (支持 bearer 和 native 两种方式)
+    if (config.profile.apiKey) {
+      Object.assign(headers, this.buildAuthHeader(config.profile.apiKey, config, 'Authorization'));
+    }
+
+    // 添加自定义请求头
+    Object.assign(headers, this.buildCustomHeaders(config));
+
+    // 应用自定义请求体
+    const finalBody = this.applyCustomBody(body, config);
+
+    // 构建查询参数
+    const queryString = this.buildQueryString(config);
+
     return {
       httpRequest: {
-        url: '/chat/completions',
+        url: `/chat/completions${queryString}`,
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...config.profile.headers
-        },
-        body
+        headers,
+        body: finalBody,
+        timeout: config.timeout
       },
-      transformedBody: body
+      transformedBody: finalBody
     };
   }
 
@@ -168,6 +186,11 @@ export class OpenAIChatFormatter extends BaseFormatter {
     // 添加工具
     if (request.tools && request.tools.length > 0) {
       body.tools = this.convertTools(request.tools);
+    }
+
+    // 添加流式选项 (用于获取完整的 usage 信息)
+    if (config.stream && config.streamOptions?.includeUsage) {
+      body.stream_options = this.buildStreamOptions(config);
     }
 
     // Handle reasoning configuration (for o1, DeepSeek R1, etc.)

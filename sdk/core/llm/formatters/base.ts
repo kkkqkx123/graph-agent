@@ -264,4 +264,175 @@ export abstract class BaseFormatter {
 
     return result;
   }
+
+  /**
+   * 构建认证头
+   *
+   * 根据配置选择认证方式
+   *
+   * @param apiKey API Key
+   * @param config 格式转换器配置
+   * @param nativeHeaderName 原生认证头名称 (如 'x-api-key', 'x-goog-api-key')
+   * @returns 认证头键值对
+   */
+  protected buildAuthHeader(
+    apiKey: string | undefined,
+    config: FormatterConfig,
+    nativeHeaderName: string
+  ): Record<string, string> {
+    if (!apiKey) {
+      return {};
+    }
+
+    const authType = config.authType || 'native';
+
+    if (authType === 'bearer') {
+      return { 'Authorization': `Bearer ${apiKey}` };
+    } else {
+      return { [nativeHeaderName]: apiKey };
+    }
+  }
+
+  /**
+   * 构建自定义请求头
+   *
+   * 合并自定义请求头配置
+   *
+   * @param config 格式转换器配置
+   * @returns 自定义请求头
+   */
+  protected buildCustomHeaders(config: FormatterConfig): Record<string, string> {
+    const headers: Record<string, string> = {};
+
+    // 处理简化版自定义请求头
+    if (config.customHeaders) {
+      Object.assign(headers, config.customHeaders);
+    }
+
+    // 处理完整版自定义请求头
+    if (config.customHeadersList && config.customHeadersList.length > 0) {
+      for (const header of config.customHeadersList) {
+        // 只添加启用的、有键名的请求头
+        if (header.enabled !== false && header.key && header.key.trim()) {
+          headers[header.key.trim()] = header.value || '';
+        }
+      }
+    }
+
+    return headers;
+  }
+
+  /**
+   * 应用自定义请求体
+   *
+   * 合并自定义请求体配置
+   *
+   * @param baseBody 基础请求体
+   * @param config 格式转换器配置
+   * @returns 合并后的请求体
+   */
+  protected applyCustomBody(baseBody: any, config: FormatterConfig): any {
+    // 如果未启用自定义请求体,直接返回
+    if (config.customBodyEnabled === false) {
+      return baseBody;
+    }
+
+    let result = { ...baseBody };
+
+    // 处理简化版自定义请求体
+    if (config.customBody) {
+      result = this.deepMerge(result, config.customBody);
+    }
+
+    // 处理完整版自定义请求体
+    if (config.customBodyConfig) {
+      const customBody = config.customBodyConfig;
+
+      if (customBody.mode === 'simple' && customBody.items) {
+        // 简单模式: 遍历所有项
+        for (const item of customBody.items) {
+          if (item.enabled === false || !item.key || !item.key.trim()) {
+            continue;
+          }
+
+          const rawKey = item.key.trim();
+          let value: any;
+
+          // 尝试解析值为 JSON
+          try {
+            value = JSON.parse(item.value);
+          } catch {
+            // 解析失败,使用原始字符串
+            value = item.value;
+          }
+
+          // 处理嵌套路径键名(如 "extra_body.google")
+          if (rawKey.includes('.')) {
+            const parts = rawKey.split('.');
+            const nestedObj: any = {};
+            let current: any = nestedObj;
+            for (let i = 0; i < parts.length - 1; i++) {
+              const part = parts[i]!;
+              current[part] = {};
+              current = current[part];
+            }
+            const lastPart = parts[parts.length - 1]!;
+            current[lastPart] = value;
+            result = this.deepMerge(result, nestedObj);
+          } else {
+            result = this.deepMerge(result, { [rawKey]: value });
+          }
+        }
+      } else if (customBody.mode === 'advanced' && customBody.json) {
+        // 高级模式: 解析完整 JSON 并深度合并
+        try {
+          const customData = JSON.parse(customBody.json);
+          result = this.deepMerge(result, customData);
+        } catch (error) {
+          console.warn('Failed to parse custom body JSON:', error);
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * 构建查询参数字符串
+   *
+   * @param config 格式转换器配置
+   * @returns 查询参数字符串 (包含 ? 前缀, 如果有参数)
+   */
+  protected buildQueryString(config: FormatterConfig): string {
+    if (!config.queryParams || Object.keys(config.queryParams).length === 0) {
+      return '';
+    }
+
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(config.queryParams)) {
+      params.append(key, String(value));
+    }
+
+    return `?${params.toString()}`;
+  }
+
+  /**
+   * 构建流式选项
+   *
+   * @param config 格式转换器配置
+   * @returns 流式选项对象
+   */
+  protected buildStreamOptions(config: FormatterConfig): any {
+    if (!config.streamOptions) {
+      return undefined;
+    }
+
+    const options: any = {};
+
+    if (config.streamOptions.includeUsage) {
+      options.include_usage = true;
+    }
+
+    return Object.keys(options).length > 0 ? options : undefined;
+  }
 }

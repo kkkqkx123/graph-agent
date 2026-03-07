@@ -26,24 +26,53 @@ export class GeminiNativeFormatter extends BaseFormatter {
 
   buildRequest(request: LLMRequest, config: FormatterConfig): BuildRequestResult {
     const body = this.buildRequestBody(request, config);
-    const endpoint = config.stream
-      ? `/models/${config.profile.model}:streamGenerateContent`
-      : `/models/${config.profile.model}:generateContent`;
+
+    // 构建端点路径
+    const method = config.stream ? 'streamGenerateContent' : 'generateContent';
+    let endpoint = `/models/${config.profile.model}:${method}`;
+
+    // Gemini Native API 使用查询参数传递 API Key
+    const queryParams: Record<string, string | number | boolean> = {
+      key: config.profile.apiKey || ''
+    };
+
+    // 流式请求需要添加 alt=sse 参数以获取 SSE 格式响应
+    if (config.stream) {
+      queryParams['alt'] = 'sse';
+    }
+
+    // 合并用户自定义的查询参数
+    if (config.queryParams) {
+      Object.assign(queryParams, config.queryParams);
+    }
+
+    // 构建请求头
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...config.profile.headers
+    };
+
+    // 添加认证头 (支持 x-goog-api-key 和 Authorization Bearer 两种方式)
+    if (config.profile.apiKey) {
+      Object.assign(headers, this.buildAuthHeader(config.profile.apiKey, config, 'x-goog-api-key'));
+    }
+
+    // 添加自定义请求头
+    Object.assign(headers, this.buildCustomHeaders(config));
+
+    // 应用自定义请求体
+    const finalBody = this.applyCustomBody(body, config);
 
     return {
       httpRequest: {
         url: endpoint,
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...config.profile.headers
-        },
-        query: {
-          key: config.profile.apiKey
-        },
-        body
+        headers,
+        query: queryParams,
+        body: finalBody,
+        timeout: config.timeout
       },
-      transformedBody: body
+      transformedBody: finalBody
     };
   }
 

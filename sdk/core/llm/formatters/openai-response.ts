@@ -27,17 +27,35 @@ export class OpenAIResponseFormatter extends BaseFormatter {
   buildRequest(request: LLMRequest, config: FormatterConfig): BuildRequestResult {
     const body = this.buildRequestBody(request, config);
 
+    // 构建请求头
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...config.profile.headers
+    };
+
+    // 添加认证头 (支持 bearer 和 native 两种方式)
+    if (config.profile.apiKey) {
+      Object.assign(headers, this.buildAuthHeader(config.profile.apiKey, config, 'Authorization'));
+    }
+
+    // 添加自定义请求头
+    Object.assign(headers, this.buildCustomHeaders(config));
+
+    // 应用自定义请求体
+    const finalBody = this.applyCustomBody(body, config);
+
+    // 构建查询参数
+    const queryString = this.buildQueryString(config);
+
     return {
       httpRequest: {
-        url: '/responses',
+        url: `/responses${queryString}`,
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...config.profile.headers
-        },
-        body
+        headers,
+        body: finalBody,
+        timeout: config.timeout
       },
-      transformedBody: body
+      transformedBody: finalBody
     };
   }
 

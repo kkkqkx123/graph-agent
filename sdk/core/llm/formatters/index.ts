@@ -11,7 +11,10 @@ export type {
   FormatterConfig,
   BuildRequestResult,
   ParseResponseResult,
-  ParseStreamChunkResult
+  ParseStreamChunkResult,
+  AuthType,
+  CustomHeader,
+  CustomBodyConfig
 } from './types.js';
 
 // 基类导出

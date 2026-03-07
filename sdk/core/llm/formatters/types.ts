@@ -4,7 +4,7 @@
  * 定义格式转换器相关的类型
  */
 
-import type { LLMRequest, LLMResult, LLMProfile } from '@modular-agent/types';
+import type { LLMResult, LLMProfile } from '@modular-agent/types';
 import type { ToolSchema } from '@modular-agent/types';
 
 /**
@@ -21,6 +21,8 @@ export interface HttpRequestOptions {
   query?: Record<string, string | number | boolean>;
   /** 请求体 */
   body?: any;
+  /** 请求超时时间 (毫秒) */
+  timeout?: number;
 }
 
 /**
@@ -52,6 +54,39 @@ export interface StreamChunk {
 }
 
 /**
+ * 认证类型
+ */
+export type AuthType = 'native' | 'bearer';
+
+/**
+ * 自定义请求头配置
+ */
+export interface CustomHeader {
+  /** 键名 */
+  key: string;
+  /** 值 */
+  value: string;
+  /** 是否启用 */
+  enabled?: boolean;
+}
+
+/**
+ * 自定义请求体配置
+ */
+export interface CustomBodyConfig {
+  /** 简单模式: 键值对列表 */
+  items?: Array<{
+    key: string;
+    value: string;
+    enabled?: boolean;
+  }>;
+  /** 高级模式: JSON 字符串 */
+  json?: string;
+  /** 模式 */
+  mode?: 'simple' | 'advanced';
+}
+
+/**
  * 格式转换器配置
  */
 export interface FormatterConfig {
@@ -65,6 +100,30 @@ export interface FormatterConfig {
   dynamicSystemPrompt?: string;
   /** 动态上下文消息 */
   dynamicContextMessages?: any[];
+
+  // === 可迁移的 API 请求增强功能 ===
+
+  /** 认证类型 (native: 使用提供商原生认证头, bearer: 使用 Authorization Bearer) */
+  authType?: AuthType;
+  /** 自定义请求头 (简化版: 直接的键值对) */
+  customHeaders?: Record<string, string>;
+  /** 自定义请求头 (完整版: 支持启用/禁用) */
+  customHeadersList?: CustomHeader[];
+  /** 自定义请求体 (简化版: 直接合并的对象) */
+  customBody?: Record<string, any>;
+  /** 自定义请求体 (完整版: 支持简单/高级模式) */
+  customBodyConfig?: CustomBodyConfig;
+  /** 是否启用自定义请求体 */
+  customBodyEnabled?: boolean;
+  /** 请求超时时间 (毫秒) */
+  timeout?: number;
+  /** 查询参数 */
+  queryParams?: Record<string, string | number | boolean>;
+  /** 流式选项 */
+  streamOptions?: {
+    /** 是否包含 usage 信息 */
+    includeUsage?: boolean;
+  };
 }
 
 /**
