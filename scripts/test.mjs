@@ -60,7 +60,8 @@ if (args.length === 0) {
 			prefixToRemove = 'sdk/'
 		}
 
-		const vitestBin = path.join(targetDir, 'node_modules/.bin/vitest')
+		// 使用根目录的 vitest，因为所有包共享同一个 vitest 配置和版本
+		const vitestBin = path.join(process.cwd(), 'node_modules/.bin/vitest')
 
 		// 处理参数：将路径转换为相对路径（因为 vitest 在目标目录下执行）
 		const processedArgs = args.map(arg => {
