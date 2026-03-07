@@ -43,6 +43,12 @@ export interface StreamChunk {
   modelVersion?: string;
   /** 原始数据 */
   raw?: any;
+  /**
+   * 思考/推理内容增量
+   *
+   * 用于流式输出思考过程
+   */
+  reasoningDelta?: string;
 }
 
 /**

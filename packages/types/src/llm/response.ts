@@ -28,4 +28,19 @@ export interface LLMResult {
   duration: Timestamp;
   /** 响应元数据 */
   metadata?: Metadata;
+  /**
+   * 思考/推理内容
+   *
+   * 用于存储模型的思考过程或推理内容
+   * - OpenAI: reasoning_content (DeepSeek R1, o1等推理模型)
+   * - Anthropic: thinking (Claude extended thinking)
+   * - Gemini: thoughts (Gemini thinking models)
+   */
+  reasoningContent?: string;
+  /**
+   * 思考/推理Token数量
+   *
+   * 用于区分思考token和普通token的计费
+   */
+  reasoningTokens?: number;
 }

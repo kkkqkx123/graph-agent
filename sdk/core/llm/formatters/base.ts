@@ -217,9 +217,51 @@ export abstract class BaseFormatter {
     profileParams: Record<string, any> = {},
     requestParams: Record<string, any> = {}
   ): Record<string, any> {
-    return {
-      ...profileParams,
-      ...requestParams
-    };
+    return this.deepMerge({ ...profileParams }, requestParams);
+  }
+
+  /**
+   * 深度合并两个对象
+   *
+   * 用于合并请求参数,支持嵌套对象的深度合并
+   *
+   * @param target 目标对象
+   * @param source 源对象
+   * @returns 合并后的对象
+   */
+  protected deepMerge(target: any, source: any): any {
+    if (source === null || source === undefined) {
+      return target;
+    }
+
+    // If target is an array, merge source into it
+    if (Array.isArray(target)) {
+      const sourceItems = Array.isArray(source) ? source : [source];
+      return [...target, ...sourceItems];
+    }
+
+    // If source is an array (but target is not), use override strategy
+    if (Array.isArray(source)) {
+      return source;
+    }
+
+    // If source is not an object, override directly
+    if (typeof source !== 'object') {
+      return source;
+    }
+
+    // If target is not an object, initialize as empty object
+    if (typeof target !== 'object' || target === null) {
+      target = {};
+    }
+
+    const result = { ...target };
+
+    for (const key of Object.keys(source)) {
+      // Recursively merge all child nodes
+      result[key] = this.deepMerge(result[key], source[key]);
+    }
+
+    return result;
   }
 }

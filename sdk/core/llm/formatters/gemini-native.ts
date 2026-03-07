@@ -56,6 +56,9 @@ export class GeminiNativeFormatter extends BaseFormatter {
     const content = this.extractContent(candidate.content?.parts || []);
     const toolCalls = this.extractToolCalls(candidate.content?.parts || []);
 
+    // Extract thinking content (for Gemini thinking models)
+    const thinkingContent = this.extractThinkingContent(candidate.content?.parts || []);
+
     return {
       id: data.id || 'unknown',
       model: config.profile.model,
@@ -76,7 +79,8 @@ export class GeminiNativeFormatter extends BaseFormatter {
       metadata: {
         finishReason: candidate.finishReason,
         safetyRatings: candidate.safetyRatings
-      }
+      },
+      reasoningContent: thinkingContent
     };
   }
 
@@ -110,6 +114,9 @@ export class GeminiNativeFormatter extends BaseFormatter {
     const content = this.extractContent(candidate.content?.parts || []);
     const toolCalls = this.extractToolCalls(candidate.content?.parts || []);
 
+    // Extract thinking content delta (for Gemini thinking models)
+    const thinkingDelta = this.extractThinkingDelta(candidate.content?.parts || []);
+
     return {
       chunk: {
         delta: content,
@@ -120,7 +127,8 @@ export class GeminiNativeFormatter extends BaseFormatter {
           totalTokens: data.usageMetadata.totalTokenCount || 0
         } : undefined,
         finishReason: candidate.finishReason,
-        raw: data
+        raw: data,
+        reasoningDelta: thinkingDelta
       },
       valid: true
     };
@@ -228,6 +236,10 @@ export class GeminiNativeFormatter extends BaseFormatter {
       body.tools = this.convertTools(request.tools);
     }
 
+    // Handle thinking configuration (for Gemini thinking models)
+    // Users can set parameters.thinkingConfig = { includeThoughts: true, thinkingLevel: 3 }
+    // The deepMerge will handle this correctly
+
     return body;
   }
 
@@ -263,5 +275,45 @@ export class GeminiNativeFormatter extends BaseFormatter {
           arguments: JSON.stringify(part.functionCall.args || {})
         }
       }));
+  }
+
+  /**
+   * 提取思考内容
+   *
+   * 从 Gemini 响应中提取 thought 类型的内容
+   */
+  private extractThinkingContent(parts: any[]): string | undefined {
+    if (!parts || !Array.isArray(parts)) {
+      return undefined;
+    }
+
+    const thoughtParts = parts.filter(part => part.thought);
+    if (thoughtParts.length === 0) {
+      return undefined;
+    }
+
+    return thoughtParts
+      .map(part => part.text || '')
+      .join('\n');
+  }
+
+  /**
+   * 提取思考内容增量
+   *
+   * 从 Gemini 流式响应中提取 thought 类型的内容增量
+   */
+  private extractThinkingDelta(parts: any[]): string | undefined {
+    if (!parts || !Array.isArray(parts)) {
+      return undefined;
+    }
+
+    const thoughtParts = parts.filter(part => part.thought);
+    if (thoughtParts.length === 0) {
+      return undefined;
+    }
+
+    return thoughtParts
+      .map(part => part.text || '')
+      .join('');
   }
 }

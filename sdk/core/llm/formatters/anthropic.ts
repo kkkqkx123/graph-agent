@@ -52,6 +52,9 @@ export class AnthropicFormatter extends BaseFormatter {
     const content = this.extractContent(data.content);
     const toolCalls = this.extractToolCalls(data.content);
 
+    // Extract thinking content (for Claude extended thinking)
+    const thinkingContent = this.extractThinkingContent(data.content);
+
     return {
       id: data.id,
       model: data.model,
@@ -72,14 +75,15 @@ export class AnthropicFormatter extends BaseFormatter {
       metadata: {
         type: data.type,
         stopReason: data.stop_reason
-      }
+      },
+      reasoningContent: thinkingContent
     };
   }
 
   parseStreamChunk(data: any, config: FormatterConfig): ParseStreamChunkResult {
     switch (data.type) {
       case 'content_block_delta':
-        // 文本增量事件
+        // Text delta event
         if (data.delta && data.delta.type === 'text_delta' && data.delta.text) {
           return {
             chunk: {
@@ -90,10 +94,22 @@ export class AnthropicFormatter extends BaseFormatter {
             valid: true
           };
         }
+        // Thinking delta event (for Claude extended thinking)
+        if (data.delta && data.delta.type === 'thinking_delta' && data.delta.thinking) {
+          return {
+            chunk: {
+              delta: '',
+              done: false,
+              reasoningDelta: data.delta.thinking,
+              raw: data
+            },
+            valid: true
+          };
+        }
         break;
 
       case 'content_block_start':
-        // 内容块开始事件（工具调用）
+        // Content block start event (tool call)
         if (data.content_block && data.content_block.type === 'tool_use') {
           const toolCall: LLMToolCall = {
             id: data.content_block.id,
@@ -112,10 +128,21 @@ export class AnthropicFormatter extends BaseFormatter {
             valid: true
           };
         }
+        // Thinking block start event
+        if (data.content_block && data.content_block.type === 'thinking') {
+          return {
+            chunk: {
+              delta: '',
+              done: false,
+              raw: data
+            },
+            valid: true
+          };
+        }
         break;
 
       case 'message_delta':
-        // 消息增量事件（包含使用情况）
+        // Message delta event (contains usage)
         if (data.usage) {
           return {
             chunk: {
@@ -135,7 +162,7 @@ export class AnthropicFormatter extends BaseFormatter {
         break;
 
       case 'message_start':
-        // 消息开始事件
+        // Message start event
         if (data.message?.usage) {
           return {
             chunk: {
@@ -249,6 +276,11 @@ export class AnthropicFormatter extends BaseFormatter {
       body.tools = this.convertTools(request.tools);
     }
 
+    // Handle thinking configuration (for Claude extended thinking)
+    // Users can set parameters.thinking = { type: 'enabled', budget_tokens: 10000 }
+    // or parameters.thinking = { type: 'adaptive', effort: 'high' }
+    // The deepMerge will handle this correctly
+
     return body;
   }
 
@@ -284,5 +316,25 @@ export class AnthropicFormatter extends BaseFormatter {
           arguments: JSON.stringify(item.input || {})
         }
       }));
+  }
+
+  /**
+   * 提取思考内容
+   *
+   * 从 Anthropic 响应中提取 thinking 类型的内容块
+   */
+  private extractThinkingContent(content: any[]): string | undefined {
+    if (!content || !Array.isArray(content)) {
+      return undefined;
+    }
+
+    const thinkingBlocks = content.filter(item => item.type === 'thinking');
+    if (thinkingBlocks.length === 0) {
+      return undefined;
+    }
+
+    return thinkingBlocks
+      .map(block => block.thinking || '')
+      .join('\n');
   }
 }

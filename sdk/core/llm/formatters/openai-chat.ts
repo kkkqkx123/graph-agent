@@ -44,6 +44,11 @@ export class OpenAIChatFormatter extends BaseFormatter {
     const choice = data.choices[0];
     const message = choice.message;
 
+    // Extract reasoning content (for DeepSeek R1, o1, etc.)
+    const reasoningContent = message.reasoning_content;
+    // Extract reasoning tokens from usage details
+    const reasoningTokens = data.usage?.completion_tokens_details?.reasoning_tokens;
+
     return {
       id: data.id,
       model: data.model,
@@ -60,7 +65,9 @@ export class OpenAIChatFormatter extends BaseFormatter {
       metadata: {
         created: data.created,
         systemFingerprint: data.system_fingerprint
-      }
+      },
+      reasoningContent,
+      reasoningTokens
     };
   }
 
@@ -73,6 +80,12 @@ export class OpenAIChatFormatter extends BaseFormatter {
     const delta = choice.delta;
     const toolCalls = delta.tool_calls ? this.parseToolCalls(delta.tool_calls) : undefined;
 
+    // Extract reasoning content delta (for DeepSeek R1, o1, etc.)
+    const reasoningDelta = delta.reasoning_content;
+
+    // Extract reasoning tokens from usage details
+    const reasoningTokens = data.usage?.completion_tokens_details?.reasoning_tokens;
+
     return {
       chunk: {
         delta: delta.content || '',
@@ -84,7 +97,8 @@ export class OpenAIChatFormatter extends BaseFormatter {
         } : undefined,
         finishReason: choice.finish_reason,
         modelVersion: data.model,
-        raw: data
+        raw: data,
+        reasoningDelta
       },
       valid: true
     };
@@ -155,6 +169,10 @@ export class OpenAIChatFormatter extends BaseFormatter {
     if (request.tools && request.tools.length > 0) {
       body.tools = this.convertTools(request.tools);
     }
+
+    // Handle reasoning configuration (for o1, DeepSeek R1, etc.)
+    // Users can set parameters.reasoning = { effort: 'high', summary: 'detailed' }
+    // The deepMerge will handle this correctly
 
     return body;
   }
