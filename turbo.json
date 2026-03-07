@@ -36,6 +36,12 @@
       ],
       "outputs": []
     },
+    "typecheck:tests": {
+      "dependsOn": [
+        "build"
+      ],
+      "outputs": []
+    },
     "prebuild": {
       "cache": false
     },

@@ -13,7 +13,8 @@
     "format": "prettier --write src/**/*.ts",
     "clean": "rimraf dist",
     "prebuild": "npm run clean",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "typecheck:tests": "tsc --noEmit -p tsconfig.test.json"
   },
   "keywords": [
     "web",

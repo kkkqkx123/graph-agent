@@ -15,6 +15,7 @@
     "lint": "turbo run lint",
     "clean": "turbo run clean && rimraf node_modules",
     "typecheck": "turbo run typecheck",
+    "typecheck:tests": "turbo run typecheck:tests",
     "postinstall": "pnpm typecheck"
   },
   "keywords": [
