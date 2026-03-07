@@ -18,7 +18,7 @@
  * - Manager只作为内部实现细节供Coordinator使用
  */
 
-import { ThreadContextNotFoundError } from '@modular-agent/types';
+import { ThreadContextNotFoundError, RuntimeValidationError } from '@modular-agent/types';
 import type { ThreadOptions, ThreadResult } from '@modular-agent/types';
 import { ThreadStatus } from '@modular-agent/types';
 import { ThreadBuilder } from '../thread-builder.js';
@@ -27,13 +27,6 @@ import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager.js'
 import { ThreadCascadeManager } from '../managers/thread-cascade-manager.js';
 import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { WorkflowRegistry } from '../../services/workflow-registry.js';
-import { now } from '@modular-agent/common-utils';
-import {
-  buildThreadCompletedEvent,
-  buildThreadFailedEvent,
-  buildThreadCancelledEvent
-} from '../utils/event/event-builder.js';
-import { emit } from '../utils/event/event-emitter.js';
 import { LifecycleCapable } from '../managers/lifecycle-capable.js';
 
 /**
@@ -189,50 +182,43 @@ export class ThreadLifecycleCoordinator implements LifecycleCapable<{}> {
 
 
   /**
-   * 强制设置线程状态（不依赖执行器）
+   * 强制设置线程状态（直接委托给 ThreadLifecycleManager）
+   * 
+   * 注意：这是应急操作，通常应该通过正常生命周期方法（pauseThread/resumeThread/stopThread）
+   * 来管理线程状态。只有在那些方法无法正常工作时才使用此方法。
+   * 
    * @param threadId 线程ID
    * @param status 新的状态
    */
   async forceSetThreadStatus(threadId: string, status: ThreadStatus): Promise<void> {
     const threadEntity = this.threadRegistry.get(threadId);
     if (!threadEntity) {
-      throw new Error(`ThreadEntity not found for threadId: ${threadId}`);
+      throw new ThreadContextNotFoundError(`ThreadEntity not found`, threadId);
     }
 
-    // 验证状态转换合法性
-    const { validateTransition } = await import('../utils/thread-state-validator.js');
-    validateTransition(threadId, threadEntity.getStatus() as ThreadStatus, status);
+    const thread = threadEntity.getThread();
 
-    // 直接设置状态
-    threadEntity.setStatus(status);
-
-    // 如果是终止状态，设置结束时间并清理
-    if (['COMPLETED', 'FAILED', 'CANCELLED', 'TIMEOUT'].includes(status)) {
-      threadEntity.setEndTime(now());
-
-      // 触发相应的终止事件
-      let event;
-      switch (status) {
-        case 'COMPLETED':
-          event = buildThreadCompletedEvent(threadEntity.thread, { success: true, output: threadEntity.getOutput() } as any);
-          break;
-        case 'FAILED':
-          event = buildThreadFailedEvent(threadEntity.thread, new Error('Thread failed'));
-          break;
-        case 'CANCELLED':
-          event = buildThreadCancelledEvent(threadEntity.thread, 'forced_cancel');
-          break;
-      }
-
-      if (event) {
-        // TODO: 需要从构造函数注入EventManager
-        // await emit(this.eventManager, event);
-      }
+    // 根据目标状态委托给对应的生命周期管理方法
+    switch (status) {
+      case 'PAUSED':
+        await this.threadLifecycleManager.pauseThread(thread);
+        break;
+      case 'RUNNING':
+        await this.threadLifecycleManager.resumeThread(thread);
+        break;
+      case 'CANCELLED':
+        await this.threadLifecycleManager.cancelThread(thread, 'forced');
+        break;
+      default:
+        throw new RuntimeValidationError(
+          `Unsupported status for forceSetThreadStatus: ${status}`,
+          { operation: 'forceSetThreadStatus', field: 'status', value: status }
+        );
     }
   }
 
   /**
-   * 强制暂停线程（不依赖执行器）
+   * 强制暂停线程（委托给 ThreadLifecycleManager）
    * @param threadId 线程ID
    */
   async forcePauseThread(threadId: string): Promise<void> {
@@ -240,26 +226,18 @@ export class ThreadLifecycleCoordinator implements LifecycleCapable<{}> {
   }
 
   /**
-   * 强制取消线程（不依赖执行器）
+   * 强制取消线程（委托给 ThreadLifecycleManager）
    * @param threadId 线程ID
    * @param reason 取消原因
    */
   async forceCancelThread(threadId: string, reason?: string): Promise<void> {
     const threadEntity = this.threadRegistry.get(threadId);
     if (!threadEntity) {
-      throw new Error(`ThreadEntity not found for threadId: ${threadId}`);
+      throw new ThreadContextNotFoundError(`ThreadEntity not found`, threadId);
     }
 
-    // 设置状态
-    threadEntity.setStatus('CANCELLED');
-
-    // 设置结束时间
-    threadEntity.setEndTime(now());
-
-    // 触发取消事件
-    const cancelledEvent = buildThreadCancelledEvent(threadEntity.thread, reason || 'forced_cancel');
-    // TODO: 需要从构造函数注入EventManager
-    // await emit(this.eventManager, cancelledEvent);
+    // 直接委托给 Manager 处理状态转换和事件触发
+    await this.threadLifecycleManager.cancelThread(threadEntity.getThread(), reason || 'forced_cancel');
   }
 
   // ============================================================

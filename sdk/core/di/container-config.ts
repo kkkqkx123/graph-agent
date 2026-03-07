@@ -253,11 +253,16 @@ export function initializeContainer(): Container {
     .inSingletonScope();
 
   // ============================================================
-  // 第七层：ThreadExecutor（依赖所有服务）
+  // 第七层：ThreadExecutor（依赖GraphRegistry和ThreadExecutionCoordinator工厂）
   // ============================================================
 
   container.bind(Identifiers.ThreadExecutor)
-    .to(ThreadExecutor)
+    .toDynamicValue((c: any) => {
+      return new ThreadExecutor({
+        graphRegistry: c.get(Identifiers.GraphRegistry),
+        threadExecutionCoordinatorFactory: c.get(Identifiers.ThreadExecutionCoordinator)
+      });
+    })
     .inSingletonScope();
 
   // ============================================================
@@ -351,26 +356,47 @@ export function initializeContainer(): Container {
     })
     .inSingletonScope();
 
-  // ConversationManager - 依赖 EventManager、ToolService
+  // ConversationManager - 工厂模式，每个线程可以创建独立实例
+  // 注意：虽然 ConversationManager 是有状态的，但在某些场景下（如测试）可以作为单例使用
+  // 在生产环境中，建议每个 ThreadEntity 拥有独立的 ConversationManager 实例
   container.bind(Identifiers.ConversationManager)
     .toDynamicValue((c: any) => {
       const eventManager = c.get(Identifiers.EventManager);
       const toolService = c.get(Identifiers.ToolService);
-      const options = {
-        eventManager,
-        toolService
+
+      return {
+        // 创建新的实例（用于线程隔离）
+        create: (threadId?: string, workflowId?: string) => {
+          return new ConversationManager({
+            eventManager,
+            toolService,
+            threadId,
+            workflowId
+          });
+        },
+        // 获取共享实例（用于向后兼容和测试）
+        getShared: () => {
+          return new ConversationManager({
+            eventManager,
+            toolService
+          });
+        }
       };
-      return new ConversationManager(options);
     })
     .inSingletonScope();
 
   // NodeExecutionCoordinator - 依赖多个服务和协调器
   container.bind(Identifiers.NodeExecutionCoordinator)
     .toDynamicValue((c: any) => {
+      // 获取 ConversationManager 工厂
+      const conversationManagerFactory = c.get(Identifiers.ConversationManager);
+
       const config = {
         eventManager: c.get(Identifiers.EventManager),
         llmCoordinator: c.get(Identifiers.LLMExecutionCoordinator),
-        conversationManager: c.get(Identifiers.ConversationManager),
+        // 使用共享实例保持向后兼容
+        // TODO: 在长期方案中，应该为每个线程创建独立的 ConversationManager 实例
+        conversationManager: conversationManagerFactory.getShared(),
         interruptionManager: c.get(Identifiers.InterruptionManager),
         navigator: c.get(Identifiers.GraphRegistry),
         toolService: c.get(Identifiers.ToolService),
@@ -428,7 +454,6 @@ export function initializeContainer(): Container {
             threadEntity,
             c.get(Identifiers.VariableCoordinator),
             c.get(Identifiers.TriggerCoordinator),
-            c.get(Identifiers.ConversationManager),
             c.get(Identifiers.InterruptionManager),
             c.get(Identifiers.ToolVisibilityCoordinator),
             c.get(Identifiers.NodeExecutionCoordinator),

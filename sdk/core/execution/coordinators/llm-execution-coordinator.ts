@@ -9,7 +9,7 @@
  *
  * 设计原则：
  * - 简化的协调逻辑
- * - 依赖注入：通过构造函数接收依赖
+ * - 依赖注入：通过 LLMContextFactory 管理依赖
  * - 职责分离：将具体执行逻辑委托给专门组件
  */
 
@@ -17,18 +17,13 @@ import type { LLMMessage, ID } from '@modular-agent/types';
 import { MessageRole } from '@modular-agent/types';
 import type { WorkflowConfig } from '@modular-agent/types';
 import { ConversationManager } from '../managers/conversation-manager.js';
-import { LLMExecutor } from '../executors/llm-executor.js';
-import { type ToolService } from '../../services/tool-service.js';
 import type { EventManager } from '../../services/event-manager.js';
 import { safeEmit } from '../utils/event/event-emitter.js';
 import type { ToolApprovalData } from '@modular-agent/types';
 import { generateId } from '../../../utils/index.js';
 import { now, getErrorOrNew } from '@modular-agent/common-utils';
-import { ToolCallExecutor } from '../executors/tool-call-executor.js';
 import { ExecutionError } from '@modular-agent/types';
 import { CheckpointCoordinator } from './checkpoint-coordinator.js';
-import type { ThreadRegistry } from '../../services/thread-registry.js';
-import type { InterruptionDetector } from '../managers/interruption-detector.js';
 import { InterruptionDetectorImpl } from '../managers/interruption-detector.js';
 import { checkInterruption, shouldContinue, getInterruptionDescription } from '@modular-agent/common-utils';
 import type { InterruptionCheckResult } from '@modular-agent/common-utils';
@@ -40,6 +35,7 @@ import {
   buildUserInteractionRequestedEvent,
   buildUserInteractionProcessedEvent
 } from '../utils/event/event-builder.js';
+import { LLMContextFactory, type LLMContextFactoryConfig } from '../factories/llm-context-factory.js';
 
 const logger = createContextualLogger();
 

@@ -7,7 +7,6 @@ import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { ThreadResult } from '@modular-agent/types';
 import type { VariableCoordinator } from './variable-coordinator.js';
 import type { TriggerCoordinator } from './trigger-coordinator.js';
-import type { ConversationManager } from '../managers/conversation-manager.js';
 import type { InterruptionManager } from '../managers/interruption-manager.js';
 import type { ToolVisibilityCoordinator } from './tool-visibility-coordinator.js';
 import type { NodeExecutionCoordinator } from './node-execution-coordinator.js';
@@ -33,7 +32,6 @@ export class ThreadExecutionCoordinator {
     private readonly threadEntity: ThreadEntity,
     private readonly variableCoordinator: VariableCoordinator,
     private readonly triggerCoordinator: TriggerCoordinator,
-    private readonly conversationManager: ConversationManager,
     private readonly interruptionManager: InterruptionManager,
     private readonly toolVisibilityCoordinator: ToolVisibilityCoordinator,
     private readonly nodeExecutionCoordinator: NodeExecutionCoordinator,

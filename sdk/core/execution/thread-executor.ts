@@ -5,8 +5,7 @@
  *
  * 职责：
  * - 执行单个 ThreadEntity
- * - 创建执行所需的管理器和协调器
- * - 协调各个执行组件
+ * - 协调各个执行组件完成执行
  *
  * 不负责：
  * - Thread 的创建和注册（由 ThreadLifecycleCoordinator 负责）
@@ -16,14 +15,36 @@
  * - 错误处理（由 ErrorHandler 负责）
  * - 子图处理（由 SubgraphHandler 负责）
  * - 触发子工作流处理（由 TriggeredSubworkflowManager 负责）
- * - 触发器管理（由 ThreadBuilder 在创建 ThreadEntity 时处理）
  */
 
 import type { ThreadResult } from '@modular-agent/types';
 import type { ThreadEntity } from '../entities/thread-entity.js';
-import { getContainer } from '../di/index.js';
-import * as Identifiers from '../di/service-identifiers.js';
-import { GraphNavigator } from '../graph/graph-navigator.js';
+import type { GraphRegistry } from '../services/graph-registry.js';
+import type { ThreadExecutionCoordinator } from './coordinators/thread-execution-coordinator.js';
+
+/**
+ * 线程隔离管理器工厂接口
+ */
+interface ThreadIsolatedManagerFactory {
+  create(threadId: string, nodeId?: string): any;
+}
+
+/**
+ * ThreadExecutionCoordinator 工厂接口
+ */
+interface ThreadExecutionCoordinatorFactory {
+  create(threadEntity: ThreadEntity): ThreadExecutionCoordinator;
+}
+
+/**
+ * ThreadExecutor 依赖配置
+ */
+export interface ThreadExecutorDependencies {
+  /** 图注册表 */
+  graphRegistry: GraphRegistry;
+  /** ThreadExecutionCoordinator 工厂 */
+  threadExecutionCoordinatorFactory: ThreadExecutionCoordinatorFactory;
+}
 
 /**
  * ThreadExecutor - Thread 执行器
@@ -32,12 +53,18 @@ import { GraphNavigator } from '../graph/graph-navigator.js';
  * 通过协调器模式委托具体职责给专门的组件
  *
  * 设计原则：
- * - 完全依赖DI容器管理所有依赖
- * - 无构造函数参数，所有依赖从容器获取
+ * - 通过构造函数注入依赖（依赖倒置）
  * - 保持轻量级，只负责执行协调
+ * - 不直接依赖DI容器，便于测试
  */
 export class ThreadExecutor {
-  constructor() {}
+  private graphRegistry: GraphRegistry;
+  private threadExecutionCoordinatorFactory: ThreadExecutionCoordinatorFactory;
+
+  constructor(deps: ThreadExecutorDependencies) {
+    this.graphRegistry = deps.graphRegistry;
+    this.threadExecutionCoordinatorFactory = deps.threadExecutionCoordinatorFactory;
+  }
 
   /**
    * 执行 ThreadEntity
@@ -45,42 +72,16 @@ export class ThreadExecutor {
    * @returns 执行结果
    */
   async executeThread(threadEntity: ThreadEntity): Promise<ThreadResult> {
-    const threadId = threadEntity.getThreadId();
     const workflowId = threadEntity.getWorkflowId();
-    const container = getContainer();
 
-    // 从DI容器获取所需的服务
-    const graphRegistry = container.get(Identifiers.GraphRegistry);
-
-    // 从DI容器获取工厂方法
-    const triggerStateManagerFactory = container.get(Identifiers.TriggerStateManager);
-    const interruptionManagerFactory = container.get(Identifiers.InterruptionManager);
-    const threadExecutionCoordinatorFactory = container.get(Identifiers.ThreadExecutionCoordinator);
-
-    // 使用工厂方法创建线程隔离的实例
-    const triggerStateManager = triggerStateManagerFactory.create(threadId);
-    const interruptionManager = interruptionManagerFactory.create(
-      threadId,
-      threadEntity.getCurrentNodeId()
-    );
-
-    // 从DI容器获取单例协调器和管理器
-    const variableCoordinator = container.get(Identifiers.VariableCoordinator);
-    const toolVisibilityCoordinator = container.get(Identifiers.ToolVisibilityCoordinator);
-    const conversationManager = container.get(Identifiers.ConversationManager);
-
-    // 获取GraphNavigator
-    const preprocessedGraph = graphRegistry.get(workflowId);
+    // 验证工作流图存在
+    const preprocessedGraph = this.graphRegistry.get(workflowId);
     if (!preprocessedGraph) {
       throw new Error(`Graph not found for workflow: ${workflowId}`);
     }
-    const navigator = new GraphNavigator(preprocessedGraph);
 
-    // 创建NodeExecutionCoordinator
-    const nodeExecutionCoordinator = container.get(Identifiers.NodeExecutionCoordinator);
-
-    // 使用工厂方法创建ThreadExecutionCoordinator
-    const threadExecutionCoordinator = threadExecutionCoordinatorFactory.create(threadEntity);
+    // 使用工厂创建 ThreadExecutionCoordinator 并执行
+    const threadExecutionCoordinator = this.threadExecutionCoordinatorFactory.create(threadEntity);
 
     // 执行Thread
     return await threadExecutionCoordinator.execute();

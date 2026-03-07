@@ -17,7 +17,10 @@
  * - ToolVisibilityCoordinator: 工具可见性协调器
  */
 
-export { NodeExecutionCoordinator } from './node-execution-coordinator.js';
+export {
+  NodeExecutionCoordinator,
+  type NodeExecutionCoordinatorConfig
+} from './node-execution-coordinator.js';
 export { TriggerCoordinator } from './trigger-coordinator.js';
 export { LLMExecutionCoordinator } from './llm-execution-coordinator.js';
 export { ThreadLifecycleCoordinator } from './thread-lifecycle-coordinator.js';
