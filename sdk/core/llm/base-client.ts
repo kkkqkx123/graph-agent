@@ -3,6 +3,7 @@
  *
  * 定义客户端的通用接口和实现，提供通用的请求处理逻辑
  * 集成HttpClient，提供统一的HTTP请求处理
+ * 使用Formatter策略模式处理不同提供商的格式转换
  */
 
 import type {
@@ -12,20 +13,23 @@ import type {
   LLMProfile
 } from '@modular-agent/types';
 import { HttpClient, SseTransport } from '@modular-agent/common-utils';
+import { BaseFormatter, type FormatterConfig } from './formatters/index.js';
 
 /**
- * LLM客户端抽象基类
+ * LLM客户端基类
  *
  * 所有基于HTTP的provider客户端继承自BaseLLMClient
- * 提供统一的接口和通用逻辑
- * 子类只需要实现parseResponse和parseStreamLine
+ * 使用 Formatter 策略模式处理格式转换
  */
-export abstract class BaseLLMClient implements LLMClient {
+export class BaseLLMClient implements LLMClient {
   protected readonly profile: LLMProfile;
   protected readonly httpClient: HttpClient;
+  protected readonly formatter: BaseFormatter;
 
-  constructor(profile: LLMProfile) {
+  constructor(profile: LLMProfile, formatter: BaseFormatter) {
     this.profile = profile;
+    this.formatter = formatter;
+
     this.httpClient = new HttpClient({
       baseURL: profile.baseUrl || '',
       timeout: profile.timeout || 30000,
@@ -37,224 +41,88 @@ export abstract class BaseLLMClient implements LLMClient {
   }
 
   /**
+   * 获取 Formatter 配置
+   */
+  protected getFormatterConfig(stream: boolean = false): FormatterConfig {
+    return {
+      profile: this.profile,
+      stream
+    };
+  }
+
+  /**
    * 非流式生成
-   *
-   * 重试和超时由HttpClient处理
-   * 错误处理由上层LLMWrapper负责
    */
   async generate(request: LLMRequest): Promise<LLMResult> {
-    // 合并请求参数
-    const mergedRequest = this.mergeParameters(request);
-    return this.doGenerate(mergedRequest);
+    const config = this.getFormatterConfig(false);
+    const { httpRequest } = this.formatter.buildRequest(request, config);
+
+    const response = await this.httpClient.post(
+      httpRequest.url,
+      httpRequest.body,
+      {
+        headers: httpRequest.headers,
+        query: httpRequest.query
+      }
+    );
+
+    return this.formatter.parseResponse(response.data, config);
   }
 
   /**
    * 流式生成
-   *
-   * 重试和超时由HttpClient处理
-   * 在客户端层累积 token 统计信息
-   * 错误处理由上层LLMWrapper负责
    */
   async *generateStream(request: LLMRequest): AsyncIterable<LLMResult> {
-    // 合并请求参数
-    const mergedRequest = this.mergeParameters(request);
+    const config = this.getFormatterConfig(true);
+    const { httpRequest } = this.formatter.buildRequest(request, config);
 
-    // 参考 Anthropic SDK 的做法：在流式传输期间持续累积 token 统计
-    // message_start 事件提供初始 token 计数（输入 token）
-    // message_delta 事件提供输出 token 计数的持续更新
-    let accumulatedUsage: any = null;
-
-    for await (const chunk of this.doGenerateStream(mergedRequest)) {
-      // 累积 token 统计
-      if (chunk.usage) {
-        if (!accumulatedUsage) {
-          // 第一次收到 usage，通常是 message_start 事件
-          accumulatedUsage = { ...chunk.usage };
-        } else {
-          // 后续的 usage，通常是 message_delta 事件，进行增量更新
-          // Anthropic SDK 的做法：直接更新为最新值
-          accumulatedUsage = { ...chunk.usage };
-        }
-      }
-
-      // 如果是最后一个 chunk（有 finishReason），确保包含累积的 usage
-      if (chunk.finishReason && accumulatedUsage) {
-        chunk.usage = accumulatedUsage;
-      }
-
-      yield chunk;
-    }
-  }
-
-  /**
-   * 合并请求参数
-   *
-   * 将request.parameters合并到Profile.parameters中
-   * request.parameters会覆盖Profile.parameters中的同名参数
-   *
-   * @param request LLM请求
-   * @returns 合并后的请求
-   */
-  protected mergeParameters(request: LLMRequest): LLMRequest {
-    const mergedParameters = {
-      ...this.profile.parameters,
-      ...request.parameters
-    };
-
-    return {
-      ...request,
-      parameters: mergedParameters
-    };
-  }
-
-  /**
-   * 子类必须实现：执行非流式生成
-   */
-  protected abstract doGenerate(request: LLMRequest): Promise<LLMResult>;
-
-  /**
-   * 子类必须实现：执行流式生成
-   */
-  protected abstract doGenerateStream(request: LLMRequest): AsyncIterable<LLMResult>;
-
-
-
-
-  /**
-   * 执行HTTP POST请求（非流式）
-   *
-   * 提供统一的HTTP POST请求处理
-   *
-   * @param url 请求路径
-   * @param body 请求体
-   * @param options 请求选项
-   * @returns 解析后的LLM结果
-   */
-  protected async doHttpPost(
-    url: string,
-    body: any,
-    options?: {
-      headers?: Record<string, string>;
-      query?: Record<string, string | number | boolean>;
-    }
-  ): Promise<LLMResult> {
-    const response = await this.httpClient.post(url, body, options);
-    return this.parseResponse(response.data);
-  }
-
-  /**
-   * 执行HTTP POST请求（流式）
-   *
-   * 提供统一的HTTP流式请求处理
-   *
-   * @param url 请求路径
-   * @param body 请求体
-   * @param options 请求选项
-   * @returns 流式LLM结果
-   */
-  protected async *doHttpStream(
-    url: string,
-    body: any,
-    options?: {
-      headers?: Record<string, string>;
-      query?: Record<string, string | number | boolean>;
-    }
-  ): AsyncIterable<LLMResult> {
-    // 创建SseTransport实例
+    // 创建 SseTransport 实例
     const transport = new SseTransport(
       this.profile.baseUrl,
-      options?.headers
+      httpRequest.headers
     );
 
-    // 使用SseTransport执行流式请求
-    const stream = transport.executeStream(url, {
-      query: options?.query,
+    // 使用 SseTransport 执行流式请求
+    const stream = transport.executeStream(httpRequest.url, {
+      query: httpRequest.query,
       method: 'POST',
-      body: body
+      body: httpRequest.body
     });
 
+    // 累积 token 统计
+    let accumulatedUsage: { promptTokens: number; completionTokens: number; totalTokens: number } | null = null;
+
     // 处理流式响应
-    for await (const chunk of stream) {
-      // 使用子类实现的parseStreamLine进行自定义解析
-      const result = this.parseStreamLine(chunk);
-      if (result) {
-        yield result;
+    for await (const line of stream) {
+      const result = this.formatter.parseStreamLine(line, config);
+
+      if (result.valid && result.chunk) {
+        // 累积 token 统计
+        if (result.chunk.usage) {
+          accumulatedUsage = { ...result.chunk.usage };
+        }
+
+        // 构建 LLMResult
+        const llmResult: LLMResult = {
+          id: `stream-${Date.now()}`,
+          model: this.profile.model,
+          content: result.chunk.delta || '',
+          message: {
+            role: 'assistant',
+            content: result.chunk.delta || ''
+          },
+          usage: result.chunk.finishReason && accumulatedUsage ? accumulatedUsage : result.chunk.usage,
+          finishReason: result.chunk.finishReason || '',
+          duration: 0,
+          metadata: {
+            raw: result.chunk.raw
+          }
+        };
+
+        yield llmResult;
       }
     }
   }
-
-  /**
-   * 构建完整URL
-   */
-  private buildFullUrl(
-    url: string,
-    query?: Record<string, string | number | boolean>
-  ): string {
-    let fullUrl = url;
-
-    // 如果URL不是完整的，添加baseURL
-    if (!url.startsWith('http') && this.profile.baseUrl) {
-      fullUrl = this.profile.baseUrl + url;
-    }
-
-    // 添加查询参数
-    if (query && Object.keys(query).length > 0) {
-      const queryString = Object.entries(query)
-        .map(([key, value]) => `${key}=${encodeURIComponent(String(value))}`)
-        .join('&');
-      fullUrl += (fullUrl.includes('?') ? '&' : '?') + queryString;
-    }
-
-    return fullUrl;
-  }
-
-  /**
-   * 子类必须实现：解析非流式响应
-   */
-  protected abstract parseResponse(data: any): LLMResult;
-
-  /**
-   * 解析流式响应行（默认实现）
-   *
-   * 大多数LLM提供商使用SSE格式，每行以 "data: " 开头
-   * 子类可以重写此方法以支持不同的格式
-   *
-   * @param line 流式响应的一行文本
-   * @returns 解析后的LLM结果，如果该行不包含有效数据则返回null
-   */
-  protected parseStreamLine(line: string): LLMResult | null {
-    // 跳过空行
-    if (!line) {
-      return null;
-    }
-
-    // 跳过结束标记（OpenAI格式）
-    if (line === 'data: [DONE]') {
-      return null;
-    }
-
-    // 解析 data: 前缀
-    if (!line.startsWith('data: ')) {
-      return null;
-    }
-
-    const dataStr = line.slice(6);
-    try {
-      const data = JSON.parse(dataStr);
-      return this.parseStreamChunk(data);
-    } catch (e) {
-      // 跳过无效JSON
-      return null;
-    }
-  }
-
-  /**
-   * 子类必须实现：解析流式响应块
-   *
-   * @param data 解析后的JSON数据
-   * @returns 解析后的LLM结果，如果该数据不包含有效内容则返回null
-   */
-  protected abstract parseStreamChunk(data: any): LLMResult | null;
 
   /**
    * 获取客户端信息
@@ -267,7 +135,7 @@ export abstract class BaseLLMClient implements LLMClient {
     return {
       provider: this.profile.provider,
       model: this.profile.model,
-      version: '1.0.0'
+      version: '2.0.0'
     };
   }
 }

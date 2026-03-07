@@ -6,7 +6,6 @@
  */
 
 import type { LLMClient, LLMProfile } from '@modular-agent/types';
-import { LLMProvider } from '@modular-agent/types';
 import { OpenAIChatClient } from './clients/openai-chat.js';
 import { OpenAIResponseClient } from './clients/openai-response.js';
 import { AnthropicClient } from './clients/anthropic.js';

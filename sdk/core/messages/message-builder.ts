@@ -3,7 +3,7 @@
  * 提供统一的消息构建接口
  */
 
-import type { LLMMessage, LLMToolCall, MessageRole } from '@modular-agent/types';
+import type { LLMMessage, LLMToolCall } from '@modular-agent/types';
 import type { ToolExecutionResult } from '@modular-agent/types';
 
 /**
@@ -21,7 +21,7 @@ export class MessageBuilder {
    */
   static buildUserMessage(content: string): LLMMessage {
     return {
-      role: 'user' as MessageRole as 'user',
+      role: 'user',
       content
     };
   }
@@ -39,7 +39,7 @@ export class MessageBuilder {
     thinking?: string
   ): LLMMessage {
     const message: LLMMessage = {
-      role: 'assistant' as MessageRole as 'assistant',
+      role: 'assistant',
       content
     };
 
@@ -69,7 +69,7 @@ export class MessageBuilder {
       : JSON.stringify({ error: result.error });
 
     return {
-      role: 'tool' as MessageRole as 'tool',
+      role: 'tool',
       content,
       toolCallId
     };
@@ -82,7 +82,7 @@ export class MessageBuilder {
    */
   static buildSystemMessage(content: string): LLMMessage {
     return {
-      role: 'system' as 'system',
+      role: 'system',
       content
     };
   }
@@ -98,7 +98,7 @@ export class MessageBuilder {
     }
 
     return {
-      role: 'system' as 'system',
+      role: 'system',
       content: descriptionText
     };
   }

@@ -2,6 +2,7 @@
  * SDK Core LLM模块
  *
  * 提供统一的LLM调用接口，支持多种LLM提供商
+ * 使用 Formatter 策略模式处理不同提供商的格式转换
  */
 
 // SDK级别核心类
@@ -12,6 +13,26 @@ export { ProfileManager } from './profile-manager.js';
 export { ClientFactory } from './client-factory.js';
 export { BaseLLMClient } from './base-client.js';
 export { MessageStream } from './message-stream.js';
+
+// Formatter 相关导出
+export {
+  BaseFormatter,
+  OpenAIChatFormatter,
+  OpenAIResponseFormatter,
+  AnthropicFormatter,
+  GeminiNativeFormatter,
+  GeminiOpenAIFormatter,
+  FormatterRegistry,
+  formatterRegistry,
+  getFormatter,
+  registerFormatter,
+  type HttpRequestOptions,
+  type StreamChunk,
+  type FormatterConfig,
+  type BuildRequestResult,
+  type ParseResponseResult,
+  type ParseStreamChunkResult
+} from './formatters/index.js';
 
 // 事件类型
 export {

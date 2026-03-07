@@ -57,6 +57,7 @@ export class LLMWrapper {
         'unknown',
         undefined,
         undefined,
+        undefined,
         {
           profileId: request.profileId || 'DEFAULT',
           availableProfiles: this.profileManager.list().map(p => p.id)
@@ -93,6 +94,7 @@ export class LLMWrapper {
       return err(new LLMError(
         'LLM Profile not found',
         'unknown',
+        undefined,
         undefined,
         undefined,
         {
@@ -254,6 +256,7 @@ export class LLMWrapper {
       `${profile.provider} API error: ${errorMessage}`,
       profile.provider,
       profile.model,
+      undefined,
       errorCode,
       {
         profileId: profile.id,
