@@ -43,4 +43,19 @@ export interface LLMResult {
    * 用于区分思考token和普通token的计费
    */
   reasoningTokens?: number;
+  /**
+   * 流式统计信息
+   *
+   * 记录流式生成过程中的性能数据
+   */
+  streamStats?: {
+    /** 接收到的流式块总数 */
+    chunkCount: number;
+    /** 从请求发送到首包到达的时间（毫秒） */
+    timeToFirstChunk: number;
+    /** 从首包到最后包的时间（毫秒） */
+    streamDuration: number;
+    /** 从请求发送到流结束的总时间（毫秒） */
+    totalDuration: number;
+  };
 }

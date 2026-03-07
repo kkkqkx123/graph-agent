@@ -110,6 +110,11 @@ export class LLMWrapper {
     // 创建 MessageStream
     const stream = new MessageStream();
 
+    // 流式统计信息
+    let chunkCount = 0;
+    let firstChunkTime: number | undefined;
+    let lastChunkTime: number | undefined;
+
     // 使用 tryCatchAsyncWithSignal 简化异常处理
     const result = await tryCatchAsyncWithSignal(
       async (signal) => {
@@ -118,7 +123,16 @@ export class LLMWrapper {
         try {
           // 执行流式调用
           for await (const chunk of client.generateStream({ ...request, signal })) {
-            chunk.duration = diffTimestamp(startTime, now());
+            const nowTime = now();
+
+            // 更新流式统计
+            chunkCount++;
+            if (firstChunkTime === undefined) {
+              firstChunkTime = nowTime;
+            }
+            lastChunkTime = nowTime;
+
+            chunk.duration = diffTimestamp(startTime, nowTime);
 
             // 推送文本内容到 MessageStream
             if (chunk.content) {
@@ -138,6 +152,18 @@ export class LLMWrapper {
             stream.abort();
           }
           throw error;
+        }
+
+        // 附加流式统计信息到最终结果
+        const finalResult = stream.getFinalResult ? await stream.getFinalResult().catch(() => null) : null;
+        if (finalResult && firstChunkTime !== undefined && lastChunkTime !== undefined) {
+          const endTime = now();
+          (finalResult as any).streamStats = {
+            chunkCount,
+            timeToFirstChunk: diffTimestamp(startTime, firstChunkTime),
+            streamDuration: diffTimestamp(firstChunkTime, lastChunkTime),
+            totalDuration: diffTimestamp(startTime, endTime)
+          };
         }
 
         return stream;

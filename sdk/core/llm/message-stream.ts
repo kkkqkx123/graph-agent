@@ -5,6 +5,7 @@
 
 import { ExecutionError } from '@modular-agent/types';
 import type { LLMMessage, LLMResult } from '@modular-agent/types';
+import { partialParse } from './lib/partial-json-parser.js';
 import {
   MessageStreamEvent,
   MessageStreamEventType,
@@ -542,29 +543,32 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
           }
         } else if (event.data.delta.type === 'input_json_delta') {
           if (targetBlock.type === 'tool_use') {
-            // 如果 input 已经是对象，说明 API 已经提供了完整的 input，不需要追加
-            // 只有当 input 是字符串或 undefined 时才追加 JSON 片段
-            if (typeof (targetBlock as any).input !== 'object') {
-              const currentInput = typeof (targetBlock as any).input === 'string'
-                ? (targetBlock as any).input
-                : '';
-              const newInput = currentInput + event.data.delta.partial_json;
-              (targetBlock as any).input = newInput;
-              
-              // 触发 inputJson 事件，提供实时解析
-              let parsedSnapshot: unknown = newInput;
-              try {
-                parsedSnapshot = JSON.parse(newInput);
-              } catch (e) {
-                // 解析失败时保持为字符串
-              }
-              this.emit('inputJson', {
-                type: 'inputJson',
-                partialJson: newInput,
-                parsedSnapshot,
-                snapshot: this.currentMessageSnapshot
-              } as MessageStreamInputJsonEvent);
+            // 使用非枚举属性存储原始 JSON 字符串（借鉴 Anthropic SDK 设计）
+            const JSON_BUF_PROPERTY = '__json_buf';
+            let jsonBuf = (targetBlock as any)[JSON_BUF_PROPERTY] || '';
+            jsonBuf += event.data.delta.partial_json;
+
+            // 更新非枚举属性
+            Object.defineProperty(targetBlock, JSON_BUF_PROPERTY, {
+              value: jsonBuf,
+              enumerable: false,
+              writable: true,
+              configurable: true
+            });
+
+            // 使用 partialParse 解析不完整 JSON
+            const parsedInput = partialParse(jsonBuf);
+            if (parsedInput !== undefined) {
+              (targetBlock as any).input = parsedInput;
             }
+
+            // 触发 inputJson 事件，提供实时解析结果
+            this.emit('inputJson', {
+              type: 'inputJson',
+              partialJson: jsonBuf,
+              parsedSnapshot: parsedInput ?? jsonBuf,
+              snapshot: this.currentMessageSnapshot
+            } as MessageStreamInputJsonEvent);
           }
         } else if (event.data.delta.type === 'thinking_delta') {
           // 处理思考增量
@@ -588,18 +592,15 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
         break;
 
       case 'content_block_stop':
-        // 尝试将 tool_use 的 input 从字符串解析为对象
+        // 清理 tool_use 的非枚举属性（原始 JSON 缓冲区）
         if (this.currentMessageSnapshot && Array.isArray(this.currentMessageSnapshot.content)) {
           const blockIndex = event.data.index !== undefined ? event.data.index : this.currentMessageSnapshot.content.length - 1;
           const targetBlock = this.currentMessageSnapshot.content.at(blockIndex);
           if (targetBlock && targetBlock.type === 'tool_use') {
-            if (typeof (targetBlock as any).input === 'string') {
-              try {
-                (targetBlock as any).input = JSON.parse((targetBlock as any).input);
-              } catch (e) {
-                // 如果解析失败，保持为字符串
-                console.warn('Failed to parse tool_use.input as JSON:', e);
-              }
+            const JSON_BUF_PROPERTY = '__json_buf';
+            // 删除非枚举属性，释放内存
+            if (JSON_BUF_PROPERTY in targetBlock) {
+              delete (targetBlock as any)[JSON_BUF_PROPERTY];
             }
           }
         }
