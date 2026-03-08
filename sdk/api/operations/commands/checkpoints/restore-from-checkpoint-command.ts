@@ -3,10 +3,9 @@
  */
 
 import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
-import { CheckpointCoordinator } from '../../../../core/execution/coordinators/checkpoint-coordinator.js';
+import { CheckpointCoordinator } from '../../../../graph/execution/coordinators/checkpoint-coordinator.js';
 import type { Thread } from '@modular-agent/types';
 import { getContainer } from '../../../../core/di/index.js';
-import * as Identifiers from '../../../../core/di/service-identifiers.js';
 import type { APIDependencyManager } from '../../../core/sdk-dependencies.js';
 
 /**

@@ -19,19 +19,19 @@ import type { ThreadEntity } from '../entities/thread-entity.js';
 import { getErrorOrNew, now } from '@modular-agent/common-utils';
 import { TaskRegistry, type TaskManager } from './task-registry.js';
 import { ThreadPoolService } from './thread-pool-service.js';
-import { TaskQueueManager } from '../execution/managers/task-queue-manager.js';
-import { CallbackManager } from '../execution/managers/callback-manager.js';
+import { TaskQueueManager } from '../../graph/execution/managers/task-queue-manager.js';
+import { CallbackManager } from '../../graph/execution/managers/callback-manager.js';
 import {
   type TriggeredSubgraphTask,
   type ExecutedSubgraphResult,
   type TaskSubmissionResult,
-} from '../execution/types/triggered-subworkflow.types.js';
-import { emit } from '../execution/utils/event/event-emitter.js';
+} from '../../graph/execution/types/triggered-subworkflow.types.js';
+import { emit } from '../../graph/execution/utils/event/event-emitter.js';
 import {
   buildTriggeredSubgraphStartedEvent,
   buildTriggeredSubgraphCompletedEvent,
   buildTriggeredSubgraphFailedEvent
-} from '../execution/utils/event/event-builder.js';
+} from '../../graph/execution/utils/event/event-builder.js';
 import { RuntimeValidationError } from '@modular-agent/types';
 
 /**

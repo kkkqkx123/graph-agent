@@ -216,7 +216,7 @@ export {
   createCustomValidationHook,
   createPermissionCheckHook,
   createAuditLoggingHook
-} from '../core/execution/utils/hook-creators.js';
+} from '../graph/execution/utils/hook-creators.js';
 
 // ============================================================================
 // 工具函数

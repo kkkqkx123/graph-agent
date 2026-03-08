@@ -17,8 +17,8 @@
  * 不需要额外的锁机制。项目中的"线程"只是逻辑概念（执行实例），而非真正的 OS 线程。
  */
 
-import { ThreadExecutor } from '../execution/thread-executor.js';
-import { type ExecutorWrapper, type PoolStats, type ThreadPoolConfig } from '../execution/types/task.types.js';
+import { ThreadExecutor } from '../../graph/execution/thread-executor.js';
+import { type ExecutorWrapper, type PoolStats, type ThreadPoolConfig } from '../../graph/execution/types/task.types.js';
 import { now } from '@modular-agent/common-utils';
 import { SystemExecutionError } from '@modular-agent/types';
 

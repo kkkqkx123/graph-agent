@@ -5,10 +5,10 @@
 
 import { now } from '@modular-agent/common-utils';
 import { GenericResourceAPI } from '../generic-resource-api.js';
-import { CheckpointStateManager } from '../../../core/execution/managers/checkpoint-state-manager.js';
+import { CheckpointStateManager } from '../../../graph/execution/managers/checkpoint-state-manager.js';
 import type { Checkpoint, CheckpointMetadata } from '@modular-agent/types';
 import type { CheckpointFilter } from '@modular-agent/types';
-import { CheckpointCoordinator } from '../../../core/execution/coordinators/checkpoint-coordinator.js';
+import { CheckpointCoordinator } from '../../../graph/execution/coordinators/checkpoint-coordinator.js';
 import { getContainer } from '../../../core/di/index.js';
 import * as Identifiers from '../../../core/di/service-identifiers.js';
 import { getErrorMessage, isSuccess, getData } from '../../types/execution-result.js';

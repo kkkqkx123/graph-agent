@@ -13,7 +13,7 @@
  * - 支持测试环境下的单例替换
  *
  * 示例：
- * import { SingletonRegistry } from '../execution/context/singleton-registry.js'
+ * import { SingletonRegistry } from '../../graph/execution/context/singleton-registry.js'
  * const eventManager = SingletonRegistry.getEventManager()
  *
  * 如需类型引用，直接从具体服务文件导入：

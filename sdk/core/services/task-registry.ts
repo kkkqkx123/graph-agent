@@ -18,7 +18,7 @@ import { generateId } from '../../utils/index.js';
 import { now } from '@modular-agent/common-utils';
 import type { ThreadEntity } from '../entities/thread-entity.js';
 import type { ThreadResult } from '@modular-agent/types';
-import { TaskStatus, type TaskInfo } from '../execution/types/task.types.js';
+import { TaskStatus, type TaskInfo } from '../../graph/execution/types/task.types.js';
 
 /**
  * 任务管理器接口

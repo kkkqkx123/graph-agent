@@ -28,34 +28,34 @@ import { WorkflowRegistry } from '../services/workflow-registry.js';
 import { ThreadPoolService } from '../services/thread-pool-service.js';
 
 // 执行层服务
-import { LLMExecutor } from '../execution/executors/llm-executor.js';
-import { ToolCallExecutor } from '../execution/executors/tool-call-executor.js';
-import { ThreadLifecycleManager } from '../execution/managers/thread-lifecycle-manager.js';
-import { ThreadCascadeManager } from '../execution/managers/thread-cascade-manager.js';
-import { CheckpointStateManager } from '../execution/managers/checkpoint-state-manager.js';
-import { ToolContextManager } from '../execution/managers/tool-context-manager.js';
-import { MessageStorageManager } from '../execution/managers/message-storage-manager.js';
-import { ToolVisibilityManager } from '../execution/managers/tool-visibility-manager.js';
-import { ThreadBuilder } from '../execution/thread-builder.js';
-import { ThreadExecutor } from '../execution/thread-executor.js';
-import { ThreadLifecycleCoordinator } from '../execution/coordinators/thread-lifecycle-coordinator.js';
+import { LLMExecutor } from '../../graph/execution/executors/llm-executor.js';
+import { ToolCallExecutor } from '../../graph/execution/executors/tool-call-executor.js';
+import { ThreadLifecycleManager } from '../../graph/execution/managers/thread-lifecycle-manager.js';
+import { ThreadCascadeManager } from '../../graph/execution/managers/thread-cascade-manager.js';
+import { CheckpointStateManager } from '../../graph/execution/managers/checkpoint-state-manager.js';
+import { ToolContextManager } from '../../graph/execution/managers/tool-context-manager.js';
+import { MessageStorageManager } from '../../graph/execution/managers/message-storage-manager.js';
+import { ToolVisibilityManager } from '../../graph/execution/managers/tool-visibility-manager.js';
+import { ThreadBuilder } from '../../graph/execution/thread-builder.js';
+import { ThreadExecutor } from '../../graph/execution/thread-executor.js';
+import { ThreadLifecycleCoordinator } from '../../graph/execution/coordinators/thread-lifecycle-coordinator.js';
 
 // 执行层 - Coordinators（协调器）
-import { ThreadExecutionCoordinator } from '../execution/coordinators/thread-execution-coordinator.js';
-import { VariableCoordinator } from '../execution/coordinators/variable-coordinator.js';
-import { TriggerCoordinator } from '../execution/coordinators/trigger-coordinator.js';
-import { NodeExecutionCoordinator } from '../execution/coordinators/node-execution-coordinator.js';
+import { ThreadExecutionCoordinator } from '../../graph/execution/coordinators/thread-execution-coordinator.js';
+import { VariableCoordinator } from '../../graph/execution/coordinators/variable-coordinator.js';
+import { TriggerCoordinator } from '../../graph/execution/coordinators/trigger-coordinator.js';
+import { NodeExecutionCoordinator } from '../../graph/execution/coordinators/node-execution-coordinator.js';
 import { TriggeredSubworkflowManager } from '../services/triggered-subworkflow-manager.js';
-import { LLMExecutionCoordinator } from '../execution/coordinators/llm-execution-coordinator.js';
-import { ToolVisibilityCoordinator } from '../execution/coordinators/tool-visibility-coordinator.js';
-import { ThreadOperationCoordinator } from '../execution/coordinators/thread-operation-coordinator.js';
-import { CheckpointCoordinator } from '../execution/coordinators/checkpoint-coordinator.js';
+import { LLMExecutionCoordinator } from '../../graph/execution/coordinators/llm-execution-coordinator.js';
+import { ToolVisibilityCoordinator } from '../../graph/execution/coordinators/tool-visibility-coordinator.js';
+import { ThreadOperationCoordinator } from '../../graph/execution/coordinators/thread-operation-coordinator.js';
+import { CheckpointCoordinator } from '../../graph/execution/coordinators/checkpoint-coordinator.js';
 
 // 执行层 - Managers（管理器）
-import { ConversationManager } from '../execution/managers/conversation-manager.js';
-import { VariableStateManager } from '../execution/managers/variable-state-manager.js';
-import { TriggerStateManager } from '../execution/managers/trigger-state-manager.js';
-import { InterruptionManager } from '../execution/managers/interruption-manager.js';
+import { ConversationManager } from '../../graph/execution/managers/conversation-manager.js';
+import { VariableStateManager } from '../../graph/execution/managers/variable-state-manager.js';
+import { TriggerStateManager } from '../../graph/execution/managers/trigger-state-manager.js';
+import { InterruptionManager } from '../../graph/execution/managers/interruption-manager.js';
 
 /** 全局容器实例 */
 let container: Container | null = null;

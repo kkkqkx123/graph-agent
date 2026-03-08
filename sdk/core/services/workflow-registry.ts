@@ -24,7 +24,7 @@ import { processWorkflow, type ProcessOptions } from '../graph/workflow-processo
 import { getContainer } from '../di/container-config.js';
 import * as Identifiers from '../di/service-identifiers.js';
 import { getErrorMessage } from '@modular-agent/common-utils';
-import { checkWorkflowReferences } from '../execution/utils/workflow-reference-checker.js';
+import { checkWorkflowReferences } from '../../graph/execution/utils/workflow-reference-checker.js';
 import { createContextualLogger } from '../../utils/contextual-logger.js';
 
 const logger = createContextualLogger();
