@@ -150,10 +150,12 @@ export class OpenAIResponseFormatter extends BaseFormatter {
       id: call.id,
       type: call.type || 'function',
       function: {
-        name: call.function.name,
-        arguments: typeof call.function.arguments === 'string'
+        name: call.function?.name || call.name,
+        arguments: typeof call.function?.arguments === 'string'
           ? call.function.arguments
-          : JSON.stringify(call.function.arguments)
+          : typeof call.arguments === 'string'
+            ? call.arguments
+            : JSON.stringify(call.function?.arguments || call.arguments || {})
       }
     }));
   }
