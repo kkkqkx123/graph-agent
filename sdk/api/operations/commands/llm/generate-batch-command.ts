@@ -2,7 +2,7 @@
  * GenerateBatchCommand - LLM批量生成命令
  */
 
-import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
+import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
 import type { LLMRequest, LLMResult } from '@modular-agent/types';
 import { APIDependencyManager } from '../../../core/sdk-dependencies.js';
 
@@ -50,15 +50,5 @@ export class GenerateBatchCommand extends BaseCommand<LLMResult[]> {
     }
 
     return errors.length > 0 ? validationFailure(errors) : validationSuccess();
-  }
-
-  getMetadata(): CommandMetadata {
-    return {
-      name: 'GenerateBatchCommand',
-      description: 'LLM批量生成',
-      category: 'execution',
-      requiresAuth: true,
-      version: '1.0.0'
-    };
   }
 }

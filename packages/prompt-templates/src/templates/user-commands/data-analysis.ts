@@ -11,31 +11,31 @@ import type { PromptTemplate } from '../../types/template.js';
 export const DATA_ANALYSIS_TEMPLATE: PromptTemplate = {
   id: 'user_commands.data_analysis',
   name: 'Data Analysis Command',
-  description: '数据分析指令',
+  description: 'Data analysis command',
   category: 'user-command',
-  content: `请对以下数据进行分析：
+  content: `Please analyze the following data:
 
-## 分析目标
+## Analysis goal
 {{analysisGoal}}
 
-## 数据内容
+## Data content
 {{dataContent}}
 
-## 分析要求
-1. **数据概览**：提供数据的基本统计信息
-2. **趋势分析**：识别数据中的趋势和模式
-3. **异常检测**：发现异常值和异常模式
-4. **关联分析**：探索变量之间的关系
-5. **结论建议**：提供有意义的结论和建议
+## Analysis requirements:
+1. **Data overview**: Provide basic statistical information about the data.
+2. **Trend analysis**: Identify trends and patterns in the data.
+3. **Anomaly detection**: Find outliers and unusual patterns.
+4. **Correlation analysis**: Explore relationships between variables.
+5. **Conclusion and recommendations**: Provide meaningful conclusions and suggestions.
 
-## 输出格式
-- 使用清晰的标题和结构
-- 提供可视化建议（如适用）
-- 使用简洁明了的语言
-- 包含关键发现和洞察
-- 提供可操作的建议`,
+## Output format:
+- Use clear titles and structure.
+- Offer suggestions for visualization (if applicable).
+- Use concise and easy-to-understand language.
+- Include key findings and insights.
+- Provide actionable recommendations.`,
   variables: [
-    { name: 'analysisGoal', type: 'string', required: true, description: '分析目标' },
-    { name: 'dataContent', type: 'string', required: true, description: '待分析的数据内容' }
+    { name: 'analysisGoal', type: 'string', required: true, description: 'Analysis goal' },
+    { name: 'dataContent', type: 'string', required: true, description: 'Data content to be analyzed' }
   ]
 };

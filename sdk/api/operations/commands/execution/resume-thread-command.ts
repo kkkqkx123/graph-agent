@@ -2,7 +2,7 @@
  * ResumeThreadCommand - 恢复线程命令
  */
 
-import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
+import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
 import type { ThreadResult } from '@modular-agent/types';
 import { APIDependencyManager } from '../../../core/sdk-dependencies.js';
 
@@ -31,15 +31,5 @@ export class ResumeThreadCommand extends BaseCommand<ThreadResult> {
     }
 
     return errors.length > 0 ? validationFailure(errors) : validationSuccess();
-  }
-
-  getMetadata(): CommandMetadata {
-    return {
-      name: 'ResumeThreadCommand',
-      description: '恢复线程执行',
-      category: 'execution',
-      requiresAuth: true,
-      version: '1.0.0'
-    };
   }
 }

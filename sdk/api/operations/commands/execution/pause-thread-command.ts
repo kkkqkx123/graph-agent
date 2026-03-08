@@ -2,7 +2,7 @@
  * PauseThreadCommand - 暂停线程命令
  */
 
-import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
+import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
 import { APIDependencyManager } from '../../../core/sdk-dependencies.js';
 
 /**
@@ -29,15 +29,5 @@ export class PauseThreadCommand extends BaseCommand<void> {
     }
 
     return errors.length > 0 ? validationFailure(errors) : validationSuccess();
-  }
-
-  getMetadata(): CommandMetadata {
-    return {
-      name: 'PauseThreadCommand',
-      description: '暂停线程执行',
-      category: 'execution',
-      requiresAuth: true,
-      version: '1.0.0'
-    };
   }
 }

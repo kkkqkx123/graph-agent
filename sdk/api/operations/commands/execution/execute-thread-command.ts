@@ -18,7 +18,7 @@
  * - Thread 是工作流的执行实例，每次执行都会创建新的 Thread
  */
 
-import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
+import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
 import type { ThreadResult, ThreadOptions } from '@modular-agent/types';
 import { APIDependencyManager } from '../../../core/sdk-dependencies.js';
 
@@ -78,15 +78,5 @@ export class ExecuteThreadCommand extends BaseCommand<ThreadResult> {
     }
 
     return errors.length > 0 ? validationFailure(errors) : validationSuccess();
-  }
-
-  getMetadata(): CommandMetadata {
-    return {
-      name: 'ExecuteThreadCommand',
-      description: '执行工作流线程',
-      category: 'execution',
-      requiresAuth: true,
-      version: '1.0.0'
-    };
   }
 }

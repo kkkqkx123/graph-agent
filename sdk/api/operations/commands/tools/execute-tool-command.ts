@@ -3,7 +3,7 @@
  */
 
 import { now, diffTimestamp } from '@modular-agent/common-utils';
-import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
+import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
 import type { ID, ToolOptions } from '@modular-agent/types';
 import type { ToolExecutionResult } from '@modular-agent/types';
 import type { APIDependencyManager } from '../../../core/sdk-dependencies.js';
@@ -67,15 +67,5 @@ export class ExecuteToolCommand extends BaseCommand<ToolExecutionResult> {
     }
 
     return errors.length > 0 ? validationFailure(errors) : validationSuccess();
-  }
-
-  getMetadata(): CommandMetadata {
-    return {
-      name: 'ExecuteToolCommand',
-      description: '执行工具',
-      category: 'execution',
-      requiresAuth: true,
-      version: '1.0.0'
-    };
   }
 }

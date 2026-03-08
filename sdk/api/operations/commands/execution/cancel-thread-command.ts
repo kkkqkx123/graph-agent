@@ -2,7 +2,7 @@
  * CancelThreadCommand - 取消线程命令
  */
 
-import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
+import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
 import { APIDependencyManager } from '../../../core/sdk-dependencies.js';
 
 /**
@@ -29,15 +29,5 @@ export class CancelThreadCommand extends BaseCommand<void> {
     }
 
     return errors.length > 0 ? validationFailure(errors) : validationSuccess();
-  }
-
-  getMetadata(): CommandMetadata {
-    return {
-      name: 'CancelThreadCommand',
-      description: '取消线程执行',
-      category: 'execution',
-      requiresAuth: true,
-      version: '1.0.0'
-    };
   }
 }

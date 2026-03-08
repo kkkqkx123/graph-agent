@@ -3,7 +3,7 @@
  */
 
 import { now, diffTimestamp } from '@modular-agent/common-utils';
-import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
+import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
 import type { ScriptOptions } from '@modular-agent/types';
 import type { ScriptExecutionResult } from '@modular-agent/types';
 import type { APIDependencyManager } from '../../../core/sdk-dependencies.js';
@@ -62,15 +62,5 @@ export class ExecuteScriptCommand extends BaseCommand<ScriptExecutionResult> {
     }
 
     return errors.length > 0 ? validationFailure(errors) : validationSuccess();
-  }
-
-  getMetadata(): CommandMetadata {
-    return {
-      name: 'ExecuteScriptCommand',
-      description: '执行脚本',
-      category: 'execution',
-      requiresAuth: true,
-      version: '1.0.0'
-    };
   }
 }

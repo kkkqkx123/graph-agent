@@ -122,8 +122,17 @@ export abstract class BaseCommand<T> implements Command<T> {
 
   /**
    * 获取命令元数据
+   * 子类可重写此方法提供更详细的元数据
    */
-  abstract getMetadata(): CommandMetadata;
+  getMetadata(): CommandMetadata {
+    return {
+      name: this.constructor.name,
+      description: '',
+      category: 'execution',
+      requiresAuth: false,
+      version: '1.0.0'
+    };
+  }
 
   /**
    * 获取执行时间
