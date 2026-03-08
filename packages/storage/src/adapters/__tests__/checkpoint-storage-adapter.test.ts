@@ -6,8 +6,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs/promises';
-import { JsonStorageProvider } from '../../src/providers/json/json-storage-provider.js';
-import { CheckpointStorageAdapter } from '../../src/adapters/checkpoint-storage-adapter.js';
+import { JsonStorageProvider } from '../../providers/json/json-storage-provider.js';
+import { CheckpointStorageAdapter } from '../checkpoint-storage-adapter.js';
 import type { CheckpointStorageMetadata } from '@modular-agent/types';
 
 describe('CheckpointStorageAdapter', () => {

@@ -6,8 +6,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs/promises';
-import { JsonStorageProvider } from '../../src/providers/json/json-storage-provider.js';
-import type { StorageMetadata } from '../../src/types/index.js';
+import { JsonStorageProvider } from '../json/json-storage-provider.js';
+import type { StorageMetadata } from '../../types/index.js';
 
 describe('JsonStorageProvider', () => {
   let tempDir: string;

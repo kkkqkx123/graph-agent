@@ -5,14 +5,13 @@
 
 import type { CheckpointStorageMetadata, CheckpointListOptions } from '@modular-agent/types';
 import type { StorageProvider, StorageMetadata } from '../types/index.js';
-import { StorageError } from '../types/storage-errors.js';
 
 /**
  * 检查点存储适配器
  * 将通用的 StorageProvider 适配为 SDK 的 CheckpointStorageCallback 接口
  */
 export class CheckpointStorageAdapter {
-  constructor(private readonly storage: StorageProvider<Uint8Array>) {}
+  constructor(private readonly storage: StorageProvider<Uint8Array>) { }
 
   /**
    * 保存检查点

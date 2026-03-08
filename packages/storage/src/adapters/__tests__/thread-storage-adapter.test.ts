@@ -6,8 +6,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs/promises';
-import { JsonStorageProvider } from '../../src/providers/json/json-storage-provider.js';
-import { ThreadStorageAdapter } from '../../src/adapters/thread-storage-adapter.js';
+import { JsonStorageProvider } from '../../providers/json/json-storage-provider.js';
+import { ThreadStorageAdapter } from '../thread-storage-adapter.js';
 import type { Thread } from '@modular-agent/types';
 
 // 创建测试用的 Thread 对象
@@ -16,7 +16,7 @@ function createTestThread(overrides: Partial<Thread> = {}): Thread {
     id: 'thread-1',
     workflowId: 'workflow-1',
     workflowVersion: '1.0.0',
-    status: 'running',
+    status: 'RUNNING',
     currentNodeId: 'node-1',
     graph: {
       nodes: [],
@@ -27,9 +27,9 @@ function createTestThread(overrides: Partial<Thread> = {}): Thread {
     variables: [],
     variableScopes: {
       thread: {},
-      workflow: {},
-      system: {},
-      node: {}
+      global: {},
+      local: [],
+      loop: []
     },
     input: {},
     output: {},
@@ -81,8 +81,8 @@ describe('ThreadStorageAdapter', () => {
     });
 
     it('should update existing thread', async () => {
-      const thread1 = createTestThread({ status: 'running' });
-      const thread2 = createTestThread({ status: 'completed' });
+      const thread1 = createTestThread({ status: 'RUNNING' });
+      const thread2 = createTestThread({ status: 'COMPLETED' });
 
       await adapter.saveThread(thread1);
       await adapter.saveThread(thread2);
@@ -142,8 +142,8 @@ describe('ThreadStorageAdapter', () => {
     });
 
     it('should filter by status', async () => {
-      await adapter.saveThread(createTestThread({ id: 'thread-1', status: 'running' }));
-      await adapter.saveThread(createTestThread({ id: 'thread-2', status: 'completed' }));
+      await adapter.saveThread(createTestThread({ id: 'thread-1', status: 'RUNNING' }));
+      await adapter.saveThread(createTestThread({ id: 'thread-2', status: 'COMPLETED' }));
 
       const threads = await adapter.listThreads({ status: 'running' });
 
@@ -164,8 +164,8 @@ describe('ThreadStorageAdapter', () => {
 
   describe('listThreadInfos', () => {
     it('should list thread infos with metadata', async () => {
-      await adapter.saveThread(createTestThread({ id: 'thread-1', status: 'running' }));
-      await adapter.saveThread(createTestThread({ id: 'thread-2', status: 'completed' }));
+      await adapter.saveThread(createTestThread({ id: 'thread-1', status: 'RUNNING' }));
+      await adapter.saveThread(createTestThread({ id: 'thread-2', status: 'COMPLETED' }));
 
       const threadInfos = await adapter.listThreadInfos();
 
@@ -177,7 +177,7 @@ describe('ThreadStorageAdapter', () => {
 
   describe('getThreadMetadata', () => {
     it('should return thread metadata', async () => {
-      const thread = createTestThread({ status: 'running' });
+      const thread = createTestThread({ status: 'RUNNING' });
 
       await adapter.saveThread(thread);
       const metadata = await adapter.getThreadMetadata('thread-1');

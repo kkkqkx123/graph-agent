@@ -9,8 +9,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs/promises';
-import { SqliteStorageProvider } from '../../src/providers/sqlite/sqlite-storage-provider.js';
-import type { StorageMetadata } from '../../src/types/index.js';
+import { SqliteStorageProvider } from '../sqlite/sqlite-storage-provider.js';
+import type { StorageMetadata } from '../../types/index.js';
 
 // 动态检测 better-sqlite3 原生模块是否可用
 let sqliteAvailable = false;

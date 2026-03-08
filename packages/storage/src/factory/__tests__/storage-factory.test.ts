@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs/promises';
-import { StorageFactory } from '../../src/factory/storage-factory.js';
+import { StorageFactory } from '../storage-factory.js';
 
 // 动态检测 better-sqlite3 原生模块是否可用
 let sqliteAvailable = false;
