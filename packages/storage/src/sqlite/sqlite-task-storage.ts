@@ -124,7 +124,7 @@ export class SqliteTaskStorage implements TaskStorageCallback {
     );
   }
 
-  async saveTask(
+  async save(
     taskId: string,
     data: Uint8Array,
     metadata: TaskStorageMetadata
@@ -178,7 +178,7 @@ export class SqliteTaskStorage implements TaskStorageCallback {
     }
   }
 
-  async loadTask(taskId: string): Promise<Uint8Array | null> {
+  async load(taskId: string): Promise<Uint8Array | null> {
     const db = this.getDb();
 
     try {
@@ -195,7 +195,7 @@ export class SqliteTaskStorage implements TaskStorageCallback {
     }
   }
 
-  async deleteTask(taskId: string): Promise<void> {
+  async delete(taskId: string): Promise<void> {
     const db = this.getDb();
 
     try {
@@ -206,7 +206,7 @@ export class SqliteTaskStorage implements TaskStorageCallback {
     }
   }
 
-  async listTasks(options?: TaskListOptions): Promise<string[]> {
+  async list(options?: TaskListOptions): Promise<string[]> {
     const db = this.getDb();
 
     try {
@@ -296,7 +296,7 @@ export class SqliteTaskStorage implements TaskStorageCallback {
     }
   }
 
-  async taskExists(taskId: string): Promise<boolean> {
+  async exists(taskId: string): Promise<boolean> {
     const db = this.getDb();
 
     try {
@@ -308,7 +308,7 @@ export class SqliteTaskStorage implements TaskStorageCallback {
     }
   }
 
-  async getTaskMetadata(taskId: string): Promise<TaskStorageMetadata | null> {
+  async getMetadata(taskId: string): Promise<TaskStorageMetadata | null> {
     const db = this.getDb();
 
     try {
@@ -501,3 +501,4 @@ export class SqliteTaskStorage implements TaskStorageCallback {
     }
   }
 }
+

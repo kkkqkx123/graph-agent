@@ -138,8 +138,8 @@ export class SqliteThreadStorage implements ThreadStorageCallback {
   /**
    * 保存线程
    */
-  async saveThread(
-    threadId: string,
+  async save(
+    id: string,
     data: Uint8Array,
     metadata: ThreadStorageMetadata
   ): Promise<void> {
@@ -170,7 +170,7 @@ export class SqliteThreadStorage implements ThreadStorageCallback {
       `);
 
       stmt.run(
-        threadId,
+        id,
         metadata.workflowId,
         metadata.workflowVersion,
         metadata.status,
@@ -186,19 +186,19 @@ export class SqliteThreadStorage implements ThreadStorageCallback {
         now
       );
     } catch (error) {
-      this.handleSqliteError(error, 'save', { threadId });
+      this.handleSqliteError(error, 'save', { id });
     }
   }
 
   /**
    * 加载线程数据
    */
-  async loadThread(threadId: string): Promise<Uint8Array | null> {
+  async load(id: string): Promise<Uint8Array | null> {
     const db = this.getDb();
 
     try {
       const stmt = db.prepare(`SELECT data FROM threads WHERE id = ?`);
-      const row = stmt.get(threadId) as { data: Buffer } | undefined;
+      const row = stmt.get(id) as { data: Buffer } | undefined;
 
       if (!row) {
         return null;
@@ -206,28 +206,28 @@ export class SqliteThreadStorage implements ThreadStorageCallback {
 
       return new Uint8Array(row.data);
     } catch (error) {
-      this.handleSqliteError(error, 'load', { threadId });
+      this.handleSqliteError(error, 'load', { id });
     }
   }
 
   /**
    * 删除线程
    */
-  async deleteThread(threadId: string): Promise<void> {
+  async delete(id: string): Promise<void> {
     const db = this.getDb();
 
     try {
       const stmt = db.prepare(`DELETE FROM threads WHERE id = ?`);
-      stmt.run(threadId);
+      stmt.run(id);
     } catch (error) {
-      this.handleSqliteError(error, 'delete', { threadId });
+      this.handleSqliteError(error, 'delete', { id });
     }
   }
 
   /**
    * 列出线程ID
    */
-  async listThreads(options?: ThreadListOptions): Promise<string[]> {
+  async list(options?: ThreadListOptions): Promise<string[]> {
     const db = this.getDb();
 
     try {
@@ -318,39 +318,22 @@ export class SqliteThreadStorage implements ThreadStorageCallback {
   /**
    * 检查线程是否存在
    */
-  async threadExists(threadId: string): Promise<boolean> {
+  async exists(id: string): Promise<boolean> {
     const db = this.getDb();
 
     try {
       const stmt = db.prepare(`SELECT 1 FROM threads WHERE id = ?`);
-      const row = stmt.get(threadId);
+      const row = stmt.get(id);
       return row !== undefined;
     } catch (error) {
-      this.handleSqliteError(error, 'exists', { threadId });
+      this.handleSqliteError(error, 'exists', { id });
     }
   }
 
   /**
-   * 更新线程状态
+   * 获取元数据
    */
-  async updateThreadStatus(threadId: string, status: ThreadStatus): Promise<void> {
-    const db = this.getDb();
-    const now = Date.now();
-
-    try {
-      const stmt = db.prepare(`
-        UPDATE threads SET status = ?, updated_at = ? WHERE id = ?
-      `);
-      stmt.run(status, now, threadId);
-    } catch (error) {
-      this.handleSqliteError(error, 'updateStatus', { threadId, status });
-    }
-  }
-
-  /**
-   * 获取线程元数据
-   */
-  async getThreadMetadata(threadId: string): Promise<ThreadStorageMetadata | null> {
+  async getMetadata(id: string): Promise<ThreadStorageMetadata | null> {
     const db = this.getDb();
 
     try {
@@ -361,7 +344,7 @@ export class SqliteThreadStorage implements ThreadStorageCallback {
           tags, custom_fields
         FROM threads WHERE id = ?
       `);
-      const row = stmt.get(threadId) as {
+      const row = stmt.get(id) as {
         id: string;
         workflow_id: string;
         workflow_version: string;
@@ -393,7 +376,24 @@ export class SqliteThreadStorage implements ThreadStorageCallback {
         customFields: row.custom_fields ? JSON.parse(row.custom_fields) : undefined
       };
     } catch (error) {
-      this.handleSqliteError(error, 'getMetadata', { threadId });
+      this.handleSqliteError(error, 'getMetadata', { id });
+    }
+  }
+
+  /**
+   * 更新线程状态
+   */
+  async updateThreadStatus(threadId: string, status: ThreadStatus): Promise<void> {
+    const db = this.getDb();
+    const now = Date.now();
+
+    try {
+      const stmt = db.prepare(`
+        UPDATE threads SET status = ?, updated_at = ? WHERE id = ?
+      `);
+      stmt.run(status, now, threadId);
+    } catch (error) {
+      this.handleSqliteError(error, 'updateStatus', { threadId, status });
     }
   }
 

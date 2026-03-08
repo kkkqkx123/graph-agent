@@ -128,8 +128,8 @@ export class SqliteCheckpointStorage implements CheckpointStorageCallback {
   /**
    * 保存检查点
    */
-  async saveCheckpoint(
-    checkpointId: string,
+  async save(
+    id: string,
     data: Uint8Array,
     metadata: CheckpointStorageMetadata
   ): Promise<void> {
@@ -151,7 +151,7 @@ export class SqliteCheckpointStorage implements CheckpointStorageCallback {
       `);
 
       stmt.run(
-        checkpointId,
+        id,
         metadata.threadId,
         metadata.workflowId,
         metadata.timestamp,
@@ -162,19 +162,19 @@ export class SqliteCheckpointStorage implements CheckpointStorageCallback {
         now
       );
     } catch (error) {
-      this.handleSqliteError(error, 'save', { checkpointId });
+      this.handleSqliteError(error, 'save', { id });
     }
   }
 
   /**
    * 加载检查点数据
    */
-  async loadCheckpoint(checkpointId: string): Promise<Uint8Array | null> {
+  async load(id: string): Promise<Uint8Array | null> {
     const db = this.getDb();
 
     try {
       const stmt = db.prepare(`SELECT data FROM checkpoints WHERE id = ?`);
-      const row = stmt.get(checkpointId) as { data: Buffer } | undefined;
+      const row = stmt.get(id) as { data: Buffer } | undefined;
 
       if (!row) {
         return null;
@@ -182,28 +182,28 @@ export class SqliteCheckpointStorage implements CheckpointStorageCallback {
 
       return new Uint8Array(row.data);
     } catch (error) {
-      this.handleSqliteError(error, 'load', { checkpointId });
+      this.handleSqliteError(error, 'load', { id });
     }
   }
 
   /**
    * 删除检查点
    */
-  async deleteCheckpoint(checkpointId: string): Promise<void> {
+  async delete(id: string): Promise<void> {
     const db = this.getDb();
 
     try {
       const stmt = db.prepare(`DELETE FROM checkpoints WHERE id = ?`);
-      stmt.run(checkpointId);
+      stmt.run(id);
     } catch (error) {
-      this.handleSqliteError(error, 'delete', { checkpointId });
+      this.handleSqliteError(error, 'delete', { id });
     }
   }
 
   /**
    * 列出检查点ID
    */
-  async listCheckpoints(options?: CheckpointListOptions): Promise<string[]> {
+  async list(options?: CheckpointListOptions): Promise<string[]> {
     const db = this.getDb();
 
     try {
@@ -257,15 +257,50 @@ export class SqliteCheckpointStorage implements CheckpointStorageCallback {
   /**
    * 检查检查点是否存在
    */
-  async checkpointExists(checkpointId: string): Promise<boolean> {
+  async exists(id: string): Promise<boolean> {
     const db = this.getDb();
 
     try {
       const stmt = db.prepare(`SELECT 1 FROM checkpoints WHERE id = ?`);
-      const row = stmt.get(checkpointId);
+      const row = stmt.get(id);
       return row !== undefined;
     } catch (error) {
-      this.handleSqliteError(error, 'exists', { checkpointId });
+      this.handleSqliteError(error, 'exists', { id });
+    }
+  }
+
+  /**
+   * 获取元数据
+   */
+  async getMetadata(id: string): Promise<CheckpointStorageMetadata | null> {
+    const db = this.getDb();
+
+    try {
+      const stmt = db.prepare(`
+        SELECT thread_id, workflow_id, timestamp, tags, custom_fields
+        FROM checkpoints WHERE id = ?
+      `);
+      const row = stmt.get(id) as {
+        thread_id: string;
+        workflow_id: string;
+        timestamp: number;
+        tags: string | null;
+        custom_fields: string | null;
+      } | undefined;
+
+      if (!row) {
+        return null;
+      }
+
+      return {
+        threadId: row.thread_id,
+        workflowId: row.workflow_id,
+        timestamp: row.timestamp,
+        tags: row.tags ? JSON.parse(row.tags) : undefined,
+        customFields: row.custom_fields ? JSON.parse(row.custom_fields) : undefined
+      };
+    } catch (error) {
+      this.handleSqliteError(error, 'getMetadata', { id });
     }
   }
 

@@ -139,19 +139,19 @@ export class JsonThreadStorage implements ThreadStorageCallback {
   /**
    * 保存线程
    */
-  async saveThread(
-    threadId: string,
+  async save(
+    id: string,
     data: Uint8Array,
     metadata: ThreadStorageMetadata
   ): Promise<void> {
     this.ensureInitialized();
 
-    const filePath = this.getFilePath(threadId);
+    const filePath = this.getFilePath(id);
     const releaseLock = await this.acquireLock(filePath);
 
     try {
       const content: StorageFileContent = {
-        id: threadId,
+        id,
         data: Array.from(data),
         metadata
       };
@@ -159,11 +159,11 @@ export class JsonThreadStorage implements ThreadStorageCallback {
       try {
         const jsonContent = JSON.stringify(content, null, 2);
         await fs.writeFile(filePath, jsonContent, 'utf-8');
-        this.metadataIndex.set(threadId, { metadata, filePath });
+        this.metadataIndex.set(id, { metadata, filePath });
       } catch (error) {
         throw new SerializationError(
-          `Failed to serialize thread: ${threadId}`,
-          threadId,
+          `Failed to serialize thread: ${id}`,
+          id,
           error as Error
         );
       }
@@ -175,10 +175,10 @@ export class JsonThreadStorage implements ThreadStorageCallback {
   /**
    * 加载线程数据
    */
-  async loadThread(threadId: string): Promise<Uint8Array | null> {
+  async load(id: string): Promise<Uint8Array | null> {
     this.ensureInitialized();
 
-    const indexEntry = this.metadataIndex.get(threadId);
+    const indexEntry = this.metadataIndex.get(id);
     if (!indexEntry) {
       return null;
     }
@@ -192,9 +192,9 @@ export class JsonThreadStorage implements ThreadStorageCallback {
         return null;
       }
       throw new StorageError(
-        `Failed to load thread: ${threadId}`,
+        `Failed to load thread: ${id}`,
         'load',
-        { threadId },
+        { id },
         error as Error
       );
     }
@@ -203,10 +203,10 @@ export class JsonThreadStorage implements ThreadStorageCallback {
   /**
    * 删除线程
    */
-  async deleteThread(threadId: string): Promise<void> {
+  async delete(id: string): Promise<void> {
     this.ensureInitialized();
 
-    const indexEntry = this.metadataIndex.get(threadId);
+    const indexEntry = this.metadataIndex.get(id);
     if (!indexEntry) {
       return;
     }
@@ -216,7 +216,7 @@ export class JsonThreadStorage implements ThreadStorageCallback {
     try {
       try {
         await fs.unlink(indexEntry.filePath);
-        this.metadataIndex.delete(threadId);
+        this.metadataIndex.delete(id);
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
           throw error;
@@ -230,7 +230,7 @@ export class JsonThreadStorage implements ThreadStorageCallback {
   /**
    * 列出线程ID
    */
-  async listThreads(options?: ThreadListOptions): Promise<string[]> {
+  async list(options?: ThreadListOptions): Promise<string[]> {
     this.ensureInitialized();
 
     let ids = Array.from(this.metadataIndex.keys());
@@ -331,9 +331,18 @@ export class JsonThreadStorage implements ThreadStorageCallback {
   /**
    * 检查线程是否存在
    */
-  async threadExists(threadId: string): Promise<boolean> {
+  async exists(id: string): Promise<boolean> {
     this.ensureInitialized();
-    return this.metadataIndex.has(threadId);
+    return this.metadataIndex.has(id);
+  }
+
+  /**
+   * 获取元数据
+   */
+  async getMetadata(id: string): Promise<ThreadStorageMetadata | null> {
+    this.ensureInitialized();
+    const entry = this.metadataIndex.get(id);
+    return entry?.metadata ?? null;
   }
 
   /**
@@ -358,19 +367,10 @@ export class JsonThreadStorage implements ThreadStorageCallback {
     };
 
     // 重新保存文件
-    const data = await this.loadThread(threadId);
+    const data = await this.load(threadId);
     if (data) {
-      await this.saveThread(threadId, data, updatedMetadata);
+      await this.save(threadId, data, updatedMetadata);
     }
-  }
-
-  /**
-   * 获取线程元数据
-   */
-  async getThreadMetadata(threadId: string): Promise<ThreadStorageMetadata | null> {
-    this.ensureInitialized();
-    const entry = this.metadataIndex.get(threadId);
-    return entry?.metadata ?? null;
   }
 
   /**

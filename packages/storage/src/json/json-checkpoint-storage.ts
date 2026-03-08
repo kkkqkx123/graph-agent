@@ -135,19 +135,19 @@ export class JsonCheckpointStorage implements CheckpointStorageCallback {
   /**
    * 保存检查点
    */
-  async saveCheckpoint(
-    checkpointId: string,
+  async save(
+    id: string,
     data: Uint8Array,
     metadata: CheckpointStorageMetadata
   ): Promise<void> {
     this.ensureInitialized();
 
-    const filePath = this.getFilePath(checkpointId);
+    const filePath = this.getFilePath(id);
     const releaseLock = await this.acquireLock(filePath);
 
     try {
       const content: StorageFileContent = {
-        id: checkpointId,
+        id,
         data: Array.from(data),
         metadata
       };
@@ -155,11 +155,11 @@ export class JsonCheckpointStorage implements CheckpointStorageCallback {
       try {
         const jsonContent = JSON.stringify(content, null, 2);
         await fs.writeFile(filePath, jsonContent, 'utf-8');
-        this.metadataIndex.set(checkpointId, { metadata, filePath });
+        this.metadataIndex.set(id, { metadata, filePath });
       } catch (error) {
         throw new SerializationError(
-          `Failed to serialize checkpoint: ${checkpointId}`,
-          checkpointId,
+          `Failed to serialize checkpoint: ${id}`,
+          id,
           error as Error
         );
       }
@@ -171,10 +171,10 @@ export class JsonCheckpointStorage implements CheckpointStorageCallback {
   /**
    * 加载检查点数据
    */
-  async loadCheckpoint(checkpointId: string): Promise<Uint8Array | null> {
+  async load(id: string): Promise<Uint8Array | null> {
     this.ensureInitialized();
 
-    const indexEntry = this.metadataIndex.get(checkpointId);
+    const indexEntry = this.metadataIndex.get(id);
     if (!indexEntry) {
       return null;
     }
@@ -188,9 +188,9 @@ export class JsonCheckpointStorage implements CheckpointStorageCallback {
         return null;
       }
       throw new StorageError(
-        `Failed to load checkpoint: ${checkpointId}`,
+        `Failed to load checkpoint: ${id}`,
         'load',
-        { checkpointId },
+        { id },
         error as Error
       );
     }
@@ -199,10 +199,10 @@ export class JsonCheckpointStorage implements CheckpointStorageCallback {
   /**
    * 删除检查点
    */
-  async deleteCheckpoint(checkpointId: string): Promise<void> {
+  async delete(id: string): Promise<void> {
     this.ensureInitialized();
 
-    const indexEntry = this.metadataIndex.get(checkpointId);
+    const indexEntry = this.metadataIndex.get(id);
     if (!indexEntry) {
       return;
     }
@@ -212,7 +212,7 @@ export class JsonCheckpointStorage implements CheckpointStorageCallback {
     try {
       try {
         await fs.unlink(indexEntry.filePath);
-        this.metadataIndex.delete(checkpointId);
+        this.metadataIndex.delete(id);
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
           throw error;
@@ -226,7 +226,7 @@ export class JsonCheckpointStorage implements CheckpointStorageCallback {
   /**
    * 列出检查点ID
    */
-  async listCheckpoints(options?: CheckpointListOptions): Promise<string[]> {
+  async list(options?: CheckpointListOptions): Promise<string[]> {
     this.ensureInitialized();
 
     let ids = Array.from(this.metadataIndex.keys());
@@ -274,9 +274,18 @@ export class JsonCheckpointStorage implements CheckpointStorageCallback {
   /**
    * 检查检查点是否存在
    */
-  async checkpointExists(checkpointId: string): Promise<boolean> {
+  async exists(id: string): Promise<boolean> {
     this.ensureInitialized();
-    return this.metadataIndex.has(checkpointId);
+    return this.metadataIndex.has(id);
+  }
+
+  /**
+   * 获取元数据
+   */
+  async getMetadata(id: string): Promise<CheckpointStorageMetadata | null> {
+    this.ensureInitialized();
+    const entry = this.metadataIndex.get(id);
+    return entry?.metadata ?? null;
   }
 
   /**

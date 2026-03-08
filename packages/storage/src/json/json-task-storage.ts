@@ -119,7 +119,7 @@ export class JsonTaskStorage implements TaskStorageCallback {
     };
   }
 
-  async saveTask(
+  async save(
     taskId: string,
     data: Uint8Array,
     metadata: TaskStorageMetadata
@@ -152,7 +152,7 @@ export class JsonTaskStorage implements TaskStorageCallback {
     }
   }
 
-  async loadTask(taskId: string): Promise<Uint8Array | null> {
+  async load(taskId: string): Promise<Uint8Array | null> {
     this.ensureInitialized();
 
     const indexEntry = this.metadataIndex.get(taskId);
@@ -177,7 +177,7 @@ export class JsonTaskStorage implements TaskStorageCallback {
     }
   }
 
-  async deleteTask(taskId: string): Promise<void> {
+  async delete(taskId: string): Promise<void> {
     this.ensureInitialized();
 
     const indexEntry = this.metadataIndex.get(taskId);
@@ -201,7 +201,7 @@ export class JsonTaskStorage implements TaskStorageCallback {
     }
   }
 
-  async listTasks(options?: TaskListOptions): Promise<string[]> {
+  async list(options?: TaskListOptions): Promise<string[]> {
     this.ensureInitialized();
 
     let ids = Array.from(this.metadataIndex.keys());
@@ -300,12 +300,12 @@ export class JsonTaskStorage implements TaskStorageCallback {
     return ids.slice(offset, offset + limit);
   }
 
-  async taskExists(taskId: string): Promise<boolean> {
+  async exists(taskId: string): Promise<boolean> {
     this.ensureInitialized();
     return this.metadataIndex.has(taskId);
   }
 
-  async getTaskMetadata(taskId: string): Promise<TaskStorageMetadata | null> {
+  async getMetadata(taskId: string): Promise<TaskStorageMetadata | null> {
     this.ensureInitialized();
     const entry = this.metadataIndex.get(taskId);
     return entry?.metadata ?? null;
@@ -403,7 +403,7 @@ export class JsonTaskStorage implements TaskStorageCallback {
         meta.completeTime &&
         meta.completeTime < cutoffTime
       ) {
-        await this.deleteTask(id);
+        await this.delete(id);
         cleanedCount++;
       }
     }
@@ -431,3 +431,4 @@ export class JsonTaskStorage implements TaskStorageCallback {
     this.initialized = false;
   }
 }
+

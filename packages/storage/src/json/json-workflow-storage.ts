@@ -136,19 +136,19 @@ export class JsonWorkflowStorage implements WorkflowStorageCallback {
     };
   }
 
-  async saveWorkflow(
-    workflowId: string,
+  async save(
+    id: string,
     data: Uint8Array,
     metadata: WorkflowStorageMetadata
   ): Promise<void> {
     this.ensureInitialized();
 
-    const filePath = this.getFilePath(workflowId);
+    const filePath = this.getFilePath(id);
     const releaseLock = await this.acquireLock(filePath);
 
     try {
       const content: WorkflowFileContent = {
-        id: workflowId,
+        id,
         data: Array.from(data),
         metadata
       };
@@ -156,11 +156,11 @@ export class JsonWorkflowStorage implements WorkflowStorageCallback {
       try {
         const jsonContent = JSON.stringify(content, null, 2);
         await fs.writeFile(filePath, jsonContent, 'utf-8');
-        this.metadataIndex.set(workflowId, { metadata, filePath });
+        this.metadataIndex.set(id, { metadata, filePath });
       } catch (error) {
         throw new SerializationError(
-          `Failed to serialize workflow: ${workflowId}`,
-          workflowId,
+          `Failed to serialize workflow: ${id}`,
+          id,
           error as Error
         );
       }
@@ -169,10 +169,10 @@ export class JsonWorkflowStorage implements WorkflowStorageCallback {
     }
   }
 
-  async loadWorkflow(workflowId: string): Promise<Uint8Array | null> {
+  async load(id: string): Promise<Uint8Array | null> {
     this.ensureInitialized();
 
-    const indexEntry = this.metadataIndex.get(workflowId);
+    const indexEntry = this.metadataIndex.get(id);
     if (!indexEntry) {
       return null;
     }
@@ -186,18 +186,18 @@ export class JsonWorkflowStorage implements WorkflowStorageCallback {
         return null;
       }
       throw new StorageError(
-        `Failed to load workflow: ${workflowId}`,
+        `Failed to load workflow: ${id}`,
         'load',
-        { workflowId },
+        { id },
         error as Error
       );
     }
   }
 
-  async deleteWorkflow(workflowId: string): Promise<void> {
+  async delete(id: string): Promise<void> {
     this.ensureInitialized();
 
-    const indexEntry = this.metadataIndex.get(workflowId);
+    const indexEntry = this.metadataIndex.get(id);
     if (!indexEntry) {
       return;
     }
@@ -208,7 +208,7 @@ export class JsonWorkflowStorage implements WorkflowStorageCallback {
       // 删除工作流文件
       try {
         await fs.unlink(indexEntry.filePath);
-        this.metadataIndex.delete(workflowId);
+        this.metadataIndex.delete(id);
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
           throw error;
@@ -217,7 +217,7 @@ export class JsonWorkflowStorage implements WorkflowStorageCallback {
 
       // 删除所有版本文件
       const versionsDir = path.join(this.config.baseDir, 'versions');
-      const safeId = this.sanitizeId(workflowId);
+      const safeId = this.sanitizeId(id);
       try {
         const versionFiles = await fs.readdir(versionsDir);
         for (const file of versionFiles) {
@@ -235,7 +235,7 @@ export class JsonWorkflowStorage implements WorkflowStorageCallback {
     }
   }
 
-  async listWorkflows(options?: WorkflowListOptions): Promise<string[]> {
+  async list(options?: WorkflowListOptions): Promise<string[]> {
     this.ensureInitialized();
 
     let ids = Array.from(this.metadataIndex.keys());
@@ -326,14 +326,14 @@ export class JsonWorkflowStorage implements WorkflowStorageCallback {
     return ids.slice(offset, offset + limit);
   }
 
-  async workflowExists(workflowId: string): Promise<boolean> {
+  async exists(id: string): Promise<boolean> {
     this.ensureInitialized();
-    return this.metadataIndex.has(workflowId);
+    return this.metadataIndex.has(id);
   }
 
-  async getWorkflowMetadata(workflowId: string): Promise<WorkflowStorageMetadata | null> {
+  async getMetadata(id: string): Promise<WorkflowStorageMetadata | null> {
     this.ensureInitialized();
-    const entry = this.metadataIndex.get(workflowId);
+    const entry = this.metadataIndex.get(id);
     return entry?.metadata ?? null;
   }
 
@@ -358,9 +358,9 @@ export class JsonWorkflowStorage implements WorkflowStorageCallback {
       updatedAt: Date.now()
     };
 
-    const data = await this.loadWorkflow(workflowId);
+    const data = await this.load(workflowId);
     if (data) {
-      await this.saveWorkflow(workflowId, data, updatedMetadata);
+      await this.save(workflowId, data, updatedMetadata);
     }
   }
 

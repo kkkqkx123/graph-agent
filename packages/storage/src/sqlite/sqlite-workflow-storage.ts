@@ -139,7 +139,7 @@ export class SqliteWorkflowStorage implements WorkflowStorageCallback {
     );
   }
 
-  async saveWorkflow(
+  async save(
     workflowId: string,
     data: Uint8Array,
     metadata: WorkflowStorageMetadata
@@ -190,7 +190,7 @@ export class SqliteWorkflowStorage implements WorkflowStorageCallback {
     }
   }
 
-  async loadWorkflow(workflowId: string): Promise<Uint8Array | null> {
+  async load(workflowId: string): Promise<Uint8Array | null> {
     const db = this.getDb();
 
     try {
@@ -207,7 +207,7 @@ export class SqliteWorkflowStorage implements WorkflowStorageCallback {
     }
   }
 
-  async deleteWorkflow(workflowId: string): Promise<void> {
+  async delete(workflowId: string): Promise<void> {
     const db = this.getDb();
 
     try {
@@ -223,7 +223,7 @@ export class SqliteWorkflowStorage implements WorkflowStorageCallback {
     }
   }
 
-  async listWorkflows(options?: WorkflowListOptions): Promise<string[]> {
+  async list(options?: WorkflowListOptions): Promise<string[]> {
     const db = this.getDb();
 
     try {
@@ -303,7 +303,7 @@ export class SqliteWorkflowStorage implements WorkflowStorageCallback {
     }
   }
 
-  async workflowExists(workflowId: string): Promise<boolean> {
+  async exists(workflowId: string): Promise<boolean> {
     const db = this.getDb();
 
     try {
@@ -315,7 +315,7 @@ export class SqliteWorkflowStorage implements WorkflowStorageCallback {
     }
   }
 
-  async getWorkflowMetadata(workflowId: string): Promise<WorkflowStorageMetadata | null> {
+  async getMetadata(workflowId: string): Promise<WorkflowStorageMetadata | null> {
     const db = this.getDb();
 
     try {
@@ -548,3 +548,4 @@ export class SqliteWorkflowStorage implements WorkflowStorageCallback {
     }
   }
 }
+
