@@ -102,7 +102,7 @@ export function renderTemplates(templates: string[], variables: Record<string, a
  */
 export function validateTemplateVariables(template: string, variables: Record<string, any>): string[] {
   const placeholderRegex = /\{\{([^}]+)\}\}/g;
-  const missingVariables: string[] = [];
+  const missingVariablesSet = new Set<string>();
   let match;
 
   while ((match = placeholderRegex.exec(template)) !== null) {
@@ -112,9 +112,9 @@ export function validateTemplateVariables(template: string, variables: Record<st
     const value = getVariableValue(variableName, variables);
 
     if (value === undefined || value === null) {
-      missingVariables.push(variableName);
+      missingVariablesSet.add(variableName);
     }
   }
 
-  return missingVariables;
+  return Array.from(missingVariablesSet);
 }

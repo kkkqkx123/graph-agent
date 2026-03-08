@@ -6,7 +6,7 @@
  */
 
 import { Command } from 'commander';
-import { createLogger } from './utils/logger.js';
+import { initializeLogger, getLogger, type CLILogger } from './utils/logger.js';
 import { createWorkflowCommands } from './commands/workflow/index.js';
 import { createThreadCommands } from './commands/thread/index.js';
 import { createCheckpointCommands } from './commands/checkpoint/index.js';
@@ -20,9 +20,6 @@ import { createVariableCommands } from './commands/variable/index.js';
 import { createEventCommands } from './commands/event/index.js';
 import { createHumanRelayCommands } from './commands/human-relay/index.js';
 
-// 创建日志记录器
-const logger = createLogger();
-
 // 创建主程序实例
 const program = new Command();
 
@@ -32,7 +29,17 @@ program
   .description('Modular Agent Framework - 模块化智能体框架命令行工具')
   .version('1.0.0')
   .option('-v, --verbose', '启用详细输出模式')
-  .option('-d, --debug', '启用调试模式');
+  .option('-d, --debug', '启用调试模式')
+  .option('-l, --log-file <path>', '指定日志文件路径')
+  .hook('preAction', (thisCommand) => {
+    // 在执行任何命令前初始化日志记录器
+    const options = thisCommand.opts() as { verbose?: boolean; debug?: boolean; logFile?: string };
+    initializeLogger({
+      verbose: options.verbose,
+      debug: options.debug,
+      logFile: options.logFile
+    });
+  });
 
 // 添加工作流命令组
 program.addCommand(createWorkflowCommands());
@@ -73,6 +80,7 @@ program.addCommand(createHumanRelayCommands());
 // 全局错误处理
 program.hook('postAction', (thisCommand) => {
   const options = thisCommand.opts() as { verbose?: boolean; debug?: boolean };
+  const logger = getLogger();
   if (options.verbose || options.debug) {
     logger.info('详细模式已启用');
   }
@@ -88,6 +96,7 @@ if (!process.argv.slice(2).length) {
 
 // 添加进程退出清理逻辑
 const cleanup = async () => {
+  const logger = getLogger();
   logger.info('正在清理资源...');
   
   try {
@@ -105,8 +114,15 @@ const cleanup = async () => {
     communicationBridge.cleanupAll();
     
     logger.info('资源清理完成');
+    // 刷新并关闭日志流
+    logger.flush(() => {
+      logger.end();
+    });
   } catch (error) {
     logger.error(`清理资源时出错: ${error instanceof Error ? error.message : String(error)}`);
+    logger.flush(() => {
+      logger.end();
+    });
   }
   
   process.exit(0);
