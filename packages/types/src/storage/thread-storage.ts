@@ -3,8 +3,8 @@
  * 定义线程持久化存储相关的元数据、查询选项
  */
 
-import type { ID, Timestamp, Version } from './common.js';
-import type { ThreadStatus, ThreadType } from './thread/status.js';
+import type { ID, Timestamp, Version } from '../common.js';
+import type { ThreadStatus, ThreadType } from '../thread/status.js';
 
 /**
  * 线程存储元数据

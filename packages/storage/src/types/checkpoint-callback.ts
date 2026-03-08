@@ -13,6 +13,27 @@ import type { CheckpointStorageMetadata, CheckpointListOptions } from '@modular-
  * - 应用层可以直接使用 CheckpointStorageAdapter，或自行实现此接口
  */
 export interface CheckpointStorageCallback {
+  // ==================== 生命周期管理 ====================
+
+  /**
+   * 初始化存储
+   * 创建必要的资源（目录、数据库连接等）
+   */
+  initialize(): Promise<void>;
+
+  /**
+   * 关闭存储连接
+   * 释放资源并清理状态
+   */
+  close(): Promise<void>;
+
+  /**
+   * 清空所有检查点
+   */
+  clear(): Promise<void>;
+
+  // ==================== 数据操作 ====================
+
   /**
    * 保存检查点
    * @param checkpointId 检查点唯一标识

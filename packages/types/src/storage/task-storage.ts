@@ -3,7 +3,7 @@
  * 定义任务持久化存储相关的元数据、查询选项和统计信息
  */
 
-import type { ID, Timestamp } from './common.js';
+import type { ID, Timestamp } from '../common.js';
 
 /**
  * 任务状态

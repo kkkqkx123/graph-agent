@@ -17,6 +17,27 @@ import type {
  * - 应用层可以直接使用 ThreadStorageAdapter，或自行实现此接口
  */
 export interface ThreadStorageCallback {
+  // ==================== 生命周期管理 ====================
+
+  /**
+   * 初始化存储
+   * 创建必要的资源（目录、数据库连接等）
+   */
+  initialize(): Promise<void>;
+
+  /**
+   * 关闭存储连接
+   * 释放资源并清理状态
+   */
+  close(): Promise<void>;
+
+  /**
+   * 清空所有线程
+   */
+  clear(): Promise<void>;
+
+  // ==================== 数据操作 ====================
+
   /**
    * 保存线程
    * @param threadId 线程唯一标识

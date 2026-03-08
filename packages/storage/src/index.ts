@@ -12,6 +12,10 @@
  * - Thread（线程）
  * - Workflow（工作流）
  * - Task（任务）
+ *
+ * 支持的存储后端：
+ * - JSON 文件存储
+ * - SQLite 数据库存储
  */
 
 // 核心类型定义
@@ -22,6 +26,3 @@ export * from './json/index.js';
 
 // SQLite 存储实现
 export * from './sqlite/index.js';
-
-// 内存存储实现（用于测试）
-export * from './memory/index.js';

@@ -3,7 +3,7 @@
  * 定义工作流持久化存储相关的元数据、查询选项和版本管理
  */
 
-import type { ID, Timestamp, Version } from './common.js';
+import type { ID, Timestamp, Version } from '../common.js';
 
 /**
  * 工作流存储元数据

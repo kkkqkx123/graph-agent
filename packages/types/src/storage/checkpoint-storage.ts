@@ -3,7 +3,7 @@
  * 定义检查点存储相关的元数据、查询选项和清理策略
  */
 
-import type { ID, Timestamp } from './common.js';
+import type { ID, Timestamp } from '../common.js';
 
 /**
  * 检查点存储元数据
@@ -94,9 +94,9 @@ export interface SizeBasedCleanupPolicy {
 /**
  * 清理策略配置（联合类型）
  */
-export type CleanupPolicy = 
-  | TimeBasedCleanupPolicy 
-  | CountBasedCleanupPolicy 
+export type CleanupPolicy =
+  | TimeBasedCleanupPolicy
+  | CountBasedCleanupPolicy
   | SizeBasedCleanupPolicy;
 
 /**
