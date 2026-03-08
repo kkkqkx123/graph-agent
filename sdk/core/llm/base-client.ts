@@ -10,7 +10,8 @@ import type {
   LLMClient,
   LLMRequest,
   LLMResult,
-  LLMProfile
+  LLMProfile,
+  TokenCountResult
 } from '@modular-agent/types';
 import { HttpClient, SseTransport } from '@modular-agent/common-utils';
 import { BaseFormatter, type FormatterConfig } from './formatters/index.js';
@@ -137,5 +138,15 @@ export class BaseLLMClient implements LLMClient {
       model: this.profile.model,
       version: '2.0.0'
     };
+  }
+
+  /**
+   * 统计Token数量
+   * 默认实现抛出错误，子类需要覆盖此方法
+   * @param _request LLM请求
+   * @returns Token计数结果
+   */
+  async countTokens(_request: LLMRequest): Promise<TokenCountResult> {
+    throw new Error('countTokens is not supported by this client');
   }
 }

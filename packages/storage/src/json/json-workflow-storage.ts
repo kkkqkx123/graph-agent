@@ -11,18 +11,9 @@ import type {
   WorkflowVersionInfo,
   WorkflowVersionListOptions
 } from '@modular-agent/types';
-import type { WorkflowStorageCallback } from '../types/workflow-callback.js';
+import type { WorkflowStorageCallback } from '../types/callback/index.js';
+import { BaseJsonStorage, BaseJsonStorageConfig } from './base-json-storage.js';
 import { StorageError, SerializationError } from '../types/storage-errors.js';
-
-/**
- * JSON 工作流存储配置
- */
-export interface JsonWorkflowStorageConfig {
-  /** 基础目录路径 */
-  baseDir: string;
-  /** 是否启用文件锁 */
-  enableFileLock?: boolean;
-}
 
 /**
  * 工作流存储文件内容格式
@@ -48,167 +39,50 @@ interface VersionFileContent {
  * JSON 文件工作流存储
  * 实现 WorkflowStorageCallback 接口
  */
-export class JsonWorkflowStorage implements WorkflowStorageCallback {
-  private metadataIndex: Map<string, { metadata: WorkflowStorageMetadata; filePath: string }> = new Map();
-  private initialized: boolean = false;
-  private lockFiles: Map<string, Promise<void>> = new Map();
+export class JsonWorkflowStorage extends BaseJsonStorage<WorkflowStorageMetadata> implements WorkflowStorageCallback {
+  constructor(config: BaseJsonStorageConfig) {
+    super(config);
+  }
 
-  constructor(private readonly config: JsonWorkflowStorageConfig) {}
-
-  async initialize(): Promise<void> {
+  /**
+   * 初始化存储
+   * 重写以创建版本目录
+   */
+  override async initialize(): Promise<void> {
     await fs.mkdir(this.config.baseDir, { recursive: true });
     await fs.mkdir(path.join(this.config.baseDir, 'versions'), { recursive: true });
-    await this.loadMetadataIndex();
-    this.initialized = true;
+    await this['loadMetadataIndex']();
+    this['initialized'] = true;
   }
 
-  private async loadMetadataIndex(): Promise<void> {
-    try {
-      const entries = await fs.readdir(this.config.baseDir, { withFileTypes: true });
-
-      for (const entry of entries) {
-        if (entry.isFile() && entry.name.endsWith('.json')) {
-          try {
-            const filePath = path.join(this.config.baseDir, entry.name);
-            const content = await fs.readFile(filePath, 'utf-8');
-            const parsed = JSON.parse(content) as WorkflowFileContent;
-            if (parsed.id && parsed.metadata) {
-              this.metadataIndex.set(parsed.id, {
-                metadata: parsed.metadata,
-                filePath
-              });
-            }
-          } catch {
-            // 忽略解析错误的文件
-          }
-        }
-      }
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        throw error;
-      }
-    }
-  }
-
-  private ensureInitialized(): void {
-    if (!this.initialized) {
-      throw new StorageError(
-        'Storage not initialized. Call initialize() first.',
-        'initialize'
-      );
-    }
-  }
-
-  private getFilePath(workflowId: string): string {
-    const safeId = this.sanitizeId(workflowId);
-    return path.join(this.config.baseDir, `${safeId}.json`);
-  }
-
+  /**
+   * 获取版本文件路径
+   */
   private getVersionFilePath(workflowId: string, version: string): string {
-    const safeId = this.sanitizeId(workflowId);
-    const safeVersion = this.sanitizeId(version);
+    const safeId = this['sanitizeId'](workflowId);
+    const safeVersion = this['sanitizeId'](version);
     return path.join(this.config.baseDir, 'versions', `${safeId}_${safeVersion}.json`);
   }
 
-  private sanitizeId(id: string): string {
-    return id.replace(/[\/\\:\*\?"<>\|]/g, '_');
-  }
-
-  private async acquireLock(filePath: string): Promise<() => void> {
-    if (!this.config.enableFileLock) {
-      return () => {};
-    }
-
-    while (this.lockFiles.has(filePath)) {
-      await this.lockFiles.get(filePath);
-    }
-
-    let releaseLock: () => void;
-    const lockPromise = new Promise<void>((resolve) => {
-      releaseLock = resolve;
-    });
-
-    this.lockFiles.set(filePath, lockPromise);
-
-    return () => {
-      this.lockFiles.delete(filePath);
-      releaseLock!();
-    };
-  }
-
-  async save(
-    id: string,
-    data: Uint8Array,
-    metadata: WorkflowStorageMetadata
-  ): Promise<void> {
+  /**
+   * 删除工作流
+   * 重写以同时删除版本文件
+   */
+  override async delete(id: string): Promise<void> {
     this.ensureInitialized();
 
-    const filePath = this.getFilePath(id);
-    const releaseLock = await this.acquireLock(filePath);
-
-    try {
-      const content: WorkflowFileContent = {
-        id,
-        data: Array.from(data),
-        metadata
-      };
-
-      try {
-        const jsonContent = JSON.stringify(content, null, 2);
-        await fs.writeFile(filePath, jsonContent, 'utf-8');
-        this.metadataIndex.set(id, { metadata, filePath });
-      } catch (error) {
-        throw new SerializationError(
-          `Failed to serialize workflow: ${id}`,
-          id,
-          error as Error
-        );
-      }
-    } finally {
-      releaseLock();
-    }
-  }
-
-  async load(id: string): Promise<Uint8Array | null> {
-    this.ensureInitialized();
-
-    const indexEntry = this.metadataIndex.get(id);
-    if (!indexEntry) {
-      return null;
-    }
-
-    try {
-      const content = await fs.readFile(indexEntry.filePath, 'utf-8');
-      const parsed = JSON.parse(content) as WorkflowFileContent;
-      return new Uint8Array(parsed.data);
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-        return null;
-      }
-      throw new StorageError(
-        `Failed to load workflow: ${id}`,
-        'load',
-        { id },
-        error as Error
-      );
-    }
-  }
-
-  async delete(id: string): Promise<void> {
-    this.ensureInitialized();
-
-    const indexEntry = this.metadataIndex.get(id);
+    const indexEntry = this['metadataIndex'].get(id);
     if (!indexEntry) {
       return;
     }
 
-    const releaseLock = await this.acquireLock(indexEntry.filePath);
+    const releaseLock = await this['acquireLock'](indexEntry.filePath);
 
     try {
       // 删除工作流文件
       try {
         await fs.unlink(indexEntry.filePath);
-        this.metadataIndex.delete(id);
+        this['metadataIndex'].delete(id);
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
           throw error;
@@ -217,7 +91,7 @@ export class JsonWorkflowStorage implements WorkflowStorageCallback {
 
       // 删除所有版本文件
       const versionsDir = path.join(this.config.baseDir, 'versions');
-      const safeId = this.sanitizeId(id);
+      const safeId = this['sanitizeId'](id);
       try {
         const versionFiles = await fs.readdir(versionsDir);
         for (const file of versionFiles) {
@@ -235,14 +109,17 @@ export class JsonWorkflowStorage implements WorkflowStorageCallback {
     }
   }
 
+  /**
+   * 列出工作流ID
+   */
   async list(options?: WorkflowListOptions): Promise<string[]> {
     this.ensureInitialized();
 
-    let ids = Array.from(this.metadataIndex.keys());
+    let ids = this.getAllIds();
 
     if (options) {
       ids = ids.filter(id => {
-        const entry = this.metadataIndex.get(id);
+        const entry = this['metadataIndex'].get(id);
         if (!entry) return false;
 
         const metadata = entry.metadata;
@@ -293,8 +170,8 @@ export class JsonWorkflowStorage implements WorkflowStorageCallback {
     const sortOrder = options?.sortOrder ?? 'desc';
 
     ids.sort((a, b) => {
-      const metaA = this.metadataIndex.get(a)?.metadata;
-      const metaB = this.metadataIndex.get(b)?.metadata;
+      const metaA = this['metadataIndex'].get(a)?.metadata;
+      const metaB = this['metadataIndex'].get(b)?.metadata;
 
       let valueA: number | string;
       let valueB: number | string;
@@ -326,24 +203,16 @@ export class JsonWorkflowStorage implements WorkflowStorageCallback {
     return ids.slice(offset, offset + limit);
   }
 
-  async exists(id: string): Promise<boolean> {
-    this.ensureInitialized();
-    return this.metadataIndex.has(id);
-  }
-
-  async getMetadata(id: string): Promise<WorkflowStorageMetadata | null> {
-    this.ensureInitialized();
-    const entry = this.metadataIndex.get(id);
-    return entry?.metadata ?? null;
-  }
-
+  /**
+   * 更新工作流元数据
+   */
   async updateWorkflowMetadata(
     workflowId: string,
     metadata: Partial<WorkflowStorageMetadata>
   ): Promise<void> {
     this.ensureInitialized();
 
-    const indexEntry = this.metadataIndex.get(workflowId);
+    const indexEntry = this['metadataIndex'].get(workflowId);
     if (!indexEntry) {
       throw new StorageError(
         `Workflow not found: ${workflowId}`,
@@ -366,6 +235,9 @@ export class JsonWorkflowStorage implements WorkflowStorageCallback {
 
   // ==================== 版本管理 ====================
 
+  /**
+   * 保存工作流版本
+   */
   async saveWorkflowVersion(
     workflowId: string,
     version: string,
@@ -375,7 +247,7 @@ export class JsonWorkflowStorage implements WorkflowStorageCallback {
     this.ensureInitialized();
 
     const filePath = this.getVersionFilePath(workflowId, version);
-    const releaseLock = await this.acquireLock(filePath);
+    const releaseLock = await this['acquireLock'](filePath);
 
     try {
       const content: VersionFileContent = {
@@ -399,6 +271,9 @@ export class JsonWorkflowStorage implements WorkflowStorageCallback {
     }
   }
 
+  /**
+   * 列出工作流版本
+   */
   async listWorkflowVersions(
     workflowId: string,
     options?: WorkflowVersionListOptions
@@ -406,12 +281,12 @@ export class JsonWorkflowStorage implements WorkflowStorageCallback {
     this.ensureInitialized();
 
     const versionsDir = path.join(this.config.baseDir, 'versions');
-    const safeId = this.sanitizeId(workflowId);
+    const safeId = this['sanitizeId'](workflowId);
     const versions: WorkflowVersionInfo[] = [];
 
     try {
       const files = await fs.readdir(versionsDir);
-      const currentMetadata = this.metadataIndex.get(workflowId);
+      const currentMetadata = this['metadataIndex'].get(workflowId);
       const currentVersion = currentMetadata?.metadata.version;
 
       for (const file of files) {
@@ -451,6 +326,9 @@ export class JsonWorkflowStorage implements WorkflowStorageCallback {
     }
   }
 
+  /**
+   * 加载工作流版本
+   */
   async loadWorkflowVersion(workflowId: string, version: string): Promise<Uint8Array | null> {
     this.ensureInitialized();
 
@@ -473,6 +351,9 @@ export class JsonWorkflowStorage implements WorkflowStorageCallback {
     }
   }
 
+  /**
+   * 删除工作流版本
+   */
   async deleteWorkflowVersion(workflowId: string, version: string): Promise<void> {
     this.ensureInitialized();
 
@@ -487,10 +368,14 @@ export class JsonWorkflowStorage implements WorkflowStorageCallback {
     }
   }
 
-  async clear(): Promise<void> {
+  /**
+   * 清空所有数据
+   * 重写以同时清空版本目录
+   */
+  override async clear(): Promise<void> {
     this.ensureInitialized();
 
-    for (const [id, entry] of this.metadataIndex) {
+    for (const [id, entry] of this['metadataIndex']) {
       try {
         await fs.unlink(entry.filePath);
       } catch (error) {
@@ -499,7 +384,7 @@ export class JsonWorkflowStorage implements WorkflowStorageCallback {
         }
       }
     }
-    this.metadataIndex.clear();
+    this['metadataIndex'].clear();
 
     // 清空版本目录
     const versionsDir = path.join(this.config.baseDir, 'versions');
@@ -513,10 +398,5 @@ export class JsonWorkflowStorage implements WorkflowStorageCallback {
         throw error;
       }
     }
-  }
-
-  async close(): Promise<void> {
-    this.metadataIndex.clear();
-    this.initialized = false;
   }
 }

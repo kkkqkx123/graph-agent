@@ -72,6 +72,8 @@ export class AnthropicFormatter extends BaseFormatter {
 
     // Extract thinking content (for Claude extended thinking)
     const thinkingContent = this.extractThinkingContent(data.content);
+    // Extract redacted thinking content (for privacy mode)
+    const redactedThinkingContent = this.extractRedactedThinkingContent(data.content);
 
     return {
       id: data.id,
@@ -92,9 +94,10 @@ export class AnthropicFormatter extends BaseFormatter {
       duration: 0,
       metadata: {
         type: data.type,
-        stopReason: data.stop_reason
+        stopReason: data.stop_reason,
+        redactedThinking: redactedThinkingContent
       },
-      reasoningContent: thinkingContent
+      reasoningContent: thinkingContent || redactedThinkingContent
     };
   }
 
@@ -153,6 +156,18 @@ export class AnthropicFormatter extends BaseFormatter {
               delta: '',
               done: false,
               raw: data
+            },
+            valid: true
+          };
+        }
+        // Redacted thinking block start event (隐私模式下的思考内容)
+        if (data.content_block && data.content_block.type === 'redacted_thinking') {
+          return {
+            chunk: {
+              delta: '',
+              done: false,
+              raw: data,
+              redactedThinking: data.content_block.data
             },
             valid: true
           };
@@ -265,6 +280,71 @@ export class AnthropicFormatter extends BaseFormatter {
   }
 
   /**
+   * 构建 Token 计数请求
+   * @param request LLM请求
+   * @param config 格式转换器配置
+   * @returns HTTP 请求配置
+   */
+  buildCountTokensRequest(request: LLMRequest, config: FormatterConfig): BuildRequestResult {
+    const parameters = this.mergeParameters(config.profile.parameters, request.parameters);
+
+    const body: any = {
+      model: config.profile.model
+    };
+
+    // 处理系统消息
+    const { systemMessage, filteredMessages } = this.extractSystemMessage(request.messages);
+    if (systemMessage) {
+      body.system = typeof systemMessage.content === 'string'
+        ? systemMessage.content
+        : JSON.stringify(systemMessage.content);
+    }
+    body.messages = this.convertMessages(filteredMessages);
+
+    // 添加工具（如果有）
+    if (request.tools && request.tools.length > 0) {
+      body.tools = this.convertTools(request.tools);
+    }
+
+    // 添加 thinking 配置（如果存在）
+    if (parameters.thinking) {
+      body.thinking = parameters.thinking;
+    }
+
+    // 添加 tool_choice（如果存在）
+    if (parameters.tool_choice) {
+      body.tool_choice = parameters.tool_choice;
+    }
+
+    // 构建请求头
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'anthropic-version': config.profile.metadata?.['apiVersion'] || this.apiVersion,
+      'anthropic-dangerous-direct-browser-access': 'false',
+      ...config.profile.headers
+    };
+
+    // 添加认证头
+    if (config.profile.apiKey) {
+      Object.assign(headers, this.buildAuthHeader(config.profile.apiKey, config, 'x-api-key'));
+    }
+
+    // 添加自定义请求头
+    Object.assign(headers, this.buildCustomHeaders(config));
+
+    return {
+      httpRequest: {
+        url: '/v1/messages/count_tokens',
+        method: 'POST',
+        headers,
+        body,
+        timeout: config.timeout
+      },
+      transformedBody: body
+    };
+  }
+
+  /**
    * 构建请求体
    */
   private buildRequestBody(request: LLMRequest, config: FormatterConfig): any {
@@ -354,5 +434,25 @@ export class AnthropicFormatter extends BaseFormatter {
     return thinkingBlocks
       .map(block => block.thinking || '')
       .join('\n');
+  }
+
+  /**
+   * 提取隐私模式思考内容
+   *
+   * 从 Anthropic 响应中提取 redacted_thinking 类型的内容块
+   * 这是隐私模式下返回的脱敏思考内容
+   */
+  private extractRedactedThinkingContent(content: any[]): string | undefined {
+    if (!content || !Array.isArray(content)) {
+      return undefined;
+    }
+
+    const redactedThinkingBlocks = content.filter(item => item.type === 'redacted_thinking');
+    if (redactedThinkingBlocks.length === 0) {
+      return undefined;
+    }
+
+    // redacted_thinking 的内容是加密的，通常返回标记表示有脱敏内容
+    return '[Redacted Thinking]';
   }
 }

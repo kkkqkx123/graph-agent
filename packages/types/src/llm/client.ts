@@ -5,6 +5,7 @@
 import type { LLMProvider } from './state.js';
 import type { LLMRequest } from './request.js';
 import type { LLMResult } from './response.js';
+import type { TokenCountResult } from './usage.js';
 
 /**
  * LLM客户端接口
@@ -19,6 +20,14 @@ export interface LLMClient {
    * 流式生成
    */
   generateStream(request: LLMRequest): AsyncIterable<LLMResult>;
+
+  /**
+   * 统计Token数量
+   * 调用LLM提供商的Token计数API
+   * @param request LLM请求
+   * @returns Token计数结果
+   */
+  countTokens?(request: LLMRequest): Promise<TokenCountResult>;
 }
 
 /**

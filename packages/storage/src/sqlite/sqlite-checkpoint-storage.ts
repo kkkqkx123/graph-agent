@@ -3,126 +3,50 @@
  * 基于 better-sqlite3 的检查点持久化存储
  */
 
-import Database, { SqliteError } from 'better-sqlite3';
 import type { CheckpointStorageMetadata, CheckpointListOptions } from '@modular-agent/types';
-import type { CheckpointStorageCallback } from '../types/checkpoint-callback.js';
-import { StorageError, StorageInitializationError } from '../types/storage-errors.js';
-
-/**
- * SQLite 检查点存储配置
- */
-export interface SqliteCheckpointStorageConfig {
-  /** 数据库文件路径 */
-  dbPath: string;
-  /** 是否启用日志 */
-  enableLogging?: boolean;
-  /** 是否以只读模式打开 */
-  readonly?: boolean;
-  /** 数据库文件不存在时是否抛出错误 */
-  fileMustExist?: boolean;
-  /** 数据库锁定时的超时时间（毫秒） */
-  timeout?: number;
-}
+import type { CheckpointStorageCallback } from '../types/callback/index.js';
+import { BaseSqliteStorage, BaseSqliteStorageConfig } from './base-sqlite-storage.js';
 
 /**
  * SQLite 检查点存储
  * 实现 CheckpointStorageCallback 接口
  */
-export class SqliteCheckpointStorage implements CheckpointStorageCallback {
-  private db: Database.Database | null = null;
-  private initialized: boolean = false;
-
-  constructor(private readonly config: SqliteCheckpointStorageConfig) {}
-
-  /**
-   * 初始化存储
-   * 创建数据库连接和表结构
-   */
-  async initialize(): Promise<void> {
-    try {
-      const options: Database.Options = {
-        readonly: this.config.readonly ?? false,
-        fileMustExist: this.config.fileMustExist ?? false,
-        timeout: this.config.timeout ?? 5000
-      };
-
-      this.db = new Database(this.config.dbPath, options);
-
-      // 启用 WAL 模式提高并发性能
-      this.db.pragma('journal_mode = WAL');
-      this.db.pragma('wal_autocheckpoint = 1000');
-      this.db.pragma('synchronous = NORMAL');
-
-      // 创建表结构（只读模式下跳过）
-      if (!this.config.readonly) {
-        this.db.exec(`
-          CREATE TABLE IF NOT EXISTS checkpoints (
-            id TEXT PRIMARY KEY,
-            thread_id TEXT NOT NULL,
-            workflow_id TEXT NOT NULL,
-            timestamp INTEGER NOT NULL,
-            data BLOB NOT NULL,
-            tags TEXT,
-            custom_fields TEXT,
-            created_at INTEGER NOT NULL,
-            updated_at INTEGER NOT NULL
-          )
-        `);
-
-        // 创建索引
-        this.db.exec(`CREATE INDEX IF NOT EXISTS idx_checkpoints_thread_id ON checkpoints(thread_id)`);
-        this.db.exec(`CREATE INDEX IF NOT EXISTS idx_checkpoints_workflow_id ON checkpoints(workflow_id)`);
-        this.db.exec(`CREATE INDEX IF NOT EXISTS idx_checkpoints_timestamp ON checkpoints(timestamp)`);
-      }
-
-      this.initialized = true;
-    } catch (error) {
-      throw new StorageInitializationError(
-        `Failed to initialize SQLite storage: ${this.config.dbPath}`,
-        error as Error
-      );
-    }
+export class SqliteCheckpointStorage extends BaseSqliteStorage<CheckpointStorageMetadata> implements CheckpointStorageCallback {
+  constructor(config: BaseSqliteStorageConfig) {
+    super(config);
   }
 
   /**
-   * 确保已初始化
+   * 获取表名
    */
-  private ensureInitialized(): void {
-    if (!this.initialized || !this.db) {
-      throw new StorageError(
-        'Storage not initialized. Call initialize() first.',
-        'initialize'
-      );
-    }
+  protected getTableName(): string {
+    return 'checkpoints';
   }
 
   /**
-   * 获取数据库实例
+   * 创建表结构
    */
-  private getDb(): Database.Database {
-    this.ensureInitialized();
-    return this.db!;
-  }
+  protected createTableSchema(): void {
+    const db = this.getDb();
 
-  /**
-   * 处理 SQLite 错误
-   */
-  private handleSqliteError(error: unknown, operation: string, context?: Record<string, unknown>): never {
-    if (error instanceof SqliteError) {
-      throw new StorageError(
-        `SQLite error [${error.code}]: ${error.message}`,
-        operation,
-        { ...context, code: error.code },
-        error
-      );
-    }
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS checkpoints (
+        id TEXT PRIMARY KEY,
+        thread_id TEXT NOT NULL,
+        workflow_id TEXT NOT NULL,
+        timestamp INTEGER NOT NULL,
+        data BLOB NOT NULL,
+        tags TEXT,
+        custom_fields TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      )
+    `);
 
-    throw new StorageError(
-      `Storage operation failed: ${operation}`,
-      operation,
-      context,
-      error as Error
-    );
+    // 创建索引
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_checkpoints_thread_id ON checkpoints(thread_id)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_checkpoints_workflow_id ON checkpoints(workflow_id)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_checkpoints_timestamp ON checkpoints(timestamp)`);
   }
 
   /**
@@ -163,40 +87,6 @@ export class SqliteCheckpointStorage implements CheckpointStorageCallback {
       );
     } catch (error) {
       this.handleSqliteError(error, 'save', { id });
-    }
-  }
-
-  /**
-   * 加载检查点数据
-   */
-  async load(id: string): Promise<Uint8Array | null> {
-    const db = this.getDb();
-
-    try {
-      const stmt = db.prepare(`SELECT data FROM checkpoints WHERE id = ?`);
-      const row = stmt.get(id) as { data: Buffer } | undefined;
-
-      if (!row) {
-        return null;
-      }
-
-      return new Uint8Array(row.data);
-    } catch (error) {
-      this.handleSqliteError(error, 'load', { id });
-    }
-  }
-
-  /**
-   * 删除检查点
-   */
-  async delete(id: string): Promise<void> {
-    const db = this.getDb();
-
-    try {
-      const stmt = db.prepare(`DELETE FROM checkpoints WHERE id = ?`);
-      stmt.run(id);
-    } catch (error) {
-      this.handleSqliteError(error, 'delete', { id });
     }
   }
 
@@ -255,21 +145,6 @@ export class SqliteCheckpointStorage implements CheckpointStorageCallback {
   }
 
   /**
-   * 检查检查点是否存在
-   */
-  async exists(id: string): Promise<boolean> {
-    const db = this.getDb();
-
-    try {
-      const stmt = db.prepare(`SELECT 1 FROM checkpoints WHERE id = ?`);
-      const row = stmt.get(id);
-      return row !== undefined;
-    } catch (error) {
-      this.handleSqliteError(error, 'exists', { id });
-    }
-  }
-
-  /**
    * 获取元数据
    */
   async getMetadata(id: string): Promise<CheckpointStorageMetadata | null> {
@@ -301,38 +176,6 @@ export class SqliteCheckpointStorage implements CheckpointStorageCallback {
       };
     } catch (error) {
       this.handleSqliteError(error, 'getMetadata', { id });
-    }
-  }
-
-  /**
-   * 清空所有检查点
-   */
-  async clear(): Promise<void> {
-    const db = this.getDb();
-
-    try {
-      const stmt = db.prepare(`DELETE FROM checkpoints`);
-      stmt.run();
-    } catch (error) {
-      this.handleSqliteError(error, 'clear', {});
-    }
-  }
-
-  /**
-   * 关闭存储连接
-   */
-  async close(): Promise<void> {
-    if (this.db) {
-      try {
-        this.db.close();
-      } catch (error) {
-        if (this.config.enableLogging) {
-          console.error('Error closing database:', error);
-        }
-      } finally {
-        this.db = null;
-        this.initialized = false;
-      }
     }
   }
 }

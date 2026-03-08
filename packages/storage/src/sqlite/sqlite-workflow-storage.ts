@@ -3,142 +3,81 @@
  * 基于 better-sqlite3 的工作流持久化存储
  */
 
-import Database, { SqliteError } from 'better-sqlite3';
 import type {
   WorkflowStorageMetadata,
   WorkflowListOptions,
   WorkflowVersionInfo,
   WorkflowVersionListOptions
 } from '@modular-agent/types';
-import type { WorkflowStorageCallback } from '../types/workflow-callback.js';
-import { StorageError, StorageInitializationError } from '../types/storage-errors.js';
-
-/**
- * SQLite 工作流存储配置
- */
-export interface SqliteWorkflowStorageConfig {
-  /** 数据库文件路径 */
-  dbPath: string;
-  /** 是否启用日志 */
-  enableLogging?: boolean;
-  /** 是否以只读模式打开 */
-  readonly?: boolean;
-  /** 数据库文件不存在时是否抛出错误 */
-  fileMustExist?: boolean;
-  /** 数据库锁定时的超时时间（毫秒） */
-  timeout?: number;
-}
+import type { WorkflowStorageCallback } from '../types/callback/index.js';
+import { BaseSqliteStorage, BaseSqliteStorageConfig } from './base-sqlite-storage.js';
 
 /**
  * SQLite 工作流存储
  * 实现 WorkflowStorageCallback 接口
  */
-export class SqliteWorkflowStorage implements WorkflowStorageCallback {
-  private db: Database.Database | null = null;
-  private initialized: boolean = false;
-
-  constructor(private readonly config: SqliteWorkflowStorageConfig) {}
+export class SqliteWorkflowStorage extends BaseSqliteStorage<WorkflowStorageMetadata> implements WorkflowStorageCallback {
+  constructor(config: BaseSqliteStorageConfig) {
+    super(config);
+  }
 
   /**
-   * 初始化存储
+   * 获取表名
    */
-  async initialize(): Promise<void> {
-    try {
-      const options: Database.Options = {
-        readonly: this.config.readonly ?? false,
-        fileMustExist: this.config.fileMustExist ?? false,
-        timeout: this.config.timeout ?? 5000
-      };
-
-      this.db = new Database(this.config.dbPath, options);
-
-      this.db.pragma('journal_mode = WAL');
-      this.db.pragma('wal_autocheckpoint = 1000');
-      this.db.pragma('synchronous = NORMAL');
-
-      if (!this.config.readonly) {
-        // 创建工作流表
-        this.db.exec(`
-          CREATE TABLE IF NOT EXISTS workflows (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            version TEXT NOT NULL,
-            description TEXT,
-            author TEXT,
-            category TEXT,
-            tags TEXT,
-            enabled INTEGER DEFAULT 1,
-            data BLOB NOT NULL,
-            node_count INTEGER NOT NULL,
-            edge_count INTEGER NOT NULL,
-            created_at INTEGER NOT NULL,
-            updated_at INTEGER NOT NULL,
-            custom_fields TEXT
-          )
-        `);
-
-        // 创建版本表
-        this.db.exec(`
-          CREATE TABLE IF NOT EXISTS workflow_versions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            workflow_id TEXT NOT NULL,
-            version TEXT NOT NULL,
-            data BLOB NOT NULL,
-            change_note TEXT,
-            created_at INTEGER NOT NULL,
-            created_by TEXT,
-            UNIQUE(workflow_id, version)
-          )
-        `);
-
-        // 创建索引
-        this.db.exec(`CREATE INDEX IF NOT EXISTS idx_workflows_name ON workflows(name)`);
-        this.db.exec(`CREATE INDEX IF NOT EXISTS idx_workflows_category ON workflows(category)`);
-        this.db.exec(`CREATE INDEX IF NOT EXISTS idx_workflows_author ON workflows(author)`);
-        this.db.exec(`CREATE INDEX IF NOT EXISTS idx_workflow_versions_workflow_id ON workflow_versions(workflow_id)`);
-      }
-
-      this.initialized = true;
-    } catch (error) {
-      throw new StorageInitializationError(
-        `Failed to initialize SQLite workflow storage: ${this.config.dbPath}`,
-        error as Error
-      );
-    }
+  protected getTableName(): string {
+    return 'workflows';
   }
 
-  private ensureInitialized(): void {
-    if (!this.initialized || !this.db) {
-      throw new StorageError(
-        'Storage not initialized. Call initialize() first.',
-        'initialize'
-      );
-    }
+  /**
+   * 创建表结构
+   */
+  protected createTableSchema(): void {
+    const db = this.getDb();
+
+    // 创建工作流表
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS workflows (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        version TEXT NOT NULL,
+        description TEXT,
+        author TEXT,
+        category TEXT,
+        tags TEXT,
+        enabled INTEGER DEFAULT 1,
+        data BLOB NOT NULL,
+        node_count INTEGER NOT NULL,
+        edge_count INTEGER NOT NULL,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        custom_fields TEXT
+      )
+    `);
+
+    // 创建版本表
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS workflow_versions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        workflow_id TEXT NOT NULL,
+        version TEXT NOT NULL,
+        data BLOB NOT NULL,
+        change_note TEXT,
+        created_at INTEGER NOT NULL,
+        created_by TEXT,
+        UNIQUE(workflow_id, version)
+      )
+    `);
+
+    // 创建索引
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_workflows_name ON workflows(name)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_workflows_category ON workflows(category)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_workflows_author ON workflows(author)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_workflow_versions_workflow_id ON workflow_versions(workflow_id)`);
   }
 
-  private getDb(): Database.Database {
-    this.ensureInitialized();
-    return this.db!;
-  }
-
-  private handleSqliteError(error: unknown, operation: string, context?: Record<string, unknown>): never {
-    if (error instanceof SqliteError) {
-      throw new StorageError(
-        `SQLite error [${error.code}]: ${error.message}`,
-        operation,
-        { ...context, code: error.code },
-        error
-      );
-    }
-
-    throw new StorageError(
-      `Storage operation failed: ${operation}`,
-      operation,
-      context,
-      error as Error
-    );
-  }
-
+  /**
+   * 保存工作流
+   */
   async save(
     workflowId: string,
     data: Uint8Array,
@@ -190,24 +129,11 @@ export class SqliteWorkflowStorage implements WorkflowStorageCallback {
     }
   }
 
-  async load(workflowId: string): Promise<Uint8Array | null> {
-    const db = this.getDb();
-
-    try {
-      const stmt = db.prepare(`SELECT data FROM workflows WHERE id = ?`);
-      const row = stmt.get(workflowId) as { data: Buffer } | undefined;
-
-      if (!row) {
-        return null;
-      }
-
-      return new Uint8Array(row.data);
-    } catch (error) {
-      this.handleSqliteError(error, 'load', { workflowId });
-    }
-  }
-
-  async delete(workflowId: string): Promise<void> {
+  /**
+   * 删除工作流
+   * 重写以同时删除版本
+   */
+  override async delete(workflowId: string): Promise<void> {
     const db = this.getDb();
 
     try {
@@ -223,6 +149,9 @@ export class SqliteWorkflowStorage implements WorkflowStorageCallback {
     }
   }
 
+  /**
+   * 列出工作流ID
+   */
   async list(options?: WorkflowListOptions): Promise<string[]> {
     const db = this.getDb();
 
@@ -303,18 +232,9 @@ export class SqliteWorkflowStorage implements WorkflowStorageCallback {
     }
   }
 
-  async exists(workflowId: string): Promise<boolean> {
-    const db = this.getDb();
-
-    try {
-      const stmt = db.prepare(`SELECT 1 FROM workflows WHERE id = ?`);
-      const row = stmt.get(workflowId);
-      return row !== undefined;
-    } catch (error) {
-      this.handleSqliteError(error, 'exists', { workflowId });
-    }
-  }
-
+  /**
+   * 获取元数据
+   */
   async getMetadata(workflowId: string): Promise<WorkflowStorageMetadata | null> {
     const db = this.getDb();
 
@@ -365,6 +285,9 @@ export class SqliteWorkflowStorage implements WorkflowStorageCallback {
     }
   }
 
+  /**
+   * 更新工作流元数据
+   */
   async updateWorkflowMetadata(
     workflowId: string,
     metadata: Partial<WorkflowStorageMetadata>
@@ -416,6 +339,9 @@ export class SqliteWorkflowStorage implements WorkflowStorageCallback {
 
   // ==================== 版本管理 ====================
 
+  /**
+   * 保存工作流版本
+   */
   async saveWorkflowVersion(
     workflowId: string,
     version: string,
@@ -441,6 +367,9 @@ export class SqliteWorkflowStorage implements WorkflowStorageCallback {
     }
   }
 
+  /**
+   * 列出工作流版本
+   */
   async listWorkflowVersions(
     workflowId: string,
     options?: WorkflowVersionListOptions
@@ -490,6 +419,9 @@ export class SqliteWorkflowStorage implements WorkflowStorageCallback {
     }
   }
 
+  /**
+   * 加载工作流版本
+   */
   async loadWorkflowVersion(workflowId: string, version: string): Promise<Uint8Array | null> {
     const db = this.getDb();
 
@@ -509,6 +441,9 @@ export class SqliteWorkflowStorage implements WorkflowStorageCallback {
     }
   }
 
+  /**
+   * 删除工作流版本
+   */
   async deleteWorkflowVersion(workflowId: string, version: string): Promise<void> {
     const db = this.getDb();
 
@@ -522,7 +457,11 @@ export class SqliteWorkflowStorage implements WorkflowStorageCallback {
     }
   }
 
-  async clear(): Promise<void> {
+  /**
+   * 清空所有数据
+   * 重写以同时清空版本表
+   */
+  override async clear(): Promise<void> {
     const db = this.getDb();
 
     try {
@@ -532,20 +471,4 @@ export class SqliteWorkflowStorage implements WorkflowStorageCallback {
       this.handleSqliteError(error, 'clear', {});
     }
   }
-
-  async close(): Promise<void> {
-    if (this.db) {
-      try {
-        this.db.close();
-      } catch (error) {
-        if (this.config.enableLogging) {
-          console.error('Error closing database:', error);
-        }
-      } finally {
-        this.db = null;
-        this.initialized = false;
-      }
-    }
-  }
 }
-

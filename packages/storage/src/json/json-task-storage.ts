@@ -3,8 +3,6 @@
  * 基于 JSON 文件系统的任务持久化存储
  */
 
-import * as fs from 'fs/promises';
-import * as path from 'path';
 import type {
   TaskStorageMetadata,
   TaskListOptions,
@@ -12,203 +10,29 @@ import type {
   TaskStatsOptions,
   TaskStatus
 } from '@modular-agent/types';
-import type { TaskStorageCallback } from '../types/task-callback.js';
-import { StorageError, SerializationError } from '../types/storage-errors.js';
-
-/**
- * JSON 任务存储配置
- */
-export interface JsonTaskStorageConfig {
-  /** 基础目录路径 */
-  baseDir: string;
-  /** 是否启用文件锁 */
-  enableFileLock?: boolean;
-}
-
-/**
- * 存储文件内容格式
- */
-interface StorageFileContent {
-  id: string;
-  data: number[];
-  metadata: TaskStorageMetadata;
-}
+import type { TaskStorageCallback } from '../types/callback/index.js';
+import { BaseJsonStorage, BaseJsonStorageConfig } from './base-json-storage.js';
 
 /**
  * JSON 文件任务存储
  * 实现 TaskStorageCallback 接口
  */
-export class JsonTaskStorage implements TaskStorageCallback {
-  private metadataIndex: Map<string, { metadata: TaskStorageMetadata; filePath: string }> = new Map();
-  private initialized: boolean = false;
-  private lockFiles: Map<string, Promise<void>> = new Map();
-
-  constructor(private readonly config: JsonTaskStorageConfig) {}
-
-  async initialize(): Promise<void> {
-    await fs.mkdir(this.config.baseDir, { recursive: true });
-    await this.loadMetadataIndex();
-    this.initialized = true;
+export class JsonTaskStorage extends BaseJsonStorage<TaskStorageMetadata> implements TaskStorageCallback {
+  constructor(config: BaseJsonStorageConfig) {
+    super(config);
   }
 
-  private async loadMetadataIndex(): Promise<void> {
-    try {
-      const entries = await fs.readdir(this.config.baseDir, { withFileTypes: true });
-
-      for (const entry of entries) {
-        if (entry.isFile() && entry.name.endsWith('.json')) {
-          try {
-            const filePath = path.join(this.config.baseDir, entry.name);
-            const content = await fs.readFile(filePath, 'utf-8');
-            const parsed = JSON.parse(content) as StorageFileContent;
-            if (parsed.id && parsed.metadata) {
-              this.metadataIndex.set(parsed.id, {
-                metadata: parsed.metadata,
-                filePath
-              });
-            }
-          } catch {
-            // 忽略解析错误的文件
-          }
-        }
-      }
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        throw error;
-      }
-    }
-  }
-
-  private ensureInitialized(): void {
-    if (!this.initialized) {
-      throw new StorageError(
-        'Storage not initialized. Call initialize() first.',
-        'initialize'
-      );
-    }
-  }
-
-  private getFilePath(taskId: string): string {
-    const safeId = this.sanitizeId(taskId);
-    return path.join(this.config.baseDir, `${safeId}.json`);
-  }
-
-  private sanitizeId(id: string): string {
-    return id.replace(/[\/\\:\*\?"<>\|]/g, '_');
-  }
-
-  private async acquireLock(filePath: string): Promise<() => void> {
-    if (!this.config.enableFileLock) {
-      return () => {};
-    }
-
-    while (this.lockFiles.has(filePath)) {
-      await this.lockFiles.get(filePath);
-    }
-
-    let releaseLock: () => void;
-    const lockPromise = new Promise<void>((resolve) => {
-      releaseLock = resolve;
-    });
-
-    this.lockFiles.set(filePath, lockPromise);
-
-    return () => {
-      this.lockFiles.delete(filePath);
-      releaseLock!();
-    };
-  }
-
-  async save(
-    taskId: string,
-    data: Uint8Array,
-    metadata: TaskStorageMetadata
-  ): Promise<void> {
-    this.ensureInitialized();
-
-    const filePath = this.getFilePath(taskId);
-    const releaseLock = await this.acquireLock(filePath);
-
-    try {
-      const content: StorageFileContent = {
-        id: taskId,
-        data: Array.from(data),
-        metadata
-      };
-
-      try {
-        const jsonContent = JSON.stringify(content, null, 2);
-        await fs.writeFile(filePath, jsonContent, 'utf-8');
-        this.metadataIndex.set(taskId, { metadata, filePath });
-      } catch (error) {
-        throw new SerializationError(
-          `Failed to serialize task: ${taskId}`,
-          taskId,
-          error as Error
-        );
-      }
-    } finally {
-      releaseLock();
-    }
-  }
-
-  async load(taskId: string): Promise<Uint8Array | null> {
-    this.ensureInitialized();
-
-    const indexEntry = this.metadataIndex.get(taskId);
-    if (!indexEntry) {
-      return null;
-    }
-
-    try {
-      const content = await fs.readFile(indexEntry.filePath, 'utf-8');
-      const parsed = JSON.parse(content) as StorageFileContent;
-      return new Uint8Array(parsed.data);
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-        return null;
-      }
-      throw new StorageError(
-        `Failed to load task: ${taskId}`,
-        'load',
-        { taskId },
-        error as Error
-      );
-    }
-  }
-
-  async delete(taskId: string): Promise<void> {
-    this.ensureInitialized();
-
-    const indexEntry = this.metadataIndex.get(taskId);
-    if (!indexEntry) {
-      return;
-    }
-
-    const releaseLock = await this.acquireLock(indexEntry.filePath);
-
-    try {
-      try {
-        await fs.unlink(indexEntry.filePath);
-        this.metadataIndex.delete(taskId);
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-          throw error;
-        }
-      }
-    } finally {
-      releaseLock();
-    }
-  }
-
+  /**
+   * 列出任务ID
+   */
   async list(options?: TaskListOptions): Promise<string[]> {
     this.ensureInitialized();
 
-    let ids = Array.from(this.metadataIndex.keys());
+    let ids = this.getAllIds();
 
     if (options) {
       ids = ids.filter(id => {
-        const entry = this.metadataIndex.get(id);
+        const entry = this['metadataIndex'].get(id);
         if (!entry) return false;
 
         const metadata = entry.metadata;
@@ -269,8 +93,8 @@ export class JsonTaskStorage implements TaskStorageCallback {
     const sortOrder = options?.sortOrder ?? 'desc';
 
     ids.sort((a, b) => {
-      const metaA = this.metadataIndex.get(a)?.metadata;
-      const metaB = this.metadataIndex.get(b)?.metadata;
+      const metaA = this['metadataIndex'].get(a)?.metadata;
+      const metaB = this['metadataIndex'].get(b)?.metadata;
 
       let valueA: number;
       let valueB: number;
@@ -300,21 +124,13 @@ export class JsonTaskStorage implements TaskStorageCallback {
     return ids.slice(offset, offset + limit);
   }
 
-  async exists(taskId: string): Promise<boolean> {
-    this.ensureInitialized();
-    return this.metadataIndex.has(taskId);
-  }
-
-  async getMetadata(taskId: string): Promise<TaskStorageMetadata | null> {
-    this.ensureInitialized();
-    const entry = this.metadataIndex.get(taskId);
-    return entry?.metadata ?? null;
-  }
-
+  /**
+   * 获取任务统计信息
+   */
   async getTaskStats(options?: TaskStatsOptions): Promise<TaskStats> {
     this.ensureInitialized();
 
-    let entries = Array.from(this.metadataIndex.values());
+    let entries = Array.from(this['metadataIndex'].values());
 
     // 应用过滤
     if (options?.workflowId) {
@@ -387,13 +203,16 @@ export class JsonTaskStorage implements TaskStorageCallback {
     };
   }
 
+  /**
+   * 清理过期任务
+   */
   async cleanupTasks(retentionTime: number): Promise<number> {
     this.ensureInitialized();
 
     const cutoffTime = Date.now() - retentionTime;
     let cleanedCount = 0;
 
-    for (const [id, entry] of this.metadataIndex) {
+    for (const [id, entry] of this['metadataIndex']) {
       const meta = entry.metadata;
       if (
         (meta.status === 'COMPLETED' ||
@@ -410,25 +229,4 @@ export class JsonTaskStorage implements TaskStorageCallback {
 
     return cleanedCount;
   }
-
-  async clear(): Promise<void> {
-    this.ensureInitialized();
-
-    for (const [id, entry] of this.metadataIndex) {
-      try {
-        await fs.unlink(entry.filePath);
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-          throw error;
-        }
-      }
-    }
-    this.metadataIndex.clear();
-  }
-
-  async close(): Promise<void> {
-    this.metadataIndex.clear();
-    this.initialized = false;
-  }
 }
-

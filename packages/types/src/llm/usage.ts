@@ -78,3 +78,14 @@ export interface TokenUsageStatistics {
   /** 总完成token数 */
   totalCompletionTokens: number;
 }
+
+/**
+ * Token计数结果
+ * 用于countTokens API的响应
+ */
+export interface TokenCountResult {
+  /** 输入token数量 */
+  inputTokens: number;
+  /** 原始响应数据 */
+  raw?: any;
+}

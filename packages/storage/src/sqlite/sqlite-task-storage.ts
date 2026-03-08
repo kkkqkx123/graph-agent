@@ -3,7 +3,6 @@
  * 基于 better-sqlite3 的任务持久化存储
  */
 
-import Database, { SqliteError } from 'better-sqlite3';
 import type {
   TaskStorageMetadata,
   TaskListOptions,
@@ -11,119 +10,62 @@ import type {
   TaskStatsOptions,
   TaskStatus
 } from '@modular-agent/types';
-import type { TaskStorageCallback } from '../types/task-callback.js';
-import { StorageError, StorageInitializationError } from '../types/storage-errors.js';
-
-/**
- * SQLite 任务存储配置
- */
-export interface SqliteTaskStorageConfig {
-  /** 数据库文件路径 */
-  dbPath: string;
-  /** 是否启用日志 */
-  enableLogging?: boolean;
-  /** 是否以只读模式打开 */
-  readonly?: boolean;
-  /** 数据库文件不存在时是否抛出错误 */
-  fileMustExist?: boolean;
-  /** 数据库锁定时的超时时间（毫秒） */
-  timeout?: number;
-}
+import type { TaskStorageCallback } from '../types/callback/index.js';
+import { BaseSqliteStorage, BaseSqliteStorageConfig } from './base-sqlite-storage.js';
 
 /**
  * SQLite 任务存储
  * 实现 TaskStorageCallback 接口
  */
-export class SqliteTaskStorage implements TaskStorageCallback {
-  private db: Database.Database | null = null;
-  private initialized: boolean = false;
-
-  constructor(private readonly config: SqliteTaskStorageConfig) {}
-
-  async initialize(): Promise<void> {
-    try {
-      const options: Database.Options = {
-        readonly: this.config.readonly ?? false,
-        fileMustExist: this.config.fileMustExist ?? false,
-        timeout: this.config.timeout ?? 5000
-      };
-
-      this.db = new Database(this.config.dbPath, options);
-
-      this.db.pragma('journal_mode = WAL');
-      this.db.pragma('wal_autocheckpoint = 1000');
-      this.db.pragma('synchronous = NORMAL');
-
-      if (!this.config.readonly) {
-        this.db.exec(`
-          CREATE TABLE IF NOT EXISTS tasks (
-            id TEXT PRIMARY KEY,
-            thread_id TEXT NOT NULL,
-            workflow_id TEXT NOT NULL,
-            status TEXT NOT NULL,
-            submit_time INTEGER NOT NULL,
-            start_time INTEGER,
-            complete_time INTEGER,
-            timeout INTEGER,
-            error TEXT,
-            error_stack TEXT,
-            data BLOB NOT NULL,
-            tags TEXT,
-            custom_fields TEXT,
-            created_at INTEGER NOT NULL,
-            updated_at INTEGER NOT NULL
-          )
-        `);
-
-        // 创建索引
-        this.db.exec(`CREATE INDEX IF NOT EXISTS idx_tasks_thread_id ON tasks(thread_id)`);
-        this.db.exec(`CREATE INDEX IF NOT EXISTS idx_tasks_workflow_id ON tasks(workflow_id)`);
-        this.db.exec(`CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)`);
-        this.db.exec(`CREATE INDEX IF NOT EXISTS idx_tasks_submit_time ON tasks(submit_time)`);
-        this.db.exec(`CREATE INDEX IF NOT EXISTS idx_tasks_complete_time ON tasks(complete_time)`);
-      }
-
-      this.initialized = true;
-    } catch (error) {
-      throw new StorageInitializationError(
-        `Failed to initialize SQLite task storage: ${this.config.dbPath}`,
-        error as Error
-      );
-    }
+export class SqliteTaskStorage extends BaseSqliteStorage<TaskStorageMetadata> implements TaskStorageCallback {
+  constructor(config: BaseSqliteStorageConfig) {
+    super(config);
   }
 
-  private ensureInitialized(): void {
-    if (!this.initialized || !this.db) {
-      throw new StorageError(
-        'Storage not initialized. Call initialize() first.',
-        'initialize'
-      );
-    }
+  /**
+   * 获取表名
+   */
+  protected getTableName(): string {
+    return 'tasks';
   }
 
-  private getDb(): Database.Database {
-    this.ensureInitialized();
-    return this.db!;
+  /**
+   * 创建表结构
+   */
+  protected createTableSchema(): void {
+    const db = this.getDb();
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS tasks (
+        id TEXT PRIMARY KEY,
+        thread_id TEXT NOT NULL,
+        workflow_id TEXT NOT NULL,
+        status TEXT NOT NULL,
+        submit_time INTEGER NOT NULL,
+        start_time INTEGER,
+        complete_time INTEGER,
+        timeout INTEGER,
+        error TEXT,
+        error_stack TEXT,
+        data BLOB NOT NULL,
+        tags TEXT,
+        custom_fields TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      )
+    `);
+
+    // 创建索引
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_tasks_thread_id ON tasks(thread_id)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_tasks_workflow_id ON tasks(workflow_id)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_tasks_submit_time ON tasks(submit_time)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_tasks_complete_time ON tasks(complete_time)`);
   }
 
-  private handleSqliteError(error: unknown, operation: string, context?: Record<string, unknown>): never {
-    if (error instanceof SqliteError) {
-      throw new StorageError(
-        `SQLite error [${error.code}]: ${error.message}`,
-        operation,
-        { ...context, code: error.code },
-        error
-      );
-    }
-
-    throw new StorageError(
-      `Storage operation failed: ${operation}`,
-      operation,
-      context,
-      error as Error
-    );
-  }
-
+  /**
+   * 保存任务
+   */
   async save(
     taskId: string,
     data: Uint8Array,
@@ -178,34 +120,9 @@ export class SqliteTaskStorage implements TaskStorageCallback {
     }
   }
 
-  async load(taskId: string): Promise<Uint8Array | null> {
-    const db = this.getDb();
-
-    try {
-      const stmt = db.prepare(`SELECT data FROM tasks WHERE id = ?`);
-      const row = stmt.get(taskId) as { data: Buffer } | undefined;
-
-      if (!row) {
-        return null;
-      }
-
-      return new Uint8Array(row.data);
-    } catch (error) {
-      this.handleSqliteError(error, 'load', { taskId });
-    }
-  }
-
-  async delete(taskId: string): Promise<void> {
-    const db = this.getDb();
-
-    try {
-      const stmt = db.prepare(`DELETE FROM tasks WHERE id = ?`);
-      stmt.run(taskId);
-    } catch (error) {
-      this.handleSqliteError(error, 'delete', { taskId });
-    }
-  }
-
+  /**
+   * 列出任务ID
+   */
   async list(options?: TaskListOptions): Promise<string[]> {
     const db = this.getDb();
 
@@ -296,18 +213,9 @@ export class SqliteTaskStorage implements TaskStorageCallback {
     }
   }
 
-  async exists(taskId: string): Promise<boolean> {
-    const db = this.getDb();
-
-    try {
-      const stmt = db.prepare(`SELECT 1 FROM tasks WHERE id = ?`);
-      const row = stmt.get(taskId);
-      return row !== undefined;
-    } catch (error) {
-      this.handleSqliteError(error, 'exists', { taskId });
-    }
-  }
-
+  /**
+   * 获取元数据
+   */
   async getMetadata(taskId: string): Promise<TaskStorageMetadata | null> {
     const db = this.getDb();
 
@@ -356,6 +264,9 @@ export class SqliteTaskStorage implements TaskStorageCallback {
     }
   }
 
+  /**
+   * 获取任务统计信息
+   */
   async getTaskStats(options?: TaskStatsOptions): Promise<TaskStats> {
     const db = this.getDb();
 
@@ -457,6 +368,9 @@ export class SqliteTaskStorage implements TaskStorageCallback {
     }
   }
 
+  /**
+   * 清理过期任务
+   */
   async cleanupTasks(retentionTime: number): Promise<number> {
     const db = this.getDb();
     const cutoffTime = Date.now() - retentionTime;
@@ -474,31 +388,4 @@ export class SqliteTaskStorage implements TaskStorageCallback {
       this.handleSqliteError(error, 'cleanup', { retentionTime });
     }
   }
-
-  async clear(): Promise<void> {
-    const db = this.getDb();
-
-    try {
-      const stmt = db.prepare(`DELETE FROM tasks`);
-      stmt.run();
-    } catch (error) {
-      this.handleSqliteError(error, 'clear', {});
-    }
-  }
-
-  async close(): Promise<void> {
-    if (this.db) {
-      try {
-        this.db.close();
-      } catch (error) {
-        if (this.config.enableLogging) {
-          console.error('Error closing database:', error);
-        }
-      } finally {
-        this.db = null;
-        this.initialized = false;
-      }
-    }
-  }
 }
-
