@@ -29,19 +29,6 @@ export class RestoreFromCheckpointCommand extends BaseCommand<Thread> {
   }
 
   /**
-   * 获取命令元数据
-   */
-  getMetadata() {
-    return {
-      name: 'RestoreFromCheckpoint',
-      description: '从检查点恢复线程',
-      category: 'management' as const,
-      requiresAuth: false,
-      version: '1.0.0'
-    };
-  }
-
-  /**
    * 验证命令参数
    */
   validate(): CommandValidationResult {
