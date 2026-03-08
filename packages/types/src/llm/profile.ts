@@ -33,4 +33,13 @@ export interface LLMProfile {
   retryDelay?: number;
   /** 可选的元数据 */
   metadata?: Metadata;
+
+  /**
+   * 工具调用模式
+   * - 'function_call': 使用 API 原生函数调用
+   * - 'xml': 使用 XML 格式在提示词中描述工具
+   * - 'json': 使用 JSON 格式在提示词中描述工具
+   * @default 'function_call'
+   */
+  toolMode?: 'function_call' | 'xml' | 'json';
 }

@@ -11,41 +11,35 @@ import type { PromptTemplate } from '../../types/template.js';
 export const FORMAT_RULE_TEMPLATE: PromptTemplate = {
   id: 'rules.format',
   name: 'Format Rules',
-  description: '代码格式化规则',
+  description: 'Code formatting rules',
   category: 'rules',
-  content: `## 代码格式规则
+  content: `## Code Formatting Rules
 
-### 基本原则
-1. **一致性**：保持代码风格的一致性
-2. **可读性**：优先考虑代码的可读性
-3. **简洁性**：避免不必要的复杂性
+### Basic Principles
+1. **Consistency**: Maintain a consistent code style.
+2. **Readability**: Prioritize the readability of the code.
+3. **Simplicity**: Avoid unnecessary complexity.
 
-### 缩进和空格
-- 使用 2 个空格进行缩进
-- 运算符前后添加空格
-- 逗号后添加空格
-- 冒号后添加空格
+### Indentation and Spacing
+- Use 2 spaces for indentation.
+- Add spaces before and after operators.
+- Add a space after commas.
+- Add a space after colons.
 
-### 命名规范
-- 变量和函数使用 camelCase
-- 类和接口使用 PascalCase
-- 常量使用 UPPER_SNAKE_CASE
-- 私有成员使用下划线前缀
+### Naming Conventions
+- Use camelCase for variables and functions.
+- Use PascalCase for classes and interfaces.
+- Use UPPER_SNAKE_CASE for constants.
+- Use an underscore prefix for private members.
 
-### 注释规范
-- 为复杂逻辑添加注释
-- 注释应说明"为什么"而非"是什么"
-- 保持注释与代码同步更新
+### Commenting Conventions
+- Add comments for complex logic.
+- Comments should explain “why” rather than “what”.
+- Keep comments up-to-date with the code.
 
-### 行长度
-- 每行代码不超过 80 字符
-- 长表达式应适当换行
-- 保持换行的一致性
-
-### 其他规范
-- 使用单引号而非双引号
-- 语句末尾添加分号
-- 避免使用 var，使用 const 或 let
-- 优先使用箭头函数`,
+### Line Length
+- Each line of code should not exceed 80 characters.
+- Long expressions should be broken into multiple lines.
+- Maintain consistent line breaks.`,
   variables: []
 };

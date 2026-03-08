@@ -517,3 +517,62 @@ ${this.argumentsToXML(call.function.arguments)}
 
 *分析日期：2026-03-08*
 *基于 LimCode 1.0.93 文档*
+
+---
+
+## 八、实施记录
+
+### 2026-03-08 已完成的修改
+
+#### 1. 核心类型定义（已完成）
+
+**修改文件：**
+- `packages/types/src/llm/profile.ts` - 添加 `toolMode` 字段到 `LLMProfile`
+- `sdk/core/llm/formatters/types.ts` - 添加 `toolMode` 字段到 `FormatterConfig`
+
+**说明：**
+- 仅添加类型定义，不涉及任何逻辑修改
+- 保持向后兼容，`toolMode` 为可选字段，默认为 `'function_call'`
+
+#### 2. 工具声明格式转换器（已完成）
+
+**新增文件：**
+- `packages/common-utils/src/tool/declaration-formatter.ts`
+
+**功能：**
+- `ToolDeclarationFormatter.toXML()` - 将工具声明转换为 XML 格式
+- `ToolDeclarationFormatter.toJSON()` - 将工具声明转换为 JSON 格式
+- `ToolDeclarationFormatter.toolCallToXML()` - 将工具调用转换为 XML 格式
+- `ToolDeclarationFormatter.toolCallToJSON()` - 将工具调用转换为 JSON 格式
+- 相关的工具结果转换方法
+
+**说明：**
+- 纯粹的格式转换工具，不修改 Formatter 逻辑
+- 为后续提示词组装提供基础设施
+
+#### 3. 明确未在 Formatter 中实现的内容（架构考虑）
+
+**不在 Formatter 中实现：**
+- ❌ 工具声明注入到系统消息
+- ❌ 历史记录格式转换在 buildRequest 中进行
+- ❌ 在 Formatter 中组装提示词
+
+**原因：**
+- 保持 Formatter 职责单一（仅格式转换）
+- 提示词组装应在更高层（如 ExecutionCoordinator 或专门的 PromptAssembler）完成
+- 避免破坏现有架构的分层设计
+
+### 下一步建议
+
+如需完整支持 XML/JSON 工具调用模式，建议在以下位置实现：
+
+1. **提示词组装层**（推荐）
+   - 创建 `ToolPromptAssembler` 类
+   - 在调用 Formatter 之前组装包含工具声明的消息
+
+2. **ExecutionCoordinator 层**
+   - 在准备 LLM 请求时，根据 `toolMode` 处理消息
+
+3. **保持 Formatter 不变**
+   - Formatter 继续只负责 API 格式转换
+   - 接收已经组装好的消息
