@@ -1,20 +1,16 @@
 /**
- * 检查点存储回调接口
- * 
- * 由应用层实现，SDK 通过回调与存储交互
- * 
- * 设计原则：
- * - SDK 不提供存储实现，只定义接口契约
- * - 应用层负责具体的存储逻辑（ORM、数据库、Redis 等）
- * - 通过回调接口实现 SDK 与存储的解耦
+ * 检查点存储回调接口定义
+ * 定义检查点持久化操作的统一接口
  */
 
 import type { CheckpointStorageMetadata, CheckpointListOptions } from '@modular-agent/types';
 
 /**
  * 检查点存储回调接口
- * 
- * 应用层需要实现此接口，提供检查点的持久化功能
+ *
+ * 定义检查点持久化操作的统一接口
+ * - packages/storage 提供了基于此接口的 CheckpointStorageAdapter 实现
+ * - 应用层可以直接使用 CheckpointStorageAdapter，或自行实现此接口
  */
 export interface CheckpointStorageCallback {
   /**

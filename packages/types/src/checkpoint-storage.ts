@@ -1,9 +1,6 @@
 /**
  * 检查点存储类型定义
  * 定义检查点存储相关的元数据、查询选项和清理策略
- *
- * 注意：存储接口 CheckpointStorageCallback 已移至 SDK 层
- * 应用层需要实现该接口以提供存储功能
  */
 
 import type { ID, Timestamp } from './common.js';

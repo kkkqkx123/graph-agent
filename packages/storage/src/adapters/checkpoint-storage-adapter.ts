@@ -1,16 +1,17 @@
 /**
  * 检查点存储适配器
- * 实现 SDK 的 CheckpointStorageCallback 接口
+ * 实现 CheckpointStorageCallback 接口
  */
 
 import type { CheckpointStorageMetadata, CheckpointListOptions } from '@modular-agent/types';
+import type { CheckpointStorageCallback } from '../types/checkpoint-callback.js';
 import type { StorageProvider, StorageMetadata } from '../types/index.js';
 
 /**
  * 检查点存储适配器
- * 将通用的 StorageProvider 适配为 SDK 的 CheckpointStorageCallback 接口
+ * 将通用的 StorageProvider 适配为 CheckpointStorageCallback 接口
  */
-export class CheckpointStorageAdapter {
+export class CheckpointStorageAdapter implements CheckpointStorageCallback {
   constructor(private readonly storage: StorageProvider<Uint8Array>) { }
 
   /**

@@ -40,6 +40,7 @@
         "@modular-agent/tool-executors": "workspace:*",
         "@modular-agent/script-executors": "workspace:*",
         "@modular-agent/prompt-templates": "workspace:*",
+        "@modular-agent/storage": "workspace:*",
         "tiktoken": "^1.0.22",
         "zod": "^4.3.6",
         "@iarna/toml": "^2.2.5"

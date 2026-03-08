@@ -3,10 +3,9 @@
  * 有状态服务，维护检查点的内部状态
  */
 
-import type { Checkpoint } from '@modular-agent/types';
-import type { CheckpointStorageMetadata, CleanupPolicy, CleanupResult } from '@modular-agent/types';
+import type { Checkpoint, CheckpointStorageMetadata, CleanupPolicy, CleanupResult } from '@modular-agent/types';
+import type { CheckpointStorageCallback } from '@modular-agent/storage';
 import type { EventManager } from '../../services/event-manager.js';
-import type { CheckpointStorageCallback } from '../../storage/checkpoint-storage-callback.js';
 import { LifecycleCapable } from './lifecycle-capable.js';
 import { serializeCheckpoint, deserializeCheckpoint } from '../utils/checkpoint-serializer.js';
 import { createCleanupStrategy } from '../utils/checkpoint-cleanup-policy.js';
