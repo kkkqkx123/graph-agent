@@ -11,38 +11,38 @@ import type { PromptTemplate } from '../../types/template.js';
 export const SAFETY_RULE_TEMPLATE: PromptTemplate = {
   id: 'rules.safety',
   name: 'Safety Rules',
-  description: '安全相关规则',
+  description: 'Security-related rules',
   category: 'rules',
-  content: `## 安全规则
+  content: `## Security Rules
 
-### 数据安全
-1. **输入验证**：对所有用户输入进行验证和清理
-2. **敏感信息**：不记录或泄露敏感信息（密码、密钥等）
-3. **数据加密**：对敏感数据进行加密存储和传输
-4. **访问控制**：实施适当的访问控制和权限管理
+### Data Security
+1. **Input Validation**: Verify and clean all user input.
+2. **Sensitive Information**: Do not log or disclose sensitive information (such as passwords and keys).
+3. **Data Encryption**: Encrypt sensitive data during storage and transmission.
+4. **Access Control**: Implement appropriate access control and permission management.
 
-### 代码安全
-1. **SQL 注入**：使用参数化查询，避免 SQL 注入
-2. **XSS 防护**：对输出进行转义，防止 XSS 攻击
-3. **CSRF 防护**：实施 CSRF 令牌机制
-4. **依赖安全**：定期更新依赖包，修复已知漏洞
+### Code Security
+1. **SQL Injection**: Use parameterized queries to prevent SQL injection attacks.
+2. **XSS Protection**: Escape output to prevent XSS attacks.
+3. **CSRF Protection**: Implement a CSRF token mechanism.
+4. **Dependency Security**: Regularly update dependency packages to fix known vulnerabilities.
 
-### 错误处理
-1. **错误信息**：不向用户暴露敏感的系统信息
-2. **日志记录**：记录安全相关事件和错误
-3. **异常处理**：妥善处理异常，避免信息泄露
-4. **错误恢复**：提供安全的错误恢复机制
+### Error Handling
+1. **Error Messages**: Do not expose sensitive system information to users.
+2. **Logging**: Record security-related events and errors.
+3. **Exception Handling**: Properly handle exceptions to prevent information leakage.
+4. **Error Recovery**: Provide a secure error recovery mechanism.
 
-### 认证和授权
-1. **强密码**：要求使用强密码并定期更换
-2. **多因素认证**：实施多因素认证机制
-3. **会话管理**：安全地管理用户会话
-4. **权限最小化**：遵循最小权限原则
+### Authentication and Authorization
+1. **Strong Passwords**: Require the use of strong passwords and encourage regular password changes.
+2. **Multi-Factor Authentication**: Implement multi-factor authentication.
+3. **Session Management**: Manage user sessions securely.
+4. **Principle of Least Privilege**: Follow the principle of least privilege.
 
-### 其他安全措施
-1. **HTTPS**：使用 HTTPS 进行安全通信
-2. **安全头**：设置适当的安全响应头
-3. **速率限制**：实施 API 速率限制
-4. **安全审计**：定期进行安全审计和测试`,
+### Other Security Measures
+1. **HTTPS**: Use HTTPS for secure communication.
+2. **Security Headers**: Set appropriate security response headers.
+3. **Rate Limiting**: Implement API rate limiting.
+4. **Security Audits**: Conduct regular security audits and tests. `,
   variables: []
 };

@@ -10,9 +10,9 @@ import type { PromptFragment } from '../types/fragment.js';
  */
 export const TOOL_DESCRIPTION_FRAGMENT: PromptFragment = {
   id: 'fragment.tool_descriptions',
-  content: `可用工具:
+  content: `Available tools:
 {{toolDescriptions}}`,
   variables: [
-    { name: 'toolDescriptions', type: 'string', required: true, description: '工具描述文本' }
+    { name: 'toolDescriptions', type: 'string', required: true, description: 'Tool description text' }
   ]
 };

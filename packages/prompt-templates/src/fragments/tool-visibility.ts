@@ -10,11 +10,11 @@ import type { PromptFragment } from '../types/fragment.js';
  */
 export const TOOL_VISIBILITY_FRAGMENT: PromptFragment = {
   id: 'fragment.tool_visibility',
-  content: `当前可用工具范围已更新为: {{scopeName}}
-可用工具列表:
-{{toolList}}`,
+  content: `The available tools have been updated to: {{scopeName}}
+  Available tools list:
+  {{toolList}}`,
   variables: [
-    { name: 'scopeName', type: 'string', required: true, description: '作用域名称' },
-    { name: 'toolList', type: 'string', required: true, description: '工具列表' }
+    { name: 'scopeName', type: 'string', required: true, description: 'Scope name' },
+    { name: 'toolList', type: 'string', required: true, description: 'List of available tools' }
   ]
 };
