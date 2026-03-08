@@ -169,7 +169,7 @@ describe('ToolSchemaFormatter', () => {
     it('应该处理无参数的工具', () => {
       const xml = toXMLFormat(mockTool1);
 
-      expect(xml).toContain('无参数');
+      expect(xml).toContain('No parameters');
     });
   });
 
@@ -186,7 +186,7 @@ describe('ToolSchemaFormatter', () => {
     it('应该处理空数组', () => {
       const xml = toXMLFormatBatch([]);
 
-      expect(xml).toBe('无可用工具');
+      expect(xml).toBe('No tools available');
     });
   });
 
@@ -209,7 +209,7 @@ describe('ToolSchemaFormatter', () => {
     it('应该处理无参数的工具', () => {
       const json = toJSONFormat(mockTool1);
 
-      expect(json).toContain('无参数');
+      expect(json).toContain('No parameters');
     });
   });
 
@@ -226,7 +226,7 @@ describe('ToolSchemaFormatter', () => {
     it('应该处理空数组', () => {
       const json = toJSONFormatBatch([]);
 
-      expect(json).toBe('无可用工具');
+      expect(json).toBe('No tools available');
     });
   });
 

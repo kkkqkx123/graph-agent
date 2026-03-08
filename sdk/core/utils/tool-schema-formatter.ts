@@ -173,7 +173,7 @@ export function toXMLFormatBatch(tools: Tool[]): string {
  */
 function generateJSONParametersDescription(tool: Tool): string {
   if (!tool.parameters || Object.keys(tool.parameters.properties).length === 0) {
-    return '无参数';
+    return 'No parameters';
   }
 
   const lines: string[] = [];
@@ -237,7 +237,7 @@ export function toJSONFormat(tool: Tool): string {
  */
 export function toJSONFormatBatch(tools: Tool[]): string {
   if (!tools || tools.length === 0) {
-    return '无可用工具';
+    return 'No tools available';
   }
 
   const toolsJson = tools.map(toJSONFormat).join('\n\n');
