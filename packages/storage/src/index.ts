@@ -1,11 +1,17 @@
 /**
  * @modular-agent/storage
- * 检查点存储包，提供多种存储后端实现
+ * 存储包，提供多种存储后端实现
  *
  * 设计原则：
- * - SDK 只依赖 CheckpointStorageCallback 接口
+ * - SDK 只依赖 StorageCallback 接口
  * - packages 提供具体实现供 apps 层使用
  * - apps 层可选择使用内置实现或自行实现接口
+ *
+ * 支持的存储类型：
+ * - Checkpoint（检查点）
+ * - Thread（线程）
+ * - Workflow（工作流）
+ * - Task（任务）
  */
 
 // 核心类型定义
