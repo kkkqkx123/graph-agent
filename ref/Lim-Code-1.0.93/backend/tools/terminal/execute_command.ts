@@ -4,6 +4,8 @@
  * 使用 child_process 执行命令，捕获输出并返回
  * 支持实时输出推送到前端
  * 支持多工作区（Multi-root Workspaces）
+ * 
+ * windows的powershell中需要在notepad $PROFILE中添加Remove-Item alias:where -Force
  */
 
 import * as cp from 'child_process';
@@ -131,19 +133,19 @@ function getShellConfig(shellType: ShellType): {
     const platform = os.platform();
     const settingsManager = getGlobalSettingsManager();
     const config = settingsManager?.getExecuteCommandConfig() || getDefaultExecuteCommandConfig();
-    
+
     // 如果是 default，使用配置中的默认 shell
     let actualShellType = shellType;
     if (shellType === 'default') {
         actualShellType = config.defaultShell as ShellType;
     }
-    
+
     // 从配置中查找 shell
     const shellConfig = config.shells.find(s => s.type === actualShellType);
-    
+
     // 使用配置的路径或默认路径
     const customPath = shellConfig?.path;
-    
+
     switch (actualShellType) {
         case 'powershell':
             if (platform === 'win32') {
@@ -155,7 +157,7 @@ function getShellConfig(shellType: ShellType): {
                 };
             }
             return { shell: customPath || 'pwsh', shellArgs: ['-NoProfile', '-Command'] };
-            
+
         case 'cmd':
             if (platform === 'win32') {
                 // Windows cmd：直接使用 cmd.exe，通过 chcp 65001 设置 UTF-8 编码
@@ -172,7 +174,7 @@ function getShellConfig(shellType: ShellType): {
                 shellArgs: ['/s', '/c'],
                 prependCommand: 'chcp 65001 >nul &&'
             };
-            
+
         case 'bash':
             if (platform === 'win32') {
                 // Windows: 优先使用 PATH 中的 bash
@@ -182,7 +184,7 @@ function getShellConfig(shellType: ShellType): {
                 };
             }
             return { shell: customPath || '/bin/bash', shellArgs: ['-c'] };
-            
+
         case 'zsh':
             if (platform === 'win32') {
                 // Windows 无 zsh，降级到 PowerShell（带 UTF-8 编码）
@@ -193,7 +195,7 @@ function getShellConfig(shellType: ShellType): {
                 };
             }
             return { shell: customPath || '/bin/zsh', shellArgs: ['-c'] };
-            
+
         case 'sh':
             if (platform === 'win32') {
                 // Windows: 优先使用 PATH 中的 sh
@@ -203,17 +205,17 @@ function getShellConfig(shellType: ShellType): {
                 };
             }
             return { shell: customPath || '/bin/sh', shellArgs: ['-c'] };
-            
+
         case 'gitbash':
             // Git Bash: 优先使用 PATH 中的 bash
             return {
                 shell: customPath || 'bash.exe',
                 shellArgs: ['-c']
             };
-            
+
         case 'wsl':
             return { shell: 'wsl.exe', shellArgs: ['--', 'bash', '-c'] };
-            
+
         default:
             // 使用配置的默认 shell
             if (platform === 'win32') {
@@ -243,7 +245,7 @@ export function getEnabledShellTypes(): string[] {
  */
 function getDefaultShellPath(shellType: string): string {
     const platform = os.platform();
-    
+
     switch (shellType) {
         case 'powershell':
             return platform === 'win32' ? 'powershell.exe' : 'pwsh';
@@ -276,7 +278,7 @@ export async function checkShellAvailability(shellType: string, customPath?: str
 }> {
     const platform = os.platform();
     const shellPath = customPath || getDefaultShellPath(shellType);
-    
+
     // Windows 特殊处理
     if (platform === 'win32') {
         // WSL 需要特殊检测
@@ -291,7 +293,7 @@ export async function checkShellAvailability(shellType: string, customPath?: str
                 });
             });
         }
-        
+
         // 对于绝对路径，检查文件是否存在
         if (shellPath.includes('\\') || shellPath.includes('/')) {
             const fs = require('fs');
@@ -302,7 +304,7 @@ export async function checkShellAvailability(shellType: string, customPath?: str
                 return { available: false, reason: t('tools.terminal.shellCheck.shellNotFound', { shellPath }) };
             }
         }
-        
+
         // 对于命令名，使用 where 命令检查 PATH
         return new Promise((resolve) => {
             cp.exec(`where ${shellPath}`, { timeout: 5000 }, (error) => {
@@ -325,7 +327,7 @@ export async function checkShellAvailability(shellType: string, customPath?: str
                 return { available: false, reason: t('tools.terminal.shellCheck.shellNotFound', { shellPath }) };
             }
         }
-        
+
         // 对于命令名，使用 which 命令检查 PATH
         return new Promise((resolve) => {
             cp.exec(`which ${shellPath}`, { timeout: 5000 }, (error) => {
@@ -344,14 +346,14 @@ export async function checkShellAvailability(shellType: string, customPath?: str
  */
 export async function checkAllShellsAvailability(shells: Array<{ type: string; path?: string }>): Promise<Map<string, { available: boolean; reason?: string }>> {
     const results = new Map<string, { available: boolean; reason?: string }>();
-    
+
     await Promise.all(
         shells.map(async (shell) => {
             const result = await checkShellAvailability(shell.type, shell.path);
             results.set(shell.type, result);
         })
     );
-    
+
     return results;
 }
 
@@ -416,7 +418,7 @@ function getOSName(): string {
 function checkShellAvailabilitySync(shellType: string, customPath?: string): boolean {
     const platform = os.platform();
     const shellPath = customPath || getDefaultShellPath(shellType);
-    
+
     try {
         if (platform === 'win32') {
             // WSL 特殊处理
@@ -424,14 +426,14 @@ function checkShellAvailabilitySync(shellType: string, customPath?: string): boo
                 cp.execSync('wsl --status', { timeout: 3000, stdio: 'ignore' });
                 return true;
             }
-            
+
             // 绝对路径检查文件存在
             if (shellPath.includes('\\') || shellPath.includes('/')) {
                 const fs = require('fs');
                 fs.accessSync(shellPath, fs.constants.X_OK);
                 return true;
             }
-            
+
             // 使用 where 检查 PATH
             cp.execSync(`where ${shellPath}`, { timeout: 3000, stdio: 'ignore' });
             return true;
@@ -442,7 +444,7 @@ function checkShellAvailabilitySync(shellType: string, customPath?: string): boo
                 fs.accessSync(shellPath, fs.constants.X_OK);
                 return true;
             }
-            
+
             // 使用 which 检查 PATH
             cp.execSync(`which ${shellPath}`, { timeout: 3000, stdio: 'ignore' });
             return true;
@@ -458,7 +460,7 @@ function checkShellAvailabilitySync(shellType: string, customPath?: string): boo
 function getAvailableShells(): Array<{ type: string; displayName: string; isDefault: boolean }> {
     const settingsManager = getGlobalSettingsManager();
     const config = settingsManager?.getExecuteCommandConfig() || getDefaultExecuteCommandConfig();
-    
+
     return config.shells
         .filter(s => s.enabled && checkShellAvailabilitySync(s.type, s.path))
         .map(s => ({
@@ -473,11 +475,11 @@ function getAvailableShells(): Array<{ type: string; displayName: string; isDefa
  */
 function getAvailableShellsDescription(): string {
     const availableShells = getAvailableShells();
-    
+
     if (availableShells.length === 0) {
         return '- No available Shell';
     }
-    
+
     return availableShells
         .map(s => `- ${s.type}: ${s.displayName}${s.isDefault ? ' (default)' : ''}`)
         .join('\n');
@@ -498,9 +500,9 @@ function getDefaultShellName(): string {
  */
 function getEnabledShellTypesForEnum(): string[] {
     const availableShells = getAvailableShells();
-    
+
     const types = availableShells.map(s => s.type);
-    
+
     // 确保 default 始终在列表开头
     return ['default', ...types];
 }
@@ -512,11 +514,11 @@ export function createExecuteCommandTool(): Tool {
     const osName = getOSName();
     const osArch = os.arch();
     const osRelease = os.release();
-    
+
     // 获取工作区信息
     const workspaceRoots = getAllWorkspaceRoots();
     const isMultiRoot = workspaceRoots.length > 1;
-    
+
     // 生成工作区说明
     let workspaceDescription = '';
     if (isMultiRoot) {
@@ -524,13 +526,13 @@ export function createExecuteCommandTool(): Tool {
             workspaceRoots.map(ws => `- ${ws.name}: ${ws.path}`).join('\n') +
             '\n\nUse "workspace_name/path" format to specify the working directory';
     }
-    
+
     // cwd 参数描述
     let cwdDescription = 'Working directory (relative to workspace root), defaults to workspace root';
     if (isMultiRoot) {
         cwdDescription = `Working directory, must use "workspace_name/path" format. Available workspaces: ${workspaceRoots.map(w => w.name).join(', ')}`;
     }
-    
+
     return {
         declaration: {
             name: 'execute_command',
@@ -580,10 +582,10 @@ ${getAvailableShellsDescription()}${workspaceDescription}
             const cwd = args.cwd as string | undefined;
             const shell = (args.shell as ShellType) || 'default';
             const timeout = (args.timeout as number) ?? 60000;
-            
+
             // 使用 context 中的 toolId 或生成新的
             const terminalId = context?.toolId as string || generateTerminalId();
-            
+
             // 获取外部的 abortSignal（用于用户取消对话时终止终端）
             const externalAbortSignal = context?.abortSignal as AbortSignal | undefined;
 
@@ -599,13 +601,13 @@ ${getAvailableShellsDescription()}${workspaceDescription}
             // 获取设置管理器和配置
             const settingsManager = getGlobalSettingsManager();
             const config = settingsManager?.getExecuteCommandConfig() || getDefaultExecuteCommandConfig();
-            
+
             // 确定实际使用的 shell 类型
             let actualShellType = shell;
             if (shell === 'default') {
                 actualShellType = config.defaultShell as ShellType;
             }
-            
+
             // 检查 shell 是否启用
             const shellInfo = config.shells.find(s => s.type === actualShellType);
             if (shellInfo && !shellInfo.enabled) {
@@ -614,7 +616,7 @@ ${getAvailableShellsDescription()}${workspaceDescription}
                     error: `Shell "${actualShellType}" is not enabled, please enable it in settings and try again`
                 };
             }
-            
+
             // 检查 shell 可用性
             const availability = await checkShellAvailability(actualShellType, shellInfo?.path);
             if (!availability.available) {
@@ -627,7 +629,7 @@ ${getAvailableShellsDescription()}${workspaceDescription}
             // 计算工作目录（支持多工作区）
             let workingDir: string;
             let workspaceName: string | undefined;
-            
+
             if (cwd) {
                 // 解析带工作区前缀的路径
                 const { workspace, relativePath } = parseWorkspacePath(cwd);
@@ -656,7 +658,7 @@ ${getAvailableShellsDescription()}${workspaceDescription}
                     });
                     return;
                 }
-                
+
                 try {
                     // 构建最终命令（可能需要添加前置命令）
                     let finalCommand = shellConfig.prependCommand
@@ -711,47 +713,47 @@ ${getAvailableShellsDescription()}${workspaceDescription}
                     };
 
                     activeProcesses.set(terminalId, terminalProcess);
-                    
+
                     // 使用 TaskManager 注册任务
                     // 创建一个 AbortController 用于统一取消
                     const taskAbortController = new AbortController();
-                    
+
                     // 监听 taskAbortController 的 signal（通过 TaskManager.cancelTask 取消时触发）
                     {
                         const taskAbortHandler = () => {
                             // 通过 TaskManager 取消时，终止进程树
                             killTerminalProcess(terminalId);
                         };
-                        
+
                         taskAbortController.signal.addEventListener('abort', taskAbortHandler, { once: true });
-                        
+
                         // 进程结束时移除监听器
                         proc.on('close', () => {
                             taskAbortController.signal.removeEventListener('abort', taskAbortHandler);
                         });
                     }
-                    
+
                     TaskManager.registerTask(terminalId, TASK_TYPE_TERMINAL, taskAbortController, {
                         command,
                         cwd: workingDir,
                         shell
                     });
-                    
+
                     // 监听外部的 abortSignal（用户取消对话时触发）
                     if (externalAbortSignal) {
                         const abortHandler = () => {
                             // 调用 killTerminalProcess 终止进程
                             killTerminalProcess(terminalId);
                         };
-                        
+
                         externalAbortSignal.addEventListener('abort', abortHandler, { once: true });
-                        
+
                         // 进程结束时移除监听器
                         proc.on('close', () => {
                             externalAbortSignal.removeEventListener('abort', abortHandler);
                         });
                     }
-                    
+
                     // 发送 start 事件，通知前端进程已启动
                     emitTerminalOutput({
                         terminalId,
@@ -774,11 +776,11 @@ ${getAvailableShellsDescription()}${workspaceDescription}
                         const content = stdoutRemaining + text;
                         const lines = content.split(/\r?\n/);
                         stdoutRemaining = lines.pop() || '';
-                        
+
                         if (lines.length > 0) {
                             terminalProcess.output.push(...lines);
                         }
-                        
+
                         // 实时推送输出到前端
                         emitTerminalOutput({
                             terminalId,
@@ -796,7 +798,7 @@ ${getAvailableShellsDescription()}${workspaceDescription}
                         if (lines.length > 0) {
                             terminalProcess.output.push(...lines);
                         }
-                        
+
                         // 实时推送错误输出到前端
                         emitTerminalOutput({
                             terminalId,
@@ -857,7 +859,7 @@ ${getAvailableShellsDescription()}${workspaceDescription}
 
                         // 从活动进程中移除
                         activeProcesses.delete(terminalId);
-                        
+
                         // 使用 TaskManager 注销任务
                         const status = terminalProcess.killed ? 'cancelled' : (code === 0 ? 'completed' : 'error');
                         TaskManager.unregisterTask(terminalId, status, {
@@ -868,10 +870,10 @@ ${getAvailableShellsDescription()}${workspaceDescription}
 
                         // 检查是否是外部 abortSignal 触发的终止
                         const isExternalAbort = externalAbortSignal?.aborted && terminalProcess.killed;
-                        
+
                         // 被用户杀死的进程也算成功（不显示错误）
                         const success = code === 0 || terminalProcess.killed === true;
-                        
+
                         // 确定错误信息
                         let error: string | undefined;
                         if (isExternalAbort) {
@@ -903,7 +905,7 @@ ${getAvailableShellsDescription()}${workspaceDescription}
                         const truncatedNote = wasTruncated
                             ? `(Output truncated: showing last ${lastOutput.length} of ${terminalProcess.output.length} lines)`
                             : undefined;
-                        
+
                         resolve({
                             success: isExternalAbort ? false : success,
                             data: {
@@ -940,7 +942,7 @@ ${getAvailableShellsDescription()}${workspaceDescription}
 
                         // 从活动进程中移除
                         activeProcesses.delete(terminalId);
-                        
+
                         // 使用 TaskManager 注销任务
                         TaskManager.unregisterTask(terminalId, 'error', {
                             error: err.message,
@@ -994,7 +996,7 @@ export function killTerminalProcess(terminalId: string): {
     error?: string;
 } {
     const terminalProcess = activeProcesses.get(terminalId);
-    
+
     if (!terminalProcess) {
         // 尝试通过 TaskManager 取消（可能任务存在但进程已结束）
         const taskResult = TaskManager.cancelTask(terminalId);
@@ -1009,7 +1011,7 @@ export function killTerminalProcess(terminalId: string): {
 
     try {
         const pid = terminalProcess.process.pid;
-        
+
         if (pid) {
             // 使用 tree-kill 终止进程树
             // tree-kill 会自动处理不同平台的差异：
@@ -1029,7 +1031,7 @@ export function killTerminalProcess(terminalId: string): {
             // 没有 PID，使用默认方式
             terminalProcess.process.kill('SIGTERM');
         }
-        
+
         terminalProcess.killed = true;
         terminalProcess.endTime = Date.now();
 
@@ -1037,9 +1039,9 @@ export function killTerminalProcess(terminalId: string): {
         const lastOutput = killMaxLines === -1
             ? terminalProcess.output
             : getLastLines(terminalProcess.output, killMaxLines);
-        
+
         // TaskManager 会在 proc.on('close') 事件中自动注销
-        
+
         return {
             success: true,
             output: lastOutput.join('\n')
@@ -1065,7 +1067,7 @@ export function cancelTerminalTask(terminalId: string): {
     if (killResult.success) {
         return { success: true };
     }
-    
+
     // 如果进程不存在，尝试通过 TaskManager 取消
     return TaskManager.cancelTask(terminalId);
 }
@@ -1080,7 +1082,7 @@ export function getTerminalOutput(terminalId: string): {
     error?: string;
 } {
     const terminalProcess = activeProcesses.get(terminalId);
-    
+
     if (!terminalProcess) {
         return {
             success: false,
@@ -1092,7 +1094,7 @@ export function getTerminalOutput(terminalId: string): {
     const lastOutput = outputMaxLines === -1
         ? terminalProcess.output
         : getLastLines(terminalProcess.output, outputMaxLines);
-    
+
     return {
         success: true,
         output: lastOutput.join('\n'),

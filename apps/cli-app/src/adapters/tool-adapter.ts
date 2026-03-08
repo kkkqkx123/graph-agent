@@ -9,16 +9,19 @@ import { resolve } from 'path';
 import type { Tool, ToolOptions } from '@modular-agent/types';
 import { StaticValidatorAPI } from '@modular-agent/sdk';
 import type { ConfigurationValidationError } from '@modular-agent/types';
+import { ToolRegistry, type ToolRegistryConfig } from '../tools/index.js';
 
 /**
  * 工具适配器
  */
 export class ToolAdapter extends BaseAdapter {
   private configManager: ConfigManager;
+  private toolRegistry: ToolRegistry;
 
-  constructor(configManager?: ConfigManager) {
+  constructor(configManager?: ConfigManager, registryConfig?: ToolRegistryConfig) {
     super();
     this.configManager = configManager || new ConfigManager();
+    this.toolRegistry = new ToolRegistry(registryConfig);
   }
 
   /**
@@ -195,5 +198,48 @@ export class ToolAdapter extends BaseAdapter {
       
       return result;
     }, '验证工具参数');
+  }
+
+  /**
+   * 注册所有内置工具
+   * 将内置工具注册到SDK
+   */
+  async registerBuiltinTools(): Promise<{
+    success: Tool[];
+    failures: Array<{ toolId: string; error: string }>;
+  }> {
+    return this.executeWithErrorHandling(async () => {
+      // 注册所有内置工具到注册中心
+      await this.toolRegistry.registerAll();
+      
+      const success: Tool[] = [];
+      const failures: Array<{ toolId: string; error: string }> = [];
+      
+      const api = this.sdk.tools;
+      const tools = this.toolRegistry.getAllSdkTools();
+      
+      for (const tool of tools) {
+        try {
+          await api.create(tool);
+          success.push(tool);
+          this.logger.success(`内置工具已注册: ${tool.name}`);
+        } catch (error) {
+          failures.push({
+            toolId: tool.id,
+            error: error instanceof Error ? error.message : String(error)
+          });
+          this.logger.error(`注册内置工具失败: ${tool.name}`);
+        }
+      }
+      
+      return { success, failures };
+    }, '注册内置工具');
+  }
+
+  /**
+   * 获取工具注册中心
+   */
+  getToolRegistry(): ToolRegistry {
+    return this.toolRegistry;
   }
 }
