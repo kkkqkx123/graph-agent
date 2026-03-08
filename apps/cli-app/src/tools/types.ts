@@ -1,19 +1,10 @@
 /**
  * 工具定义类型
- * 定义工具执行结果和工具定义接口
+ * 定义 app 层特有的工具定义接口和配置
  */
 
-/**
- * 工具执行结果
- */
-export interface ToolResult {
-  /** 是否成功 */
-  success: boolean;
-  /** 输出内容 */
-  content: string;
-  /** 错误信息 */
-  error?: string;
-}
+// 从 SDK 导入通用类型
+export type { ToolOutput } from '@modular-agent/types';
 
 /**
  * 工具定义接口
@@ -33,9 +24,9 @@ export interface ToolDefinition {
   /** 版本号（可选，用于 FunctionRegistry） */
   version?: string;
   /** 执行函数（无状态工具） */
-  execute?: (parameters: Record<string, any>) => Promise<ToolResult>;
+  execute?: (parameters: Record<string, any>) => Promise<import('@modular-agent/types').ToolOutput>;
   /** 工厂函数（有状态工具） */
-  factory?: () => { execute: (parameters: Record<string, any>) => Promise<ToolResult> };
+  factory?: () => { execute: (parameters: Record<string, any>) => Promise<import('@modular-agent/types').ToolOutput> };
 }
 
 /**

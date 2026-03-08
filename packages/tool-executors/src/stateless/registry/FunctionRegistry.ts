@@ -4,7 +4,7 @@
  */
 
 import type { FunctionRegistryItem, FunctionRegistryConfig } from '../types.js';
-import type { ID } from '@modular-agent/types';
+import type { ID, ToolOutput } from '@modular-agent/types';
 import { ToolError } from '@modular-agent/types';
 
 /**
@@ -27,7 +27,7 @@ export class FunctionRegistry {
    */
   register(
     toolId: ID,
-    execute: (parameters: any) => Promise<any>,
+    execute: (parameters: any) => Promise<ToolOutput>,
     version?: string,
     description?: string
   ): void {
@@ -92,7 +92,7 @@ export class FunctionRegistry {
   /**
    * 执行函数
    */
-  async execute(toolId: ID, parameters: any): Promise<any> {
+  async execute(toolId: ID, parameters: any): Promise<ToolOutput> {
     const item = this.functions.get(toolId);
     
     if (!item) {
@@ -177,7 +177,7 @@ export class FunctionRegistry {
    * 批量注册函数
    */
   registerBatch(functions: Record<string, {
-    execute: (parameters: any) => Promise<any>;
+    execute: (parameters: any) => Promise<ToolOutput>;
     version?: string;
     description?: string;
   }>): void {

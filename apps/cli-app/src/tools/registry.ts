@@ -3,8 +3,8 @@
  * 复用 tool-executors 包的 FunctionRegistry 和 StatefulExecutor
  */
 
-import type { Tool, ToolParameters } from '@modular-agent/types';
-import { FunctionRegistry, StatefulExecutor } from '@modular-agent/tool-executors';
+import type { Tool } from '@modular-agent/types';
+import { FunctionRegistry, StatefulExecutor, toSdkTool } from '@modular-agent/tool-executors';
 import type { ToolDefinition, ToolRegistryConfig } from './types.js';
 import { registerStatelessTools } from './stateless/index.js';
 import { registerStatefulTools } from './stateful/index.js';
@@ -16,10 +16,10 @@ import { registerStatefulTools } from './stateful/index.js';
 export class ToolRegistry {
   private config: ToolRegistryConfig;
   private tools: Map<string, ToolDefinition> = new Map();
-  
+
   /** 复用 FunctionRegistry 管理无状态工具函数 */
   private functionRegistry: FunctionRegistry;
-  
+
   /** 复用 StatefulExecutor 管理有状态工具实例 */
   private statefulExecutor: StatefulExecutor;
 
@@ -28,14 +28,14 @@ export class ToolRegistry {
       workspaceDir: config.workspaceDir || process.cwd(),
       memoryFile: config.memoryFile || './workspace/.agent_memory.json'
     };
-    
+
     // 初始化 tool-executors 组件
     this.functionRegistry = new FunctionRegistry({
       enableVersionControl: true,
       enableCallStatistics: true,
       maxFunctions: 100
     });
-    
+
     this.statefulExecutor = new StatefulExecutor({
       enableInstanceCache: true,
       maxCachedInstances: 100,
@@ -51,7 +51,7 @@ export class ToolRegistry {
   async registerAll(): Promise<void> {
     // 注册无状态工具
     await registerStatelessTools(this, this.config);
-    
+
     // 注册有状态工具
     await registerStatefulTools(this, this.config);
   }
@@ -64,7 +64,7 @@ export class ToolRegistry {
       console.warn(`Tool '${tool.id}' already registered, overwriting...`);
     }
     this.tools.set(tool.id, tool);
-    
+
     // 同时注册到对应的执行器
     if (tool.type === 'STATELESS' && tool.execute) {
       // 复用 FunctionRegistry 注册无状态工具
@@ -93,38 +93,11 @@ export class ToolRegistry {
   }
 
   /**
-   * 转换为SDK Tool格式
-   */
-  toSdkTool(toolDef: ToolDefinition): Tool {
-    const tool: Tool = {
-      id: toolDef.id,
-      name: toolDef.name,
-      type: toolDef.type,
-      description: toolDef.description,
-      parameters: toolDef.parameters as ToolParameters
-    };
-
-    // 根据类型设置config
-    if (toolDef.type === 'STATELESS' && toolDef.execute) {
-      tool.config = {
-        execute: toolDef.execute
-      };
-    } else if (toolDef.type === 'STATEFUL' && toolDef.factory) {
-      tool.config = {
-        factory: {
-          create: toolDef.factory
-        }
-      };
-    }
-
-    return tool;
-  }
-
-  /**
    * 获取所有SDK格式的工具
+   * 使用 tool-executors 提供的 toSdkTool 函数
    */
   getAllSdkTools(): Tool[] {
-    return this.getAll().map(t => this.toSdkTool(t));
+    return this.getAll().map(t => toSdkTool(t));
   }
 
   /**

@@ -1,17 +1,18 @@
 /**
- * 后台Bash工具
+ * 后台Shell工具
  * 支持后台执行命令、获取输出和终止进程
  */
 
 import { spawn, ChildProcess } from 'child_process';
 import { randomUUID } from 'crypto';
-import type { ToolDefinition, ToolResult } from '../types.js';
+import type { ToolOutput } from '@modular-agent/types';
+import type { ToolDefinition } from '../types.js';
 
 /**
  * 后台Shell状态
  */
 interface BackgroundShell {
-  bashId: string;
+  shellId: string;
   command: string;
   process: ChildProcess;
   startTime: number;
@@ -22,13 +23,13 @@ interface BackgroundShell {
 }
 
 /**
- * Bash输出结果
+ * Shell输出结果
  */
-interface BashOutputResult extends ToolResult {
+interface ShellOutputResult extends ToolOutput {
   stdout: string;
   stderr: string;
   exitCode: number;
-  bashId?: string;
+  shellId?: string;
 }
 
 /**
@@ -42,18 +43,18 @@ class BackgroundShellManager {
    * 添加后台Shell
    */
   add(shell: BackgroundShell): void {
-    this.shells.set(shell.bashId, shell);
+    this.shells.set(shell.shellId, shell);
   }
 
   /**
    * 获取后台Shell
    */
-  get(bashId: string): BackgroundShell | undefined {
-    return this.shells.get(bashId);
+  get(shellId: string): BackgroundShell | undefined {
+    return this.shells.get(shellId);
   }
 
   /**
-   * 获取所有可用的bash ID
+   * 获取所有可用的shell ID
    */
   getAvailableIds(): string[] {
     return Array.from(this.shells.keys());
@@ -62,8 +63,8 @@ class BackgroundShellManager {
   /**
    * 移除后台Shell
    */
-  remove(bashId: string): boolean {
-    return this.shells.delete(bashId);
+  remove(shellId: string): boolean {
+    return this.shells.delete(shellId);
   }
 
   /**
@@ -98,10 +99,10 @@ class BackgroundShellManager {
   /**
    * 终止后台Shell
    */
-  async terminate(bashId: string): Promise<BackgroundShell> {
-    const shell = this.shells.get(bashId);
+  async terminate(shellId: string): Promise<BackgroundShell> {
+    const shell = this.shells.get(shellId);
     if (!shell) {
-      throw new Error(`Shell not found: ${bashId}`);
+      throw new Error(`Shell not found: ${shellId}`);
     }
 
     // 终止进程
@@ -126,7 +127,7 @@ class BackgroundShellManager {
 
     shell.status = 'terminated';
     shell.exitCode = shell.process.exitCode ?? -1;
-    this.shells.delete(bashId);
+    this.shells.delete(shellId);
 
     return shell;
   }
@@ -135,7 +136,7 @@ class BackgroundShellManager {
    * 清理所有Shell
    */
   cleanup(): void {
-    for (const [bashId, shell] of this.shells) {
+    for (const [shellId, shell] of this.shells) {
       if (shell.process.pid) {
         try {
           process.kill(shell.process.pid, 'SIGTERM');
@@ -149,27 +150,27 @@ class BackgroundShellManager {
 }
 
 /**
- * 创建后台Bash启动工具
+ * 创建后台Shell启动工具
  */
-export function createBashBackgroundTool(): ToolDefinition {
+export function createShellBackgroundTool(): ToolDefinition {
   return {
-    id: 'bash_background',
-    name: 'bash_background',
+    id: 'shell_background',
+    name: 'shell_background',
     type: 'STATEFUL',
-    description: `Execute bash commands in background for long-running processes.
+    description: `Execute shell commands in background for long-running processes.
 
 Use this for:
   - Starting servers (npm run dev, python -m http.server)
   - Long-running build processes
   - Background tasks that need monitoring
 
-After starting, use bash_output to monitor and bash_kill to terminate.`,
+After starting, use shell_output to monitor and shell_kill to terminate.`,
     parameters: {
       type: 'object',
       properties: {
         command: {
           type: 'string',
-          description: 'The bash command to execute in background'
+          description: 'The shell command to execute in background'
         }
       },
       required: ['command']
@@ -178,15 +179,15 @@ After starting, use bash_output to monitor and bash_kill to terminate.`,
       const manager = new BackgroundShellManager();
 
       return {
-        execute: async (params: Record<string, any>): Promise<BashOutputResult> => {
+        execute: async (params: Record<string, any>): Promise<ShellOutputResult> => {
           const { command } = params;
 
           try {
-            const bashId = randomUUID().slice(0, 8);
+            const shellId = randomUUID().slice(0, 8);
 
             // 根据平台选择shell
             const isWindows = process.platform === 'win32';
-            const shell = isWindows ? 'cmd.exe' : '/bin/bash';
+            const shell = isWindows ? 'cmd.exe' : '/bin/shell';
             const shellArgs = isWindows ? ['/c', command] : ['-c', command];
 
             const proc = spawn(shell, shellArgs, {
@@ -196,7 +197,7 @@ After starting, use bash_output to monitor and bash_kill to terminate.`,
             });
 
             const shell_: BackgroundShell = {
-              bashId,
+              shellId: shellId,
               command,
               process: proc,
               startTime: Date.now(),
@@ -211,11 +212,11 @@ After starting, use bash_output to monitor and bash_kill to terminate.`,
 
             return {
               success: true,
-              content: `Command started in background. Use bash_output to monitor (bash_id='${bashId}').\n\nCommand: ${command}\nBash ID: ${bashId}`,
-              stdout: `Background command started with ID: ${bashId}`,
+              content: `Command started in background. Use shell_output to monitor (shell_id='${shellId}').\n\nCommand: ${command}\nShell ID: ${shellId}`,
+              stdout: `Background command started with ID: ${shellId}`,
               stderr: '',
               exitCode: 0,
-              bashId
+              shellId: shellId
             };
           } catch (error) {
             return {
@@ -237,16 +238,16 @@ After starting, use bash_output to monitor and bash_kill to terminate.`,
 }
 
 /**
- * 创建Bash输出获取工具
+ * 创建Shell输出获取工具
  */
-export function createBashOutputTool(): ToolDefinition {
+export function createShellOutputTool(): ToolDefinition {
   return {
-    id: 'bash_output',
-    name: 'bash_output',
+    id: 'shell_output',
+    name: 'shell_output',
     type: 'STATEFUL',
-    description: `Retrieves output from a running or completed background bash shell.
+    description: `Retrieves output from a running or completed background shell shell.
 
-- Takes a bash_id parameter identifying the shell
+- Takes a shell_id parameter identifying the shell
 - Always returns only new output since the last check
 - Returns stdout and stderr output along with shell status
 - Supports optional regex filtering to show only lines matching a pattern
@@ -260,7 +261,7 @@ Process status values:
     parameters: {
       type: 'object',
       properties: {
-        bash_id: {
+        shell_id: {
           type: 'string',
           description: 'The ID of the background shell to retrieve output from'
         },
@@ -269,25 +270,25 @@ Process status values:
           description: 'Optional regular expression to filter the output lines'
         }
       },
-      required: ['bash_id']
+      required: ['shell_id']
     },
     factory: () => {
-      // 注意：这里需要与bash_background共享同一个manager
+      // 注意：这里需要与shell_background共享同一个manager
       // 在实际使用中，应该通过线程上下文传递
       const manager = new BackgroundShellManager();
 
       return {
-        execute: async (params: Record<string, any>): Promise<BashOutputResult> => {
-          const { bash_id, filter_str } = params;
+        execute: async (params: Record<string, any>): Promise<ShellOutputResult> => {
+          const { shell_id, filter_str } = params;
 
           try {
-            const shell = manager.get(bash_id);
+            const shell = manager.get(shell_id);
             if (!shell) {
               const availableIds = manager.getAvailableIds();
               return {
                 success: false,
                 content: '',
-                error: `Shell not found: ${bash_id}. Available: ${availableIds.length > 0 ? availableIds.join(', ') : 'none'}`,
+                error: `Shell not found: ${shell_id}. Available: ${availableIds.length > 0 ? availableIds.join(', ') : 'none'}`,
                 stdout: '',
                 stderr: '',
                 exitCode: -1
@@ -317,13 +318,13 @@ Process status values:
               stdout,
               stderr: '',
               exitCode: shell.exitCode ?? 0,
-              bashId: bash_id
+              shellId: shell_id
             };
           } catch (error) {
             return {
               success: false,
               content: '',
-              error: `Failed to get bash output: ${error instanceof Error ? error.message : String(error)}`,
+              error: `Failed to get shell output: ${error instanceof Error ? error.message : String(error)}`,
               stdout: '',
               stderr: error instanceof Error ? error.message : String(error),
               exitCode: -1
@@ -336,52 +337,52 @@ Process status values:
 }
 
 /**
- * 创建Bash终止工具
+ * 创建Shell终止工具
  */
-export function createBashKillTool(): ToolDefinition {
+export function createShellKillTool(): ToolDefinition {
   return {
-    id: 'bash_kill',
-    name: 'bash_kill',
+    id: 'shell_kill',
+    name: 'shell_kill',
     type: 'STATEFUL',
-    description: `Kills a running background bash shell by its ID.
+    description: `Kills a running background shell shell by its ID.
 
-- Takes a bash_id parameter identifying the shell to kill
+- Takes a shell_id parameter identifying the shell to kill
 - Attempts graceful termination (SIGTERM) first, then forces (SIGKILL) if needed
 - Returns the final status and any remaining output before termination
 - Cleans up all resources associated with the shell`,
     parameters: {
       type: 'object',
       properties: {
-        bash_id: {
+        shell_id: {
           type: 'string',
           description: 'The ID of the background shell to terminate'
         }
       },
-      required: ['bash_id']
+      required: ['shell_id']
     },
     factory: () => {
       const manager = new BackgroundShellManager();
 
       return {
-        execute: async (params: Record<string, any>): Promise<BashOutputResult> => {
-          const { bash_id } = params;
+        execute: async (params: Record<string, any>): Promise<ShellOutputResult> => {
+          const { shell_id } = params;
 
           try {
             // 获取剩余输出
-            const shell = manager.get(bash_id);
+            const shell = manager.get(shell_id);
             const remainingLines = shell ? shell.outputLines.slice(shell.lastReadIndex) : [];
 
             // 终止进程
-            const terminatedShell = await manager.terminate(bash_id);
+            const terminatedShell = await manager.terminate(shell_id);
             const stdout = remainingLines.join('\n');
 
             return {
               success: true,
-              content: stdout || `Shell ${bash_id} terminated successfully`,
+              content: stdout || `Shell ${shell_id} terminated successfully`,
               stdout,
               stderr: '',
               exitCode: terminatedShell.exitCode ?? 0,
-              bashId: bash_id
+              shellId: shell_id
             };
           } catch (error) {
             const availableIds = manager.getAvailableIds();

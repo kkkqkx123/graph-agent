@@ -7,6 +7,9 @@
 export { now, timestampFromDate, timestampToDate, timestampToISOString, nowWithTimezone, diffTimestamp, formatDuration } from './timestamp-utils.js';
 export { ok, err, tryCatchAsyncWithSignal, all, any } from './result-utils.js';
 
+// 工具相关辅助函数
+export { generateToolId, truncateText, formatLineNumbers } from './tool-utils.js';
+
 // 简单的ID生成函数（仅用于common-utils内部）
 export function generateId(): string {
   return crypto.randomUUID();

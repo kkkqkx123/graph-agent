@@ -4,7 +4,8 @@
 
 import { writeFile, mkdir } from 'fs/promises';
 import { dirname } from 'path';
-import type { ToolDefinition, ToolResult, ToolRegistryConfig } from '../types.js';
+import type { ToolOutput } from '@modular-agent/types';
+import type { ToolDefinition, ToolRegistryConfig } from '../types.js';
 import { resolvePath } from '../utils.js';
 
 /**
@@ -30,7 +31,7 @@ export function createWriteTool(config: ToolRegistryConfig): ToolDefinition {
       },
       required: ['path', 'content']
     },
-    execute: async (params: Record<string, any>): Promise<ToolResult> => {
+    execute: async (params: Record<string, any>): Promise<ToolOutput> => {
       try {
         const { path, content } = params;
         const filePath = resolvePath(path, config.workspaceDir!);

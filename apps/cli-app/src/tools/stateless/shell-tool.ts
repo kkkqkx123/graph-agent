@@ -5,12 +5,13 @@
 
 import { spawn } from 'child_process';
 import { TimeoutController } from '@modular-agent/tool-executors';
-import type { ToolDefinition, ToolResult } from '../types.js';
+import type { ToolOutput } from '@modular-agent/types';
+import type { ToolDefinition } from '../types.js';
 
 /**
  * Shell执行结果
  */
-interface ShellResult extends ToolResult {
+interface ShellResult extends ToolOutput {
   stdout: string;
   stderr: string;
   exitCode: number;
@@ -59,7 +60,7 @@ Examples:
       },
       required: ['command']
     },
-    execute: async (params: Record<string, any>): Promise<ToolResult> => {
+    execute: async (params: Record<string, any>): Promise<ToolOutput> => {
       const { command, timeout = 120 } = params;
 
       // 验证超时（秒转毫秒）

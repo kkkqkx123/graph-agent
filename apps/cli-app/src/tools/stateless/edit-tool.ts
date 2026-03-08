@@ -4,7 +4,8 @@
 
 import { readFile, writeFile } from 'fs/promises';
 import { existsSync } from 'fs';
-import type { ToolDefinition, ToolResult, ToolRegistryConfig } from '../types.js';
+import type { ToolOutput } from '@modular-agent/types';
+import type { ToolDefinition, ToolRegistryConfig } from '../types.js';
 import { resolvePath } from '../utils.js';
 
 /**
@@ -34,7 +35,7 @@ export function createEditTool(config: ToolRegistryConfig): ToolDefinition {
       },
       required: ['path', 'old_str', 'new_str']
     },
-    execute: async (params: Record<string, any>): Promise<ToolResult> => {
+    execute: async (params: Record<string, any>): Promise<ToolOutput> => {
       try {
         const { path, old_str, new_str } = params;
         const filePath = resolvePath(path, config.workspaceDir!);

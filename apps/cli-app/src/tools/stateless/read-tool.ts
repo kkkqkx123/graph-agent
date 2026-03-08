@@ -4,8 +4,10 @@
 
 import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';
-import type { ToolDefinition, ToolResult, ToolRegistryConfig } from '../types.js';
-import { formatLineNumbers, truncateText, resolvePath } from '../utils.js';
+import type { ToolOutput } from '@modular-agent/types';
+import { formatLineNumbers, truncateText } from '@modular-agent/common-utils';
+import type { ToolDefinition, ToolRegistryConfig } from '../types.js';
+import { resolvePath } from '../utils.js';
 
 /**
  * 创建文件读取工具
@@ -34,7 +36,7 @@ export function createReadTool(config: ToolRegistryConfig): ToolDefinition {
       },
       required: ['path']
     },
-    execute: async (params: Record<string, any>): Promise<ToolResult> => {
+    execute: async (params: Record<string, any>): Promise<ToolOutput> => {
       try {
         const { path, offset, limit } = params;
         const filePath = resolvePath(path, config.workspaceDir!);

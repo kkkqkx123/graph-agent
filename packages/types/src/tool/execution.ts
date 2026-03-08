@@ -3,7 +3,6 @@
  */
 
 import type { ID, Timestamp } from '../common.js';
-import type { Tool } from './definition.js';
 
 /**
  * 工具调用记录类型
@@ -44,12 +43,13 @@ export interface ToolExecutionOptions {
 }
 
 /**
- * 工具执行结果
+ * 工具执行结果（SDK 内部使用）
+ * 包含完整的执行元数据，用于内部流转
  */
 export interface ToolExecutionResult {
   /** 是否成功 */
   success: boolean;
-  /** 执行结果 */
+  /** 执行结果（原始数据） */
   result?: any;
   /** 错误信息 */
   error?: string;
@@ -57,4 +57,17 @@ export interface ToolExecutionResult {
   executionTime: number;
   /** 重试次数 */
   retryCount: number;
+}
+
+/**
+ * 工具输出（工具实现层使用）
+ * 工具 execute 函数的返回值类型
+ */
+export interface ToolOutput {
+  /** 是否成功 */
+  success: boolean;
+  /** 输出内容（可以是任意类型，最终会序列化为字符串发送给 LLM） */
+  content: any;
+  /** 错误信息 */
+  error?: string;
 }

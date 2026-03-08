@@ -6,7 +6,8 @@
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { dirname, resolve } from 'path';
-import type { ToolDefinition, ToolResult, ToolRegistryConfig } from '../types.js';
+import type { ToolOutput } from '@modular-agent/types';
+import type { ToolDefinition, ToolRegistryConfig } from '../types.js';
 
 /**
  * 笔记条目
@@ -64,7 +65,7 @@ class SessionNoteInstance {
   /**
    * 记录笔记
    */
-  async record(content: string, category: string = 'general'): Promise<ToolResult> {
+  async record(content: string, category: string = 'general'): Promise<ToolOutput> {
     try {
       await this.loadNotes();
 
@@ -93,7 +94,7 @@ class SessionNoteInstance {
   /**
    * 回忆笔记
    */
-  async recall(category?: string): Promise<ToolResult> {
+  async recall(category?: string): Promise<ToolOutput> {
     try {
       await this.loadNotes();
 

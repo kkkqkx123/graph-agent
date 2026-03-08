@@ -3,7 +3,7 @@
  * 执行应用层提供的无状态函数工具，通过函数注册表管理函数，支持版本控制和调用统计
  */
 
-import type { Tool, ID } from '@modular-agent/types';
+import type { Tool, ID, ToolOutput } from '@modular-agent/types';
 import type { StatelessToolConfig } from '@modular-agent/types';
 import { ToolError } from '@modular-agent/types';
 import { BaseExecutor } from '../core/base/BaseExecutor.js';
@@ -65,11 +65,22 @@ export class StatelessExecutor extends BaseExecutor {
         );
       }
 
-      // 执行函数
-      const result = await this.functionRegistry.execute(tool.id, parameters);
+      // 执行函数，获取 ToolOutput
+      const output = await this.functionRegistry.execute(tool.id, parameters);
 
+      // 如果工具执行失败，抛出错误
+      if (!output.success) {
+        throw new ToolError(
+          output.error || 'Tool execution failed',
+          tool.id,
+          'STATELESS',
+          { parameters }
+        );
+      }
+
+      // 返回结果，将 ToolOutput.content 作为 result
       return {
-        result,
+        result: output.content,
         functionStats: this.functionRegistry.getFunctionStats(tool.id)
       };
     } catch (error) {
@@ -91,7 +102,7 @@ export class StatelessExecutor extends BaseExecutor {
    */
   registerFunction(
     toolId: ID,
-    execute: (parameters: any) => Promise<any>,
+    execute: (parameters: any) => Promise<ToolOutput>,
     version?: string,
     description?: string
   ): void {
@@ -102,7 +113,7 @@ export class StatelessExecutor extends BaseExecutor {
    * 批量注册函数
    */
   registerBatch(functions: Record<string, {
-    execute: (parameters: any) => Promise<any>;
+    execute: (parameters: any) => Promise<ToolOutput>;
     version?: string;
     description?: string;
   }>): void {

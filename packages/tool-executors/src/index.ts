@@ -48,3 +48,7 @@ export type {
   FunctionRegistryItem,
   FunctionRegistryConfig
 } from './stateless/types.js';
+
+// 辅助函数
+export { toSdkTool, toSdkTools } from './utils.js';
+export type { ToolDefinitionLike } from './utils.js';

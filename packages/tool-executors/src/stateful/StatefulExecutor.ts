@@ -4,7 +4,7 @@
  */
 
 import { now } from '@modular-agent/common-utils';
-import type { Tool } from '@modular-agent/types';
+import type { Tool, ToolOutput } from '@modular-agent/types';
 import type { StatefulToolConfig, StatefulToolFactory } from '@modular-agent/types';
 import { ToolError } from '@modular-agent/types';
 import { BaseExecutor } from '../core/base/BaseExecutor.js';
@@ -91,10 +91,21 @@ export class StatefulExecutor extends BaseExecutor {
         );
       }
 
-      const result = await instance.execute(parameters);
+      const output: ToolOutput = await instance.execute(parameters);
 
+      // 如果工具执行失败，抛出错误
+      if (!output.success) {
+        throw new ToolError(
+          output.error || 'Tool execution failed',
+          tool.id,
+          'STATEFUL',
+          { parameters, threadId }
+        );
+      }
+
+      // 返回结果，将 ToolOutput.content 作为 result
       return {
-        result,
+        result: output.content,
         threadId
       };
     } catch (error) {

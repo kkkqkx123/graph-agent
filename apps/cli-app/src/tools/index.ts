@@ -3,8 +3,11 @@
  * 导出所有工具相关的类型、注册中心和工具定义
  */
 
-// 类型导出
-export type { ToolResult, ToolDefinition, ToolRegistryConfig } from './types.js';
+// 类型导出（从 SDK 重新导出）
+export type { ToolOutput } from '@modular-agent/types';
+
+// app 层特有类型导出
+export type { ToolDefinition, ToolRegistryConfig } from './types.js';
 
 // 注册中心导出
 export { ToolRegistry, createToolRegistry } from './registry.js';
@@ -16,7 +19,9 @@ export {
   StatefulExecutor,
   TimeoutController,
   ParameterValidator,
-  RetryStrategy
+  RetryStrategy,
+  toSdkTool,
+  toSdkTools
 } from '@modular-agent/tool-executors';
 
 // 无状态工具导出
@@ -33,10 +38,10 @@ export {
   registerStatefulTools,
   createRecordNoteTool,
   createRecallNoteTool,
-  createBashBackgroundTool,
-  createBashOutputTool,
-  createBashKillTool
+  createShellBackgroundTool,
+  createShellOutputTool,
+  createShellKillTool
 } from './stateful/index.js';
 
-// 辅助函数导出
+// 辅助函数导出（从 common-utils 重新导出）
 export { generateToolId, truncateText, formatLineNumbers, resolvePath } from './utils.js';

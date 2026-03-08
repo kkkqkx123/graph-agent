@@ -2,12 +2,14 @@
  * Stateless执行器类型定义
  */
 
+import type { ToolOutput } from '@modular-agent/types';
+
 /**
  * 函数注册表项
  */
 export interface FunctionRegistryItem {
   /** 函数 */
-  execute: (parameters: any) => Promise<any>;
+  execute: (parameters: any) => Promise<ToolOutput>;
   /** 版本 */
   version?: string;
   /** 描述 */
