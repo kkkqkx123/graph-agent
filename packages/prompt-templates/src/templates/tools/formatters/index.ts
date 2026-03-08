@@ -1,0 +1,15 @@
+/**
+ * 格式转换模板统一导出
+ */
+
+export {
+  TOOL_XML_FORMAT_TEMPLATE,
+  TOOLS_XML_LIST_TEMPLATE,
+  TOOL_XML_PARAMETER_LINE_TEMPLATE
+} from './xml-format.js';
+
+export {
+  TOOL_JSON_FORMAT_TEMPLATE,
+  TOOLS_JSON_LIST_TEMPLATE,
+  TOOL_JSON_PARAMETER_LINE_TEMPLATE
+} from './json-format.js';

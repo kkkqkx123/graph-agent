@@ -20,7 +20,23 @@ export interface ToolProperty {
   enum?: any[];
   /** 格式约束（可选，如uri、email、date、date-time等） */
   format?: string;
-  
+  /** 示例值（可选） */
+  examples?: any[];
+
+  // 字符串约束
+  /** 最小长度 */
+  minLength?: number;
+  /** 最大长度 */
+  maxLength?: number;
+  /** 正则模式 */
+  pattern?: string;
+
+  // 数值约束
+  /** 最小值 */
+  minimum?: number;
+  /** 最大值 */
+  maximum?: number;
+
   // 对象结构
   /** 对象属性定义 */
   properties?: Record<string, ToolProperty>;
@@ -28,20 +44,27 @@ export interface ToolProperty {
   required?: string[];
   /** 额外属性定义 */
   additionalProperties?: boolean | ToolProperty;
-  
+
   // 数组结构
   /** 数组元素类型定义 */
   items?: ToolProperty;
+
+  // 允许其他 JSON Schema 字段（用于扩展）
+  [key: string]: any;
 }
 
 /**
  * 工具参数schema类型（JSON Schema格式）
  */
 export interface ToolParameters {
+  /** 类型（固定为 object） */
+  type?: 'object';
   /** 参数属性定义 */
   properties: Record<string, ToolProperty>;
   /** 必需参数列表 */
   required: string[];
+  /** 额外属性定义 */
+  additionalProperties?: boolean | ToolProperty;
 }
 
 /**

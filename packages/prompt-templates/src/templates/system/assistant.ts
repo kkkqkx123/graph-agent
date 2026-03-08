@@ -11,7 +11,7 @@ import type { PromptTemplate } from '../../types/template.js';
 export const ASSISTANT_SYSTEM_TEMPLATE: PromptTemplate = {
   id: 'system.assistant',
   name: 'Assistant System Prompt',
-  description: 'General prompts for the assistant system',
+  description: '通用助手系统提示词',
   category: 'system',
   content: `you are an intelligent assistant, ready to help ith various tasks.
 ## Core capabilities:

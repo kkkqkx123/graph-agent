@@ -19,3 +19,9 @@ export * from './tool-description-generator.js';
 
 // 工具参数描述工具
 export * from './tool-parameters-describer.js';
+
+// 工具 Schema 格式转换工具
+export * from './tool-schema-formatter.js';
+
+// 工具 Schema 清理工具
+export * from './tool-schema-cleaner.js';

@@ -11,7 +11,7 @@ import type { PromptTemplate } from '../../types/template.js';
 export const FORMAT_RULE_TEMPLATE: PromptTemplate = {
   id: 'rules.format',
   name: 'Format Rules',
-  description: 'Code formatting rules',
+  description: '代码格式规则',
   category: 'rules',
   content: `## Code Formatting Rules
 

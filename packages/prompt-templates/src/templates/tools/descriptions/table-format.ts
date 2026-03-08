@@ -15,8 +15,8 @@ export const TOOL_DESCRIPTION_TABLE_TEMPLATE: PromptTemplate = {
   category: 'tools',
   content: '| {{toolName}} | {{toolId}} | {{toolDescription}} |',
   variables: [
-    { name: 'toolName', type: 'string', required: true, description: '工具名称' },
-    { name: 'toolId', type: 'string', required: true, description: '工具ID' },
-    { name: 'toolDescription', type: 'string', required: true, description: '工具描述' }
+    { name: 'toolName', type: 'string', required: true, description: 'Tool name' },
+    { name: 'toolId', type: 'string', required: true, description: 'Tool ID' },
+    { name: 'toolDescription', type: 'string', required: true, description: 'Tool description' }
   ]
 };

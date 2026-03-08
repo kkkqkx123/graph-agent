@@ -11,7 +11,7 @@ import type { PromptTemplate } from '../../types/template.js';
 export const SAFETY_RULE_TEMPLATE: PromptTemplate = {
   id: 'rules.safety',
   name: 'Safety Rules',
-  description: 'Security-related rules',
+  description: '安全相关规则',
   category: 'rules',
   content: `## Security Rules
 

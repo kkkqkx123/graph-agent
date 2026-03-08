@@ -1,4 +1,4 @@
-# Modular Agent Framework Developer Guide
+# Developer Guide
 
 This document provides essential information for AI agents working with the Modular Agent Framework.
 
@@ -145,4 +145,6 @@ For example, to run all tests in the `sdk/core/services` package, run `cd sdk; p
 ## Language Guidelines
 
 - comments and documentation in Chinese
-- LLM-related configurations and code in English (mainly prompts)
+- LLM-related configurations and code in English (mainly prompts).
+This contain:
+packages\prompt-templates package

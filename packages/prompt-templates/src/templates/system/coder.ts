@@ -11,7 +11,7 @@ import type { PromptTemplate } from '../../types/template.js';
 export const CODER_SYSTEM_TEMPLATE: PromptTemplate = {
   id: 'system.coder',
   name: 'Coder System Prompt',
-  description: 'Programmer assistant system prompts',
+  description: '编程助手系统提示词',
   category: 'system',
   content: `You are a professional programmer assistant, skilled in coding, debugging, and optimizing software.
 
