@@ -1,0 +1,30 @@
+{
+  "name": "@modular-agent/storage",
+  "version": "1.0.0",
+  "description": "通用存储包，提供 JSON 和 SQLite 存储后端",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run --reporter=verbose",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "typecheck:tests": "tsc --noEmit -p tsconfig.test.json"
+  },
+  "dependencies": {
+    "@modular-agent/types": "workspace:*",
+    "@modular-agent/common-utils": "workspace:*",
+    "better-sqlite3": "^12.6.2"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13"
+  }
+}
