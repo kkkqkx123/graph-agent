@@ -15,8 +15,8 @@
  */
 
 import { isAbortError, checkInterruption } from '@modular-agent/common-utils';
-import type { ToolService } from '../../services/tool-service.js';
-import type { EventManager } from '../../services/event-manager.js';
+import type { ToolService } from '../../../core/services/tool-service.js';
+import type { EventManager } from '../../../core/services/event-manager.js';
 import type { Tool, ID } from '@modular-agent/types';
 import { safeEmit } from '../utils/event/event-emitter.js';
 import { now, diffTimestamp, generateId } from '@modular-agent/common-utils';
@@ -24,7 +24,7 @@ import type { ConversationManager } from '../managers/conversation-manager.js';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
 import { ThreadInterruptedException, SystemExecutionError } from '@modular-agent/types';
-import { MessageBuilder } from '../../messages/message-builder.js';
+import { MessageBuilder } from '../../../core/messages/message-builder.js';
 import type { ToolVisibilityCoordinator } from '../coordinators/tool-visibility-coordinator.js';
 import {
   buildMessageAddedEvent,

@@ -6,8 +6,8 @@
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import type { NodeExecutionResult } from '@modular-agent/types';
 import { ValidationError, ThreadContextNotFoundError } from '@modular-agent/types';
-import type { ThreadRegistry } from '../../../services/thread-registry.js';
-import type { EventManager } from '../../../services/event-manager.js';
+import type { ThreadRegistry } from '../../../../core/services/thread-registry.js';
+import type { EventManager } from '../../../../core/services/event-manager.js';
 import { getErrorMessage, now } from '@modular-agent/common-utils';
 import { buildNodeCompletedEvent } from '../../utils/event/index.js';
 

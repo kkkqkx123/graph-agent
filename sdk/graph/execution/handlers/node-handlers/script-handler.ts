@@ -11,8 +11,8 @@
 import type { Node, ScriptNodeConfig } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
 import { now, getErrorMessage } from '@modular-agent/common-utils';
-import { getContainer } from '../../../di/index.js';
-import * as Identifiers from '../../../di/service-identifiers.js';
+import { getContainer } from '../../../../core/di/index.js';
+import * as Identifiers from '../../../../core/di/service-identifiers.js';
 
 /**
  * Script节点处理函数

@@ -7,13 +7,13 @@
 
 import type { PreprocessedGraph } from '@modular-agent/types';
 import type { Thread, ThreadOptions, ThreadStatus } from '@modular-agent/types';
-import { ThreadEntity } from '../entities/thread-entity.js';
-import { ExecutionState } from '../entities/execution-state.js';
+import { ThreadEntity } from '../../core/entities/thread-entity.js';
+import { ExecutionState } from '../../core/entities/execution-state.js';
 import { generateId, now as getCurrentTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
 import { ExecutionError, RuntimeValidationError } from '@modular-agent/types';
-import type { GraphRegistry } from '../services/graph-registry.js';
-import { getContainer } from '../di/index.js';
-import * as Identifiers from '../di/service-identifiers.js';
+import type { GraphRegistry } from '../../core/services/graph-registry.js';
+import { getContainer } from '../../core/di/index.js';
+import * as Identifiers from '../../core/di/service-identifiers.js';
 import { createContextualLogger } from '../../utils/contextual-logger.js';
 
 const logger = createContextualLogger();
@@ -24,7 +24,7 @@ const logger = createContextualLogger();
 export class ThreadBuilder {
   private threadTemplates: Map<string, ThreadEntity> = new Map();
 
-  constructor() {}
+  constructor() { }
 
   /**
    * 获取图注册表（从DI容器）

@@ -110,7 +110,7 @@ export class APIDependencyManager {
   /**
    * 获取线程生命周期协调器
    */
-  getThreadLifecycleCoordinator(): import('../../core/execution/coordinators/thread-lifecycle-coordinator.js').ThreadLifecycleCoordinator {
+  getThreadLifecycleCoordinator(): import('../../graph/execution/coordinators/thread-lifecycle-coordinator.js').ThreadLifecycleCoordinator {
     return this.container.get(Identifiers.ThreadLifecycleCoordinator);
   }
   

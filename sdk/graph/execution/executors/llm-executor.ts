@@ -17,9 +17,9 @@
 import { isAbortError, checkInterruption, getInterruptionType, getThreadId, getNodeId } from '@modular-agent/common-utils';
 import type { InterruptionCheckResult } from '@modular-agent/common-utils';
 import type { LLMMessage, LLMResult } from '@modular-agent/types';
-import { LLMWrapper } from '../../llm/wrapper.js';
+import { LLMWrapper } from '../../../core/llm/wrapper.js';
 import { ExecutionError, ThreadInterruptedException, LLMError } from '@modular-agent/types';
-import type { EventManager } from '../../services/event-manager.js';
+import type { EventManager } from '../../../core/services/event-manager.js';
 
 /**
  * LLM执行请求数据

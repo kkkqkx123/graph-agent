@@ -15,15 +15,15 @@
  * - 支持同步和异步执行模式
  */
 
-import type { ThreadEntity } from '../../../entities/thread-entity.js';
-import type { ThreadRegistry } from '../../../services/thread-registry.js';
-import type { TaskRegistry } from '../../../services/task-registry.js';
-import type { EventManager } from '../../../services/event-manager.js';
+import type { ThreadEntity } from '../../../../core/entities/thread-entity.js';
+import type { ThreadRegistry } from '../../../../core/services/thread-registry.js';
+import type { TaskRegistry } from '../../../../core/services/task-registry.js';
+import type { EventManager } from '../../../../core/services/event-manager.js';
 import type { ThreadBuilder } from '../../thread-builder.js';
 import type { TaskQueueManager } from '../../managers/task-queue-manager.js';
 import type { ThreadExecutor } from '../../thread-executor.js';
 import { DynamicThreadManager } from '../../managers/dynamic-thread-manager.js';
-import { ThreadPoolService } from '../../../services/thread-pool-service.js';
+import { ThreadPoolService } from '../../../../core/services/thread-pool-service.js';
 import {
   type CreateDynamicThreadRequest,
   type ExecutedThreadResult,
@@ -32,8 +32,8 @@ import {
 } from '../../types/dynamic-thread.types.js';
 import { getErrorMessage, getErrorOrNew, now, diffTimestamp } from '@modular-agent/common-utils';
 import { ToolError } from '@modular-agent/types';
-import { getContainer } from '../../../di/index.js';
-import * as Identifiers from '../../../di/service-identifiers.js';
+import { getContainer } from '../../../../core/di/index.js';
+import * as Identifiers from '../../../../core/di/service-identifiers.js';
 
 /**
  * 工具执行结果接口

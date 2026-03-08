@@ -13,9 +13,9 @@ import type { Thread } from '@modular-agent/types';
 import { ExecutionError } from '@modular-agent/types';
 import { now, diffTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
 import { LLMExecutionCoordinator } from '../../coordinators/llm-execution-coordinator.js';
-import { LLMWrapper } from '../../../llm/wrapper.js';
+import { LLMWrapper } from '../../../../core/llm/wrapper.js';
 import { executeHumanRelay } from '../human-relay-handler.js';
-import type { EventManager } from '../../../services/event-manager.js';
+import type { EventManager } from '../../../../core/services/event-manager.js';
 
 /**
  * LLM节点执行结果

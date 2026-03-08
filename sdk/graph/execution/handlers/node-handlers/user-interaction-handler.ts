@@ -13,7 +13,7 @@ import type { Thread } from '@modular-agent/types';
 import type { UserInteractionHandler as AppUserInteractionHandler, UserInteractionRequest } from '@modular-agent/types';
 import type { VariableScope } from '@modular-agent/types';
 import { ExecutionError } from '@modular-agent/types';
-import { generateId } from '../../../../utils/index.js';
+import { generateId } from '../../../../core/utils/index.js';
 import { now, diffTimestamp } from '@modular-agent/common-utils';
 
 /**

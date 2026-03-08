@@ -57,12 +57,12 @@ vi.mock('../context/execution-context.js', () => ({
 
 // 在 mock 之后导入
 import { ThreadExecutor } from '../thread-executor.js';
-import { ThreadEntity } from '../../entities/thread-entity.js';
+import { ThreadEntity } from '../../core/entities/thread-entity.js';
 import { ExecutionContext } from '../context/execution-context.js';
 import { NodeExecutionCoordinator } from '../coordinators/node-execution-coordinator.js';
 import { LLMExecutionCoordinator } from '../coordinators/llm-execution-coordinator.js';
 import { ConversationManager } from '../managers/conversation-manager.js';
-import { GraphNavigator } from '../../graph/graph-navigator.js';
+import { GraphNavigator } from '../../core/graph/graph-navigator.js';
 import { handleNodeFailure, handleExecutionError } from '../handlers/error-handler.js';
 
 describe('ThreadExecutor', () => {

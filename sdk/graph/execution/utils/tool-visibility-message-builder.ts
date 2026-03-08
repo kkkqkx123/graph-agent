@@ -11,9 +11,9 @@
 
 import type { ToolScope } from '../managers/tool-context-manager.js';
 import type { VisibilityChangeType } from '../types/tool-visibility.types.js';
-import type { ToolService } from '../../services/tool-service.js';
+import type { ToolService } from '../../../../services/tool-service.js';
 import { now, renderTemplate } from '@modular-agent/common-utils';
-import { generateToolTable } from '../../utils/tool-description-generator.js';
+import { generateToolTable } from '../../../core/utils/tool-description-generator.js';
 import {
   TOOL_VISIBILITY_DECLARATION_TEMPLATE,
   VISIBILITY_CHANGE_TYPE_TEXTS

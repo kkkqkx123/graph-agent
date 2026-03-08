@@ -17,14 +17,14 @@
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import type { ExecuteTriggeredSubgraphActionConfig } from '@modular-agent/types';
 import { RuntimeValidationError, ThreadContextNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
-import type { ThreadRegistry } from '../../../services/thread-registry.js';
-import type { EventManager } from '../../../services/event-manager.js';
+import type { ThreadRegistry } from '../../../../core/services/thread-registry.js';
+import type { EventManager } from '../../../../core/services/event-manager.js';
 import type { ThreadBuilder } from '../../thread-builder.js';
 import type { TaskQueueManager } from '../../managers/task-queue-manager.js';
 import { getErrorMessage, now, diffTimestamp } from '@modular-agent/common-utils';
 import type { TriggeredSubgraphTask } from '../../types/triggered-subworkflow.types.js';
-import { getContainer } from '../../../di/index.js';
-import * as Identifiers from '../../../di/service-identifiers.js';
+import { getContainer } from '../../../../core/di/index.js';
+import * as Identifiers from '../../../../core/di/service-identifiers.js';
 
 /**
  * 创建成功结果（同步执行）

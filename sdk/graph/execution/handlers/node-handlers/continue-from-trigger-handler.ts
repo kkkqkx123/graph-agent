@@ -8,9 +8,9 @@ import type { Thread } from '@modular-agent/types';
 import type { ContinueFromTriggerNodeConfig } from '@modular-agent/types';
 import { ThreadStatus } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
-import { MessageArrayUtils } from '../../../utils/message-array-utils.js';
-import { executeOperation } from '../../../utils/message-operation-utils.js';
-import { getVisibleMessages } from '../../../utils/visible-range-calculator.js';
+import { MessageArrayUtils } from '../../../../core/utils/message-array-utils.js';
+import { executeOperation } from '../../../../core/utils/message-operation-utils.js';
+import { getVisibleMessages } from '../../../../core/utils/visible-range-calculator.js';
 import type { MessageOperationContext } from '@modular-agent/types';
 
 /**

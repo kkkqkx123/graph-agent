@@ -17,7 +17,7 @@ import type { LLMMessage, ID } from '@modular-agent/types';
 import { MessageRole } from '@modular-agent/types';
 import type { WorkflowConfig } from '@modular-agent/types';
 import { ConversationManager } from '../managers/conversation-manager.js';
-import type { EventManager } from '../../services/event-manager.js';
+import type { EventManager } from '../../../core/services/event-manager.js';
 import { safeEmit } from '../utils/event/event-emitter.js';
 import type { ToolApprovalData } from '@modular-agent/types';
 import { generateId } from '../../../utils/index.js';

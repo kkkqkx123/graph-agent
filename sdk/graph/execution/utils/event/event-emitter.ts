@@ -8,7 +8,7 @@
  * - 简化调用：简化事件触发的调用方式
  */
 
-import type { EventManager } from '../../../services/event-manager.js';
+import type { EventManager } from '../../../../core/services/event-manager.js';
 import type { Event, EventType } from '@modular-agent/types';
 import { ExecutionError } from '@modular-agent/types';
 import { getErrorOrNew } from '@modular-agent/common-utils';

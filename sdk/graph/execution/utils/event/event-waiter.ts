@@ -15,7 +15,7 @@
  * - 事件驱动，避免轮询
  */
 
-import type { EventManager } from '../../../services/event-manager.js';
+import type { EventManager } from '../../../../core/services/event-manager.js';
 import { EventType, TimeoutError } from '@modular-agent/types';
 import { now, diffTimestamp } from '@modular-agent/common-utils';
 

@@ -9,11 +9,11 @@
  * - 验证必需依赖是否存在
  */
 
-import type { ThreadRegistry } from '../../services/thread-registry.js';
-import type { WorkflowRegistry } from '../../services/workflow-registry.js';
-import type { GraphRegistry } from '../../services/graph-registry.js';
-import type { EventManager } from '../../services/event-manager.js';
-import type { ToolService } from '../../services/tool-service.js';
+import type { ThreadRegistry } from '../../../core/services/thread-registry.js';
+import type { WorkflowRegistry } from '../../../core/services/workflow-registry.js';
+import type { GraphRegistry } from '../../../core/services/graph-registry.js';
+import type { EventManager } from '../../../core/services/event-manager.js';
+import type { ToolService } from '../../../core/services/tool-service.js';
 import type { LLMExecutor } from '../executors/llm-executor.js';
 import type { ToolCallExecutor } from '../executors/tool-call-executor.js';
 import type { InterruptionDetector } from '../managers/interruption-detector.js';

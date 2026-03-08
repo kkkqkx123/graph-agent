@@ -4,7 +4,7 @@
  */
 
 // 执行实体
-export { ThreadEntity, ExecutionState, type SubgraphContext } from '../entities/index.js';
+export { ThreadEntity, ExecutionState, type SubgraphContext } from '../../core/entities/index.js';
 
 // 主要执行引擎
 export { ThreadExecutor, type ThreadExecutorDependencies } from './thread-executor.js';
@@ -22,7 +22,7 @@ export {
 } from './utils/thread-state-validator.js';
 
 // Thread注册表
-export { ThreadRegistry } from '../services/thread-registry.js';
+export { ThreadRegistry } from '../../core/services/thread-registry.js';
 
 // 变量协调器和状态管理器
 export { VariableCoordinator } from './coordinators/variable-coordinator.js';

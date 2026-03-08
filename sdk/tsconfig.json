@@ -10,6 +10,8 @@
     "include": [
         "index.ts",
         "core/**/*",
+        "graph/**/*",
+        "agent/**/*",
         "api/**/*",
         "utils/**/*"
     ],

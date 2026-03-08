@@ -25,8 +25,8 @@ import { ThreadBuilder } from '../thread-builder.js';
 import { ThreadExecutor } from '../thread-executor.js';
 import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager.js';
 import { ThreadCascadeManager } from '../managers/thread-cascade-manager.js';
-import type { ThreadRegistry } from '../../services/thread-registry.js';
-import type { WorkflowRegistry } from '../../services/workflow-registry.js';
+import type { ThreadRegistry } from '../../../core/services/thread-registry.js';
+import type { WorkflowRegistry } from '../../../core/services/workflow-registry.js';
 import { LifecycleCapable } from '../managers/lifecycle-capable.js';
 
 /**
@@ -42,7 +42,7 @@ export class ThreadLifecycleCoordinator implements LifecycleCapable<{}> {
     private readonly threadBuilder: ThreadBuilder,
     private readonly threadExecutor: ThreadExecutor,
     private readonly workflowRegistry: WorkflowRegistry
-  ) {}
+  ) { }
 
 
   /**

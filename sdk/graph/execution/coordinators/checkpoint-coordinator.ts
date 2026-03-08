@@ -7,13 +7,13 @@ import { NotFoundError, ThreadContextNotFoundError, CheckpointNotFoundError, Wor
 import { CheckpointType, DEFAULT_DELTA_STORAGE_CONFIG } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
 import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot, MessageMarkMap, DeltaStorageConfig } from '@modular-agent/types';
-import type { ThreadRegistry } from '../../services/thread-registry.js';
-import type { WorkflowRegistry } from '../../services/workflow-registry.js';
-import type { GraphRegistry } from '../../services/graph-registry.js';
+import type { ThreadRegistry } from '../../../core/services/thread-registry.js';
+import type { WorkflowRegistry } from '../../../core/services/workflow-registry.js';
+import type { GraphRegistry } from '../../../core/services/graph-registry.js';
 import { CheckpointStateManager } from '../managers/checkpoint-state-manager.js';
 import { ConversationManager } from '../managers/conversation-manager.js';
 import { VariableStateManager } from '../managers/variable-state-manager.js';
-import { ThreadEntity } from '../../entities/thread-entity.js';
+import { ThreadEntity } from '../../../core/entities/thread-entity.js';
 import { CheckpointDiffCalculator } from '../utils/checkpoint-diff-calculator.js';
 import { DeltaCheckpointRestorer } from '../utils/checkpoint-delta-restorer.js';
 import { generateId } from '../../../utils/index.js';
@@ -327,7 +327,7 @@ export class CheckpointCoordinator {
     }
 
     // 步骤10：创建 ThreadEntity
-    const { ExecutionState } = await import('../../entities/execution-state.js');
+    const { ExecutionState } = await import('../../../core/entities/execution-state.js');
     const executionState = new ExecutionState();
     const threadEntity = new ThreadEntity(thread as Thread, executionState, conversationManager);
 
@@ -482,32 +482,32 @@ export class CheckpointCoordinator {
     return checkpointIds[0];
   }
 
-    /**
-     * 验证检查点完整性和兼容性（静态私有方法）
-     */
-    private static validateCheckpoint(checkpoint: Checkpoint): void {
-      // 验证必需字段
-      if (!checkpoint.id || !checkpoint.threadId || !checkpoint.workflowId) {
-        throw new Error('Invalid checkpoint: missing required fields');
+  /**
+   * 验证检查点完整性和兼容性（静态私有方法）
+   */
+  private static validateCheckpoint(checkpoint: Checkpoint): void {
+    // 验证必需字段
+    if (!checkpoint.id || !checkpoint.threadId || !checkpoint.workflowId) {
+      throw new Error('Invalid checkpoint: missing required fields');
+    }
+
+    // 根据检查点类型验证
+    if (checkpoint.type === CheckpointType.DELTA) {
+      // 增量检查点需要验证 delta 字段
+      if (!checkpoint.delta && !checkpoint.previousCheckpointId) {
+        throw new Error('Invalid delta checkpoint: missing delta data and previous checkpoint reference');
+      }
+    } else {
+      // 完整检查点需要验证 threadState 字段
+      if (!checkpoint.threadState) {
+        throw new Error('Invalid full checkpoint: missing thread state');
       }
 
-      // 根据检查点类型验证
-      if (checkpoint.type === CheckpointType.DELTA) {
-        // 增量检查点需要验证 delta 字段
-        if (!checkpoint.delta && !checkpoint.previousCheckpointId) {
-          throw new Error('Invalid delta checkpoint: missing delta data and previous checkpoint reference');
-        }
-      } else {
-        // 完整检查点需要验证 threadState 字段
-        if (!checkpoint.threadState) {
-          throw new Error('Invalid full checkpoint: missing thread state');
-        }
-
-        // 验证 threadState 结构
-        const { threadState } = checkpoint;
-        if (!threadState.status || !threadState.currentNodeId) {
-          throw new Error('Invalid checkpoint: incomplete thread state');
-        }
+      // 验证 threadState 结构
+      const { threadState } = checkpoint;
+      if (!threadState.status || !threadState.currentNodeId) {
+        throw new Error('Invalid checkpoint: incomplete thread state');
       }
     }
+  }
 }

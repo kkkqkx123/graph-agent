@@ -5,12 +5,12 @@
  */
 
 import type { Thread } from '@modular-agent/types';
-import type { ThreadEntity } from '../../entities/thread-entity.js';
+import type { ThreadEntity } from '../../../core/entities/thread-entity.js';
 import type { ThreadBuilder } from '../thread-builder.js';
-import type { ThreadRegistry } from '../../services/thread-registry.js';
-import type { EventManager } from '../../services/event-manager.js';
+import type { ThreadRegistry } from '../../../core/services/thread-registry.js';
+import type { EventManager } from '../../../core/services/event-manager.js';
 import { ExecutionError, RuntimeValidationError } from '@modular-agent/types';
-import { MessageArrayUtils } from '../../utils/message-array-utils.js';
+import { MessageArrayUtils } from '../../../core/utils/message-array-utils.js';
 import { getErrorMessage, getErrorOrUndefined } from '@modular-agent/common-utils';
 import {
   buildThreadForkStartedEvent,

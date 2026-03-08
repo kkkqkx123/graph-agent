@@ -14,7 +14,7 @@
  * - 使用纯函数，无内部状态
  */
 
-import type { ThreadEntity } from '../../entities/thread-entity.js';
+import type { ThreadEntity } from '../../../core/entities/thread-entity.js';
 import { now } from '@modular-agent/common-utils';
 
 /**

@@ -26,7 +26,7 @@
  * - accessor.get('loop.item') - 获取循环变量
  */
 
-import type { ThreadEntity } from '../../entities/thread-entity.js';
+import type { ThreadEntity } from '../../../core/entities/thread-entity.js';
 import type { VariableScope } from '@modular-agent/types';
 import { resolvePath } from '@modular-agent/common-utils';
 

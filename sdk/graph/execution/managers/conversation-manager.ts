@@ -22,8 +22,8 @@ import type { MessageMarkMap } from '@modular-agent/types';
 import { MessageRole } from '@modular-agent/types';
 import { RuntimeValidationError, ErrorSeverity } from '@modular-agent/types';
 import { TokenUsageTracker } from '../token-usage-tracker.js';
-import { getVisibleOriginalIndices, getVisibleMessages } from '../../utils/visible-range-calculator.js';
-import { startNewBatch, rollbackToBatch as rollbackBatch } from '../../utils/batch-management-utils.js';
+import { getVisibleOriginalIndices, getVisibleMessages } from '../../../core/utils/visible-range-calculator.js';
+import { startNewBatch, rollbackToBatch as rollbackBatch } from '../../../core/utils/batch-management-utils.js';
 import {
   getIndicesByRole,
   getRecentIndicesByRole,
@@ -33,13 +33,13 @@ import {
   getVisibleRecentIndicesByRole,
   getVisibleRangeIndicesByRole,
   getVisibleCountByRole
-} from '../../utils/message-index-utils.js';
-import type { EventManager } from '../../services/event-manager.js';
+} from '../../../core/utils/message-index-utils.js';
+import type { EventManager } from '../../../core/services/event-manager.js';
 import type { LifecycleCapable } from './lifecycle-capable.js';
 import { createContextualLogger } from '../../../utils/contextual-logger.js';
 import { emit } from '../utils/event/event-emitter.js';
 import { buildTokenLimitExceededEvent } from '../utils/event/event-builder.js';
-import { generateToolListDescription } from '../../utils/tool-description-generator.js';
+import { generateToolListDescription } from '../../../core/utils/tool-description-generator.js';
 
 const logger = createContextualLogger();
 
