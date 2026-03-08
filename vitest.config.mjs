@@ -4,6 +4,11 @@
  */
 
 import { defineConfig } from 'vitest/config';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export default defineConfig({
   test: {
@@ -69,10 +74,10 @@ export default defineConfig({
     
     // 别名配置
     alias: {
-      '@modular-agent/common-utils': '/packages/common-utils/src',
-      '@modular-agent/types': '/packages/types/src',
-      '@modular-agent/tool-executors': '/packages/tool-executors/src',
-      '@modular-agent/sdk': '/sdk/src'
+      '@modular-agent/common-utils': resolve(__dirname, 'packages/common-utils/src'),
+      '@modular-agent/types': resolve(__dirname, 'packages/types/src'),
+      '@modular-agent/tool-executors': resolve(__dirname, 'packages/tool-executors/src'),
+      '@modular-agent/sdk': resolve(__dirname, 'sdk/src')
     }
   }
 });

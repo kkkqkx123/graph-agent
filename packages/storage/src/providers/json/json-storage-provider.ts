@@ -199,9 +199,18 @@ export class JsonStorageProvider<T> implements StorageProvider<T> {
         ...metadata
       };
 
+      // 处理 Uint8Array 序列化
+      let serializedData: unknown = entity;
+      if (entity instanceof Uint8Array) {
+        serializedData = {
+          __type: 'Uint8Array',
+          data: Array.from(entity)
+        };
+      }
+
       const content: StorageFileContent<T> = {
         id,
-        data: entity,
+        data: serializedData as T,
         metadata: fullMetadata
       };
 
@@ -231,7 +240,14 @@ export class JsonStorageProvider<T> implements StorageProvider<T> {
     try {
       const content = await fs.readFile(filePath, 'utf-8');
       const parsed = JSON.parse(content) as StorageFileContent<T>;
-      return parsed.data;
+      
+      // 处理 Uint8Array 反序列化
+      let data = parsed.data;
+      if (data && typeof data === 'object' && (data as Record<string, unknown>)['__type'] === 'Uint8Array') {
+        data = new Uint8Array((data as Record<string, unknown>)['data'] as number[]) as T;
+      }
+      
+      return data;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
         return null;
@@ -292,7 +308,14 @@ export class JsonStorageProvider<T> implements StorageProvider<T> {
         if (!metadata) return false;
 
         return Object.entries(options.filter!).every(([key, value]) => {
-          const metaValue = (metadata as unknown as Record<string, unknown>)[key];
+          // 先检查顶层属性
+          let metaValue = (metadata as unknown as Record<string, unknown>)[key];
+          
+          // 如果顶层没有，检查 customFields
+          if (metaValue === undefined && metadata.customFields) {
+            metaValue = metadata.customFields[key];
+          }
+          
           if (Array.isArray(value) && Array.isArray(metaValue)) {
             // 标签匹配：检查是否有交集
             return value.some(v => metaValue.includes(v));

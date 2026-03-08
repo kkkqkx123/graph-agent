@@ -3,7 +3,7 @@
  * 基于 better-sqlite3 的存储实现
  */
 
-import Database from 'better-sqlite3';
+import Database, { SqliteError } from 'better-sqlite3';
 import type {
   StorageProvider,
   ListOptions,
@@ -23,6 +23,12 @@ export interface SqliteStorageConfig {
   entityType: 'checkpoint' | 'thread';
   /** 是否启用日志 */
   enableLogging?: boolean;
+  /** 是否以只读模式打开 */
+  readonly?: boolean;
+  /** 数据库文件不存在时是否抛出错误 */
+  fileMustExist?: boolean;
+  /** 数据库锁定时的超时时间（毫秒） */
+  timeout?: number;
 }
 
 /**
@@ -54,14 +60,27 @@ export class SqliteStorageProvider<T> implements StorageProvider<T> {
    */
   async initialize(): Promise<void> {
     try {
-      this.db = new Database(this.config.dbPath);
+      // 构建数据库连接选项
+      const options: Database.Options = {
+        readonly: this.config.readonly ?? false,
+        fileMustExist: this.config.fileMustExist ?? false,
+        timeout: this.config.timeout ?? 5000
+      };
+      
+      this.db = new Database(this.config.dbPath, options);
       
       // 启用 WAL 模式提高并发性能
       this.db.pragma('journal_mode = WAL');
       
-      // 执行初始化语句
-      for (const statement of INIT_STATEMENTS) {
-        this.db.exec(statement);
+      // 配置 WAL 模式参数，避免 checkpoint 饥饿
+      this.db.pragma('wal_autocheckpoint = 1000'); // 每 1000 页执行一次 checkpoint
+      this.db.pragma('synchronous = NORMAL'); // 平衡性能和数据安全
+      
+      // 执行初始化语句（只读模式下跳过）
+      if (!this.config.readonly) {
+        for (const statement of INIT_STATEMENTS) {
+          this.db.exec(statement);
+        }
       }
       
       this.initialized = true;
@@ -115,7 +134,23 @@ export class SqliteStorageProvider<T> implements StorageProvider<T> {
   private deserializeEntity(data: Buffer | string): T {
     try {
       const json = typeof data === 'string' ? data : data.toString('utf-8');
-      return JSON.parse(json) as T;
+      const parsed = JSON.parse(json);
+      
+      // 如果是 Uint8Array，需要转换回正确的类型
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        // 检查是否是类数组对象（可能是 Uint8Array 的 JSON 表示）
+        const keys = Object.keys(parsed);
+        if (keys.length > 0 && keys.every(k => /^\d+$/.test(k))) {
+          // 转换回 Uint8Array
+          const arr = new Uint8Array(keys.length);
+          for (let i = 0; i < keys.length; i++) {
+            arr[i] = parsed[i];
+          }
+          return arr as unknown as T;
+        }
+      }
+      
+      return parsed as T;
     } catch (error) {
       throw new SerializationError(
         'Failed to deserialize entity',
@@ -123,6 +158,56 @@ export class SqliteStorageProvider<T> implements StorageProvider<T> {
         error as Error
       );
     }
+  }
+
+  /**
+   * 处理 SQLite 错误并转换为适当的存储错误
+   */
+  private handleSqliteError(error: unknown, operation: string, context?: Record<string, unknown>): never {
+    if (error instanceof SqliteError) {
+      // 根据 SQLite 错误代码进行分类处理
+      switch (error.code) {
+        case 'SQLITE_CONSTRAINT_UNIQUE':
+        case 'SQLITE_CONSTRAINT_PRIMARYKEY':
+          throw new StorageError(
+            `Entity already exists or constraint violation: ${error.message}`,
+            operation,
+            { ...context, code: error.code },
+            error
+          );
+        case 'SQLITE_BUSY':
+        case 'SQLITE_LOCKED':
+          throw new StorageError(
+            `Database is locked or busy: ${error.message}`,
+            operation,
+            { ...context, code: error.code },
+            error
+          );
+        case 'SQLITE_FULL':
+        case 'SQLITE_IOERR':
+          throw new StorageError(
+            `Database I/O error: ${error.message}`,
+            operation,
+            { ...context, code: error.code },
+            error
+          );
+        default:
+          throw new StorageError(
+            `SQLite error [${error.code}]: ${error.message}`,
+            operation,
+            { ...context, code: error.code },
+            error
+          );
+      }
+    }
+    
+    // 非 SQLite 错误，直接包装
+    throw new StorageError(
+      `Storage operation failed: ${operation}`,
+      operation,
+      context,
+      error as Error
+    );
   }
 
   async save(id: string, entity: T, metadata?: StorageMetadata): Promise<void> {
@@ -183,12 +268,7 @@ export class SqliteStorageProvider<T> implements StorageProvider<T> {
         );
       }
     } catch (error) {
-      throw new StorageError(
-        `Failed to save entity: ${id}`,
-        'save',
-        { id },
-        error as Error
-      );
+      this.handleSqliteError(error, 'save', { id });
     }
   }
 
@@ -205,12 +285,7 @@ export class SqliteStorageProvider<T> implements StorageProvider<T> {
 
       return this.deserializeEntity(row.data);
     } catch (error) {
-      throw new StorageError(
-        `Failed to load entity: ${id}`,
-        'load',
-        { id },
-        error as Error
-      );
+      this.handleSqliteError(error, 'load', { id });
     }
   }
 
@@ -221,12 +296,7 @@ export class SqliteStorageProvider<T> implements StorageProvider<T> {
       const stmt = db.prepare(`DELETE FROM ${this.tableName} WHERE id = ?`);
       stmt.run(id);
     } catch (error) {
-      throw new StorageError(
-        `Failed to delete entity: ${id}`,
-        'delete',
-        { id },
-        error as Error
-      );
+      this.handleSqliteError(error, 'delete', { id });
     }
   }
 
@@ -238,12 +308,7 @@ export class SqliteStorageProvider<T> implements StorageProvider<T> {
       const row = stmt.get(id);
       return row !== undefined;
     } catch (error) {
-      throw new StorageError(
-        `Failed to check entity existence: ${id}`,
-        'exists',
-        { id },
-        error as Error
-      );
+      this.handleSqliteError(error, 'exists', { id });
     }
   }
 
@@ -318,12 +383,7 @@ export class SqliteStorageProvider<T> implements StorageProvider<T> {
           : false
       };
     } catch (error) {
-      throw new StorageError(
-        'Failed to list entities',
-        'list',
-        { options },
-        error as Error
-      );
+      this.handleSqliteError(error, 'list', { options });
     }
   }
 
@@ -386,12 +446,7 @@ export class SqliteStorageProvider<T> implements StorageProvider<T> {
         };
       }
     } catch (error) {
-      throw new StorageError(
-        `Failed to get metadata: ${id}`,
-        'getMetadata',
-        { id },
-        error as Error
-      );
+      this.handleSqliteError(error, 'getMetadata', { id });
     }
   }
 
@@ -399,27 +454,25 @@ export class SqliteStorageProvider<T> implements StorageProvider<T> {
     const db = this.getDb();
 
     try {
-      // 使用事务批量保存
-      const transaction = db.transaction(() => {
-        for (const item of items) {
-          // 同步调用 save 的内部逻辑
-          const now = Date.now();
-          const data = this.serializeEntity(item.entity);
+      // 使用事务批量保存，优化：在事务外 prepare 语句，在事务内复用
+      if (this.config.entityType === 'checkpoint') {
+        const stmt = db.prepare(`
+          INSERT INTO checkpoints (id, thread_id, workflow_id, timestamp, data, tags, custom_fields, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET
+            thread_id = excluded.thread_id,
+            workflow_id = excluded.workflow_id,
+            timestamp = excluded.timestamp,
+            data = excluded.data,
+            tags = excluded.tags,
+            custom_fields = excluded.custom_fields,
+            updated_at = excluded.updated_at
+        `);
 
-          if (this.config.entityType === 'checkpoint') {
-            const stmt = db.prepare(`
-              INSERT INTO checkpoints (id, thread_id, workflow_id, timestamp, data, tags, custom_fields, created_at, updated_at)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-              ON CONFLICT(id) DO UPDATE SET
-                thread_id = excluded.thread_id,
-                workflow_id = excluded.workflow_id,
-                timestamp = excluded.timestamp,
-                data = excluded.data,
-                tags = excluded.tags,
-                custom_fields = excluded.custom_fields,
-                updated_at = excluded.updated_at
-            `);
-
+        const transaction = db.transaction(() => {
+          for (const item of items) {
+            const now = Date.now();
+            const data = this.serializeEntity(item.entity);
             stmt.run(
               item.id,
               item.metadata?.parentId ?? '',
@@ -431,19 +484,27 @@ export class SqliteStorageProvider<T> implements StorageProvider<T> {
               now,
               now
             );
-          } else {
-            const stmt = db.prepare(`
-              INSERT INTO threads (id, workflow_id, status, start_time, end_time, data, created_at, updated_at)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-              ON CONFLICT(id) DO UPDATE SET
-                workflow_id = excluded.workflow_id,
-                status = excluded.status,
-                start_time = excluded.start_time,
-                end_time = excluded.end_time,
-                data = excluded.data,
-                updated_at = excluded.updated_at
-            `);
+          }
+        });
 
+        transaction();
+      } else {
+        const stmt = db.prepare(`
+          INSERT INTO threads (id, workflow_id, status, start_time, end_time, data, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET
+            workflow_id = excluded.workflow_id,
+            status = excluded.status,
+            start_time = excluded.start_time,
+            end_time = excluded.end_time,
+            data = excluded.data,
+            updated_at = excluded.updated_at
+        `);
+
+        const transaction = db.transaction(() => {
+          for (const item of items) {
+            const now = Date.now();
+            const data = this.serializeEntity(item.entity);
             stmt.run(
               item.id,
               item.metadata?.workflowId ?? '',
@@ -455,17 +516,12 @@ export class SqliteStorageProvider<T> implements StorageProvider<T> {
               now
             );
           }
-        }
-      });
+        });
 
-      transaction();
+        transaction();
+      }
     } catch (error) {
-      throw new StorageError(
-        'Failed to save batch',
-        'saveBatch',
-        { count: items.length },
-        error as Error
-      );
+      this.handleSqliteError(error, 'saveBatch', { count: items.length });
     }
   }
 
@@ -477,12 +533,7 @@ export class SqliteStorageProvider<T> implements StorageProvider<T> {
       const stmt = db.prepare(`DELETE FROM ${this.tableName} WHERE id IN (${placeholders})`);
       stmt.run(...ids);
     } catch (error) {
-      throw new StorageError(
-        'Failed to delete batch',
-        'deleteBatch',
-        { count: ids.length },
-        error as Error
-      );
+      this.handleSqliteError(error, 'deleteBatch', { count: ids.length });
     }
   }
 
@@ -493,20 +544,23 @@ export class SqliteStorageProvider<T> implements StorageProvider<T> {
       const stmt = db.prepare(`DELETE FROM ${this.tableName}`);
       stmt.run();
     } catch (error) {
-      throw new StorageError(
-        'Failed to clear storage',
-        'clear',
-        {},
-        error as Error
-      );
+      this.handleSqliteError(error, 'clear', {});
     }
   }
 
   async close(): Promise<void> {
     if (this.db) {
-      this.db.close();
-      this.db = null;
-      this.initialized = false;
+      try {
+        this.db.close();
+      } catch (error) {
+        // 记录错误但不抛出，确保资源状态正确更新
+        if (this.config.enableLogging) {
+          console.error('Error closing database:', error);
+        }
+      } finally {
+        this.db = null;
+        this.initialized = false;
+      }
     }
   }
 }
