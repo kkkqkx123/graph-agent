@@ -38,6 +38,7 @@ import { llmHandler } from './llm-handler.js';
 import { addToolHandler } from './add-tool-handler.js';
 import { startFromTriggerHandler } from './start-from-trigger-handler.js';
 import { continueFromTriggerHandler } from './continue-from-trigger-handler.js';
+import { agentLoopHandler } from './agent-loop-handler.js';
 
 /**
  * 节点处理函数映射
@@ -55,6 +56,7 @@ export const nodeHandlers: Record<NodeType, NodeHandler> = {
   ['ROUTE']: routeHandler,
   ['LOOP_START']: loopStartHandler,
   ['LOOP_END']: loopEndHandler,
+  ['AGENT_LOOP']: agentLoopHandler,
   ['USER_INTERACTION']: userInteractionHandler,
   ['CONTEXT_PROCESSOR']: contextProcessorHandler,
   ['LLM']: llmHandler,
@@ -90,3 +92,4 @@ export { llmHandler } from './llm-handler.js';
 export { addToolHandler } from './add-tool-handler.js';
 export { startFromTriggerHandler } from './start-from-trigger-handler.js';
 export { continueFromTriggerHandler } from './continue-from-trigger-handler.js';
+export { agentLoopHandler } from './agent-loop-handler.js';

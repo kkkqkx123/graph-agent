@@ -49,6 +49,11 @@ import type {
   ContinueFromTriggerNodeConfig
 } from './configs/subgraph-configs.js';
 
+import type { AgentLoopNodeConfig } from './agent-loop.js';
+
+// 导出Agent Loop类型
+export * from './agent-loop.js';
+
 /**
  * 节点配置联合类型
  */
@@ -65,6 +70,7 @@ export type NodeConfig =
   | ContextProcessorNodeConfig
   | LoopStartNodeConfig
   | LoopEndNodeConfig
+  | AgentLoopNodeConfig
   | SubgraphNodeConfig
   | StartFromTriggerNodeConfig
   | ContinueFromTriggerNodeConfig;
