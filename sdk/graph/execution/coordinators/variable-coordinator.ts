@@ -20,7 +20,7 @@ import type { Thread } from '@modular-agent/types';
 import type { VariableScope } from '@modular-agent/types';
 import type { EventManager } from '../../../core/services/event-manager.js';
 import { getErrorOrNew } from '@modular-agent/common-utils';
-import { RuntimeValidationError, SystemExecutionError } from '@modular-agent/types';
+import { RuntimeValidationError, EventSystemError } from '@modular-agent/types';
 import { VariableStateManager } from '../managers/variable-state-manager.js';
 import { VariableAccessor } from '../utils/variable-accessor.js';
 import { safeEmit } from '../utils/event/event-emitter.js';
@@ -374,11 +374,11 @@ export class VariableCoordinator {
       });
       await safeEmit(this.eventManager, event);
     } catch (error) {
-      // 抛出系统执行错误，由 ErrorService 统一处理
-      throw new SystemExecutionError(
+      // 抛出事件系统错误，由 ErrorService 统一处理
+      throw new EventSystemError(
         'Failed to emit variable changed event',
-        'VariableCoordinator',
-        'emitVariableChangedEvent',
+        'emit',
+        'VARIABLE_CHANGED',
         undefined,
         undefined,
         { variableName: name, originalError: getErrorOrNew(error) }

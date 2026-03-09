@@ -59,7 +59,6 @@ import { VariableStateManager } from '../../graph/execution/managers/variable-st
 import { TriggerStateManager } from '../../graph/execution/managers/trigger-state-manager.js';
 import { InterruptionManager } from '../execution/managers/interruption-manager.js';
 import { AgentLoopService } from '../../agent/agent-loop-service.js';
-import { ConversationService } from '../../agent/conversation-service.js';
 
 /** 全局容器实例 */
 let container: Container | null = null;
@@ -531,15 +530,10 @@ export function initializeContainer(): Container {
     .inSingletonScope();
 
   // Agent 层服务
-  container.bind(Identifiers.ConversationService)
-    .to(ConversationService)
-    .inTransientScope();
-
   container.bind(Identifiers.AgentLoopService)
     .toDynamicValue((c: any) => new AgentLoopService(
       c.get(Identifiers.LLMWrapper),
-      c.get(Identifiers.ToolService),
-      c.get(Identifiers.ConversationService)
+      c.get(Identifiers.ToolService)
     ))
     .inSingletonScope();
 

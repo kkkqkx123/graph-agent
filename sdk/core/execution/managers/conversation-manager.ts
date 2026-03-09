@@ -1,39 +1,21 @@
 /**
  * 对话管理器
- * 管理消息历史和消息索引
+ * 扩展 MessageHistory，增加 Graph 特有功能
  *
- * 核心职责：
- * 1. 消息历史管理
- * 2. Token统计和事件触发（委托给 TokenUsageTracker）
- * 3. 消息索引管理（使用工具函数）
- * 4. 消息可见性管理（通过批次边界控制）
+ * Graph 特有功能：
+ * 1. Token 统计和事件触发
+ * 2. 工具描述消息管理
+ * 3. 与 Graph 执行层的集成
  *
- * 重要说明：
- * - ConversationManager只管理状态，不负责执行逻辑
- * - 执行逻辑由LLMExecutor负责
- * - Token统计委托给TokenUsageTracker
- * - 消息索引管理使用工具函数
- * - 上下文压缩通过触发器+子工作流实现，不在此模块
- * - 消息可见性通过批次边界控制，不可见消息仍被存储但不发送给LLM
+ * 继承自 MessageHistory 的功能：
+ * - 消息历史管理
+ * - 批次可见性控制
+ * - 快照/恢复
  */
 
 import type { LLMMessage, LLMUsage, TokenUsageHistory, TokenUsageStats } from '@modular-agent/types';
-import type { MessageMarkMap } from '@modular-agent/types';
-import { MessageRole } from '@modular-agent/types';
-import { RuntimeValidationError, ErrorSeverity } from '@modular-agent/types';
+import { MessageHistory, type MessageHistoryState } from '../../messages/message-history.js';
 import { TokenUsageTracker } from '../services/token-usage-tracker.js';
-import { getVisibleOriginalIndices, getVisibleMessages } from '../../utils/visible-range-calculator.js';
-import { startNewBatch, rollbackToBatch as rollbackBatch } from '../../utils/batch-management-utils.js';
-import {
-  getIndicesByRole,
-  getRecentIndicesByRole,
-  getRangeIndicesByRole,
-  getCountByRole,
-  getVisibleIndicesByRole,
-  getVisibleRecentIndicesByRole,
-  getVisibleRangeIndicesByRole,
-  getVisibleCountByRole
-} from '../../utils/message-index-utils.js';
 import type { EventManager } from '../../services/event-manager.js';
 import type { LifecycleCapable } from '../../../graph/execution/managers/lifecycle-capable.js';
 import { createContextualLogger } from '../../../utils/contextual-logger.js';
@@ -44,16 +26,16 @@ import { generateToolListDescription } from '../../utils/tool-description-genera
 const logger = createContextualLogger();
 
 /**
- * ConversationManager事件回调
+ * ConversationManager 配置选项
  */
 export interface ConversationManagerOptions {
-  /** Token限制阈值，超过此值触发消息操作事件 */
+  /** Token 限制阈值，超过此值触发消息操作事件 */
   tokenLimit?: number;
   /** 事件管理器 */
   eventManager?: EventManager;
-  /** 工作流ID（用于事件） */
+  /** 工作流 ID（用于事件） */
   workflowId?: string;
-  /** 线程ID（用于事件） */
+  /** 线程 ID（用于事件） */
   threadId?: string;
   /** 工具服务（用于工具描述初始化） */
   toolService?: any;
@@ -67,16 +49,14 @@ export interface ConversationManagerOptions {
       descriptionTemplate?: string;
     };
   };
+  /** 初始消息列表 */
+  initialMessages?: LLMMessage[];
 }
 
 /**
- * 对话状态接口
+ * 对话状态接口（扩展 MessageHistoryState）
  */
-export interface ConversationState {
-  /** 消息历史 */
-  messages: LLMMessage[];
-  /** 消息标记映射 */
-  markMap: MessageMarkMap;
+export interface ConversationState extends MessageHistoryState {
   /** 累积的 Token 使用统计 */
   tokenUsage: TokenUsageStats | null;
   /** 当前请求的 Token 使用统计 */
@@ -87,11 +67,10 @@ export interface ConversationState {
 
 /**
  * 对话管理器类
+ * 扩展 MessageHistory，增加 Graph 特有功能
  */
-export class ConversationManager implements LifecycleCapable<ConversationState> {
-  private messages: LLMMessage[] = [];
+export class ConversationManager extends MessageHistory implements LifecycleCapable<ConversationState> {
   private tokenUsageTracker: TokenUsageTracker;
-  private markMap: MessageMarkMap;
   private eventManager?: EventManager;
   private workflowId?: string;
   private threadId?: string;
@@ -103,15 +82,11 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    * @param options 配置选项
    */
   constructor(options: ConversationManagerOptions = {}) {
+    super({ initialMessages: options.initialMessages });
+
     this.tokenUsageTracker = new TokenUsageTracker({
       tokenLimit: options.tokenLimit
     });
-    this.markMap = {
-      originalIndices: [],
-      batchBoundaries: [0],
-      boundaryToBatch: [0],
-      currentBatch: 0
-    };
     this.eventManager = options.eventManager;
     this.workflowId = options.workflowId;
     this.threadId = options.threadId;
@@ -119,226 +94,97 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
     this.availableTools = options.availableTools;
   }
 
-  /**
-   * 添加消息
-   * @param message 消息对象
-   * @returns 添加后的消息数组长度
-   */
-  addMessage(message: LLMMessage): number {
-    // 验证消息格式
-    if (!message.role || !message.content) {
-      throw new RuntimeValidationError('Invalid message format: role and content are required', { operation: 'addMessage', field: 'message' });
-    }
-
-    // 将消息追加到数组末尾
-    this.messages.push({ ...message });
-    const newIndex = this.messages.length - 1;
-
-    // 同步更新标记映射
-    this.markMap.originalIndices.push(newIndex);
-
-    // 验证索引一致性
-    if (this.markMap.originalIndices.length !== this.messages.length) {
-      throw new Error('Index synchronization error: originalIndices length does not match messages length');
-    }
-
-    return this.messages.length;
-  }
+  // ============================================================
+  // Token 统计功能（Graph 特有）
+  // ============================================================
 
   /**
-   * 批量添加消息
-   * @param messages 消息数组
-   * @returns 添加后的消息数组长度
-   */
-  addMessages(...messages: LLMMessage[]): number {
-    for (const message of messages) {
-      this.addMessage(message);
-    }
-    return this.messages.length;
-  }
-
-  /**
-   * 获取当前可见消息（批次边界之后的消息）
-   * @returns 可见消息数组的副本
-   */
-  getMessages(): LLMMessage[] {
-    return getVisibleMessages(this.messages, this.markMap);
-  }
-
-  /**
-   * 获取所有消息（包括不可见消息）
-   * @returns 所有消息数组的副本
-   */
-  getAllMessages(): LLMMessage[] {
-    return [...this.messages];
-  }
-
-  /**
-   * 根据索引范围获取消息
-   * @param start 起始索引
-   * @param end 结束索引
-   * @returns 消息数组
-   */
-  getMessagesByRange(start: number, end: number): LLMMessage[] {
-    const visibleIndices = getVisibleOriginalIndices(this.markMap);
-    const filteredIndices = visibleIndices.filter(idx => idx >= start && idx < end);
-    return filteredIndices.map(idx => ({ ...this.messages[idx]! }));
-  }
-
-
-  /**
-   * 检查Token使用情况，触发消息操作事件
+   * 检查 Token 使用情况，触发消息操作事件
    *
    * 说明：
-   * - 当Token使用量超过阈值时，触发 TOKEN_LIMIT_EXCEEDED 事件
-   * - 应用层监听此事件并执行相应的消息操作（如 truncate, filter, clear，或回调新的消息数组）
-   * - SDK不提供默认的消息操作实现，由应用层根据业务需求定义
+   * - 当 Token 使用量超过阈值时，触发 TOKEN_LIMIT_EXCEEDED 事件
+   * - 应用层监听此事件并执行相应的消息操作（如 truncate, filter, clear）
+   * - SDK 不提供默认的消息操作实现，由应用层根据业务需求定义
    */
   async checkTokenUsage(): Promise<void> {
-    const tokensUsed = this.tokenUsageTracker.getTokenUsage(this.messages);
+    const tokensUsed = this.tokenUsageTracker.getTokenUsage(this.getAllMessages());
 
-    // 如果超过限制，触发Token限制事件
-    if (this.tokenUsageTracker.isTokenLimitExceeded(this.messages)) {
+    // 如果超过限制，触发 Token 限制事件
+    if (this.tokenUsageTracker.isTokenLimitExceeded(this.getAllMessages())) {
       await this.triggerTokenLimitEvent(tokensUsed);
     }
   }
 
   /**
-   * 更新Token使用统计
-   * @param usage Token使用数据
+   * 更新 Token 使用统计
+   * @param usage Token 使用数据
    */
   updateTokenUsage(usage?: LLMUsage): void {
     if (!usage) {
       return;
     }
-
     this.tokenUsageTracker.updateApiUsage(usage);
   }
 
   /**
-   * 累积流式响应的Token使用统计
-   * @param usage Token使用数据（增量）
+   * 累积流式响应的 Token 使用统计
+   * @param usage Token 使用数据（增量）
    */
   accumulateStreamUsage(usage: LLMUsage): void {
     this.tokenUsageTracker.accumulateStreamUsage(usage);
   }
 
   /**
-   * 完成当前请求的Token统计
+   * 完成当前请求的 Token 统计
    */
   finalizeCurrentRequest(): void {
     this.tokenUsageTracker.finalizeCurrentRequest();
   }
 
   /**
-   * 获取Token使用统计
-   * @returns Token使用统计
+   * 获取 Token 使用统计
+   * @returns Token 使用统计
    */
   getTokenUsage(): TokenUsageStats | null {
     return this.tokenUsageTracker.getCumulativeUsage();
   }
 
   /**
-   * 获取当前请求的Token使用统计
-   * @returns Token使用统计
+   * 获取当前请求的 Token 使用统计
+   * @returns Token 使用统计
    */
   getCurrentRequestUsage(): TokenUsageStats | null {
     return this.tokenUsageTracker.getCurrentRequestUsage();
   }
 
   /**
-   * 获取Token使用历史记录
-   * @returns Token使用历史记录
+   * 获取 Token 使用历史记录
+   * @returns Token 使用历史记录
    */
   getUsageHistory(): TokenUsageHistory[] {
     return this.tokenUsageTracker.getUsageHistory();
   }
 
   /**
-   * 获取最近N条消息
-   * @param n 消息数量
-   * @returns 消息数组
+   * 获取 Token 使用追踪器实例
+   * @returns TokenUsageTracker 实例
    */
-  getRecentMessages(n: number): LLMMessage[] {
-    if (n >= this.messages.length) {
-      return this.getMessages();
-    }
-
-    return this.messages.slice(-n).map(msg => ({ ...msg }));
+  getTokenUsageTracker(): TokenUsageTracker {
+    return this.tokenUsageTracker;
   }
 
   /**
-   * 按角色过滤消息
-   * @param role 消息角色
-   * @returns 消息数组
-   */
-  filterMessagesByRole(role: string): LLMMessage[] {
-    return this.messages
-      .filter(msg => msg.role === role)
-      .map(msg => ({ ...msg }));
-  }
-
-  /**
-   * 获取指定类型的所有消息
-   * @param role 消息角色
-   * @returns 消息数组
-   */
-  getMessagesByRole(role: MessageRole): LLMMessage[] {
-    const indices = getIndicesByRole(this.messages, role);
-    return indices.map(index => ({ ...this.messages[index]! }));
-  }
-
-  /**
-   * 获取指定类型的最近N条消息
-   * @param role 消息角色
-   * @param n 消息数量
-   * @returns 消息数组
-   */
-  getRecentMessagesByRole(role: MessageRole, n: number): LLMMessage[] {
-    const indices = getRecentIndicesByRole(this.messages, role, n);
-    return indices.map(index => ({ ...this.messages[index]! }));
-  }
-
-  /**
-   * 获取指定类型的索引范围消息
-   * @param role 消息角色
-   * @param start 起始位置（在类型数组中的位置）
-   * @param end 结束位置（在类型数组中的位置）
-   * @returns 消息数组
-   */
-  getMessagesByRoleRange(role: MessageRole, start: number, end: number): LLMMessage[] {
-    const indices = getRangeIndicesByRole(this.messages, role, start, end);
-    return indices.map(index => ({ ...this.messages[index]! }));
-  }
-
-  /**
-   * 获取指定类型的消息数量
-   * @param role 消息角色
-   * @returns 消息数量
-   */
-  getMessageCountByRole(role: MessageRole): number {
-    return getCountByRole(this.messages, role);
-  }
-
-  /**
-   * 触发Token限制事件
-   *
-   * 说明：
-   * - 触发 TOKEN_LIMIT_EXCEEDED 事件，通知应用层Token使用量超过阈值
-   * - 应用层应监听此事件并执行相应的消息操作
-   * - 常见的消息操作包括：truncate（截断）、filter（过滤）、clear（清空）
-   * - 消息操作通过 CONTEXT_PROCESSOR 节点或触发子工作流实现
-   *
-   * @param tokensUsed 当前使用的Token数量
+   * 触发 Token 限制事件
+   * @param tokensUsed 当前使用的 Token 数量
    */
   private async triggerTokenLimitEvent(tokensUsed: number): Promise<void> {
     // 1. 通过 EventManager 发送事件
     if (this.eventManager && this.workflowId && this.threadId) {
       const event = buildTokenLimitExceededEvent({
-        threadId: this.threadId!,
+        threadId: this.threadId,
         tokensUsed,
         tokenLimit: this.tokenUsageTracker['tokenLimit'],
-        workflowId: this.workflowId!
+        workflowId: this.workflowId
       });
       await emit(this.eventManager, event);
     }
@@ -356,174 +202,9 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
     );
   }
 
-  /**
-   * 回退到指定批次
-   * @param targetBatch 目标批次号
-   */
-  rollbackToBatch(targetBatch: number): void {
-    this.markMap = rollbackBatch(this.markMap, targetBatch);
-  }
-
-  /**
-   * 获取标记映射
-   * @returns 标记映射
-   */
-  getMarkMap(): MessageMarkMap {
-    return {
-      ...this.markMap,
-      originalIndices: [...this.markMap.originalIndices],
-      batchBoundaries: [...this.markMap.batchBoundaries],
-      boundaryToBatch: [...this.markMap.boundaryToBatch]
-    };
-  }
-
-  /**
-   * 设置标记映射
-   * @param markMap 标记映射
-   */
-  setMarkMap(markMap: MessageMarkMap): void {
-    this.markMap = {
-      ...markMap,
-      originalIndices: [...markMap.originalIndices],
-      batchBoundaries: [...markMap.batchBoundaries],
-      boundaryToBatch: [...markMap.boundaryToBatch]
-    };
-  }
-
-  /**
-   * 获取Token使用追踪器实例（用于内部操作）
-   * @returns TokenUsageTracker 实例
-   */
-  getTokenUsageTracker(): TokenUsageTracker {
-    return this.tokenUsageTracker;
-  }
-
-  /**
-   * 设置原始索引数组
-   * @param indices 索引数组
-   */
-  setOriginalIndices(indices: number[]): void {
-    this.markMap.originalIndices = [...indices];
-  }
-
-  /**
-   * 克隆 ConversationManager 实例
-   * 创建一个包含相同消息历史和配置的新 ConversationManager 实例
-   * @returns 克隆的 ConversationManager 实例
-   */
-  clone(): ConversationManager {
-    // 创建新的 ConversationManager 实例
-    const clonedManager = new ConversationManager({
-      tokenLimit: this.tokenUsageTracker['tokenLimit'],
-      eventManager: this.eventManager,
-      workflowId: this.workflowId,
-      threadId: this.threadId
-    });
-
-    // 复制所有消息历史
-    clonedManager.messages = this.messages.map(msg => ({ ...msg }));
-
-    // 复制 token 使用统计
-    clonedManager.tokenUsageTracker = this.tokenUsageTracker.clone();
-
-    // 复制标记映射
-    clonedManager.markMap = {
-      ...this.markMap,
-      originalIndices: [...this.markMap.originalIndices],
-      batchBoundaries: [...this.markMap.batchBoundaries],
-      boundaryToBatch: [...this.markMap.boundaryToBatch]
-    };
-
-    return clonedManager;
-  }
-
-  /**
-   * 创建状态快照
-   * @returns 对话状态快照
-   */
-  createSnapshot(): ConversationState {
-    return {
-      messages: this.getAllMessages().map(msg => ({ ...msg })),
-      markMap: this.getMarkMap(),
-      tokenUsage: this.getTokenUsage(),
-      currentRequestUsage: this.getCurrentRequestUsage(),
-      usageHistory: this.getUsageHistory()
-    };
-  }
-
-  /**
-   * 从快照恢复状态
-   * @param snapshot 对话状态快照
-   */
-  restoreFromSnapshot(snapshot: ConversationState): void {
-    // 清空当前消息
-    this.messages = [];
-    this.markMap = {
-      originalIndices: [],
-      batchBoundaries: [0],
-      boundaryToBatch: [0],
-      currentBatch: 0
-    };
-
-    // 恢复消息历史
-    this.addMessages(...snapshot.messages);
-  }
-
-  /**
-   * 清理资源
-   * 清空消息历史和Token统计
-   */
-  cleanup(): void {
-    this.messages = [];
-    this.markMap = {
-      originalIndices: [],
-      batchBoundaries: [0],
-      boundaryToBatch: [0],
-      currentBatch: 0
-    };
-  }
-
-  /**
-   * 获取指定类型的所有可见消息
-   * @param role 消息角色
-   * @returns 消息数组
-   */
-  getVisibleMessagesByRole(role: MessageRole): LLMMessage[] {
-    const indices = getVisibleIndicesByRole(this.messages, this.markMap, role);
-    return indices.map(index => ({ ...this.messages[index]! }));
-  }
-
-  /**
-   * 获取指定类型的最近N条可见消息
-   * @param role 消息角色
-   * @param n 消息数量
-   * @returns 消息数组
-   */
-  getVisibleRecentMessagesByRole(role: MessageRole, n: number): LLMMessage[] {
-    const indices = getVisibleRecentIndicesByRole(this.messages, this.markMap, role, n);
-    return indices.map(index => ({ ...this.messages[index]! }));
-  }
-
-  /**
-   * 获取指定类型的索引范围可见消息
-   * @param role 消息角色
-   * @param start 起始位置（在类型数组中的位置）
-   * @param end 结束位置（在类型数组中的位置）
-   * @returns 消息数组
-   */
-  getVisibleMessagesByRoleRange(role: MessageRole, start: number, end: number): LLMMessage[] {
-    const indices = getVisibleRangeIndicesByRole(this.messages, this.markMap, role, start, end);
-    return indices.map(index => ({ ...this.messages[index]! }));
-  }
-
-  /**
-   * 获取指定类型的可见消息数量
-   * @param role 消息角色
-   * @returns 消息数量
-   */
-  getVisibleMessageCountByRole(role: MessageRole): number {
-    return getVisibleCountByRole(this.messages, this.markMap, role);
-  }
+  // ============================================================
+  // 工具描述消息管理（Graph 特有）
+  // ============================================================
 
   /**
    * 检查是否已经存在工具描述消息
@@ -555,7 +236,7 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
 
     // 获取工具对象列表
     const tools = initialToolIds
-      .map(id => this.toolService.getTool(id))
+      .map(id => this.toolService!.getTool(id))
       .filter(Boolean);
 
     // 使用工具描述生成器生成工具列表描述
@@ -575,9 +256,9 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
    * 在新批次开始时添加初始工具描述（如果不存在）
    * @param boundaryIndex 批次边界索引
    */
-  startNewBatchWithInitialTools(boundaryIndex: number): void {
+  startNewBatchWithInitialTools(boundaryIndex: number): number {
     // 开始新批次
-    this.markMap = startNewBatch(this.markMap, boundaryIndex);
+    const newBatch = this.startNewBatch(boundaryIndex);
 
     // 检查是否已存在工具描述消息
     if (!this.hasToolDescriptionMessage()) {
@@ -587,5 +268,68 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
         this.addMessage(toolDescMessage);
       }
     }
+
+    return newBatch;
+  }
+
+  // ============================================================
+  // 重写父类方法
+  // ============================================================
+
+  /**
+   * 克隆 ConversationManager 实例
+   * @returns 克隆的 ConversationManager 实例
+   */
+  override clone(): ConversationManager {
+    const clonedManager = new ConversationManager({
+      tokenLimit: this.tokenUsageTracker['tokenLimit'],
+      eventManager: this.eventManager,
+      workflowId: this.workflowId,
+      threadId: this.threadId,
+      toolService: this.toolService,
+      availableTools: this.availableTools,
+      initialMessages: this.getAllMessages()
+    });
+
+    // 复制 token 使用统计
+    clonedManager.tokenUsageTracker = this.tokenUsageTracker.clone();
+
+    // 复制标记映射
+    clonedManager.setMarkMap(this.getMarkMap());
+
+    return clonedManager;
+  }
+
+  /**
+   * 创建状态快照
+   * @returns 对话状态快照
+   */
+  override createSnapshot(): ConversationState {
+    const baseSnapshot = super.createSnapshot();
+    return {
+      ...baseSnapshot,
+      tokenUsage: this.getTokenUsage(),
+      currentRequestUsage: this.getCurrentRequestUsage(),
+      usageHistory: this.getUsageHistory()
+    };
+  }
+
+  /**
+   * 从快照恢复状态
+   * @param snapshot 对话状态快照
+   */
+  override restoreFromSnapshot(snapshot: ConversationState): void {
+    super.restoreFromSnapshot(snapshot);
+    // Token 统计不恢复，保持当前状态
+  }
+
+  /**
+   * 清理资源
+   */
+  cleanup(): void {
+    super.clear();
+    this.tokenUsageTracker = new TokenUsageTracker({
+      tokenLimit: this.tokenUsageTracker['tokenLimit']
+    });
   }
 }

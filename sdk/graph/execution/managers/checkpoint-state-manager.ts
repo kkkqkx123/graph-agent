@@ -11,7 +11,7 @@ import { serializeCheckpoint, deserializeCheckpoint } from '../utils/checkpoint-
 import { createCleanupStrategy } from '../utils/checkpoint-cleanup-policy.js';
 import { getErrorOrNew } from '@modular-agent/common-utils';
 import { safeEmit } from '../utils/event/event-emitter.js';
-import { SystemExecutionError } from '@modular-agent/types';
+import { StateManagementError } from '@modular-agent/types';
 import { mergeMetadata } from '../../../utils/metadata-utils.js';
 import {
   buildCheckpointCreatedEvent,
@@ -172,11 +172,12 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
         try {
           await this.executeCleanup();
         } catch (error) {
-          // 抛出系统执行错误，由 ErrorService 统一处理
-          throw new SystemExecutionError(
+          // 抛出状态管理错误，由 ErrorService 统一处理
+          throw new StateManagementError(
             'Error executing cleanup policy',
-            'CheckpointStateManager',
-            'executeCleanup',
+            'checkpoint',
+            'delete',
+            undefined,
             undefined,
             undefined,
             { originalError: getErrorOrNew(error) }

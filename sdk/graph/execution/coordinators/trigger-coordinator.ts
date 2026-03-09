@@ -29,7 +29,7 @@ import type {
 import type { BaseEvent, NodeCustomEvent } from '@modular-agent/types';
 import type { ID } from '@modular-agent/types';
 import { getTriggerHandler } from '../handlers/trigger-handlers/index.js';
-import { ExecutionError, ConfigurationValidationError, RuntimeValidationError, SystemExecutionError } from '@modular-agent/types';
+import { ExecutionError, ConfigurationValidationError, RuntimeValidationError, DependencyInjectionError } from '@modular-agent/types';
 import { now, getErrorOrNew } from '@modular-agent/common-utils';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
@@ -332,28 +332,28 @@ export class TriggerCoordinator {
       case 'pause_thread':
       case 'resume_thread':
         if (!threadLifecycleCoordinator) {
-          throw new SystemExecutionError('ThreadLifecycleCoordinator not provided');
+          throw new DependencyInjectionError('ThreadLifecycleCoordinator not provided', 'ThreadLifecycleCoordinator');
         }
         result = await handler(trigger.action, trigger.id, threadLifecycleCoordinator);
         break;
 
       case 'skip_node':
         if (!threadRegistry || !eventManager) {
-          throw new SystemExecutionError('ThreadRegistry or EventManager not provided');
+          throw new DependencyInjectionError('ThreadRegistry or EventManager not provided', 'ThreadRegistry/EventManager');
         }
         result = await handler(trigger.action, trigger.id, threadRegistry, eventManager);
         break;
 
       case 'set_variable':
         if (!threadRegistry) {
-          throw new SystemExecutionError('ThreadRegistry not provided');
+          throw new DependencyInjectionError('ThreadRegistry not provided', 'ThreadRegistry');
         }
         result = await handler(trigger.action, trigger.id, threadRegistry);
         break;
 
       case 'execute_triggered_subgraph':
         if (!threadRegistry || !eventManager || !threadBuilder || !taskQueueManager) {
-          throw new SystemExecutionError('Required dependencies not provided for execute_triggered_subgraph');
+          throw new DependencyInjectionError('Required dependencies not provided for execute_triggered_subgraph', 'ThreadRegistry/EventManager/ThreadBuilder/TaskQueueManager');
         }
         result = await handler(
           trigger.action,
@@ -407,10 +407,10 @@ export class TriggerCoordinator {
 
     // 使用注入的graphRegistry
     if (!graphRegistry) {
-      throw new SystemExecutionError(
+      throw new DependencyInjectionError(
         'GraphRegistry is required for trigger execution',
-        'TriggerCoordinator',
-        'getWorkflowTrigger',
+        'GraphRegistry',
+        'TriggerCoordinator.getWorkflowTrigger',
         undefined,
         undefined,
         { triggerId, workflowId: targetWorkflowId }

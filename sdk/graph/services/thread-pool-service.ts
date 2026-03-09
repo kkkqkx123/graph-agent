@@ -20,7 +20,7 @@
 import { ThreadExecutor } from '../../graph/execution/thread-executor.js';
 import { type ExecutorWrapper, type PoolStats, type ThreadPoolConfig } from '../../graph/execution/types/task.types.js';
 import { now } from '@modular-agent/common-utils';
-import { SystemExecutionError } from '@modular-agent/types';
+import { StateManagementError } from '@modular-agent/types';
 
 /**
  * ThreadPoolService - 线程池服务（全局单例）
@@ -145,10 +145,10 @@ export class ThreadPoolService {
    */
   async allocateExecutor(): Promise<any> {
     if (this.isShutdown) {
-      throw new SystemExecutionError(
+      throw new StateManagementError(
         'ThreadPoolService is shutdown',
-        'ThreadPoolService',
-        'allocateExecutor'
+        'threadPool',
+        'read'
       );
     }
 
@@ -322,10 +322,10 @@ export class ThreadPoolService {
 
     // 拒绝所有等待的 Promise
     for (const waiting of this.waitingPromises) {
-      waiting.reject(new SystemExecutionError(
+      waiting.reject(new StateManagementError(
         'ThreadPoolService is shutdown',
-        'ThreadPoolService',
-        'shutdown'
+        'threadPool',
+        'read'
       ));
     }
     this.waitingPromises = [];

@@ -105,7 +105,7 @@ export async function agentLoopHandler(
     }
 
     // 3. 将结果同步回 Graph 对话历史（用于持久化和展示）
-    // 注意：AgentLoopService 内部使用了独立的 ConversationService
+    // 注意：AgentLoopService 内部使用了独立的 MessageHistory
     // 我们需要将新增加的消息同步到 context.conversationManager
     const allMessages = result.content ? [{ role: 'assistant', content: result.content }] : [];
     // TODO: 如果需要更完整的同步，可以在 AgentLoopService 中增加获取新增消息的方法

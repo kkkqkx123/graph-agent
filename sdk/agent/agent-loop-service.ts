@@ -13,14 +13,26 @@ import type {
 import { AgentStreamEventType } from '@modular-agent/types';
 import { LLMWrapper } from '../core/llm/index.js';
 import { ToolService } from '../core/services/tool-service.js';
-import { ConversationService } from './conversation-service.js';
+import { MessageHistory } from '../core/messages/message-history.js';
 
 export class AgentLoopService {
+    /** 消息历史实例 */
+    private messageHistory: MessageHistory;
+
     constructor(
         private llmWrapper: LLMWrapper,
-        private toolService: ToolService,
-        private conversationService: ConversationService
-    ) { }
+        private toolService: ToolService
+    ) {
+        this.messageHistory = new MessageHistory();
+    }
+
+    /**
+     * 获取消息历史实例
+     * @returns MessageHistory 实例
+     */
+    getMessageHistory(): MessageHistory {
+        return this.messageHistory;
+    }
 
     /**
      * 运行 Agent 循环（非流式）
@@ -32,12 +44,12 @@ export class AgentLoopService {
         let toolCallCount = 0;
 
         // 1. 初始化对话
-        this.conversationService.clear();
+        this.messageHistory.clear();
         if (config.systemPrompt) {
-            this.conversationService.addMessage({ role: 'system', content: config.systemPrompt });
+            this.messageHistory.addSystemMessage(config.systemPrompt);
         }
-        if (config.initialMessages) {
-            this.conversationService.initialize(config.initialMessages);
+        if (config.initialMessages && config.initialMessages.length > 0) {
+            this.messageHistory.initialize(config.initialMessages);
         }
 
         // 2. 准备工具信息
@@ -57,7 +69,7 @@ export class AgentLoopService {
                 // 3. 调用 LLM
                 const llmResult = await this.llmWrapper.generate({
                     profileId: config.profileId || 'DEFAULT',
-                    messages: this.conversationService.getMessages(),
+                    messages: this.messageHistory.getMessages(),
                     tools: toolSchemas as any,
                 });
 
@@ -71,7 +83,7 @@ export class AgentLoopService {
                 }
 
                 const response = llmResult.value;
-                this.conversationService.addAssistantMessage(
+                this.messageHistory.addAssistantMessage(
                     response.content,
                     response.toolCalls?.map(tc => ({
                         id: tc.id,
@@ -102,12 +114,12 @@ export class AgentLoopService {
                     });
 
                     if (executionResult.isOk()) {
-                        this.conversationService.addToolResultMessage(
+                        this.messageHistory.addToolResultMessage(
                             toolCall.id,
                             JSON.stringify(executionResult.value.result)
                         );
                     } else {
-                        this.conversationService.addToolResultMessage(
+                        this.messageHistory.addToolResultMessage(
                             toolCall.id,
                             JSON.stringify({ error: executionResult.error.message })
                         );
@@ -145,12 +157,12 @@ export class AgentLoopService {
         let toolCallCount = 0;
 
         // 1. 初始化对话
-        this.conversationService.clear();
+        this.messageHistory.clear();
         if (config.systemPrompt) {
-            this.conversationService.addMessage({ role: 'system', content: config.systemPrompt });
+            this.messageHistory.addSystemMessage(config.systemPrompt);
         }
-        if (config.initialMessages) {
-            this.conversationService.initialize(config.initialMessages);
+        if (config.initialMessages && config.initialMessages.length > 0) {
+            this.messageHistory.initialize(config.initialMessages);
         }
 
         // 2. 准备工具信息
@@ -176,7 +188,7 @@ export class AgentLoopService {
                 // 3. 调用 LLM (流式)
                 const llmResult = await this.llmWrapper.generateStream({
                     profileId: config.profileId || 'DEFAULT',
-                    messages: this.conversationService.getMessages(),
+                    messages: this.messageHistory.getMessages(),
                     tools: toolSchemas as any,
                     stream: true
                 });
@@ -212,7 +224,7 @@ export class AgentLoopService {
                 }
 
                 const finalResult = await messageStream.getFinalResult();
-                this.conversationService.addAssistantMessage(
+                this.messageHistory.addAssistantMessage(
                     finalResult.content,
                     finalResult.toolCalls?.map(tc => ({
                         id: tc.id,
@@ -254,7 +266,7 @@ export class AgentLoopService {
                     });
 
                     if (executionResult.isOk()) {
-                        this.conversationService.addToolResultMessage(
+                        this.messageHistory.addToolResultMessage(
                             toolCall.id,
                             JSON.stringify(executionResult.value.result)
                         );
@@ -264,7 +276,7 @@ export class AgentLoopService {
                             data: { toolCallId: toolCall.id, result: executionResult.value.result, success: true }
                         };
                     } else {
-                        this.conversationService.addToolResultMessage(
+                        this.messageHistory.addToolResultMessage(
                             toolCall.id,
                             JSON.stringify({ error: executionResult.error.message })
                         );

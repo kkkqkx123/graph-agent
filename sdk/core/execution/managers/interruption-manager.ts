@@ -15,7 +15,7 @@
  * - 通用性：可被 Graph 模块和 Agent 模块共享
  */
 
-import { ThreadInterruptedException } from '@modular-agent/types';
+import { InterruptedException, ThreadInterruptedException } from '@modular-agent/types';
 
 /**
  * 中断类型
@@ -45,7 +45,7 @@ export interface InterruptionManagerConfig {
   /** 节点 ID（可选） */
   nodeId?: string;
   /** 自定义中断异常创建函数 */
-  createInterruptionError?: (info: InterruptionInfo) => Error;
+  createInterruptionError?: (info: InterruptionInfo) => InterruptedException;
 }
 
 /**
@@ -58,7 +58,7 @@ export class InterruptionManager {
   private interruptionType: InterruptionType = null;
   private contextId: string;
   private nodeId: string;
-  private createInterruptionError?: (info: InterruptionInfo) => Error;
+  private createInterruptionError?: (info: InterruptionInfo) => InterruptedException;
 
   /**
    * 构造函数
@@ -196,7 +196,7 @@ export class InterruptionManager {
   /**
    * 创建中断错误
    */
-  private createError(message: string, type: 'PAUSE' | 'STOP'): Error {
+  private createError(message: string, type: 'PAUSE' | 'STOP'): InterruptedException {
     const info: InterruptionInfo = {
       type,
       message,

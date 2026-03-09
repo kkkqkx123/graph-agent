@@ -5,8 +5,7 @@
 
 import type { HookExecutionContext } from '../index.js';
 import type { NodeCustomEvent } from '@modular-agent/types';
-import { EventType } from '@modular-agent/types';
-import { SystemExecutionError } from '@modular-agent/types';
+import { EventSystemError } from '@modular-agent/types';
 import { getErrorOrNew, now } from '@modular-agent/common-utils';
 
 /**
@@ -39,11 +38,11 @@ export async function emitHookEvent(
   try {
     await emitEvent(event);
   } catch (error) {
-    // 抛出系统执行错误，由 ErrorService 统一处理
-    throw new SystemExecutionError(
+    // 抛出事件系统错误，由 ErrorService 统一处理
+    throw new EventSystemError(
       `Failed to emit custom event "${eventName}" for node "${node.id}"`,
-      'HookEventEmitter',
-      'emitHookEvent',
+      'emit',
+      'NODE_CUSTOM_EVENT',
       node.id,
       undefined,
       { eventName, nodeId: node.id, originalError: getErrorOrNew(error) }

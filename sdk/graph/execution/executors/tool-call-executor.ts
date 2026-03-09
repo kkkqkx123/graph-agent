@@ -23,7 +23,7 @@ import { now, diffTimestamp, generateId } from '@modular-agent/common-utils';
 import type { ConversationManager } from '../../../core/execution/managers/conversation-manager.js';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
-import { ThreadInterruptedException, SystemExecutionError } from '@modular-agent/types';
+import { ThreadInterruptedException, CheckpointError } from '@modular-agent/types';
 import { MessageBuilder } from '../../../core/messages/message-builder.js';
 import type { ToolVisibilityCoordinator } from '../coordinators/tool-visibility-coordinator.js';
 import {
@@ -313,11 +313,11 @@ export class ToolCallExecutor {
             this.checkpointDependencies
           );
         } catch (error) {
-          // 抛出系统执行错误，由 ErrorService 统一处理
-          throw new SystemExecutionError(
+          // 抛出检查点错误，由 ErrorService 统一处理
+          throw new CheckpointError(
             `Failed to create checkpoint before tool "${toolCall.name}"`,
-            'ToolCallExecutor',
-            'executeToolCall',
+            'create',
+            undefined,
             undefined,
             undefined,
             { toolId: toolCall.name, originalError: error instanceof Error ? error : new Error(String(error)) }
@@ -465,11 +465,11 @@ export class ToolCallExecutor {
             this.checkpointDependencies
           );
         } catch (error) {
-          // 抛出系统执行错误，由 ErrorService 统一处理
-          throw new SystemExecutionError(
+          // 抛出检查点错误，由 ErrorService 统一处理
+          throw new CheckpointError(
             `Failed to create checkpoint after tool "${toolCall.name}"`,
-            'ToolCallExecutor',
-            'executeToolCall',
+            'create',
+            undefined,
             undefined,
             undefined,
             { toolId: toolCall.name, originalError: error instanceof Error ? error : new Error(String(error)) }

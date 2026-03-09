@@ -19,7 +19,7 @@ import type { CheckpointStateManager } from '../managers/checkpoint-state-manage
 import type { ThreadBuilder } from '../thread-builder.js';
 import type { TaskQueueManager } from '../managers/task-queue-manager.js';
 import type { ThreadLifecycleCoordinator } from '../coordinators/thread-lifecycle-coordinator.js';
-import { SystemExecutionError } from '@modular-agent/types';
+import { DependencyInjectionError } from '@modular-agent/types';
 
 /**
  * 生命周期触发器上下文
@@ -101,7 +101,7 @@ export class TriggerHandlerContextFactory {
    *
    * @param trigger 触发器
    * @returns 处理器上下文
-   * @throws SystemExecutionError 当必需依赖缺失时
+   * @throws DependencyInjectionError 当必需依赖缺失时
    */
   createHandlerContext(trigger: Trigger): TriggerHandlerContext {
     const actionType = trigger.action.type;
@@ -132,14 +132,14 @@ export class TriggerHandlerContextFactory {
    *
    * @param trigger 触发器
    * @returns 生命周期触发器上下文
-   * @throws SystemExecutionError 当 ThreadLifecycleCoordinator 缺失时
+   * @throws DependencyInjectionError 当 ThreadLifecycleCoordinator 缺失时
    */
   private createLifecycleContext(trigger: Trigger): LifecycleTriggerContext {
     if (!this.config.threadLifecycleCoordinator) {
-      throw new SystemExecutionError(
+      throw new DependencyInjectionError(
         'ThreadLifecycleCoordinator is required for lifecycle trigger actions',
-        'TriggerHandlerContextFactory',
-        'createLifecycleContext',
+        'ThreadLifecycleCoordinator',
+        'TriggerHandlerContextFactory.createLifecycleContext',
         undefined,
         undefined,
         { triggerId: trigger.id, actionType: trigger.action.type }
@@ -156,14 +156,14 @@ export class TriggerHandlerContextFactory {
    *
    * @param trigger 触发器
    * @returns 跳过节点触发器上下文
-   * @throws SystemExecutionError 当必需依赖缺失时
+   * @throws DependencyInjectionError 当必需依赖缺失时
    */
   private createSkipNodeContext(trigger: Trigger): SkipNodeTriggerContext {
     if (!this.config.eventManager) {
-      throw new SystemExecutionError(
+      throw new DependencyInjectionError(
         'EventManager is required for skip_node trigger action',
-        'TriggerHandlerContextFactory',
-        'createSkipNodeContext',
+        'EventManager',
+        'TriggerHandlerContextFactory.createSkipNodeContext',
         undefined,
         undefined,
         { triggerId: trigger.id, actionType: trigger.action.type }
@@ -193,14 +193,14 @@ export class TriggerHandlerContextFactory {
    *
    * @param trigger 触发器
    * @returns 执行子图触发器上下文
-   * @throws SystemExecutionError 当必需依赖缺失时
+   * @throws DependencyInjectionError 当必需依赖缺失时
    */
   private createSubgraphContext(trigger: Trigger): ExecuteSubgraphTriggerContext {
     if (!this.config.eventManager) {
-      throw new SystemExecutionError(
+      throw new DependencyInjectionError(
         'EventManager is required for execute_triggered_subgraph trigger action',
-        'TriggerHandlerContextFactory',
-        'createSubgraphContext',
+        'EventManager',
+        'TriggerHandlerContextFactory.createSubgraphContext',
         undefined,
         undefined,
         { triggerId: trigger.id, actionType: trigger.action.type }
@@ -208,10 +208,10 @@ export class TriggerHandlerContextFactory {
     }
 
     if (!this.config.threadBuilder) {
-      throw new SystemExecutionError(
+      throw new DependencyInjectionError(
         'ThreadBuilder is required for execute_triggered_subgraph trigger action',
-        'TriggerHandlerContextFactory',
-        'createSubgraphContext',
+        'ThreadBuilder',
+        'TriggerHandlerContextFactory.createSubgraphContext',
         undefined,
         undefined,
         { triggerId: trigger.id, actionType: trigger.action.type }
@@ -219,10 +219,10 @@ export class TriggerHandlerContextFactory {
     }
 
     if (!this.config.taskQueueManager) {
-      throw new SystemExecutionError(
+      throw new DependencyInjectionError(
         'TaskQueueManager is required for execute_triggered_subgraph trigger action',
-        'TriggerHandlerContextFactory',
-        'createSubgraphContext',
+        'TaskQueueManager',
+        'TriggerHandlerContextFactory.createSubgraphContext',
         undefined,
         undefined,
         { triggerId: trigger.id, actionType: trigger.action.type }

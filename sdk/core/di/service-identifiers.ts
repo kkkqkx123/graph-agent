@@ -293,9 +293,3 @@ export const LLMWrapper = Symbol('LLMWrapper') as ServiceIdentifier<any>;
  * 负责执行 Agent 工具迭代循环
  */
 export const AgentLoopService = Symbol('AgentLoopService') as ServiceIdentifier<any>;
-
-/**
- * ConversationService - Agent 对话服务
- * 负责管理 Agent 对话历史
- */
-export const ConversationService = Symbol('ConversationService') as ServiceIdentifier<any>;

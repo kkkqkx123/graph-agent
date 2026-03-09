@@ -441,10 +441,10 @@ function createExecutionVerificationHook() {
       description: 'Verify execution results',
       handler: async (context: HookExecutionContext) => {
         if (!context.result) {
-          throw new SystemExecutionError(
+          throw new StateManagementError(
             'Execution result is missing',
-            'VerificationHook',
-            'executeHook'
+            'executionResult',
+            'read'
           );
         }
 
@@ -671,10 +671,10 @@ function createCarefulErrorHandlingHook() {
           }
         } catch (error) {
           // 捕获其他未预期的错误
-          throw new SystemExecutionError(
+          throw new StateManagementError(
             'Hook execution failed',
-            'ErrorHandlingHook',
-            'executeHook',
+            'hook',
+            'execute',
             context.node.id,
             undefined,
             { originalError: error }

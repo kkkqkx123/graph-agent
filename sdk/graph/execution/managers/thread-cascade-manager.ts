@@ -16,7 +16,7 @@ import type { ThreadRegistry } from '../../services/thread-registry.js';
 import { ThreadLifecycleManager } from './thread-lifecycle-manager.js';
 import type { EventManager } from '../../../core/services/event-manager.js';
 import { TaskRegistry } from '../../services/task-registry.js';
-import { SystemExecutionError } from '@modular-agent/types';
+import { StateManagementError } from '@modular-agent/types';
 import { getErrorOrNew } from '@modular-agent/common-utils';
 
 /**
@@ -58,11 +58,12 @@ export class ThreadCascadeManager {
           cancelledCount++;
         }
       } catch (error) {
-        // 抛出系统执行错误，由 ErrorService 统一处理
-        throw new SystemExecutionError(
+        // 抛出状态管理错误，由 ErrorService 统一处理
+        throw new StateManagementError(
           `Failed to cancel child thread ${childThreadId}`,
-          'ThreadCascadeManager',
-          'cancelChildThreads',
+          'thread',
+          'delete',
+          childThreadId,
           undefined,
           undefined,
           { childThreadId, originalError: getErrorOrNew(error) }
