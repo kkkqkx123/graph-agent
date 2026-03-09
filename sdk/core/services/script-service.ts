@@ -7,7 +7,6 @@
  */
 
 import type { Script, ScriptType, ScriptExecutionOptions, ScriptExecutionResult } from '@modular-agent/types';
-import type { ThreadEntity } from '../entities/thread-entity.js';
 import type { IScriptExecutor } from '@modular-agent/script-executors';
 import { ScriptExecutionError, ScriptNotFoundError, ConfigurationValidationError } from '@modular-agent/types';
 import { tryCatchAsyncWithSignal, all } from '@modular-agent/common-utils';
@@ -402,13 +401,11 @@ class ScriptService {
    * 执行脚本
    * @param scriptName 脚本名称
    * @param options 执行选项（覆盖脚本默认选项）
-   * @param threadEntity 线程实体（可选，用于沙箱隔离）
    * @returns Result<ScriptExecutionResult, ScriptExecutionError>
    */
   async execute(
     scriptName: string,
-    options: Partial<ScriptExecutionOptions> = {},
-    threadEntity?: ThreadEntity
+    options: Partial<ScriptExecutionOptions> = {}
   ): Promise<Result<ScriptExecutionResult, ScriptExecutionError>> {
     // 获取脚本定义
     const script = this.getScript(scriptName);
@@ -451,20 +448,18 @@ class ScriptService {
   /**
     * 批量执行脚本
     * @param executions 执行任务数组
-    * @param threadEntity 线程实体（可选）
     * @returns Result<ScriptExecutionResult[], ScriptExecutionError>
     */
   async executeBatch(
     executions: Array<{
       scriptName: string;
       options?: Partial<ScriptExecutionOptions>;
-    }>,
-    threadEntity?: ThreadEntity
+    }>
   ): Promise<Result<ScriptExecutionResult[], ScriptExecutionError>> {
     // 并行执行所有脚本
     const results = await Promise.all(
       executions.map(exec =>
-        this.execute(exec.scriptName, exec.options, threadEntity)
+        this.execute(exec.scriptName, exec.options)
       )
     );
 

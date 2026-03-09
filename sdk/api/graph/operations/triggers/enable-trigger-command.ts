@@ -3,7 +3,7 @@
  */
 
 import { BaseCommand, CommandValidationResult } from '../../../shared/types/command.js';
-import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types';
+import { ThreadContextNotFoundError } from '@modular-agent/types';
 import type { APIDependencyManager } from '../../../shared/core/sdk-dependencies.js';
 
 /**
