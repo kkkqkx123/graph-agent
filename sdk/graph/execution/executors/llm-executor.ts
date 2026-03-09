@@ -70,11 +70,7 @@ export type LLMExecutionResultWithInterruption =
  * 由 DI 容器管理生命周期
  */
 export class LLMExecutor {
-  private llmWrapper: LLMWrapper;
-
-  constructor(eventManager: EventManager) {
-    this.llmWrapper = new LLMWrapper(eventManager);
-  }
+  constructor(private llmWrapper: LLMWrapper) { }
 
   /**
    * 处理 LLM 调用错误

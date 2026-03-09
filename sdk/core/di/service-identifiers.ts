@@ -273,3 +273,29 @@ export const TriggeredSubworkflowManager = Symbol('TriggeredSubworkflowManager')
  * 管理 ThreadExecutor 实例池，提供全局线程池资源管理
  */
 export const ThreadPoolService = Symbol('ThreadPoolService') as ServiceIdentifier<any>;
+
+// ============================================================
+// Core 层服务
+// ============================================================
+
+/**
+ * LLMWrapper - LLM 包装器
+ * 提供统一的 LLM 调用接口
+ */
+export const LLMWrapper = Symbol('LLMWrapper') as ServiceIdentifier<any>;
+
+// ============================================================
+// Agent 层服务
+// ============================================================
+
+/**
+ * AgentLoopService - Agent 循环服务
+ * 负责执行 Agent 工具迭代循环
+ */
+export const AgentLoopService = Symbol('AgentLoopService') as ServiceIdentifier<any>;
+
+/**
+ * ConversationService - Agent 对话服务
+ * 负责管理 Agent 对话历史
+ */
+export const ConversationService = Symbol('ConversationService') as ServiceIdentifier<any>;

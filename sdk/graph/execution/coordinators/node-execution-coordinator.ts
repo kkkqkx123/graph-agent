@@ -83,6 +83,8 @@ export interface NodeExecutionCoordinatorConfig {
   toolContextManager?: any;
   /** 工具服务（可选） */
   toolService?: any;
+  /** Agent 循环服务（可选） */
+  agentLoopService?: any;
 }
 
 /**
@@ -132,7 +134,8 @@ export class NodeExecutionCoordinator {
       userInteractionHandler: config.userInteractionHandler,
       humanRelayHandler: config.humanRelayHandler,
       toolContextManager: config.toolContextManager,
-      toolService: config.toolService
+      toolService: config.toolService,
+      agentLoopService: config.agentLoopService
     });
   }
 

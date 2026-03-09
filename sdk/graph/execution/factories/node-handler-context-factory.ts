@@ -35,6 +35,8 @@ export interface NodeHandlerContextFactoryConfig {
   toolContextManager?: any;
   /** 工具服务（可选） */
   toolService?: any;
+  /** Agent 循环服务（可选） */
+  agentLoopService?: any;
 }
 
 /**
@@ -46,7 +48,7 @@ export interface NodeHandlerContextFactoryConfig {
  * - 验证必需依赖是否存在
  */
 export class NodeHandlerContextFactory {
-  constructor(private config: NodeHandlerContextFactoryConfig) {}
+  constructor(private config: NodeHandlerContextFactoryConfig) { }
 
   /**
    * 创建节点处理器上下文
@@ -66,6 +68,9 @@ export class NodeHandlerContextFactory {
 
       case 'LLM':
         return this.createLLMContext();
+
+      case 'AGENT_LOOP':
+        return this.createAgentLoopContext(node, threadEntity);
 
       case 'ADD_TOOL':
         return this.createAddToolContext(node, threadEntity);
@@ -132,6 +137,21 @@ export class NodeHandlerContextFactory {
       toolService: this.config.toolService,
       eventManager: this.config.eventManager,
       threadEntity
+    };
+  }
+
+  /**
+   * 创建 Agent Loop 节点上下文
+   */
+  private createAgentLoopContext(node: Node, threadEntity: ThreadEntity): any {
+    return {
+      agentLoopService: this.config.agentLoopService,
+      llmCoordinator: this.config.llmCoordinator,
+      conversationManager: this.config.conversationManager,
+      eventManager: this.config.eventManager,
+      // 这里的 toolCallExecutor 通常在 NodeExecutionCoordinator 中可以通过 Identifier 获取
+      // 但在 handler 中，我们需要确保它被传入。
+      // 注意：agent-loop-handler 原本是手动执行循环，现在我们要改造成使用 agentLoopService
     };
   }
 }

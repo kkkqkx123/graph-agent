@@ -57,9 +57,9 @@ export interface AgentLoopToolCall {
 }
 
 /**
- * Agent Loop 执行结果
+ * Agent Loop 节点执行结果
  */
-export interface AgentLoopResult {
+export interface AgentLoopNodeResult {
   /** 最终LLM输出内容 */
   content: string;
   /** 实际迭代次数 */

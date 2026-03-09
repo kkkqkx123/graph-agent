@@ -39,3 +39,6 @@ export * from './http.js';
 
 // API类型
 export * from './api-types.js';
+
+// Agent类型
+export * from './agent.js';

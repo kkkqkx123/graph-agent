@@ -15,6 +15,7 @@ import * as Identifiers from './service-identifiers.js';
 // 存储层服务
 import { GraphRegistry } from '../services/graph-registry.js';
 import { ThreadRegistry } from '../services/thread-registry.js';
+import { LLMWrapper } from '../llm/wrapper.js';
 
 // 业务层服务
 import { EventManager } from '../services/event-manager.js';
@@ -56,6 +57,8 @@ import { ConversationManager } from '../../graph/execution/managers/conversation
 import { VariableStateManager } from '../../graph/execution/managers/variable-state-manager.js';
 import { TriggerStateManager } from '../../graph/execution/managers/trigger-state-manager.js';
 import { InterruptionManager } from '../../graph/execution/managers/interruption-manager.js';
+import { AgentLoopService } from '../../agent/agent-loop-service.js';
+import { ConversationService } from '../../agent/conversation-service.js';
 
 /** 全局容器实例 */
 let container: Container | null = null;
@@ -101,6 +104,10 @@ export function initializeContainer(): Container {
 
   container.bind(Identifiers.ThreadRegistry)
     .to(ThreadRegistry)
+    .inSingletonScope();
+
+  container.bind(Identifiers.LLMWrapper)
+    .toDynamicValue((c: any) => new LLMWrapper(c.get(Identifiers.EventManager)))
     .inSingletonScope();
 
   // ============================================================
@@ -174,8 +181,8 @@ export function initializeContainer(): Container {
 
   container.bind(Identifiers.LLMExecutor)
     .toDynamicValue((c: any) => {
-      const eventManager = c.get(Identifiers.EventManager);
-      return new LLMExecutor(eventManager);
+      const llmWrapper = c.get(Identifiers.LLMWrapper);
+      return new LLMExecutor(llmWrapper);
     })
     .inSingletonScope();
 
@@ -411,7 +418,8 @@ export function initializeContainer(): Container {
           checkpointStateManager: c.get(Identifiers.CheckpointStateManager),
           workflowRegistry: c.get(Identifiers.WorkflowRegistry),
           graphRegistry: c.get(Identifiers.GraphRegistry)
-        }
+        },
+        agentLoopService: c.get(Identifiers.AgentLoopService)
       };
       return new NodeExecutionCoordinator(config);
     })
@@ -512,6 +520,19 @@ export function initializeContainer(): Container {
         }
       };
     })
+    .inSingletonScope();
+
+  // Agent 层服务
+  container.bind(Identifiers.ConversationService)
+    .to(ConversationService)
+    .inTransientScope();
+
+  container.bind(Identifiers.AgentLoopService)
+    .toDynamicValue((c: any) => new AgentLoopService(
+      c.get(Identifiers.LLMWrapper),
+      c.get(Identifiers.ToolService),
+      c.get(Identifiers.ConversationService)
+    ))
     .inSingletonScope();
 
   return container;
