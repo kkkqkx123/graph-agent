@@ -56,7 +56,7 @@ vi.mock('../context/execution-context.js', () => ({
 }));
 
 // 在 mock 之后导入
-import { ThreadExecutor } from '../thread-executor.js';
+import { ThreadExecutor } from '../executors/thread-executor.js';
 import { ThreadEntity } from '../entities/thread-entity.js';
 import { ExecutionContext } from '../context/execution-context.js';
 import { NodeExecutionCoordinator } from '../coordinators/node-execution-coordinator.js';

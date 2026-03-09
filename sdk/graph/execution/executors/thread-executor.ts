@@ -15,12 +15,18 @@
  * - 错误处理（由 ErrorHandler 负责）
  * - 子图处理（由 SubgraphHandler 负责）
  * - 触发子工作流处理（由 TriggeredSubworkflowManager 负责）
+ *
+ * 设计原则：
+ * - 无状态设计，所有状态通过 ThreadEntity 管理
+ * - 支持暂停/恢复功能
+ * - 支持中断控制（AbortController）
+ * - 与 LLMExecutor、ToolCallExecutor 保持一致的架构
  */
 
 import type { ThreadResult } from '@modular-agent/types';
-import type { ThreadEntity } from '../entities/thread-entity.js';
-import type { GraphRegistry } from '../services/graph-registry.js';
-import type { ThreadExecutionCoordinator } from './coordinators/thread-execution-coordinator.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
+import type { GraphRegistry } from '../../services/graph-registry.js';
+import type { ThreadExecutionCoordinator } from '../coordinators/thread-execution-coordinator.js';
 
 /**
  * 线程隔离管理器工厂接口
@@ -47,15 +53,18 @@ export interface ThreadExecutorDependencies {
 }
 
 /**
- * ThreadExecutor - Thread 执行器
+ * ThreadExecutor - Thread 执行器（无状态）
  *
  * 专注于执行单个 ThreadEntity，不负责线程的创建、注册和管理
  * 通过协调器模式委托具体职责给专门的组件
  *
  * 设计原则：
+ * - 无状态设计，不持有任何状态
+ * - 所有状态通过 ThreadEntity 参数传入
  * - 通过构造函数注入依赖（依赖倒置）
  * - 保持轻量级，只负责执行协调
  * - 不直接依赖DI容器，便于测试
+ * - 由 DI 容器管理生命周期
  */
 export class ThreadExecutor {
   private graphRegistry: GraphRegistry;

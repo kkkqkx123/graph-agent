@@ -7,7 +7,7 @@
 export { ThreadEntity, ExecutionState, type SubgraphContext } from '../entities/index.js';
 
 // 主要执行引擎
-export { ThreadExecutor, type ThreadExecutorDependencies } from './thread-executor.js';
+export { ThreadExecutor, type ThreadExecutorDependencies } from './executors/thread-executor.js';
 
 // Thread构建器
 export { ThreadBuilder } from './thread-builder.js';

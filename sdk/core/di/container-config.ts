@@ -39,7 +39,7 @@ import { ToolContextManager } from '../../graph/execution/managers/tool-context-
 import { MessageHistoryManager } from '../../graph/execution/managers/message-history-manager.js';
 import { ToolVisibilityManager } from '../../graph/execution/managers/tool-visibility-manager.js';
 import { ThreadBuilder } from '../../graph/execution/thread-builder.js';
-import { ThreadExecutor } from '../../graph/execution/thread-executor.js';
+import { ThreadExecutor } from '../../graph/execution/executors/thread-executor.js';
 import { ThreadLifecycleCoordinator } from '../../graph/execution/coordinators/thread-lifecycle-coordinator.js';
 
 // 执行层 - Coordinators（协调器）

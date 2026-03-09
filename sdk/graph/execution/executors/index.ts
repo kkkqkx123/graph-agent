@@ -9,3 +9,7 @@ export { LLMExecutor } from './llm-executor.js';
 // 工具调用执行器
 export { ToolCallExecutor } from './tool-call-executor.js';
 export type { ToolExecutionResult, ToolCallTaskInfo } from './tool-call-executor.js';
+
+// Thread执行器（无状态）
+export { ThreadExecutor } from './thread-executor.js';
+export type { ThreadExecutorDependencies } from './thread-executor.js';

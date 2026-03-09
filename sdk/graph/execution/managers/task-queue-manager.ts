@@ -13,7 +13,7 @@
  * - 自动处理队列和线程池协调
  */
 
-import { ThreadExecutor } from '../thread-executor.js';
+import { ThreadExecutor } from '../executors/thread-executor.js';
 import { TaskRegistry } from '../../services/task-registry.js';
 import { ThreadPoolService } from '../../services/thread-pool-service.js';
 import type { EventManager } from '../../../core/services/event-manager.js';

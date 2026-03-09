@@ -22,7 +22,7 @@ import { ThreadContextNotFoundError, RuntimeValidationError } from '@modular-age
 import type { ThreadOptions, ThreadResult } from '@modular-agent/types';
 import { ThreadStatus } from '@modular-agent/types';
 import { ThreadBuilder } from '../thread-builder.js';
-import { ThreadExecutor } from '../thread-executor.js';
+import { ThreadExecutor } from '../executors/thread-executor.js';
 import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager.js';
 import { ThreadCascadeManager } from '../managers/thread-cascade-manager.js';
 import type { ThreadRegistry } from '../../services/thread-registry.js';
