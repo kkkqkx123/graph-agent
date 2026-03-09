@@ -8,6 +8,7 @@
 
 import type { Script, ScriptType, ScriptExecutionOptions, ScriptExecutionResult } from '@modular-agent/types';
 import type { IScriptExecutor } from '@modular-agent/script-executors';
+import { ShellExecutor, PythonExecutor, JavaScriptExecutor, PowerShellExecutor, CmdExecutor } from '@modular-agent/script-executors';
 import { ScriptExecutionError, ScriptNotFoundError, ConfigurationValidationError } from '@modular-agent/types';
 import { tryCatchAsyncWithSignal, all } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
@@ -21,46 +22,20 @@ class ScriptService {
   private scripts: Map<string, Script> = new Map();
   private executors: Map<ScriptType, IScriptExecutor> = new Map();
 
-  /**
-   * 注册脚本执行器
-   * @param type 脚本类型
-   * @param executor 脚本执行器
-   */
-  registerExecutor(type: ScriptType, executor: IScriptExecutor): void {
-    this.executors.set(type, executor);
+  constructor() {
+    this.initializeExecutors();
   }
 
   /**
-   * 获取脚本执行器
-   * @param type 脚本类型
-   * @returns 脚本执行器，如果不存在则返回undefined
+   * 初始化执行器
+   * 脚本类型是SDK的标准类型,使用静态初始化
    */
-  getExecutor(type: ScriptType): IScriptExecutor | undefined {
-    return this.executors.get(type);
-  }
-
-  /**
-   * 检查执行器是否存在
-   * @param type 脚本类型
-   * @returns 是否存在
-   */
-  hasExecutor(type: ScriptType): boolean {
-    return this.executors.has(type);
-  }
-
-  /**
-   * 列出所有注册的执行器类型
-   * @returns 脚本类型数组
-   */
-  listExecutorTypes(): ScriptType[] {
-    return Array.from(this.executors.keys());
-  }
-
-  /**
-   * 清空所有执行器
-   */
-  clearExecutors(): void {
-    this.executors.clear();
+  private initializeExecutors(): void {
+    this.executors.set('SHELL', new ShellExecutor());
+    this.executors.set('PYTHON', new PythonExecutor());
+    this.executors.set('JAVASCRIPT', new JavaScriptExecutor());
+    this.executors.set('POWERSHELL', new PowerShellExecutor());
+    this.executors.set('CMD', new CmdExecutor());
   }
 
   /**

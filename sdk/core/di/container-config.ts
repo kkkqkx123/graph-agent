@@ -10,6 +10,7 @@
  */
 
 import { Container } from '@modular-agent/common-utils';
+import type { CheckpointStorageCallback } from '@modular-agent/storage';
 import * as Identifiers from './service-identifiers.js';
 
 // 存储层服务
@@ -63,21 +64,28 @@ import { ConversationService } from '../../agent/conversation-service.js';
 /** 全局容器实例 */
 let container: Container | null = null;
 /** 应用层提供的存储回调 */
-let storageCallback: any = null;
+let storageCallback: CheckpointStorageCallback | null = null;
 
 /**
  * 设置存储回调
  * @param callback 存储回调接口实现
  */
-export function setStorageCallback(callback: any): void {
+export function setStorageCallback(callback: CheckpointStorageCallback): void {
   storageCallback = callback;
 }
 
 /**
  * 获取存储回调
  * @returns 存储回调接口实现
+ * @throws Error 如果存储回调未初始化
  */
-export function getStorageCallback(): any {
+export function getStorageCallback(): CheckpointStorageCallback {
+  if (!storageCallback) {
+    throw new Error(
+      'Storage callback not initialized. ' +
+      'Please call setStorageCallback() before using SDK.'
+    );
+  }
   return storageCallback;
 }
 
