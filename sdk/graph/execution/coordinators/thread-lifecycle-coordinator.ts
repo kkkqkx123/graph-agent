@@ -27,7 +27,7 @@ import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager.js'
 import { ThreadCascadeManager } from '../managers/thread-cascade-manager.js';
 import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { WorkflowRegistry } from '../../services/workflow-registry.js';
-import { LifecycleCapable } from '../managers/lifecycle-capable.js';
+import { LifecycleCapable } from '../../../core/execution/managers/lifecycle-capable.js';
 
 /**
  * Thread 生命周期协调器

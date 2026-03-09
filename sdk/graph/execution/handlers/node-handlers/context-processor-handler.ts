@@ -19,7 +19,7 @@ import type { Node, ContextProcessorNodeConfig } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
 import { RuntimeValidationError, ValidationError } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
-import { executeOperation } from '../../../../core/utils/message-operation-utils.js';
+import { executeOperation } from '../../../../core/utils/messages/message-operation-utils.js';
 import type { MessageOperationContext } from '@modular-agent/types';
 import type { MessageOperationResult } from '@modular-agent/types';
 import { createContextualLogger } from '../../../../utils/contextual-logger.js';

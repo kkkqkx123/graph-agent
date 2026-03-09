@@ -17,7 +17,7 @@ import type { LLMMessage, LLMUsage, TokenUsageHistory, TokenUsageStats } from '@
 import { MessageHistory, type MessageHistoryState } from '../../messages/message-history.js';
 import { TokenUsageTracker } from '../services/token-usage-tracker.js';
 import type { EventManager } from '../../services/event-manager.js';
-import type { LifecycleCapable } from '../../../graph/execution/managers/lifecycle-capable.js';
+import type { LifecycleCapable } from './lifecycle-capable.js';
 import { createContextualLogger } from '../../../utils/contextual-logger.js';
 import { emit } from '../../../graph/execution/utils/event/event-emitter.js';
 import { buildTokenLimitExceededEvent } from '../../../graph/execution/utils/event/event-builder.js';

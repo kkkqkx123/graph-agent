@@ -3,16 +3,16 @@
  */
 
 // 消息数组操作工具
-export { MessageArrayUtils } from './message-array-utils.js';
+export { MessageArrayUtils } from './messages/message-array-utils.js';
 
 // 可见范围计算工具
-export * from './visible-range-calculator.js';
+export * from './messages/visible-range-calculator.js';
 
 // 批次管理工具
-export * from './batch-management-utils.js';
+export * from './messages/batch-management-utils.js';
 
 // 消息操作工具
-export * from './message-operation-utils.js';
+export * from './messages/message-operation-utils.js';
 
 // 工具描述生成工具
 export * from './tool-description-generator.js';

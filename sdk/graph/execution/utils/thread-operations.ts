@@ -10,7 +10,7 @@ import type { ThreadBuilder } from '../thread-builder.js';
 import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { EventManager } from '../../../core/services/event-manager.js';
 import { ExecutionError, RuntimeValidationError } from '@modular-agent/types';
-import { MessageArrayUtils } from '../../../core/utils/message-array-utils.js';
+import { MessageArrayUtils } from '../../../core/utils/messages/message-array-utils.js';
 import { getErrorMessage, getErrorOrUndefined } from '@modular-agent/common-utils';
 import {
   buildThreadForkStartedEvent,
@@ -230,7 +230,7 @@ export async function join(
             mainThreadEntity.getThreadId()
           );
         }
-        
+
         const parentConversationManager = parentThreadEntity.getConversationManager();
         if (!parentConversationManager) {
           throw new ExecutionError(
@@ -239,10 +239,10 @@ export async function join(
             parentThreadEntity.getThreadId()
           );
         }
-        
+
         const mainMessages = mainConversationManager.getMessages();
         const clonedMessages = MessageArrayUtils.cloneMessages(mainMessages);
-        
+
         // 将克隆的消息添加到父线程
         for (const msg of clonedMessages) {
           parentConversationManager.addMessage(msg);

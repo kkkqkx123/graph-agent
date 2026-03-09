@@ -8,9 +8,9 @@ import type { Thread } from '@modular-agent/types';
 import type { ContinueFromTriggerNodeConfig } from '@modular-agent/types';
 import { ThreadStatus } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
-import { MessageArrayUtils } from '../../../../core/utils/message-array-utils.js';
-import { executeOperation } from '../../../../core/utils/message-operation-utils.js';
-import { getVisibleMessages } from '../../../../core/utils/visible-range-calculator.js';
+import { MessageArrayUtils } from '../../../../core/utils/messages/message-array-utils.js';
+import { executeOperation } from '../../../../core/utils/messages/message-operation-utils.js';
+import { getVisibleMessages } from '../../../../core/utils/messages/visible-range-calculator.js';
 import type { MessageOperationContext } from '@modular-agent/types';
 
 /**
@@ -36,8 +36,8 @@ function canExecute(thread: Thread, node: Node): boolean {
  * @returns 执行结果
  */
 export async function continueFromTriggerHandler(
-  thread: Thread, 
-  node: Node, 
+  thread: Thread,
+  node: Node,
   context?: any
 ): Promise<any> {
   // 检查是否可以执行
@@ -52,7 +52,7 @@ export async function continueFromTriggerHandler(
   }
 
   const config = node.config as ContinueFromTriggerNodeConfig;
-  
+
   // 获取主线程实体（从context中）
   const mainThreadEntity = context?.mainThreadEntity;
   if (!mainThreadEntity) {
@@ -84,26 +84,26 @@ export async function continueFromTriggerHandler(
     if (conversationManager) {
       const allMessages = conversationManager.getAllMessages();
       const markMap = conversationManager.getIndexManager().getMarkMap();
-      
+
       // 构建操作上下文
       const operationContext: MessageOperationContext = {
         messages: allMessages,
         markMap: markMap,
         options: config.callbackOptions
       };
-      
+
       // 执行消息操作
       const result = await executeOperation(
         operationContext,
         config.conversationHistoryCallback
       );
-      
+
       // 获取可见消息回传到主线程
       const visibleMessages = getVisibleMessages(
         result.messages,
         result.markMap
       );
-      
+
       // 将消息回传到主线程
       for (const msg of visibleMessages) {
         mainThreadEntity.addMessage(msg);

@@ -25,7 +25,6 @@ export type { TriggerRuntimeState } from '@modular-agent/types';
 export { VariableStateManager } from './variable-state-manager.js';
 export { ToolContextManager, type ToolScope, type ToolMetadata, type ToolContext } from './tool-context-manager.js';
 export { MessageHistoryManager, type MessageHistoryState } from './message-history-manager.js';
-export { type LifecycleCapable } from './lifecycle-capable.js';
 
 // 从通用执行核心重新导出
 export {

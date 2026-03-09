@@ -16,7 +16,7 @@
 
 import type { LLMMessage } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
-import type { LifecycleCapable } from './lifecycle-capable.js';
+import type { LifecycleCapable } from '../../../core/execution/managers/lifecycle-capable.js';
 
 /**
  * 批次消息快照
@@ -42,7 +42,7 @@ export class MessageHistoryManager implements LifecycleCapable<MessageHistorySta
   private messages: LLMMessage[] = [];
   private batchSnapshots: Map<number, BatchSnapshot> = new Map();
 
-  constructor(private threadId: string) {}
+  constructor(private threadId: string) { }
 
   /**
    * 获取线程ID

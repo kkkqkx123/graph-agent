@@ -94,7 +94,7 @@ function executeTruncateOperation(
   let workingMessages = messages;
   let workingMarkMap = markMap;
   let affectedVisibleIndices: number[] = [];
-  
+
   // 如果只操作可见消息，先获取可见消息
   if (visibleOnly) {
     const boundary = getCurrentBoundary(markMap);
@@ -103,31 +103,31 @@ function executeTruncateOperation(
     const visibleMessages = visibleIndices
       .map(idx => messages[idx])
       .filter((msg): msg is LLMMessage => msg !== undefined);
-    
+
     // 执行截断操作
     const truncateOptions = convertStrategyToOptions(operation.strategy);
     const truncatedMessages = MessageArrayUtils.truncateMessages(visibleMessages, {
       ...truncateOptions,
       role: operation.role
     });
-    
+
     // 计算需要保留的原始索引
     const keptVisibleIndices = getKeptVisibleIndices(visibleMessages, truncatedMessages);
     const keptVisibleOriginalIndices = keptVisibleIndices
       .map(idx => visibleIndices[idx])
       .filter((idx): idx is number => idx !== undefined);
-    
+
     // 合并不可见索引和保留的可见索引，保持原始顺序
     const keptOriginalIndices = markMap.originalIndices.filter(idx =>
       invisibleIndices.includes(idx) || keptVisibleOriginalIndices.includes(idx)
     );
-    
+
     // 记录受影响的索引
     affectedVisibleIndices = visibleIndices.filter(idx => !keptVisibleOriginalIndices.includes(idx));
-    
+
     // 更新标记映射，只保留需要的消息
     workingMarkMap = updateMarkMapForKeptIndices(markMap, keptOriginalIndices);
-    
+
     // 重建完整消息数组（保持原始顺序）
     workingMessages = rebuildMessagesArray(messages, keptOriginalIndices);
   } else {
@@ -137,17 +137,17 @@ function executeTruncateOperation(
       ...truncateOptions,
       role: operation.role
     });
-    
+
     // 重建标记映射
     workingMarkMap = rebuildMarkMap(workingMessages);
   }
-  
+
   // 如果需要创建新批次
   if (operation.createNewBatch) {
     const boundaryIndex = workingMessages.length;
     workingMarkMap = startNewBatch(workingMarkMap, boundaryIndex);
   }
-  
+
   return {
     messages: workingMessages,
     markMap: workingMarkMap,
@@ -168,15 +168,15 @@ function executeInsertOperation(
   let workingMessages = [...messages];
   let workingMarkMap = { ...markMap };
   let affectedVisibleIndices: number[] = [];
-  
+
   if (visibleOnly && operation.position !== -1) {
     // 将可见位置转换为原始位置
     const visibleIndices = getVisibleOriginalIndices(markMap);
     if (operation.position >= 0 && operation.position <= visibleIndices.length) {
       let insertAtOriginalIndex: number;
       if (operation.position === visibleIndices.length) {
-        insertAtOriginalIndex = visibleIndices.length > 0 
-          ? ((visibleIndices[visibleIndices.length - 1] ?? 0) + 1) 
+        insertAtOriginalIndex = visibleIndices.length > 0
+          ? ((visibleIndices[visibleIndices.length - 1] ?? 0) + 1)
           : 0;
       } else {
         const idx = visibleIndices[operation.position];
@@ -185,17 +185,17 @@ function executeInsertOperation(
         }
         insertAtOriginalIndex = idx;
       }
-      
+
       // 在原始位置插入消息
       workingMessages.splice(insertAtOriginalIndex, 0, ...operation.messages);
-      
+
       // 记录受影响的索引
       affectedVisibleIndices = Array.from({ length: operation.messages.length }, (_, i) => insertAtOriginalIndex + i);
-      
+
       // 更新标记映射
       workingMarkMap = updateMarkMapAfterInsert(
-        markMap, 
-        insertAtOriginalIndex, 
+        markMap,
+        insertAtOriginalIndex,
         operation.messages.length,
         workingMessages
       );
@@ -204,19 +204,19 @@ function executeInsertOperation(
     // 在末尾插入或操作完整数组
     const insertPosition = operation.position === -1 ? workingMessages.length : operation.position;
     workingMessages.splice(insertPosition, 0, ...operation.messages);
-    
+
     // 记录受影响的索引
     affectedVisibleIndices = Array.from({ length: operation.messages.length }, (_, i) => insertPosition + i);
-    
+
     workingMarkMap = updateMarkMapAfterInsert(markMap, insertPosition, operation.messages.length, workingMessages);
   }
-  
+
   // 如果需要创建新批次
   if (operation.createNewBatch) {
     const boundaryIndex = workingMessages.length;
     workingMarkMap = startNewBatch(workingMarkMap, boundaryIndex);
   }
-  
+
   return {
     messages: workingMessages,
     markMap: workingMarkMap,
@@ -237,7 +237,7 @@ function executeReplaceOperation(
   let workingMessages = [...messages];
   let workingMarkMap = { ...markMap };
   let affectedVisibleIndices: number[] = [];
-  
+
   if (visibleOnly) {
     // 将可见索引转换为原始索引
     const originalIndex = visibleIndexToOriginal(operation.index, markMap);
@@ -251,13 +251,13 @@ function executeReplaceOperation(
     workingMessages[operation.index] = operation.message;
     affectedVisibleIndices = [operation.index];
   }
-  
+
   // 如果需要创建新批次
   if (operation.createNewBatch) {
     const boundaryIndex = workingMessages.length;
     workingMarkMap = startNewBatch(workingMarkMap, boundaryIndex);
   }
-  
+
   return {
     messages: workingMessages,
     markMap: workingMarkMap,
@@ -278,23 +278,23 @@ function executeClearOperation(
   let workingMessages: LLMMessage[];
   let workingMarkMap = { ...markMap };
   let affectedVisibleIndices: number[] = [];
-  
+
   // CLEAR操作完全清空消息，如需保留特定消息请使用FILTER操作
   const keepSystemMessage = false;
   const keepToolDescription = false;
-  
+
   if (visibleOnly) {
     // 只清空可见消息，保留不可见消息
     const boundary = getCurrentBoundary(markMap);
     const visibleIndices = getVisibleOriginalIndices(markMap);
     const invisibleIndices = markMap.originalIndices.filter(idx => idx < boundary);
-    
+
     // 保留不可见消息的索引
     const keptIndices = invisibleIndices;
-    
+
     // 记录受影响的索引（所有可见索引）
     affectedVisibleIndices = visibleIndices;
-    
+
     // 重建消息数组（只保留不可见消息）
     workingMessages = rebuildMessagesArray(messages, keptIndices);
     workingMarkMap = updateMarkMapForKeptIndices(markMap, keptIndices);
@@ -310,13 +310,13 @@ function executeClearOperation(
       return true;
     });
   }
-  
+
   // 如果需要创建新批次
   if (operation.createNewBatch) {
     const boundaryIndex = workingMessages.length;
     workingMarkMap = startNewBatch(workingMarkMap, boundaryIndex);
   }
-  
+
   return {
     messages: workingMessages,
     markMap: workingMarkMap,
@@ -337,7 +337,7 @@ function executeFilterOperation(
   let workingMessages: LLMMessage[];
   let workingMarkMap = { ...markMap };
   let affectedVisibleIndices: number[] = [];
-  
+
   if (visibleOnly) {
     // 只过滤可见消息，保留不可见消息
     const boundary = getCurrentBoundary(markMap);
@@ -346,14 +346,14 @@ function executeFilterOperation(
     const visibleMessages = visibleIndices
       .map(idx => messages[idx])
       .filter((msg): msg is LLMMessage => msg !== undefined);
-    
+
     let filteredMessages = visibleMessages;
-    
+
     // 按角色过滤
     if (operation.roles && operation.roles.length > 0) {
       filteredMessages = MessageArrayUtils.filterMessagesByRole(filteredMessages, operation.roles);
     }
-    
+
     // 按内容关键词过滤
     if (operation.contentContains || operation.contentExcludes) {
       filteredMessages = MessageArrayUtils.filterMessagesByContent(filteredMessages, {
@@ -361,14 +361,14 @@ function executeFilterOperation(
         excludes: operation.contentExcludes
       });
     }
-    
+
     // 记录受影响的索引
     const keptMessages = new Set(filteredMessages);
     affectedVisibleIndices = visibleIndices.filter(idx => {
       const msg = messages[idx];
       return msg !== undefined && !keptMessages.has(msg);
     });
-    
+
     // 合并不可见索引和过滤后的可见索引
     const keptVisibleIndices = filteredMessages
       .map(msg => messages.indexOf(msg))
@@ -376,19 +376,19 @@ function executeFilterOperation(
     const keptOriginalIndices = markMap.originalIndices.filter(idx =>
       invisibleIndices.includes(idx) || keptVisibleIndices.includes(idx)
     );
-    
+
     // 重建消息数组
     workingMessages = rebuildMessagesArray(messages, keptOriginalIndices);
     workingMarkMap = updateMarkMapForKeptIndices(markMap, keptOriginalIndices);
   } else {
     // 过滤所有消息
     workingMessages = messages;
-    
+
     // 按角色过滤
     if (operation.roles && operation.roles.length > 0) {
       workingMessages = MessageArrayUtils.filterMessagesByRole(workingMessages, operation.roles);
     }
-    
+
     // 按内容关键词过滤
     if (operation.contentContains || operation.contentExcludes) {
       workingMessages = MessageArrayUtils.filterMessagesByContent(workingMessages, {
@@ -396,20 +396,20 @@ function executeFilterOperation(
         excludes: operation.contentExcludes
       });
     }
-    
+
     workingMarkMap = rebuildMarkMap(workingMessages);
     affectedVisibleIndices = markMap.originalIndices.filter(idx => {
       const msg = messages[idx];
       return msg !== undefined && !workingMessages.includes(msg);
     });
   }
-  
+
   // 如果需要创建新批次
   if (operation.createNewBatch) {
     const boundaryIndex = workingMessages.length;
     workingMarkMap = startNewBatch(workingMarkMap, boundaryIndex);
   }
-  
+
   return {
     messages: workingMessages,
     markMap: workingMarkMap,
@@ -427,7 +427,7 @@ function executeBatchManagementOperation(
   operation: BatchManagementOperation
 ): MessageOperationResult {
   let workingMarkMap = { ...markMap };
-  
+
   switch (operation.batchOperation) {
     case 'START_NEW_BATCH':
       if (operation.boundaryIndex === undefined) {
@@ -435,18 +435,18 @@ function executeBatchManagementOperation(
       }
       workingMarkMap = startNewBatch(workingMarkMap, operation.boundaryIndex);
       break;
-      
+
     case 'ROLLBACK_TO_BATCH':
       if (operation.targetBatch === undefined) {
         throw new Error('targetBatch is required for ROLLBACK_TO_BATCH operation');
       }
       workingMarkMap = rollbackToBatch(workingMarkMap, operation.targetBatch);
       break;
-      
+
     default:
       throw new Error(`Unsupported batch operation: ${operation.batchOperation}`);
   }
-  
+
   return {
     messages,
     markMap: workingMarkMap,
@@ -481,7 +481,7 @@ function updateMarkMapForKeptIndices(
     batchBoundaries: [...markMap.batchBoundaries],
     boundaryToBatch: [...markMap.boundaryToBatch]
   };
-  
+
   return newMarkMap;
 }
 
@@ -500,18 +500,18 @@ function updateMarkMapAfterInsert(
     batchBoundaries: [...markMap.batchBoundaries],
     boundaryToBatch: [...markMap.boundaryToBatch]
   };
-  
+
   // 更新原始索引
   newMarkMap.originalIndices = newMarkMap.originalIndices.map(idx =>
     idx >= insertIndex ? idx + insertCount : idx
   );
   newMarkMap.originalIndices.push(...Array.from({ length: insertCount }, (_, i) => insertIndex + i));
-  
+
   // 更新批次边界
   newMarkMap.batchBoundaries = newMarkMap.batchBoundaries.map(boundary =>
     boundary >= insertIndex ? boundary + insertCount : boundary
   );
-  
+
   return newMarkMap;
 }
 
@@ -532,7 +532,7 @@ function rebuildMessagesArray(
  */
 function rebuildMarkMap(messages: LLMMessage[]): MessageMarkMap {
   const originalIndices = messages.map((_, idx) => idx);
-  
+
   return {
     originalIndices,
     batchBoundaries: [0],
@@ -552,7 +552,7 @@ function calculateStats(messages: LLMMessage[], markMap: MessageMarkMap): {
   const totalMessages = messages.length;
   const visibleMessageCount = getVisibleOriginalIndices(markMap).length;
   const invisibleMessageCount = totalMessages - visibleMessageCount;
-  
+
   return {
     originalMessageCount: totalMessages,
     visibleMessageCount,

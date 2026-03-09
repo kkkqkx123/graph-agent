@@ -16,27 +16,23 @@
  */
 
 import type { LLMMessage, LLMToolCall, MessageRole, MessageMarkMap } from '@modular-agent/types';
-import { MessageArrayUtils } from '../utils/message-array-utils.js';
-import { startNewBatch, rollbackToBatch as rollbackBatch, getBatchInfo, getAllBatchesInfo } from '../utils/batch-management-utils.js';
+import { MessageArrayUtils } from '../utils/messages/message-array-utils.js';
+import { startNewBatch, rollbackToBatch as rollbackBatch, getBatchInfo, getAllBatchesInfo } from '../utils/messages/batch-management-utils.js';
 import {
-  getVisibleOriginalIndices,
   getVisibleMessages,
   getVisibleMessageCount,
   getInvisibleMessages,
   getInvisibleMessageCount,
   isMessageVisible,
   getCurrentBoundary
-} from '../utils/visible-range-calculator.js';
+} from '../utils/messages/visible-range-calculator.js';
 import {
   getIndicesByRole,
-  getRecentIndicesByRole,
-  getRangeIndicesByRole,
   getCountByRole,
   getVisibleIndicesByRole,
   getVisibleRecentIndicesByRole,
-  getVisibleRangeIndicesByRole,
   getVisibleCountByRole
-} from '../utils/message-index-utils.js';
+} from '../utils/messages/message-index-utils.js';
 
 /**
  * 消息历史配置

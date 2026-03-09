@@ -6,7 +6,7 @@
 import type { Checkpoint, CheckpointStorageMetadata, CleanupPolicy, CleanupResult } from '@modular-agent/types';
 import type { CheckpointStorageCallback } from '@modular-agent/storage';
 import type { EventManager } from '../../../core/services/event-manager.js';
-import { LifecycleCapable } from './lifecycle-capable.js';
+import { LifecycleCapable } from '../../../core/execution/managers/lifecycle-capable.js';
 import { serializeCheckpoint, deserializeCheckpoint } from '../utils/checkpoint-serializer.js';
 import { createCleanupStrategy } from '../utils/checkpoint-cleanup-policy.js';
 import { getErrorOrNew } from '@modular-agent/common-utils';
