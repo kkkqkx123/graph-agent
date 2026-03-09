@@ -3,7 +3,7 @@
  * 无状态服务，协调完整的检查点流程
  */
 
-import { NotFoundError, ThreadContextNotFoundError, CheckpointNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
+import { ThreadContextNotFoundError, CheckpointNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
 import { CheckpointType, DEFAULT_DELTA_STORAGE_CONFIG } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
 import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot, MessageMarkMap, DeltaStorageConfig } from '@modular-agent/types';

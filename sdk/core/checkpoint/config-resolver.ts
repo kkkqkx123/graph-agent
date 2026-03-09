@@ -5,10 +5,7 @@
  * 支持多层级配置，具体层级由子类定义。
  */
 
-import type {
-  CheckpointConfigResult,
-  CheckpointConfigSourceType
-} from './types.js';
+import type { CheckpointConfigSource, CheckpointConfigResult } from '@modular-agent/types';
 
 /**
  * 配置层级定义
@@ -22,8 +19,6 @@ export interface ConfigLayer {
   enabled?: boolean;
   /** 检查点描述 */
   description?: string;
-  /** 自定义元数据 */
-  metadata?: Record<string, any>;
 }
 
 /**
@@ -69,8 +64,7 @@ export abstract class CheckpointConfigResolver {
         return {
           shouldCreate: layer.enabled,
           description: layer.description || this.defaultDescription,
-          source: layer.name as CheckpointConfigSourceType,
-          metadata: layer.metadata
+          source: layer.name as CheckpointConfigSource
         };
       }
     }
@@ -99,7 +93,6 @@ export abstract class CheckpointConfigResolver {
     config?: {
       enabled?: boolean;
       description?: string;
-      metadata?: Record<string, any>;
     }
   ): ConfigLayer {
     return {
@@ -107,32 +100,6 @@ export abstract class CheckpointConfigResolver {
       priority,
       ...config
     };
-  }
-}
-
-/**
- * 简单配置解析器
- *
- * 提供基本的配置解析功能，适用于简单场景。
- */
-export class SimpleCheckpointConfigResolver extends CheckpointConfigResolver {
-  /**
-   * 解析简单配置
-   *
-   * @param explicitConfig 显式配置（最高优先级）
-   * @param globalConfig 全局配置
-   * @returns 解析结果
-   */
-  resolveSimple(
-    explicitConfig?: { enabled?: boolean; description?: string },
-    globalConfig?: { enabled?: boolean; description?: string }
-  ): CheckpointConfigResult {
-    const layers: ConfigLayer[] = [
-      this.createLayer('explicit', 100, explicitConfig),
-      this.createLayer('global', 10, globalConfig)
-    ];
-
-    return this.resolve(layers);
   }
 }
 

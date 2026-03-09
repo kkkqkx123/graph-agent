@@ -15,7 +15,6 @@ import type {
   CheckpointConfigContext,
   CheckpointConfigResult
 } from '@modular-agent/types';
-import { WorkflowType } from '@modular-agent/types';
 import {
   CheckpointConfigResolver,
   type ConfigLayer

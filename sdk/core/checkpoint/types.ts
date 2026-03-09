@@ -4,10 +4,10 @@
  * 提供可被 Graph 和 Agent 模块复用的 Checkpoint 基础类型。
  */
 
-import type { CheckpointMetadata, CheckpointConfigSource } from '@modular-agent/types';
+import type { CheckpointMetadata, CheckpointConfigSource, CheckpointConfigResult } from '@modular-agent/types';
 
-// 重新导出 CheckpointConfigSource 以便使用
-export type { CheckpointConfigSource } from '@modular-agent/types';
+// 重新导出常用类型以方便使用
+export type { CheckpointMetadata, CheckpointConfigSource, CheckpointConfigResult } from '@modular-agent/types';
 
 /**
  * 通用检查点数据（基础接口）
@@ -35,27 +35,6 @@ export interface BaseCheckpointOptions {
   metadata?: CheckpointMetadata;
   /** 标签 */
   tags?: string[];
-}
-
-/**
- * 检查点配置来源类型
- *
- * 使用 @modular-agent/types 中定义的类型
- */
-export type CheckpointConfigSourceType = CheckpointConfigSource;
-
-/**
- * 检查点配置解析结果
- */
-export interface CheckpointConfigResult {
-  /** 是否创建检查点 */
-  shouldCreate: boolean;
-  /** 检查点描述 */
-  description?: string;
-  /** 配置来源 */
-  source: CheckpointConfigSource;
-  /** 自定义元数据 */
-  metadata?: CheckpointMetadata;
 }
 
 /**

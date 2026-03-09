@@ -8,8 +8,9 @@
 export type {
   BaseCheckpointData,
   BaseCheckpointOptions,
-  CheckpointConfigSourceType,
+  CheckpointConfigSource,
   CheckpointConfigResult,
+  CheckpointMetadata,
   CheckpointManager,
   CheckpointListFilter,
   CheckpointSnapshotBuilder
@@ -18,7 +19,6 @@ export type {
 // 配置解析器
 export {
   CheckpointConfigResolver,
-  SimpleCheckpointConfigResolver,
   shouldCreateCheckpoint,
   getCheckpointDescription
 } from './config-resolver.js';
