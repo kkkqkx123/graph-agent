@@ -16,7 +16,7 @@
  */
 
 import type { ID } from '@modular-agent/types';
-import type { ThreadEntity } from '../../../core/entities/thread-entity.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { EventManager } from '../../../core/services/event-manager.js';
 import { now, diffTimestamp, getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
 import { createSubgraphMetadata } from './subgraph-handler.js';

@@ -20,9 +20,9 @@ import type { WorkflowReferenceInfo, WorkflowReferenceRelation, WorkflowReferenc
 import type { ThreadRegistry } from './thread-registry.js';
 import { ExecutionError, ConfigurationValidationError, WorkflowNotFoundError } from '@modular-agent/types';
 import type { GraphRegistry } from './graph-registry.js';
-import { processWorkflow, type ProcessOptions } from '../graph/workflow-processor.js';
-import { getContainer } from '../di/container-config.js';
-import * as Identifiers from '../di/service-identifiers.js';
+import { processWorkflow, type ProcessOptions } from '../preprocessing/workflow-processor.js';
+import { getContainer } from '../../core/di/container-config.js';
+import * as Identifiers from '../../core/di/service-identifiers.js';
 import { getErrorMessage } from '@modular-agent/common-utils';
 import { checkWorkflowReferences } from '../../graph/execution/utils/workflow-reference-checker.js';
 import { createContextualLogger } from '../../utils/contextual-logger.js';

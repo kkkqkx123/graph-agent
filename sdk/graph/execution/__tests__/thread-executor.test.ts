@@ -57,12 +57,12 @@ vi.mock('../context/execution-context.js', () => ({
 
 // 在 mock 之后导入
 import { ThreadExecutor } from '../thread-executor.js';
-import { ThreadEntity } from '../../core/entities/thread-entity.js';
+import { ThreadEntity } from '../entities/thread-entity.js';
 import { ExecutionContext } from '../context/execution-context.js';
 import { NodeExecutionCoordinator } from '../coordinators/node-execution-coordinator.js';
 import { LLMExecutionCoordinator } from '../coordinators/llm-execution-coordinator.js';
 import { ConversationManager } from '../managers/conversation-manager.js';
-import { GraphNavigator } from '../../core/graph/graph-navigator.js';
+import { GraphNavigator } from '../preprocessing/graph-navigator.js';
 import { handleNodeFailure, handleExecutionError } from '../handlers/error-handler.js';
 
 describe('ThreadExecutor', () => {
@@ -167,7 +167,38 @@ describe('ThreadExecutor', () => {
         local: [],
         loop: []
       },
-      threadType: 'MAIN'
+      threadType: 'MAIN',
+      // ThreadEntity 方法
+      getThreadId: vi.fn().mockReturnValue('test-thread-id'),
+      getWorkflowId: vi.fn().mockReturnValue('test-workflow-id'),
+      getWorkflowVersion: vi.fn().mockReturnValue('1.0.0'),
+      getStatus: vi.fn().mockReturnValue('RUNNING'),
+      setStatus: vi.fn(),
+      getCurrentNodeId: vi.fn().mockReturnValue('node-1'),
+      setCurrentNodeId: vi.fn(),
+      getInput: vi.fn().mockReturnValue({ test: 'input' }),
+      getOutput: vi.fn().mockReturnValue({}),
+      setOutput: vi.fn(),
+      getGraph: vi.fn().mockReturnValue({}),
+      getThread: vi.fn().mockReturnValue(mockThread),
+      getExecutionState: vi.fn().mockReturnValue({}),
+      addNodeResult: vi.fn(),
+      getNodeResults: vi.fn().mockReturnValue([]),
+      addError: vi.fn(),
+      getErrors: vi.fn().mockReturnValue([]),
+      getStartTime: vi.fn().mockReturnValue(Date.now()),
+      getEndTime: vi.fn(),
+      setEndTime: vi.fn(),
+      shouldPause: vi.fn().mockReturnValue(false),
+      setShouldPause: vi.fn(),
+      shouldStop: vi.fn().mockReturnValue(false),
+      setShouldStop: vi.fn(),
+      getConversationManager: vi.fn(),
+      setConversationManager: vi.fn(),
+      addMessage: vi.fn(),
+      getMessages: vi.fn().mockReturnValue([]),
+      getNavigator: vi.fn().mockReturnValue(mockNavigator),
+      cleanup: vi.fn()
     } as any;
 
     // 创建 mock LLMExecutionCoordinator 实例
@@ -201,8 +232,32 @@ describe('ThreadExecutor', () => {
     };
     mockExecutionContext = mockExecutionContextConfig as any;
 
+    // 创建 mock ThreadExecutionCoordinator
+    const mockThreadExecutionCoordinator = {
+      execute: vi.fn().mockResolvedValue({
+        success: true,
+        threadId: 'test-thread-id',
+        output: { test: 'output' },
+        executionTime: 100,
+        metadata: {
+          nodeCount: 1,
+          errorCount: 0
+        }
+      })
+    };
+
+    // 创建 mock GraphRegistry
+    const mockGraphRegistry = {
+      get: vi.fn().mockReturnValue(mockGraph)
+    };
+
     // 创建 ThreadExecutor 实例
-    threadExecutor = new ThreadExecutor(mockExecutionContext);
+    threadExecutor = new ThreadExecutor({
+      graphRegistry: mockGraphRegistry,
+      threadExecutionCoordinatorFactory: {
+        create: vi.fn().mockReturnValue(mockThreadExecutionCoordinator)
+      }
+    });
   });
 
   afterEach(() => {
@@ -449,13 +504,6 @@ describe('ThreadExecutor', () => {
       expect(result.metadata.status).toBe('RUNNING');
       expect(result.metadata.nodeCount).toBe(1);
       expect(result.metadata.errorCount).toBe(0);
-    });
-  });
-
-  describe('getEventManager', () => {
-    it('应该返回 EventManager 实例', () => {
-      const eventManager = threadExecutor.getEventManager();
-      expect(eventManager).toBeDefined();
     });
   });
 });

@@ -26,7 +26,7 @@ import type {
   VisibilityDeclaration,
   VisibilityChangeType
 } from '../types/tool-visibility.types.js';
-import type { ThreadEntity } from '../../../core/entities/thread-entity.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { ToolService } from '../../../core/services/tool-service.js';
 import type { LLMMessage } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';

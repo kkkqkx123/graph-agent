@@ -18,8 +18,8 @@
  */
 
 import type { ThreadResult } from '@modular-agent/types';
-import type { ThreadEntity } from '../../core/entities/thread-entity.js';
-import type { GraphRegistry } from '../../core/services/graph-registry.js';
+import type { ThreadEntity } from '../entities/thread-entity.js';
+import type { GraphRegistry } from '../services/graph-registry.js';
 import type { ThreadExecutionCoordinator } from './coordinators/thread-execution-coordinator.js';
 
 /**

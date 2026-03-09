@@ -12,10 +12,10 @@
  * - 错误隔离：单个子线程操作失败不影响其他子线程
  */
 
-import type { ThreadRegistry } from '../../../core/services/thread-registry.js';
+import type { ThreadRegistry } from '../../services/thread-registry.js';
 import { ThreadLifecycleManager } from './thread-lifecycle-manager.js';
 import type { EventManager } from '../../../core/services/event-manager.js';
-import { TaskRegistry } from '../../../core/services/task-registry.js';
+import { TaskRegistry } from '../../services/task-registry.js';
 import { SystemExecutionError } from '@modular-agent/types';
 import { getErrorOrNew } from '@modular-agent/common-utils';
 

@@ -8,7 +8,7 @@ import type { Thread, ThreadStatus, LLMMessage } from '@modular-agent/types';
 import type { PreprocessedGraph } from '@modular-agent/types';
 import type { SubgraphContext } from './execution-state.js';
 import { ExecutionState } from './execution-state.js';
-import type { ConversationManager } from '../../graph/execution/managers/conversation-manager.js';
+import type { ConversationManager } from '../execution/managers/conversation-manager.js';
 
 /**
  * ThreadEntity - Thread实体

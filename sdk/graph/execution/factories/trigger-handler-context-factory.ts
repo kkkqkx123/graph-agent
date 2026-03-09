@@ -10,9 +10,9 @@
  */
 
 import type { Trigger, TriggerAction } from '@modular-agent/types';
-import type { ThreadRegistry } from '../../../core/services/thread-registry.js';
-import type { WorkflowRegistry } from '../../../core/services/workflow-registry.js';
-import type { GraphRegistry } from '../../../core/services/graph-registry.js';
+import type { ThreadRegistry } from '../../services/thread-registry.js';
+import type { WorkflowRegistry } from '../../services/workflow-registry.js';
+import type { GraphRegistry } from '../../services/graph-registry.js';
 import type { EventManager } from '../../../core/services/event-manager.js';
 import type { TriggerStateManager } from '../managers/trigger-state-manager.js';
 import type { CheckpointStateManager } from '../managers/checkpoint-state-manager.js';

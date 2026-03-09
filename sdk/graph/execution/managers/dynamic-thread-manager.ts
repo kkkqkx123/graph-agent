@@ -14,12 +14,12 @@
  * - 提供完整的事件通知机制
  */
 
-import type { ThreadEntity } from '../../../core/entities/thread-entity.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { EventManager } from '../../../core/services/event-manager.js';
-import type { ThreadRegistry } from '../../../core/services/thread-registry.js';
+import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { ThreadExecutor } from '../thread-executor.js';
 import { now, diffTimestamp, getErrorMessage } from '@modular-agent/common-utils';
-import { TaskRegistry, type TaskManager } from '../../../core/services/task-registry.js';
+import { TaskRegistry, type TaskManager } from '../../services/task-registry.js';
 import { ThreadPoolService } from '../../../core/services/thread-pool-service.js';
 import { TaskQueueManager } from './task-queue-manager.js';
 import { ThreadBuilder } from '../thread-builder.js';

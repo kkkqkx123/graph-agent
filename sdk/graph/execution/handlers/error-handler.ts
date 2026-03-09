@@ -15,7 +15,7 @@
  * - severity 驱动：仅 ERROR 级别错误停止执行，WARNING 和 INFO 级别继续执行
  */
 
-import type { ThreadEntity } from '../../../core/entities/thread-entity.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { Node } from '@modular-agent/types';
 import type { NodeExecutionResult } from '@modular-agent/types';
 import { ErrorContext, SDKError, ErrorSeverity } from '@modular-agent/types';

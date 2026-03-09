@@ -15,13 +15,13 @@
  * - 提供清晰的节点执行接口
  */
 
-import type { ThreadEntity } from '../../../core/entities/thread-entity.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { Node } from '@modular-agent/types';
 import type { NodeExecutionResult } from '@modular-agent/types';
 import type { EventManager } from '../../../core/services/event-manager.js';
 import type { ConversationManager } from '../managers/conversation-manager.js';
 import type { InterruptionManager } from '../managers/interruption-manager.js';
-import type { GraphNavigator } from '../../../core/graph/graph-navigator.js';
+import type { GraphNavigator } from '../../preprocessing/graph-navigator.js';
 import { LLMExecutionCoordinator } from './llm-execution-coordinator.js';
 import { enterSubgraph, exitSubgraph, getSubgraphInput, getSubgraphOutput } from '../handlers/subgraph-handler.js';
 import { SystemExecutionError } from '@modular-agent/types';

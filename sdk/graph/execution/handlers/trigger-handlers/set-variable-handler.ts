@@ -5,7 +5,7 @@
 
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import { NotFoundError, ValidationError, RuntimeValidationError, ThreadContextNotFoundError } from '@modular-agent/types';
-import type { ThreadRegistry } from '../../../../core/services/thread-registry.js';
+import type { ThreadRegistry } from '../../../services/thread-registry.js';
 import { now, diffTimestamp } from '@modular-agent/common-utils';
 
 /**

@@ -1,12 +1,12 @@
 /**
  * Validation模块导出
  * 提供工作流、节点和消息的验证功能
+ * 注意：GraphValidator 已迁移到 graph/validation 模块
  */
 
 export * from './workflow-validator.js';
 export * from './node-validator.js';
 export * from './message-validator.js';
-export * from './graph-validator.js';
 
 // 导出节点验证函数
 export * from './node-validation/index.js';

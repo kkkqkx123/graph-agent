@@ -15,7 +15,7 @@
  * - 委托模式：使用VariableStateManager进行原子状态操作
  */
 
-import type { ThreadEntity } from '../../../core/entities/thread-entity.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { Thread } from '@modular-agent/types';
 import type { VariableScope } from '@modular-agent/types';
 import type { EventManager } from '../../../core/services/event-manager.js';

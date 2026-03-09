@@ -9,7 +9,7 @@
  */
 
 import type { Node } from '@modular-agent/types';
-import type { ThreadEntity } from '../../../core/entities/thread-entity.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { UserInteractionHandler } from '@modular-agent/types';
 import type { HumanRelayHandler } from '@modular-agent/types';
 import type { ConversationManager } from '../managers/conversation-manager.js';

@@ -48,10 +48,10 @@ import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 import { GraphData } from '../entities/graph-data.js';
 import { SUBGRAPH_METADATA_KEYS } from '@modular-agent/types';
-import { analyzeGraph } from '../graph/utils/graph-analyzer.js';
-import { detectCycles } from '../graph/utils/graph-cycle-detector.js';
-import { analyzeReachability } from '../graph/utils/graph-reachability-analyzer.js';
-import { getReachableNodes } from '../graph/utils/graph-traversal.js';
+import { analyzeGraph } from '../preprocessing/utils/graph-analyzer.js';
+import { detectCycles } from '../preprocessing/utils/graph-cycle-detector.js';
+import { analyzeReachability } from '../preprocessing/utils/graph-reachability-analyzer.js';
+import { getReachableNodes } from '../preprocessing/utils/graph-traversal.js';
 
 /**
  * 图验证器类

@@ -19,13 +19,13 @@ import type { WorkflowTrigger } from '@modular-agent/types';
 import type { TriggerReference } from '@modular-agent/types';
 import { GraphBuilder } from './graph-builder.js';
 import { GraphValidator } from '../validation/graph-validator.js';
-import { WorkflowValidator } from '../validation/workflow-validator.js';
+import { WorkflowValidator } from '../../core/validation/workflow-validator.js';
 import { IdMappingBuilder } from './id-mapping-builder.js';
 import { PreprocessedGraphData } from '../entities/preprocessed-graph-data.js';
 import { now } from '@modular-agent/common-utils';
 import { ConfigurationValidationError, NodeTemplateNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
-import { getContainer } from '../di/index.js';
-import * as Identifiers from '../di/service-identifiers.js';
+import { getContainer } from '../../core/di/index.js';
+import * as Identifiers from '../../core/di/service-identifiers.js';
 
 export interface ProcessOptions extends GraphBuildOptions {
   workflowRegistry?: any;

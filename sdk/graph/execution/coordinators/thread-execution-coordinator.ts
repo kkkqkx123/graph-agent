@@ -3,14 +3,14 @@
  * 协调Thread的执行流程，编排各个组件完成执行任务
  */
 
-import type { ThreadEntity } from '../../../core/entities/thread-entity.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { ThreadResult } from '@modular-agent/types';
 import type { VariableCoordinator } from './variable-coordinator.js';
 import type { TriggerCoordinator } from './trigger-coordinator.js';
 import type { InterruptionManager } from '../managers/interruption-manager.js';
 import type { ToolVisibilityCoordinator } from './tool-visibility-coordinator.js';
 import type { NodeExecutionCoordinator } from './node-execution-coordinator.js';
-import type { GraphNavigator } from '../../../core/graph/graph-navigator.js';
+import type { GraphNavigator } from '../../preprocessing/graph-navigator.js';
 import { ThreadInterruptedException } from '@modular-agent/types';
 
 /**

@@ -19,7 +19,7 @@ import type { ThreadEntity } from '../entities/thread-entity.js';
 import { getErrorOrNew, now } from '@modular-agent/common-utils';
 import { TaskRegistry, type TaskManager } from './task-registry.js';
 import { ThreadPoolService } from './thread-pool-service.js';
-import { TaskQueueManager } from '../../graph/execution/managers/task-queue-manager.js';
+import { TaskQueueManager } from '../execution/managers/task-queue-manager.js';
 import { CallbackManager } from '../../graph/execution/managers/callback-manager.js';
 import {
   type TriggeredSubgraphTask,

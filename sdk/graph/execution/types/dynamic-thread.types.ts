@@ -7,7 +7,7 @@
  * - 提供完整的动态线程生命周期状态
  */
 
-import type { ThreadEntity } from '../../../core/entities/thread-entity.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { ThreadResult } from '@modular-agent/types';
 import { TaskStatus } from './task.types.js';
 

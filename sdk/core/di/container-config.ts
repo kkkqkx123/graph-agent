@@ -13,8 +13,8 @@ import { Container } from '@modular-agent/common-utils';
 import * as Identifiers from './service-identifiers.js';
 
 // 存储层服务
-import { GraphRegistry } from '../services/graph-registry.js';
-import { ThreadRegistry } from '../services/thread-registry.js';
+import { GraphRegistry } from '../../graph/services/graph-registry.js';
+import { ThreadRegistry } from '../../graph/services/thread-registry.js';
 import { LLMWrapper } from '../llm/wrapper.js';
 
 // 业务层服务
@@ -23,10 +23,10 @@ import { ToolService } from '../services/tool-service.js';
 import { ScriptService } from '../services/script-service.js';
 import { NodeTemplateRegistry } from '../services/node-template-registry.js';
 import { TriggerTemplateRegistry } from '../services/trigger-template-registry.js';
-import { TaskRegistry } from '../services/task-registry.js';
+import { TaskRegistry } from '../../graph/services/task-registry.js';
 import { ErrorService } from '../services/error-service.js';
-import { WorkflowRegistry } from '../services/workflow-registry.js';
-import { ThreadPoolService } from '../services/thread-pool-service.js';
+import { WorkflowRegistry } from '../../graph/services/workflow-registry.js';
+import { ThreadPoolService } from '../../graph/services/thread-pool-service.js';
 
 // 执行层服务
 import { LLMExecutor } from '../../graph/execution/executors/llm-executor.js';
@@ -46,7 +46,7 @@ import { ThreadExecutionCoordinator } from '../../graph/execution/coordinators/t
 import { VariableCoordinator } from '../../graph/execution/coordinators/variable-coordinator.js';
 import { TriggerCoordinator } from '../../graph/execution/coordinators/trigger-coordinator.js';
 import { NodeExecutionCoordinator } from '../../graph/execution/coordinators/node-execution-coordinator.js';
-import { TriggeredSubworkflowManager } from '../services/triggered-subworkflow-manager.js';
+import { TriggeredSubworkflowManager } from '../../graph/services/triggered-subworkflow-manager.js';
 import { LLMExecutionCoordinator } from '../../graph/execution/coordinators/llm-execution-coordinator.js';
 import { ToolVisibilityCoordinator } from '../../graph/execution/coordinators/tool-visibility-coordinator.js';
 import { ThreadOperationCoordinator } from '../../graph/execution/coordinators/thread-operation-coordinator.js';

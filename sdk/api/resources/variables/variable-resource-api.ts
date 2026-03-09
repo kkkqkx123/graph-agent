@@ -5,7 +5,7 @@
 
 import { now } from '@modular-agent/common-utils';
 import { GenericResourceAPI } from '../generic-resource-api.js';
-import type { ThreadRegistry } from '../../../core/services/thread-registry.js';
+import type { ThreadRegistry } from '../../../graph/services/thread-registry.js';
 import type { Thread, VariableFilter } from '@modular-agent/types';
 import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types';
 import { getContainer } from '../../../core/di/index.js';

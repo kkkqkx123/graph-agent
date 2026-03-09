@@ -5,9 +5,9 @@
 
 import type { ID } from '@modular-agent/types';
 import type { CheckpointMetadata } from '@modular-agent/types';
-import type { ThreadRegistry } from '../../../../core/services/thread-registry.js';
-import type { WorkflowRegistry } from '../../../../core/services/workflow-registry.js';
-import type { GraphRegistry } from '../../../../core/services/graph-registry.js';
+import type { ThreadRegistry } from '../../../services/thread-registry.js';
+import type { WorkflowRegistry } from '../../../services/workflow-registry.js';
+import type { GraphRegistry } from '../../../services/graph-registry.js';
 import { CheckpointStateManager } from '../../managers/checkpoint-state-manager.js';
 import { CheckpointCoordinator } from '../../coordinators/checkpoint-coordinator.js';
 import { mergeMetadata } from '../../../../utils/metadata-utils.js';

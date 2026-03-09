@@ -17,7 +17,7 @@
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
 import type { ExecuteTriggeredSubgraphActionConfig } from '@modular-agent/types';
 import { RuntimeValidationError, ThreadContextNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
-import type { ThreadRegistry } from '../../../../core/services/thread-registry.js';
+import type { ThreadRegistry } from '../../../services/thread-registry.js';
 import type { EventManager } from '../../../../core/services/event-manager.js';
 import type { ThreadBuilder } from '../../thread-builder.js';
 import type { TaskQueueManager } from '../../managers/task-queue-manager.js';

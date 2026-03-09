@@ -12,8 +12,8 @@
 
 import { getContainer } from '../../core/di/index.js';
 import * as Identifiers from '../../core/di/service-identifiers.js';
-import type { WorkflowRegistry } from '../../core/services/workflow-registry.js';
-import type { ThreadRegistry } from '../../core/services/thread-registry.js';
+import type { WorkflowRegistry } from '../../graph/services/workflow-registry.js';
+import type { ThreadRegistry } from '../../graph/services/thread-registry.js';
 import type { EventManager } from '../../core/services/event-manager.js';
 import type { CheckpointStateManager } from '../../graph/execution/managers/checkpoint-state-manager.js';
 import type { ToolService } from '../../core/services/tool-service.js';
@@ -21,7 +21,7 @@ import type { LLMExecutor } from '../../graph/execution/executors/llm-executor.j
 import type { ScriptService } from '../../core/services/script-service.js';
 import type { NodeTemplateRegistry } from '../../core/services/node-template-registry.js';
 import type { TriggerTemplateRegistry } from '../../core/services/trigger-template-registry.js';
-import type { GraphRegistry } from '../../core/services/graph-registry.js';
+import type { GraphRegistry } from '../../graph/services/graph-registry.js';
 
 /**
  * API依赖管理类

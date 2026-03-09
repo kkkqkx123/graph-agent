@@ -15,15 +15,15 @@
  */
 
 import type { ForkConfig, JoinResult } from '../utils/thread-operations.js';
-import { type ThreadRegistry } from '../../../core/services/thread-registry.js';
+import { type ThreadRegistry } from '../../services/thread-registry.js';
 import { ThreadBuilder } from '../thread-builder.js';
 import type { EventManager } from '../../../core/services/event-manager.js';
-import type { WorkflowRegistry } from '../../../core/services/workflow-registry.js';
+import type { WorkflowRegistry } from '../../services/workflow-registry.js';
 import type { ToolService } from '../../../core/services/tool-service.js';
-import type { GraphRegistry } from '../../../core/services/graph-registry.js';
+import type { GraphRegistry } from '../../services/graph-registry.js';
 import { ThreadContextNotFoundError } from '@modular-agent/types';
 import { fork, join, copy } from '../utils/thread-operations.js';
-import type { ThreadEntity } from '../../../core/entities/thread-entity.js';
+import type { ThreadEntity } from '../../entities/thread-entity.js';
 
 /**
  * Thread 操作协调器类

@@ -15,9 +15,9 @@
  * - 支持同步和异步执行模式
  */
 
-import type { ThreadEntity } from '../../../../core/entities/thread-entity.js';
-import type { ThreadRegistry } from '../../../../core/services/thread-registry.js';
-import type { TaskRegistry } from '../../../../core/services/task-registry.js';
+import type { ThreadEntity } from '../../../entities/thread-entity.js';
+import type { ThreadRegistry } from '../../../services/thread-registry.js';
+import type { TaskRegistry } from '../../../services/task-registry.js';
 import type { EventManager } from '../../../../core/services/event-manager.js';
 import type { ThreadBuilder } from '../../thread-builder.js';
 import type { TaskQueueManager } from '../../managers/task-queue-manager.js';
