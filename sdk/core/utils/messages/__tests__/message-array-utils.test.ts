@@ -199,7 +199,7 @@ describe('MessageArrayUtils', () => {
       const messages = createTestMessages();
       const result = MessageArrayUtils.filterMessagesByRole(messages, ['user']);
       expect(result).toHaveLength(2);
-      expect(result.every(msg => msg.role === 'user')).toBe(true);
+      expect(result.every((msg: { role: string; }) => msg.role === 'user')).toBe(true);
     });
 
     it('应该支持多个角色', () => {
@@ -227,7 +227,7 @@ describe('MessageArrayUtils', () => {
       const messages = createTestMessages();
       const result = MessageArrayUtils.filterMessagesByContent(messages, { excludes: ['Hello'] });
       expect(result).toHaveLength(5);
-      expect(result.every(msg => typeof msg.content === 'string' && !msg.content.includes('Hello'))).toBe(true);
+      expect(result.every((msg: LLMMessage) => typeof msg.content === 'string' && !msg.content.includes('Hello'))).toBe(true);
     });
 
     it('应该同时支持包含和排除', () => {
@@ -288,7 +288,7 @@ describe('MessageArrayUtils', () => {
         { role: 'user', content: 'Hello' },
         { role: 'assistant', content: 'Hi' }
       ];
-      const result = MessageArrayUtils.deduplicateMessages(messages, msg => msg.role);
+      const result = MessageArrayUtils.deduplicateMessages(messages, (msg: { role: any; }) => msg.role);
       expect(result).toHaveLength(2);
     });
 
