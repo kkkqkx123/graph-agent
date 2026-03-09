@@ -9,7 +9,7 @@ import { ScriptType } from '@modular-agent/types';
 import { ConfigurationValidationError } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
-import { validateConfig } from './utils.js';
+import { validateConfig } from '../../core/validation/utils.js';
 import { createContextualLogger } from '../../utils/contextual-logger.js';
 
 const logger = createContextualLogger();

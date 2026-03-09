@@ -4,6 +4,7 @@
  */
 
 import type { Node, NodeConfig, NodeType } from '@modular-agent/types';
+import { NodeTemplateNotFoundError, ConfigurationValidationError } from '@modular-agent/types';
 import { generateId } from '../../utils/index.js';
 import { getContainer } from '../../core/di/index.js';
 import * as Identifiers from '../../core/di/service-identifiers.js';
@@ -89,7 +90,7 @@ export class NodeBuilder extends BaseBuilder<Node> {
     const nodeTemplateRegistry = container.get(Identifiers.NodeTemplateRegistry) as any;
     const template = nodeTemplateRegistry.get(templateName);
     if (!template) {
-      throw new Error(`节点模板 '${templateName}' 不存在`);
+      throw new NodeTemplateNotFoundError(`节点模板 '${templateName}' 不存在`, templateName);
     }
 
     this._type = template.type;
@@ -106,10 +107,10 @@ export class NodeBuilder extends BaseBuilder<Node> {
   build(): Node {
     // 验证必需字段
     if (!this._id) {
-      throw new Error('节点ID不能为空');
+      throw new ConfigurationValidationError('节点ID不能为空', { configType: 'node' });
     }
     if (!this._type) {
-      throw new Error('节点类型不能为空');
+      throw new ConfigurationValidationError('节点类型不能为空', { configType: 'node' });
     }
     if (!this._name) {
       this._name = this._id;

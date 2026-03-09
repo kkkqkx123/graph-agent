@@ -5,7 +5,7 @@
 
 import { createLogger } from './logger.js';
 import { ValidationError } from './validator.js';
-import type { CLIError, APIError, FileOperationError } from '../types/cli-types.js';
+import type { CLIError, CLIAPIError, CLIFileOperationError } from '../types/cli-types.js';
 
 const logger = createLogger();
 
@@ -205,7 +205,7 @@ export class CLIErrorHandler {
   /**
    * 获取 API 错误的建议
    */
-  private getAPISuggestions(error: APIError): string[] {
+  private getAPISuggestions(error: CLIAPIError): string[] {
     const suggestions: string[] = [];
 
     if (error.statusCode === 401) {
@@ -233,7 +233,7 @@ export class CLIErrorHandler {
   /**
    * 获取文件操作错误的建议
    */
-  private getFileOperationSuggestions(error: FileOperationError): string[] {
+  private getFileOperationSuggestions(error: CLIFileOperationError): string[] {
     const suggestions: string[] = [];
 
     if (error.filePath) {
@@ -314,24 +314,24 @@ export class CLIErrorHandler {
   /**
    * 检查是否为 API 错误
    */
-  private isAPIError(error: unknown): error is APIError {
+  private isAPIError(error: unknown): error is CLIAPIError {
     return (
       typeof error === 'object' &&
       error !== null &&
       'name' in error &&
-      error.name === 'APIError'
+      error.name === 'CLIAPIError'
     );
   }
 
   /**
    * 检查是否为文件操作错误
    */
-  private isFileOperationError(error: unknown): error is FileOperationError {
+  private isFileOperationError(error: unknown): error is CLIFileOperationError {
     return (
       typeof error === 'object' &&
       error !== null &&
       'name' in error &&
-      error.name === 'FileOperationError'
+      error.name === 'CLIFileOperationError'
     );
   }
 

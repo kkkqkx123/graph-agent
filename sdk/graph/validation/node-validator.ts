@@ -44,7 +44,7 @@ export class NodeValidator {
     // 首先验证基本信息
     const basicResult = nodeSchema.safeParse(node);
     if (!basicResult.success) {
-      return err(convertZodError(basicResult.error, 'node', 'node'));
+      return err(convertZodError(basicResult.error, 'node'));
     }
 
     // 然后验证节点配置
@@ -73,24 +73,5 @@ export class NodeValidator {
    */
   validateNodes(nodes: Node[]): Result<Node, ConfigurationValidationError[]>[] {
     return nodes.map((node) => this.validateNode(node));
-  }
-
-  /**
-   * 将zod错误转换为ValidationResult
-   * @param error zod错误
-   * @param prefix 字段路径前缀
-   * @returns ValidationResult
-   */
-  private convertZodError(error: z.ZodError, prefix?: string): ConfigurationValidationError[] {
-    const errors: ConfigurationValidationError[] = error.issues.map((issue) => {
-      const field = issue.path.length > 0
-        ? (prefix ? `${prefix}.${issue.path.join('.')}` : issue.path.join('.'))
-        : prefix;
-      return new ConfigurationValidationError(issue.message, {
-        configPath: field,
-        configType: 'node'
-      });
-    });
-    return errors;
   }
 }

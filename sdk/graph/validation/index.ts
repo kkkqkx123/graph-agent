@@ -7,3 +7,9 @@ export * from './graph-validator.js';
 export * from './workflow-validator.js';
 export * from './node-validator.js';
 export * from './node-validation/index.js';
+
+// 脚本节点
+export * from './script-config-validator.js';
+
+// 验证策略
+export * from './strategies/index.js';

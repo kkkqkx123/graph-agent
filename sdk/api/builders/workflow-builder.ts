@@ -10,6 +10,7 @@ import type { Edge } from '@modular-agent/types';
 import type { Condition } from '@modular-agent/types';
 import type { WorkflowTrigger } from '@modular-agent/types';
 import type { TriggerReference } from '@modular-agent/types';
+import { NodeTemplateNotFoundError } from '@modular-agent/types';
 import { generateId } from '../../utils/index.js';
 import { getContainer } from '../../core/di/index.js';
 import * as Identifiers from '../../core/di/service-identifiers.js';
@@ -139,7 +140,7 @@ export class WorkflowBuilder extends BaseBuilder<WorkflowDefinition> {
     const nodeTemplateRegistry = container.get(Identifiers.NodeTemplateRegistry) as any;
     const template = nodeTemplateRegistry.get(templateName);
     if (!template) {
-      throw new Error(`节点模板 '${templateName}' 不存在`);
+      throw new NodeTemplateNotFoundError(`节点模板 '${templateName}' 不存在`, templateName);
     }
 
     // 合并配置

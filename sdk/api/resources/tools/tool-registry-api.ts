@@ -10,7 +10,7 @@ import {
 } from '../../validation/validation-strategy.js';
 
 import type { Tool, ToolFilter } from '@modular-agent/types';
-import { NotFoundError } from '@modular-agent/types';
+import { NotFoundError, ToolNotFoundError } from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api.js';
 import type { APIDependencyManager } from '../../core/sdk-dependencies.js';
 
@@ -73,7 +73,7 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
     // 获取现有工具
     const existingTool = await this.getResource(id);
     if (!existingTool) {
-      throw new Error(`Tool '${id}' not found`);
+      throw new ToolNotFoundError(`Tool '${id}' not found`, id);
     }
 
     // 合并更新

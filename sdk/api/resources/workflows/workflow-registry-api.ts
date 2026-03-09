@@ -13,6 +13,7 @@ import {
 import { now } from '@modular-agent/common-utils';
 import { GenericResourceAPI } from '../generic-resource-api.js';
 import type { WorkflowDefinition, WorkflowFilter, WorkflowSummary } from '@modular-agent/types';
+import { WorkflowNotFoundError } from '@modular-agent/types';
 import type { APIDependencyManager } from '../../core/sdk-dependencies.js';
 
 /**
@@ -97,7 +98,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
   ): Promise<string> {
     const existingWorkflow = await this.getResource(id);
     if (!existingWorkflow) {
-      throw new Error(`Workflow with ID '${id}' not found`);
+      throw new WorkflowNotFoundError(`Workflow with ID '${id}' not found`, id);
     }
 
     // 使用版本工具类自动递增版本

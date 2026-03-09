@@ -40,10 +40,10 @@ export class CommandError extends SDKError {
  * 验证错误
  * 当命令参数验证失败时抛出
  */
-export class ValidationError extends CommandError {
+export class CommandValidationError extends CommandError {
   constructor(message: string, context?: Record<string, any>, severity?: ErrorSeverity) {
     super(message, 'VALIDATION_ERROR', context, severity);
-    this.name = 'ValidationError';
+    this.name = 'CommandValidationError';
   }
 }
 
@@ -51,10 +51,10 @@ export class ValidationError extends CommandError {
  * 执行错误
  * 当命令执行过程中发生错误时抛出
  */
-export class ExecutionError extends CommandError {
+export class CommandExecutionError extends CommandError {
   constructor(message: string, context?: Record<string, any>, severity?: ErrorSeverity) {
     super(message, 'EXECUTION_ERROR', context, severity);
-    this.name = 'ExecutionError';
+    this.name = 'CommandExecutionError';
   }
 }
 
@@ -73,10 +73,10 @@ export class PermissionError extends CommandError {
  * 资源未找到错误
  * 当请求的资源不存在时抛出
  */
-export class NotFoundError extends CommandError {
+export class CommandNotFoundError extends CommandError {
   constructor(message: string, context?: Record<string, any>, severity?: ErrorSeverity) {
     super(message, 'NOT_FOUND_ERROR', context, severity);
-    this.name = 'NotFoundError';
+    this.name = 'CommandNotFoundError';
   }
 }
 
@@ -84,10 +84,10 @@ export class NotFoundError extends CommandError {
  * 超时错误
  * 当命令执行超时时抛出
  */
-export class TimeoutError extends CommandError {
+export class CommandTimeoutError extends CommandError {
   constructor(message: string, context?: Record<string, any>, severity?: ErrorSeverity) {
     super(message, 'TIMEOUT_ERROR', context, severity);
-    this.name = 'TimeoutError';
+    this.name = 'CommandTimeoutError';
   }
 }
 

@@ -9,7 +9,7 @@ import type { ConfigFile } from '../types.js';
 import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 import { ValidationError } from '@modular-agent/types';
-import { CodeConfigValidator } from '../../../core/validation/code-config-validator.js';
+import { CodeConfigValidator } from '../../../graph/validation/script-config-validator.js';
 import {
   validateRequiredFields,
   validateBooleanField

@@ -73,33 +73,33 @@ export class CLIError extends Error {
 /**
  * 验证错误类型
  */
-export class ValidationError extends CLIError {
+export class CLIValidationError extends CLIError {
   constructor(message: string, public field?: string) {
     super(message, 'VALIDATION_ERROR', 2);
-    this.name = 'ValidationError';
+    this.name = 'CLIValidationError';
   }
 }
 
 /**
  * 文件操作错误类型
  */
-export class FileOperationError extends CLIError {
+export class CLIFileOperationError extends CLIError {
   constructor(message: string, public filePath?: string) {
     super(message, 'FILE_ERROR', 3);
-    this.name = 'FileOperationError';
+    this.name = 'CLIFileOperationError';
   }
 }
 
 /**
  * API 错误类型
  */
-export class APIError extends CLIError {
+export class CLIAPIError extends CLIError {
   constructor(
     message: string,
     public statusCode?: number,
     public apiEndpoint?: string
   ) {
     super(message, 'API_ERROR', 4);
-    this.name = 'APIError';
+    this.name = 'CLIAPIError';
   }
 }

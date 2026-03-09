@@ -13,15 +13,9 @@ export * from './hook-validator.js';
 // 导出Trigger验证函数
 export * from './trigger-validator.js';
 
-// 导出配置验证器
-export * from './code-config-validator.js';
-
 // 导出静态验证器和运行时验证器
 export * from './tool-static-validator.js';
 export * from './tool-runtime-validator.js';
-
-// 导出策略验证器
-export * from './strategies/self-reference-validation-strategy.js';
 
 // 导出工具函数
 export * from './utils.js';

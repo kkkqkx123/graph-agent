@@ -37,7 +37,7 @@ import { ok, err } from '@modular-agent/common-utils';
 import { validateNodeByType } from './node-validation/index.js';
 import { validateHooks } from '../../core/validation/hook-validator.js';
 import { validateTriggers } from '../../core/validation/trigger-validator.js';
-import { SelfReferenceValidationStrategy } from '../../core/validation/strategies/self-reference-validation-strategy.js';
+import { SelfReferenceValidationStrategy } from './strategies/self-reference-validation-strategy.js';
 import { validateConfig } from '../../core/validation/utils.js';
 
 /**
