@@ -1,10 +1,14 @@
 /**
  * Graph Services模块导出
+ *
+ * 重要变更：
+ * - 本模块不再导出任何内容
+ * - 所有服务类定义在各自的文件中导出（仅供类型引用）
+ * - 所有单例实例通过 DI 统一管理
+ *
+ * 设计原则：
+ * - 强制通过 DI 访问服务，避免误用
+ * - 确保单例的全局唯一性
+ * - 支持测试环境下的单例替换
+ *
  */
-
-export { GraphRegistry } from './graph-registry.js';
-export { ThreadRegistry } from './thread-registry.js';
-export { WorkflowRegistry } from './workflow-registry.js';
-export { TaskRegistry } from './task-registry.js';
-export { TriggeredSubworkflowManager } from './triggered-subworkflow-manager.js';
-export { ThreadPoolService } from './thread-pool-service.js';

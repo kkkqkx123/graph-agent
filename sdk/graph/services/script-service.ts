@@ -7,7 +7,7 @@
  */
 
 import type { Script, ScriptType, ScriptExecutionOptions, ScriptExecutionResult } from '@modular-agent/types';
-import type { ThreadEntity } from '../../graph/entities/thread-entity.js';
+import type { ThreadEntity } from '../entities/thread-entity.js';
 import type { IScriptExecutor } from '@modular-agent/script-executors';
 import { ScriptExecutionError, ScriptNotFoundError, ConfigurationValidationError } from '@modular-agent/types';
 import { tryCatchAsyncWithSignal, all } from '@modular-agent/common-utils';
