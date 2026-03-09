@@ -31,12 +31,12 @@ export {
   ConversationManager,
   type ConversationManagerOptions,
   type ConversationState
-} from '../../../core/execution/managers/conversation-manager.js';
+} from '../../../core/managers/conversation-manager.js';
 
 export {
   InterruptionManager,
   type InterruptionType
-} from '../../../core/execution/managers/interruption-manager.js';
+} from '../../../core/managers/interruption-manager.js';
 
 export { InterruptionDetector, InterruptionDetectorImpl } from './interruption-detector.js';
 

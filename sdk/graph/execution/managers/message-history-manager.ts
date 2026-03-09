@@ -16,7 +16,7 @@
 
 import type { LLMMessage } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
-import type { LifecycleCapable } from '../../../core/execution/managers/lifecycle-capable.js';
+import type { LifecycleCapable } from '../../../core/managers/lifecycle-capable.js';
 
 /**
  * 批次消息快照

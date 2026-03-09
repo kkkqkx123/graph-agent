@@ -7,7 +7,7 @@ import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { ThreadResult } from '@modular-agent/types';
 import type { VariableCoordinator } from './variable-coordinator.js';
 import type { TriggerCoordinator } from './trigger-coordinator.js';
-import type { InterruptionManager } from '../../../core/execution/managers/interruption-manager.js';
+import type { InterruptionManager } from '../../../core/managers/interruption-manager.js';
 import type { ToolVisibilityCoordinator } from './tool-visibility-coordinator.js';
 import type { NodeExecutionCoordinator } from './node-execution-coordinator.js';
 import type { GraphNavigator } from '../../preprocessing/graph-navigator.js';

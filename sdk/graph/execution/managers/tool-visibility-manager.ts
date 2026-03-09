@@ -5,7 +5,7 @@
 
 import type { ToolScope } from './tool-context-manager.js';
 import type { ToolVisibilityContext } from '../types/tool-visibility.types.js';
-import type { LifecycleCapable } from '../../../core/execution/managers/lifecycle-capable.js';
+import type { LifecycleCapable } from '../../../core/managers/lifecycle-capable.js';
 
 /**
  * ToolVisibilityManager - 工具可见性管理器

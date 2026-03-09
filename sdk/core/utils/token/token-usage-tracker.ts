@@ -16,7 +16,7 @@
  */
 
 import type { LLMMessage, LLMUsage, TokenUsageHistory, TokenUsageStatistics, TokenUsageStats } from '@modular-agent/types';
-import { generateId } from '../../../utils/index.js';
+import { generateId } from '../../../../utils/index.js';
 import { now } from '@modular-agent/common-utils';
 import { estimateTokens as estimateTokensUtil, getTokenUsage as getTokenUsageUtil, isTokenLimitExceeded as isTokenLimitExceededUtil } from './token-utils.js';
 

@@ -29,8 +29,8 @@ export { VariableCoordinator } from './coordinators/variable-coordinator.js';
 export { VariableStateManager } from './managers/variable-state-manager.js';
 
 // LLM执行相关 - 从通用执行核心重新导出
-export { ConversationManager, type ConversationState, type ConversationManagerOptions } from '../../core/execution/managers/conversation-manager.js';
-export { TokenUsageTracker, type TokenUsageTrackerOptions, type FullTokenUsageStats } from '../../core/execution/services/token-usage-tracker.js';
+export { ConversationManager, type ConversationState, type ConversationManagerOptions } from '../../core/managers/conversation-manager.js';
+export { TokenUsageTracker, type TokenUsageTrackerOptions, type FullTokenUsageStats } from '../../core/utils/token/token-usage-tracker.js';
 export type { TokenUsageStats } from '@modular-agent/types';
 
 // Hook处理函数

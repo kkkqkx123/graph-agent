@@ -19,7 +19,7 @@ import type { ThreadVariable } from '@modular-agent/types';
 import type { VariableScope, VariableScopes } from '@modular-agent/types';
 import type { WorkflowVariable } from '@modular-agent/types';
 import { ValidationError, RuntimeValidationError } from '@modular-agent/types';
-import type { LifecycleCapable } from '../../../core/execution/managers/lifecycle-capable.js';
+import type { LifecycleCapable } from '../../../core/managers/lifecycle-capable.js';
 
 /**
  * VariableStateManager - 变量状态管理器
