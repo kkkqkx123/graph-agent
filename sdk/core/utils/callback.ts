@@ -8,7 +8,6 @@
  * - 支持错误处理和超时控制
  */
 
-import type { ExecutedThreadResult } from '../types/dynamic-thread.types.js';
 import { getErrorOrNew, now, diffTimestamp } from '@modular-agent/common-utils';
 
 /**
@@ -62,30 +61,6 @@ export async function withTimeout<T>(
     promise,
     createTimeoutPromise(timeout, errorMessage)
   ]);
-}
-
-/**
- * 合并多个子线程结果
- * @param results 子线程结果数组
- * @returns 合并后的结果
- */
-export function mergeResults(results: ExecutedThreadResult[]): Record<string, any> {
-  const merged: Record<string, any> = {
-    success: true,
-    totalResults: results.length,
-    results: []
-  };
-
-  results.forEach((result, index) => {
-    merged['results'].push({
-      index,
-      threadId: result.threadEntity.getThreadId(),
-      output: result.threadEntity.getOutput(),
-      executionTime: result.executionTime
-    });
-  });
-
-  return merged;
 }
 
 /**

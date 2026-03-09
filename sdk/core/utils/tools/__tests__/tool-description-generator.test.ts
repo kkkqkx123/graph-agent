@@ -38,7 +38,7 @@ describe('ToolDescriptionGenerator', () => {
     mockTool1 = {
       id: 'tool-1',
       name: 'Calculator',
-      type: 'native' as const,
+      type: 'STATELESS' as const,
       description: 'Performs basic calculations',
       parameters: {
         properties: {},
@@ -49,7 +49,7 @@ describe('ToolDescriptionGenerator', () => {
     mockTool2 = {
       id: 'tool-2',
       name: 'Weather',
-      type: 'native' as const,
+      type: 'STATELESS' as const,
       description: 'Gets weather information',
       parameters: {
         properties: {},
@@ -60,7 +60,7 @@ describe('ToolDescriptionGenerator', () => {
     mockTool3 = {
       id: 'tool-3',
       name: 'Email',
-      type: 'native' as const,
+      type: 'STATELESS' as const,
       description: 'Sends emails',
       parameters: {
         properties: {},

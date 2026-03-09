@@ -23,7 +23,7 @@ import { getErrorOrNew } from '@modular-agent/common-utils';
 import { RuntimeValidationError, EventSystemError } from '@modular-agent/types';
 import { VariableStateManager } from '../managers/variable-state-manager.js';
 import { VariableAccessor } from '../utils/variable-accessor.js';
-import { safeEmit } from '../utils/event/event-emitter.js';
+import { safeEmit } from '../utils/index.js';
 import { buildVariableChangedEvent } from '../utils/event/event-builder.js';
 
 /**

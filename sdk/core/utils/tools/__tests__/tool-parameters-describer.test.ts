@@ -35,19 +35,21 @@ describe('ToolParametersDescriber', () => {
     mockTool = {
       id: 'test-tool-1',
       name: 'Calculator',
+      type: 'STATELESS' as const,
       description: 'Performs basic calculations',
       parameters: {
+        type: 'object',
         properties: {
           a: {
-            type: 'number',
+            type: 'number' as const,
             description: 'First number'
           },
           b: {
-            type: 'number',
+            type: 'number' as const,
             description: 'Second number'
           },
           operator: {
-            type: 'string',
+            type: 'string' as const,
             description: 'Mathematical operator (+, -, *, /)'
           }
         },
@@ -112,7 +114,7 @@ describe('ToolParametersDescriber', () => {
           ...mockTool.parameters,
           properties: {
             a: {
-              type: 'number',
+              type: 'number' as const,
               description: undefined as unknown as string
             }
           },
@@ -234,6 +236,7 @@ describe('ToolParametersDescriber', () => {
       const toolWithoutParams = {
         ...mockTool,
         parameters: {
+          type: 'object' as const,
           properties: {},
           required: []
         }
@@ -246,6 +249,7 @@ describe('ToolParametersDescriber', () => {
       const toolWithEmptyParams = {
         ...mockTool,
         parameters: {
+          type: 'object' as const,
           properties: {},
           required: []
         }
@@ -262,26 +266,28 @@ describe('ToolParametersDescriber', () => {
       toolWithNestedObject = {
         id: 'nested-tool',
         name: 'NestedTool',
+        type: 'STATELESS' as const,
         description: 'Tool with nested parameters',
         parameters: {
+          type: 'object',
           properties: {
             config: {
               type: 'object',
               description: 'Configuration object',
               properties: {
                 timeout: {
-                  type: 'number',
+                  type: 'number' as const,
                   description: 'Timeout in milliseconds'
                 },
                 retries: {
-                  type: 'number',
+                  type: 'number' as const,
                   description: 'Number of retries'
                 }
               },
               required: ['timeout']
             },
             name: {
-              type: 'string',
+              type: 'string' as const,
               description: 'Tool name'
             }
           },
@@ -312,8 +318,10 @@ describe('ToolParametersDescriber', () => {
       toolWithArray = {
         id: 'array-tool',
         name: 'ArrayTool',
+        type: 'STATELESS' as const,
         description: 'Tool with array parameters',
         parameters: {
+          type: 'object',
           properties: {
             items: {
               type: 'array',
@@ -322,11 +330,11 @@ describe('ToolParametersDescriber', () => {
                 type: 'object',
                 properties: {
                   id: {
-                    type: 'string',
+                    type: 'string' as const,
                     description: 'Item ID'
                   },
                   value: {
-                    type: 'number',
+                    type: 'number' as const,
                     description: 'Item value'
                   }
                 },

@@ -126,17 +126,17 @@ describe('ToolSchemaCleaner', () => {
       const params = createTestParameters();
       const cleaned = cleanForGemini(params);
 
-      expect(cleaned.properties.config.properties.enabled.type).toBe('boolean');
-      expect(cleaned.properties.config.properties.enabled.default).toBeUndefined();
-      expect(cleaned.properties.config.properties.nested.properties.value.$schema).toBeUndefined();
+      expect(cleaned.properties.config.properties!.enabled.type).toBe('boolean');
+      expect(cleaned.properties.config.properties!.enabled.default).toBeUndefined();
+      expect(cleaned.properties.config.properties!.nested.properties!.value.$schema).toBeUndefined();
     });
 
     it('应该递归清理数组元素', () => {
       const params = createTestParameters();
       const cleaned = cleanForGemini(params);
 
-      expect(cleaned.properties.tags.items.type).toBe('string');
-      expect(cleaned.properties.tags.items.$schema).toBeUndefined();
+      expect(cleaned.properties.tags.items!.type).toBe('string');
+      expect(cleaned.properties.tags.items!.$schema).toBeUndefined();
     });
 
     it('应该保留 required 字段', () => {
@@ -404,7 +404,7 @@ describe('ToolSchemaCleaner', () => {
       const cleaned = cleanForGemini(params);
 
       expect(
-        cleaned.properties.level1.properties.level2.properties.level3.$schema
+        cleaned.properties.level1.properties!.level2.properties!.level3.$schema
       ).toBeUndefined();
     });
   });

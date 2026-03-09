@@ -41,7 +41,7 @@ export {
   buildUserInteractionProcessedEvent
 } from './event/index.js';
 
-// 事件触发工具函数
+// 事件触发工具函数（从 core/utils/event 重新导出）
 export {
   safeEmit,
   emit,
@@ -51,7 +51,7 @@ export {
   emitDelayed,
   emitWithRetry,
   emitAndWaitForCallback
-} from './event/event-emitter.js';
+} from '../../../core/utils/event/event-emitter.js';
 
 // 事件等待工具函数
 export {
@@ -65,11 +65,16 @@ export {
   waitForAnyThreadCompleted,
   waitForAnyThreadCompletion,
   waitForNodeCompleted,
-  waitForNodeFailed,
+  waitForNodeFailed
+} from './event/event-waiter.js';
+
+// 通用条件等待函数（从 core/utils/event 重新导出）
+export {
+  WAIT_FOREVER,
   waitForCondition,
   waitForAllConditions,
   waitForAnyCondition
-} from './event/event-waiter.js';
+} from '../../../core/utils/event/condition-waiter.js';
 
 // 线程操作工具
 export {
@@ -97,7 +102,7 @@ export {
 
 export { checkWorkflowReferences } from './workflow-reference-checker.js';
 
-// Hook创建器工具
+// Hook创建器工具（从 core/utils/hook 重新导出通用部分）
 export {
   createThreadStateCheckHook,
   createCustomValidationHook,
@@ -105,12 +110,11 @@ export {
   createAuditLoggingHook
 } from './hook-creators.js';
 
-// 回调工具函数
+// 回调工具函数（从 core/utils/callback 重新导出）
 export {
   wrapCallback,
   createTimeoutPromise,
   withTimeout,
-  mergeResults,
   validateCallback,
   createSafeCallback,
   executeCallbacks,
@@ -120,10 +124,24 @@ export {
   createOnceCallback,
   createCachedCallback,
   cleanupCache
-} from './callback-utils.js';
+} from '../../../core/utils/callback.js';
 
 // 检查点差异计算器
 export { CheckpointDiffCalculator } from './checkpoint-diff-calculator.js';
 
 // 增量检查点恢复器
 export { DeltaCheckpointRestorer, type DeltaRestorerDependencies } from './checkpoint-delta-restorer.js';
+
+// 检查点清理策略（从 core/utils/checkpoint 重新导出）
+export {
+  TimeBasedCleanupStrategy,
+  CountBasedCleanupStrategy,
+  SizeBasedCleanupStrategy,
+  createCleanupStrategy
+} from '../../../core/utils/checkpoint/cleanup-policy.js';
+
+// 检查点序列化（从 core/utils/checkpoint 重新导出）
+export {
+  serializeCheckpoint,
+  deserializeCheckpoint
+} from '../../../core/utils/checkpoint/serializer.js';

@@ -74,9 +74,10 @@ describe('ToolSchemaFormatter', () => {
     mockTool1 = {
       id: 'tool-1',
       name: 'Calculator',
-      type: 'native' as const,
+      type: 'STATELESS' as const,
       description: 'Performs basic calculations',
       parameters: {
+        type: 'object',
         properties: {},
         required: []
       }
@@ -85,9 +86,10 @@ describe('ToolSchemaFormatter', () => {
     mockTool2 = {
       id: 'tool-2',
       name: 'Weather',
-      type: 'native' as const,
+      type: 'STATELESS' as const,
       description: 'Gets weather information',
       parameters: {
+        type: 'object',
         properties: {},
         required: []
       }
@@ -96,16 +98,17 @@ describe('ToolSchemaFormatter', () => {
     mockToolWithParams = {
       id: 'tool-params',
       name: 'SearchTool',
-      type: 'native' as const,
+      type: 'STATELESS' as const,
       description: 'Searches for information',
       parameters: {
+        type: 'object',
         properties: {
           query: {
-            type: 'string',
+            type: 'string' as const,
             description: 'Search query'
           },
           limit: {
-            type: 'number',
+            type: 'number' as const,
             description: 'Max results'
           }
         },
@@ -309,6 +312,7 @@ describe('ToolSchemaFormatter', () => {
       const toolWithNestedParams: Tool = {
         ...mockTool1,
         parameters: {
+          type: 'object',
           properties: {
             config: {
               type: 'object',
@@ -328,13 +332,14 @@ describe('ToolSchemaFormatter', () => {
 
       const schema = toFunctionCallSchema(toolWithNestedParams);
 
-      expect(schema.function.parameters.properties.config.properties.enabled).toBeDefined();
+      expect(schema.function.parameters.properties.config.properties!.enabled).toBeDefined();
     });
 
     it('应该处理数组参数', () => {
       const toolWithArrayParams: Tool = {
         ...mockTool1,
         parameters: {
+          type: 'object',
           properties: {
             items: {
               type: 'array',
@@ -352,7 +357,7 @@ describe('ToolSchemaFormatter', () => {
       const schema = toFunctionCallSchema(toolWithArrayParams);
 
       expect(schema.function.parameters.properties.items.type).toBe('array');
-      expect(schema.function.parameters.properties.items.items.type).toBe('string');
+      expect(schema.function.parameters.properties.items.items!.type).toBe('string');
     });
   });
 });

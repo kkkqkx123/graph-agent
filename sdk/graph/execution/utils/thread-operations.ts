@@ -22,7 +22,7 @@ import {
 } from './event/event-builder.js';
 import {
   safeEmit
-} from './event/event-emitter.js';
+} from '../../../core/utils/event/event-emitter.js';
 import {
   waitForMultipleThreadsCompleted,
   waitForAnyThreadCompleted,

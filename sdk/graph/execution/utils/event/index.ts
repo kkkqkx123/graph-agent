@@ -51,7 +51,7 @@ export {
     emitDelayed,
     emitWithRetry,
     emitAndWaitForCallback
-} from './event-emitter.js';
+} from '../../../../core/utils/event/event-emitter.js';
 
 // 事件等待工具函数
 export {

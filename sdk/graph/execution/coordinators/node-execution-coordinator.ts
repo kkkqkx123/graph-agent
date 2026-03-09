@@ -32,7 +32,7 @@ import { SUBGRAPH_METADATA_KEYS, SubgraphBoundaryType } from '@modular-agent/typ
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
 import { resolveCheckpointConfig } from '../handlers/checkpoint-handlers/checkpoint-config-resolver.js';
-import { emit } from '../utils/event/event-emitter.js';
+import { emit } from '../utils/index.js';
 import {
   buildThreadPausedEvent,
   buildThreadCancelledEvent,

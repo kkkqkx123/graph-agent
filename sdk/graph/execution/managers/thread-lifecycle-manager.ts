@@ -33,7 +33,7 @@ import {
 } from '../utils/event/event-builder.js';
 import {
   emit
-} from '../utils/event/event-emitter.js';
+} from '../utils/index.js';
 import { now } from '@modular-agent/common-utils';
 
 /**

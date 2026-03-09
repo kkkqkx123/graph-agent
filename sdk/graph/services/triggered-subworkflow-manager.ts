@@ -26,7 +26,7 @@ import {
   type ExecutedSubgraphResult,
   type TaskSubmissionResult,
 } from '../../graph/execution/types/triggered-subworkflow.types.js';
-import { emit } from '../../graph/execution/utils/event/event-emitter.js';
+import { emit } from '../execution/utils/index.js';
 import {
   buildTriggeredSubgraphStartedEvent,
   buildTriggeredSubgraphCompletedEvent,
