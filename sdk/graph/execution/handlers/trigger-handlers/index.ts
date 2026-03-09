@@ -1,9 +1,11 @@
 /**
- * 触发器处理函数模块
- * 提供各种触发器动作的处理函数
+ * Graph 触发器处理函数模块
+ *
+ * 基于 sdk/core/triggers 通用框架实现 Graph 特定的触发器处理。
+ * 提供各种触发器动作的处理函数。
  *
  * 注意：
- * - 触发器动作类型是固定的（TriggerActionType枚举）
+ * - 触发器动作类型是固定的（TriggerActionType 枚举）
  * - 处理器在模块加载时静态映射，不支持运行时扩展
  * - 与 NodeHandler 保持一致的架构设计
  */
@@ -13,10 +15,28 @@ import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types
 import { TriggerActionType } from '@modular-agent/types';
 import { now } from '@modular-agent/common-utils';
 
+// 导入通用框架
+export {
+  matchTriggerCondition,
+  matchTriggers,
+  canTrigger,
+  getTriggerStatus,
+  incrementTriggerCount,
+  isTriggerExpired,
+  getRemainingTriggers
+} from '../../../../core/triggers/index.js';
+
+export type {
+  BaseTriggerCondition,
+  BaseTriggerAction,
+  BaseTriggerDefinition,
+  BaseEventData
+} from '../../../../core/triggers/index.js';
+
 /**
  * 触发器处理器类型
  * @param action 触发动作
- * @param triggerId 触发器ID
+ * @param triggerId 触发器 ID
  * @param dependencies 依赖项（可选）
  * @returns 执行结果
  */
@@ -39,7 +59,7 @@ import { executeTriggeredSubgraphHandler } from './execute-triggered-subgraph-ha
 /**
  * 触发器处理函数映射
  *
- * 注意：触发器动作类型是固定的（TriggerActionType枚举），处理器在模块加载时静态映射
+ * 注意：触发器动作类型是固定的（TriggerActionType 枚举），处理器在模块加载时静态映射
  */
 export const triggerHandlers: Record<TriggerActionType, TriggerHandler> = {
   ['start_workflow']: async (action, triggerId) => ({

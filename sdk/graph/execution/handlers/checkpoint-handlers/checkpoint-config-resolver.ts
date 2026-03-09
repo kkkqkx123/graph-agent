@@ -1,38 +1,244 @@
 /**
- * 检查点配置解析器
- * 处理检查点配置的优先级规则
+ * Graph 检查点配置解析器
+ *
+ * 基于 sdk/core/checkpoint 通用框架实现 Graph 特定的配置解析逻辑。
+ * 处理多层级配置优先级规则。
  */
 
-import type { CheckpointConfig, WorkflowDefinition } from '@modular-agent/types';
-import { WorkflowType } from '@modular-agent/types';
-import type { Node, NodeHook } from '@modular-agent/types';
-import type { Trigger } from '@modular-agent/types';
-import type { Tool } from '@modular-agent/types';
-import {
-  CheckpointTriggerType,
-  CheckpointConfigSource
-} from '@modular-agent/types';
 import type {
+  CheckpointConfig,
+  WorkflowDefinition,
+  Node,
+  NodeHook,
+  Trigger,
+  Tool,
   CheckpointConfigContext,
   CheckpointConfigResult
 } from '@modular-agent/types';
+import { WorkflowType } from '@modular-agent/types';
+import {
+  CheckpointConfigResolver,
+  type ConfigLayer
+} from '../../../../core/checkpoint/index.js';
+
+/**
+ * Graph 检查点配置解析器
+ *
+ * 扩展通用配置解析器，添加 Graph 特定的配置层级。
+ *
+ * 配置优先级（从高到低）：
+ * 1. Hook 配置
+ * 2. Trigger 配置
+ * 3. Tool 配置
+ * 4. Node 配置
+ * 5. Global 配置
+ */
+export class GraphCheckpointConfigResolver extends CheckpointConfigResolver {
+  /**
+   * 解析 Graph 检查点配置
+   *
+   * @param globalConfig 全局检查点配置
+   * @param nodeConfig 节点配置
+   * @param hookConfig Hook 配置
+   * @param triggerConfig Trigger 配置
+   * @param toolConfig Tool 配置
+   * @param context 检查点配置上下文
+   * @param workflow 工作流定义
+   * @returns 解析结果
+   */
+  resolveGraphConfig(
+    globalConfig: CheckpointConfig | undefined,
+    nodeConfig: Node | undefined,
+    hookConfig: NodeHook | undefined,
+    triggerConfig: Trigger | undefined,
+    toolConfig: Tool | undefined,
+    context: CheckpointConfigContext,
+    workflow?: WorkflowDefinition
+  ): CheckpointConfigResult {
+    // 特殊处理：triggered 子工作流
+    if (workflow && workflow.type === 'TRIGGERED_SUBWORKFLOW') {
+      const triggeredConfig = workflow.triggeredSubworkflowConfig;
+
+      if (triggeredConfig?.enableCheckpoints === true) {
+        // 明确启用检查点，使用 triggered 子工作流的配置
+        return this.resolveGraphConfigInternal(
+          triggeredConfig.checkpointConfig,
+          nodeConfig,
+          hookConfig,
+          triggerConfig,
+          toolConfig,
+          context
+        );
+      }
+
+      // 默认不创建检查点
+      return {
+        shouldCreate: false,
+        source: 'triggered_subworkflow'
+      };
+    }
+
+    // 普通工作流，使用标准解析逻辑
+    return this.resolveGraphConfigInternal(
+      globalConfig,
+      nodeConfig,
+      hookConfig,
+      triggerConfig,
+      toolConfig,
+      context
+    );
+  }
+
+  /**
+   * 内部解析逻辑
+   */
+  private resolveGraphConfigInternal(
+    globalConfig: CheckpointConfig | undefined,
+    nodeConfig: Node | undefined,
+    hookConfig: NodeHook | undefined,
+    triggerConfig: Trigger | undefined,
+    toolConfig: Tool | undefined,
+    context: CheckpointConfigContext
+  ): CheckpointConfigResult {
+    // 检查全局是否启用
+    const globallyEnabled = globalConfig?.enabled !== false;
+
+    if (!globallyEnabled) {
+      return {
+        shouldCreate: false,
+        source: 'disabled'
+      };
+    }
+
+    // 构建配置层级
+    const layers: ConfigLayer[] = [];
+
+    // 1. Hook 配置（最高优先级）
+    if (hookConfig?.createCheckpoint !== undefined) {
+      layers.push(
+        this.createLayer('hook', 100, {
+          enabled: hookConfig.createCheckpoint,
+          description: hookConfig.checkpointDescription
+        })
+      );
+    }
+
+    // 2. Trigger 配置
+    if (triggerConfig?.createCheckpoint !== undefined) {
+      layers.push(
+        this.createLayer('trigger', 90, {
+          enabled: triggerConfig.createCheckpoint,
+          description: triggerConfig.checkpointDescription
+        })
+      );
+    }
+
+    // 3. Tool 配置
+    if (toolConfig?.createCheckpoint !== undefined) {
+      const shouldCreate = this.resolveToolCheckpointConfig(
+        toolConfig.createCheckpoint,
+        context.triggerType
+      );
+      layers.push(
+        this.createLayer('tool', 80, {
+          enabled: shouldCreate,
+          description: toolConfig.checkpointDescriptionTemplate
+        })
+      );
+    }
+
+    // 4. Node 配置
+    if (nodeConfig) {
+      const nodeCheckpointConfig = this.resolveNodeCheckpointConfig(nodeConfig, context.triggerType);
+      if (nodeCheckpointConfig !== undefined) {
+        layers.push(
+          this.createLayer('node', 70, {
+            enabled: nodeCheckpointConfig,
+            description: `${context.triggerType === 'NODE_BEFORE_EXECUTE' ? 'Before' : 'After'} node: ${nodeConfig.name}`
+          })
+        );
+      }
+    }
+
+    // 5. Global 配置（最低优先级）
+    if (globalConfig) {
+      const globalCheckpointConfig = this.resolveGlobalCheckpointConfig(globalConfig, context.triggerType);
+      if (globalCheckpointConfig !== undefined) {
+        layers.push(
+          this.createLayer('global', 10, {
+            enabled: globalCheckpointConfig,
+            description: `Global checkpoint ${context.triggerType === 'NODE_BEFORE_EXECUTE' ? 'before' : 'after'} node`
+          })
+        );
+      }
+    }
+
+    return this.resolve(layers);
+  }
+
+  /**
+   * 解析 Tool 检查点配置
+   */
+  private resolveToolCheckpointConfig(
+    config: boolean | 'before' | 'after' | 'both',
+    triggerType: string
+  ): boolean {
+    if (config === true) return true;
+    if (config === 'both') return true;
+    if (config === 'before' && triggerType === 'TOOL_BEFORE') return true;
+    if (config === 'after' && triggerType === 'TOOL_AFTER') return true;
+    return false;
+  }
+
+  /**
+   * 解析 Node 检查点配置
+   */
+  private resolveNodeCheckpointConfig(
+    node: Node,
+    triggerType: string
+  ): boolean | undefined {
+    if (triggerType === 'NODE_BEFORE_EXECUTE') {
+      return node.checkpointBeforeExecute;
+    }
+    if (triggerType === 'NODE_AFTER_EXECUTE') {
+      return node.checkpointAfterExecute;
+    }
+    return undefined;
+  }
+
+  /**
+   * 解析 Global 检查点配置
+   */
+  private resolveGlobalCheckpointConfig(
+    config: CheckpointConfig,
+    triggerType: string
+  ): boolean | undefined {
+    if (triggerType === 'NODE_BEFORE_EXECUTE') {
+      return config.checkpointBeforeNode;
+    }
+    if (triggerType === 'NODE_AFTER_EXECUTE') {
+      return config.checkpointAfterNode;
+    }
+    return undefined;
+  }
+}
+
+// 创建默认解析器实例
+const defaultResolver = new GraphCheckpointConfigResolver();
 
 /**
  * 解析检查点配置
- * 根据优先级规则确定是否创建检查点
- * 
- * 优先级层次：
- * 1. 节点级配置（最高）
- * 2. Hook/Trigger配置（中）
- * 3. 全局配置（最低）
- * 
+ *
+ * 便捷函数，使用默认解析器。
+ *
  * @param globalConfig 全局检查点配置
- * @param nodeConfig 节点配置（可选）
- * @param hookConfig Hook配置（可选）
- * @param triggerConfig Trigger配置（可选）
- * @param toolConfig 工具配置（可选）
+ * @param nodeConfig 节点配置
+ * @param hookConfig Hook 配置
+ * @param triggerConfig Trigger 配置
+ * @param toolConfig Tool 配置
  * @param context 检查点配置上下文
- * @returns 检查点配置解析结果
+ * @param workflow 工作流定义
+ * @returns 解析结果
  */
 export function resolveCheckpointConfig(
   globalConfig: CheckpointConfig | undefined,
@@ -43,160 +249,19 @@ export function resolveCheckpointConfig(
   context: CheckpointConfigContext,
   workflow?: WorkflowDefinition
 ): CheckpointConfigResult {
-  // 特殊处理：如果是triggered子工作流，默认不创建检查点
-  if (workflow && workflow.type === 'TRIGGERED_SUBWORKFLOW') {
-    // 检查是否明确启用了检查点
-    const triggeredConfig = workflow.triggeredSubworkflowConfig;
-    
-    if (triggeredConfig?.enableCheckpoints === true) {
-      // 明确启用检查点，使用triggered子工作流的检查点配置
-      const triggeredCheckpointConfig = triggeredConfig.checkpointConfig;
-      return resolveCheckpointConfigInternal(
-        triggeredCheckpointConfig,
-        nodeConfig,
-        hookConfig,
-        triggerConfig,
-        toolConfig,
-        context
-      );
-    }
-    
-    // 默认不创建检查点
-    return {
-      shouldCreate: false,
-      source: 'triggered_subworkflow'
-    };
-  }
-  
-  // 普通工作流，使用标准解析逻辑
-  return resolveCheckpointConfigInternal(
+  return defaultResolver.resolveGraphConfig(
     globalConfig,
     nodeConfig,
     hookConfig,
     triggerConfig,
     toolConfig,
-    context
+    context,
+    workflow
   );
 }
 
 /**
- * 内部检查点配置解析函数
- * 不包含triggered子工作流的特殊处理
- */
-function resolveCheckpointConfigInternal(
-  globalConfig: CheckpointConfig | undefined,
-  nodeConfig: Node | undefined,
-  hookConfig: NodeHook | undefined,
-  triggerConfig: Trigger | undefined,
-  toolConfig: Tool | undefined,
-  context: CheckpointConfigContext
-): CheckpointConfigResult {
-  // 检查全局是否启用检查点
-  const globallyEnabled = globalConfig?.enabled !== false;
-  
-  // 如果全局禁用，直接返回不创建
-  if (!globallyEnabled) {
-    return {
-      shouldCreate: false,
-      source: 'disabled'
-    };
-  }
-
-  // 1. 检查Hook配置（最高优先级）
-  if (hookConfig?.createCheckpoint !== undefined) {
-    return {
-      shouldCreate: hookConfig.createCheckpoint,
-      description: hookConfig.checkpointDescription,
-      source: 'hook'
-    };
-  }
-
-  // 2. 检查Trigger配置（高优先级）
-  if (triggerConfig?.createCheckpoint !== undefined) {
-    return {
-      shouldCreate: triggerConfig.createCheckpoint,
-      description: triggerConfig.checkpointDescription,
-      source: 'trigger'
-    };
-  }
-
-  // 3. 检查工具配置（中优先级）
-  if (toolConfig?.createCheckpoint !== undefined) {
-    const toolCheckpointConfig = toolConfig.createCheckpoint;
-    let shouldCreate = false;
-    
-    // 根据触发类型和工具配置决定是否创建
-    if (context.triggerType === 'TOOL_BEFORE') {
-      shouldCreate = toolCheckpointConfig === true || toolCheckpointConfig === 'before' || toolCheckpointConfig === 'both';
-    } else if (context.triggerType === 'TOOL_AFTER') {
-      shouldCreate = toolCheckpointConfig === 'after' || toolCheckpointConfig === 'both';
-    }
-    
-    return {
-      shouldCreate,
-      description: toolConfig.checkpointDescriptionTemplate,
-      source: 'tool'
-    };
-  }
-
-  // 4. 检查节点配置（中优先级）
-  if (nodeConfig) {
-    if (context.triggerType === 'NODE_BEFORE_EXECUTE') {
-      if (nodeConfig.checkpointBeforeExecute !== undefined) {
-        return {
-          shouldCreate: nodeConfig.checkpointBeforeExecute,
-          description: `Before node: ${nodeConfig.name}`,
-          source: 'node'
-        };
-      }
-    } else if (context.triggerType === 'NODE_AFTER_EXECUTE') {
-      if (nodeConfig.checkpointAfterExecute !== undefined) {
-        return {
-          shouldCreate: nodeConfig.checkpointAfterExecute,
-          description: `After node: ${nodeConfig.name}`,
-          source: 'node'
-        };
-      }
-    }
-  }
-
-  // 5. 检查全局配置（最低优先级）
-  if (globalConfig) {
-    if (context.triggerType === 'NODE_BEFORE_EXECUTE') {
-      if (globalConfig.checkpointBeforeNode !== undefined) {
-        return {
-          shouldCreate: globalConfig.checkpointBeforeNode,
-          description: 'Global checkpoint before node',
-          source: 'global'
-        };
-      }
-    } else if (context.triggerType === 'NODE_AFTER_EXECUTE') {
-      if (globalConfig.checkpointAfterNode !== undefined) {
-        return {
-          shouldCreate: globalConfig.checkpointAfterNode,
-          description: 'Global checkpoint after node',
-          source: 'global'
-        };
-      }
-    }
-  }
-
-  // 默认不创建检查点
-  return {
-    shouldCreate: false,
-    source: 'disabled'
-  };
-}
-
-/**
- * 检查是否应该创建检查点（便捷函数）
- * @param globalConfig 全局检查点配置
- * @param nodeConfig 节点配置（可选）
- * @param hookConfig Hook配置（可选）
- * @param triggerConfig Trigger配置（可选）
- * @param toolConfig 工具配置（可选）
- * @param context 检查点配置上下文
- * @returns 是否创建检查点
+ * 检查是否应该创建检查点
  */
 export function shouldCreateCheckpoint(
   globalConfig: CheckpointConfig | undefined,
@@ -206,26 +271,18 @@ export function shouldCreateCheckpoint(
   toolConfig: Tool | undefined,
   context: CheckpointConfigContext
 ): boolean {
-  const result = resolveCheckpointConfig(
+  return resolveCheckpointConfig(
     globalConfig,
     nodeConfig,
     hookConfig,
     triggerConfig,
     toolConfig,
     context
-  );
-  return result.shouldCreate;
+  ).shouldCreate;
 }
 
 /**
- * 获取检查点描述（便捷函数）
- * @param globalConfig 全局检查点配置
- * @param nodeConfig 节点配置（可选）
- * @param hookConfig Hook配置（可选）
- * @param triggerConfig Trigger配置（可选）
- * @param toolConfig 工具配置（可选）
- * @param context 检查点配置上下文
- * @returns 检查点描述
+ * 获取检查点描述
  */
 export function getCheckpointDescription(
   globalConfig: CheckpointConfig | undefined,
@@ -235,13 +292,12 @@ export function getCheckpointDescription(
   toolConfig: Tool | undefined,
   context: CheckpointConfigContext
 ): string | undefined {
-  const result = resolveCheckpointConfig(
+  return resolveCheckpointConfig(
     globalConfig,
     nodeConfig,
     hookConfig,
     triggerConfig,
     toolConfig,
     context
-  );
-  return result.description;
+  ).description;
 }

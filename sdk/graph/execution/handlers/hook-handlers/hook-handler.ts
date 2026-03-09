@@ -1,154 +1,110 @@
 /**
- * Hook处理器模块
- * 提供通用的Hook执行函数
- * 执行时机由上层有状态模块（如ThreadExecutor）管理
+ * Graph Hook 处理器模块
+ *
+ * 基于 sdk/core/hooks 通用框架实现 Graph 特定的 Hook 执行逻辑。
+ * 执行时机由上层有状态模块（如 ThreadExecutor）管理。
  */
 
-import type { Node, NodeHook } from '@modular-agent/types';
-import { HookType } from '@modular-agent/types';
-import type { Thread } from '@modular-agent/types';
-import type { NodeExecutionResult } from '@modular-agent/types';
-import type { NodeCustomEvent } from '@modular-agent/types';
+import type { Node, NodeHook, Thread, NodeExecutionResult, NodeCustomEvent } from '@modular-agent/types';
+import { HookType, ExecutionError } from '@modular-agent/types';
 import type { CheckpointDependencies } from '../checkpoint-handlers/checkpoint-utils.js';
 import { createCheckpoint } from '../checkpoint-handlers/checkpoint-utils.js';
-import { ExecutionError } from '@modular-agent/types';
-import { getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
+import {
+  filterAndSortHooks,
+  executeHooks,
+  resolvePayloadTemplate,
+  type BaseHookDefinition,
+  type BaseHookContext,
+  type HookHandler
+} from '../../../../core/hooks/index.js';
+import { getErrorOrNew } from '@modular-agent/common-utils';
 import { createContextualLogger } from '../../../../utils/contextual-logger.js';
+import {
+  buildHookEvaluationContext,
+  convertToEvaluationContext,
+  emitHookEvent
+} from './utils/index.js';
 
 const logger = createContextualLogger();
 
 /**
- * Hook执行上下文接口
+ * Graph Hook 执行上下文
+ *
+ * 扩展 BaseHookContext，添加 Graph 特定的上下文数据。
  */
-export interface HookExecutionContext {
-  /** Thread实例 */
+export interface HookExecutionContext extends BaseHookContext {
+  /** Thread 实例 */
   thread: Thread;
   /** 节点定义 */
   node: Node;
-  /** 节点执行结果（AFTER_EXECUTE时可用） */
+  /** 节点执行结果（AFTER_EXECUTE 时可用） */
   result?: NodeExecutionResult;
   /** 检查点依赖项（可选） */
   checkpointDependencies?: CheckpointDependencies;
 }
 
 /**
- * 执行指定类型的Hook
- * @param context Hook执行上下文
- * @param hookType Hook类型（BEFORE_EXECUTE 或 AFTER_EXECUTE）
- * @param emitEvent 事件发射函数
+ * Graph Hook 定义
+ *
+ * NodeHook 扩展 BaseHookDefinition。
  */
-export async function executeHook(
-  context: HookExecutionContext,
-  hookType: HookType,
-  emitEvent: (event: NodeCustomEvent) => Promise<void>
-): Promise<void> {
-  const { node } = context;
+export type GraphHookDefinition = NodeHook & BaseHookDefinition;
 
-  // 检查节点是否有Hook配置
-  if (!node.hooks || node.hooks.length === 0) {
-    return;
-  }
-
-  // 筛选指定类型的Hook，并按权重排序（权重高的先执行）
-  const hooks = node.hooks
-    .filter((hook: NodeHook) => hook.hookType === hookType && (hook.enabled !== false))
-    .sort((a: NodeHook, b: NodeHook) => (b.weight || 0) - (a.weight || 0));
-
-  // 异步执行所有Hook，不阻塞节点执行
-  const promises = hooks.map((hook: NodeHook) => executeSingleHook(context, hook, hookType, emitEvent));
-  await Promise.allSettled(promises);
+/**
+ * 构建 Graph Hook 评估上下文
+ */
+function buildGraphEvalContext(context: HookExecutionContext): Record<string, any> {
+  const hookEvalContext = buildHookEvaluationContext(context);
+  return convertToEvaluationContext(hookEvalContext);
 }
 
 /**
- * 执行单个Hook
- * @param context Hook执行上下文
- * @param hook Hook配置
- * @param emitEvent 事件发射函数
+ * 创建检查点处理器
  */
-async function executeSingleHook(
-  context: HookExecutionContext,
-  hook: NodeHook,
-  hookType: HookType,
-  emitEvent: (event: NodeCustomEvent) => Promise<void>
-): Promise<void> {
-  try {
-    const { conditionEvaluator } = await import('@modular-agent/common-utils');
-    const {
-      buildHookEvaluationContext,
-      convertToEvaluationContext,
-      generateHookEventData,
-      emitHookEvent
-    } = await import('./utils/index.js');
-
-    // 构建评估上下文
-    const evalContext = buildHookEvaluationContext(context);
-
-    // 评估触发条件（如果有）
-    if (hook.condition) {
-      let result: boolean;
-      try {
-        result = conditionEvaluator.evaluate(
-          hook.condition,
-          convertToEvaluationContext(evalContext)
-        );
-      } catch (error) {
-        // 记录警告但不中断执行
-        logger.warn(
-          `Hook condition evaluation failed: ${getErrorMessage(error)}`,
-          {
-            eventName: hook.eventName,
-            nodeId: context.node.id,
-            operation: 'hook_condition_evaluation'
-          },
-          { error }
-        );
-        // 条件评估失败，跳过此 Hook
-        return;
-      }
-
-      if (!result) {
-        return;
-      }
+function createCheckpointHandler(): HookHandler<HookExecutionContext> {
+  return async (context, hook, eventData) => {
+    // 将 hook 转换为 NodeHook 以访问 Graph 特定属性
+    const nodeHook = hook as NodeHook;
+    if (!nodeHook.createCheckpoint || !context.checkpointDependencies) {
+      return;
     }
 
-    // Hook触发前创建检查点（如果配置了）
-    if (hook.createCheckpoint && context.checkpointDependencies) {
-      try {
-        await createCheckpoint(
-          {
-            threadId: context.thread.id,
-            nodeId: context.node.id,
-            description: hook.checkpointDescription || `Hook: ${hook.eventName}`
-          },
-          context.checkpointDependencies
-        );
-      } catch (error) {
-        // 记录警告日志，不中断执行
-        logger.warn(
-          'Failed to create checkpoint for hook',
-          {
-            eventName: hook.eventName,
-            nodeId: context.node.id,
-            threadId: context.thread.id,
-            workflowId: context.thread.workflowId,
-            operation: 'checkpoint_creation'
-          },
-          undefined,
-          getErrorOrNew(error)
-        );
-      }
+    try {
+      await createCheckpoint(
+        {
+          threadId: context.thread.id,
+          nodeId: context.node.id,
+          description: nodeHook.checkpointDescription || `Hook: ${hook.eventName}`
+        },
+        context.checkpointDependencies
+      );
+    } catch (error) {
+      logger.warn(
+        'Failed to create checkpoint for hook',
+        {
+          eventName: hook.eventName,
+          nodeId: context.node.id,
+          threadId: context.thread.id,
+          workflowId: context.thread.workflowId,
+          operation: 'checkpoint_creation'
+        },
+        undefined,
+        getErrorOrNew(error)
+      );
     }
+  };
+}
 
-    // 生成事件载荷
-    const eventData = generateHookEventData(hook, evalContext);
-
-    // 如果eventPayload中有handler，执行自定义处理函数
+/**
+ * 创建自定义处理器
+ */
+function createCustomHandler(): HookHandler<HookExecutionContext> {
+  return async (context, hook, eventData) => {
     const customHandler = hook.eventPayload?.['handler'];
     if (customHandler && typeof customHandler === 'function') {
       try {
-        await customHandler(context, hook, eventData);
+        await customHandler(context, hook as NodeHook, eventData);
       } catch (error) {
-        // 抛出执行错误，标记为错误级别（自定义处理程序执行失败）
         throw new ExecutionError(
           'Custom handler execution failed',
           context.node.id,
@@ -163,25 +119,68 @@ async function executeSingleHook(
         );
       }
     }
+  };
+}
 
-    // 触发自定义事件
+/**
+ * 创建事件发射处理器
+ */
+function createEventEmitterHandler(
+  emitEvent: (event: NodeCustomEvent) => Promise<void>
+): HookHandler<HookExecutionContext> {
+  return async (context, hook, eventData) => {
     await emitHookEvent(context, hook.eventName, eventData, emitEvent);
-  } catch (error) {
-    // 抛出执行错误，标记为错误级别（Hook执行失败）
-    throw new ExecutionError(
-      'Hook execution failed',
-      context.node.id,
-      context.thread.workflowId,
-      {
-        eventName: hook.eventName,
-        nodeId: context.node.id,
-        hookType,
-        operation: 'hook_execution'
-      },
-      getErrorOrNew(error),
-      'error'
-    );
+  };
+}
+
+/**
+ * 执行指定类型的 Hook
+ *
+ * @param context Hook 执行上下文
+ * @param hookType Hook 类型（BEFORE_EXECUTE 或 AFTER_EXECUTE）
+ * @param emitEvent 事件发射函数
+ */
+export async function executeHook(
+  context: HookExecutionContext,
+  hookType: HookType,
+  emitEvent: (event: NodeCustomEvent) => Promise<void>
+): Promise<void> {
+  const { node } = context;
+
+  // 检查节点是否有 Hook 配置
+  if (!node.hooks || node.hooks.length === 0) {
+    return;
   }
+
+  // 使用通用框架筛选和排序 Hook
+  const hooks = filterAndSortHooks(node.hooks as GraphHookDefinition[], hookType);
+
+  if (hooks.length === 0) {
+    return;
+  }
+
+  // 创建处理器链
+  const handlers: HookHandler<HookExecutionContext>[] = [
+    createCheckpointHandler(),
+    createCustomHandler(),
+    createEventEmitterHandler(emitEvent)
+  ];
+
+  // 使用通用框架执行 Hook
+  await executeHooks(
+    hooks,
+    context,
+    buildGraphEvalContext,
+    handlers,
+    async (event) => {
+      // 事件已通过 createEventEmitterHandler 处理
+    },
+    {
+      parallel: true,
+      continueOnError: true,
+      warnOnConditionFailure: true
+    }
+  );
 }
 
 // 导出工具函数
