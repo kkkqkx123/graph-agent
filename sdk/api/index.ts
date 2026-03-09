@@ -1,9 +1,16 @@
 /**
  * API层入口文件
  * 导出所有API模块和类型
+ *
+ * 目录结构：
+ * - graph/   : Graph 相关 API (Workflow, Thread, Checkpoint 等)
+ * - agent/   : Agent 相关 API (AgentLoop 等)
+ * - shared/  : 共享模块 (types, core, common, utils, validation 等)
  */
 
-// Command模式核心
+// ============================================================================
+// Shared - Command模式核心
+// ============================================================================
 export {
   Command,
   BaseCommand,
@@ -13,10 +20,9 @@ export {
   CommandValidationResult,
   validationSuccess,
   validationFailure
-} from './types/command.js';
+} from './shared/types/command.js';
 
-export { CommandExecutor } from './common/command-executor.js';
-
+export { CommandExecutor } from './shared/common/command-executor.js';
 
 // Query模式核心
 export {
@@ -28,154 +34,143 @@ export {
   queryFailure,
   isQuerySuccess,
   isQueryFailure
-} from './types/query.js';
+} from './shared/types/query.js';
 
 // Subscription模式核心
 export {
   Subscription,
   BaseSubscription,
   SubscriptionMetadata
-} from './types/subscription.js';
+} from './shared/types/subscription.js';
 
 // 统一类型
-export { ExecutionResult, success, failure, isSuccess, isFailure, getData, getError } from './types/execution-result.js';
-export { ExecutionOptions, DEFAULT_EXECUTION_OPTIONS, mergeExecutionOptions } from './types/execution-options.js';
+export { ExecutionResult, success, failure, isSuccess, isFailure, getData, getError } from './shared/types/execution-result.js';
+export { ExecutionOptions, DEFAULT_EXECUTION_OPTIONS, mergeExecutionOptions } from './shared/types/execution-options.js';
 
 // 全局SDK实例
-export { getSDK } from './core/sdk.js';
-
-// 资源管理API (CRUD Operations)
-export { WorkflowRegistryAPI } from './resources/workflows/workflow-registry-api.js';
-export { ThreadRegistryAPI } from './resources/threads/thread-registry-api.js';
-export { NodeRegistryAPI } from './resources/templates/node-template-registry-api.js';
-export { TriggerTemplateRegistryAPI } from './resources/templates/trigger-template-registry-api.js';
-export { ToolRegistryAPI } from './resources/tools/tool-registry-api.js';
-export { ScriptRegistryAPI } from './resources/scripts/script-registry-api.js';
-export { LLMProfileRegistryAPI as ProfileRegistryAPI } from './resources/llm/llm-profile-registry-api.js';
-
-// 新增资源管理API
-export { CheckpointResourceAPI } from './resources/checkpoints/checkpoint-resource-api.js';
-export {
-  MessageResourceAPI,
-  type MessageFilter,
-  type MessageStats
-} from './resources/messages/message-resource-api.js';
-export {
-  VariableResourceAPI,
-  type VariableDefinition
-} from './resources/variables/variable-resource-api.js';
-export { TriggerResourceAPI } from './resources/triggers/trigger-resource-api.js';
-export {
-  EventResourceAPI
-} from './resources/events/event-resource-api.js';
-export {
-  UserInteractionResourceAPI,
-  type UserInteractionConfig,
-  type UserInteractionFilter
-} from './resources/user-interaction/user-interaction-resource-api.js';
-export {
-  HumanRelayResourceAPI,
-  type HumanRelayConfig,
-  type HumanRelayFilter
-} from './resources/human-relay/human-relay-resource-api.js';
-
-// 通用资源API基类和工具
-export { GenericResourceAPI } from './resources/generic-resource-api.js';
-export {
-  createResourceAPIs,
-  type ResourceAPIs
-} from './resources/index.js';
+export { getSDK } from './shared/core/sdk.js';
 
 // API工厂
-export { APIFactory, getAPIFactory, type AllAPIs } from './core/api-factory.js';
-
+export { APIFactory, getAPIFactory, type AllAPIs } from './shared/core/api-factory.js';
 
 // 事件系统类型
 export {
   APIEventType,
   type APIEventData,
   type APIEventListener
-} from './types/event-types.js';
+} from './shared/types/event-types.js';
 
 // 事件系统实现
 export {
   APIEventBus,
   APIEventBuilder,
   createEventBus
-} from './common/api-event-system.js';
+} from './shared/common/api-event-system.js';
 
 // ============================================================================
-// Command类 - 核心API (Core APIs) - 有副作用操作
+// Shared - 资源管理API (CRUD Operations) - 共享资源
+// ============================================================================
+export { ToolRegistryAPI } from './shared/resources/tools/tool-registry-api.js';
+export { ScriptRegistryAPI } from './shared/resources/scripts/script-registry-api.js';
+export { LLMProfileRegistryAPI as ProfileRegistryAPI } from './shared/resources/llm/llm-profile-registry-api.js';
+
+// 通用资源API基类和工具
+export { GenericResourceAPI } from './shared/resources/generic-resource-api.js';
+export {
+  createResourceAPIs,
+  type ResourceAPIs
+} from './shared/resources/index.js';
+
+// ============================================================================
+// Graph - 资源管理API (CRUD Operations)
+// ============================================================================
+export { WorkflowRegistryAPI } from './graph/resources/workflows/workflow-registry-api.js';
+export { ThreadRegistryAPI } from './graph/resources/threads/thread-registry-api.js';
+export { NodeRegistryAPI } from './graph/resources/templates/node-template-registry-api.js';
+export { TriggerTemplateRegistryAPI } from './graph/resources/templates/trigger-template-registry-api.js';
+export { CheckpointResourceAPI } from './graph/resources/checkpoints/checkpoint-resource-api.js';
+export {
+  MessageResourceAPI,
+  type MessageFilter,
+  type MessageStats
+} from './graph/resources/messages/message-resource-api.js';
+export {
+  VariableResourceAPI,
+  type VariableDefinition
+} from './graph/resources/variables/variable-resource-api.js';
+export { TriggerResourceAPI } from './graph/resources/triggers/trigger-resource-api.js';
+export {
+  EventResourceAPI
+} from './graph/resources/events/event-resource-api.js';
+export {
+  UserInteractionResourceAPI,
+  type UserInteractionConfig,
+  type UserInteractionFilter
+} from './graph/resources/user-interaction/user-interaction-resource-api.js';
+export {
+  HumanRelayResourceAPI,
+  type HumanRelayConfig,
+  type HumanRelayFilter
+} from './graph/resources/human-relay/human-relay-resource-api.js';
+
+// ============================================================================
+// Graph - Command类 (有副作用操作)
 // ============================================================================
 
 // Execution Commands
 export {
   ExecuteThreadCommand
-} from './operations/commands/execution/execute-thread-command.js';
-export type { ExecuteThreadParams } from './operations/commands/execution/execute-thread-command.js';
+} from './graph/operations/execution/execute-thread-command.js';
+export type { ExecuteThreadParams } from './graph/operations/execution/execute-thread-command.js';
 
 export {
   PauseThreadCommand
-} from './operations/commands/execution/pause-thread-command.js';
+} from './graph/operations/execution/pause-thread-command.js';
 
 export {
   ResumeThreadCommand
-} from './operations/commands/execution/resume-thread-command.js';
+} from './graph/operations/execution/resume-thread-command.js';
 
 export {
   CancelThreadCommand
-} from './operations/commands/execution/cancel-thread-command.js';
-
-// LLM Commands
-export {
-  GenerateCommand
-} from './operations/commands/llm/generate-command.js';
-
-export {
-  GenerateBatchCommand
-} from './operations/commands/llm/generate-batch-command.js';
-
-// Script Commands
-export {
-  ExecuteScriptCommand
-} from './operations/commands/scripts/execute-script-command.js';
-
-// Tool Commands
-export {
-  ExecuteToolCommand
-} from './operations/commands/tools/execute-tool-command.js';
-
-// Checkpoint Commands (已迁移到CheckpointResourceAPI)
-// 使用CheckpointResourceAPI.createThreadCheckpoint()和.restoreFromCheckpoint()
+} from './graph/operations/execution/cancel-thread-command.js';
 
 // Trigger Commands
 export {
   EnableTriggerCommand
-} from './operations/commands/triggers/enable-trigger-command.js';
-export type { EnableTriggerParams } from './operations/commands/triggers/enable-trigger-command.js';
+} from './graph/operations/triggers/enable-trigger-command.js';
+export type { EnableTriggerParams } from './graph/operations/triggers/enable-trigger-command.js';
 
 export {
   DisableTriggerCommand
-} from './operations/commands/triggers/disable-trigger-command.js';
-export type { DisableTriggerParams } from './operations/commands/triggers/disable-trigger-command.js';
+} from './graph/operations/triggers/disable-trigger-command.js';
+export type { DisableTriggerParams } from './graph/operations/triggers/disable-trigger-command.js';
 
+// Subscriptions
 export {
   OnEventSubscription
-} from './operations/subscriptions/events/on-event-subscription.js';
-export type { OnEventParams } from './operations/subscriptions/events/on-event-subscription.js';
+} from './graph/operations/subscriptions/events/on-event-subscription.js';
+export type { OnEventParams } from './graph/operations/subscriptions/events/on-event-subscription.js';
 
 export {
   OnceEventSubscription
-} from './operations/subscriptions/events/once-event-subscription.js';
-export type { OnceEventParams } from './operations/subscriptions/events/once-event-subscription.js';
+} from './graph/operations/subscriptions/events/once-event-subscription.js';
+export type { OnceEventParams } from './graph/operations/subscriptions/events/once-event-subscription.js';
 
 export {
   OffEventSubscription
-} from './operations/subscriptions/events/off-event-subscription.js';
-export type { OffEventParams } from './operations/subscriptions/events/off-event-subscription.js';
+} from './graph/operations/subscriptions/events/off-event-subscription.js';
+export type { OffEventParams } from './graph/operations/subscriptions/events/off-event-subscription.js';
 
 // ============================================================================
-// 验证API
+// Graph - 构建器
+// ============================================================================
+export { WorkflowBuilder, ExecutionBuilder } from './graph/builders/index.js';
+export { NodeTemplateBuilder } from './graph/builders/node-template-builder.js';
+export { TriggerTemplateBuilder } from './graph/builders/trigger-template-builder.js';
+
+// ============================================================================
+// Graph - 验证API
 // ============================================================================
 export { WorkflowValidator as WorkflowValidatorAPI } from '../graph/validation/index.js';
 export { CodeConfigValidator as CodeConfigValidatorAPI } from '../graph/validation/script-config-validator.js';
@@ -193,23 +188,7 @@ export {
 } from '../core/validation/index.js';
 
 // ============================================================================
-// 构建器
-// ============================================================================
-export { WorkflowBuilder, ExecutionBuilder } from './builders/index.js';
-export { NodeTemplateBuilder } from './builders/node-template-builder.js';
-export { TriggerTemplateBuilder } from './builders/trigger-template-builder.js';
-export type {
-  ExecutionEvent,
-  StartEvent,
-  CompleteEvent,
-  ErrorEvent,
-  CancelledEvent,
-  ProgressEvent,
-  NodeExecutedEvent
-} from './types/execution-events.js';
-
-// ============================================================================
-// Hook创建器
+// Graph - Hook创建器
 // ============================================================================
 export {
   createThreadStateCheckHook,
@@ -219,14 +198,50 @@ export {
 } from '../graph/execution/utils/hook-creators.js';
 
 // ============================================================================
-// 工具函数
+// Shared - Commands (LLM, Tool, Script)
+// ============================================================================
+
+// LLM Commands
+export {
+  GenerateCommand
+} from './shared/operations/llm/generate-command.js';
+
+export {
+  GenerateBatchCommand
+} from './shared/operations/llm/generate-batch-command.js';
+
+// Script Commands
+export {
+  ExecuteScriptCommand
+} from './shared/operations/scripts/execute-script-command.js';
+
+// Tool Commands
+export {
+  ExecuteToolCommand
+} from './shared/operations/tools/execute-tool-command.js';
+
+// ============================================================================
+// Agent - Commands
+// ============================================================================
+export {
+  RunAgentLoopCommand,
+  type RunAgentLoopParams
+} from './agent/operations/run-agent-loop-command.js';
+
+export {
+  RunAgentLoopStreamCommand,
+  type RunAgentLoopStreamParams
+} from './agent/operations/run-agent-loop-stream-command.js';
+
+// ============================================================================
+// Shared - 工具函数
 // ============================================================================
 // Result类型 - 从核心层导入
 export { ok, err, all, any, tryCatchAsyncWithSignal } from '@modular-agent/common-utils';
 export type { Result, Ok, Err } from '@modular-agent/types';
 
 // ============================================================================
-// Observable响应式编程
+// Shared - Observable响应式编程
 // ============================================================================
 export {
   Observable,
@@ -234,11 +249,11 @@ export {
   Subscription as ObservableSubscription,
   ObservableImpl,
   create
-} from './utils/observable.js';
-export type { OperatorFunction } from './utils/observable.js';
+} from './shared/utils/observable.js';
+export type { OperatorFunction } from './shared/utils/observable.js';
 
 // ============================================================================
-// 类型定义
+// Shared - 类型定义
 // ============================================================================
 export type {
   ThreadOptions,
@@ -271,8 +286,18 @@ export type {
   TriggerFilter
 } from '@modular-agent/types';
 
+export type {
+  ExecutionEvent,
+  StartEvent,
+  CompleteEvent,
+  ErrorEvent,
+  CancelledEvent,
+  ProgressEvent,
+  NodeExecutedEvent
+} from './shared/types/execution-events.js';
+
 // ============================================================================
-// 配置解析模块
+// Shared - 配置解析模块
 // ============================================================================
 export {
   ConfigParser,
@@ -284,20 +309,20 @@ export {
   type EdgeConfigFile,
   type IConfigParser,
   type IConfigTransformer
-} from './config/index.js';
+} from './shared/config/index.js';
 
 // JSON解析函数
 export {
   parseJson,
   stringifyJson,
   validateJsonSyntax
-} from './config/index.js';
+} from './shared/config/index.js';
 
 // TOML解析函数
 export {
   parseToml,
   validateTomlSyntax
-} from './config/index.js';
+} from './shared/config/index.js';
 
 // 配置解析函数
 export {
@@ -307,9 +332,9 @@ export {
   parseScript,
   parseLLMProfile,
   loadConfigContent
-} from './config/index.js';
+} from './shared/config/index.js';
 
 // ============================================================================
 // Profile模板类型
 // ============================================================================
-export type { LLMProfileTemplate as ProfileTemplate } from './resources/llm/llm-profile-registry-api.js';
+export type { LLMProfileTemplate as ProfileTemplate } from './shared/resources/llm/llm-profile-registry-api.js';

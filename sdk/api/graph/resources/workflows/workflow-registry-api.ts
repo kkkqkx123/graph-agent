@@ -11,7 +11,7 @@ import {
 } from '../../validation/validation-strategy.js';
 
 import { now } from '@modular-agent/common-utils';
-import { GenericResourceAPI } from '../generic-resource-api.js';
+import { GenericResourceAPI } from '../../shared/resources/generic-resource-api.js';
 import type { WorkflowDefinition, WorkflowFilter, WorkflowSummary } from '@modular-agent/types';
 import { WorkflowNotFoundError } from '@modular-agent/types';
 import type { APIDependencyManager } from '../../core/sdk-dependencies.js';
@@ -209,20 +209,20 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
     // 使用简化验证工具验证必需字段
     const requiredResult = validateRequiredFields(workflow, ['id', 'name', 'version'], 'workflow');
     if (requiredResult.isErr()) {
-      errors.push(...requiredResult.unwrapOrElse(err => err.map(error => error.message)));
+      errors.push(...requiredResult.unwrapOrElse((err: unknown[]) => err.map((error: unknown) => String(error))));
     }
 
     // 验证节点数组
     const arrayResult = validateArray(workflow.nodes, '工作流节点', 1);
     if (arrayResult.isErr()) {
-      errors.push(...arrayResult.unwrapOrElse(err => err.map(error => error.message)));
+      errors.push(...arrayResult.unwrapOrElse((err: unknown[]) => err.map((error: unknown) => String(error))));
     }
 
     // 验证ID长度
     if (workflow.id) {
       const idResult = validateStringLength(workflow.id, '工作流ID', 1, 100);
       if (idResult.isErr()) {
-        errors.push(...idResult.unwrapOrElse(err => err.map(error => error.message)));
+        errors.push(...idResult.unwrapOrElse((err: unknown[]) => err.map((error: unknown) => String(error))));
       }
     }
 
@@ -230,7 +230,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
     if (workflow.name) {
       const nameResult = validateStringLength(workflow.name, '工作流名称', 1, 200);
       if (nameResult.isErr()) {
-        errors.push(...nameResult.unwrapOrElse(err => err.map(error => error.message)));
+        errors.push(...nameResult.unwrapOrElse((err: unknown[]) => err.map((error: unknown) => String(error))));
       }
     }
 
@@ -239,7 +239,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
       const versionPattern = /^[0-9]+\.[0-9]+\.[0-9]+$/;
       const versionResult = validatePattern(workflow.version, '工作流版本', versionPattern, '工作流版本格式不正确，应为x.y.z格式');
       if (versionResult.isErr()) {
-        errors.push(...versionResult.unwrapOrElse(err => err.map(error => error.message)));
+        errors.push(...versionResult.unwrapOrElse((err: unknown[]) => err.map((error: unknown) => String(error))));
       }
     }
 
