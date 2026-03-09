@@ -4,7 +4,7 @@
  * 定义格式转换器相关的类型
  */
 
-import type { LLMResult, LLMProfile } from '@modular-agent/types';
+import type { LLMResult, LLMProfile, LLMUsage } from '@modular-agent/types';
 import type { ToolSchema } from '@modular-agent/types';
 
 /**
@@ -34,11 +34,7 @@ export interface StreamChunk {
   /** 是否完成 */
   done: boolean;
   /** Token 使用情况 */
-  usage?: {
-    promptTokens: number;
-    completionTokens: number;
-    totalTokens: number;
-  };
+  usage?: LLMUsage;
   /** 完成原因 */
   finishReason?: string;
   /** 模型版本 */

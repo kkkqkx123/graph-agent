@@ -88,6 +88,9 @@ export class GeminiNativeFormatter extends BaseFormatter {
     // Extract thinking content (for Gemini thinking models)
     const thinkingContent = this.extractThinkingContent(candidate.content?.parts || []);
 
+    // Extract thoughtsTokenCount for thinking models
+    const thoughtsTokenCount = data.usageMetadata?.thoughtsTokenCount || 0;
+
     return {
       id: data.id || 'unknown',
       model: config.profile.model,
@@ -101,7 +104,9 @@ export class GeminiNativeFormatter extends BaseFormatter {
       usage: data.usageMetadata ? {
         promptTokens: data.usageMetadata.promptTokenCount || 0,
         completionTokens: data.usageMetadata.candidatesTokenCount || 0,
-        totalTokens: data.usageMetadata.totalTokenCount || 0
+        totalTokens: data.usageMetadata.totalTokenCount || 0,
+        // 添加 reasoningTokens 字段，映射 Gemini 的 thoughtsTokenCount
+        reasoningTokens: thoughtsTokenCount > 0 ? thoughtsTokenCount : undefined
       } : undefined,
       finishReason: candidate.finishReason || 'stop',
       duration: 0,
@@ -109,7 +114,8 @@ export class GeminiNativeFormatter extends BaseFormatter {
         finishReason: candidate.finishReason,
         safetyRatings: candidate.safetyRatings
       },
-      reasoningContent: thinkingContent
+      reasoningContent: thinkingContent,
+      reasoningTokens: thoughtsTokenCount > 0 ? thoughtsTokenCount : undefined
     };
   }
 
@@ -146,6 +152,9 @@ export class GeminiNativeFormatter extends BaseFormatter {
     // Extract thinking content delta (for Gemini thinking models)
     const thinkingDelta = this.extractThinkingDelta(candidate.content?.parts || []);
 
+    // Extract thoughtsTokenCount for thinking models
+    const thoughtsTokenCount = data.usageMetadata?.thoughtsTokenCount || 0;
+
     return {
       chunk: {
         delta: content,
@@ -153,7 +162,9 @@ export class GeminiNativeFormatter extends BaseFormatter {
         usage: data.usageMetadata ? {
           promptTokens: data.usageMetadata.promptTokenCount || 0,
           completionTokens: data.usageMetadata.candidatesTokenCount || 0,
-          totalTokens: data.usageMetadata.totalTokenCount || 0
+          totalTokens: data.usageMetadata.totalTokenCount || 0,
+          // 添加 reasoningTokens 字段，映射 Gemini 的 thoughtsTokenCount
+          reasoningTokens: thoughtsTokenCount > 0 ? thoughtsTokenCount : undefined
         } : undefined,
         finishReason: candidate.finishReason,
         raw: data,

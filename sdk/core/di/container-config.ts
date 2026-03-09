@@ -36,7 +36,7 @@ import { ThreadLifecycleManager } from '../../graph/execution/managers/thread-li
 import { ThreadCascadeManager } from '../../graph/execution/managers/thread-cascade-manager.js';
 import { CheckpointStateManager } from '../../graph/execution/managers/checkpoint-state-manager.js';
 import { ToolContextManager } from '../../graph/execution/managers/tool-context-manager.js';
-import { MessageStorageManager } from '../../graph/execution/managers/message-storage-manager.js';
+import { MessageHistoryManager } from '../../graph/execution/managers/message-history-manager.js';
 import { ToolVisibilityManager } from '../../graph/execution/managers/tool-visibility-manager.js';
 import { ThreadBuilder } from '../../graph/execution/thread-builder.js';
 import { ThreadExecutor } from '../../graph/execution/thread-executor.js';
@@ -210,19 +210,19 @@ export function initializeContainer(): Container {
     })
     .inSingletonScope();
 
-  container.bind(Identifiers.MessageStorageManager)
+  container.bind(Identifiers.MessageHistoryManager)
     .toDynamicValue((c: any) => {
-      // MessageStorageManager 是线程隔离的，每个线程需要自己的实例
+      // MessageHistoryManager 是线程隔离的，每个线程需要自己的实例
       // 这里使用一个默认的 threadId，实际使用时应该由 ThreadContext 创建
-      return new MessageStorageManager('default');
+      return new MessageHistoryManager('default');
     })
     .inSingletonScope();
 
   container.bind(Identifiers.ThreadLifecycleManager)
     .toDynamicValue((c: any) => {
       const eventManager = c.get(Identifiers.EventManager);
-      const messageStorageManager = c.get(Identifiers.MessageStorageManager);
-      return new ThreadLifecycleManager(eventManager, messageStorageManager);
+      const messageHistoryManager = c.get(Identifiers.MessageHistoryManager);
+      return new ThreadLifecycleManager(eventManager, messageHistoryManager);
     })
     .inSingletonScope();
 

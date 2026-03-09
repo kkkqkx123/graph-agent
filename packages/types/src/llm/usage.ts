@@ -12,6 +12,8 @@ export interface LLMUsage {
   completionTokens: number;
   /** 总token数 */
   totalTokens: number;
+  /** 思考token数 */
+  reasoningTokens?: number;
   /** 提示token成本（可选） */
   promptTokensCost?: number;
   /** 完成token成本（可选） */

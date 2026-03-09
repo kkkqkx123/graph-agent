@@ -65,7 +65,7 @@ export class OpenAIChatFormatter extends BaseFormatter {
     // Extract reasoning content (for DeepSeek R1, o1, etc.)
     const reasoningContent = message.reasoning_content;
     // Extract reasoning tokens from usage details
-    const reasoningTokens = data.usage?.completion_tokens_details?.reasoning_tokens;
+    const reasoningTokens = data.usage?.completion_tokens_details?.reasoning_tokens || 0;
 
     return {
       id: data.id,
@@ -76,7 +76,9 @@ export class OpenAIChatFormatter extends BaseFormatter {
       usage: data.usage ? {
         promptTokens: data.usage.prompt_tokens,
         completionTokens: data.usage.completion_tokens,
-        totalTokens: data.usage.total_tokens
+        totalTokens: data.usage.total_tokens,
+        // 添加 reasoningTokens 字段，支持思考模型统计
+        reasoningTokens: reasoningTokens > 0 ? reasoningTokens : undefined
       } : undefined,
       finishReason: choice.finish_reason,
       duration: 0,
@@ -85,7 +87,7 @@ export class OpenAIChatFormatter extends BaseFormatter {
         systemFingerprint: data.system_fingerprint
       },
       reasoningContent,
-      reasoningTokens
+      reasoningTokens: reasoningTokens > 0 ? reasoningTokens : undefined
     };
   }
 
@@ -102,7 +104,7 @@ export class OpenAIChatFormatter extends BaseFormatter {
     const reasoningDelta = delta.reasoning_content;
 
     // Extract reasoning tokens from usage details
-    const reasoningTokens = data.usage?.completion_tokens_details?.reasoning_tokens;
+    const reasoningTokens = data.usage?.completion_tokens_details?.reasoning_tokens || 0;
 
     return {
       chunk: {
@@ -111,7 +113,9 @@ export class OpenAIChatFormatter extends BaseFormatter {
         usage: data.usage ? {
           promptTokens: data.usage.prompt_tokens,
           completionTokens: data.usage.completion_tokens,
-          totalTokens: data.usage.total_tokens
+          totalTokens: data.usage.total_tokens,
+          // 添加 reasoningTokens 字段，支持思考模型统计
+          reasoningTokens: reasoningTokens > 0 ? reasoningTokens : undefined
         } : undefined,
         finishReason: choice.finish_reason,
         modelVersion: data.model,

@@ -1,9 +1,9 @@
 /**
- * MessageStorageManager - 消息存储管理器
+ * MessageHistoryManager - 消息历史管理器
  * 管理单个线程的消息历史和批次快照
  *
  * 核心职责：
- * 1. 存储线程的消息历史
+ * 1. 管理线程的消息历史
  * 2. 支持批次级别的消息版本控制
  * 3. 提供消息历史的查询和清理功能
  * 4. 支持状态快照和恢复（用于检查点）
@@ -28,17 +28,17 @@ interface BatchSnapshot {
 }
 
 /**
- * 消息存储状态接口
+ * 消息历史状态接口
  */
-export interface MessageStorageState {
+export interface MessageHistoryState {
   messages: LLMMessage[];
   batchSnapshots: Map<number, BatchSnapshot>;
 }
 
 /**
- * 消息存储管理器类
+ * 消息历史管理器类
  */
-export class MessageStorageManager implements LifecycleCapable<MessageStorageState> {
+export class MessageHistoryManager implements LifecycleCapable<MessageHistoryState> {
   private messages: LLMMessage[] = [];
   private batchSnapshots: Map<number, BatchSnapshot> = new Map();
 
@@ -53,11 +53,11 @@ export class MessageStorageManager implements LifecycleCapable<MessageStorageSta
   }
 
   /**
-   * 存储消息历史
+   * 保存消息历史
    * @param messages 消息数组
    */
-  storeMessages(messages: LLMMessage[]): void {
-    // 深度复制消息数组，避免外部修改影响存储
+  saveMessages(messages: LLMMessage[]): void {
+    // 深度复制消息数组，避免外部修改
     this.messages = messages.map(msg => ({ ...msg }));
   }
 
@@ -110,7 +110,7 @@ export class MessageStorageManager implements LifecycleCapable<MessageStorageSta
   }
 
   /**
-   * 获取存储统计信息
+   * 获取统计信息
    * @returns 统计信息
    */
   getStats(): {
@@ -125,9 +125,9 @@ export class MessageStorageManager implements LifecycleCapable<MessageStorageSta
 
   /**
    * 创建状态快照
-   * @returns 消息存储状态快照
+   * @returns 消息历史状态快照
    */
-  createSnapshot(): MessageStorageState {
+  createSnapshot(): MessageHistoryState {
     return {
       messages: this.getMessages(),
       batchSnapshots: new Map(
@@ -145,9 +145,9 @@ export class MessageStorageManager implements LifecycleCapable<MessageStorageSta
 
   /**
    * 从快照恢复状态
-   * @param snapshot 消息存储状态快照
+   * @param snapshot 消息历史状态快照
    */
-  restoreFromSnapshot(snapshot: MessageStorageState): void {
+  restoreFromSnapshot(snapshot: MessageHistoryState): void {
     this.messages = snapshot.messages.map(msg => ({ ...msg }));
     this.batchSnapshots = new Map(
       Array.from(snapshot.batchSnapshots.entries()).map(([batchId, snapshot]) => [

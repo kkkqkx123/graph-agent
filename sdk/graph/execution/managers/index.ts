@@ -13,7 +13,7 @@
  * - TriggerStateManager: 触发器状态管理器
  * - VariableStateManager: 变量状态管理器
  * - ToolContextManager: 工具上下文管理器
- * - MessageStorageManager: 消息存储管理器
+ * - MessageHistoryManager: 消息历史管理器
  * - InterruptionManager: 中断状态管理器
  * - InterruptionDetector: 中断检测器
  * - LifecycleCapable: 统一的生命周期管理能力接口
@@ -24,7 +24,7 @@ export { TriggerStateManager } from './trigger-state-manager.js';
 export type { TriggerRuntimeState } from '@modular-agent/types';
 export { VariableStateManager } from './variable-state-manager.js';
 export { ToolContextManager, type ToolScope, type ToolMetadata, type ToolContext } from './tool-context-manager.js';
-export { MessageStorageManager, type MessageStorageState } from './message-storage-manager.js';
+export { MessageHistoryManager, type MessageHistoryState } from './message-history-manager.js';
 export { type LifecycleCapable } from './lifecycle-capable.js';
 
 export {

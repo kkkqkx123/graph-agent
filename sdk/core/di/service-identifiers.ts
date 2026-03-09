@@ -137,10 +137,10 @@ export const ToolContextManager = Symbol('ToolContextManager') as ServiceIdentif
 export const ToolVisibilityManager = Symbol('ToolVisibilityManager') as ServiceIdentifier<any>;
 
 /**
- * MessageStorageManager - 消息存储管理器
- * 管理线程的消息存储，线程隔离
+ * MessageHistoryManager - 消息历史管理器
+ * 管理线程的消息历史，线程隔离
  */
-export const MessageStorageManager = Symbol('MessageStorageManager') as ServiceIdentifier<any>;
+export const MessageHistoryManager = Symbol('MessageHistoryManager') as ServiceIdentifier<any>;
 
 /**
  * LLMExecutor - LLM 执行器

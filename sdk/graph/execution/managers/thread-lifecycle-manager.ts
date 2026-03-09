@@ -20,7 +20,7 @@
 
 import type { Thread, ThreadStatus, ThreadResult } from '@modular-agent/types';
 import type { EventManager } from '../../../core/services/event-manager.js';
-import { MessageStorageManager } from './message-storage-manager.js';
+import { MessageHistoryManager } from './message-history-manager.js';
 import { validateTransition } from '../utils/thread-state-validator.js';
 import {
   buildThreadStartedEvent,
@@ -44,7 +44,7 @@ import { now } from '@modular-agent/common-utils';
 export class ThreadLifecycleManager {
   constructor(
     private eventManager: EventManager,
-    private messageStorageManager: MessageStorageManager
+    private messageHistoryManager: MessageHistoryManager
   ) {
     // 所有依赖都通过构造函数注入，保持依赖注入的一致性
   }
@@ -148,8 +148,8 @@ export class ThreadLifecycleManager {
       if (!thread.endTime) {
         thread.endTime = now();
       }
-      // 清理消息存储
-      this.messageStorageManager.cleanup();
+      // 清理消息历史
+      this.messageHistoryManager.cleanup();
       // 触发THREAD_COMPLETED事件
       const completedEvent = buildThreadCompletedEvent(thread, result);
       await emit(this.eventManager, completedEvent);
@@ -166,7 +166,7 @@ export class ThreadLifecycleManager {
     thread.endTime = now();
 
     // 清理消息存储
-    this.messageStorageManager.cleanup();
+    this.messageHistoryManager.cleanup();
 
     // 触发THREAD_COMPLETED事件
     const completedEvent = buildThreadCompletedEvent(thread, result);
@@ -200,7 +200,7 @@ export class ThreadLifecycleManager {
     thread.errors.push(error.message);
 
     // 清理消息存储
-    this.messageStorageManager.cleanup();
+    this.messageHistoryManager.cleanup();
 
     // 触发THREAD_FAILED事件
     const failedEvent = buildThreadFailedEvent(thread, error);
@@ -236,7 +236,7 @@ export class ThreadLifecycleManager {
     thread.endTime = now();
 
     // 清理消息存储
-    this.messageStorageManager.cleanup();
+    this.messageHistoryManager.cleanup();
 
     // 触发THREAD_CANCELLED事件
     const cancelledEvent = buildThreadCancelledEvent(thread, reason);

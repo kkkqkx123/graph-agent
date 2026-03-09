@@ -11,7 +11,8 @@ import type {
   LLMRequest,
   LLMResult,
   LLMProfile,
-  TokenCountResult
+  TokenCountResult,
+  LLMUsage
 } from '@modular-agent/types';
 import { HttpClient, SseTransport } from '@modular-agent/common-utils';
 import { BaseFormatter, type FormatterConfig } from './formatters/index.js';
@@ -91,16 +92,31 @@ export class BaseLLMClient implements LLMClient {
     });
 
     // 累积 token 统计
-    let accumulatedUsage: { promptTokens: number; completionTokens: number; totalTokens: number } | null = null;
+    let accumulatedUsage: LLMUsage | null = null;
 
     // 处理流式响应
     for await (const line of stream) {
       const result = this.formatter.parseStreamLine(line, config);
 
       if (result.valid && result.chunk) {
-        // 累积 token 统计
+        // 累积 token 统计（累积而非覆盖）
         if (result.chunk.usage) {
-          accumulatedUsage = { ...result.chunk.usage };
+          const currentUsage = result.chunk.usage;
+          if (accumulatedUsage) {
+            accumulatedUsage = {
+              promptTokens: currentUsage.promptTokens ?? accumulatedUsage.promptTokens,
+              completionTokens: currentUsage.completionTokens ?? accumulatedUsage.completionTokens,
+              totalTokens: currentUsage.totalTokens ?? accumulatedUsage.totalTokens,
+              reasoningTokens: currentUsage.reasoningTokens ?? accumulatedUsage.reasoningTokens
+            };
+          } else {
+            accumulatedUsage = {
+              promptTokens: currentUsage.promptTokens ?? 0,
+              completionTokens: currentUsage.completionTokens ?? 0,
+              totalTokens: currentUsage.totalTokens ?? 0,
+              reasoningTokens: currentUsage.reasoningTokens
+            };
+          }
         }
 
         // 构建 LLMResult
