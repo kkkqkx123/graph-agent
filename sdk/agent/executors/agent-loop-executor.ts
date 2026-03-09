@@ -2,7 +2,6 @@
  * Agent 循环执行器
  *
  * 负责执行独立的 Agent 工具迭代循环，不依赖于图引擎。
- * 参考 Lim-Code 的 ToolIterationLoopService 实现。
  *
  * 设计原则：
  * - 无状态设计，所有状态通过 AgentLoopEntity 管理
@@ -34,7 +33,7 @@ export class AgentLoopExecutor {
     constructor(
         private llmWrapper: LLMWrapper,
         private toolService: ToolService
-    ) {}
+    ) { }
 
     /**
      * 执行 Agent Loop（基于 AgentLoopEntity）

@@ -10,6 +10,7 @@
  * - coordinators/ 协调器层：管理生命周期
  * - executors/    执行器层：核心执行逻辑
  * - snapshot/     快照层：快照创建和恢复
+ * - checkpoint/   检查点层：增量快照创建和恢复
  * - services/     服务层：注册表等
  */
 
@@ -39,6 +40,19 @@ export {
     type AgentLoopEntitySnapshot as SnapshotEntitySnapshot,
     type AgentLoopStateSnapshot as SnapshotStateSnapshot
 } from './snapshot/index.js';
+
+// 检查点层
+export {
+    AgentLoopDiffCalculator,
+    AgentLoopDeltaRestorer,
+    AgentLoopCheckpointResolver,
+    AgentLoopCheckpointCoordinator,
+    createCheckpoint,
+    restoreFromCheckpoint,
+    type CheckpointDependencies,
+    type CheckpointOptions,
+    type CreateCheckpointOptions
+} from './checkpoint/index.js';
 
 // 服务层
 export { AgentLoopRegistry } from './services/index.js';

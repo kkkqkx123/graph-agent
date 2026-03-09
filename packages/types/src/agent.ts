@@ -39,6 +39,10 @@ export interface AgentLoopConfig {
     tools?: string[];
     /** 是否流式输出 */
     stream?: boolean;
+    /** 是否在结束时创建检查点 */
+    createCheckpointOnEnd?: boolean;
+    /** 是否在出错时创建检查点 */
+    createCheckpointOnError?: boolean;
 }
 
 /**
@@ -55,6 +59,8 @@ export interface AgentLoopResult {
     toolCallCount: number;
     /** 错误信息 */
     error?: any;
+    /** Agent Loop ID */
+    agentLoopId?: string;
 }
 
 /**
@@ -123,3 +129,6 @@ export interface IterationRecord {
     /** LLM 响应内容 */
     responseContent?: string;
 }
+
+// 导出 checkpoint 相关类型
+export * from './agent/checkpoint.js';

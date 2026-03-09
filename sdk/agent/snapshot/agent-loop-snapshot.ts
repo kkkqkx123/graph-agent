@@ -2,7 +2,7 @@
  * Agent Loop 快照模块
  *
  * 提供独立的快照创建和恢复功能，与实体逻辑解耦。
- * 参考 Graph 引擎的 Checkpoint 机制设计。
+ * 参考 Graph 引擎的 Checkpoint 机制设计。与checkpoint的职责不同。
  */
 
 import type { ID, LLMMessage, AgentLoopConfig } from '@modular-agent/types';

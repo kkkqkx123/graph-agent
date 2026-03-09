@@ -154,6 +154,55 @@ export class AgentLoopEntity {
     return entity;
   }
 
+  // ========== 检查点（新增：增量快照机制） ==========
+
+  /**
+   * 从检查点恢复 AgentLoopEntity 实例（静态方法）
+   * @param checkpointId 检查点ID
+   * @param dependencies 检查点依赖项
+   * @returns AgentLoopEntity 实例
+   */
+  static async fromCheckpoint(
+    checkpointId: string,
+    dependencies: {
+      saveCheckpoint: (checkpoint: any) => Promise<string>;
+      getCheckpoint: (id: string) => Promise<any>;
+      listCheckpoints: (agentLoopId: string) => Promise<string[]>;
+      deltaConfig?: any;
+    }
+  ): Promise<AgentLoopEntity> {
+    const { AgentLoopCheckpointCoordinator } = await import('../checkpoint/index.js');
+    return await AgentLoopCheckpointCoordinator.restoreFromCheckpoint(
+      checkpointId,
+      dependencies
+    );
+  }
+
+  /**
+   * 创建检查点（实例方法）
+   * @param dependencies 检查点依赖项
+   * @param options 检查点创建选项
+   * @returns 检查点ID
+   */
+  async createCheckpoint(
+    dependencies: {
+      saveCheckpoint: (checkpoint: any) => Promise<string>;
+      getCheckpoint: (id: string) => Promise<any>;
+      listCheckpoints: (agentLoopId: string) => Promise<string[]>;
+      deltaConfig?: any;
+    },
+    options?: {
+      metadata?: any;
+    }
+  ): Promise<string> {
+    const { AgentLoopCheckpointCoordinator } = await import('../checkpoint/index.js');
+    return await AgentLoopCheckpointCoordinator.createCheckpoint(
+      this,
+      dependencies,
+      options
+    );
+  }
+
   // ========== 状态访问 ==========
 
   /**
