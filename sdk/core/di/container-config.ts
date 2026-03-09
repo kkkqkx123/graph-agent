@@ -58,7 +58,7 @@ import { ConversationManager } from '../execution/managers/conversation-manager.
 import { VariableStateManager } from '../../graph/execution/managers/variable-state-manager.js';
 import { TriggerStateManager } from '../../graph/execution/managers/trigger-state-manager.js';
 import { InterruptionManager } from '../execution/managers/interruption-manager.js';
-import { AgentLoopService } from '../../agent/agent-loop-service.js';
+import { AgentLoopExecutor } from '../../agent/executors/agent-loop-executor.js';
 
 /** 全局容器实例 */
 let container: Container | null = null;
@@ -426,7 +426,7 @@ export function initializeContainer(): Container {
           workflowRegistry: c.get(Identifiers.WorkflowRegistry),
           graphRegistry: c.get(Identifiers.GraphRegistry)
         },
-        agentLoopService: c.get(Identifiers.AgentLoopService)
+        agentLoopExecutorFactory: c.get(Identifiers.AgentLoopExecutor)
       };
       return new NodeExecutionCoordinator(config);
     })
@@ -498,6 +498,21 @@ export function initializeContainer(): Container {
     })
     .inSingletonScope();
 
+  // AgentLoopExecutor - 工厂模式，每次执行创建新实例
+  container.bind(Identifiers.AgentLoopExecutor)
+    .toDynamicValue((c: any) => {
+      return {
+        // 创建新的 AgentLoopExecutor 实例
+        create: () => {
+          return new AgentLoopExecutor(
+            c.get(Identifiers.LLMWrapper),
+            c.get(Identifiers.ToolService)
+          );
+        }
+      };
+    })
+    .inSingletonScope();
+
   // CheckpointCoordinator - 使用静态方法，不需要实例化
   // 提供一个工厂方法来获取依赖对象
   container.bind(Identifiers.CheckpointCoordinator)
@@ -527,14 +542,6 @@ export function initializeContainer(): Container {
         }
       };
     })
-    .inSingletonScope();
-
-  // Agent 层服务
-  container.bind(Identifiers.AgentLoopService)
-    .toDynamicValue((c: any) => new AgentLoopService(
-      c.get(Identifiers.LLMWrapper),
-      c.get(Identifiers.ToolService)
-    ))
     .inSingletonScope();
 
   return container;

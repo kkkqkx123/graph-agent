@@ -12,7 +12,7 @@ import type { LLMExecutionCoordinator } from '../../coordinators/llm-execution-c
 import type { ToolCallExecutor } from '../../executors/tool-call-executor.js';
 import type { ConversationManager } from '../../../../core/execution/managers/conversation-manager.js';
 import type { EventManager } from '../../../../core/services/event-manager.js';
-import type { AgentLoopService } from '../../../../agent/agent-loop-service.js';
+import type { AgentLoopExecutor } from '../../../../agent/executors/agent-loop-executor.js';
 import { safeEmit } from '../../utils/event/event-emitter.js';
 import {
   buildMessageAddedEvent,
@@ -41,8 +41,8 @@ export interface AgentLoopExecutionResult {
  * Agent Loop 处理器上下文
  */
 export interface AgentLoopHandlerContext {
-  /** Agent 循环服务 */
-  agentLoopService: AgentLoopService;
+  /** Agent 循环执行器 */
+  agentLoopExecutor: AgentLoopExecutor;
   /** LLM执行协调器 */
   llmCoordinator: LLMExecutionCoordinator;
   /** 工具调用执行器 */
@@ -91,8 +91,8 @@ export async function agentLoopHandler(
       }));
     }
 
-    // 2. 调用 AgentLoopService 执行循环
-    const result = await context.agentLoopService.run({
+    // 2. 调用 AgentLoopExecutor 执行循环
+    const result = await context.agentLoopExecutor.run({
       profileId: config.profileId,
       systemPrompt: config.systemPrompt,
       initialMessages,
@@ -105,7 +105,7 @@ export async function agentLoopHandler(
     }
 
     // 3. 将结果同步回 Graph 对话历史（用于持久化和展示）
-    // 注意：AgentLoopService 内部使用了独立的 MessageHistory
+    // 注意：AgentLoopExecutor 内部使用了独立的 MessageHistory
     // 我们需要将新增加的消息同步到 context.conversationManager
     const allMessages = result.content ? [{ role: 'assistant', content: result.content }] : [];
     // TODO: 如果需要更完整的同步，可以在 AgentLoopService 中增加获取新增消息的方法

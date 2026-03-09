@@ -14,12 +14,11 @@
  * - 不处理工具调用，工具调用由 LLMCoordinator 协调
  */
 
-import { isAbortError, checkInterruption, getInterruptionType, getThreadId, getNodeId } from '@modular-agent/common-utils';
+import { isAbortError, checkInterruption } from '@modular-agent/common-utils';
 import type { InterruptionCheckResult } from '@modular-agent/common-utils';
 import type { LLMMessage, LLMResult } from '@modular-agent/types';
 import { LLMWrapper } from '../../../core/llm/wrapper.js';
-import { ExecutionError, ThreadInterruptedException, LLMError } from '@modular-agent/types';
-import type { EventManager } from '../../../core/services/event-manager.js';
+import { ExecutionError, LLMError } from '@modular-agent/types';
 
 /**
  * LLM执行请求数据

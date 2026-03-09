@@ -69,12 +69,12 @@ export class ThreadInterruptedException extends InterruptedException {
  * 说明：
  * 1. 用于表示 Agent 模块中执行被用户请求中断（暂停或停止）
  * 2. 继承自 InterruptedException，添加 Agent 模块特有的上下文
- * 3. AgentLoopService 检测到中断标志时抛出
+ * 3. AgentLoopExecutor 检测到中断标志时抛出
  *
  * 使用场景：
  * - 用户调用 pauseConversation() 时，执行器在安全点抛出此异常
  * - 用户调用 stopConversation() 时，执行器在安全点抛出此异常
- * - AgentLoopService 检测到中断标志时抛出
+ * - AgentLoopExecutor 检测到中断标志时抛出
  */
 export class AgentInterruptedException extends InterruptedException {
   constructor(

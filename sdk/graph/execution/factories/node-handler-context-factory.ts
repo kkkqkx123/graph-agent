@@ -35,8 +35,8 @@ export interface NodeHandlerContextFactoryConfig {
   toolContextManager?: any;
   /** 工具服务（可选） */
   toolService?: any;
-  /** Agent 循环服务（可选） */
-  agentLoopService?: any;
+  /** Agent 循环执行器工厂（可选） */
+  agentLoopExecutorFactory?: any;
 }
 
 /**
@@ -144,14 +144,22 @@ export class NodeHandlerContextFactory {
    * 创建 Agent Loop 节点上下文
    */
   private createAgentLoopContext(node: Node, threadEntity: ThreadEntity): any {
+    if (!this.config.agentLoopExecutorFactory) {
+      throw new ExecutionError(
+        'AgentLoopExecutorFactory is not provided',
+        node.id,
+        threadEntity.getWorkflowId()
+      );
+    }
+
     return {
-      agentLoopService: this.config.agentLoopService,
+      agentLoopExecutor: this.config.agentLoopExecutorFactory.create(),
       llmCoordinator: this.config.llmCoordinator,
       conversationManager: this.config.conversationManager,
       eventManager: this.config.eventManager,
       // 这里的 toolCallExecutor 通常在 NodeExecutionCoordinator 中可以通过 Identifier 获取
       // 但在 handler 中，我们需要确保它被传入。
-      // 注意：agent-loop-handler 原本是手动执行循环，现在我们要改造成使用 agentLoopService
+      // 注意：agent-loop-handler 使用 agentLoopExecutor 执行循环
     };
   }
 }

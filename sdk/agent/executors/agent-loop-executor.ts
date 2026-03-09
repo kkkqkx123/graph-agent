@@ -1,8 +1,14 @@
 /**
- * Agent 循环服务
+ * Agent 循环执行器
  *
  * 负责执行独立的 Agent 工具迭代循环，不依赖于图引擎。
  * 参考 Lim-Code 的 ToolIterationLoopService 实现。
+ *
+ * 设计原则：
+ * - 无状态设计，所有状态通过参数传入或内部管理
+ * - 每次执行创建独立的 MessageHistory 实例
+ * - 由 DI 容器管理生命周期（工厂模式）
+ * - 与 LLMExecutor、ToolCallExecutor 保持一致的架构
  */
 
 import type {
@@ -11,27 +17,28 @@ import type {
     AgentStreamEvent
 } from '@modular-agent/types';
 import { AgentStreamEventType } from '@modular-agent/types';
-import { LLMWrapper } from '../core/llm/index.js';
-import { ToolService } from '../core/services/tool-service.js';
-import { MessageHistory } from '../core/messages/message-history.js';
+import { LLMWrapper } from '../../core/llm/index.js';
+import { ToolService } from '../../core/services/tool-service.js';
+import { MessageHistory } from '../../core/messages/message-history.js';
 
-export class AgentLoopService {
-    /** 消息历史实例 */
-    private messageHistory: MessageHistory;
-
+/**
+ * Agent 循环执行器类
+ *
+ * 提供方法来执行 Agent 循环（非流式和流式）
+ * 每次执行创建独立的 MessageHistory 实例，避免状态污染
+ */
+export class AgentLoopExecutor {
     constructor(
         private llmWrapper: LLMWrapper,
         private toolService: ToolService
-    ) {
-        this.messageHistory = new MessageHistory();
-    }
+    ) {}
 
     /**
-     * 获取消息历史实例
+     * 创建新的消息历史实例
      * @returns MessageHistory 实例
      */
-    getMessageHistory(): MessageHistory {
-        return this.messageHistory;
+    private createMessageHistory(): MessageHistory {
+        return new MessageHistory();
     }
 
     /**
@@ -39,17 +46,17 @@ export class AgentLoopService {
      * @param config 循环配置
      */
     async run(config: AgentLoopConfig): Promise<AgentLoopResult> {
+        const messageHistory = this.createMessageHistory();
         const maxIterations = config.maxIterations ?? 10;
         let iterations = 0;
         let toolCallCount = 0;
 
         // 1. 初始化对话
-        this.messageHistory.clear();
         if (config.systemPrompt) {
-            this.messageHistory.addSystemMessage(config.systemPrompt);
+            messageHistory.addSystemMessage(config.systemPrompt);
         }
         if (config.initialMessages && config.initialMessages.length > 0) {
-            this.messageHistory.initialize(config.initialMessages);
+            messageHistory.initialize(config.initialMessages);
         }
 
         // 2. 准备工具信息
@@ -69,7 +76,7 @@ export class AgentLoopService {
                 // 3. 调用 LLM
                 const llmResult = await this.llmWrapper.generate({
                     profileId: config.profileId || 'DEFAULT',
-                    messages: this.messageHistory.getMessages(),
+                    messages: messageHistory.getMessages(),
                     tools: toolSchemas as any,
                 });
 
@@ -83,7 +90,7 @@ export class AgentLoopService {
                 }
 
                 const response = llmResult.value;
-                this.messageHistory.addAssistantMessage(
+                messageHistory.addAssistantMessage(
                     response.content,
                     response.toolCalls?.map(tc => ({
                         id: tc.id,
@@ -114,12 +121,12 @@ export class AgentLoopService {
                     });
 
                     if (executionResult.isOk()) {
-                        this.messageHistory.addToolResultMessage(
+                        messageHistory.addToolResultMessage(
                             toolCall.id,
                             JSON.stringify(executionResult.value.result)
                         );
                     } else {
-                        this.messageHistory.addToolResultMessage(
+                        messageHistory.addToolResultMessage(
                             toolCall.id,
                             JSON.stringify({ error: executionResult.error.message })
                         );
@@ -152,17 +159,17 @@ export class AgentLoopService {
      * @param config 循环配置
      */
     async *runStream(config: AgentLoopConfig): AsyncGenerator<AgentStreamEvent> {
+        const messageHistory = this.createMessageHistory();
         const maxIterations = config.maxIterations ?? 10;
         let iterations = 0;
         let toolCallCount = 0;
 
         // 1. 初始化对话
-        this.messageHistory.clear();
         if (config.systemPrompt) {
-            this.messageHistory.addSystemMessage(config.systemPrompt);
+            messageHistory.addSystemMessage(config.systemPrompt);
         }
         if (config.initialMessages && config.initialMessages.length > 0) {
-            this.messageHistory.initialize(config.initialMessages);
+            messageHistory.initialize(config.initialMessages);
         }
 
         // 2. 准备工具信息
@@ -188,7 +195,7 @@ export class AgentLoopService {
                 // 3. 调用 LLM (流式)
                 const llmResult = await this.llmWrapper.generateStream({
                     profileId: config.profileId || 'DEFAULT',
-                    messages: this.messageHistory.getMessages(),
+                    messages: messageHistory.getMessages(),
                     tools: toolSchemas as any,
                     stream: true
                 });
@@ -224,7 +231,7 @@ export class AgentLoopService {
                 }
 
                 const finalResult = await messageStream.getFinalResult();
-                this.messageHistory.addAssistantMessage(
+                messageHistory.addAssistantMessage(
                     finalResult.content,
                     finalResult.toolCalls?.map(tc => ({
                         id: tc.id,
@@ -266,7 +273,7 @@ export class AgentLoopService {
                     });
 
                     if (executionResult.isOk()) {
-                        this.messageHistory.addToolResultMessage(
+                        messageHistory.addToolResultMessage(
                             toolCall.id,
                             JSON.stringify(executionResult.value.result)
                         );
@@ -276,7 +283,7 @@ export class AgentLoopService {
                             data: { toolCallId: toolCall.id, result: executionResult.value.result, success: true }
                         };
                     } else {
-                        this.messageHistory.addToolResultMessage(
+                        messageHistory.addToolResultMessage(
                             toolCall.id,
                             JSON.stringify({ error: executionResult.error.message })
                         );

@@ -2,19 +2,19 @@
  * RunAgentLoopCommand - 运行 Agent 循环命令
  *
  * 职责：
- * - 封装 AgentLoopService 的 run() 方法为 Command 模式
+ * - 封装 AgentLoopExecutor 的 run() 方法为 Command 模式
  * - 提供统一的 API 层接口
  * - 支持非流式 Agent 执行
  *
  * 设计原则：
  * - 遵循命令模式，继承 BaseCommand
- * - 依赖注入 AgentLoopService
+ * - 依赖注入 AgentLoopExecutor
  * - 参数验证在 validate() 方法中完成
  */
 
 import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../shared/types/command.js';
 import type { AgentLoopConfig, AgentLoopResult } from '@modular-agent/types';
-import { AgentLoopService } from '../../../agent/agent-loop-service.js';
+import { AgentLoopExecutor } from '../../../agent/executors/agent-loop-executor.js';
 
 /**
  * 运行 Agent 循环命令参数
@@ -29,19 +29,19 @@ export interface RunAgentLoopParams {
  *
  * 工作流程：
  * 1. 验证参数（config 必需）
- * 2. 使用 AgentLoopService 执行循环
+ * 2. 使用 AgentLoopExecutor 执行循环
  * 3. 返回 AgentLoopResult 结果
  */
 export class RunAgentLoopCommand extends BaseCommand<AgentLoopResult> {
   constructor(
     private readonly params: RunAgentLoopParams,
-    private readonly agentLoopService: AgentLoopService
+    private readonly agentLoopExecutor: AgentLoopExecutor
   ) {
     super();
   }
 
   protected async executeInternal(): Promise<AgentLoopResult> {
-    return this.agentLoopService.run(this.params.config);
+    return this.agentLoopExecutor.run(this.params.config);
   }
 
   validate(): CommandValidationResult {
