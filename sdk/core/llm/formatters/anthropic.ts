@@ -307,13 +307,13 @@ export class AnthropicFormatter extends BaseFormatter {
     }
 
     // 添加 thinking 配置（如果存在）
-    if (parameters.thinking) {
-      body.thinking = parameters.thinking;
+    if (parameters['thinking']) {
+      body['thinking'] = parameters['thinking'];
     }
 
     // 添加 tool_choice（如果存在）
-    if (parameters.tool_choice) {
-      body.tool_choice = parameters.tool_choice;
+    if (parameters['tool_choice']) {
+      body['tool_choice'] = parameters['tool_choice'];
     }
 
     // 构建请求头

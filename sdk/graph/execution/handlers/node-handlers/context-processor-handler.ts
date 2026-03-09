@@ -22,7 +22,7 @@ import { now } from '@modular-agent/common-utils';
 import { executeOperation } from '../../../../core/utils/message-operation-utils.js';
 import type { MessageOperationContext } from '@modular-agent/types';
 import type { MessageOperationResult } from '@modular-agent/types';
-import { createContextualLogger } from '../../../../../utils/contextual-logger.js';
+import { createContextualLogger } from '../../../../utils/contextual-logger.js';
 
 const logger = createContextualLogger();
 

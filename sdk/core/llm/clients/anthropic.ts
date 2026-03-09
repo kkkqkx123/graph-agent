@@ -24,7 +24,7 @@ export class AnthropicClient extends BaseLLMClient {
    * @param request LLM请求
    * @returns Token计数结果
    */
-  async countTokens(request: LLMRequest): Promise<TokenCountResult> {
+  override async countTokens(request: LLMRequest): Promise<TokenCountResult> {
     const formatter = this.formatter as AnthropicFormatter;
     const config = this.getFormatterConfig(false);
     const { httpRequest } = formatter.buildCountTokensRequest(request, config);

@@ -51,6 +51,12 @@ export interface StreamChunk {
    * 用于流式输出思考过程
    */
   reasoningDelta?: string;
+  /**
+   * 隐私模式思考内容
+   *
+   * 用于 Anthropic 的 redacted_thinking 块
+   */
+  redactedThinking?: string;
 }
 
 /**
