@@ -54,14 +54,14 @@ export class RunAgentLoopStreamCommand extends BaseCommand<AsyncGenerator<AgentS
 
     // 验证：profileId 如果提供必须是非空字符串
     if (this.params.config?.profileId !== undefined &&
-        typeof this.params.config.profileId === 'string' &&
-        this.params.config.profileId.trim().length === 0) {
+      typeof this.params.config.profileId === 'string' &&
+      this.params.config.profileId.trim().length === 0) {
       errors.push('profileId 不能为空字符串');
     }
 
     // 验证：maxIterations 如果提供必须是正整数
     if (this.params.config?.maxIterations !== undefined &&
-        (this.params.config.maxIterations < 1 || !Number.isInteger(this.params.config.maxIterations))) {
+      (this.params.config.maxIterations < 1 || !Number.isInteger(this.params.config.maxIterations))) {
       errors.push('maxIterations 必须是正整数');
     }
 

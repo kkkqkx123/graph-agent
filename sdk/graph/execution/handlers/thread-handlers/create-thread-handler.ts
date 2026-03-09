@@ -3,42 +3,40 @@
  * 提供无状态的动态线程创建功能
  *
  * 职责：
- * - 接收工具调用请求
+ * - 接收线程操作请求
  * - 解析参数并创建 DynamicThreadManager
  * - 调用 DynamicThreadManager 创建动态线程
- * - 处理返回结果并转换为 ToolExecutionResult
+ * - 处理返回结果并转换为 ThreadOperationResult
  *
  * 设计原则：
  * - 无状态函数式设计
  * - 职责单一，每个函数只做一件事
- * - 与其他工具处理函数保持一致
  * - 支持同步和异步执行模式
+ *
+ * 注意：此模块与 LLM Tool 调用机制无关，专门用于线程生命周期管理
  */
 
-import type { ThreadEntity } from '../../../entities/thread-entity.js';
 import type { ThreadRegistry } from '../../../services/thread-registry.js';
 import type { TaskRegistry } from '../../../services/task-registry.js';
 import type { EventManager } from '../../../../core/services/event-manager.js';
 import type { ThreadBuilder } from '../../thread-builder.js';
 import type { TaskQueueManager } from '../../managers/task-queue-manager.js';
-import type { ThreadExecutor } from '../../thread-executor.js';
 import { DynamicThreadManager } from '../../managers/dynamic-thread-manager.js';
-import { ThreadPoolService } from '../../../services/thread-pool-service.js';
 import {
   type CreateDynamicThreadRequest,
   type ExecutedThreadResult,
   type ThreadSubmissionResult,
   type DynamicThreadConfig
 } from '../../types/dynamic-thread.types.js';
-import { getErrorMessage, getErrorOrNew, now, diffTimestamp } from '@modular-agent/common-utils';
+import { getErrorMessage, now, diffTimestamp } from '@modular-agent/common-utils';
 import { ToolError } from '@modular-agent/types';
 import { getContainer } from '../../../../core/di/index.js';
 import * as Identifiers from '../../../../core/di/service-identifiers.js';
 
 /**
- * 工具执行结果接口
+ * 线程操作执行结果接口
  */
-export interface ToolExecutionResult {
+export interface ThreadOperationResult {
   /** 是否成功 */
   success: boolean;
   /** 执行结果 */
@@ -64,22 +62,30 @@ export interface CreateThreadRequest {
 }
 
 /**
+ * 线程操作上下文
+ * 包含执行线程操作所需的所有依赖
+ */
+export interface ThreadOperationContext {
+  threadRegistry: ThreadRegistry;
+  taskRegistry: TaskRegistry;
+  eventManager: EventManager;
+  threadBuilder: ThreadBuilder;
+  taskQueueManager: TaskQueueManager;
+  currentThreadId?: string;
+}
+
+/**
  * 创建动态线程
- * @param action 工具调用动作
+ * @param action 创建线程请求
  * @param triggerId 触发器 ID
- * @param executionContext 执行上下文
- * @returns 工具执行结果
+ * @param context 线程操作上下文
+ * @returns 线程操作结果
  */
 export async function createThreadHandler(
   action: CreateThreadRequest,
   triggerId: string,
-  threadRegistry: ThreadRegistry,
-  taskRegistry: TaskRegistry,
-  eventManager: EventManager,
-  threadBuilder: ThreadBuilder,
-  taskQueueManager: TaskQueueManager,
-  currentThreadId?: string
-): Promise<ToolExecutionResult> {
+  context: ThreadOperationContext
+): Promise<ThreadOperationResult> {
   const startTime = now();
 
   try {
@@ -89,10 +95,10 @@ export async function createThreadHandler(
     }
 
     // 获取主线程 ThreadEntity
-    if (!currentThreadId) {
+    if (!context.currentThreadId) {
       throw new ToolError('Current thread ID not provided', 'create-thread');
     }
-    const mainThreadEntity = threadRegistry.get(currentThreadId);
+    const mainThreadEntity = context.threadRegistry.get(context.currentThreadId);
 
     if (!mainThreadEntity) {
       throw new ToolError('Main thread entity not found', 'create-thread');
@@ -105,11 +111,11 @@ export async function createThreadHandler(
     const container = getContainer();
     const threadPoolService = container.get(Identifiers.ThreadPoolService);
     const dynamicThreadManager = new DynamicThreadManager(
-      threadRegistry,
-      threadBuilder,
-      taskRegistry,
-      taskQueueManager,
-      eventManager,
+      context.threadRegistry,
+      context.threadBuilder,
+      context.taskRegistry,
+      context.taskQueueManager,
+      context.eventManager,
       threadPoolService
     );
 
@@ -178,20 +184,16 @@ export async function createThreadHandler(
 
 /**
  * 取消动态线程
- * @param action 工具调用动作
+ * @param action 取消线程请求
  * @param triggerId 触发器 ID
- * @param executionContext 执行上下文
- * @returns 工具执行结果
+ * @param context 线程操作上下文
+ * @returns 线程操作结果
  */
 export async function cancelThreadHandler(
   action: { threadId: string },
   triggerId: string,
-  threadRegistry: ThreadRegistry,
-  taskRegistry: TaskRegistry,
-  eventManager: EventManager,
-  threadBuilder: ThreadBuilder,
-  taskQueueManager: TaskQueueManager
-): Promise<ToolExecutionResult> {
+  context: ThreadOperationContext
+): Promise<ThreadOperationResult> {
   const startTime = now();
 
   try {
@@ -204,11 +206,11 @@ export async function cancelThreadHandler(
     const container = getContainer();
     const threadPoolService = container.get(Identifiers.ThreadPoolService);
     const dynamicThreadManager = new DynamicThreadManager(
-      threadRegistry,
-      threadBuilder,
-      taskRegistry,
-      taskQueueManager,
-      eventManager,
+      context.threadRegistry,
+      context.threadBuilder,
+      context.taskRegistry,
+      context.taskQueueManager,
+      context.eventManager,
       threadPoolService
     );
 
@@ -240,20 +242,16 @@ export async function cancelThreadHandler(
 
 /**
  * 查询动态线程状态
- * @param action 工具调用动作
+ * @param action 查询线程状态请求
  * @param triggerId 触发器 ID
- * @param executionContext 执行上下文
- * @returns 工具执行结果
+ * @param context 线程操作上下文
+ * @returns 线程操作结果
  */
 export async function getThreadStatusHandler(
   action: { threadId: string },
   triggerId: string,
-  threadRegistry: ThreadRegistry,
-  taskRegistry: TaskRegistry,
-  eventManager: EventManager,
-  threadBuilder: ThreadBuilder,
-  taskQueueManager: TaskQueueManager
-): Promise<ToolExecutionResult> {
+  context: ThreadOperationContext
+): Promise<ThreadOperationResult> {
   const startTime = now();
 
   try {
@@ -266,11 +264,11 @@ export async function getThreadStatusHandler(
     const container = getContainer();
     const threadPoolService = container.get(Identifiers.ThreadPoolService);
     const dynamicThreadManager = new DynamicThreadManager(
-      threadRegistry,
-      threadBuilder,
-      taskRegistry,
-      taskQueueManager,
-      eventManager,
+      context.threadRegistry,
+      context.threadBuilder,
+      context.taskRegistry,
+      context.taskQueueManager,
+      context.eventManager,
       threadPoolService
     );
 
