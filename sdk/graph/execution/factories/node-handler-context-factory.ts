@@ -12,7 +12,7 @@ import type { Node } from '@modular-agent/types';
 import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { UserInteractionHandler } from '@modular-agent/types';
 import type { HumanRelayHandler } from '@modular-agent/types';
-import type { ConversationManager } from '../managers/conversation-manager.js';
+import type { ConversationManager } from '../../../core/execution/managers/conversation-manager.js';
 import type { EventManager } from '../../../core/services/event-manager.js';
 import { LLMExecutionCoordinator } from '../coordinators/llm-execution-coordinator.js';
 import { ExecutionError } from '@modular-agent/types';

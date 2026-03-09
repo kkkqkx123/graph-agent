@@ -20,7 +20,7 @@ import type { EventManager } from '../../../core/services/event-manager.js';
 import type { Tool, ID } from '@modular-agent/types';
 import { safeEmit } from '../utils/event/event-emitter.js';
 import { now, diffTimestamp, generateId } from '@modular-agent/common-utils';
-import type { ConversationManager } from '../managers/conversation-manager.js';
+import type { ConversationManager } from '../../../core/execution/managers/conversation-manager.js';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
 import { ThreadInterruptedException, SystemExecutionError } from '@modular-agent/types';

@@ -203,7 +203,7 @@ export class ThreadLifecycleManager {
     this.messageHistoryManager.cleanup();
 
     // 触发THREAD_FAILED事件
-    const failedEvent = buildThreadFailedEvent(thread, error);
+    const failedEvent = buildThreadFailedEvent({ threadId: thread.id, error });
     await emit(this.eventManager, failedEvent);
 
     // 触发THREAD_STATE_CHANGED事件

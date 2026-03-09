@@ -14,7 +14,7 @@
  * - VariableStateManager: 变量状态管理器
  * - ToolContextManager: 工具上下文管理器
  * - MessageHistoryManager: 消息历史管理器
- * - InterruptionManager: 中断状态管理器
+ * - InterruptionManager: 中断状态管理器（从 @modular-agent/core/execution 重新导出）
  * - InterruptionDetector: 中断检测器
  * - LifecycleCapable: 统一的生命周期管理能力接口
  * - CheckpointCleanupPolicy: 检查点清理策略
@@ -27,13 +27,18 @@ export { ToolContextManager, type ToolScope, type ToolMetadata, type ToolContext
 export { MessageHistoryManager, type MessageHistoryState } from './message-history-manager.js';
 export { type LifecycleCapable } from './lifecycle-capable.js';
 
+// 从通用执行核心重新导出
 export {
   ConversationManager,
-  ConversationManagerOptions,
-  ConversationState
-} from './conversation-manager.js';
+  type ConversationManagerOptions,
+  type ConversationState
+} from '../../../core/execution/managers/conversation-manager.js';
 
-export { InterruptionManager, type InterruptionType } from './interruption-manager.js';
+export {
+  InterruptionManager,
+  type InterruptionType
+} from '../../../core/execution/managers/interruption-manager.js';
+
 export { InterruptionDetector, InterruptionDetectorImpl } from './interruption-detector.js';
 
 // 工具可见性管理器

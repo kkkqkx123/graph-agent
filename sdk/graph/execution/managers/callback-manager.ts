@@ -13,7 +13,7 @@
  * - 支持泛型，适配不同的结果类型
  */
 
-import type { CallbackInfo, DynamicThreadEvent } from '../types/dynamic-thread.types.js';
+import type { DynamicThreadEvent } from '../types/dynamic-thread.types.js';
 import { now } from '@modular-agent/common-utils';
 
 /**

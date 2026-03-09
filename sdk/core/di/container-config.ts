@@ -54,10 +54,10 @@ import { ThreadOperationCoordinator } from '../../graph/execution/coordinators/t
 import { CheckpointCoordinator } from '../../graph/execution/coordinators/checkpoint-coordinator.js';
 
 // 执行层 - Managers（管理器）
-import { ConversationManager } from '../../graph/execution/managers/conversation-manager.js';
+import { ConversationManager } from '../execution/managers/conversation-manager.js';
 import { VariableStateManager } from '../../graph/execution/managers/variable-state-manager.js';
 import { TriggerStateManager } from '../../graph/execution/managers/trigger-state-manager.js';
-import { InterruptionManager } from '../../graph/execution/managers/interruption-manager.js';
+import { InterruptionManager } from '../execution/managers/interruption-manager.js';
 import { AgentLoopService } from '../../agent/agent-loop-service.js';
 import { ConversationService } from '../../agent/conversation-service.js';
 

@@ -10,7 +10,7 @@ import { ExecutionError } from '@modular-agent/types';
 import { now, diffTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
 import type { LLMExecutionCoordinator } from '../../coordinators/llm-execution-coordinator.js';
 import type { ToolCallExecutor } from '../../executors/tool-call-executor.js';
-import type { ConversationManager } from '../../managers/conversation-manager.js';
+import type { ConversationManager } from '../../../../core/execution/managers/conversation-manager.js';
 import type { EventManager } from '../../../../core/services/event-manager.js';
 import type { AgentLoopService } from '../../../../agent/agent-loop-service.js';
 import { safeEmit } from '../../utils/event/event-emitter.js';

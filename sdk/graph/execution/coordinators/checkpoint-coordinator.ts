@@ -11,7 +11,7 @@ import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { WorkflowRegistry } from '../../services/workflow-registry.js';
 import type { GraphRegistry } from '../../services/graph-registry.js';
 import { CheckpointStateManager } from '../managers/checkpoint-state-manager.js';
-import { ConversationManager } from '../managers/conversation-manager.js';
+import { ConversationManager } from '../../../core/execution/managers/conversation-manager.js';
 import { VariableStateManager } from '../managers/variable-state-manager.js';
 import { ThreadEntity } from '../../entities/thread-entity.js';
 import { CheckpointDiffCalculator } from '../utils/checkpoint-diff-calculator.js';
