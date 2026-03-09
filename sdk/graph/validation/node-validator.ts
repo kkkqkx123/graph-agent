@@ -11,6 +11,7 @@ import { ConfigurationValidationError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 import { validateNodeByType } from './node-validation/index.js';
+import { convertZodError } from '../../core/validation/utils.js';
 
 /**
  * 节点schema（基本信息验证）
@@ -43,7 +44,7 @@ export class NodeValidator {
     // 首先验证基本信息
     const basicResult = nodeSchema.safeParse(node);
     if (!basicResult.success) {
-      return err(this.convertZodError(basicResult.error, 'node'));
+      return err(convertZodError(basicResult.error, 'node', 'node'));
     }
 
     // 然后验证节点配置

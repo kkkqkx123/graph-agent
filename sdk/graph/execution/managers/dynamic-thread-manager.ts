@@ -20,7 +20,7 @@ import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { ThreadExecutor } from '../thread-executor.js';
 import { now, diffTimestamp, getErrorMessage } from '@modular-agent/common-utils';
 import { TaskRegistry, type TaskManager } from '../../services/task-registry.js';
-import { ThreadPoolService } from '../../../core/services/thread-pool-service.js';
+import { ThreadPoolService } from '../../services/thread-pool-service.js';
 import { TaskQueueManager } from './task-queue-manager.js';
 import { ThreadBuilder } from '../thread-builder.js';
 import { CallbackManager } from './callback-manager.js';

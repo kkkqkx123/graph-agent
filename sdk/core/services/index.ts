@@ -18,7 +18,6 @@
  *
  * 如需类型引用，直接从具体服务文件导入：
  * import type { EventManager } from './event-manager.js'
+ *
+ * 注意：ThreadPoolService 已迁移到 graph/services 模块
  */
-
-// ThreadPoolService 导出（供类型引用）
-export { ThreadPoolService } from './thread-pool-service.js';

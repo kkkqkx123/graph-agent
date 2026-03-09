@@ -23,7 +23,7 @@ import type { ThreadBuilder } from '../../thread-builder.js';
 import type { TaskQueueManager } from '../../managers/task-queue-manager.js';
 import type { ThreadExecutor } from '../../thread-executor.js';
 import { DynamicThreadManager } from '../../managers/dynamic-thread-manager.js';
-import { ThreadPoolService } from '../../../../core/services/thread-pool-service.js';
+import { ThreadPoolService } from '../../../services/thread-pool-service.js';
 import {
   type CreateDynamicThreadRequest,
   type ExecutedThreadResult,

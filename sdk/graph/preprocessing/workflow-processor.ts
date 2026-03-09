@@ -19,7 +19,7 @@ import type { WorkflowTrigger } from '@modular-agent/types';
 import type { TriggerReference } from '@modular-agent/types';
 import { GraphBuilder } from './graph-builder.js';
 import { GraphValidator } from '../validation/graph-validator.js';
-import { WorkflowValidator } from '../../core/validation/workflow-validator.js';
+import { WorkflowValidator } from '../validation/workflow-validator.js';
 import { IdMappingBuilder } from './id-mapping-builder.js';
 import { PreprocessedGraphData } from '../entities/preprocessed-graph-data.js';
 import { now } from '@modular-agent/common-utils';

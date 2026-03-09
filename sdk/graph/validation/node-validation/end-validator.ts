@@ -8,7 +8,7 @@ import type { Node } from '@modular-agent/types';
 import { ConfigurationValidationError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
 import { ok } from '@modular-agent/common-utils';
-import { validateNodeType, validateNodeConfig } from '../utils.js';
+import { validateNodeType, validateNodeConfig } from '../../../core/validation/utils.js';
 
 /**
  * End节点配置schema（必须为空对象）

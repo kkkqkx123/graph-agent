@@ -31,18 +31,14 @@
 import { z } from 'zod';
 import type { WorkflowDefinition } from '@modular-agent/types';
 import type { Node } from '@modular-agent/types';
-import { NodeType } from '@modular-agent/types';
-import { WorkflowType } from '@modular-agent/types';
 import { ConfigurationValidationError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
-import { all } from '@modular-agent/common-utils';
 import { validateNodeByType } from './node-validation/index.js';
-import { validateHooks } from './hook-validator.js';
-import { validateTriggers } from './trigger-validator.js';
-import { SelfReferenceValidationStrategy } from './strategies/self-reference-validation-strategy.js';
-import { TriggerActionType } from '@modular-agent/types';
-import { validateConfig, convertZodError } from './utils.js';
+import { validateHooks } from '../../core/validation/hook-validator.js';
+import { validateTriggers } from '../../core/validation/trigger-validator.js';
+import { SelfReferenceValidationStrategy } from '../../core/validation/strategies/self-reference-validation-strategy.js';
+import { validateConfig } from '../../core/validation/utils.js';
 
 /**
  * 工作流变量schema
@@ -186,7 +182,7 @@ export class WorkflowValidator {
     const hasStartFromTrigger = nodes.some(node => node.type === 'START_FROM_TRIGGER');
     const hasContinueFromTrigger = nodes.some(node => node.type === 'CONTINUE_FROM_TRIGGER');
     const hasSubgraphNode = nodes.some(node => node.type === 'SUBGRAPH');
-    
+
     // 检查是否包含EXECUTE_TRIGGERED_SUBGRAPH触发器
     const hasExecuteTriggeredSubgraphTrigger = triggers?.some(trigger => {
       if ('action' in trigger) {

@@ -177,7 +177,7 @@ export type { OffEventParams } from './operations/subscriptions/events/off-event
 // ============================================================================
 // 验证API
 // ============================================================================
-export { WorkflowValidator as WorkflowValidatorAPI } from '../core/validation/index.js';
+export { WorkflowValidator as WorkflowValidatorAPI } from '../graph/validation/index.js';
 export { CodeConfigValidator as CodeConfigValidatorAPI } from '../core/validation/index.js';
 export { StaticValidator as StaticValidatorAPI } from '../core/validation/index.js';
 export { StaticValidator } from '../core/validation/index.js';

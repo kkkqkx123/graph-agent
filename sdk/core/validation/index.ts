@@ -1,15 +1,11 @@
 /**
  * Validation模块导出
- * 提供工作流、节点和消息的验证功能
- * 注意：GraphValidator 已迁移到 graph/validation 模块
+ * 提供通用验证功能
+ * 注意：WorkflowValidator、NodeValidator 和 node-validation 已迁移到 graph/validation 模块
  */
 
-export * from './workflow-validator.js';
-export * from './node-validator.js';
+// 导出消息验证器
 export * from './message-validator.js';
-
-// 导出节点验证函数
-export * from './node-validation/index.js';
 
 // 导出Hook验证函数
 export * from './hook-validator.js';
@@ -23,3 +19,9 @@ export * from './code-config-validator.js';
 // 导出静态验证器和运行时验证器
 export * from './tool-static-validator.js';
 export * from './tool-runtime-validator.js';
+
+// 导出策略验证器
+export * from './strategies/self-reference-validation-strategy.js';
+
+// 导出工具函数
+export * from './utils.js';

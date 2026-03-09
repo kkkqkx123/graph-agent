@@ -10,7 +10,7 @@ import type { NodeTemplate, NodeTemplateSummary } from '@modular-agent/types';
 import type { Node } from '@modular-agent/types';
 import { NodeType } from '@modular-agent/types';
 import { ValidationError, NotFoundError, ConfigurationValidationError, NodeTemplateNotFoundError } from '@modular-agent/types';
-import { validateNodeByType } from '../validation/node-validation/index.js';
+import { validateNodeByType } from '../../graph/validation/node-validation/index.js';
 import { getErrorMessage, now } from '@modular-agent/common-utils';
 
 /**
