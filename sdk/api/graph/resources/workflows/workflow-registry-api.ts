@@ -8,13 +8,13 @@ import {
   validateStringLength,
   validateArray,
   validatePattern
-} from '../../validation/validation-strategy.js';
+} from '../../../shared/validation/validation-strategy.js';
 
 import { now } from '@modular-agent/common-utils';
-import { GenericResourceAPI } from '../../shared/resources/generic-resource-api.js';
+import { GenericResourceAPI } from '../../../shared/resources/generic-resource-api.js';
 import type { WorkflowDefinition, WorkflowFilter, WorkflowSummary } from '@modular-agent/types';
 import { WorkflowNotFoundError } from '@modular-agent/types';
-import type { APIDependencyManager } from '../../core/sdk-dependencies.js';
+import type { APIDependencyManager } from '../../../shared/core/sdk-dependencies.js';
 
 /**
  * WorkflowRegistryAPI - 工作流管理API

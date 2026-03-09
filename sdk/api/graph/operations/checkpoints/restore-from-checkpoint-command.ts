@@ -2,11 +2,11 @@
  * RestoreFromCheckpointCommand - 从检查点恢复线程
  */
 
-import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
+import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../../shared/types/command.js';
 import { CheckpointCoordinator } from '../../../../graph/execution/coordinators/checkpoint-coordinator.js';
 import type { Thread } from '@modular-agent/types';
 import { getContainer } from '../../../../core/di/index.js';
-import type { APIDependencyManager } from '../../../core/sdk-dependencies.js';
+import type { APIDependencyManager } from '../../../shared/core/sdk-dependencies.js';
 
 /**
  * 从检查点恢复参数

@@ -3,7 +3,7 @@
  * 继承自 BaseBuilder，添加模板注册功能
  */
 
-import { BaseBuilder } from './base-builder.js';
+import { BaseBuilder } from '../../shared/base-builder.js';
 
 /**
  * TemplateBuilder - 模板构建器抽象基类

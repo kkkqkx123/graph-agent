@@ -2,9 +2,9 @@
  * EnableTriggerCommand - 启用触发器
  */
 
-import { BaseCommand, CommandValidationResult } from '../../../types/command.js';
+import { BaseCommand, CommandValidationResult } from '../../../shared/types/command.js';
 import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types';
-import type { APIDependencyManager } from '../../../core/sdk-dependencies.js';
+import type { APIDependencyManager } from '../../../shared/core/sdk-dependencies.js';
 
 /**
  * 启用触发器参数

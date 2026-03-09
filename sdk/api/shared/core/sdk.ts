@@ -12,9 +12,9 @@ import { APIFactory } from './api-factory.js';
 import { APIDependencyManager } from './sdk-dependencies.js';
 import { getData } from '../types/execution-result.js';
 import type { SDKOptions } from '@modular-agent/types';
-import { logger } from '../../utils/index.js';
+import { logger } from '../../../utils/index.js';
 import { getErrorMessage } from '@modular-agent/common-utils';
-import { setStorageCallback } from '../../core/di/container-config.js';
+import { setStorageCallback } from '../../../core/di/container-config.js';
 
 /**
  * SDK主类 - 统一API入口（内部类，不导出）
@@ -210,7 +210,7 @@ class SDK {
     // 清理依赖管理器
     try {
       // DI容器会自动清理所有单例服务
-      const { resetContainer } = await import('../../core/di/index.js');
+      const { resetContainer } = await import('../../../core/di/index.js');
       resetContainer();
     } catch (error) {
       logger.error('Failed to cleanup dependencies', { error: getErrorMessage(error) });

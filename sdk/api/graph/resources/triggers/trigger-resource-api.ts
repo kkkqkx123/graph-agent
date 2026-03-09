@@ -4,13 +4,13 @@
  */
 
 import { now } from '@modular-agent/common-utils';
-import { GenericResourceAPI } from '../generic-resource-api.js';
-import type { ThreadRegistry } from '../../../graph/services/thread-registry.js';
+import { GenericResourceAPI } from '../../../shared/resources/generic-resource-api.js';
+import type { ThreadRegistry } from '../../../../graph/services/thread-registry.js';
 import { TriggerStatus } from '@modular-agent/types';
 import type { Trigger } from '@modular-agent/types';
 import { NotFoundError, ThreadContextNotFoundError, TriggerFilter } from '@modular-agent/types';
-import { getContainer } from '../../../core/di/index.js';
-import * as Identifiers from '../../../core/di/service-identifiers.js';
+import { getContainer } from '../../../../core/di/index.js';
+import * as Identifiers from '../../../../core/di/service-identifiers.js';
 
 /**
  * TriggerResourceAPI - 触发器资源管理API

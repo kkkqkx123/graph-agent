@@ -6,8 +6,8 @@
 import type { TriggerTemplate, TriggerCondition, TriggerAction } from '@modular-agent/types';
 import { EventType, TriggerActionType } from '@modular-agent/types';
 import { TemplateBuilder } from './template-builder.js';
-import { getContainer } from '../../core/di/index.js';
-import * as Identifiers from '../../core/di/service-identifiers.js';
+import { getContainer } from '../../../core/di/index.js';
+import * as Identifiers from '../../../core/di/service-identifiers.js';
 
 /**
  * TriggerTemplateBuilder - 触发器模板构建器

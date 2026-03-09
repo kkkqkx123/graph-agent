@@ -10,18 +10,18 @@
  * - 统一通过DI容器获取依赖
  */
 
-import { getContainer } from '../../core/di/index.js';
-import * as Identifiers from '../../core/di/service-identifiers.js';
-import type { WorkflowRegistry } from '../../graph/services/workflow-registry.js';
-import type { ThreadRegistry } from '../../graph/services/thread-registry.js';
-import type { EventManager } from '../../core/services/event-manager.js';
-import type { CheckpointStateManager } from '../../graph/execution/managers/checkpoint-state-manager.js';
-import type { ToolService } from '../../core/services/tool-service.js';
-import type { LLMExecutor } from '../../graph/execution/executors/llm-executor.js';
-import type { ScriptService } from '../../graph/services/script-service.js';
-import type { NodeTemplateRegistry } from '../../core/services/node-template-registry.js';
-import type { TriggerTemplateRegistry } from '../../core/services/trigger-template-registry.js';
-import type { GraphRegistry } from '../../graph/services/graph-registry.js';
+import { getContainer } from '../../../core/di/index.js';
+import * as Identifiers from '../../../core/di/service-identifiers.js';
+import type { WorkflowRegistry } from '../../../graph/services/workflow-registry.js';
+import type { ThreadRegistry } from '../../../graph/services/thread-registry.js';
+import type { EventManager } from '../../../core/services/event-manager.js';
+import type { CheckpointStateManager } from '../../../graph/execution/managers/checkpoint-state-manager.js';
+import type { ToolService } from '../../../core/services/tool-service.js';
+import type { LLMExecutor } from '../../../graph/execution/executors/llm-executor.js';
+import type { ScriptService } from '../../../graph/services/script-service.js';
+import type { NodeTemplateRegistry } from '../../../core/services/node-template-registry.js';
+import type { TriggerTemplateRegistry } from '../../../core/services/trigger-template-registry.js';
+import type { GraphRegistry } from '../../../graph/services/graph-registry.js';
 
 /**
  * API依赖管理类
@@ -110,14 +110,14 @@ export class APIDependencyManager {
   /**
    * 获取线程生命周期协调器
    */
-  getThreadLifecycleCoordinator(): import('../../graph/execution/coordinators/thread-lifecycle-coordinator.js').ThreadLifecycleCoordinator {
+  getThreadLifecycleCoordinator(): import('../../../graph/execution/coordinators/thread-lifecycle-coordinator.js').ThreadLifecycleCoordinator {
     return this.container.get(Identifiers.ThreadLifecycleCoordinator);
   }
 
   /**
    * 获取 LLM 包装器
    */
-  getLLMWrapper(): import('../../core/llm/wrapper.js').LLMWrapper {
+  getLLMWrapper(): import('../../../core/llm/wrapper.js').LLMWrapper {
     return this.container.get(Identifiers.LLMWrapper);
   }
 }

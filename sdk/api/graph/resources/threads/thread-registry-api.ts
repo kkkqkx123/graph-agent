@@ -4,11 +4,11 @@
  * 重构版本：继承GenericResourceAPI，提高代码复用性和一致性
  */
 
-import type { ThreadRegistry } from '../../../graph/services/thread-registry.js';
+import type { ThreadRegistry } from '../../../../graph/services/thread-registry.js';
 import type { Thread, ThreadResult, ThreadStatus, ThreadFilter, ThreadSummary } from '@modular-agent/types';
-import { GenericResourceAPI } from '../generic-resource-api.js';
-import { getErrorMessage, isSuccess, getData } from '../../types/execution-result.js';
-import type { APIDependencyManager } from '../../core/sdk-dependencies.js';
+import { GenericResourceAPI } from '../../../shared/resources/generic-resource-api.js';
+import { getErrorMessage, isSuccess, getData } from '../../../shared/types/execution-result.js';
+import type { APIDependencyManager } from '../../../shared/core/sdk-dependencies.js';
 // SingletonRegistry 已被移除，不再需要此导入
 
 

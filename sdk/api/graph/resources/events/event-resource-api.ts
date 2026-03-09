@@ -3,7 +3,7 @@
  * 继承GenericResourceAPI，提供统一的CRUD操作
  */
 
-import { GenericResourceAPI } from '../generic-resource-api.js';
+import { GenericResourceAPI } from '../../../shared/resources/generic-resource-api.js';
 import type { BaseEvent, EventFilter } from '@modular-agent/types';
 import { getErrorMessage } from '@modular-agent/common-utils';
 

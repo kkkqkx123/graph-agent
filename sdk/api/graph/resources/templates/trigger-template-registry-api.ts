@@ -9,9 +9,9 @@ import type {
   TriggerTemplateSummary,
   TriggerTemplateFilter
 } from '@modular-agent/types';
-import { GenericResourceAPI } from '../generic-resource-api.js';
-import { isSuccess, getData } from '../../types/execution-result.js';
-import type { APIDependencyManager } from '../../core/sdk-dependencies.js';
+import { GenericResourceAPI } from '../../../shared/resources/generic-resource-api.js';
+import { isSuccess, getData } from '../../../shared/types/execution-result.js';
+import type { APIDependencyManager } from '../../../shared/core/sdk-dependencies.js';
 
 
 /**

@@ -11,7 +11,7 @@
 
 import type { WorkflowConfigFile } from './types.js';
 import { ConfigurationError } from '@modular-agent/types';
-import { TomlParserManager } from '../../utils/toml-parser-manager.js';
+import { TomlParserManager } from '../../../utils/toml-parser-manager.js';
 import { isError } from '@modular-agent/common-utils';
 
 /**

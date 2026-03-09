@@ -7,10 +7,10 @@
 import type { ThreadResult, ThreadOptions } from '@modular-agent/types';
 import { ok, err, getErrorOrNew, withAbortSignal, now } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
-import { Observable, create, type Observer } from '../utils/observable.js';
-import { ExecuteThreadCommand } from '../operations/commands/execution/execute-thread-command.js';
+import { Observable, create, type Observer } from '../../shared/utils/observable.js';
+import { ExecuteThreadCommand } from '../operations/execution/execute-thread-command.js';
 import { ExecutionError as SDKExecutionError } from '@modular-agent/types';
-import { APIDependencyManager } from '../core/sdk-dependencies.js';
+import { APIDependencyManager } from '../../shared/core/sdk-dependencies.js';
 import type {
   ExecutionEvent,
   StartEvent,
@@ -19,7 +19,7 @@ import type {
   CancelledEvent,
   ProgressEvent,
   NodeExecutedEvent
-} from '../types/execution-events.js';
+} from '../../shared/types/execution-events.js';
 
 /**
  * ExecutionBuilder - 流畅的执行构建器
@@ -140,7 +140,7 @@ export class ExecutionBuilder {
       if (executionResult.result.isOk()) {
         return ok(executionResult.result.unwrap());
       } else {
-        return err(new Error(executionResult.result.unwrapOrElse(e => e.message) || '执行失败'));
+        return err(new Error(executionResult.result.unwrapOrElse((e: Error) => e.message) || '执行失败'));
       }
     } catch (error) {
       // 触发错误回调
@@ -321,7 +321,7 @@ export class ExecutionBuilder {
       if (executionResult.result.isOk()) {
         return ok(executionResult.result.unwrap());
       } else {
-        return err(new Error(executionResult.result.unwrapOrElse(e => e.message) || '执行失败'));
+        return err(new Error(executionResult.result.unwrapOrElse((e: Error) => e.message) || '执行失败'));
       }
     }, signal);
   }

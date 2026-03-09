@@ -2,9 +2,9 @@
  * GenerateCommand - LLM生成命令
  */
 
-import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
+import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../types/command.js';
 import type { LLMRequest, LLMResult } from '@modular-agent/types';
-import { APIDependencyManager } from '../../../core/sdk-dependencies.js';
+import { APIDependencyManager } from '../core/sdk-dependencies.js';
 
 /**
  * LLM生成命令

@@ -204,11 +204,11 @@ export {
 // LLM Commands
 export {
   GenerateCommand
-} from './shared/operations/llm/generate-command.js';
+} from './shared/operations/generate-command.js';
 
 export {
   GenerateBatchCommand
-} from './shared/operations/llm/generate-batch-command.js';
+} from './shared/operations/generate-batch-command.js';
 
 // Script Commands
 export {

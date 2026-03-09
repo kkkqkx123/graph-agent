@@ -4,12 +4,12 @@
  */
 
 import { now } from '@modular-agent/common-utils';
-import { GenericResourceAPI } from '../generic-resource-api.js';
-import type { ThreadRegistry } from '../../../graph/services/thread-registry.js';
+import { GenericResourceAPI } from '../../../shared/resources/generic-resource-api.js';
+import type { ThreadRegistry } from '../../../../graph/services/thread-registry.js';
 import type { Thread, VariableFilter } from '@modular-agent/types';
 import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types';
-import { getContainer } from '../../../core/di/index.js';
-import * as Identifiers from '../../../core/di/service-identifiers.js';
+import { getContainer } from '../../../../core/di/index.js';
+import * as Identifiers from '../../../../core/di/service-identifiers.js';
 
 // 重新导出 VariableFilter 供外部使用
 export type { VariableFilter };

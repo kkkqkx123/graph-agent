@@ -9,7 +9,7 @@ import type { ConfigFile } from '../types.js';
 import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 import { ValidationError } from '@modular-agent/types';
-import { validateWorkflowTrigger } from '../../../core/validation/trigger-validator.js';
+import { validateWorkflowTrigger } from '../../../../core/validation/trigger-validator.js';
 import {
   validateRequiredFields,
   validateNumberField

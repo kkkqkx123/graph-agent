@@ -5,7 +5,7 @@
  */
 
 import { now } from '@modular-agent/common-utils';
-import { ProfileManager } from '../../../core/llm/profile-manager.js';
+import { ProfileManager } from '../../../../core/llm/profile-manager.js';
 import type { LLMProfile, LLMProvider } from '@modular-agent/types';
 import { ValidationError, NotFoundError, ConfigurationValidationError, NodeTemplateNotFoundError } from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api.js';
@@ -97,7 +97,7 @@ export class LLMProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string
         `Profile not found: ${id}`,
         'PROFILE',
         id,
-        { availableProfiles: this.profileManager.list().map(p => p.id) }
+        { availableProfiles: this.profileManager.list().map((p: LLMProfile) => p.id) }
       );
     }
 
@@ -211,7 +211,7 @@ export class LLMProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string
         `Profile not found: ${profileId}`,
         'PROFILE',
         profileId,
-        { availableProfiles: this.profileManager.list().map(p => p.id) }
+        { availableProfiles: this.profileManager.list().map((p: LLMProfile) => p.id) }
       );
     }
 

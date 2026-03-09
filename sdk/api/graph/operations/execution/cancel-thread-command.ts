@@ -2,8 +2,8 @@
  * CancelThreadCommand - 取消线程命令
  */
 
-import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
-import { APIDependencyManager } from '../../../core/sdk-dependencies.js';
+import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../../shared/types/command.js';
+import { APIDependencyManager } from '../../../shared/core/sdk-dependencies.js';
 
 /**
  * 取消线程命令

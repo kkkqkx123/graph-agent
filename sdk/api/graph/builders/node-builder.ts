@@ -5,10 +5,10 @@
 
 import type { Node, NodeConfig, NodeType } from '@modular-agent/types';
 import { NodeTemplateNotFoundError, ConfigurationValidationError } from '@modular-agent/types';
-import { generateId } from '../../utils/index.js';
-import { getContainer } from '../../core/di/index.js';
-import * as Identifiers from '../../core/di/service-identifiers.js';
-import { BaseBuilder } from './base-builder.js';
+import { generateId } from '../../../utils/id-utils.js';
+import { getContainer } from '../../../core/di/index.js';
+import * as Identifiers from '../../../core/di/service-identifiers.js';
+import { BaseBuilder } from '../../shared/base-builder.js';
 
 /**
  * NodeBuilder - 节点构建器

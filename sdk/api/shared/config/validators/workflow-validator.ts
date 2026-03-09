@@ -8,7 +8,7 @@ import type { WorkflowDefinition } from '@modular-agent/types';
 import type { ConfigFile } from '../types.js';
 import type { Result } from '@modular-agent/types';
 import { ValidationError } from '@modular-agent/types';
-import { WorkflowValidator } from '../../../graph/validation/workflow-validator.js';
+import { WorkflowValidator } from '../../../../graph/validation/workflow-validator.js';
 
 /**
  * 验证工作流配置

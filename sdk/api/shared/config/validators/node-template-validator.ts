@@ -10,7 +10,7 @@ import { ConfigType } from '../types.js';
 import { ok, err } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 import { ValidationError } from '@modular-agent/types';
-import { NodeValidator } from '../../../graph/validation/node-validator.js';
+import { NodeValidator } from '../../../../graph/validation/node-validator.js';
 import { NodeType } from '@modular-agent/types';
 import {
   validateRequiredFields,

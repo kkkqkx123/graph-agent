@@ -2,9 +2,9 @@
  * ResumeThreadCommand - 恢复线程命令
  */
 
-import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
+import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../../shared/types/command.js';
 import type { ThreadResult } from '@modular-agent/types';
-import { APIDependencyManager } from '../../../core/sdk-dependencies.js';
+import { APIDependencyManager } from '../../../shared/core/sdk-dependencies.js';
 
 /**
  * 恢复线程命令

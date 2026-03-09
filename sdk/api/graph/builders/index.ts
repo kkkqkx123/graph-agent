@@ -4,7 +4,7 @@
  */
 
 // 基础构建器
-export { BaseBuilder } from './base-builder.js';
+export { BaseBuilder } from '../../shared/base-builder.js';
 export { TemplateBuilder } from './template-builder.js';
 
 // 具体构建器

@@ -18,9 +18,9 @@
  * - Thread 是工作流的执行实例，每次执行都会创建新的 Thread
  */
 
-import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command.js';
+import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../../shared/types/command.js';
 import type { ThreadResult, ThreadOptions } from '@modular-agent/types';
-import { APIDependencyManager } from '../../../core/sdk-dependencies.js';
+import { APIDependencyManager } from '../../../shared/core/sdk-dependencies.js';
 
 /**
  * 执行线程命令参数

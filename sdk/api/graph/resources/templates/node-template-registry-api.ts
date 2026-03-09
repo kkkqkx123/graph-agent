@@ -8,9 +8,8 @@ import type { NodeTemplate, NodeTemplateFilter, NodeTemplateSummary } from '@mod
 import { ValidationError, ConfigurationValidationError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
 import { ok, err, getErrorMessage } from '@modular-agent/common-utils';
-import { NodeType } from '@modular-agent/types';
-import { GenericResourceAPI } from '../generic-resource-api.js';
-import type { APIDependencyManager } from '../../core/sdk-dependencies.js';
+import { GenericResourceAPI } from '../../../shared/resources/generic-resource-api.js';
+import type { APIDependencyManager } from '../../../shared/core/sdk-dependencies.js';
 
 
 /**

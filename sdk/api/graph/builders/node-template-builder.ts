@@ -6,8 +6,8 @@
 import type { NodeTemplate } from '@modular-agent/types';
 import type { NodeType, NodeConfig } from '@modular-agent/types';
 import { TemplateBuilder } from './template-builder.js';
-import { getContainer } from '../../core/di/index.js';
-import * as Identifiers from '../../core/di/service-identifiers.js';
+import { getContainer } from '../../../core/di/index.js';
+import * as Identifiers from '../../../core/di/service-identifiers.js';
 
 /**
  * NodeTemplateBuilder - 节点模板构建器
