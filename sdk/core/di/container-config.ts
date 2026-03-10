@@ -29,9 +29,16 @@ import { ErrorService } from '../services/error-service.js';
 import { WorkflowRegistry } from '../../graph/services/workflow-registry.js';
 import { ThreadPoolService } from '../../graph/services/thread-pool-service.js';
 
-// 执行层服务
-import { LLMExecutor } from '../../graph/execution/executors/llm-executor.js';
-import { ToolCallExecutor } from '../../graph/execution/executors/tool-call-executor.js';
+// 执行层服务 - Core 层通用执行器
+import { LLMExecutor, ToolCallExecutor } from '../execution/executors/index.js';
+import { safeEmit } from '../../graph/execution/utils/index.js';
+import { createCheckpoint } from '../../graph/execution/handlers/checkpoint-handlers/checkpoint-utils.js';
+import {
+  buildMessageAddedEvent,
+  buildToolCallStartedEvent,
+  buildToolCallCompletedEvent,
+  buildToolCallFailedEvent
+} from '../../graph/execution/utils/event/event-builder.js';
 import { ThreadLifecycleManager } from '../../graph/execution/managers/thread-lifecycle-manager.js';
 import { ThreadCascadeManager } from '../../graph/execution/managers/thread-cascade-manager.js';
 import { CheckpointStateManager } from '../../graph/execution/managers/checkpoint-state-manager.js';
@@ -197,6 +204,14 @@ export function initializeContainer(): Container {
 
   container.bind(Identifiers.ToolCallExecutor)
     .toDynamicValue((c: any) => {
+      // Graph 模块特有的事件构建器
+      const eventBuilder = {
+        buildMessageAddedEvent,
+        buildToolCallStartedEvent,
+        buildToolCallCompletedEvent,
+        buildToolCallFailedEvent
+      };
+
       return new ToolCallExecutor(
         c.get(Identifiers.ToolService),
         c.get(Identifiers.EventManager),
@@ -206,7 +221,10 @@ export function initializeContainer(): Container {
           workflowRegistry: c.get(Identifiers.WorkflowRegistry),
           graphRegistry: c.get(Identifiers.GraphRegistry)
         },
-        c.get(Identifiers.ToolVisibilityCoordinator)
+        c.get(Identifiers.ToolVisibilityCoordinator),
+        eventBuilder,
+        createCheckpoint,
+        safeEmit
       );
     })
     .inSingletonScope();

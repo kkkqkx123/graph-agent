@@ -35,7 +35,7 @@ import {
   buildUserInteractionProcessedEvent
 } from '../utils/event/event-builder.js';
 import { LLMContextFactory, type LLMContextFactoryConfig } from '../factories/llm-context-factory.js';
-import { ToolCallExecutor } from '../executors/tool-call-executor.js';
+import { ToolCallExecutor } from '../../../core/execution/executors/tool-call-executor.js';
 
 const logger = createContextualLogger();
 

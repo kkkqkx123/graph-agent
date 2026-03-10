@@ -17,7 +17,7 @@ import type { ThreadRegistry } from '../../../graph/services/thread-registry.js'
 import type { EventManager } from '../../../core/services/event-manager.js';
 import type { CheckpointStateManager } from '../../../graph/execution/managers/checkpoint-state-manager.js';
 import type { ToolService } from '../../../core/services/tool-service.js';
-import type { LLMExecutor } from '../../../graph/execution/executors/llm-executor.js';
+import type { LLMExecutor } from '../../../core/execution/executors/llm-executor.js';
 import type { ScriptService } from '../../../core/services/script-service.js';
 import type { NodeTemplateRegistry } from '../../../core/services/node-template-registry.js';
 import type { TriggerTemplateRegistry } from '../../../core/services/trigger-template-registry.js';

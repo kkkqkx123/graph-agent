@@ -12,26 +12,24 @@
  * - 专门的工具执行逻辑
  * - 与事件协调器集成
  * - 统一的错误处理
+ * - 可选依赖注入，支持多场景复用
+ *
+ * 位置说明：
+ * - 位于 sdk/core/execution/executors，作为通用执行器
+ * - 可被 Graph、Agent 等模块复用
+ * - Graph 特有功能通过可选依赖注入
  */
 
 import { isAbortError, checkInterruption } from '@modular-agent/common-utils';
-import type { ToolService } from '../../../core/services/tool-service.js';
-import type { EventManager } from '../../../core/services/event-manager.js';
+import type { ToolService } from '../../services/tool-service.js';
+import type { EventManager } from '../../services/event-manager.js';
 import type { Tool, ID } from '@modular-agent/types';
-import { safeEmit } from '../utils/index.js';
 import { now, diffTimestamp, generateId } from '@modular-agent/common-utils';
-import type { ConversationManager } from '../../../core/managers/conversation-manager.js';
-import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
-import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
+import type { ConversationManager } from '../../managers/conversation-manager.js';
 import { ThreadInterruptedException, CheckpointError } from '@modular-agent/types';
-import { MessageBuilder } from '../../../core/messages/message-builder.js';
-import type { ToolVisibilityCoordinator } from '../coordinators/tool-visibility-coordinator.js';
-import {
-  buildMessageAddedEvent,
-  buildToolCallStartedEvent,
-  buildToolCallCompletedEvent,
-  buildToolCallFailedEvent
-} from '../utils/event/event-builder.js';
+import { MessageBuilder } from '../../messages/message-builder.js';
+import type { CheckpointDependencies } from '../../../graph/execution/handlers/checkpoint-handlers/checkpoint-utils.js';
+import type { ToolVisibilityCoordinator } from '../../../graph/execution/coordinators/tool-visibility-coordinator.js';
 
 /**
  * 工具调用任务信息
@@ -75,6 +73,25 @@ export interface ToolExecutionResult {
 }
 
 /**
+ * 事件构建器接口
+ * 由调用方提供事件构建实现
+ */
+export interface EventBuilder {
+  buildMessageAddedEvent(params: any): any;
+  buildToolCallStartedEvent(params: any): any;
+  buildToolCallCompletedEvent(params: any): any;
+  buildToolCallFailedEvent(params: any): any;
+}
+
+/**
+ * 检查点创建函数类型
+ */
+export type CheckpointCreator = (
+  options: { threadId: string; toolId?: string; description?: string },
+  dependencies: CheckpointDependencies
+) => Promise<string>;
+
+/**
  * 工具调用执行器类
  */
 export class ToolCallExecutor {
@@ -82,7 +99,10 @@ export class ToolCallExecutor {
     private toolService: ToolService,
     private eventManager?: EventManager,
     private checkpointDependencies?: CheckpointDependencies,
-    private toolVisibilityCoordinator?: ToolVisibilityCoordinator
+    private toolVisibilityCoordinator?: ToolVisibilityCoordinator,
+    private eventBuilder?: EventBuilder,
+    private createCheckpointFn?: CheckpointCreator,
+    private safeEmitFn?: (eventManager: EventManager, event: any) => void | Promise<void>
   ) { }
 
   /**
@@ -177,22 +197,22 @@ export class ToolCallExecutor {
         conversationState.addMessage(toolMessage);
 
         // 触发消息添加事件
-        if (this.eventManager) {
-          const messageEvent = buildMessageAddedEvent({
+        if (this.eventManager && this.eventBuilder && this.safeEmitFn) {
+          const messageEvent = this.eventBuilder.buildMessageAddedEvent({
             threadId: threadId || '',
             role: toolMessage.role,
             content: typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
             nodeId
           });
-          safeEmit(this.eventManager, messageEvent);
+          this.safeEmitFn(this.eventManager, messageEvent);
         }
 
         // 从taskInfos获取任务信息
         const taskInfo = taskInfos.get(toolCall.id)!;
 
         // 触发工具调用失败事件
-        if (this.eventManager) {
-          const failedEvent = buildToolCallFailedEvent({
+        if (this.eventManager && this.eventBuilder && this.safeEmitFn) {
+          const failedEvent = this.eventBuilder.buildToolCallFailedEvent({
             threadId: threadId || '',
             nodeId: nodeId || '',
             toolId: toolCall.name,
@@ -201,7 +221,7 @@ export class ToolCallExecutor {
             taskId: taskInfo.taskId,
             batchId: taskInfo.batchId
           });
-          safeEmit(this.eventManager, failedEvent);
+          this.safeEmitFn(this.eventManager, failedEvent);
         }
 
         return {
@@ -265,19 +285,19 @@ export class ToolCallExecutor {
         conversationState.addMessage(toolMessage);
 
         // 触发消息添加事件
-        if (this.eventManager) {
-          const messageEvent = buildMessageAddedEvent({
+        if (this.eventManager && this.eventBuilder && this.safeEmitFn) {
+          const messageEvent = this.eventBuilder.buildMessageAddedEvent({
             threadId: threadId || '',
             role: toolMessage.role,
             content: typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
             nodeId
           });
-          await safeEmit(this.eventManager, messageEvent);
+          await this.safeEmitFn(this.eventManager, messageEvent);
         }
 
         // 触发工具调用失败事件
-        if (this.eventManager) {
-          const failedEvent = buildToolCallFailedEvent({
+        if (this.eventManager && this.eventBuilder && this.safeEmitFn) {
+          const failedEvent = this.eventBuilder.buildToolCallFailedEvent({
             threadId: threadId || '',
             nodeId: nodeId || '',
             toolId: toolCall.name,
@@ -286,7 +306,7 @@ export class ToolCallExecutor {
             taskId: taskInfo.taskId,
             batchId
           });
-          await safeEmit(this.eventManager, failedEvent);
+          await this.safeEmitFn(this.eventManager, failedEvent);
         }
 
         return {
@@ -300,11 +320,11 @@ export class ToolCallExecutor {
     }
 
     // 工具调用前创建检查点（如果配置了）
-    if (toolConfig?.createCheckpoint && this.checkpointDependencies && threadId) {
+    if (toolConfig?.createCheckpoint && this.checkpointDependencies && threadId && this.createCheckpointFn) {
       const checkpointConfig = toolConfig.createCheckpoint;
       if (checkpointConfig === true || checkpointConfig === 'before' || checkpointConfig === 'both') {
         try {
-          await createCheckpoint(
+          await this.createCheckpointFn(
             {
               threadId,
               toolId: toolCall.name,
@@ -327,8 +347,8 @@ export class ToolCallExecutor {
     }
 
     // 触发工具调用开始事件
-    if (this.eventManager) {
-      const startedEvent = buildToolCallStartedEvent({
+    if (this.eventManager && this.eventBuilder && this.safeEmitFn) {
+      const startedEvent = this.eventBuilder.buildToolCallStartedEvent({
         threadId: threadId || '',
         nodeId: nodeId || '',
         toolId: toolCall.name,
@@ -337,7 +357,7 @@ export class ToolCallExecutor {
         taskId: taskInfo.taskId,
         batchId
       });
-      await safeEmit(this.eventManager, startedEvent);
+      await this.safeEmitFn(this.eventManager, startedEvent);
     }
 
     // 构建执行选项，支持从工具配置中读取
@@ -391,19 +411,19 @@ export class ToolCallExecutor {
       conversationState.addMessage(toolMessage);
 
       // 触发消息添加事件
-      if (this.eventManager) {
-        const messageEvent = buildMessageAddedEvent({
+      if (this.eventManager && this.eventBuilder && this.safeEmitFn) {
+        const messageEvent = this.eventBuilder.buildMessageAddedEvent({
           threadId: threadId || '',
           role: toolMessage.role,
           content: typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
           nodeId
         });
-        await safeEmit(this.eventManager, messageEvent);
+        await this.safeEmitFn(this.eventManager, messageEvent);
       }
 
       // 触发工具调用失败事件
-      if (this.eventManager) {
-        const failedEvent = buildToolCallFailedEvent({
+      if (this.eventManager && this.eventBuilder && this.safeEmitFn) {
+        const failedEvent = this.eventBuilder.buildToolCallFailedEvent({
           threadId: threadId || '',
           nodeId: nodeId || '',
           toolId: toolCall.name,
@@ -412,7 +432,7 @@ export class ToolCallExecutor {
           taskId: taskInfo.taskId,
           batchId
         });
-        await safeEmit(this.eventManager, failedEvent);
+        await this.safeEmitFn(this.eventManager, failedEvent);
       }
 
       return {
@@ -441,22 +461,22 @@ export class ToolCallExecutor {
     conversationState.addMessage(toolMessage);
 
     // 触发消息添加事件
-    if (this.eventManager) {
-      const messageEvent = buildMessageAddedEvent({
+    if (this.eventManager && this.eventBuilder && this.safeEmitFn) {
+      const messageEvent = this.eventBuilder.buildMessageAddedEvent({
         threadId: threadId || '',
         role: toolMessage.role,
         content: typeof toolMessage.content === 'string' ? toolMessage.content : JSON.stringify(toolMessage.content),
         nodeId
       });
-      await safeEmit(this.eventManager, messageEvent);
+      await this.safeEmitFn(this.eventManager, messageEvent);
     }
 
     // 工具调用后创建检查点（如果配置了）
-    if (toolConfig?.createCheckpoint && this.checkpointDependencies && threadId) {
+    if (toolConfig?.createCheckpoint && this.checkpointDependencies && threadId && this.createCheckpointFn) {
       const checkpointConfig = toolConfig.createCheckpoint;
       if (checkpointConfig === 'after' || checkpointConfig === 'both') {
         try {
-          await createCheckpoint(
+          await this.createCheckpointFn(
             {
               threadId,
               toolId: toolCall.name,
@@ -479,8 +499,8 @@ export class ToolCallExecutor {
     }
 
     // 触发工具调用完成事件
-    if (this.eventManager) {
-      const completedEvent = buildToolCallCompletedEvent({
+    if (this.eventManager && this.eventBuilder && this.safeEmitFn) {
+      const completedEvent = this.eventBuilder.buildToolCallCompletedEvent({
         threadId: threadId || '',
         nodeId: nodeId || '',
         toolId: toolCall.name,
@@ -490,7 +510,7 @@ export class ToolCallExecutor {
         taskId: taskInfo.taskId,
         batchId
       });
-      await safeEmit(this.eventManager, completedEvent);
+      await this.safeEmitFn(this.eventManager, completedEvent);
     }
 
     return {

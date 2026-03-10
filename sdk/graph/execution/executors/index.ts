@@ -3,12 +3,9 @@
  * 提供Thread执行引擎、节点处理函数、路由器和事件管理器
  */
 
-// llm执行器
-export { LLMExecutor } from './llm-executor.js';
-
-// 工具调用执行器
-export { ToolCallExecutor } from './tool-call-executor.js';
-export type { ToolExecutionResult, ToolCallTaskInfo } from './tool-call-executor.js';
+// 从 core 层重新导出通用执行器
+export { LLMExecutor, ToolCallExecutor } from '../../../core/execution/executors/index.js';
+export type { ToolExecutionResult, ToolCallTaskInfo } from '../../../core/execution/executors/tool-call-executor.js';
 
 // Thread执行器（无状态）
 export { ThreadExecutor } from './thread-executor.js';

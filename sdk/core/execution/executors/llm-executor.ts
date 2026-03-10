@@ -12,12 +12,17 @@
  * - 由 DI 容器管理生命周期
  * - 由 LLMCoordinator 调用
  * - 不处理工具调用，工具调用由 LLMCoordinator 协调
+ *
+ * 位置说明：
+ * - 位于 sdk/core/execution/executors，作为通用执行器
+ * - 可被 Graph、Agent 等模块复用
+ * - 不依赖任何特定模块的实现
  */
 
 import { isAbortError, checkInterruption } from '@modular-agent/common-utils';
 import type { InterruptionCheckResult } from '@modular-agent/common-utils';
 import type { LLMMessage, LLMResult } from '@modular-agent/types';
-import { LLMWrapper } from '../../../core/llm/wrapper.js';
+import { LLMWrapper } from '../../llm/wrapper.js';
 import { ExecutionError, LLMError } from '@modular-agent/types';
 
 /**
