@@ -1,49 +1,34 @@
 /**
  * AgentLoopEntity - Agent Loop 执行实例
  *
- * 自包含的数据实体，封装 Agent Loop 实例的数据访问操作。
+ * 纯数据实体，封装 Agent Loop 实例的数据访问操作。
  * 参考 ThreadEntity 的设计模式。
  *
- * 注意：快照功能由 AgentLoopSnapshotManager 提供
+ * 注意：
+ * - 工厂方法由 AgentLoopFactory 提供
+ * - 生命周期管理由 AgentLoopLifecycle 提供
+ * - 快照功能由 AgentLoopSnapshotManager 提供
  */
 
-import { randomUUID } from 'crypto';
 import type { ID, LLMMessage, AgentLoopConfig } from '@modular-agent/types';
 import { AgentLoopStatus } from '@modular-agent/types';
 import { AgentLoopState } from './agent-loop-state.js';
-import type { AgentLoopEntitySnapshot } from '../snapshot/agent-loop-snapshot.js';
-import { AgentLoopSnapshotManager } from '../snapshot/agent-loop-snapshot.js';
+import { MessageHistoryManager, VariableStateManager } from '../execution/managers/index.js';
 import type { ConversationManager } from '../../core/managers/conversation-manager.js';
-
-/**
- * AgentLoopEntity 创建选项
- */
-export interface AgentLoopEntityOptions {
-  /** 初始消息 */
-  initialMessages?: LLMMessage[];
-  /** 初始变量 */
-  initialVariables?: Record<string, any>;
-  /** 对话管理器 */
-  conversationManager?: ConversationManager;
-  /** 父 Thread ID */
-  parentThreadId?: ID;
-  /** 节点 ID */
-  nodeId?: ID;
-}
 
 /**
  * AgentLoopEntity - Agent Loop 执行实例
  *
  * 核心职责：
  * - 封装执行实例的所有数据
- * - 提供数据访问接口
- * - 管理消息历史和变量存储
- * - 支持中断控制
+ * - 提供数据访问接口（getter/setter）
+ * - 持有状态管理器实例
  *
  * 设计原则：
- * - 自包含：所有状态都在实体内部
+ * - 纯数据实体：只包含数据和访问方法
+ * - 不包含工厂方法：由 AgentLoopFactory 负责
+ * - 不包含生命周期方法：由 AgentLoopLifecycle 负责
  * - 与 ConversationManager 可选集成
- * - 快照功能由 AgentLoopSnapshotManager 提供
  */
 export class AgentLoopEntity {
   /** 执行实例 ID */
@@ -55,11 +40,11 @@ export class AgentLoopEntity {
   /** 执行状态 */
   readonly state: AgentLoopState;
 
-  /** 消息历史 */
-  messages: LLMMessage[] = [];
+  /** 消息历史管理器 */
+  readonly messageHistoryManager: MessageHistoryManager;
 
-  /** 变量存储 */
-  private variables: Map<string, any> = new Map();
+  /** 变量状态管理器 */
+  readonly variableStateManager: VariableStateManager;
 
   /** 中止控制器 */
   abortController?: AbortController;
@@ -87,120 +72,8 @@ export class AgentLoopEntity {
     this.id = id;
     this.config = config;
     this.state = state ?? new AgentLoopState();
-  }
-
-  // ========== 静态工厂方法 ==========
-
-  /**
-   * 创建新的 AgentLoopEntity 实例
-   * @param config 循环配置
-   * @param options 创建选项
-   * @returns AgentLoopEntity 实例
-   */
-  static create(config: AgentLoopConfig, options: AgentLoopEntityOptions = {}): AgentLoopEntity {
-    const id = `agent-loop-${randomUUID()}`;
-    const entity = new AgentLoopEntity(id, config);
-
-    // 初始化消息历史
-    if (options.initialMessages && options.initialMessages.length > 0) {
-      entity.setMessages(options.initialMessages);
-    } else if (config.initialMessages && config.initialMessages.length > 0) {
-      entity.setMessages(config.initialMessages as LLMMessage[]);
-    }
-
-    // 初始化变量
-    if (options.initialVariables) {
-      for (const [key, value] of Object.entries(options.initialVariables)) {
-        entity.setVariable(key, value);
-      }
-    }
-
-    // 设置对话管理器
-    if (options.conversationManager) {
-      entity.setConversationManager(options.conversationManager);
-    }
-
-    // 设置父 Thread ID 和节点 ID
-    entity.parentThreadId = options.parentThreadId;
-    entity.nodeId = options.nodeId;
-
-    return entity;
-  }
-
-  /**
-   * 从快照恢复 AgentLoopEntity 实例
-   * @param snapshot 快照数据
-   * @returns AgentLoopEntity 实例
-   */
-  static fromSnapshot(snapshot: AgentLoopEntitySnapshot): AgentLoopEntity {
-    const state = new AgentLoopState();
-    const restoredState = AgentLoopSnapshotManager.restoreState(snapshot);
-
-    // 恢复状态
-    state.status = restoredState.status;
-    (state as any)._currentIteration = restoredState.currentIteration;
-    (state as any)._toolCallCount = restoredState.toolCallCount;
-    (state as any)._startTime = restoredState.startTime;
-    (state as any)._endTime = restoredState.endTime;
-    (state as any)._error = restoredState.error;
-    (state as any)._iterationHistory = restoredState.iterationHistory;
-
-    const entity = new AgentLoopEntity(snapshot.id, snapshot.config, state);
-    entity.messages = [...snapshot.messages];
-    entity.variables = new Map(Object.entries(snapshot.variables));
-    entity.parentThreadId = snapshot.parentThreadId;
-    entity.nodeId = snapshot.nodeId;
-
-    return entity;
-  }
-
-  // ========== 检查点（新增：增量快照机制） ==========
-
-  /**
-   * 从检查点恢复 AgentLoopEntity 实例（静态方法）
-   * @param checkpointId 检查点ID
-   * @param dependencies 检查点依赖项
-   * @returns AgentLoopEntity 实例
-   */
-  static async fromCheckpoint(
-    checkpointId: string,
-    dependencies: {
-      saveCheckpoint: (checkpoint: any) => Promise<string>;
-      getCheckpoint: (id: string) => Promise<any>;
-      listCheckpoints: (agentLoopId: string) => Promise<string[]>;
-      deltaConfig?: any;
-    }
-  ): Promise<AgentLoopEntity> {
-    const { AgentLoopCheckpointCoordinator } = await import('../checkpoint/index.js');
-    return await AgentLoopCheckpointCoordinator.restoreFromCheckpoint(
-      checkpointId,
-      dependencies
-    );
-  }
-
-  /**
-   * 创建检查点（实例方法）
-   * @param dependencies 检查点依赖项
-   * @param options 检查点创建选项
-   * @returns 检查点ID
-   */
-  async createCheckpoint(
-    dependencies: {
-      saveCheckpoint: (checkpoint: any) => Promise<string>;
-      getCheckpoint: (id: string) => Promise<any>;
-      listCheckpoints: (agentLoopId: string) => Promise<string[]>;
-      deltaConfig?: any;
-    },
-    options?: {
-      metadata?: any;
-    }
-  ): Promise<string> {
-    const { AgentLoopCheckpointCoordinator } = await import('../checkpoint/index.js');
-    return await AgentLoopCheckpointCoordinator.createCheckpoint(
-      this,
-      dependencies,
-      options
-    );
+    this.messageHistoryManager = new MessageHistoryManager(id);
+    this.variableStateManager = new VariableStateManager(id);
   }
 
   // ========== 状态访问 ==========
@@ -254,7 +127,7 @@ export class AgentLoopEntity {
    * @param message LLM 消息
    */
   addMessage(message: LLMMessage): void {
-    this.messages.push(message);
+    this.messageHistoryManager.addMessage(message);
 
     // 同步到 ConversationManager（如果存在）
     if (this.conversationManager) {
@@ -266,7 +139,7 @@ export class AgentLoopEntity {
    * 获取所有消息
    */
   getMessages(): LLMMessage[] {
-    return [...this.messages];
+    return this.messageHistoryManager.getMessages();
   }
 
   /**
@@ -274,7 +147,7 @@ export class AgentLoopEntity {
    * @param count 消息数量
    */
   getRecentMessages(count: number): LLMMessage[] {
-    return this.messages.slice(-count);
+    return this.messageHistoryManager.getRecentMessages(count);
   }
 
   /**
@@ -282,14 +155,14 @@ export class AgentLoopEntity {
    * @param messages 消息列表
    */
   setMessages(messages: LLMMessage[]): void {
-    this.messages = [...messages];
+    this.messageHistoryManager.setMessages(messages);
   }
 
   /**
    * 清空消息历史
    */
   clearMessages(): void {
-    this.messages = [];
+    this.messageHistoryManager.clearMessages();
   }
 
   // ========== 变量管理 ==========
@@ -299,7 +172,7 @@ export class AgentLoopEntity {
    * @param name 变量名
    */
   getVariable(name: string): any {
-    return this.variables.get(name);
+    return this.variableStateManager.getVariable(name);
   }
 
   /**
@@ -308,14 +181,14 @@ export class AgentLoopEntity {
    * @param value 变量值
    */
   setVariable(name: string, value: any): void {
-    this.variables.set(name, value);
+    this.variableStateManager.setVariable(name, value);
   }
 
   /**
    * 获取所有变量
    */
   getAllVariables(): Record<string, any> {
-    return Object.fromEntries(this.variables);
+    return this.variableStateManager.getAllVariables();
   }
 
   /**
@@ -323,7 +196,7 @@ export class AgentLoopEntity {
    * @param name 变量名
    */
   deleteVariable(name: string): boolean {
-    return this.variables.delete(name);
+    return this.variableStateManager.deleteVariable(name);
   }
 
   // ========== 中止控制 ==========
@@ -416,62 +289,5 @@ export class AgentLoopEntity {
    */
   setConversationManager(conversationManager: ConversationManager): void {
     this.conversationManager = conversationManager;
-  }
-
-  // ========== 快照（委托给 SnapshotManager） ==========
-
-  /**
-   * 创建快照
-   * @returns 快照数据
-   */
-  createSnapshot(): AgentLoopEntitySnapshot {
-    return AgentLoopSnapshotManager.createSnapshot({
-      id: this.id,
-      config: this.config,
-      state: {
-        status: this.state.status,
-        currentIteration: this.state.currentIteration,
-        toolCallCount: this.state.toolCallCount,
-        startTime: this.state.startTime,
-        endTime: this.state.endTime,
-        error: this.state.error,
-        iterationHistory: this.state.iterationHistory,
-      },
-      messages: this.messages,
-      variables: this.variables,
-      parentThreadId: this.parentThreadId,
-      nodeId: this.nodeId,
-    });
-  }
-
-  // ========== 清理资源 ==========
-
-  /**
-   * 清理资源
-   */
-  cleanup(): void {
-    this.state.cleanup();
-    this.messages = [];
-    this.variables.clear();
-    this.abortController = undefined;
-  }
-
-  // ========== 克隆 ==========
-
-  /**
-   * 克隆实体
-   */
-  clone(): AgentLoopEntity {
-    const cloned = new AgentLoopEntity(
-      this.id,
-      { ...this.config },
-      this.state.clone()
-    );
-    cloned.messages = [...this.messages];
-    cloned.variables = new Map(this.variables);
-    cloned.parentThreadId = this.parentThreadId;
-    cloned.nodeId = this.nodeId;
-    cloned.conversationManager = this.conversationManager;
-    return cloned;
   }
 }

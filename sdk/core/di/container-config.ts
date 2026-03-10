@@ -58,7 +58,9 @@ import { ConversationManager } from '../managers/conversation-manager.js';
 import { VariableStateManager } from '../../graph/execution/managers/variable-state-manager.js';
 import { TriggerStateManager } from '../../graph/execution/managers/trigger-state-manager.js';
 import { InterruptionManager } from '../managers/interruption-manager.js';
-import { AgentLoopExecutor } from '../../agent/executors/agent-loop-executor.js';
+import { AgentLoopExecutor } from '../../agent/execution/executors/agent-loop-executor.js';
+import { AgentLoopRegistry } from '../../agent/services/agent-loop-registry.js';
+import { AgentLoopCoordinator } from '../../agent/execution/coordinators/agent-loop-coordinator.js';
 
 /** 全局容器实例 */
 let container: Container | null = null;
@@ -507,6 +509,25 @@ export function initializeContainer(): Container {
           return new AgentLoopExecutor(
             c.get(Identifiers.LLMWrapper),
             c.get(Identifiers.ToolService)
+          );
+        }
+      };
+    })
+    .inSingletonScope();
+
+  // AgentLoopRegistry - Agent Loop 注册表，全局单例
+  container.bind(Identifiers.AgentLoopRegistry)
+    .to(AgentLoopRegistry)
+    .inSingletonScope();
+
+  // AgentLoopCoordinator - Agent Loop 生命周期协调器，工厂模式
+  container.bind(Identifiers.AgentLoopCoordinator)
+    .toDynamicValue((c: any) => {
+      return {
+        create: () => {
+          return new AgentLoopCoordinator(
+            c.get(Identifiers.AgentLoopRegistry),
+            c.get(Identifiers.AgentLoopExecutor).create()
           );
         }
       };

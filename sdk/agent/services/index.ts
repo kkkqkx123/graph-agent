@@ -1,9 +1,10 @@
 /**
- * Agent 服务层导出
+ * Agent Services 模块导出
  *
- * 职责：
- * - 提供统一的服务类导出
- * - 管理服务层的对外接口
+ * 设计原则：
+ * - 服务类通过 DI 访问，避免误用
+ * - 确保单例的全局唯一性
+ * - 支持测试环境下的单例替换
  */
 
 export { AgentLoopRegistry } from './agent-loop-registry.js';

@@ -232,7 +232,7 @@ export async function* agentLoopStreamHandler(
     const entity = coordinator.getRunning()[0] || coordinator.getPaused()[0];
     const iterations = entity?.state.currentIteration ?? 0;
     const toolCallCount = entity?.state.toolCallCount ?? 0;
-    const content = entity?.getMessages().filter(m => m.role === 'assistant').pop()?.content;
+    const content = entity?.getMessages().filter((m: any) => m.role === 'assistant').pop()?.content;
 
     // 4. 更新变量
     if (thread.variableScopes?.thread) {

@@ -289,7 +289,19 @@ export const LLMWrapper = Symbol('LLMWrapper') as ServiceIdentifier<any>;
 // ============================================================
 
 /**
+ * AgentLoopRegistry - Agent Loop 注册表
+ * 管理 AgentLoopEntity 的内存存储
+ */
+export const AgentLoopRegistry = Symbol('AgentLoopRegistry') as ServiceIdentifier<any>;
+
+/**
  * AgentLoopExecutor - Agent 循环执行器
  * 负责执行 Agent 工具迭代循环，每次执行创建独立的消息历史
  */
 export const AgentLoopExecutor = Symbol('AgentLoopExecutor') as ServiceIdentifier<any>;
+
+/**
+ * AgentLoopCoordinator - Agent Loop 生命周期协调器
+ * 协调 AgentLoopEntity 的完整生命周期管理
+ */
+export const AgentLoopCoordinator = Symbol('AgentLoopCoordinator') as ServiceIdentifier<any>;

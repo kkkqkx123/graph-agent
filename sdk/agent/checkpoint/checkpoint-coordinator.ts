@@ -194,11 +194,12 @@ export class AgentLoopCheckpointCoordinator {
     (state as any)._iterationHistory = stateSnapshot.iterationHistory;
 
     const entity = new AgentLoopEntity(checkpointId, config, state);
-    entity.messages = [...messages];
-    // 使用公共方法设置变量
+
+    // 使用 Manager 设置消息和变量
+    entity.messageHistoryManager.setMessages(messages);
     const variablesObj = variables;
     Object.entries(variablesObj).forEach(([key, value]) => {
-      (entity as any).setVariable(key, value);
+      entity.setVariable(key, value);
     });
 
     return entity;

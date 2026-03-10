@@ -7,11 +7,11 @@
 
 import type { ID } from '@modular-agent/types';
 import type { AgentLoopConfig, AgentLoopResult } from '@modular-agent/types';
-import { AgentLoopEntity, type AgentLoopEntityOptions } from '../entities/agent-loop-entity.js';
-import { AgentLoopStatus } from '../entities/agent-loop-state.js';
-import { AgentLoopRegistry } from '../services/agent-loop-registry.js';
+import { AgentLoopEntity } from '../../entities/agent-loop-entity.js';
+import { AgentLoopStatus } from '../../entities/agent-loop-state.js';
+import { AgentLoopFactory, type AgentLoopEntityOptions } from '../../execution/factories/index.js';
+import { AgentLoopRegistry } from '../../services/agent-loop-registry.js';
 import { AgentLoopExecutor, type AgentLoopStreamEvent } from '../executors/agent-loop-executor.js';
-import type { AgentLoopEntitySnapshot } from '../snapshot/agent-loop-snapshot.js';
 
 /**
  * 执行选项
@@ -21,8 +21,8 @@ export interface AgentLoopExecuteOptions extends AgentLoopEntityOptions {
   stream?: boolean;
   /** 自定义 ID（可选，默认自动生成） */
   id?: ID;
-  /** 从快照恢复 */
-  snapshot?: AgentLoopEntitySnapshot;
+  /** 从检查点恢复（检查点ID） */
+  checkpointId?: string;
 }
 
 /**
@@ -42,7 +42,7 @@ export class AgentLoopCoordinator {
   constructor(
     private readonly registry: AgentLoopRegistry,
     private readonly executor: AgentLoopExecutor
-  ) {}
+  ) { }
 
   /**
    * 构建实体（内部方法）
@@ -51,13 +51,13 @@ export class AgentLoopCoordinator {
    * @returns AgentLoopEntity 实例
    */
   private buildEntity(config: AgentLoopConfig, options: AgentLoopExecuteOptions = {}): AgentLoopEntity {
-    // 如果提供了快照，从快照恢复
-    if (options.snapshot) {
-      return AgentLoopEntity.fromSnapshot(options.snapshot);
+    // 如果提供了检查点ID，从检查点恢复
+    if (options.checkpointId) {
+      throw new Error('From checkpoint is not yet implemented in this method. Please use AgentLoopFactory.fromCheckpoint directly.');
     }
 
-    // 使用静态工厂方法创建新实例
-    return AgentLoopEntity.create(config, options);
+    // 使用工厂方法创建新实例
+    return AgentLoopFactory.create(config, options);
   }
 
   /**

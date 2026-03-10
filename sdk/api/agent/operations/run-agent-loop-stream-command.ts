@@ -19,7 +19,7 @@
 
 import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../shared/types/command.js';
 import type { AgentLoopConfig } from '@modular-agent/types';
-import { AgentLoopExecutor, type AgentLoopStreamEvent } from '../../../agent/executors/agent-loop-executor.js';
+import { AgentLoopExecutor, type AgentLoopStreamEvent } from '../../../agent/execution/executors/agent-loop-executor.js';
 
 /**
  * 运行 Agent 循环流式命令参数

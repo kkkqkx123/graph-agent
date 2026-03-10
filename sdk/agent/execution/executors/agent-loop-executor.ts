@@ -22,12 +22,12 @@ import type {
     LLMMessage
 } from '@modular-agent/types';
 import { AgentStreamEventType } from '@modular-agent/types';
-import { AgentLoopEntity } from '../entities/agent-loop-entity.js';
-import { AgentLoopStatus } from '../entities/agent-loop-state.js';
-import { LLMWrapper } from '../../core/llm/index.js';
-import { ToolService } from '../../core/services/tool-service.js';
-import { MessageHistory } from '../../core/messages/message-history.js';
-import type { MessageStreamEvent } from '../../core/llm/message-stream-events.js';
+import { AgentLoopEntity } from '../../entities/agent-loop-entity.js';
+import { AgentLoopStatus } from '../../entities/agent-loop-state.js';
+import { LLMWrapper } from '../../../core/llm/index.js';
+import { ToolService } from '../../../core/services/tool-service.js';
+import { MessageHistory } from '../../../core/messages/message-history.js';
+import type { MessageStreamEvent } from '../../../core/llm/message-stream-events.js';
 
 /**
  * Agent Loop 流式事件
@@ -117,7 +117,7 @@ export class AgentLoopExecutor {
                 const assistantMessage: LLMMessage = {
                     role: 'assistant',
                     content: response.content,
-                    toolCalls: response.toolCalls?.map(tc => ({
+                    toolCalls: response.toolCalls?.map((tc: any) => ({
                         id: tc.id,
                         type: 'function' as const,
                         function: {
@@ -128,7 +128,7 @@ export class AgentLoopExecutor {
                 };
                 messageHistory.addAssistantMessage(
                     response.content,
-                    response.toolCalls?.map(tc => ({
+                    response.toolCalls?.map((tc: any) => ({
                         id: tc.id,
                         type: 'function' as const,
                         function: {
@@ -363,7 +363,7 @@ export class AgentLoopExecutor {
                 const assistantMessage: LLMMessage = {
                     role: 'assistant',
                     content: finalResult.content,
-                    toolCalls: finalResult.toolCalls?.map(tc => ({
+                    toolCalls: finalResult.toolCalls?.map((tc: any) => ({
                         id: tc.id,
                         type: 'function' as const,
                         function: {
@@ -374,7 +374,7 @@ export class AgentLoopExecutor {
                 };
                 messageHistory.addAssistantMessage(
                     finalResult.content,
-                    finalResult.toolCalls?.map(tc => ({
+                    finalResult.toolCalls?.map((tc: any) => ({
                         id: tc.id,
                         type: 'function' as const,
                         function: {
