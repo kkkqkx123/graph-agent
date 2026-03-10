@@ -3,7 +3,7 @@
  * 定义metadata中使用的key，避免命名冲突
  */
 
-import type { ID } from './common.js';
+import type { ID } from '../common.js';
 
 /**
  * 子图边界标记metadata键名常量

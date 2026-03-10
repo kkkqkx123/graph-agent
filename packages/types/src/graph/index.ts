@@ -17,3 +17,9 @@ export * from './merge.js';
 
 // 导出预处理图类型
 export * from './preprocessed-graph.js';
+
+// 导出条件类型
+export * from './condition.js';
+
+// 导出子图类型
+export * from './subgraph.js';

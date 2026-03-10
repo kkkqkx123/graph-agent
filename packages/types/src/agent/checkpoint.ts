@@ -4,22 +4,8 @@
 
 import type { ID, Timestamp, Metadata } from '../common.js';
 import type { Message } from '../message/index.js';
-
-// 重新导出 AgentLoopStatus 以避免循环依赖
-export enum AgentLoopStatus {
-  /** 已创建，未开始执行 */
-  CREATED = 'CREATED',
-  /** 正在执行 */
-  RUNNING = 'RUNNING',
-  /** 已暂停 */
-  PAUSED = 'PAUSED',
-  /** 已完成 */
-  COMPLETED = 'COMPLETED',
-  /** 执行失败 */
-  FAILED = 'FAILED',
-  /** 已取消 */
-  CANCELLED = 'CANCELLED',
-}
+import type { IterationRecord } from './records.js';
+import { AgentLoopStatus } from './status.js';
 
 /**
  * Agent Loop 检查点类型
@@ -43,42 +29,6 @@ export interface AgentLoopCheckpointMetadata {
   tags?: string[];
   /** 自定义字段对象 */
   customFields?: Metadata;
-}
-
-/**
- * 工具调用记录
- */
-export interface ToolCallRecord {
-  /** 工具调用 ID */
-  id: string;
-  /** 工具名称 */
-  name: string;
-  /** 调用参数 */
-  arguments: any;
-  /** 执行结果 */
-  result?: any;
-  /** 错误信息 */
-  error?: string;
-  /** 开始时间 */
-  startTime: number;
-  /** 结束时间 */
-  endTime?: number;
-}
-
-/**
- * 迭代记录
- */
-export interface IterationRecord {
-  /** 迭代序号 */
-  iteration: number;
-  /** 开始时间 */
-  startTime: number;
-  /** 结束时间 */
-  endTime?: number;
-  /** 工具调用记录 */
-  toolCalls: ToolCallRecord[];
-  /** LLM 响应内容 */
-  responseContent?: string;
 }
 
 /**

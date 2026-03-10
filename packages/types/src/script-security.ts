@@ -6,7 +6,7 @@
 /**
  * 代码风险等级
  */
-export type CodeRiskLevel =
+export type ScriptRiskLevel =
   /** 无风险 - 不进行任何安全检查 */
   'none' |
   /** 低风险 - 基础路径检查 */
@@ -57,9 +57,9 @@ export interface SecurityViolation {
 /**
  * 代码安全策略
  */
-export interface CodeSecurityPolicy {
+export interface ScriptSecurityPolicy {
   /** 允许的风险等级 */
-  allowedRiskLevels: CodeRiskLevel[];
+  allowedRiskLevels: ScriptRiskLevel[];
   /** 脚本白名单 */
   whitelist?: string[];
   /** 脚本黑名单 */
@@ -93,7 +93,7 @@ export interface AuditEvent {
   /** 脚本名称 */
   scriptName?: string;
   /** 风险等级 */
-  riskLevel?: CodeRiskLevel;
+  riskLevel?: ScriptRiskLevel;
   /** 额外数据 */
   data?: Record<string, any>;
 }

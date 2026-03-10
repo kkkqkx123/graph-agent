@@ -4,7 +4,6 @@
  */
 
 import type { ID } from '../common.js';
-import type { Node } from '../node/index.js';
 import type { NodeType } from '../node/base.js';
 
 /**
@@ -14,14 +13,14 @@ import type { NodeType } from '../node/base.js';
 export interface IdMapping {
   /** 节点ID映射：原始ID -> 索引ID */
   nodeIds: Map<ID, number>;
-  
+
   /** 边ID映射：原始ID -> 索引ID */
   edgeIds: Map<ID, number>;
-  
+
   /** 反向映射：索引ID -> 原始ID */
   reverseNodeIds: Map<number, ID>;
   reverseEdgeIds: Map<number, ID>;
-  
+
   /** 子图命名空间映射 */
   subgraphNamespaces: Map<ID, string>;
 }
@@ -33,14 +32,14 @@ export interface IdMapping {
 export interface NodeConfigUpdater {
   /** 节点类型 */
   nodeType: NodeType;
-  
+
   /**
    * 检查配置是否包含ID引用
    * @param config 节点配置
    * @returns 是否包含ID引用
    */
   containsIdReferences(config: any): boolean;
-  
+
   /**
    * 更新配置中的ID引用
    * @param config 节点配置

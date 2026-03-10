@@ -4,7 +4,7 @@
  */
 
 import type { ID } from '../../common.js';
-import { CodeRiskLevel } from '../../code-security.js';
+import { ScriptRiskLevel } from '../../script-security.js';
 
 /**
  * 代码节点配置
@@ -15,7 +15,7 @@ export interface ScriptNodeConfig {
   /** 脚本语言(shell/cmd/powershell/python/javascript) */
   scriptType: 'shell' | 'cmd' | 'powershell' | 'python' | 'javascript';
   /** 风险等级【应用层中会实现不同的执行策略，例如none不检查，high在沙箱运行】 */
-  risk: CodeRiskLevel;
+  risk: ScriptRiskLevel;
   /** 是否为内联代码 */
   inline?: boolean;
 }

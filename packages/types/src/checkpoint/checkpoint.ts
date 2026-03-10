@@ -2,7 +2,7 @@
  * 检查点类型定义
  */
 
-import type { ID, Timestamp, Metadata } from '../common.js';
+import type { ID, Timestamp } from '../common.js';
 import type { ThreadStateSnapshot } from './snapshot.js';
 import type { CheckpointMetadata } from './config.js';
 import type { ThreadStatus } from '../thread/index.js';

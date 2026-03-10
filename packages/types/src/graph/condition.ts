@@ -3,7 +3,7 @@
  * 定义条件评估相关的类型和接口
  */
 
-import type { Metadata } from './common.js';
+import type { Metadata } from '../common.js';
 
 /**
  * 条件接口

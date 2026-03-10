@@ -41,7 +41,7 @@ export interface ContinueFromTriggerNodeConfig {
   conversationHistoryCallback?: {
     /** 操作类型 */
     operation: 'TRUNCATE' | 'FILTER';
-    
+
     /** 截断操作配置 */
     truncate?: TruncateMessageOperation & {
       /** 回传最后N条可见消息 */
@@ -52,7 +52,7 @@ export interface ContinueFromTriggerNodeConfig {
         count: number;
       };
     };
-    
+
     /** 过滤操作配置 */
     filter?: FilterMessageOperation & {
       /** 回传指定角色的所有可见消息 */

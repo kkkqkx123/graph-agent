@@ -24,3 +24,7 @@ export * from './execution.js';
 
 // 导出历史记录类型
 export * from './history.js';
+
+
+// 导出信号类型
+export * from './signal/index.js';
