@@ -1,12 +1,11 @@
 /**
- * Agent Loop Execution 模块导出
+ * Agent Loop Lifecycle 模块导出
  */
 
-export { AgentLoopFactory, type AgentLoopEntityOptions } from './factories/index.js';
 export {
   createAgentLoopCheckpoint,
   cleanupAgentLoop,
   cloneAgentLoop,
   type AgentLoopCheckpointDependencies,
   type AgentLoopCheckpointOptions
-} from './handles/index.js';
+} from './agent-loop-lifecycle.js';

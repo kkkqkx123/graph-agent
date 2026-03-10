@@ -37,8 +37,12 @@ export {
 // 执行层（工厂和生命周期）
 export {
     AgentLoopFactory,
-    AgentLoopLifecycle,
-    type AgentLoopEntityOptions
+    createAgentLoopCheckpoint,
+    cleanupAgentLoop,
+    cloneAgentLoop,
+    type AgentLoopEntityOptions,
+    type AgentLoopCheckpointDependencies,
+    type AgentLoopCheckpointOptions
 } from './execution/index.js';
 
 // 协调器层

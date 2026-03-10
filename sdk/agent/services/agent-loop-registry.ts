@@ -8,7 +8,7 @@
 import type { ID } from '@modular-agent/types';
 import type { AgentLoopEntity } from '../entities/agent-loop-entity.js';
 import { AgentLoopStatus } from '../entities/agent-loop-state.js';
-import { AgentLoopLifecycle } from '../execution/lifecycle/index.js';
+import { cleanupAgentLoop } from '../execution/handles/index.js';
 
 /**
  * AgentLoopRegistry - Agent Loop 注册表
@@ -143,7 +143,7 @@ export class AgentLoopRegistry {
    */
   cleanup(): void {
     for (const entity of this.entities.values()) {
-      AgentLoopLifecycle.cleanup(entity);
+      cleanupAgentLoop(entity);
     }
     this.entities.clear();
   }
