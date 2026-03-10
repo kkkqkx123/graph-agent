@@ -8,7 +8,7 @@
 import type { ID } from '@modular-agent/types';
 import type { AgentLoopConfig, AgentLoopResult } from '@modular-agent/types';
 import { AgentLoopEntity } from '../../entities/agent-loop-entity.js';
-import { AgentLoopStatus } from '../../entities/agent-loop-state.js';
+import { AgentLoopStatus } from '@modular-agent/types';
 import { AgentLoopFactory, type AgentLoopEntityOptions } from '../../execution/factories/index.js';
 import { AgentLoopRegistry } from '../../services/agent-loop-registry.js';
 import { AgentLoopExecutor, type AgentLoopStreamEvent } from '../executors/agent-loop-executor.js';

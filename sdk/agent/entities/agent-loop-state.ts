@@ -10,9 +10,6 @@
 import { now } from '@modular-agent/common-utils';
 import { AgentLoopStatus, type ToolCallRecord, type IterationRecord } from '@modular-agent/types';
 
-// 重新导出类型以保持向后兼容
-export { AgentLoopStatus, type ToolCallRecord, type IterationRecord } from '@modular-agent/types';
-
 /**
  * AgentLoopState - Agent Loop 执行状态管理器
  *

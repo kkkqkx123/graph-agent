@@ -7,7 +7,7 @@
 
 import type { ID } from '@modular-agent/types';
 import type { AgentLoopEntity } from '../entities/agent-loop-entity.js';
-import { AgentLoopStatus } from '../entities/agent-loop-state.js';
+import { AgentLoopStatus } from '@modular-agent/types';
 import { cleanupAgentLoop } from '../execution/handles/index.js';
 
 /**

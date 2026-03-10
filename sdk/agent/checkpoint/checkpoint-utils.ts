@@ -6,7 +6,7 @@
 
 import type { ID } from '@modular-agent/types';
 import type { CheckpointMetadata } from '@modular-agent/types';
-import type { AgentLoopEntity } from '../types.js';
+import type { AgentLoopEntity } from '../entities/agent-loop-entity.js';
 import { AgentLoopCheckpointCoordinator, type CheckpointDependencies, type CheckpointOptions } from './checkpoint-coordinator.js';
 import { mergeMetadata } from '../../utils/metadata-utils.js';
 

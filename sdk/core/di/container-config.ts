@@ -524,10 +524,9 @@ export function initializeContainer(): Container {
       return {
         // 创建新的 AgentLoopExecutor 实例
         create: () => {
-          return new AgentLoopExecutor(
-            c.get(Identifiers.LLMWrapper),
-            c.get(Identifiers.ToolService)
-          );
+          const llmExecutor = c.get(Identifiers.LLMExecutor);
+          const toolService = c.get(Identifiers.ToolService);
+          return new AgentLoopExecutor(llmExecutor, toolService);
         }
       };
     })

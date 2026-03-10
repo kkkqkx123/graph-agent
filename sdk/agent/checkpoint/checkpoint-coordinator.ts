@@ -6,7 +6,7 @@
 
 import type {
   AgentLoopEntity
-} from '../types.js';
+} from '../entities/agent-loop-entity.js';
 import type {
   CheckpointMetadata,
   DeltaStorageConfig,
@@ -100,7 +100,7 @@ export class AgentLoopCheckpointCoordinator {
         timestamp,
         type: EnumCheckpointType.FULL,
         stateSnapshot: currentState,
-        messages: [...entity.messages],
+        messages: [...entity.getMessages()],
         variables: entity.getAllVariables(),
         config: { ...entity.config },
         metadata: options?.metadata
@@ -118,7 +118,7 @@ export class AgentLoopCheckpointCoordinator {
           timestamp,
           type: EnumCheckpointType.FULL,
           stateSnapshot: currentState,
-          messages: [...entity.messages],
+          messages: [...entity.getMessages()],
           variables: entity.getAllVariables(),
           config: { ...entity.config },
           metadata: options?.metadata
@@ -129,7 +129,7 @@ export class AgentLoopCheckpointCoordinator {
           previousCheckpoint.stateSnapshot!,
           currentState,
           previousCheckpoint.messages?.length || 0,
-          entity.messages
+          entity.getMessages()
         );
 
         // 找到基线检查点ID

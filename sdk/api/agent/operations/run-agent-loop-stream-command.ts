@@ -20,6 +20,7 @@
 import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../shared/types/command.js';
 import type { AgentLoopConfig } from '@modular-agent/types';
 import { AgentLoopExecutor, type AgentLoopStreamEvent } from '../../../agent/execution/executors/agent-loop-executor.js';
+import { AgentLoopEntity } from '../../../agent/entities/agent-loop-entity.js';
 
 /**
  * 运行 Agent 循环流式命令参数
@@ -46,9 +47,9 @@ export class RunAgentLoopStreamCommand extends BaseCommand<AsyncGenerator<AgentL
   }
 
   protected async executeInternal(): Promise<AsyncGenerator<AgentLoopStreamEvent>> {
-    return this.agentLoopExecutor.runStream(this.params.config);
+      const entity = new AgentLoopEntity(`command-${Date.now()}`, this.params.config);
+      return this.agentLoopExecutor.executeStream(entity);
   }
-
   validate(): CommandValidationResult {
     const errors: string[] = [];
 

@@ -21,13 +21,15 @@ import type {
     AgentStreamEvent,
     LLMMessage
 } from '@modular-agent/types';
-import { AgentStreamEventType } from '@modular-agent/types';
+import { AgentStreamEventType, AgentLoopStatus } from '@modular-agent/types';
 import { AgentLoopEntity } from '../../entities/agent-loop-entity.js';
-import { AgentLoopStatus } from '../../entities/agent-loop-state.js';
 import { LLMWrapper } from '../../../core/llm/index.js';
 import { ToolService } from '../../../core/services/tool-service.js';
 import { MessageHistory } from '../../../core/messages/message-history.js';
 import type { MessageStreamEvent } from '../../../core/llm/message-stream-events.js';
+import { isAbortError, checkInterruption } from '@modular-agent/common-utils';
+import { LLMExecutor } from '../../../core/execution/executors/llm-executor.js';
+import { ToolCallExecutor } from '../../../core/execution/executors/tool-call-executor.js';
 
 /**
  * Agent Loop 流式事件
@@ -43,12 +45,23 @@ export type AgentLoopStreamEvent = MessageStreamEvent | AgentStreamEvent;
  *
  * 提供方法来执行 Agent 循环（非流式和流式）
  * 接收 AgentLoopEntity 参数，支持状态追踪和中断控制
+ * 
+ * 重构说明：
+ * - 复用 LLMExecutor 和 ToolCallExecutor，统一中断控制
  */
 export class AgentLoopExecutor {
+    private llmExecutor: LLMExecutor;
+    private toolCallExecutor: ToolCallExecutor;
+    private toolService: ToolService;  // 保留用于 prepareToolSchemas
+
     constructor(
-        private llmWrapper: LLMWrapper,
-        private toolService: ToolService
-    ) { }
+        llmExecutor: LLMExecutor,
+        toolService: ToolService
+    ) {
+        this.llmExecutor = llmExecutor;
+        this.toolService = toolService;
+        this.toolCallExecutor = new ToolCallExecutor(toolService);
+    }
 
     /**
      * 执行 Agent Loop（基于 AgentLoopEntity）
@@ -93,25 +106,49 @@ export class AgentLoopExecutor {
                 // 开始新迭代
                 entity.state.startIteration();
 
-                // 调用 LLM
-                const llmResult = await this.llmWrapper.generate({
-                    profileId: config.profileId || 'DEFAULT',
-                    messages: messageHistory.getMessages(),
-                    tools: toolSchemas as any,
-                    signal: entity.getAbortSignal(),
-                });
+                // 使用 LLMExecutor 调用 LLM
+                const llmResult = await this.llmExecutor.executeLLMCall(
+                    messageHistory.getMessages(),
+                    {
+                        prompt: '',  // Agent不需要prompt参数
+                        profileId: config.profileId || 'DEFAULT',
+                        parameters: {},
+                        tools: toolSchemas as any,
+                        stream: false
+                    },
+                    {
+                        abortSignal: entity.getAbortSignal(),
+                        threadId: entity.id,
+                        nodeId: entity.nodeId
+                    }
+                );
 
-                if (llmResult.isErr()) {
-                    entity.state.fail(llmResult.error);
-                    return {
-                        success: false,
-                        iterations: entity.state.currentIteration,
-                        toolCallCount: entity.state.toolCallCount,
-                        error: llmResult.error
-                    };
+                // 处理中断状态
+                if (!llmResult.success) {
+                    const interruption = llmResult.interruption;
+                    if (interruption.type === 'paused') {
+                        entity.state.pause();
+                        return {
+                            success: false,
+                            iterations: entity.state.currentIteration,
+                            toolCallCount: entity.state.toolCallCount,
+                            error: 'Execution paused'
+                        };
+                    }
+                    if (interruption.type === 'stopped' || interruption.type === 'aborted') {
+                        entity.state.cancel();
+                        return {
+                            success: false,
+                            iterations: entity.state.currentIteration,
+                            toolCallCount: entity.state.toolCallCount,
+                            error: 'Execution cancelled'
+                        };
+                    }
+                    // 如果不是中断错误,抛出异常
+                    throw new Error('LLM execution failed with unknown error');
                 }
 
-                const response = llmResult.value;
+                const response = llmResult.result;
 
                 // 记录助手消息
                 const assistantMessage: LLMMessage = {
@@ -152,58 +189,27 @@ export class AgentLoopExecutor {
                 }
 
                 // 执行工具调用
-                for (const toolCall of response.toolCalls) {
-                    // 检查中断信号
-                    if (entity.isAborted() || entity.shouldStop()) {
-                        entity.state.cancel();
-                        return {
-                            success: false,
-                            iterations: entity.state.currentIteration,
-                            toolCallCount: entity.state.toolCallCount,
-                            error: 'Execution cancelled during tool call'
-                        };
-                    }
+                if (response.toolCalls && response.toolCalls.length > 0) {
+                    // 使用 ToolCallExecutor 执行工具调用
+                    const toolResults = await this.toolCallExecutor.executeToolCalls(
+                        response.toolCalls.map((tc: any) => ({
+                            id: tc.id,
+                            name: tc.function.name,
+                            arguments: tc.function.arguments
+                        })),
+                        messageHistory as any,  // MessageHistory 实现了 addMessage 方法
+                        entity.id,
+                        entity.nodeId,
+                        { abortSignal: entity.getAbortSignal() }
+                    );
 
-                    // 记录工具调用开始
-                    const args = typeof toolCall.function.arguments === 'string'
-                        ? JSON.parse(toolCall.function.arguments)
-                        : toolCall.function.arguments;
-                    entity.state.recordToolCallStart(toolCall.id, toolCall.function.name, args);
-
-                    const executionResult = await this.toolService.execute(toolCall.function.name, {
-                        parameters: args
-                    });
-
-                    if (executionResult.isOk()) {
-                        const result = executionResult.value.result;
-                        messageHistory.addToolResultMessage(
-                            toolCall.id,
-                            JSON.stringify(result)
-                        );
-                        entity.state.recordToolCallEnd(toolCall.id, result);
-
-                        // 记录工具结果消息
-                        const toolResultMessage: LLMMessage = {
-                            role: 'tool',
-                            toolCallId: toolCall.id,
-                            content: JSON.stringify(result)
-                        };
-                        entity.addMessage(toolResultMessage);
-                    } else {
-                        const error = executionResult.error.message;
-                        messageHistory.addToolResultMessage(
-                            toolCall.id,
-                            JSON.stringify({ error })
-                        );
-                        entity.state.recordToolCallEnd(toolCall.id, undefined, error);
-
-                        // 记录工具错误消息
-                        const toolResultMessage: LLMMessage = {
-                            role: 'tool',
-                            toolCallId: toolCall.id,
-                            content: JSON.stringify({ error })
-                        };
-                        entity.addMessage(toolResultMessage);
+                    // 处理结果
+                    for (const result of toolResults) {
+                        if (result.success) {
+                            entity.state.recordToolCallEnd(result.toolCallId, result.result);
+                        } else {
+                            entity.state.recordToolCallEnd(result.toolCallId, undefined, result.error);
+                        }
                     }
                 }
 
@@ -284,8 +290,53 @@ export class AgentLoopExecutor {
                 // 开始新迭代
                 entity.state.startIteration();
 
-                // 调用 LLM (流式)
-                const llmResult = await this.llmWrapper.generateStream({
+                // 调用 LLM (流式) - 使用 LLMExecutor
+                const llmResult = await this.llmExecutor.executeLLMCall(
+                    messageHistory.getMessages(),
+                    {
+                        prompt: '',  // Agent不需要prompt参数
+                        profileId: config.profileId || 'DEFAULT',
+                        parameters: {},
+                        tools: toolSchemas as any,
+                        stream: true
+                    },
+                    {
+                        abortSignal: entity.getAbortSignal(),
+                        threadId: entity.id,
+                        nodeId: entity.nodeId
+                    }
+                );
+
+                // 处理中断状态
+                if (!llmResult.success) {
+                    const interruption = llmResult.interruption;
+                    if (interruption.type === 'paused') {
+                        entity.state.pause();
+                        yield {
+                            type: AgentStreamEventType.ERROR,
+                            timestamp: Date.now(),
+                            data: { error: 'Execution paused' }
+                        };
+                        return;
+                    }
+                    if (interruption.type === 'stopped' || interruption.type === 'aborted') {
+                        entity.state.cancel();
+                        yield {
+                            type: AgentStreamEventType.ERROR,
+                            timestamp: Date.now(),
+                            data: { error: 'Execution cancelled' }
+                        };
+                        return;
+                    }
+                    // 如果不是中断错误,抛出异常
+                    throw new Error('LLM execution failed with unknown error');
+                }
+
+                // 流式执行需要直接使用 LLMWrapper 的 generateStream
+                // LLMExecutor 的流式实现不支持实时事件转发
+                // 所以这里我们仍然使用 llmWrapper.generateStream
+                // 但需要从 llmExecutor 中获取 llmWrapper
+                const llmWrapperResult = await this.llmExecutor['llmWrapper'].generateStream({
                     profileId: config.profileId || 'DEFAULT',
                     messages: messageHistory.getMessages(),
                     tools: toolSchemas as any,
@@ -293,23 +344,38 @@ export class AgentLoopExecutor {
                     signal: entity.getAbortSignal(),
                 });
 
-                if (llmResult.isErr()) {
-                    entity.state.fail(llmResult.error);
+                if (llmWrapperResult.isErr()) {
+                    const error = llmWrapperResult.error;
+
+                    // 处理中断错误
+                    if (isAbortError(error)) {
+                        const result = checkInterruption(entity.getAbortSignal());
+                        entity.state.fail(error);
+                        yield {
+                            type: AgentStreamEventType.ERROR,
+                            timestamp: Date.now(),
+                            data: { error: result.type === 'paused' ? 'Execution paused' : 'Execution cancelled' }
+                        };
+                        return;
+                    }
+
+                    // 其他错误
+                    entity.state.fail(error);
                     yield {
                         type: AgentStreamEventType.ERROR,
                         timestamp: Date.now(),
-                        data: { error: llmResult.error }
+                        data: { error: error }
                     };
                     return;
                 }
 
-                const messageStream = llmResult.value;
+                const messageStream = llmWrapperResult.value;
 
                 // 订阅 MessageStream 事件并转发
                 // 使用事件监听器模式收集 LLM 层事件
                 // 注意：MessageStream 的 on 方法在 emit 时会展开参数，所以需要使用展开参数的监听器类型
                 const llmEvents: MessageStreamEvent[] = [];
-                
+
                 messageStream
                     .on('text', ((delta: string, snapshot: string) => {
                         llmEvents.push({
@@ -340,17 +406,33 @@ export class AgentLoopExecutor {
                     }) as any);
 
                 // 等待流完成，同时转发事件
-                await messageStream.done();
+                try {
+                    await messageStream.done();
+                } catch (error) {
+                    // 处理流式完成时的中断错误
+                    if (isAbortError(error)) {
+                        const result = checkInterruption(entity.getAbortSignal());
+                        entity.state.fail(error);
+                        yield {
+                            type: AgentStreamEventType.ERROR,
+                            timestamp: Date.now(),
+                            data: { error: result.type === 'paused' ? 'Execution paused' : 'Execution cancelled' }
+                        };
+                        return;
+                    }
+                    throw error;
+                }
 
                 // 转发收集到的 LLM 层事件
                 for (const event of llmEvents) {
                     // 检查中断信号
                     if (entity.isAborted() || entity.shouldStop()) {
+                        const result = checkInterruption(entity.getAbortSignal());
                         entity.state.cancel();
                         yield {
                             type: AgentStreamEventType.ERROR,
                             timestamp: Date.now(),
-                            data: { error: 'Execution cancelled' }
+                            data: { error: result.type === 'paused' ? 'Execution paused' : 'Execution cancelled' }
                         };
                         return;
                     }
@@ -426,9 +508,15 @@ export class AgentLoopExecutor {
                         : toolCall.function.arguments;
                     entity.state.recordToolCallStart(toolCall.id, toolCall.function.name, args);
 
-                    const executionResult = await this.toolService.execute(toolCall.function.name, {
-                        parameters: args
-                    });
+                    const executionResult = await this.toolService.execute(
+                        toolCall.function.name,
+                        {
+                            parameters: args
+                        },
+                        {
+                            signal: entity.getAbortSignal()  // 传递 AbortSignal
+                        }
+                    );
 
                     if (executionResult.isOk()) {
                         const result = executionResult.value.result;
@@ -451,24 +539,39 @@ export class AgentLoopExecutor {
                             data: { toolCallId: toolCall.id, result, success: true }
                         };
                     } else {
-                        const error = executionResult.error.message;
+                        const error = executionResult.error;
+
+                        // 处理中断错误
+                        if (isAbortError(error)) {
+                            const result = checkInterruption(entity.getAbortSignal());
+                            entity.state.fail(error);
+                            yield {
+                                type: AgentStreamEventType.ERROR,
+                                timestamp: Date.now(),
+                                data: { error: result.type === 'paused' ? 'Execution paused during tool call' : 'Execution cancelled during tool call' }
+                            };
+                            return;
+                        }
+
+                        // 其他错误
+                        const errorMessage = error.message;
                         messageHistory.addToolResultMessage(
                             toolCall.id,
-                            JSON.stringify({ error })
+                            JSON.stringify({ error: errorMessage })
                         );
-                        entity.state.recordToolCallEnd(toolCall.id, undefined, error);
+                        entity.state.recordToolCallEnd(toolCall.id, undefined, errorMessage);
 
                         const toolResultMessage: LLMMessage = {
                             role: 'tool',
                             toolCallId: toolCall.id,
-                            content: JSON.stringify({ error })
+                            content: JSON.stringify({ error: errorMessage })
                         };
                         entity.addMessage(toolResultMessage);
 
                         yield {
                             type: AgentStreamEventType.TOOL_CALL_END,
                             timestamp: Date.now(),
-                            data: { toolCallId: toolCall.id, error, success: false }
+                            data: { toolCallId: toolCall.id, error: errorMessage, success: false }
                         };
                     }
                 }
@@ -503,28 +606,6 @@ export class AgentLoopExecutor {
                 data: { error }
             };
         }
-    }
-
-    // ========== 向后兼容的旧 API ==========
-
-    /**
-     * 运行 Agent 循环（非流式）- 向后兼容
-     * @param config 循环配置
-     * @deprecated 请使用 execute(entity) 方法
-     */
-    async run(config: AgentLoopConfig): Promise<AgentLoopResult> {
-        const entity = new AgentLoopEntity(`legacy-${Date.now()}`, config);
-        return this.execute(entity);
-    }
-
-    /**
-     * 运行 Agent 循环（流式）- 向后兼容
-     * @param config 循环配置
-     * @deprecated 请使用 executeStream(entity) 方法
-     */
-    async *runStream(config: AgentLoopConfig): AsyncGenerator<AgentLoopStreamEvent> {
-        const entity = new AgentLoopEntity(`legacy-${Date.now()}`, config);
-        yield* this.executeStream(entity);
     }
 
     // ========== 私有方法 ==========

@@ -25,7 +25,7 @@ import {
   buildMessageAddedEvent,
   buildConversationStateChangedEvent
 } from '../../utils/event/event-builder.js';
-import { LLMWrapper } from '../../../../core/llm/index.js';
+import { LLMExecutor } from '../../../../core/execution/executors/llm-executor.js';
 import { ToolService } from '../../../../core/services/tool-service.js';
 
 /**
@@ -54,8 +54,8 @@ export interface AgentLoopExecutionResult {
  * Agent Loop 处理器上下文
  */
 export interface AgentLoopHandlerContext {
-  /** LLM 包装器 */
-  llmWrapper: LLMWrapper;
+  /** LLM 执行器 */
+  llmExecutor: LLMExecutor;
   /** 工具服务 */
   toolService: ToolService;
   /** 对话管理器 */
@@ -73,7 +73,7 @@ export interface AgentLoopHandlerContext {
  */
 function createCoordinator(context: AgentLoopHandlerContext): AgentLoopCoordinator {
   const registry = context.agentLoopRegistry ?? new AgentLoopRegistry();
-  const executor = new AgentLoopExecutor(context.llmWrapper, context.toolService);
+  const executor = new AgentLoopExecutor(context.llmExecutor, context.toolService);
 
   return new AgentLoopCoordinator(registry, executor);
 }

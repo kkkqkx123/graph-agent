@@ -15,6 +15,7 @@
 import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../shared/types/command.js';
 import type { AgentLoopConfig, AgentLoopResult } from '@modular-agent/types';
 import { AgentLoopExecutor } from '../../../agent/execution/executors/agent-loop-executor.js';
+import { AgentLoopEntity } from '../../../agent/entities/agent-loop-entity.js';
 
 /**
  * 运行 Agent 循环命令参数
@@ -41,9 +42,9 @@ export class RunAgentLoopCommand extends BaseCommand<AgentLoopResult> {
   }
 
   protected async executeInternal(): Promise<AgentLoopResult> {
-    return this.agentLoopExecutor.run(this.params.config);
+      const entity = new AgentLoopEntity(`command-${Date.now()}`, this.params.config);
+      return this.agentLoopExecutor.execute(entity);
   }
-
   validate(): CommandValidationResult {
     const errors: string[] = [];
 
