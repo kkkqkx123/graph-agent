@@ -212,15 +212,6 @@ export class AgentLoopEntity {
   }
 
   /**
-   * 中止执行
-   */
-  abort(): void {
-    if (this.abortController) {
-      this.abortController.abort();
-    }
-  }
-
-  /**
    * 检查是否已中止
    */
   isAborted(): boolean {
@@ -228,6 +219,38 @@ export class AgentLoopEntity {
   }
 
   // ========== 中断控制 ==========
+
+  /**
+   * 暂停执行
+   */
+  pause(): void {
+    this.state.pause();
+  }
+
+  /**
+   * 恢复执行
+   */
+  resume(): void {
+    this.state.resume();
+  }
+
+  /**
+   * 停止执行
+   */
+  stop(): void {
+    this.state.cancel();
+    this.abort();
+  }
+
+  /**
+   * 中止执行
+   * @param reason 中止原因（可选）
+   */
+  abort(reason?: string): void {
+    if (this.abortController) {
+      this.abortController.abort(reason);
+    }
+  }
 
   /**
    * 检查是否应该暂停

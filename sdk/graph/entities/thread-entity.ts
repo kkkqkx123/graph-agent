@@ -340,6 +340,39 @@ export class ThreadEntity {
 
   // ========== 中断控制 ==========
 
+  /**
+   * 暂停执行
+   */
+  pause(): void {
+    this.setShouldPause(true);
+  }
+
+  /**
+   * 恢复执行
+   */
+  resume(): void {
+    this.setShouldPause(false);
+    this.setShouldStop(false);
+  }
+
+  /**
+   * 停止执行
+   */
+  stop(): void {
+    this.setShouldStop(true);
+    this.abort();
+  }
+
+  /**
+   * 中止执行
+   * @param reason 中止原因（可选）
+   */
+  abort(reason?: string): void {
+    if (this.abortController) {
+      this.abortController.abort(reason);
+    }
+  }
+
   interrupt(type: 'PAUSE' | 'STOP'): void {
     if (type === 'PAUSE') {
       this.setShouldPause(true);
