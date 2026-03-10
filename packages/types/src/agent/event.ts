@@ -1,17 +1,23 @@
 /**
- * Agent 流式事件类型定义
+ * Agent 事件类型定义
+ *
+ * 注意：LLM 层的流式事件（如文本增量、思考内容等）由 MessageStreamEvent 提供，
+ * 此处仅定义 Agent 层特有的事件（工具调用、迭代完成等）。
+ *
+ * 架构设计：
+ * - LLM API 流式响应 → MessageStream → MessageStreamEvent
+ * - AgentLoopExecutor 订阅 MessageStreamEvent，并产生 AgentStreamEvent
+ * - 上层消费者同时接收两类事件
  */
 
 /**
- * Agent 流式事件类型
+ * Agent 事件类型
+ *
+ * 仅包含 Agent 层特有的事件，不包含 LLM 层事件
  */
 export enum AgentStreamEventType {
     /** 开始执行 */
     START = 'agent_start',
-    /** 模型正在生成 */
-    THINKING = 'agent_thinking',
-    /** 模型回复块（内容增量） */
-    CONTENT_CHUNK = 'agent_content_chunk',
     /** 工具调用开始 */
     TOOL_CALL_START = 'agent_tool_call_start',
     /** 工具调用结束 */
@@ -25,7 +31,7 @@ export enum AgentStreamEventType {
 }
 
 /**
- * Agent 流式事件基类
+ * Agent 事件基类
  */
 export interface AgentStreamEvent {
     type: AgentStreamEventType;

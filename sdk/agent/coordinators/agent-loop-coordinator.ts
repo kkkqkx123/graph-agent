@@ -6,11 +6,11 @@
  */
 
 import type { ID } from '@modular-agent/types';
-import type { AgentLoopConfig, AgentLoopResult, AgentStreamEvent } from '@modular-agent/types';
+import type { AgentLoopConfig, AgentLoopResult } from '@modular-agent/types';
 import { AgentLoopEntity, type AgentLoopEntityOptions } from '../entities/agent-loop-entity.js';
 import { AgentLoopStatus } from '../entities/agent-loop-state.js';
 import { AgentLoopRegistry } from '../services/agent-loop-registry.js';
-import { AgentLoopExecutor } from '../executors/agent-loop-executor.js';
+import { AgentLoopExecutor, type AgentLoopStreamEvent } from '../executors/agent-loop-executor.js';
 import type { AgentLoopEntitySnapshot } from '../snapshot/agent-loop-snapshot.js';
 
 /**
@@ -103,12 +103,12 @@ export class AgentLoopCoordinator {
    * 流式执行 Agent Loop
    * @param config 循环配置
    * @param options 执行选项
-   * @returns 流式事件生成器
+   * @returns 流式事件生成器（包含 LLM 层事件和 Agent 层事件）
    */
   async *executeStream(
     config: AgentLoopConfig,
     options: AgentLoopExecuteOptions = {}
-  ): AsyncGenerator<AgentStreamEvent> {
+  ): AsyncGenerator<AgentLoopStreamEvent> {
     // 1. 构建实体
     const entity = this.buildEntity(config, options);
 

@@ -12,9 +12,9 @@ export type { AgentLoopConfig } from './config.js';
 // 结果类型
 export type { AgentLoopResult } from './result.js';
 
-// 流式事件类型
-export { AgentStreamEventType } from './stream.js';
-export type { AgentStreamEvent } from './stream.js';
+// 事件类型
+export { AgentStreamEventType } from './event.js';
+export type { AgentStreamEvent } from './event.js';
 
 // 执行记录类型
 export type { ToolCallRecord, IterationRecord } from './records.js';

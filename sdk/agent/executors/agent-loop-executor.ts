@@ -8,6 +8,11 @@
  * - 支持暂停/恢复功能
  * - 支持中断控制（AbortController）
  * - 与 LLMExecutor、ToolCallExecutor 保持一致的架构
+ *
+ * 流式事件架构：
+ * - LLM 层事件（text, inputJson, message 等）由 MessageStream 产生
+ * - Agent 层事件（tool_call_start/end, iteration_complete 等）由本执行器产生
+ * - executeStream 返回联合类型 AgentLoopStreamEvent，包含两类事件
  */
 
 import type {
@@ -22,6 +27,16 @@ import { AgentLoopStatus } from '../entities/agent-loop-state.js';
 import { LLMWrapper } from '../../core/llm/index.js';
 import { ToolService } from '../../core/services/tool-service.js';
 import { MessageHistory } from '../../core/messages/message-history.js';
+import type { MessageStreamEvent } from '../../core/llm/message-stream-events.js';
+
+/**
+ * Agent Loop 流式事件
+ *
+ * 联合类型，包含：
+ * - LLM 层事件（MessageStreamEvent）：文本增量、工具参数解析等
+ * - Agent 层事件（AgentStreamEvent）：工具调用、迭代完成等
+ */
+export type AgentLoopStreamEvent = MessageStreamEvent | AgentStreamEvent;
 
 /**
  * Agent 循环执行器类
@@ -217,10 +232,15 @@ export class AgentLoopExecutor {
 
     /**
      * 流式执行 Agent Loop（基于 AgentLoopEntity）
+     *
+     * 返回联合类型 AgentLoopStreamEvent，包含：
+     * - LLM 层事件（MessageStreamEvent）：直接转发 MessageStream 的事件
+     * - Agent 层事件（AgentStreamEvent）：工具调用、迭代完成等
+     *
      * @param entity Agent Loop 实体
      * @returns 流式事件生成器
      */
-    async *executeStream(entity: AgentLoopEntity): AsyncGenerator<AgentStreamEvent> {
+    async *executeStream(entity: AgentLoopEntity): AsyncGenerator<AgentLoopStreamEvent> {
         const config = entity.config;
         const maxIterations = config.maxIterations ?? 10;
         const messageHistory = this.createMessageHistory();
@@ -285,8 +305,45 @@ export class AgentLoopExecutor {
 
                 const messageStream = llmResult.value;
 
-                // 订阅流事件并转发
-                for await (const event of messageStream) {
+                // 订阅 MessageStream 事件并转发
+                // 使用事件监听器模式收集 LLM 层事件
+                // 注意：MessageStream 的 on 方法在 emit 时会展开参数，所以需要使用展开参数的监听器类型
+                const llmEvents: MessageStreamEvent[] = [];
+                
+                messageStream
+                    .on('text', ((delta: string, snapshot: string) => {
+                        llmEvents.push({
+                            type: 'text',
+                            delta,
+                            snapshot
+                        });
+                    }) as any)
+                    .on('inputJson', ((partialJson: string, parsedSnapshot: unknown, snapshot: LLMMessage) => {
+                        llmEvents.push({
+                            type: 'inputJson',
+                            partialJson,
+                            parsedSnapshot,
+                            snapshot
+                        });
+                    }) as any)
+                    .on('message', ((message: LLMMessage) => {
+                        llmEvents.push({
+                            type: 'message',
+                            message
+                        });
+                    }) as any)
+                    .on('error', ((error: Error) => {
+                        llmEvents.push({
+                            type: 'error',
+                            error
+                        });
+                    }) as any);
+
+                // 等待流完成，同时转发事件
+                await messageStream.done();
+
+                // 转发收集到的 LLM 层事件
+                for (const event of llmEvents) {
                     // 检查中断信号
                     if (entity.isAborted() || entity.shouldStop()) {
                         entity.state.cancel();
@@ -297,22 +354,7 @@ export class AgentLoopExecutor {
                         };
                         return;
                     }
-
-                    if (event.type === 'content_block_delta') {
-                        if (event.data.delta.type === 'text_delta') {
-                            yield {
-                                type: AgentStreamEventType.CONTENT_CHUNK,
-                                timestamp: Date.now(),
-                                data: { delta: event.data.delta.text }
-                            };
-                        } else if (event.data.delta.type === 'thinking_delta') {
-                            yield {
-                                type: AgentStreamEventType.THINKING,
-                                timestamp: Date.now(),
-                                data: { delta: event.data.delta.thinking }
-                            };
-                        }
-                    }
+                    yield event;
                 }
 
                 const finalResult = await messageStream.getFinalResult();
@@ -480,7 +522,7 @@ export class AgentLoopExecutor {
      * @param config 循环配置
      * @deprecated 请使用 executeStream(entity) 方法
      */
-    async *runStream(config: AgentLoopConfig): AsyncGenerator<AgentStreamEvent> {
+    async *runStream(config: AgentLoopConfig): AsyncGenerator<AgentLoopStreamEvent> {
         const entity = new AgentLoopEntity(`legacy-${Date.now()}`, config);
         yield* this.executeStream(entity);
     }
