@@ -26,7 +26,7 @@ export * from './tool/index.js';
 export * from './message/index.js';
 
 // 代码安全工具模块
-export * from './code-security/index.js';
+export * from './script-security/index.js';
 
 // 依赖注入容器
 export * from './di/index.js';
