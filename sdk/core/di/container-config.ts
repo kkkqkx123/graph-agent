@@ -30,7 +30,7 @@ import { WorkflowRegistry } from '../../graph/services/workflow-registry.js';
 import { ThreadPoolService } from '../../graph/services/thread-pool-service.js';
 
 // 执行层服务 - Core 层通用执行器
-import { LLMExecutor, ToolCallExecutor, SkillExecutor } from '../executors/index.js';
+import { LLMExecutor, ToolCallExecutor, SkillLoader } from '../executors/index.js';
 import { SkillRegistry } from '../services/skill-registry.js';
 import { safeEmit } from '../../graph/execution/utils/index.js';
 import { createCheckpoint } from '../../graph/execution/handlers/checkpoint-handlers/checkpoint-utils.js';
@@ -200,10 +200,10 @@ export function initializeContainer(): Container {
     })
     .inSingletonScope();
 
-  // SkillExecutor - Skill 执行器
-  container.bind(Identifiers.SkillExecutor)
+  // SkillLoader - Skill 加载器
+  container.bind(Identifiers.SkillLoader)
     .toDynamicValue((c: any) => {
-      return new SkillExecutor(
+      return new SkillLoader(
         c.get(Identifiers.SkillRegistry),
         c.get(Identifiers.EventManager)
       );

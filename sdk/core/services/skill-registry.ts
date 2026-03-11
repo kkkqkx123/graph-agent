@@ -132,7 +132,7 @@ export class SkillRegistry {
     // 提取 YAML frontmatter
     const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
 
-    if (!frontmatterMatch) {
+    if (!frontmatterMatch || !frontmatterMatch[1]) {
       throw new SkillParseErrorClass(skillDir, 'Missing YAML frontmatter');
     }
 
@@ -143,29 +143,30 @@ export class SkillRegistry {
       const metadata = this.parseYamlFrontmatter(frontmatter);
 
       // 验证必需字段
-      if (!metadata.name) {
+      if (!metadata['name']) {
         throw new SkillParseErrorClass(skillDir, 'Missing required field: name');
       }
 
-      if (!metadata.description) {
+      if (!metadata['description']) {
         throw new SkillParseErrorClass(skillDir, 'Missing required field: description');
       }
 
       // 验证 name 格式
-      if (!/^[a-z0-9-]+$/.test(metadata.name)) {
+      const name = metadata['name'] as string;
+      if (!/^[a-z0-9-]+$/.test(name)) {
         throw new SkillParseErrorClass(
           skillDir,
-          `Invalid skill name '${metadata.name}': must be lowercase alphanumeric with hyphens only`
+          `Invalid skill name '${name}': must be lowercase alphanumeric with hyphens only`
         );
       }
 
       return {
-        name: metadata.name,
-        description: metadata.description,
-        version: metadata.version,
-        license: metadata.license,
-        allowedTools: metadata.allowedTools,
-        metadata: metadata.metadata
+        name: metadata['name'] as string,
+        description: metadata['description'] as string,
+        version: metadata['version'] as string | undefined,
+        license: metadata['license'] as string | undefined,
+        allowedTools: metadata['allowedTools'] as string[] | undefined,
+        metadata: metadata['metadata'] as Record<string, string> | undefined
       };
     } catch (error) {
       if (error instanceof SkillParseErrorClass) {
@@ -396,7 +397,7 @@ export class SkillRegistry {
 
     // 移除 YAML frontmatter
     const bodyMatch = content.match(/^---\n[\s\S]*?\n---\n([\s\S]*)/);
-    const body = bodyMatch ? bodyMatch[1].trim() : content;
+    const body = bodyMatch && bodyMatch[1] ? bodyMatch[1].trim() : content;
 
     // 更新缓存
     if (this.config.cacheEnabled) {

@@ -33,6 +33,9 @@ export * from './system-events.js';
 // 导出 Agent 相关事件
 export * from './agent-events.js';
 
+// 导出 Skill 相关事件
+export * from './skill-events.js';
+
 // 为了向后兼容，重新导出 EventType
 export { EventType } from './base.js';
 
@@ -108,6 +111,11 @@ import type {
 } from './system-events.js';
 
 import type { AgentCustomEvent } from './agent-events.js';
+import type {
+  SkillExecutionStartedEvent,
+  SkillExecutionCompletedEvent,
+  SkillExecutionFailedEvent
+} from './skill-events.js';
 
 /**
  * 所有事件类型的联合类型
@@ -159,4 +167,7 @@ export type Event =
   | HumanRelayFailedEvent
   | LLMStreamAbortedEvent
   | LLMStreamErrorEvent
-  | AgentCustomEvent;
+  | AgentCustomEvent
+  | SkillExecutionStartedEvent
+  | SkillExecutionCompletedEvent
+  | SkillExecutionFailedEvent;

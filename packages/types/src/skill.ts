@@ -165,11 +165,11 @@ export interface SkillMatchResult {
 }
 
 /**
- * Skill 执行上下文
+ * Skill 加载上下文
  */
-export interface SkillExecutionContext {
+export interface SkillLoadContext {
   /**
-   * 要执行的 Skill
+   * 要加载的 Skill
    */
   skill: Skill;
 
@@ -181,7 +181,7 @@ export interface SkillExecutionContext {
 
   /**
    * 变量
-   * - 用于 Skill 执行时的变量替换
+   * - 用于 Skill 加载时的变量替换
    */
   variables?: Record<string, any>;
 
@@ -193,13 +193,18 @@ export interface SkillExecutionContext {
 }
 
 /**
- * Skill 执行结果
+ * Skill 加载结果
  */
-export interface SkillExecutionResult {
+export interface SkillLoadResult {
   /**
    * 是否成功
    */
   success: boolean;
+
+  /**
+   * Skill 内容
+   */
+  content?: string;
 
   /**
    * 结果数据
@@ -212,10 +217,31 @@ export interface SkillExecutionResult {
   error?: Error;
 
   /**
-   * 执行时间（毫秒）
+   * 加载时间（毫秒）
    */
-  executionTime?: number;
+  loadTime?: number;
+
+  /**
+   * 是否来自缓存
+   */
+  cached?: boolean;
 }
+
+// ============================================================
+// 向后兼容的类型别名（已弃用，将在未来版本移除）
+// ============================================================
+
+/**
+ * @deprecated 使用 SkillLoadContext 代替
+ * Skill 执行上下文
+ */
+export type SkillExecutionContext = SkillLoadContext;
+
+/**
+ * @deprecated 使用 SkillLoadResult 代替
+ * Skill 执行结果
+ */
+export type SkillExecutionResult = SkillLoadResult;
 
 /**
  * Skill 解析错误

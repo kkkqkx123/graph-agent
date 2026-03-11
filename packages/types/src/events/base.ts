@@ -109,7 +109,19 @@ export type EventType =
   /** 动态线程已取消 */
   'DYNAMIC_THREAD_CANCELLED' |
   /** Agent 自定义事件 */
-  'AGENT_CUSTOM_EVENT';
+  'AGENT_CUSTOM_EVENT' |
+  /** Skill 加载开始 */
+  'SKILL_LOAD_STARTED' |
+  /** Skill 加载完成 */
+  'SKILL_LOAD_COMPLETED' |
+  /** Skill 加载失败 */
+  'SKILL_LOAD_FAILED' |
+  /** @deprecated 使用 SKILL_LOAD_STARTED 代替 */
+  'SKILL_EXECUTION_STARTED' |
+  /** @deprecated 使用 SKILL_LOAD_COMPLETED 代替 */
+  'SKILL_EXECUTION_COMPLETED' |
+  /** @deprecated 使用 SKILL_LOAD_FAILED 代替 */
+  'SKILL_EXECUTION_FAILED';
 
 /**
  * 基础事件类型

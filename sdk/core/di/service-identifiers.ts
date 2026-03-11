@@ -317,7 +317,13 @@ export const AgentLoopCoordinator = Symbol('AgentLoopCoordinator') as ServiceIde
 export const SkillRegistry = Symbol('SkillRegistry') as ServiceIdentifier<any>;
 
 /**
- * SkillExecutor - Skill 执行器
- * 负责 Skill 的执行、权限验证和资源访问控制
+ * SkillLoader - Skill 加载器
+ * 负责 Skill 的加载、权限验证和资源访问控制
  */
-export const SkillExecutor = Symbol('SkillExecutor') as ServiceIdentifier<any>;
+export const SkillLoader = Symbol('SkillLoader') as ServiceIdentifier<any>;
+
+/**
+ * @deprecated 使用 SkillLoader 代替
+ * SkillExecutor - Skill 执行器
+ */
+export const SkillExecutor = SkillLoader;
