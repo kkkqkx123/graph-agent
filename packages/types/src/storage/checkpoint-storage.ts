@@ -23,10 +23,10 @@ export interface CheckpointStorageMetadata {
 }
 
 /**
- * 检查点列表查询选项
+ * 检查点存储列表查询选项
  * 支持基本过滤和分页
  */
-export interface CheckpointListOptions {
+export interface CheckpointStorageListOptions {
   /** 按线程ID过滤 */
   threadId?: ID;
   /** 按工作流ID过滤 */

@@ -36,16 +36,7 @@ export class AgentLoopDiffCalculator {
       delta.addedMessages = addedMessages;
     }
 
-    // 2. 计算迭代增量（只返回新增迭代）
-    const addedIterations = this.calculateIterationDelta(
-      previous.iterationHistory,
-      current.iterationHistory
-    );
-    if (addedIterations.length > 0) {
-      delta.addedIterations = addedIterations;
-    }
-
-    // 3. 计算状态变更
+    // 2. 计算状态变更
     if (previous.status !== current.status) {
       delta.statusChange = {
         from: previous.status,
@@ -53,7 +44,7 @@ export class AgentLoopDiffCalculator {
       };
     }
 
-    // 4. 计算其他状态差异
+    // 3. 计算其他状态差异
     const otherChanges = this.calculateOtherChanges(previous, current);
     if (Object.keys(otherChanges).length > 0) {
       delta.otherChanges = otherChanges;
@@ -75,22 +66,6 @@ export class AgentLoopDiffCalculator {
     // 消息通常是追加操作，返回新增部分
     if (currentMessages.length > previousMessageCount) {
       return currentMessages.slice(previousMessageCount);
-    }
-    return [];
-  }
-
-  /**
-   * 计算迭代增量（只返回新增迭代）
-   * @param previousIterations 前一个快照的迭代记录
-   * @param currentIterations 当前快照的迭代记录
-   * @returns 新增的迭代记录
-   */
-  private calculateIterationDelta(
-    previousIterations: any[],
-    currentIterations: any[]
-  ): any[] {
-    if (currentIterations.length > previousIterations.length) {
-      return currentIterations.slice(previousIterations.length);
     }
     return [];
   }

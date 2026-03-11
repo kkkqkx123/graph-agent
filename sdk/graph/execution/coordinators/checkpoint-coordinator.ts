@@ -4,9 +4,10 @@
  */
 
 import { ThreadContextNotFoundError, CheckpointNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
-import { CheckpointType, DEFAULT_DELTA_STORAGE_CONFIG } from '@modular-agent/types';
+import { CheckpointTypeEnum } from '@modular-agent/types';
+import { DEFAULT_DELTA_STORAGE_CONFIG } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
-import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot, MessageMarkMap, DeltaStorageConfig } from '@modular-agent/types';
+import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot, MessageMarkMap, DeltaStorageConfig, CheckpointType } from '@modular-agent/types';
 import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { WorkflowRegistry } from '../../services/workflow-registry.js';
 import type { GraphRegistry } from '../../services/graph-registry.js';
@@ -81,14 +82,14 @@ export class CheckpointCoordinator {
     // 步骤6：创建检查点
     let checkpoint: Checkpoint;
 
-    if (checkpointType === CheckpointType.FULL) {
+    if (checkpointType === CheckpointTypeEnum.FULL) {
       // 创建完整检查点
       checkpoint = {
         id: checkpointId,
         threadId: threadEntity.getThreadId(),
         workflowId: threadEntity.getWorkflowId(),
         timestamp,
-        type: CheckpointType.FULL,
+        type: CheckpointTypeEnum.FULL,
         threadState: currentState,
         metadata
       };
@@ -104,14 +105,14 @@ export class CheckpointCoordinator {
           threadId: threadEntity.getThreadId(),
           workflowId: threadEntity.getWorkflowId(),
           timestamp,
-          type: CheckpointType.FULL,
+          type: CheckpointTypeEnum.FULL,
           threadState: currentState,
           metadata
         };
       } else {
         // 获取上一个检查点的完整状态
         let previousState: ThreadStateSnapshot;
-        if (previousCheckpoint.type === CheckpointType.DELTA) {
+        if (previousCheckpoint.type === CheckpointTypeEnum.DELTA) {
           // 如果上一个检查点是增量检查点，需要恢复完整状态
           const restorer = new DeltaCheckpointRestorer({ checkpointStateManager });
           previousState = await restorer.restore(previousCheckpointId);
@@ -127,7 +128,7 @@ export class CheckpointCoordinator {
 
         // 找到基线检查点ID
         let baseCheckpointId = previousCheckpoint.baseCheckpointId;
-        if (!baseCheckpointId && previousCheckpoint.type === CheckpointType.FULL) {
+        if (!baseCheckpointId && previousCheckpoint.type === CheckpointTypeEnum.FULL) {
           baseCheckpointId = previousCheckpoint.id;
         }
 
@@ -136,7 +137,7 @@ export class CheckpointCoordinator {
           threadId: threadEntity.getThreadId(),
           workflowId: threadEntity.getWorkflowId(),
           timestamp,
-          type: CheckpointType.DELTA,
+          type: CheckpointTypeEnum.DELTA,
           baseCheckpointId,
           previousCheckpointId,
           delta,
@@ -216,21 +217,21 @@ export class CheckpointCoordinator {
   ): CheckpointType {
     // 如果未启用增量存储，始终创建完整检查点
     if (!config.enabled) {
-      return CheckpointType.FULL;
+      return CheckpointTypeEnum.FULL;
     }
 
     // 第一个检查点必须是完整检查点
     if (checkpointCount === 0) {
-      return CheckpointType.FULL;
+      return CheckpointTypeEnum.FULL;
     }
 
     // 每隔 baselineInterval 个检查点创建一个完整检查点
     if (checkpointCount % config.baselineInterval === 0) {
-      return CheckpointType.FULL;
+      return CheckpointTypeEnum.FULL;
     }
 
     // 其他情况创建增量检查点
-    return CheckpointType.DELTA;
+    return CheckpointTypeEnum.DELTA;
   }
 
   /**
@@ -256,7 +257,7 @@ export class CheckpointCoordinator {
 
     // 步骤3：获取完整的线程状态（处理增量检查点）
     let threadState: ThreadStateSnapshot;
-    if (checkpoint.type === CheckpointType.DELTA) {
+    if (checkpoint.type === CheckpointTypeEnum.DELTA) {
       // 如果是增量检查点，需要恢复完整状态
       const restorer = new DeltaCheckpointRestorer({ checkpointStateManager });
       threadState = await restorer.restore(checkpointId);
@@ -492,7 +493,7 @@ export class CheckpointCoordinator {
     }
 
     // 根据检查点类型验证
-    if (checkpoint.type === CheckpointType.DELTA) {
+    if (checkpoint.type === CheckpointTypeEnum.DELTA) {
       // 增量检查点需要验证 delta 字段
       if (!checkpoint.delta && !checkpoint.previousCheckpointId) {
         throw new Error('Invalid delta checkpoint: missing delta data and previous checkpoint reference');

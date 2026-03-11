@@ -10,7 +10,7 @@ import {
 } from '../../core/checkpoint/index.js';
 import type {
   AgentLoopCheckpointConfig,
-  AgentLoopCheckpointConfigResult,
+  CheckpointConfigResult,
   AgentLoopCheckpointConfigContext
 } from '@modular-agent/types';
 
@@ -36,7 +36,7 @@ export class AgentLoopCheckpointResolver extends CheckpointConfigResolver {
     globalConfig: AgentLoopCheckpointConfig,
     loopConfig: AgentLoopCheckpointConfig,
     context: AgentLoopCheckpointConfigContext
-  ): AgentLoopCheckpointConfigResult {
+  ): CheckpointConfigResult {
     const layers: ConfigLayer[] = [];
 
     // 1. Loop 配置（最高优先级）

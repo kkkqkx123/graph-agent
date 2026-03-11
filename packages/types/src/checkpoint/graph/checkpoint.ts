@@ -1,22 +1,13 @@
 /**
- * 检查点类型定义
+ * Graph 检查点类型定义
  */
 
-import type { ID, Timestamp } from '../common.js';
+import type { ID, Timestamp } from '../../common.js';
 import type { ThreadStateSnapshot } from './snapshot.js';
 import type { CheckpointMetadata } from './config.js';
-import type { ThreadStatus } from '../thread/index.js';
-import type { NodeExecutionResult } from '../thread/index.js';
-
-/**
- * 检查点类型枚举
- */
-export enum CheckpointType {
-  /** 完整检查点 */
-  FULL = 'FULL',
-  /** 增量检查点 */
-  DELTA = 'DELTA'
-}
+import type { ThreadStatus } from '../../thread/index.js';
+import type { NodeExecutionResult } from '../../thread/index.js';
+import type { CheckpointType } from '../base.js';
 
 /**
  * 增量数据结构

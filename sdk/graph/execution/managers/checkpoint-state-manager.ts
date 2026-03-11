@@ -218,7 +218,14 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
    * @returns 检查点ID数组
    */
   async list(options?: import('@modular-agent/types').CheckpointListOptions): Promise<string[]> {
-    return this.storageCallback.list(options);
+    // 将 CheckpointListOptions 转换为 CheckpointStorageListOptions
+    const storageOptions: import('@modular-agent/types').CheckpointStorageListOptions | undefined = options ? {
+      threadId: options.parentId as string,
+      tags: options.tags,
+      limit: options.limit,
+      offset: options.offset
+    } : undefined;
+    return this.storageCallback.list(storageOptions);
   }
 
   /**

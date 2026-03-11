@@ -3,7 +3,7 @@
  * 基于 better-sqlite3 的检查点持久化存储
  */
 
-import type { CheckpointStorageMetadata, CheckpointListOptions } from '@modular-agent/types';
+import type { CheckpointStorageMetadata, CheckpointStorageListOptions } from '@modular-agent/types';
 import type { CheckpointStorageCallback } from '../types/callback/index.js';
 import { BaseSqliteStorage, BaseSqliteStorageConfig } from './base-sqlite-storage.js';
 
@@ -93,7 +93,7 @@ export class SqliteCheckpointStorage extends BaseSqliteStorage<CheckpointStorage
   /**
    * 列出检查点ID
    */
-  async list(options?: CheckpointListOptions): Promise<string[]> {
+  async list(options?: CheckpointStorageListOptions): Promise<string[]> {
     const db = this.getDb();
 
     try {

@@ -9,8 +9,8 @@ import type {
   AgentLoopStateSnapshot,
   AgentLoopDelta
 } from '@modular-agent/types';
-import { AgentLoopCheckpointType } from '@modular-agent/types';
-import type { LLMMessage, AgentLoopConfig } from '@modular-agent/types';
+import type { LLMMessage, AgentLoopConfig, CheckpointType } from '@modular-agent/types';
+import { CheckpointTypeEnum } from '@modular-agent/types';
 
 /**
  * 完整检查点数据
@@ -49,7 +49,7 @@ export class AgentLoopDeltaRestorer {
     }
 
     // 如果是完整检查点，直接返回
-    if (!checkpoint.type || checkpoint.type === AgentLoopCheckpointType.FULL) {
+    if (!checkpoint.type || checkpoint.type === CheckpointTypeEnum.FULL) {
       return this.extractFullCheckpoint(checkpoint);
     }
 
@@ -63,11 +63,12 @@ export class AgentLoopDeltaRestorer {
    * @returns 完整的检查点数据
    */
   private extractFullCheckpoint(checkpoint: AgentLoopCheckpoint): FullCheckpointData {
+    const snapshot = checkpoint.snapshot!;
     return {
-      stateSnapshot: checkpoint.stateSnapshot!,
-      messages: checkpoint.messages || [],
-      variables: checkpoint.variables || {},
-      config: checkpoint.config || {}
+      stateSnapshot: snapshot,
+      messages: snapshot.messages,
+      variables: snapshot.variables,
+      config: snapshot.config || {}
     };
   }
 
@@ -127,7 +128,7 @@ export class AgentLoopDeltaRestorer {
       }
 
       // 找到完整检查点
-      if (!prevCheckpoint.type || prevCheckpoint.type === AgentLoopCheckpointType.FULL) {
+      if (!prevCheckpoint.type || prevCheckpoint.type === CheckpointTypeEnum.FULL) {
         return prevCheckpoint;
       }
 
@@ -183,17 +184,6 @@ export class AgentLoopDeltaRestorer {
     // 应用消息增量
     if (delta.addedMessages && delta.addedMessages.length > 0) {
       result.messages = [...result.messages, ...delta.addedMessages];
-    }
-
-    // 应用迭代增量
-    if (delta.addedIterations && delta.addedIterations.length > 0) {
-      result.stateSnapshot = {
-        ...result.stateSnapshot,
-        iterationHistory: [
-          ...result.stateSnapshot.iterationHistory,
-          ...delta.addedIterations
-        ]
-      };
     }
 
     // 应用状态变更

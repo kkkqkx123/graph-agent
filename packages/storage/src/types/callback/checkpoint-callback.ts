@@ -3,7 +3,7 @@
  * 定义检查点持久化操作的统一接口
  */
 
-import type { CheckpointStorageMetadata, CheckpointListOptions } from '@modular-agent/types';
+import type { CheckpointStorageMetadata, CheckpointStorageListOptions } from '@modular-agent/types';
 import type { BaseStorageCallback } from './base-storage-callback.js';
 
 /**
@@ -15,6 +15,6 @@ import type { BaseStorageCallback } from './base-storage-callback.js';
  * - 应用层可以直接使用 CheckpointStorageAdapter，或自行实现此接口
  */
 export interface CheckpointStorageCallback
-  extends BaseStorageCallback<CheckpointStorageMetadata, CheckpointListOptions> {
+  extends BaseStorageCallback<CheckpointStorageMetadata, CheckpointStorageListOptions> {
   // 检查点存储无特有方法，所有操作都通过 BaseStorageCallback 提供
 }

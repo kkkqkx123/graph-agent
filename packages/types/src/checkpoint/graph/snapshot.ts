@@ -2,12 +2,12 @@
  * 线程状态快照类型定义
  */
 
-import type { ID } from '../common.js';
-import { ThreadStatus } from '../thread/index.js';
-import type { NodeExecutionResult, VariableScopes } from '../thread/index.js';
-import type { TriggerRuntimeState } from '../trigger/index.js';
-import type { TokenUsageStats } from '../llm/index.js';
-import type { MessageMarkMap } from '../message/index.js';
+import type { ID } from '../../common.js';
+import { ThreadStatus } from '../../thread/index.js';
+import type { NodeExecutionResult, VariableScopes } from '../../thread/index.js';
+import type { TriggerRuntimeState } from '../../trigger/index.js';
+import type { TokenUsageStats } from '../../llm/index.js';
+import type { MessageMarkMap } from '../../message/index.js';
 
 /**
  * 线程状态快照类型

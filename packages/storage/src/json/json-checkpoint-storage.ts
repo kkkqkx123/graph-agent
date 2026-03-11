@@ -3,7 +3,7 @@
  * 基于 JSON 文件系统的检查点持久化存储
  */
 
-import type { CheckpointStorageMetadata, CheckpointListOptions } from '@modular-agent/types';
+import type { CheckpointStorageMetadata, CheckpointStorageListOptions } from '@modular-agent/types';
 import type { CheckpointStorageCallback } from '../types/callback/index.js';
 import { BaseJsonStorage, BaseJsonStorageConfig } from './base-json-storage.js';
 
@@ -19,7 +19,7 @@ export class JsonCheckpointStorage extends BaseJsonStorage<CheckpointStorageMeta
   /**
    * 列出检查点ID
    */
-  async list(options?: CheckpointListOptions): Promise<string[]> {
+  async list(options?: CheckpointStorageListOptions): Promise<string[]> {
     this.ensureInitialized();
 
     let ids = this.getAllIds();

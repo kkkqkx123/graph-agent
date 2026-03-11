@@ -19,16 +19,18 @@ export type { AgentStreamEvent } from './event.js';
 // 执行记录类型
 export type { ToolCallRecord, IterationRecord } from './records.js';
 
-// 检查点类型
-export {
-    AgentLoopCheckpointType,
-    type AgentLoopCheckpointMetadata,
-    type AgentLoopDelta,
-    type AgentLoopStateSnapshot,
-    type AgentLoopCheckpoint,
-    type AgentLoopCheckpointConfigSource,
-    type AgentLoopCheckpointConfigResult,
-    type AgentLoopCheckpointConfigContext,
-    type AgentLoopCheckpointConfig,
-    type AgentLoopCheckpointListOptions
-} from './checkpoint.js';
+// 检查点类型（从 checkpoint/agent 模块导入）
+export type {
+  AgentLoopDelta,
+  AgentLoopStateSnapshot,
+  AgentLoopCheckpoint,
+  AgentLoopCheckpointConfigSource,
+  AgentLoopCheckpointConfigContext,
+  AgentLoopCheckpointConfig
+} from '../checkpoint/agent/index.js';
+
+// 检查点配置解析函数
+export { resolveAgentLoopCheckpointConfig } from '../checkpoint/agent/config.js';
+
+// 重新导出通用检查点类型（为了向后兼容）
+export type { CheckpointType as TCheckpointType, CheckpointMetadata, CheckpointConfigResult } from '../checkpoint/base.js';

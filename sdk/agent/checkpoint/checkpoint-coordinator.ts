@@ -10,11 +10,11 @@ import type {
 import type {
   CheckpointMetadata,
   DeltaStorageConfig,
-  AgentLoopCheckpointType,
+  CheckpointType,
   AgentLoopCheckpoint,
   AgentLoopStateSnapshot
 } from '@modular-agent/types';
-import { AgentLoopCheckpointType as EnumCheckpointType } from '@modular-agent/types';
+import { CheckpointTypeEnum } from '@modular-agent/types';
 import { AgentLoopDiffCalculator } from './agent-loop-diff-calculator.js';
 import { AgentLoopDeltaRestorer } from './agent-loop-delta-restorer.js';
 import { generateId } from '../../utils/index.js';
@@ -92,17 +92,14 @@ export class AgentLoopCheckpointCoordinator {
     // 步骤5：创建检查点
     let checkpoint: AgentLoopCheckpoint;
 
-    if (checkpointType === EnumCheckpointType.FULL) {
+    if (checkpointType === CheckpointTypeEnum.FULL) {
       // 创建完整检查点
       checkpoint = {
         id: checkpointId,
         agentLoopId: entity.id,
         timestamp,
-        type: EnumCheckpointType.FULL,
-        stateSnapshot: currentState,
-        messages: [...entity.getMessages()],
-        variables: entity.getAllVariables(),
-        config: { ...entity.config },
+        type: CheckpointTypeEnum.FULL,
+        snapshot: currentState,
         metadata: options?.metadata
       };
     } else {
@@ -116,25 +113,22 @@ export class AgentLoopCheckpointCoordinator {
           id: checkpointId,
           agentLoopId: entity.id,
           timestamp,
-          type: EnumCheckpointType.FULL,
-          stateSnapshot: currentState,
-          messages: [...entity.getMessages()],
-          variables: entity.getAllVariables(),
-          config: { ...entity.config },
+          type: CheckpointTypeEnum.FULL,
+          snapshot: currentState,
           metadata: options?.metadata
         };
       } else {
         // 计算差异
         const delta = AgentLoopCheckpointCoordinator.diffCalculator.calculateDelta(
-          previousCheckpoint.stateSnapshot!,
+          previousCheckpoint.snapshot!,
           currentState,
-          previousCheckpoint.messages?.length || 0,
+          previousCheckpoint.snapshot!.messages.length,
           entity.getMessages()
         );
 
         // 找到基线检查点ID
         let baseCheckpointId = previousCheckpoint.baseCheckpointId;
-        if (!baseCheckpointId && previousCheckpoint.type === EnumCheckpointType.FULL) {
+        if (!baseCheckpointId && previousCheckpoint.type === CheckpointTypeEnum.FULL) {
           baseCheckpointId = previousCheckpoint.id;
         }
 
@@ -142,7 +136,7 @@ export class AgentLoopCheckpointCoordinator {
           id: checkpointId,
           agentLoopId: entity.id,
           timestamp,
-          type: EnumCheckpointType.DELTA,
+          type: CheckpointTypeEnum.DELTA,
           baseCheckpointId,
           previousCheckpointId,
           delta,
@@ -191,7 +185,6 @@ export class AgentLoopCheckpointCoordinator {
     (state as any)._startTime = stateSnapshot.startTime;
     (state as any)._endTime = stateSnapshot.endTime;
     (state as any)._error = stateSnapshot.error;
-    (state as any)._iterationHistory = stateSnapshot.iterationHistory;
 
     const entity = new AgentLoopEntity(checkpointId, config, state);
 
@@ -206,7 +199,7 @@ export class AgentLoopCheckpointCoordinator {
   }
 
   /**
-   * 提取实体状态快照
+   * 提取状态快照
    * @param entity Agent Loop 实体
    * @returns 状态快照
    */
@@ -218,7 +211,9 @@ export class AgentLoopCheckpointCoordinator {
       startTime: entity.state.startTime,
       endTime: entity.state.endTime,
       error: entity.state.error,
-      iterationHistory: entity.state.iterationHistory
+      messages: entity.messageHistoryManager.getMessages(),
+      variables: entity.getAllVariables(),
+      config: entity.config
     };
   }
 
@@ -231,24 +226,24 @@ export class AgentLoopCheckpointCoordinator {
   private static determineCheckpointType(
     checkpointCount: number,
     config: DeltaStorageConfig
-  ): AgentLoopCheckpointType {
+  ): CheckpointType {
     // 如果未启用增量存储，始终创建完整检查点
     if (!config.enabled) {
-      return EnumCheckpointType.FULL;
+      return CheckpointTypeEnum.FULL;
     }
 
     // 第一个检查点必须是完整检查点
     if (checkpointCount === 0) {
-      return EnumCheckpointType.FULL;
+      return CheckpointTypeEnum.FULL;
     }
 
     // 每隔 baselineInterval 个检查点创建一个完整检查点
     if (checkpointCount % config.baselineInterval === 0) {
-      return EnumCheckpointType.FULL;
+      return CheckpointTypeEnum.FULL;
     }
 
     // 其他情况创建增量检查点
-    return EnumCheckpointType.DELTA;
+    return CheckpointTypeEnum.DELTA;
   }
 
   /**
@@ -261,20 +256,20 @@ export class AgentLoopCheckpointCoordinator {
     }
 
     // 根据检查点类型验证
-    if (checkpoint.type === EnumCheckpointType.DELTA) {
+    if (checkpoint.type === CheckpointTypeEnum.DELTA) {
       // 增量检查点需要验证 delta 字段
       if (!checkpoint.delta && !checkpoint.previousCheckpointId) {
         throw new Error('Invalid delta checkpoint: missing delta data and previous checkpoint reference');
       }
     } else {
-      // 完整检查点需要验证 stateSnapshot 字段
-      if (!checkpoint.stateSnapshot) {
+      // 完整检查点需要验证 snapshot 字段
+      if (!checkpoint.snapshot) {
         throw new Error('Invalid full checkpoint: missing state snapshot');
       }
 
-      // 验证 stateSnapshot 结构
-      const { stateSnapshot } = checkpoint;
-      if (!stateSnapshot.status) {
+      // 验证 snapshot 结构
+      const { snapshot } = checkpoint;
+      if (!snapshot.status) {
         throw new Error('Invalid checkpoint: incomplete state snapshot');
       }
     }
