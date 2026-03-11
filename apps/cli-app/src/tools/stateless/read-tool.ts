@@ -6,13 +6,14 @@ import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import type { ToolOutput } from '@modular-agent/types';
 import { formatLineNumbers, truncateText } from '@modular-agent/common-utils';
-import type { ToolDefinition, ToolRegistryConfig } from '../types.js';
+import type { ToolDefinitionLike } from '@modular-agent/tool-executors';
+import type { ToolRegistryConfig } from '../types.js';
 import { resolvePath } from '../utils.js';
 
 /**
  * 创建文件读取工具
  */
-export function createReadTool(config: ToolRegistryConfig): ToolDefinition {
+export function createReadTool(config: ToolRegistryConfig): ToolDefinitionLike {
   return {
     id: 'read_file',
     name: 'read_file',

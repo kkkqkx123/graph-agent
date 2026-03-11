@@ -7,7 +7,10 @@
 export type { ToolOutput } from '@modular-agent/types';
 
 // app 层特有类型导出
-export type { ToolDefinition, ToolRegistryConfig } from './types.js';
+export type { ToolRegistryConfig } from './types.js';
+
+// 从 tool-executors 导出工具定义类型
+export type { ToolDefinitionLike } from '@modular-agent/tool-executors';
 
 // 注册中心导出
 export { ToolRegistry, createToolRegistry } from './registry.js';

@@ -4,9 +4,8 @@
  */
 
 import { spawn } from 'child_process';
-import { TimeoutController } from '@modular-agent/tool-executors';
+import { TimeoutController, type ToolDefinitionLike } from '@modular-agent/tool-executors';
 import type { ToolOutput } from '@modular-agent/types';
-import type { ToolDefinition } from '../types.js';
 
 /**
  * Shell执行结果
@@ -20,7 +19,7 @@ interface ShellResult extends ToolOutput {
 /**
  * 创建Shell工具
  */
-export function createShellTool(): ToolDefinition {
+export function createShellTool(): ToolDefinitionLike {
   // 复用 TimeoutController
   const timeoutController = new TimeoutController(120000); // 默认120秒
 

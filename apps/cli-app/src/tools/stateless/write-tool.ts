@@ -5,13 +5,14 @@
 import { writeFile, mkdir } from 'fs/promises';
 import { dirname } from 'path';
 import type { ToolOutput } from '@modular-agent/types';
-import type { ToolDefinition, ToolRegistryConfig } from '../types.js';
+import type { ToolDefinitionLike } from '@modular-agent/tool-executors';
+import type { ToolRegistryConfig } from '../types.js';
 import { resolvePath } from '../utils.js';
 
 /**
  * 创建文件写入工具
  */
-export function createWriteTool(config: ToolRegistryConfig): ToolDefinition {
+export function createWriteTool(config: ToolRegistryConfig): ToolDefinitionLike {
   return {
     id: 'write_file',
     name: 'write_file',

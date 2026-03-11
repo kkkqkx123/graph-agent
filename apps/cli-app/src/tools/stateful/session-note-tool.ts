@@ -7,7 +7,8 @@ import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { dirname, resolve } from 'path';
 import type { ToolOutput } from '@modular-agent/types';
-import type { ToolDefinition, ToolRegistryConfig } from '../types.js';
+import type { ToolDefinitionLike } from '@modular-agent/tool-executors';
+import type { ToolRegistryConfig } from '../types.js';
 
 /**
  * 笔记条目
@@ -137,7 +138,7 @@ class SessionNoteInstance {
 /**
  * 创建记录笔记工具
  */
-export function createRecordNoteTool(config: ToolRegistryConfig): ToolDefinition {
+export function createRecordNoteTool(config: ToolRegistryConfig): ToolDefinitionLike {
   const memoryFile = resolve(config.workspaceDir!, config.memoryFile!);
 
   return {
@@ -173,7 +174,7 @@ export function createRecordNoteTool(config: ToolRegistryConfig): ToolDefinition
 /**
  * 创建回忆笔记工具
  */
-export function createRecallNoteTool(config: ToolRegistryConfig): ToolDefinition {
+export function createRecallNoteTool(config: ToolRegistryConfig): ToolDefinitionLike {
   const memoryFile = resolve(config.workspaceDir!, config.memoryFile!);
 
   return {

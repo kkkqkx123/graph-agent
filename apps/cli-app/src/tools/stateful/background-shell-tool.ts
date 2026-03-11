@@ -6,7 +6,7 @@
 import { spawn, ChildProcess } from 'child_process';
 import { randomUUID } from 'crypto';
 import type { ToolOutput } from '@modular-agent/types';
-import type { ToolDefinition } from '../types.js';
+import type { ToolDefinitionLike } from '@modular-agent/tool-executors';
 
 /**
  * 后台Shell状态
@@ -152,7 +152,7 @@ class BackgroundShellManager {
 /**
  * 创建后台Shell启动工具
  */
-export function createShellBackgroundTool(): ToolDefinition {
+export function createShellBackgroundTool(): ToolDefinitionLike {
   return {
     id: 'shell_background',
     name: 'shell_background',
@@ -240,7 +240,7 @@ After starting, use shell_output to monitor and shell_kill to terminate.`,
 /**
  * 创建Shell输出获取工具
  */
-export function createShellOutputTool(): ToolDefinition {
+export function createShellOutputTool(): ToolDefinitionLike {
   return {
     id: 'shell_output',
     name: 'shell_output',
@@ -339,7 +339,7 @@ Process status values:
 /**
  * 创建Shell终止工具
  */
-export function createShellKillTool(): ToolDefinition {
+export function createShellKillTool(): ToolDefinitionLike {
   return {
     id: 'shell_kill',
     name: 'shell_kill',

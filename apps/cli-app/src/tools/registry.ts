@@ -4,8 +4,8 @@
  */
 
 import type { Tool } from '@modular-agent/types';
-import { FunctionRegistry, StatefulExecutor, toSdkTool } from '@modular-agent/tool-executors';
-import type { ToolDefinition, ToolRegistryConfig } from './types.js';
+import { FunctionRegistry, StatefulExecutor, McpExecutor, toSdkTool, type ToolDefinitionLike } from '@modular-agent/tool-executors';
+import type { ToolRegistryConfig } from './types.js';
 import { registerStatelessTools } from './stateless/index.js';
 import { registerStatefulTools } from './stateful/index.js';
 
@@ -15,13 +15,16 @@ import { registerStatefulTools } from './stateful/index.js';
  */
 export class ToolRegistry {
   private config: ToolRegistryConfig;
-  private tools: Map<string, ToolDefinition> = new Map();
+  private tools: Map<string, ToolDefinitionLike> = new Map();
 
   /** 复用 FunctionRegistry 管理无状态工具函数 */
   private functionRegistry: FunctionRegistry;
 
   /** 复用 StatefulExecutor 管理有状态工具实例 */
   private statefulExecutor: StatefulExecutor;
+
+  /** MCP执行器管理MCP工具 */
+  private mcpExecutor: McpExecutor;
 
   constructor(config: ToolRegistryConfig = {}) {
     this.config = {
@@ -43,6 +46,9 @@ export class ToolRegistry {
       autoCleanupExpiredInstances: true,
       cleanupInterval: 300000 // 5分钟
     });
+
+    // 初始化MCP执行器
+    this.mcpExecutor = new McpExecutor();
   }
 
   /**
@@ -59,7 +65,7 @@ export class ToolRegistry {
   /**
    * 注册单个工具
    */
-  register(tool: ToolDefinition): void {
+  register(tool: ToolDefinitionLike): void {
     if (this.tools.has(tool.id)) {
       console.warn(`Tool '${tool.id}' already registered, overwriting...`);
     }
@@ -81,14 +87,14 @@ export class ToolRegistry {
   /**
    * 获取工具定义
    */
-  get(toolId: string): ToolDefinition | undefined {
+  get(toolId: string): ToolDefinitionLike | undefined {
     return this.tools.get(toolId);
   }
 
   /**
    * 获取所有工具定义
    */
-  getAll(): ToolDefinition[] {
+  getAll(): ToolDefinitionLike[] {
     return Array.from(this.tools.values());
   }
 
@@ -171,8 +177,25 @@ export class ToolRegistry {
    */
   async cleanup(): Promise<void> {
     await this.statefulExecutor.cleanup();
+    await this.mcpExecutor.closeAllSessions();
     this.functionRegistry.clear();
     this.tools.clear();
+  }
+
+  /**
+   * 获取MCP执行器
+   */
+  getMcpExecutor(): McpExecutor {
+    return this.mcpExecutor;
+  }
+
+  /**
+   * 注册MCP工具
+   */
+  registerMcpTools(tools: ToolDefinitionLike[]): void {
+    for (const tool of tools) {
+      this.register(tool);
+    }
   }
 }
 

@@ -5,13 +5,14 @@
 import { readFile, writeFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import type { ToolOutput } from '@modular-agent/types';
-import type { ToolDefinition, ToolRegistryConfig } from '../types.js';
+import type { ToolDefinitionLike } from '@modular-agent/tool-executors';
+import type { ToolRegistryConfig } from '../types.js';
 import { resolvePath } from '../utils.js';
 
 /**
  * 创建文件编辑工具
  */
-export function createEditTool(config: ToolRegistryConfig): ToolDefinition {
+export function createEditTool(config: ToolRegistryConfig): ToolDefinitionLike {
   return {
     id: 'edit_file',
     name: 'edit_file',

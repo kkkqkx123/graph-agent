@@ -2,7 +2,7 @@
  * 工具执行器辅助函数
  */
 
-import type { Tool, ToolParameters, ToolType, ToolOutput } from '@modular-agent/types';
+import type { Tool, ToolParameters, ToolType, ToolOutput, McpToolConfig, RestToolConfig } from '@modular-agent/types';
 
 /**
  * 工具定义（app层使用的简化格式）
@@ -25,6 +25,8 @@ export interface ToolDefinitionLike {
   execute?: (parameters: Record<string, any>) => Promise<ToolOutput>;
   /** 工厂函数（有状态工具） */
   factory?: () => { execute: (parameters: Record<string, any>) => Promise<ToolOutput> };
+  /** MCP配置（MCP工具） */
+  config?: McpToolConfig | RestToolConfig | any;
 }
 
 /**
@@ -54,6 +56,9 @@ export function toSdkTool(toolDef: ToolDefinitionLike): Tool {
         create: toolDef.factory
       }
     };
+  } else if ((toolDef.type === 'MCP' || toolDef.type === 'REST') && toolDef.config) {
+    // MCP 和 REST 工具直接使用传入的 config
+    tool.config = toolDef.config;
   }
 
   return tool;
