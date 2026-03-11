@@ -10,11 +10,11 @@ import type {
 import type {
   CheckpointMetadata,
   DeltaStorageConfig,
-  CheckpointType,
+  TCheckpointType,
   AgentLoopCheckpoint,
   AgentLoopStateSnapshot
 } from '@modular-agent/types';
-import { CheckpointTypeEnum } from '@modular-agent/types';
+import { CheckpointType } from '@modular-agent/types';
 import { AgentLoopDiffCalculator } from './agent-loop-diff-calculator.js';
 import { AgentLoopDeltaRestorer } from './agent-loop-delta-restorer.js';
 import { generateId } from '../../utils/index.js';
@@ -92,13 +92,13 @@ export class AgentLoopCheckpointCoordinator {
     // 步骤5：创建检查点
     let checkpoint: AgentLoopCheckpoint;
 
-    if (checkpointType === CheckpointTypeEnum.FULL) {
+    if (checkpointType === CheckpointType['FULL']) {
       // 创建完整检查点
       checkpoint = {
         id: checkpointId,
         agentLoopId: entity.id,
         timestamp,
-        type: CheckpointTypeEnum.FULL,
+        type: CheckpointType['FULL'],
         snapshot: currentState,
         metadata: options?.metadata
       };
@@ -113,7 +113,7 @@ export class AgentLoopCheckpointCoordinator {
           id: checkpointId,
           agentLoopId: entity.id,
           timestamp,
-          type: CheckpointTypeEnum.FULL,
+          type: CheckpointType['FULL']!,
           snapshot: currentState,
           metadata: options?.metadata
         };
@@ -128,7 +128,7 @@ export class AgentLoopCheckpointCoordinator {
 
         // 找到基线检查点ID
         let baseCheckpointId = previousCheckpoint.baseCheckpointId;
-        if (!baseCheckpointId && previousCheckpoint.type === CheckpointTypeEnum.FULL) {
+        if (!baseCheckpointId && previousCheckpoint.type === CheckpointType['FULL']) {
           baseCheckpointId = previousCheckpoint.id;
         }
 
@@ -136,7 +136,7 @@ export class AgentLoopCheckpointCoordinator {
           id: checkpointId,
           agentLoopId: entity.id,
           timestamp,
-          type: CheckpointTypeEnum.DELTA,
+          type: CheckpointType['DELTA']!,
           baseCheckpointId,
           previousCheckpointId,
           delta,
@@ -226,24 +226,24 @@ export class AgentLoopCheckpointCoordinator {
   private static determineCheckpointType(
     checkpointCount: number,
     config: DeltaStorageConfig
-  ): CheckpointType {
+  ): TCheckpointType {
     // 如果未启用增量存储，始终创建完整检查点
     if (!config.enabled) {
-      return CheckpointTypeEnum.FULL;
+      return CheckpointType['FULL']!;
     }
 
     // 第一个检查点必须是完整检查点
     if (checkpointCount === 0) {
-      return CheckpointTypeEnum.FULL;
+      return CheckpointType['FULL']!;
     }
 
     // 每隔 baselineInterval 个检查点创建一个完整检查点
     if (checkpointCount % config.baselineInterval === 0) {
-      return CheckpointTypeEnum.FULL;
+      return CheckpointType['FULL']!;
     }
 
     // 其他情况创建增量检查点
-    return CheckpointTypeEnum.DELTA;
+    return CheckpointType['DELTA']!;
   }
 
   /**
@@ -256,7 +256,7 @@ export class AgentLoopCheckpointCoordinator {
     }
 
     // 根据检查点类型验证
-    if (checkpoint.type === CheckpointTypeEnum.DELTA) {
+    if (checkpoint.type === CheckpointType['DELTA']) {
       // 增量检查点需要验证 delta 字段
       if (!checkpoint.delta && !checkpoint.previousCheckpointId) {
         throw new Error('Invalid delta checkpoint: missing delta data and previous checkpoint reference');

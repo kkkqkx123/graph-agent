@@ -1,16 +1,19 @@
 /**
- * Execution类型定义
- * 定义工作流执行相关的类型
+ * Workflow Execution类型定义
+ * 定义图工作流执行相关的类型
+ *
+ * 这些类型描述的是"执行一个工作流"这个操作的配置和结果。
+ * Thread 是图工作流的顶层执行模块，包含完整的图结构信息。
  */
 
-import type { Thread, ThreadOptions, ThreadResult } from './thread/index.js';
-import type { WorkflowDefinition } from './workflow/index.js';
-import type { ID, Timestamp, Metadata } from './common.js';
+import type { Thread, ThreadOptions, ThreadResult } from './index.js';
+import type { WorkflowDefinition } from '../workflow/index.js';
+import type { ID, Timestamp, Metadata } from '../common.js';
 
 /**
- * 执行选项类型
+ * 工作流执行选项类型
  */
-export interface ExecutionOptions {
+export interface WorkflowExecutionOptions {
   /** 工作流定义 */
   workflow: WorkflowDefinition;
   /** 线程选项 */
@@ -24,21 +27,21 @@ export interface ExecutionOptions {
 }
 
 /**
- * 执行结果类型
+ * 工作流执行结果类型
  */
-export interface ExecutionResult {
+export interface WorkflowExecutionResult {
   /** 执行是否成功 */
   success: boolean;
   /** 线程结果 */
   threadResult: ThreadResult;
   /** 执行元数据 */
-  metadata: ExecutionMetadata;
+  metadata: WorkflowExecutionMetadata;
 }
 
 /**
- * 执行元数据类型
+ * 工作流执行元数据类型
  */
-export interface ExecutionMetadata {
+export interface WorkflowExecutionMetadata {
   /** 执行ID */
   executionId: ID;
   /** 工作流ID */
@@ -66,39 +69,20 @@ export interface ExecutionMetadata {
 }
 
 /**
- * 执行上下文类型
+ * 工作流执行上下文类型
  */
-export interface ExecutionContext {
+export interface WorkflowExecutionContext {
   /** 工作流定义 */
   workflow: WorkflowDefinition;
   /** 当前线程 */
   thread: Thread;
   /** 执行选项 */
-  options: ExecutionOptions;
+  options: WorkflowExecutionOptions;
   /** 执行元数据 */
-  metadata: ExecutionMetadata;
+  metadata: WorkflowExecutionMetadata;
   /** 自定义上下文数据 */
   contextData: Metadata;
 }
-
-/**
- * 执行状态
- */
-export type ExecutionState =
-  /** 未开始 */
-  'NOT_STARTED' |
-  /** 执行中 */
-  'RUNNING' |
-  /** 已暂停 */
-  'PAUSED' |
-  /** 已完成 */
-  'COMPLETED' |
-  /** 已失败 */
-  'FAILED' |
-  /** 已取消 */
-  'CANCELLED' |
-  /** 超时 */
-  'TIMEOUT';
 
 /**
  * 统一的执行状态枚举（仅作为类型参考）

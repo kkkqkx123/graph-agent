@@ -21,15 +21,15 @@
  */
 
 import { isAbortError, checkInterruption } from '@modular-agent/common-utils';
-import type { ToolService } from '../../services/tool-service.js';
-import type { EventManager } from '../../services/event-manager.js';
+import type { ToolService } from '../services/tool-service.js';
+import type { EventManager } from '../services/event-manager.js';
 import type { Tool, ID } from '@modular-agent/types';
 import { now, diffTimestamp, generateId } from '@modular-agent/common-utils';
-import type { ConversationManager } from '../../managers/conversation-manager.js';
+import type { ConversationManager } from '../managers/conversation-manager.js';
 import { ThreadInterruptedException, CheckpointError } from '@modular-agent/types';
-import { MessageBuilder } from '../../messages/message-builder.js';
-import type { CheckpointDependencies } from '../../../graph/execution/handlers/checkpoint-handlers/checkpoint-utils.js';
-import type { ToolVisibilityCoordinator } from '../../../graph/execution/coordinators/tool-visibility-coordinator.js';
+import { MessageBuilder } from '../messages/message-builder.js';
+import type { CheckpointDependencies } from '../../graph/execution/handlers/checkpoint-handlers/checkpoint-utils.js';
+import type { ToolVisibilityCoordinator } from '../../graph/execution/coordinators/tool-visibility-coordinator.js';
 
 /**
  * 工具调用任务信息

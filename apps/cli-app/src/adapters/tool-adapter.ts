@@ -6,7 +6,7 @@
 import { BaseAdapter } from './base-adapter.js';
 import { ConfigManager } from '../config/config-manager.js';
 import { resolve } from 'path';
-import type { Tool, ToolOptions } from '@modular-agent/types';
+import type { Tool, ToolExecutionOptions } from '@modular-agent/types';
 import { StaticValidatorAPI } from '@modular-agent/sdk';
 import type { ConfigurationValidationError } from '@modular-agent/types';
 import { ToolRegistry, type ToolRegistryConfig } from '../tools/index.js';
@@ -162,7 +162,7 @@ export class ToolAdapter extends BaseAdapter {
   async executeTool(
     toolId: string,
     parameters: Record<string, any>,
-    options?: ToolOptions
+    options?: ToolExecutionOptions
   ): Promise<any> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.tools;

@@ -22,6 +22,9 @@ export * from './variables.js';
 // 导出执行相关类型
 export * from './execution.js';
 
+// 导出工作流执行相关类型
+export * from './workflow-execution.js';
+
 // 导出历史记录类型
 export * from './history.js';
 

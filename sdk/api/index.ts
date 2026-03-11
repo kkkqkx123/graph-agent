@@ -96,11 +96,14 @@ export {
 } from './graph/resources/messages/message-resource-api.js';
 export {
   VariableResourceAPI,
-  type VariableDefinition
+  type VariableDefinition,
+  type VariableFilter
 } from './graph/resources/variables/variable-resource-api.js';
 export { TriggerResourceAPI } from './graph/resources/triggers/trigger-resource-api.js';
 export {
-  EventResourceAPI
+  EventResourceAPI,
+  type EventFilter,
+  type EventStats
 } from './graph/resources/events/event-resource-api.js';
 export {
   UserInteractionResourceAPI,

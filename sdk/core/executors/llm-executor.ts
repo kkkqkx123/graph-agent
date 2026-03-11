@@ -22,7 +22,7 @@
 import { isAbortError, checkInterruption } from '@modular-agent/common-utils';
 import type { InterruptionCheckResult } from '@modular-agent/common-utils';
 import type { LLMMessage, LLMResult } from '@modular-agent/types';
-import { LLMWrapper } from '../../llm/wrapper.js';
+import { LLMWrapper } from '../llm/wrapper.js';
 import { ExecutionError, LLMError } from '@modular-agent/types';
 
 /**

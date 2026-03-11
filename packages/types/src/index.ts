@@ -19,7 +19,7 @@ export * from './agent/index.js';
 
 // 执行相关类型
 export * from './thread/index.js';
-export * from './execution.js';
+export * from './workflow/index.js';
 export * from './events/index.js';
 export * from './errors/index.js';
 export * from './trigger/index.js';

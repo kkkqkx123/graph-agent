@@ -144,7 +144,5 @@ For example, to run all tests in the `sdk/core/services` package, run `cd sdk; p
 
 ## Language Guidelines
 
-- comments and documentation in Chinese
-- LLM-related configurations and code in English (mainly prompts).
-This contain:
-packages\prompt-templates package
+- documentation in Chinese
+- comment and code in English.

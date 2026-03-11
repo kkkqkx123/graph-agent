@@ -4,7 +4,6 @@
  */
 
 import { BaseAdapter } from './base-adapter.js';
-import type { VariableFilter } from '@modular-agent/sdk/api/graph/resources/variables/variable-resource-api.js';
 
 /**
  * 变量适配器

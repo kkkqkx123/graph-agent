@@ -30,7 +30,7 @@ import { WorkflowRegistry } from '../../graph/services/workflow-registry.js';
 import { ThreadPoolService } from '../../graph/services/thread-pool-service.js';
 
 // 执行层服务 - Core 层通用执行器
-import { LLMExecutor, ToolCallExecutor } from '../execution/executors/index.js';
+import { LLMExecutor, ToolCallExecutor } from '../executors/index.js';
 import { safeEmit } from '../../graph/execution/utils/index.js';
 import { createCheckpoint } from '../../graph/execution/handlers/checkpoint-handlers/checkpoint-utils.js';
 import {

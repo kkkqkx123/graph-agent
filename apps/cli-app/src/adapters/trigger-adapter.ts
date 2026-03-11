@@ -4,7 +4,7 @@
  */
 
 import { BaseAdapter } from './base-adapter.js';
-import type { Trigger, TriggerFilter } from '@modular-agent/types';
+import type { Trigger, TriggerTemplateFilter } from '@modular-agent/types';
 
 /**
  * 触发器适配器
@@ -13,7 +13,7 @@ export class TriggerAdapter extends BaseAdapter {
   /**
    * 列出所有触发器
    */
-  async listTriggers(filter?: TriggerFilter): Promise<Trigger[]> {
+  async listTriggers(filter?: TriggerTemplateFilter): Promise<Trigger[]> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.triggers;
       const result = await api.getAll(filter);

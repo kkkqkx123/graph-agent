@@ -28,8 +28,8 @@ import { ToolService } from '../../../core/services/tool-service.js';
 import { MessageHistory } from '../../../core/messages/message-history.js';
 import type { MessageStreamEvent } from '../../../core/llm/message-stream-events.js';
 import { isAbortError, checkInterruption } from '@modular-agent/common-utils';
-import { LLMExecutor } from '../../../core/execution/executors/llm-executor.js';
-import { ToolCallExecutor } from '../../../core/execution/executors/tool-call-executor.js';
+import { LLMExecutor } from '../../../core/executors/llm-executor.js';
+import { ToolCallExecutor } from '../../../core/executors/tool-call-executor.js';
 
 /**
  * Agent Loop 流式事件

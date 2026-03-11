@@ -6,7 +6,7 @@
 import { BaseAdapter } from './base-adapter.js';
 import { ConfigManager } from '../config/config-manager.js';
 import { resolve } from 'path';
-import type { Script, ScriptOptions } from '@modular-agent/types';
+import type { Script, ScriptExecutionOptions } from '@modular-agent/types';
 
 /**
  * 脚本适配器
@@ -155,7 +155,7 @@ export class ScriptAdapter extends BaseAdapter {
    */
   async executeScript(
     scriptName: string,
-    options?: ScriptOptions
+    options?: ScriptExecutionOptions
   ): Promise<any> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.scripts;

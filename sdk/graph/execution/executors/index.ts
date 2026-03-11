@@ -4,8 +4,8 @@
  */
 
 // 从 core 层重新导出通用执行器
-export { LLMExecutor, ToolCallExecutor } from '../../../core/execution/executors/index.js';
-export type { ToolExecutionResult, ToolCallTaskInfo } from '../../../core/execution/executors/tool-call-executor.js';
+export { LLMExecutor, ToolCallExecutor } from '../../../core/executors/index.js';
+export type { ToolExecutionResult, ToolCallTaskInfo } from '../../../core/executors/tool-call-executor.js';
 
 // Thread执行器（无状态）
 export { ThreadExecutor } from './thread-executor.js';

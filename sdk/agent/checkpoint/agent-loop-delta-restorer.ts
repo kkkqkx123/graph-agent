@@ -1,7 +1,7 @@
 /**
- * Agent Loop 增量检查点恢复器
+ * Agent Loop Incremental Checkpoint Restorer
  *
- * 用于从增量检查点恢复完整状态
+ * Used to restore the full state from incremental checkpoints
  */
 
 import type {
@@ -9,11 +9,11 @@ import type {
   AgentLoopStateSnapshot,
   AgentLoopDelta
 } from '@modular-agent/types';
-import type { LLMMessage, AgentLoopConfig, CheckpointType } from '@modular-agent/types';
-import { CheckpointTypeEnum } from '@modular-agent/types';
+import type { LLMMessage, AgentLoopConfig, TCheckpointType } from '@modular-agent/types';
+import { CheckpointType } from '@modular-agent/types';
 
 /**
- * 完整检查点数据
+ * Full Checkpoint Data
  */
 interface FullCheckpointData {
   stateSnapshot: AgentLoopStateSnapshot;
@@ -23,7 +23,7 @@ interface FullCheckpointData {
 }
 
 /**
- * 增量恢复器依赖项
+ * Delta Restorer Dependencies
  */
 export interface DeltaRestorerDependencies {
   getCheckpoint: (id: string) => Promise<AgentLoopCheckpoint | null>;
@@ -31,15 +31,15 @@ export interface DeltaRestorerDependencies {
 }
 
 /**
- * Agent Loop 增量检查点恢复器
+ * Agent Loop Incremental Checkpoint Restorer
  */
 export class AgentLoopDeltaRestorer {
-  constructor(private dependencies: DeltaRestorerDependencies) {}
+  constructor(private dependencies: DeltaRestorerDependencies) { }
 
   /**
-   * 从检查点恢复完整状态
-   * @param checkpointId 检查点ID
-   * @returns 完整的检查点数据
+   * Restore full state from a checkpoint
+   * @param checkpointId Checkpoint ID
+   * @returns Full checkpoint data
    */
   async restore(checkpointId: string): Promise<FullCheckpointData> {
     const checkpoint = await this.dependencies.getCheckpoint(checkpointId);
@@ -48,19 +48,19 @@ export class AgentLoopDeltaRestorer {
       throw new Error(`Checkpoint not found: ${checkpointId}`);
     }
 
-    // 如果是完整检查点，直接返回
-    if (!checkpoint.type || checkpoint.type === CheckpointTypeEnum.FULL) {
+    // If it's a full checkpoint, return directly
+    if (!checkpoint.type || checkpoint.type === CheckpointType['FULL']) {
       return this.extractFullCheckpoint(checkpoint);
     }
 
-    // 如果是增量检查点，需要链式恢复
+    // If it's an incremental checkpoint, chain recovery is needed
     return this.restoreDeltaCheckpoint(checkpoint);
   }
 
   /**
-   * 提取完整检查点数据
-   * @param checkpoint 检查点
-   * @returns 完整的检查点数据
+   * Extract full checkpoint data
+   * @param checkpoint Checkpoint
+   * @returns Full checkpoint data
    */
   private extractFullCheckpoint(checkpoint: AgentLoopCheckpoint): FullCheckpointData {
     const snapshot = checkpoint.snapshot!;
@@ -73,17 +73,17 @@ export class AgentLoopDeltaRestorer {
   }
 
   /**
-   * 链式恢复增量检查点
-   * @param deltaCheckpoint 增量检查点
-   * @returns 完整的检查点数据
+   * Chain recovery for incremental checkpoints
+   * @param deltaCheckpoint Incremental checkpoint
+   * @returns Full checkpoint data
    */
   private async restoreDeltaCheckpoint(
     deltaCheckpoint: AgentLoopCheckpoint
   ): Promise<FullCheckpointData> {
-    // 1. 找到基线检查点
+    // 1. Find the base checkpoint
     const baseCheckpoint = await this.findBaseCheckpoint(deltaCheckpoint);
 
-    // 2. 从基线开始，依次应用增量
+    // 2. Apply increments sequentially starting from the base
     let result = this.extractFullCheckpoint(baseCheckpoint);
     const deltaChain = await this.buildDeltaChain(
       baseCheckpoint.id,
@@ -98,14 +98,14 @@ export class AgentLoopDeltaRestorer {
   }
 
   /**
-   * 找到基线检查点
-   * @param checkpoint 起始检查点
-   * @returns 基线检查点
+   * Find the base checkpoint
+   * @param checkpoint Starting checkpoint
+   * @returns Base checkpoint
    */
   private async findBaseCheckpoint(
     checkpoint: AgentLoopCheckpoint
   ): Promise<AgentLoopCheckpoint> {
-    // 如果有 baseCheckpointId，直接获取
+    // If baseCheckpointId exists, get it directly
     if (checkpoint.baseCheckpointId) {
       const baseCheckpoint = await this.dependencies.getCheckpoint(
         checkpoint.baseCheckpointId
@@ -115,7 +115,7 @@ export class AgentLoopDeltaRestorer {
       }
     }
 
-    // 否则，沿着 previousCheckpointId 链向上查找
+    // Otherwise, traverse up the previousCheckpointId chain
     let current = checkpoint;
     while (current.previousCheckpointId) {
       const prevCheckpoint = await this.dependencies.getCheckpoint(
@@ -127,23 +127,23 @@ export class AgentLoopDeltaRestorer {
         );
       }
 
-      // 找到完整检查点
-      if (!prevCheckpoint.type || prevCheckpoint.type === CheckpointTypeEnum.FULL) {
+      // Found a full checkpoint
+      if (!prevCheckpoint.type || prevCheckpoint.type === CheckpointType['FULL']) {
         return prevCheckpoint;
       }
 
       current = prevCheckpoint;
     }
 
-    // 如果没有找到基线，抛出错误
+    // If no base checkpoint is found, throw an error
     throw new Error('No base checkpoint found in the chain');
   }
 
   /**
-   * 构建增量链
-   * @param baseCheckpointId 基线检查点ID
-   * @param targetCheckpointId 目标检查点ID
-   * @returns 增量数据链
+   * Build the delta chain
+   * @param baseCheckpointId Base checkpoint ID
+   * @param targetCheckpointId Target checkpoint ID
+   * @returns Delta data chain
    */
   private async buildDeltaChain(
     baseCheckpointId: string,
@@ -152,7 +152,7 @@ export class AgentLoopDeltaRestorer {
     const deltaChain: AgentLoopDelta[] = [];
     let currentId = targetCheckpointId;
 
-    // 从目标检查点向基线检查点遍历，收集增量
+    // Traverse from the target checkpoint towards the base checkpoint, collecting deltas
     while (currentId && currentId !== baseCheckpointId) {
       const checkpoint = await this.dependencies.getCheckpoint(currentId);
       if (!checkpoint) {
@@ -170,10 +170,10 @@ export class AgentLoopDeltaRestorer {
   }
 
   /**
-   * 应用增量到状态
-   * @param state 当前状态
-   * @param delta 增量数据
-   * @returns 应用增量后的状态
+   * Apply delta to the state
+   * @param state Current state
+   * @param delta Delta data
+   * @returns State after applying delta
    */
   private applyDelta(
     state: FullCheckpointData,
@@ -181,17 +181,17 @@ export class AgentLoopDeltaRestorer {
   ): FullCheckpointData {
     const result = { ...state };
 
-    // 应用消息增量
+    // Apply added messages delta
     if (delta.addedMessages && delta.addedMessages.length > 0) {
       result.messages = [...result.messages, ...delta.addedMessages];
     }
 
-    // 应用状态变更
+    // Apply status change
     if (delta.statusChange) {
       result.stateSnapshot.status = delta.statusChange.to;
     }
 
-    // 应用其他变更
+    // Apply other changes
     if (delta.otherChanges) {
       for (const [key, change] of Object.entries(delta.otherChanges)) {
         if (key === 'toolCallCount') {

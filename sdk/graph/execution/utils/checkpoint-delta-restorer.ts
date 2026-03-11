@@ -37,7 +37,7 @@ export class DeltaCheckpointRestorer {
     }
 
     // 如果是完整检查点，直接返回
-    if (!checkpoint.type || checkpoint.type === CheckpointType.FULL) {
+    if (!checkpoint.type || checkpoint.type === CheckpointType['FULL']) {
       return checkpoint.threadState!;
     }
 
@@ -102,7 +102,7 @@ export class DeltaCheckpointRestorer {
       }
 
       // 找到完整检查点
-      if (!prevCheckpoint.type || prevCheckpoint.type === CheckpointType.FULL) {
+      if (!prevCheckpoint.type || prevCheckpoint.type === CheckpointType['FULL']) {
         return prevCheckpoint;
       }
 

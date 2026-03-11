@@ -25,7 +25,7 @@ import {
   buildMessageAddedEvent,
   buildConversationStateChangedEvent
 } from '../../utils/event/event-builder.js';
-import { LLMExecutor } from '../../../../core/execution/executors/llm-executor.js';
+import { LLMExecutor } from '../../../../core/executors/llm-executor.js';
 import { ToolService } from '../../../../core/services/tool-service.js';
 
 /**
