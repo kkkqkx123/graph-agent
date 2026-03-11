@@ -11,7 +11,7 @@
 import { APIFactory } from './api-factory.js';
 import { APIDependencyManager } from './sdk-dependencies.js';
 import { getData } from '../types/execution-result.js';
-import type { SDKOptions } from '@modular-agent/types';
+import type { SDKOptions } from '../types/core-types.js';
 import { logger } from '../../../utils/index.js';
 import { getErrorMessage } from '@modular-agent/common-utils';
 import { setStorageCallback } from '../../../core/di/container-config.js';

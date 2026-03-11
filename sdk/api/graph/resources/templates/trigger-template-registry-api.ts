@@ -4,14 +4,45 @@
  * 重构版本：继承GenericResourceAPI，提高代码复用性和一致性
  */
 
-import type {
-  TriggerTemplate,
-  TriggerTemplateSummary,
-  TriggerTemplateFilter
-} from '@modular-agent/types';
+import type { TriggerTemplate } from '@modular-agent/types';
 import { GenericResourceAPI } from '../../../shared/resources/generic-resource-api.js';
 import { isSuccess, getData } from '../../../shared/types/execution-result.js';
 import type { APIDependencyManager } from '../../../shared/core/sdk-dependencies.js';
+import type { Timestamp } from '@modular-agent/types';
+
+/**
+ * 触发器模板过滤器
+ */
+export interface TriggerTemplateFilter {
+  /** 模板名称（支持模糊匹配） */
+  name?: string;
+  /** 关键词搜索 */
+  keyword?: string;
+  /** 触发器类型 */
+  triggerType?: string;
+  /** 分类 */
+  category?: string;
+  /** 标签数组 */
+  tags?: string[];
+}
+
+/**
+ * 触发器模板摘要
+ */
+export interface TriggerTemplateSummary {
+  /** 模板名称 */
+  name: string;
+  /** 模板描述 */
+  description?: string;
+  /** 分类 */
+  category?: string;
+  /** 标签数组 */
+  tags?: string[];
+  /** 创建时间 */
+  createdAt: Timestamp;
+  /** 更新时间 */
+  updatedAt: Timestamp;
+}
 
 
 /**

@@ -13,10 +13,10 @@ import type {
   WorkflowDefinition,
   WorkflowMetadata,
   WorkflowRelationship,
-  WorkflowHierarchy,
-  WorkflowSummary
+  WorkflowHierarchy
 } from '@modular-agent/types';
 import type { WorkflowReferenceInfo, WorkflowReferenceRelation, WorkflowReferenceType } from '@modular-agent/types';
+import type { WorkflowSummary } from '../../api/graph/resources/workflows/workflow-registry-api.js';
 import type { ThreadRegistry } from './thread-registry.js';
 import { ExecutionError, ConfigurationValidationError, WorkflowNotFoundError } from '@modular-agent/types';
 import type { GraphRegistry } from './graph-registry.js';

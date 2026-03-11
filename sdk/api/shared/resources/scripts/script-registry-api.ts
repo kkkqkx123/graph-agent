@@ -11,11 +11,10 @@ import {
 } from '../../validation/validation-strategy.js';
 
 import type { Script } from '@modular-agent/types';
-import { ScriptType } from '@modular-agent/types';
-import type { ScriptFilter, ScriptRegistrationConfig } from '@modular-agent/types';
 import { NotFoundError } from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api.js';
 import type { APIDependencyManager } from '../../core/sdk-dependencies.js';
+import type { ScriptFilter, ScriptRegistrationConfig } from '../../types/code-types.js';
 
 /**
  * ScriptRegistryAPI - 脚本资源管理API

@@ -8,9 +8,23 @@ import { GenericResourceAPI } from '../../../shared/resources/generic-resource-a
 import type { ThreadRegistry } from '../../../../graph/services/thread-registry.js';
 import { TriggerStatus } from '@modular-agent/types';
 import type { Trigger } from '@modular-agent/types';
-import { NotFoundError, ThreadContextNotFoundError, TriggerFilter } from '@modular-agent/types';
+import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types';
 import { getContainer } from '../../../../core/di/index.js';
 import * as Identifiers from '../../../../core/di/service-identifiers.js';
+
+/**
+ * 触发器过滤器
+ */
+export interface TriggerFilter {
+  /** 触发器ID列表 */
+  ids?: string[];
+  /** 触发器名称（支持模糊匹配） */
+  name?: string;
+  /** 工作流ID */
+  workflowId?: string;
+  /** 是否启用 */
+  enabled?: boolean;
+}
 
 /**
  * TriggerResourceAPI - 触发器资源管理API

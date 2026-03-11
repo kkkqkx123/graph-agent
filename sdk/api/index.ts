@@ -258,33 +258,18 @@ export type { OperatorFunction } from './shared/utils/observable.js';
 export type {
   ThreadOptions,
   SDKOptions,
-  SDKDependencies,
-  WorkflowFilter,
-  ThreadFilter,
-  WorkflowSummary,
-  ThreadSummary,
-  ToolFilter,
-  ToolOptions,
-  ToolExecutionResult,
-  ToolTestResult,
+  SDKDependencies
+} from './shared/types/core-types.js';
+
+export type {
   ScriptFilter,
   ScriptOptions,
   ScriptTestResult,
   ScriptExecutionLog,
   ScriptStatistics,
   ScriptRegistrationConfig,
-  ScriptBatchExecutionConfig,
-  EventFilter,
-  CheckpointFilter,
-  CheckpointSummary,
-  VariableUpdateOptions,
-  VariableFilter,
-  NodeTemplateFilter,
-  NodeTemplateSummary,
-  TriggerTemplateFilter,
-  TriggerTemplateSummary,
-  TriggerFilter
-} from '@modular-agent/types';
+  ScriptBatchExecutionConfig
+} from './shared/types/code-types.js';
 
 export type {
   ExecutionEvent,

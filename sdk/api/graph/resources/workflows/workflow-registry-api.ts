@@ -12,9 +12,58 @@ import {
 
 import { now } from '@modular-agent/common-utils';
 import { GenericResourceAPI } from '../../../shared/resources/generic-resource-api.js';
-import type { WorkflowDefinition, WorkflowFilter, WorkflowSummary } from '@modular-agent/types';
+import type { WorkflowDefinition } from '@modular-agent/types';
 import { WorkflowNotFoundError } from '@modular-agent/types';
 import type { APIDependencyManager } from '../../../shared/core/sdk-dependencies.js';
+import type { Timestamp } from '@modular-agent/types';
+
+/**
+ * 工作流过滤器
+ */
+export interface WorkflowFilter {
+  /** 工作流ID列表 */
+  ids?: string[];
+  /** 工作流名称（支持模糊匹配） */
+  name?: string;
+  /** 标签数组 */
+  tags?: string[];
+  /** 作者 */
+  author?: string;
+  /** 分类 */
+  category?: string;
+  /** 版本 */
+  version?: string;
+  /** 创建时间范围 */
+  createdAtRange?: { start?: Timestamp; end?: Timestamp };
+  /** 更新时间范围 */
+  updatedAtRange?: { start?: Timestamp; end?: Timestamp };
+}
+
+/**
+ * 工作流摘要
+ */
+export interface WorkflowSummary {
+  /** 工作流ID */
+  id: string;
+  /** 工作流名称 */
+  name: string;
+  /** 工作流描述 */
+  description?: string;
+  /** 版本 */
+  version: string;
+  /** 节点数量 */
+  nodeCount: number;
+  /** 边数量 */
+  edgeCount: number;
+  /** 创建时间 */
+  createdAt: Timestamp;
+  /** 更新时间 */
+  updatedAt: Timestamp;
+  /** 标签数组 */
+  tags?: string[];
+  /** 分类 */
+  category?: string;
+}
 
 /**
  * WorkflowRegistryAPI - 工作流管理API

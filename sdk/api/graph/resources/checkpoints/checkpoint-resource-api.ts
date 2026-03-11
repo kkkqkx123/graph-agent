@@ -7,12 +7,60 @@ import { now } from '@modular-agent/common-utils';
 import { GenericResourceAPI } from '../../../shared/resources/generic-resource-api.js';
 import { CheckpointStateManager } from '../../../../graph/execution/managers/checkpoint-state-manager.js';
 import type { Checkpoint, CheckpointMetadata } from '@modular-agent/types';
-import type { CheckpointFilter } from '@modular-agent/types';
 import { CheckpointCoordinator } from '../../../../graph/execution/coordinators/checkpoint-coordinator.js';
 import { getContainer } from '../../../../core/di/index.js';
 import * as Identifiers from '../../../../core/di/service-identifiers.js';
 import { getErrorMessage, isSuccess, getData } from '../../../shared/types/execution-result.js';
 import type { EventManager } from '../../../../core/services/event-manager.js';
+import type { Timestamp } from '@modular-agent/types';
+import { ThreadStatus } from '@modular-agent/types';
+import { CheckpointTriggerType } from '@modular-agent/types';
+
+/**
+ * 检查点过滤器
+ */
+export interface CheckpointFilter {
+  /** 检查点ID列表 */
+  ids?: string[];
+  /** 线程ID */
+  threadId?: string;
+  /** 工作流ID */
+  workflowId?: string;
+  /** 触发类型 */
+  triggerType?: CheckpointTriggerType;
+  /** 创建者 */
+  creator?: string;
+  /** 标签数组 */
+  tags?: string[];
+  /** 创建时间范围 */
+  timestampRange?: { start?: Timestamp; end?: Timestamp };
+  /** 开始时间（从） */
+  startTimeFrom?: Timestamp;
+  /** 开始时间（到） */
+  startTimeTo?: Timestamp;
+}
+
+/**
+ * 检查点摘要
+ */
+export interface CheckpointSummary {
+  /** 检查点ID */
+  id: string;
+  /** 线程ID */
+  threadId: string;
+  /** 工作流ID */
+  workflowId: string;
+  /** 线程状态 */
+  threadStatus: ThreadStatus;
+  /** 当前节点ID */
+  currentNodeId: string;
+  /** 创建时间戳 */
+  timestamp: Timestamp;
+  /** 检查点描述 */
+  description?: string;
+  /** 标签数组 */
+  tags?: string[];
+}
 
 /**
  * CheckpointResourceAPI - 检查点资源管理API

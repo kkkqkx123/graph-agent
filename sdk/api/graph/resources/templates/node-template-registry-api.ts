@@ -4,12 +4,48 @@
  * 重构版本：继承GenericResourceAPI，提高代码复用性和一致性
  */
 
-import type { NodeTemplate, NodeTemplateFilter, NodeTemplateSummary } from '@modular-agent/types';
+import type { NodeTemplate } from '@modular-agent/types';
 import { ValidationError, ConfigurationValidationError } from '@modular-agent/types';
+import { NodeType } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
 import { ok, err, getErrorMessage } from '@modular-agent/common-utils';
 import { GenericResourceAPI } from '../../../shared/resources/generic-resource-api.js';
 import type { APIDependencyManager } from '../../../shared/core/sdk-dependencies.js';
+import type { Timestamp } from '@modular-agent/types';
+
+/**
+ * 节点模板过滤器
+ */
+export interface NodeTemplateFilter {
+  /** 模板名称（支持模糊匹配） */
+  name?: string;
+  /** 节点类型 */
+  nodeType?: string;
+  /** 分类 */
+  category?: string;
+  /** 标签数组 */
+  tags?: string[];
+}
+
+/**
+ * 节点模板摘要
+ */
+export interface NodeTemplateSummary {
+  /** 模板名称 */
+  name: string;
+  /** 节点类型 */
+  type: NodeType;
+  /** 节点描述 */
+  description?: string;
+  /** 分类 */
+  category?: string;
+  /** 标签数组 */
+  tags?: string[];
+  /** 创建时间 */
+  createdAt: Timestamp;
+  /** 更新时间 */
+  updatedAt: Timestamp;
+}
 
 
 /**

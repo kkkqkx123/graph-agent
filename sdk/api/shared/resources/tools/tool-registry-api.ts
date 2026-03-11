@@ -9,10 +9,68 @@ import {
   validateObject
 } from '../../validation/validation-strategy.js';
 
-import type { Tool, ToolFilter } from '@modular-agent/types';
+import type { Tool } from '@modular-agent/types';
+import { ToolType } from '@modular-agent/types';
 import { NotFoundError, ToolNotFoundError } from '@modular-agent/types';
 import { GenericResourceAPI } from '../generic-resource-api.js';
 import type { APIDependencyManager } from '../../core/sdk-dependencies.js';
+import type { Timestamp } from '@modular-agent/types';
+
+/**
+ * 工具过滤器
+ */
+export interface ToolFilter {
+  /** 工具ID列表 */
+  ids?: string[];
+  /** 工具名称（支持模糊搜索） */
+  name?: string;
+  /** 工具类型 */
+  type?: ToolType;
+  /** 分类 */
+  category?: string;
+  /** 标签数组 */
+  tags?: string[];
+  /** 是否启用 */
+  enabled?: boolean;
+}
+
+/**
+ * 工具选项
+ */
+export interface ToolOptions {
+  /** 超时时间（毫秒） */
+  timeout?: number;
+  /** 最大重试次数 */
+  retries?: number;
+  /** 重试延迟（毫秒） */
+  retryDelay?: number;
+  /** 是否启用指数退避 */
+  exponentialBackoff?: boolean;
+  /** 最大重试次数（别名） */
+  maxRetries?: number;
+  /** 是否启用日志 */
+  enableLogging?: boolean;
+}
+
+/**
+ * 工具测试结果
+ */
+export interface ToolTestResult {
+  /** 工具ID */
+  toolId: string;
+  /** 工具名称 */
+  toolName?: string;
+  /** 测试是否成功 */
+  success: boolean;
+  /** 测试结果 */
+  result?: any;
+  /** 错误信息 */
+  error?: string;
+  /** 执行时间（毫秒） */
+  executionTime: number;
+  /** 测试时间戳 */
+  timestamp: Timestamp;
+}
 
 /**
  * ToolRegistryAPI - 工具资源管理API

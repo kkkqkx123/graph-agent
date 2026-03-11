@@ -4,8 +4,28 @@
  */
 
 import { GenericResourceAPI } from '../../../shared/resources/generic-resource-api.js';
-import type { BaseEvent, EventFilter } from '@modular-agent/types';
+import type { BaseEvent } from '@modular-agent/types';
+import { EventType } from '@modular-agent/types';
+import type { Timestamp } from '@modular-agent/types';
 import { getErrorMessage } from '@modular-agent/common-utils';
+
+/**
+ * 事件过滤器
+ */
+export interface EventFilter {
+  /** 事件ID列表 */
+  ids?: string[];
+  /** 事件类型 */
+  eventType?: EventType;
+  /** 线程ID */
+  threadId?: string;
+  /** 工作流ID */
+  workflowId?: string;
+  /** 节点ID */
+  nodeId?: string;
+  /** 创建时间范围 */
+  timestampRange?: { start?: Timestamp; end?: Timestamp };
+}
 
 /**
  * 事件统计信息

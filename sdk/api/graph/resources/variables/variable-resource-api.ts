@@ -6,13 +6,38 @@
 import { now } from '@modular-agent/common-utils';
 import { GenericResourceAPI } from '../../../shared/resources/generic-resource-api.js';
 import type { ThreadRegistry } from '../../../../graph/services/thread-registry.js';
-import type { Thread, VariableFilter } from '@modular-agent/types';
+import type { Thread } from '@modular-agent/types';
 import { NotFoundError, ThreadContextNotFoundError } from '@modular-agent/types';
 import { getContainer } from '../../../../core/di/index.js';
 import * as Identifiers from '../../../../core/di/service-identifiers.js';
 
-// 重新导出 VariableFilter 供外部使用
-export type { VariableFilter };
+/**
+ * 变量过滤器
+ */
+export interface VariableFilter {
+  /** 变量名称（支持模糊匹配） */
+  name?: string;
+  /** 变量作用域 */
+  scope?: 'global' | 'thread' | 'subgraph' | 'loop';
+  /** 变量类型 */
+  type?: string;
+  /** 线程ID */
+  threadId?: string;
+  /** 工作流ID */
+  workflowId?: string;
+}
+
+/**
+ * 变量更新选项
+ */
+export interface VariableUpdateOptions {
+  /** 是否覆盖已存在的变量 */
+  overwrite?: boolean;
+  /** 是否验证变量值 */
+  validate?: boolean;
+  /** 是否触发事件 */
+  triggerEvent?: boolean;
+}
 
 /**
  * 变量定义信息

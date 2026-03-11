@@ -4,7 +4,8 @@
 
 import { now, diffTimestamp } from '@modular-agent/common-utils';
 import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../types/command.js';
-import type { ID, ToolOptions } from '@modular-agent/types';
+import type { ID } from '@modular-agent/types';
+import type { ToolOptions } from '../../resources/tools/tool-registry-api.js';
 import type { ToolExecutionResult } from '@modular-agent/types';
 import type { APIDependencyManager } from '../../core/sdk-dependencies.js';
 

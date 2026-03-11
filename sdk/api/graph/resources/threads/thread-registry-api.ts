@@ -5,11 +5,56 @@
  */
 
 import type { ThreadRegistry } from '../../../../graph/services/thread-registry.js';
-import type { Thread, ThreadResult, ThreadStatus, ThreadFilter, ThreadSummary } from '@modular-agent/types';
+import type { Thread, ThreadResult, ThreadStatus } from '@modular-agent/types';
 import { GenericResourceAPI } from '../../../shared/resources/generic-resource-api.js';
 import { getErrorMessage, isSuccess, getData } from '../../../shared/types/execution-result.js';
 import type { APIDependencyManager } from '../../../shared/core/sdk-dependencies.js';
+import type { Timestamp } from '@modular-agent/types';
 // SingletonRegistry 已被移除，不再需要此导入
+
+/**
+ * 线程过滤器
+ */
+export interface ThreadFilter {
+  /** 线程ID列表 */
+  ids?: string[];
+  /** 工作流ID */
+  workflowId?: string;
+  /** 线程状态 */
+  status?: ThreadStatus;
+  /** 线程类型 */
+  threadType?: 'MAIN' | 'FORK_JOIN' | 'TRIGGERED_SUBWORKFLOW';
+  /** 创建时间范围 */
+  createdAtRange?: { start?: Timestamp; end?: Timestamp };
+  /** 更新时间范围 */
+  updatedAtRange?: { start?: Timestamp; end?: Timestamp };
+}
+
+/**
+ * 线程摘要
+ */
+export interface ThreadSummary {
+  /** 线程ID */
+  id: string;
+  /** 工作流ID */
+  workflowId: string;
+  /** 工作流名称 */
+  workflowName: string;
+  /** 线程状态 */
+  status: ThreadStatus;
+  /** 线程类型 */
+  threadType?: 'MAIN' | 'FORK_JOIN' | 'TRIGGERED_SUBWORKFLOW';
+  /** 当前节点ID */
+  currentNodeId: string;
+  /** 开始时间 */
+  startTime: Timestamp;
+  /** 结束时间 */
+  endTime?: Timestamp;
+  /** 执行时间（毫秒） */
+  executionTime?: number;
+  /** 错误数量 */
+  errorCount: number;
+}
 
 
 /**

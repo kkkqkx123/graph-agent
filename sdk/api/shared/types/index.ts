@@ -20,34 +20,6 @@ export { DEFAULT_EXECUTION_OPTIONS, mergeExecutionOptions } from './execution-op
 // 核心类型
 export type { ThreadOptions, SDKOptions, SDKDependencies } from './core-types.js';
 
-// 注册表类型（从 types 层导入）
-export type {
-  WorkflowFilter,
-  ThreadFilter,
-  WorkflowSummary,
-  ThreadSummary,
-  NodeTemplateFilter,
-  NodeTemplateSummary
-} from '@modular-agent/types';
-
-// 管理类型（从 types 层导入）
-export type {
-  CheckpointFilter,
-  CheckpointSummary,
-  EventFilter,
-  VariableUpdateOptions,
-  VariableFilter,
-  TriggerFilter
-} from '@modular-agent/types';
-
-// 工具类型（从 types 层导入）
-export type {
-  ToolFilter,
-  ToolOptions,
-  ToolExecutionResult,
-  ToolTestResult
-} from '@modular-agent/types';
-
 // 脚本类型
 export type {
   ScriptFilter,
@@ -58,9 +30,3 @@ export type {
   ScriptRegistrationConfig,
   ScriptBatchExecutionConfig
 } from './code-types.js';
-
-// 重新导出触发器模板类型（来自types层）
-export type {
-  TriggerTemplateFilter,
-  TriggerTemplateSummary
-} from '@modular-agent/types';

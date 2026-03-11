@@ -38,8 +38,5 @@ export * from './human-relay.js';
 export * from './result.js';
 export * from './http.js';
 
-// API类型
-export * from './api-types.js';
-
 // 存储类型
 export * from './storage/index.js';

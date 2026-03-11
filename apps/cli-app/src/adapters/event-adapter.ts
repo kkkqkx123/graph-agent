@@ -4,7 +4,8 @@
  */
 
 import { BaseAdapter } from './base-adapter.js';
-import type { BaseEvent, EventFilter } from '@modular-agent/types';
+import type { BaseEvent } from '@modular-agent/types';
+import type { EventFilter } from '@modular-agent/sdk/api/graph/resources/events/event-resource-api.js';
 
 /**
  * 事件适配器

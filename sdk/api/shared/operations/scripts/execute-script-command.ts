@@ -4,7 +4,7 @@
 
 import { now, diffTimestamp } from '@modular-agent/common-utils';
 import { BaseCommand, CommandValidationResult, validationSuccess, validationFailure } from '../../types/command.js';
-import type { ScriptOptions } from '@modular-agent/types';
+import type { ScriptOptions } from '../../types/code-types.js';
 import type { ScriptExecutionResult } from '@modular-agent/types';
 import type { APIDependencyManager } from '../../core/sdk-dependencies.js';
 
