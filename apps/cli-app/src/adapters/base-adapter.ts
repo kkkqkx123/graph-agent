@@ -4,17 +4,17 @@
  */
 
 import { getSDK } from '@modular-agent/sdk';
-import { createLogger } from '../utils/logger.js';
+import { getLogger, type CLILogger } from '../utils/logger.js';
 
 /**
  * 基础适配器类
  */
 export class BaseAdapter {
-  protected logger: ReturnType<typeof createLogger>;
+  protected logger: CLILogger;
   protected sdk: ReturnType<typeof getSDK>;
 
   constructor() {
-    this.logger = createLogger();
+    this.logger = getLogger();
     this.sdk = getSDK();
   }
 

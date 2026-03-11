@@ -5,10 +5,10 @@
 
 import { getSDK } from '@modular-agent/sdk';
 import { randomUUID } from 'crypto';
-import { createLogger } from '../utils/logger.js';
+import { getLogger } from '../utils/logger.js';
 import type { TerminalSession, TaskExecutionResult, TaskStatus } from './types.js';
 
-const logger = createLogger();
+const logger = getLogger();
 
 /**
  * 任务执行器

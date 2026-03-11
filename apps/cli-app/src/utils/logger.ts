@@ -94,14 +94,6 @@ export function getLogger(): CLILogger {
 }
 
 /**
- * 创建 CLI 日志记录器实例
- * @deprecated 使用 getLogger() 获取全局实例，或使用 initializeLogger() 初始化
- */
-export function createLogger(options: LoggerOptions = {}): CLILogger {
-  return initializeLogger(options);
-}
-
-/**
  * CLI 日志记录器
  * 扩展基础日志器，添加 CLI 特定的功能
  */

@@ -4,11 +4,11 @@
 
 import { Command } from 'commander';
 import { MessageAdapter } from '../../adapters/message-adapter.js';
-import { createLogger } from '../../utils/logger.js';
+import { getLogger } from '../../utils/logger.js';
 import { formatMessage, formatMessageList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
 
-const logger = createLogger();
+const logger = getLogger();
 
 /**
  * 创建消息命令组

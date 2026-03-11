@@ -4,11 +4,11 @@
 
 import { Command } from 'commander';
 import { ScriptAdapter } from '../../adapters/script-adapter.js';
-import { createLogger } from '../../utils/logger.js';
+import { getLogger } from '../../utils/logger.js';
 import { formatScript, formatScriptList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
 
-const logger = createLogger();
+const logger = getLogger();
 
 /**
  * 创建脚本命令组

@@ -4,7 +4,7 @@
 
 import { Command } from 'commander';
 import { ThreadAdapter } from '../../adapters/thread-adapter.js';
-import { createLogger } from '../../utils/logger.js';
+import { getLogger } from '../../utils/logger.js';
 import { formatThread, formatThreadList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
 
@@ -13,7 +13,7 @@ import { TerminalManager } from '../../terminal/terminal-manager.js';
 import { TaskExecutor } from '../../terminal/task-executor.js';
 import { CommunicationBridge } from '../../terminal/communication-bridge.js';
 
-const logger = createLogger();
+const logger = getLogger();
 
 // 创建全局实例
 const terminalManager = new TerminalManager();

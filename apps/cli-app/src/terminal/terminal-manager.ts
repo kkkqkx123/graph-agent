@@ -6,10 +6,10 @@
 import * as pty from 'node-pty';
 import { spawn } from 'child_process';
 import { randomUUID } from 'crypto';
-import { createLogger } from '../utils/logger.js';
+import { getLogger } from '../utils/logger.js';
 import type { TerminalOptions, TerminalSession, TerminalEvent } from './types.js';
 
-const logger = createLogger();
+const logger = getLogger();
 
 /**
  * 终端管理器

@@ -4,10 +4,10 @@
  */
 
 import { Subject, Observable, Subscription } from 'rxjs';
-import { createLogger } from '../utils/logger.js';
+import { getLogger } from '../utils/logger.js';
 import type { BridgeMessage, TerminalSession } from './types.js';
 
-const logger = createLogger();
+const logger = getLogger();
 
 /**
  * 通信桥接

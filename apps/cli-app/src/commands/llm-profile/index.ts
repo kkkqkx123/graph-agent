@@ -4,11 +4,11 @@
 
 import { Command } from 'commander';
 import { LLMProfileAdapter } from '../../adapters/llm-profile-adapter.js';
-import { createLogger } from '../../utils/logger.js';
+import { getLogger } from '../../utils/logger.js';
 import { formatLLMProfile, formatLLMProfileList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
 
-const logger = createLogger();
+const logger = getLogger();
 
 /**
  * 创建 LLM Profile 命令组

@@ -4,11 +4,11 @@
 
 import { Command } from 'commander';
 import { EventAdapter } from '../../adapters/event-adapter.js';
-import { createLogger } from '../../utils/logger.js';
+import { getLogger } from '../../utils/logger.js';
 import { formatEvent, formatEventList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
 
-const logger = createLogger();
+const logger = getLogger();
 
 /**
  * 创建事件命令组

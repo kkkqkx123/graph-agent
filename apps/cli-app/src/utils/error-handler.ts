@@ -3,11 +3,11 @@
  * 提供统一的错误处理和用户友好的错误信息显示
  */
 
-import { createLogger } from './logger.js';
+import { getLogger } from './logger.js';
 import { ValidationError } from './validator.js';
 import type { CLIError, CLIAPIError, CLIFileOperationError } from '../types/cli-types.js';
 
-const logger = createLogger();
+const logger = getLogger();
 
 /**
  * 错误类型枚举

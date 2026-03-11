@@ -4,11 +4,11 @@
 
 import { Command } from 'commander';
 import { ToolAdapter } from '../../adapters/tool-adapter.js';
-import { createLogger } from '../../utils/logger.js';
+import { getLogger } from '../../utils/logger.js';
 import { formatTool, formatToolList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
 
-const logger = createLogger();
+const logger = getLogger();
 
 /**
  * 创建工具命令组

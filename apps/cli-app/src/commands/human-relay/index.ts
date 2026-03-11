@@ -4,11 +4,11 @@
 
 import { Command } from 'commander';
 import { HumanRelayAdapter } from '../../adapters/human-relay-adapter.js';
-import { createLogger } from '../../utils/logger.js';
+import { getLogger } from '../../utils/logger.js';
 import { formatHumanRelay, formatHumanRelayList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
 
-const logger = createLogger();
+const logger = getLogger();
 
 /**
  * 创建 Human Relay 命令组
