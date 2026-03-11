@@ -236,6 +236,150 @@ export {
   type RunAgentLoopStreamParams
 } from './agent/operations/run-agent-loop-stream-command.js';
 
+export {
+  CancelAgentLoopCommand,
+  type CancelAgentLoopParams
+} from './agent/operations/cancel-agent-loop-command.js';
+
+export {
+  PauseAgentLoopCommand,
+  type PauseAgentLoopParams
+} from './agent/operations/pause-agent-loop-command.js';
+
+export {
+  ResumeAgentLoopCommand,
+  type ResumeAgentLoopParams
+} from './agent/operations/resume-agent-loop-command.js';
+
+// Agent Checkpoint Commands
+export {
+  CreateCheckpointCommand,
+  type CreateCheckpointParams
+} from './agent/operations/checkpoints/create-checkpoint-command.js';
+
+export {
+  RestoreCheckpointCommand,
+  type RestoreCheckpointParams
+} from './agent/operations/checkpoints/restore-checkpoint-command.js';
+
+// ============================================================================
+// Agent - Resources
+// ============================================================================
+export {
+  AgentLoopRegistryAPI,
+  type AgentLoopFilter,
+  type AgentLoopSummary
+} from './agent/resources/agent-loop-registry-api.js';
+
+export {
+  AgentLoopCheckpointResourceAPI,
+  type AgentLoopCheckpointFilter,
+  type CheckpointStorage
+} from './agent/resources/checkpoint-resource-api.js';
+
+export {
+  AgentLoopMessageResourceAPI,
+  type AgentLoopMessageFilter,
+  type AgentLoopMessageStats
+} from './agent/resources/message-resource-api.js';
+
+export {
+  AgentLoopVariableResourceAPI,
+  type AgentLoopVariableFilter,
+  type VariableDefinition as AgentLoopVariableDefinition
+} from './agent/resources/variable-resource-api.js';
+
+// ============================================================================
+// Agent - Core Components (from sdk/agent)
+// ============================================================================
+// 实体层
+export {
+  AgentLoopEntity,
+  AgentLoopState,
+  AgentLoopStatus,
+  type ToolCallRecord,
+  type IterationRecord
+} from '../agent/entities/index.js';
+
+// AgentLoopStateSnapshot 从 agent/index.ts 导出
+export { type AgentLoopStateSnapshot } from '../agent/index.js';
+
+// 管理器层
+export {
+  MessageHistoryManager,
+  VariableStateManager,
+  type MessageHistoryState,
+  type VariableState
+} from '../agent/execution/managers/index.js';
+
+// 执行层（工厂和生命周期）
+export {
+  AgentLoopFactory,
+  createAgentLoopCheckpoint,
+  cleanupAgentLoop,
+  cloneAgentLoop,
+  type AgentLoopEntityOptions,
+  type AgentLoopCheckpointDependencies,
+  type AgentLoopCheckpointOptions
+} from '../agent/execution/index.js';
+
+// 协调器层
+export {
+  AgentLoopCoordinator,
+  type AgentLoopExecuteOptions
+} from '../agent/execution/coordinators/index.js';
+
+// 执行器层
+export { AgentLoopExecutor, type AgentLoopStreamEvent } from '../agent/execution/executors/index.js';
+
+// 检查点层
+export {
+  AgentLoopDiffCalculator,
+  AgentLoopDeltaRestorer,
+  AgentLoopCheckpointResolver,
+  AgentLoopCheckpointCoordinator,
+  createCheckpoint,
+  restoreFromCheckpoint,
+  type CheckpointDependencies,
+  type CheckpointOptions,
+  type CreateCheckpointOptions
+} from '../agent/checkpoint/index.js';
+
+// 服务层
+export { AgentLoopRegistry } from '../agent/services/index.js';
+
+// Hook handlers
+export {
+  executeAgentHook,
+  type AgentHookExecutionContext,
+  type AgentHookDefinition,
+  buildAgentHookEvaluationContext,
+  convertToEvaluationContext,
+  type AgentHookEvaluationContext,
+  emitAgentHookEvent,
+  type AgentCustomEventData
+} from '../agent/execution/handlers/index.js';
+
+// ============================================================================
+// SDK Core - Core Components
+// ============================================================================
+// LLM Components
+export { LLMWrapper, ProfileManager } from '../core/llm/index.js';
+export type {
+  MessageStreamEvent,
+  MessageStreamStreamEvent,
+  MessageStreamTextEvent,
+  MessageStreamInputJsonEvent,
+  MessageStreamMessageEvent,
+  MessageStreamFinalMessageEvent,
+  MessageStreamErrorEvent,
+  MessageStreamAbortEvent,
+  MessageStreamEndEvent
+} from '../core/llm/index.js';
+
+// Service Components
+export { ToolService } from '../core/services/tool-service.js';
+
 // ============================================================================
 // Shared - 工具函数
 // ============================================================================

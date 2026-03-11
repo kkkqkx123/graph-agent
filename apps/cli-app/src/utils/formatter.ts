@@ -494,3 +494,49 @@ export function formatHumanRelayList(configs: any[], options: { table?: boolean 
 
   return configs.map(c => formatHumanRelay(c)).join('\n');
 }
+
+/**
+ * 格式化 Agent Loop 信息
+ */
+export function formatAgentLoop(agentLoop: any, options: { verbose?: boolean } = {}): string {
+  if (options.verbose) {
+    return JSON.stringify(agentLoop, null, 2);
+  }
+
+  const id = agentLoop.id || 'N/A';
+  const status = agentLoop.status || agentLoop.success ? 'completed' : 'failed';
+  const iterations = agentLoop.iterations ?? agentLoop.currentIteration ?? 0;
+  const toolCallCount = agentLoop.toolCallCount ?? 0;
+
+  let content = '';
+  if (agentLoop.content) {
+    content = agentLoop.content.length > 50
+      ? agentLoop.content.substring(0, 50) + '...'
+      : agentLoop.content;
+  }
+
+  return `${chalk.blue(id)} - ${formatStatus(status)} - 迭代: ${chalk.cyan(iterations)} - 工具调用: ${chalk.yellow(toolCallCount)}${content ? `\n  结果: ${chalk.gray(content)}` : ''}`;
+}
+
+/**
+ * 格式化 Agent Loop 列表
+ */
+export function formatAgentLoopList(agentLoops: any[], options: { table?: boolean } = {}): string {
+  if (agentLoops.length === 0) {
+    return chalk.yellow('没有找到 Agent Loop');
+  }
+
+  if (options.table) {
+    const headers = ['ID', '状态', '迭代次数', '工具调用'];
+    const rows = agentLoops.map(al => [
+      chalk.gray(al.id?.substring(0, 8) || 'N/A'),
+      formatStatus(al.status || 'unknown'),
+      chalk.cyan(al.iterations ?? al.currentIteration ?? 0),
+      chalk.yellow(al.toolCallCount ?? 0)
+    ]);
+
+    return formatTable(headers, rows);
+  }
+
+  return agentLoops.map(al => formatAgentLoop(al)).join('\n');
+}

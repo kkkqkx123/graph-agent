@@ -19,6 +19,7 @@ import { createMessageCommands } from './commands/message/index.js';
 import { createVariableCommands } from './commands/variable/index.js';
 import { createEventCommands } from './commands/event/index.js';
 import { createHumanRelayCommands } from './commands/human-relay/index.js';
+import { createAgentCommands } from './commands/agent/index.js';
 
 // 创建主程序实例
 const program = new Command();
@@ -76,6 +77,9 @@ program.addCommand(createEventCommands());
 
 // 添加 Human Relay 命令组
 program.addCommand(createHumanRelayCommands());
+
+// 添加 Agent Loop 命令组
+program.addCommand(createAgentCommands());
 
 // 全局错误处理
 program.hook('postAction', (thisCommand) => {

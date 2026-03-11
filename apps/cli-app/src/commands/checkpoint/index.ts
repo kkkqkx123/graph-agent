@@ -3,7 +3,7 @@
  */
 
 import { Command } from 'commander';
-import { CheckpointAdapter } from '../../adapters/checkpoint-adapter.js';
+import { ThreadCheckpointAdapter } from '../../adapters/thread-checkpoint-adapter.js';
 import { getLogger } from '../../utils/logger.js';
 import { formatCheckpoint, formatCheckpointList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
@@ -27,7 +27,7 @@ export function createCheckpointCommands(): Command {
       try {
         logger.info(`正在创建检查点: ${threadId}`);
 
-        const adapter = new CheckpointAdapter();
+        const adapter = new ThreadCheckpointAdapter();
         const checkpoint = await adapter.createCheckpoint(threadId, options.name);
 
         console.log(formatCheckpoint(checkpoint, { verbose: options.verbose }));
@@ -45,7 +45,7 @@ export function createCheckpointCommands(): Command {
       try {
         logger.info(`正在载入检查点: ${checkpointId}`);
 
-        const adapter = new CheckpointAdapter();
+        const adapter = new ThreadCheckpointAdapter();
         await adapter.loadCheckpoint(checkpointId);
       } catch (error) {
         logger.error(`载入检查点失败: ${error instanceof Error ? error.message : String(error)}`);
@@ -61,7 +61,7 @@ export function createCheckpointCommands(): Command {
     .option('-v, --verbose', '详细输出')
     .action(async (options: CommandOptions) => {
       try {
-        const adapter = new CheckpointAdapter();
+        const adapter = new ThreadCheckpointAdapter();
         const checkpoints = await adapter.listCheckpoints();
 
         console.log(formatCheckpointList(checkpoints, { table: options.table }));
@@ -78,7 +78,7 @@ export function createCheckpointCommands(): Command {
     .option('-v, --verbose', '详细输出')
     .action(async (checkpointId, options: CommandOptions) => {
       try {
-        const adapter = new CheckpointAdapter();
+        const adapter = new ThreadCheckpointAdapter();
         const checkpoint = await adapter.getCheckpoint(checkpointId);
 
         console.log(formatCheckpoint(checkpoint, { verbose: options.verbose }));
@@ -102,7 +102,7 @@ export function createCheckpointCommands(): Command {
           return;
         }
 
-        const adapter = new CheckpointAdapter();
+        const adapter = new ThreadCheckpointAdapter();
         await adapter.deleteCheckpoint(checkpointId);
       } catch (error) {
         logger.error(`删除检查点失败: ${error instanceof Error ? error.message : String(error)}`);

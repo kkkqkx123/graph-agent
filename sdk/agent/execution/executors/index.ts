@@ -6,4 +6,4 @@
  * - 管理 Agent 层执行器的导出
  */
 
-export { AgentLoopExecutor } from './agent-loop-executor.js';
+export { AgentLoopExecutor, type AgentLoopStreamEvent } from './agent-loop-executor.js';
