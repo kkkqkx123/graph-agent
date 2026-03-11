@@ -21,6 +21,7 @@ import { createEventCommands } from './commands/event/index.js';
 import { createHumanRelayCommands } from './commands/human-relay/index.js';
 import { createAgentCommands } from './commands/agent/index.js';
 import { createMcpCommands } from './commands/mcp/index.js';
+import { createSkillCommands } from './commands/skill/index.js';
 
 // 创建主程序实例
 const program = new Command();
@@ -84,6 +85,9 @@ program.addCommand(createAgentCommands());
 
 // 添加 MCP 命令组
 program.addCommand(createMcpCommands());
+
+// 添加 Skill 命令组
+program.addCommand(createSkillCommands());
 
 // 全局错误处理
 program.hook('postAction', (thisCommand) => {

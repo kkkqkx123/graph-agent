@@ -20,6 +20,7 @@ import { EventResourceAPI } from '../../graph/resources/events/event-resource-ap
 import { TriggerResourceAPI } from '../../graph/resources/triggers/trigger-resource-api.js';
 import { VariableResourceAPI } from '../../graph/resources/variables/variable-resource-api.js';
 import { MessageResourceAPI } from '../../graph/resources/messages/message-resource-api.js';
+import { SkillRegistryAPI } from '../resources/skills/skill-registry-api.js';
 import { APIDependencyManager } from './sdk-dependencies.js';
 
 /**
@@ -52,6 +53,8 @@ export interface AllAPIs {
   variables: VariableResourceAPI;
   /** 消息API */
   messages: MessageResourceAPI;
+  /** Skill API */
+  skills: SkillRegistryAPI;
 }
 
 /**
@@ -214,6 +217,14 @@ export class APIFactory {
   }
 
   /**
+   * 创建Skill API
+   * @returns SkillRegistryAPI实例
+   */
+  public createSkillAPI(): SkillRegistryAPI {
+    return this.createAPI('skills', SkillRegistryAPI);
+  }
+
+  /**
    * 创建所有API实例
    * @returns 所有API实例
    */
@@ -231,7 +242,8 @@ export class APIFactory {
       events: this.createEventAPI(),
       triggers: this.createTriggerAPI(),
       variables: this.createVariableAPI(),
-      messages: this.createMessageAPI()
+      messages: this.createMessageAPI(),
+      skills: this.createSkillAPI()
     };
   }
 }

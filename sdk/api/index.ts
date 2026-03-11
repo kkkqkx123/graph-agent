@@ -73,6 +73,11 @@ export {
 export { ToolRegistryAPI } from './shared/resources/tools/tool-registry-api.js';
 export { ScriptRegistryAPI } from './shared/resources/scripts/script-registry-api.js';
 export { LLMProfileRegistryAPI as ProfileRegistryAPI } from './shared/resources/llm/llm-profile-registry-api.js';
+export {
+  SkillRegistryAPI,
+  type SkillFilter,
+  type SkillLoadOptions
+} from './shared/resources/skills/skill-registry-api.js';
 
 // 通用资源API基类和工具
 export { GenericResourceAPI } from './shared/resources/generic-resource-api.js';
@@ -379,6 +384,14 @@ export type {
 
 // Service Components
 export { ToolService } from '../core/services/tool-service.js';
+
+// Skill Tools
+export {
+  createGetSkillTool,
+  createGetSkillExecutor,
+  registerGetSkillTool,
+  type GetSkillToolParameters
+} from '../core/tools/get-skill-tool.js';
 
 // ============================================================================
 // Shared - 工具函数

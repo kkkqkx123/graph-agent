@@ -22,6 +22,8 @@ import type { ScriptService } from '../../../core/services/script-service.js';
 import type { NodeTemplateRegistry } from '../../../core/services/node-template-registry.js';
 import type { TriggerTemplateRegistry } from '../../../core/services/trigger-template-registry.js';
 import type { GraphRegistry } from '../../../graph/services/graph-registry.js';
+import type { SkillRegistry } from '../../../core/services/skill-registry.js';
+import type { SkillLoader } from '../../../core/services/skill-loader.js';
 
 /**
  * API依赖管理类
@@ -119,5 +121,19 @@ export class APIDependencyManager {
    */
   getLLMWrapper(): import('../../../core/llm/wrapper.js').LLMWrapper {
     return this.container.get(Identifiers.LLMWrapper);
+  }
+
+  /**
+   * 获取 Skill 注册表
+   */
+  getSkillRegistry(): SkillRegistry {
+    return this.container.get(Identifiers.SkillRegistry);
+  }
+
+  /**
+   * 获取 Skill 加载器
+   */
+  getSkillLoader(): SkillLoader {
+    return this.container.get(Identifiers.SkillLoader);
   }
 }

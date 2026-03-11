@@ -59,6 +59,13 @@ import { UserInteractionResourceAPI, type UserInteractionConfig, type UserIntera
 // Human Relay资源管理
 import { HumanRelayResourceAPI, type HumanRelayConfig, type HumanRelayFilter } from '../../graph/resources/human-relay/human-relay-resource-api.js';
 
+// Skill资源管理
+import {
+  SkillRegistryAPI,
+  type SkillFilter,
+  type SkillLoadOptions
+} from './skills/skill-registry-api.js';
+
 // 依赖管理
 import type { APIDependencyManager } from '../core/sdk-dependencies.js';
 
@@ -78,6 +85,7 @@ export { TriggerTemplateRegistryAPI };
 export { LLMProfileRegistryAPI };
 export { UserInteractionResourceAPI, type UserInteractionConfig, type UserInteractionFilter };
 export { HumanRelayResourceAPI, type HumanRelayConfig, type HumanRelayFilter };
+export { SkillRegistryAPI, type SkillFilter, type SkillLoadOptions };
 
 /**
  * 创建所有资源管理API实例的工厂函数
@@ -97,7 +105,8 @@ export function createResourceAPIs(dependencies: APIDependencyManager) {
     triggerTemplates: new TriggerTemplateRegistryAPI(dependencies),
     profiles: new LLMProfileRegistryAPI(dependencies),
     userInteractions: new UserInteractionResourceAPI(dependencies),
-    humanRelay: new HumanRelayResourceAPI(dependencies)
+    humanRelay: new HumanRelayResourceAPI(dependencies),
+    skills: new SkillRegistryAPI(dependencies)
   };
 }
 

@@ -131,6 +131,13 @@ class SDK {
   }
 
   /**
+   * 获取Skill API
+   */
+  get skills() {
+    return this.factory.createSkillAPI();
+  }
+
+  /**
    * 获取API工厂实例
    */
   getFactory(): APIFactory {
