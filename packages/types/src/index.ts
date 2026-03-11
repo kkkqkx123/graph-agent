@@ -40,3 +40,6 @@ export * from './http.js';
 
 // 存储类型
 export * from './storage/index.js';
+
+// Skill 类型
+export * from './skill.js';

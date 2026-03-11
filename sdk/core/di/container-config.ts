@@ -30,7 +30,8 @@ import { WorkflowRegistry } from '../../graph/services/workflow-registry.js';
 import { ThreadPoolService } from '../../graph/services/thread-pool-service.js';
 
 // 执行层服务 - Core 层通用执行器
-import { LLMExecutor, ToolCallExecutor } from '../executors/index.js';
+import { LLMExecutor, ToolCallExecutor, SkillExecutor } from '../executors/index.js';
+import { SkillRegistry } from '../services/skill-registry.js';
 import { safeEmit } from '../../graph/execution/utils/index.js';
 import { createCheckpoint } from '../../graph/execution/handlers/checkpoint-handlers/checkpoint-utils.js';
 import {
@@ -176,6 +177,36 @@ export function initializeContainer(): Container {
     .toDynamicValue((c: any) => {
       const eventManager = c.get(Identifiers.EventManager);
       return new ErrorService(eventManager);
+    })
+    .inSingletonScope();
+
+  // ============================================================
+  // Skill 层服务
+  // ============================================================
+
+  // SkillRegistry - Skill 注册表，需要配置路径
+  // 使用工厂模式，允许应用层提供配置
+  container.bind(Identifiers.SkillRegistry)
+    .toDynamicValue(() => {
+      // 默认配置：空路径列表
+      // 应用层应该在初始化时重新绑定此服务并提供实际配置
+      const config = {
+        paths: [],
+        autoScan: true,
+        cacheEnabled: true,
+        cacheTTL: 300000
+      };
+      return new SkillRegistry(config);
+    })
+    .inSingletonScope();
+
+  // SkillExecutor - Skill 执行器
+  container.bind(Identifiers.SkillExecutor)
+    .toDynamicValue((c: any) => {
+      return new SkillExecutor(
+        c.get(Identifiers.SkillRegistry),
+        c.get(Identifiers.EventManager)
+      );
     })
     .inSingletonScope();
 

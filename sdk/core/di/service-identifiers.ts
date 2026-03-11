@@ -305,3 +305,19 @@ export const AgentLoopExecutor = Symbol('AgentLoopExecutor') as ServiceIdentifie
  * 协调 AgentLoopEntity 的完整生命周期管理
  */
 export const AgentLoopCoordinator = Symbol('AgentLoopCoordinator') as ServiceIdentifier<any>;
+
+// ============================================================
+// Skill 层服务
+// ============================================================
+
+/**
+ * SkillRegistry - Skill 注册表
+ * 管理 Skill 的发现、解析和查询
+ */
+export const SkillRegistry = Symbol('SkillRegistry') as ServiceIdentifier<any>;
+
+/**
+ * SkillExecutor - Skill 执行器
+ * 负责 Skill 的执行、权限验证和资源访问控制
+ */
+export const SkillExecutor = Symbol('SkillExecutor') as ServiceIdentifier<any>;
