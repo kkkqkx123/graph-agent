@@ -29,7 +29,7 @@ export * from './trigger-template.js';
 export * from './tool/index.js';
 export * from './llm/index.js';
 export * from './message/index.js';
-export * from './code.js';
+export * from './script.js';
 export * from './script-security.js';
 export * from './checkpoint/index.js';
 export * from './storage/index.js';

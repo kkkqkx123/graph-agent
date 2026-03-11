@@ -9,7 +9,7 @@
  */
 
 import { GenericResourceAPI } from '../../shared/resources/generic-resource-api.js';
-import type { AgentLoopCheckpoint, CheckpointMetadata, ID } from '@modular-agent/types';
+import type { AgentLoopCheckpoint, ID } from '@modular-agent/types';
 import { getErrorMessage, isSuccess, getData } from '../../shared/types/execution-result.js';
 import type { AgentLoopEntity } from '../../../agent/entities/agent-loop-entity.js';
 import {

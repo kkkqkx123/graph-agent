@@ -16,7 +16,7 @@ vi.mock('../event/event-builder.js', () => ({
   buildThreadCopyCompletedEvent: vi.fn().mockReturnValue({ type: 'THREAD_COPY_COMPLETED' })
 }));
 
-vi.mock('../event/event-emitter.js', () => ({
+vi.mock('../../../../core/utils/event/event-emitter.js', () => ({
   safeEmit: vi.fn().mockResolvedValue(undefined)
 }));
 
@@ -46,7 +46,7 @@ import {
   buildThreadCopyStartedEvent,
   buildThreadCopyCompletedEvent
 } from '../event/event-builder.js';
-import { safeEmit } from '../event/event-emitter.js';
+import { safeEmit } from '../event/index.js';
 import {
   waitForMultipleThreadsCompleted,
   waitForAnyThreadCompleted,

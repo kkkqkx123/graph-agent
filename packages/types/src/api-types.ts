@@ -6,7 +6,7 @@
 import type { ID, Timestamp } from './common.js';
 import { ThreadStatus } from './thread/index.js';
 import { ToolType } from './tool/index.js';
-import type { ScriptType } from './code.js';
+import type { ScriptType } from './script.js';
 import { CheckpointTriggerType } from './checkpoint/index.js';
 import { EventType } from './events/index.js';
 

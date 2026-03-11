@@ -40,7 +40,6 @@ interface ListenerWrapper<T> {
 class EventManager {
   // 全局事件监听器（对外暴露）
   private globalListeners: Map<string, ListenerWrapper<any>[]> = new Map();
-  private globalWildcardListeners: ListenerWrapper<any>[] = [];
 
   /**
    * 注册事件监听器（全局事件）
@@ -119,36 +118,6 @@ class EventManager {
   }
 
   /**
-   * 注销事件监听器（通过ID）
-   * @param eventType 事件类型
-   * @param listenerId 监听器ID
-   * @returns 是否成功注销
-   */
-  offById(eventType: EventType, listenerId: string): boolean {
-    if (!eventType) {
-      throw new RuntimeValidationError('EventType is required', { field: 'eventType' });
-    }
-
-    const wrappers = this.globalListeners.get(eventType);
-    if (!wrappers) {
-      return false;
-    }
-
-    const index = wrappers.findIndex(w => w.id === listenerId);
-    if (index === -1) {
-      return false;
-    }
-
-    wrappers.splice(index, 1);
-
-    if (wrappers.length === 0) {
-      this.globalListeners.delete(eventType);
-    }
-
-    return true;
-  }
-
-  /**
    * 注销全局事件监听器
    * @param eventType 事件类型
    * @param listener 事件监听器
@@ -199,20 +168,11 @@ class EventManager {
       throw new RuntimeValidationError('Event type is required', { field: 'event.type' });
     }
 
-    // 添加传播控制标志
-    (event as any)._propagationStopped = false;
-
     // 获取监听器
     const wrappers = this.globalListeners.get(event.type) || [];
-    const allWrappers = [...wrappers, ...this.globalWildcardListeners];
 
     // 执行监听器
-    for (const wrapper of allWrappers) {
-      // 检查传播是否被停止
-      if ((event as any)._propagationStopped) {
-        break;
-      }
-
+    for (const wrapper of wrappers) {
       // 检查过滤器
       if (wrapper.filter && !wrapper.filter(event)) {
         continue;
@@ -244,23 +204,6 @@ class EventManager {
         );
       }
     }
-  }
-
-  /**
-   * 停止事件传播
-   * @param event 事件对象
-   */
-  stopPropagation<T extends BaseEvent>(event: T): void {
-    (event as any)._propagationStopped = true;
-  }
-
-  /**
-   * 检查事件传播是否已停止
-   * @param event 事件对象
-   * @returns 是否已停止
-   */
-  isPropagationStopped<T extends BaseEvent>(event: T): boolean {
-    return (event as any)._propagationStopped === true;
   }
 
   /**
@@ -296,19 +239,6 @@ class EventManager {
 
     // 注册包装监听器
     return this.on(eventType, wrapper, options);
-  }
-
-  /**
-   * 清空事件监听器
-   * @param eventType 事件类型（可选），如果不提供则清空所有监听器
-   */
-  clear(eventType?: EventType): void {
-    if (eventType) {
-      this.globalListeners.delete(eventType);
-    } else {
-      this.globalListeners.clear();
-      this.globalWildcardListeners = [];
-    }
   }
 
   /**
@@ -360,23 +290,6 @@ class EventManager {
         }, timeout);
       }
     });
-  }
-
-  /**
-   * 获取监听器数量（仅全局事件）
-   * @param eventType 事件类型（可选）
-   * @returns 监听器数量
-   */
-  getListenerCount(eventType?: EventType): number {
-    if (eventType) {
-      return this.globalListeners.get(eventType)?.length || 0;
-    }
-    let count = 0;
-    for (const wrappers of this.globalListeners.values()) {
-      count += wrappers.length;
-    }
-    count += this.globalWildcardListeners.length;
-    return count;
   }
 
 }

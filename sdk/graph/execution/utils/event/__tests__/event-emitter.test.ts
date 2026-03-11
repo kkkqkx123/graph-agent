@@ -16,7 +16,7 @@ import {
   emitDelayed,
   emitWithRetry,
   emitAndWaitForCallback
-} from '../event-emitter.js';
+} from '../index.js';
 
 describe('EventEmitter', () => {
   let mockEventManager: EventManager;
@@ -29,10 +29,7 @@ describe('EventEmitter', () => {
       on: vi.fn(),
       off: vi.fn(),
       emit: vi.fn(),
-      once: vi.fn(),
-      clear: vi.fn(),
-      stopPropagation: vi.fn(),
-      isPropagationStopped: vi.fn()
+      once: vi.fn()
     } as unknown as EventManager;
 
     // 创建测试用的事件对象

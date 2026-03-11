@@ -9,7 +9,6 @@
 
 import { GenericResourceAPI } from '../../shared/resources/generic-resource-api.js';
 import type { LLMMessage, ID } from '@modular-agent/types';
-import { getErrorMessage, isSuccess, getData } from '../../shared/types/execution-result.js';
 import type { AgentLoopRegistry } from '../../../agent/services/agent-loop-registry.js';
 import { getContainer } from '../../../core/di/index.js';
 import * as Identifiers from '../../../core/di/service-identifiers.js';

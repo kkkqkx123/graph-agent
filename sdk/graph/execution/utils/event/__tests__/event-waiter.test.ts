@@ -33,10 +33,7 @@ describe('EventWaiter', () => {
       on: vi.fn(),
       off: vi.fn(),
       emit: vi.fn(),
-      once: vi.fn(),
-      clear: vi.fn(),
-      stopPropagation: vi.fn(),
-      isPropagationStopped: vi.fn()
+      once: vi.fn()
     } as unknown as EventManager;
   });
 
