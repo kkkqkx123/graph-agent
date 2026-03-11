@@ -4,7 +4,7 @@
  */
 
 import type { ID } from '../../common.js';
-import { ScriptRiskLevel } from '../../script-security.js';
+import { ScriptRiskLevel } from '../../script/script-security.js';
 
 /**
  * 代码节点配置

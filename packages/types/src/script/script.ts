@@ -3,7 +3,7 @@
  * 定义脚本执行的基本信息和配置
  */
 
-import type { ID, Metadata } from './common.js';
+import type { ID, Metadata } from '../common.js';
 
 /**
  * 脚本类型

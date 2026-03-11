@@ -29,10 +29,10 @@ export * from './trigger-template.js';
 export * from './tool/index.js';
 export * from './llm/index.js';
 export * from './message/index.js';
-export * from './script.js';
-export * from './script-security.js';
+export * from './script/index.js';
 export * from './checkpoint/index.js';
 export * from './storage/index.js';
+
 export * from './interaction.js';
 export * from './human-relay.js';
 export * from './result.js';
