@@ -19,6 +19,9 @@ export type { AgentStreamEvent } from './event.js';
 // 执行记录类型
 export type { ToolCallRecord, IterationRecord } from './records.js';
 
+// Hook 类型
+export type { AgentHookType, AgentHook } from './hooks.js';
+
 // 检查点类型（从 checkpoint/agent 模块导入）
 export type {
   AgentLoopDelta,

@@ -4,6 +4,7 @@
 
 import type { ID } from '../common.js';
 import type { Message } from '../message/index.js';
+import type { AgentHook } from './hooks.js';
 
 /**
  * Agent 循环配置
@@ -25,4 +26,6 @@ export interface AgentLoopConfig {
     createCheckpointOnEnd?: boolean;
     /** 是否在出错时创建检查点 */
     createCheckpointOnError?: boolean;
+    /** Hook 配置列表 */
+    hooks?: AgentHook[];
 }

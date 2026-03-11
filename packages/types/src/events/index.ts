@@ -30,6 +30,9 @@ export * from './interaction-events.js';
 // 导出系统事件
 export * from './system-events.js';
 
+// 导出 Agent 相关事件
+export * from './agent-events.js';
+
 // 为了向后兼容，重新导出 EventType
 export { EventType } from './base.js';
 
@@ -104,6 +107,8 @@ import type {
   LLMStreamErrorEvent
 } from './system-events.js';
 
+import type { AgentCustomEvent } from './agent-events.js';
+
 /**
  * 所有事件类型的联合类型
  */
@@ -153,4 +158,5 @@ export type Event =
   | HumanRelayProcessedEvent
   | HumanRelayFailedEvent
   | LLMStreamAbortedEvent
-  | LLMStreamErrorEvent;
+  | LLMStreamErrorEvent
+  | AgentCustomEvent;

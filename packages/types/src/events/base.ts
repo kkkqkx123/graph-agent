@@ -107,7 +107,9 @@ export type EventType =
   /** 动态线程失败 */
   'DYNAMIC_THREAD_FAILED' |
   /** 动态线程已取消 */
-  'DYNAMIC_THREAD_CANCELLED';
+  'DYNAMIC_THREAD_CANCELLED' |
+  /** Agent 自定义事件 */
+  'AGENT_CUSTOM_EVENT';
 
 /**
  * 基础事件类型

@@ -8,17 +8,24 @@
  * - 支持暂停/恢复功能
  * - 支持中断控制（AbortController）
  * - 与 LLMExecutor、ToolCallExecutor 保持一致的架构
+ * - 支持 Hook 机制，在关键执行点触发自定义逻辑
  *
  * 流式事件架构：
  * - LLM 层事件（text, inputJson, message 等）由 MessageStream 产生
  * - Agent 层事件（tool_call_start/end, iteration_complete 等）由本执行器产生
  * - executeStream 返回联合类型 AgentLoopStreamEvent，包含两类事件
+ *
+ * Hook 集成：
+ * - BEFORE_ITERATION / AFTER_ITERATION: 迭代前后
+ * - BEFORE_TOOL_CALL / AFTER_TOOL_CALL: 工具调用前后
+ * - BEFORE_LLM_CALL / AFTER_LLM_CALL: LLM 调用前后
  */
 
 import type {
     AgentLoopConfig,
     AgentLoopResult,
     AgentStreamEvent,
+    AgentCustomEvent,
     LLMMessage
 } from '@modular-agent/types';
 import { AgentStreamEventType, AgentLoopStatus } from '@modular-agent/types';
@@ -30,6 +37,7 @@ import type { MessageStreamEvent } from '../../../core/llm/message-stream-events
 import { isAbortError, checkInterruption } from '@modular-agent/common-utils';
 import { LLMExecutor } from '../../../core/executors/llm-executor.js';
 import { ToolCallExecutor } from '../../../core/executors/tool-call-executor.js';
+import { executeAgentHook } from '../handlers/hook-handlers/index.js';
 
 /**
  * Agent Loop 流式事件
@@ -45,22 +53,43 @@ export type AgentLoopStreamEvent = MessageStreamEvent | AgentStreamEvent;
  *
  * 提供方法来执行 Agent 循环（非流式和流式）
  * 接收 AgentLoopEntity 参数，支持状态追踪和中断控制
- * 
+ *
  * 重构说明：
  * - 复用 LLMExecutor 和 ToolCallExecutor，统一中断控制
+ * - 集成 Hook 机制，支持在关键执行点触发自定义逻辑
  */
 export class AgentLoopExecutor {
     private llmExecutor: LLMExecutor;
     private toolCallExecutor: ToolCallExecutor;
     private toolService: ToolService;  // 保留用于 prepareToolSchemas
+    private emitEvent?: (event: AgentCustomEvent) => Promise<void>;
 
     constructor(
         llmExecutor: LLMExecutor,
-        toolService: ToolService
+        toolService: ToolService,
+        emitEvent?: (event: AgentCustomEvent) => Promise<void>
     ) {
         this.llmExecutor = llmExecutor;
         this.toolService = toolService;
         this.toolCallExecutor = new ToolCallExecutor(toolService);
+        this.emitEvent = emitEvent;
+    }
+
+    /**
+     * 设置事件发射函数
+     * @param emitEvent 事件发射函数
+     */
+    setEventEmitter(emitEvent: (event: AgentCustomEvent) => Promise<void>): void {
+        this.emitEvent = emitEvent;
+    }
+
+    /**
+     * 获取默认的事件发射函数（空操作）
+     */
+    private getDefaultEmitter(): (event: AgentCustomEvent) => Promise<void> {
+        return async (_event: AgentCustomEvent) => {
+            // 默认空操作
+        };
     }
 
     /**
@@ -72,6 +101,7 @@ export class AgentLoopExecutor {
         const config = entity.config;
         const maxIterations = config.maxIterations ?? 10;
         const messageHistory = this.createMessageHistory();
+        const emitEvent = this.emitEvent || this.getDefaultEmitter();
 
         // 初始化消息历史
         this.initializeMessageHistory(messageHistory, config, entity.getMessages());
@@ -103,8 +133,14 @@ export class AgentLoopExecutor {
                     };
                 }
 
+                // ========== BEFORE_ITERATION Hook ==========
+                await executeAgentHook(entity, 'BEFORE_ITERATION', emitEvent);
+
                 // 开始新迭代
                 entity.state.startIteration();
+
+                // ========== BEFORE_LLM_CALL Hook ==========
+                await executeAgentHook(entity, 'BEFORE_LLM_CALL', emitEvent);
 
                 // 使用 LLMExecutor 调用 LLM
                 const llmResult = await this.llmExecutor.executeLLMCall(
@@ -150,6 +186,15 @@ export class AgentLoopExecutor {
 
                 const response = llmResult.result;
 
+                // ========== AFTER_LLM_CALL Hook ==========
+                await executeAgentHook(
+                    entity,
+                    'AFTER_LLM_CALL',
+                    emitEvent,
+                    undefined,
+                    { content: response.content, toolCalls: response.toolCalls }
+                );
+
                 // 记录助手消息
                 const assistantMessage: LLMMessage = {
                     role: 'assistant',
@@ -179,6 +224,10 @@ export class AgentLoopExecutor {
                 // 检查是否需要工具调用
                 if (!response.toolCalls || response.toolCalls.length === 0) {
                     entity.state.endIteration(response.content);
+
+                    // ========== AFTER_ITERATION Hook ==========
+                    await executeAgentHook(entity, 'AFTER_ITERATION', emitEvent);
+
                     entity.state.complete();
                     return {
                         success: true,
@@ -190,12 +239,15 @@ export class AgentLoopExecutor {
 
                 // 执行工具调用
                 if (response.toolCalls && response.toolCalls.length > 0) {
+                    // 保存原始工具调用信息用于 Hook
+                    const originalToolCalls = response.toolCalls;
+
                     // 使用 ToolCallExecutor 执行工具调用
                     const toolResults = await this.toolCallExecutor.executeToolCalls(
-                        response.toolCalls.map((tc: any) => ({
+                        response.toolCalls.map(tc => ({
                             id: tc.id,
-                            name: tc.function.name,
-                            arguments: tc.function.arguments
+                            name: tc.name,
+                            arguments: tc.arguments
                         })),
                         messageHistory as any,  // MessageHistory 实现了 addMessage 方法
                         entity.id,
@@ -205,15 +257,40 @@ export class AgentLoopExecutor {
 
                     // 处理结果
                     for (const result of toolResults) {
+                        // ========== BEFORE_TOOL_CALL Hook ==========
+                        const originalToolCall = originalToolCalls.find(tc => tc.id === result.toolCallId);
+                        const toolCallInfo = {
+                            id: result.toolCallId,
+                            name: originalToolCall?.name || '',
+                            arguments: originalToolCall?.arguments ? 
+                                JSON.parse(originalToolCall.arguments) : {}
+                        };
+                        await executeAgentHook(entity, 'BEFORE_TOOL_CALL', emitEvent, toolCallInfo);
+
                         if (result.success) {
                             entity.state.recordToolCallEnd(result.toolCallId, result.result);
+
+                            // ========== AFTER_TOOL_CALL Hook ==========
+                            await executeAgentHook(entity, 'AFTER_TOOL_CALL', emitEvent, {
+                                ...toolCallInfo,
+                                result: result.result
+                            });
                         } else {
                             entity.state.recordToolCallEnd(result.toolCallId, undefined, result.error);
+
+                            // ========== AFTER_TOOL_CALL Hook (with error) ==========
+                            await executeAgentHook(entity, 'AFTER_TOOL_CALL', emitEvent, {
+                                ...toolCallInfo,
+                                error: result.error
+                            });
                         }
                     }
                 }
 
                 entity.state.endIteration(response.content);
+
+                // ========== AFTER_ITERATION Hook ==========
+                await executeAgentHook(entity, 'AFTER_ITERATION', emitEvent);
             }
 
             // 达到最大迭代次数
@@ -243,6 +320,9 @@ export class AgentLoopExecutor {
      * - LLM 层事件（MessageStreamEvent）：直接转发 MessageStream 的事件
      * - Agent 层事件（AgentStreamEvent）：工具调用、迭代完成等
      *
+     * Hook 集成：
+     * - 在关键执行点触发 Hook（迭代前后、工具调用前后、LLM 调用前后）
+     *
      * @param entity Agent Loop 实体
      * @returns 流式事件生成器
      */
@@ -250,6 +330,7 @@ export class AgentLoopExecutor {
         const config = entity.config;
         const maxIterations = config.maxIterations ?? 10;
         const messageHistory = this.createMessageHistory();
+        const emitEvent = this.emitEvent || this.getDefaultEmitter();
 
         // 初始化消息历史
         this.initializeMessageHistory(messageHistory, config, entity.getMessages());
@@ -287,8 +368,14 @@ export class AgentLoopExecutor {
                     return;
                 }
 
+                // ========== BEFORE_ITERATION Hook ==========
+                await executeAgentHook(entity, 'BEFORE_ITERATION', emitEvent);
+
                 // 开始新迭代
                 entity.state.startIteration();
+
+                // ========== BEFORE_LLM_CALL Hook ==========
+                await executeAgentHook(entity, 'BEFORE_LLM_CALL', emitEvent);
 
                 // 调用 LLM (流式) - 使用 LLMExecutor
                 const llmResult = await this.llmExecutor.executeLLMCall(
@@ -441,6 +528,15 @@ export class AgentLoopExecutor {
 
                 const finalResult = await messageStream.getFinalResult();
 
+                // ========== AFTER_LLM_CALL Hook ==========
+                await executeAgentHook(
+                    entity,
+                    'AFTER_LLM_CALL',
+                    emitEvent,
+                    undefined,
+                    { content: finalResult.content, toolCalls: finalResult.toolCalls }
+                );
+
                 // 记录助手消息
                 const assistantMessage: LLMMessage = {
                     role: 'assistant',
@@ -470,6 +566,10 @@ export class AgentLoopExecutor {
                 // 检查是否需要工具调用
                 if (!finalResult.toolCalls || finalResult.toolCalls.length === 0) {
                     entity.state.endIteration(finalResult.content);
+
+                    // ========== AFTER_ITERATION Hook ==========
+                    await executeAgentHook(entity, 'AFTER_ITERATION', emitEvent);
+
                     entity.state.complete();
                     yield {
                         type: AgentStreamEventType.COMPLETE,
@@ -497,15 +597,24 @@ export class AgentLoopExecutor {
                         return;
                     }
 
+                    const args = typeof toolCall.function.arguments === 'string'
+                        ? JSON.parse(toolCall.function.arguments)
+                        : toolCall.function.arguments;
+
+                    // ========== BEFORE_TOOL_CALL Hook ==========
+                    const toolCallInfo = {
+                        id: toolCall.id,
+                        name: toolCall.function.name,
+                        arguments: args
+                    };
+                    await executeAgentHook(entity, 'BEFORE_TOOL_CALL', emitEvent, toolCallInfo);
+
                     yield {
                         type: AgentStreamEventType.TOOL_CALL_START,
                         timestamp: Date.now(),
                         data: { toolCall }
                     };
 
-                    const args = typeof toolCall.function.arguments === 'string'
-                        ? JSON.parse(toolCall.function.arguments)
-                        : toolCall.function.arguments;
                     entity.state.recordToolCallStart(toolCall.id, toolCall.function.name, args);
 
                     const executionResult = await this.toolService.execute(
@@ -525,6 +634,12 @@ export class AgentLoopExecutor {
                             JSON.stringify(result)
                         );
                         entity.state.recordToolCallEnd(toolCall.id, result);
+
+                        // ========== AFTER_TOOL_CALL Hook ==========
+                        await executeAgentHook(entity, 'AFTER_TOOL_CALL', emitEvent, {
+                            ...toolCallInfo,
+                            result: result
+                        });
 
                         const toolResultMessage: LLMMessage = {
                             role: 'tool',
@@ -561,6 +676,12 @@ export class AgentLoopExecutor {
                         );
                         entity.state.recordToolCallEnd(toolCall.id, undefined, errorMessage);
 
+                        // ========== AFTER_TOOL_CALL Hook (with error) ==========
+                        await executeAgentHook(entity, 'AFTER_TOOL_CALL', emitEvent, {
+                            ...toolCallInfo,
+                            error: errorMessage
+                        });
+
                         const toolResultMessage: LLMMessage = {
                             role: 'tool',
                             toolCallId: toolCall.id,
@@ -583,6 +704,9 @@ export class AgentLoopExecutor {
                 };
 
                 entity.state.endIteration(finalResult.content);
+
+                // ========== AFTER_ITERATION Hook ==========
+                await executeAgentHook(entity, 'AFTER_ITERATION', emitEvent);
             }
 
             // 达到最大迭代次数
