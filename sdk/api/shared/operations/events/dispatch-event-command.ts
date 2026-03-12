@@ -1,22 +1,25 @@
 /**
- * DispatchEventCommand - 分发事件
+ * DispatchEventCommand - Dispatch Event
+ *
+ * Note: This is now a shared command as event dispatching is a cross-module concern
+ * used by Graph, Agent, and other modules.
  */
 
-import { BaseCommand, CommandValidationResult } from '../../../shared/types/command.js';
-import type { APIDependencyManager } from '../../../shared/core/sdk-dependencies.js';
+import { BaseCommand, CommandValidationResult } from '../../types/command.js';
+import type { APIDependencyManager } from '../../core/sdk-dependencies.js';
 import type { BaseEvent } from '@modular-agent/types';
-import { emit } from '../../../../core/utils/event/event-emitter.js';
+import { emit } from '../../../core/utils/event/event-emitter.js';
 
 /**
- * 分发事件参数
+ * Dispatch event parameters
  */
 export interface DispatchEventParams {
-  /** 事件对象 */
+  /** Event object */
   event: BaseEvent;
 }
 
 /**
- * DispatchEventCommand - 分发事件
+ * DispatchEventCommand - Dispatch Event
  */
 export class DispatchEventCommand extends BaseCommand<void> {
   constructor(
@@ -27,15 +30,15 @@ export class DispatchEventCommand extends BaseCommand<void> {
   }
 
   /**
-   * 验证命令参数
+   * Validate command parameters
    */
   validate(): CommandValidationResult {
     const errors: string[] = [];
 
     if (!this.params.event) {
-      errors.push('事件对象不能为空');
+      errors.push('Event object cannot be empty');
     } else if (!this.params.event.type) {
-      errors.push('事件类型不能为空');
+      errors.push('Event type cannot be empty');
     }
 
     return {
@@ -45,7 +48,7 @@ export class DispatchEventCommand extends BaseCommand<void> {
   }
 
   /**
-   * 执行命令
+   * Execute command
    */
   protected async executeInternal(): Promise<void> {
     const eventManager = this.dependencies.getEventManager();

@@ -30,7 +30,7 @@ import { TriggerResourceAPI } from '../../graph/resources/triggers/trigger-resou
 import {
   EventResourceAPI,
   type EventStats
-} from '../../graph/resources/events/event-resource-api.js';
+} from './events/event-resource-api.js';
 
 // 工作流资源管理
 import { WorkflowRegistryAPI } from '../../graph/resources/workflows/workflow-registry-api.js';

@@ -79,6 +79,13 @@ export {
   type SkillLoadOptions
 } from './shared/resources/skills/skill-registry-api.js';
 
+// Event Resource API - Shared across all modules
+export {
+  EventResourceAPI,
+  type EventFilter,
+  type EventStats
+} from './shared/resources/events/event-resource-api.js';
+
 // 通用资源API基类和工具
 export { GenericResourceAPI } from './shared/resources/generic-resource-api.js';
 export {
@@ -105,11 +112,6 @@ export {
   type VariableFilter
 } from './graph/resources/variables/variable-resource-api.js';
 export { TriggerResourceAPI } from './graph/resources/triggers/trigger-resource-api.js';
-export {
-  EventResourceAPI,
-  type EventFilter,
-  type EventStats
-} from './graph/resources/events/event-resource-api.js';
 export {
   UserInteractionResourceAPI,
   type UserInteractionConfig,
@@ -170,10 +172,15 @@ export {
 } from './graph/operations/subscriptions/events/off-event-subscription.js';
 export type { OffEventParams } from './graph/operations/subscriptions/events/off-event-subscription.js';
 
+// ============================================================================
+// Shared - Command类 (有副作用操作)
+// ============================================================================
+
+// Event Commands - Shared across all modules
 export {
   DispatchEventCommand
-} from './graph/operations/events/dispatch-event-command.js';
-export type { DispatchEventParams } from './graph/operations/events/dispatch-event-command.js';
+} from './shared/operations/events/dispatch-event-command.js';
+export type { DispatchEventParams } from './shared/operations/events/dispatch-event-command.js';
 
 // ============================================================================
 // Graph - 构建器

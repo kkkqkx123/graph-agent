@@ -16,7 +16,7 @@ import { NodeRegistryAPI } from '../../graph/resources/templates/node-template-r
 import { TriggerTemplateRegistryAPI } from '../../graph/resources/templates/trigger-template-registry-api.js';
 import { UserInteractionResourceAPI } from '../../graph/resources/user-interaction/user-interaction-resource-api.js';
 import { HumanRelayResourceAPI } from '../../graph/resources/human-relay/human-relay-resource-api.js';
-import { EventResourceAPI } from '../../graph/resources/events/event-resource-api.js';
+import { EventResourceAPI } from '../resources/events/event-resource-api.js';
 import { TriggerResourceAPI } from '../../graph/resources/triggers/trigger-resource-api.js';
 import { VariableResourceAPI } from '../../graph/resources/variables/variable-resource-api.js';
 import { MessageResourceAPI } from '../../graph/resources/messages/message-resource-api.js';

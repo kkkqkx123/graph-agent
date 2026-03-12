@@ -1,26 +1,29 @@
 /**
- * EventResourceAPI - 事件资源管理API
- * 重构版本：移除无效的内存缓存，连接到EventManager
- * 
- * 设计说明：
- * - 事件历史通过监听EventManager实时收集
- * - 提供事件查询、统计、搜索等功能
- * - 事件不可通过API直接创建、更新或删除
+ * EventResourceAPI - Event Resource Management API
+ * Refactored version: Removed invalid memory cache, connected to EventManager
+ *
+ * Design Notes:
+ * - Event history is collected in real-time by listening to EventManager
+ * - Provides event query, statistics, and search functionality
+ * - Events cannot be created, updated, or deleted through API
+ *
+ * Note: This is now a shared API component as events are a cross-module concern
+ * used by Graph, Agent, and other modules.
  */
 
-import { GenericResourceAPI } from '../../../shared/resources/generic-resource-api.js';
+import { GenericResourceAPI } from '../generic-resource-api.js';
 import type { BaseEvent, Event, EventType } from '@modular-agent/types';
 import type { Timestamp } from '@modular-agent/types';
 import { DispatchEventCommand } from '../../operations/events/dispatch-event-command.js';
-import type { APIDependencyManager } from '../../../shared/core/sdk-dependencies.js';
-import { CommandExecutor } from '../../../shared/common/command-executor.js';
+import type { APIDependencyManager } from '../../core/sdk-dependencies.js';
+import { CommandExecutor } from '../../common/command-executor.js';
 
 /**
- * 所有事件类型列表
- * 用于监听所有事件
+ * All event types list
+ * Used to listen to all events
  */
 const ALL_EVENT_TYPES: EventType[] = [
-  // 线程事件
+  // Thread events
   'THREAD_STARTED',
   'THREAD_COMPLETED',
   'THREAD_FAILED',
@@ -34,110 +37,110 @@ const ALL_EVENT_TYPES: EventType[] = [
   'THREAD_JOIN_CONDITION_MET',
   'THREAD_COPY_STARTED',
   'THREAD_COPY_COMPLETED',
-  // 节点事件
+  // Node events
   'NODE_STARTED',
   'NODE_COMPLETED',
   'NODE_FAILED',
   'NODE_CUSTOM_EVENT',
-  // Token事件
+  // Token events
   'TOKEN_LIMIT_EXCEEDED',
   'TOKEN_USAGE_WARNING',
-  // 上下文压缩事件
+  // Context compression events
   'CONTEXT_COMPRESSION_REQUESTED',
   'CONTEXT_COMPRESSION_COMPLETED',
-  // 消息事件
+  // Message events
   'MESSAGE_ADDED',
-  // 工具事件
+  // Tool events
   'TOOL_CALL_STARTED',
   'TOOL_CALL_COMPLETED',
   'TOOL_CALL_FAILED',
   'TOOL_ADDED',
-  // 对话事件
+  // Conversation events
   'CONVERSATION_STATE_CHANGED',
-  // 错误事件
+  // Error events
   'ERROR',
-  // 检查点事件
+  // Checkpoint events
   'CHECKPOINT_CREATED',
   'CHECKPOINT_RESTORED',
   'CHECKPOINT_DELETED',
   'CHECKPOINT_FAILED',
-  // 子图事件
+  // Subgraph events
   'SUBGRAPH_STARTED',
   'SUBGRAPH_COMPLETED',
   'TRIGGERED_SUBGRAPH_STARTED',
   'TRIGGERED_SUBGRAPH_COMPLETED',
   'TRIGGERED_SUBGRAPH_FAILED',
-  // 变量事件
+  // Variable events
   'VARIABLE_CHANGED',
-  // 用户交互事件
+  // User interaction events
   'USER_INTERACTION_REQUESTED',
   'USER_INTERACTION_RESPONDED',
   'USER_INTERACTION_PROCESSED',
   'USER_INTERACTION_FAILED',
-  // HumanRelay事件
+  // HumanRelay events
   'HUMAN_RELAY_REQUESTED',
   'HUMAN_RELAY_RESPONDED',
   'HUMAN_RELAY_PROCESSED',
   'HUMAN_RELAY_FAILED',
-  // LLM流式事件
+  // LLM stream events
   'LLM_STREAM_ABORTED',
   'LLM_STREAM_ERROR',
-  // 动态线程事件
+  // Dynamic thread events
   'DYNAMIC_THREAD_SUBMITTED',
   'DYNAMIC_THREAD_COMPLETED',
   'DYNAMIC_THREAD_FAILED',
   'DYNAMIC_THREAD_CANCELLED',
-  // Agent事件
+  // Agent events
   'AGENT_CUSTOM_EVENT',
-  // Skill事件
+  // Skill events
   'SKILL_LOAD_STARTED',
   'SKILL_LOAD_COMPLETED',
   'SKILL_LOAD_FAILED',
-  // 已废弃的Skill事件
+  // Deprecated Skill events
   'SKILL_EXECUTION_STARTED',
   'SKILL_EXECUTION_COMPLETED',
   'SKILL_EXECUTION_FAILED'
 ];
 
 /**
- * 事件过滤器
+ * Event filter
  */
 export interface EventFilter {
-  /** 事件ID列表 */
+  /** Event ID list */
   ids?: string[];
-  /** 事件类型 */
+  /** Event type */
   eventType?: EventType;
-  /** 线程ID */
+  /** Thread ID */
   threadId?: string;
-  /** 工作流ID */
+  /** Workflow ID */
   workflowId?: string;
-  /** 节点ID */
+  /** Node ID */
   nodeId?: string;
-  /** 创建时间范围 */
+  /** Creation time range */
   timestampRange?: { start?: Timestamp; end?: Timestamp };
 }
 
 /**
- * 事件统计信息
+ * Event statistics
  */
 export interface EventStats {
-  /** 总数 */
+  /** Total count */
   total: number;
-  /** 按类型统计 */
+  /** Statistics by type */
   byType: Record<string, number>;
-  /** 按线程统计 */
+  /** Statistics by thread */
   byThread: Record<string, number>;
-  /** 按工作流统计 */
+  /** Statistics by workflow */
   byWorkflow: Record<string, number>;
 }
 
 /**
- * EventResourceAPI - 事件资源管理API
- * 
- * 重构说明：
- * - 移除了无效的内存缓存
- * - 通过监听EventManager收集事件历史
- * - 提供实时的事件查询和统计功能
+ * EventResourceAPI - Event Resource Management API
+ *
+ * Refactoring Notes:
+ * - Removed invalid memory cache
+ * - Collects event history by listening to EventManager
+ * - Provides real-time event query and statistics functionality
  */
 export class EventResourceAPI extends GenericResourceAPI<BaseEvent, string, EventFilter> {
   private eventHistory: BaseEvent[] = [];
@@ -151,47 +154,47 @@ export class EventResourceAPI extends GenericResourceAPI<BaseEvent, string, Even
     this.dependencies = dependencies;
     this.executor = new CommandExecutor();
     this.maxHistorySize = maxHistorySize;
-    
-    // 设置事件监听器
+
+    // Setup event listeners
     this.setupEventListeners();
   }
 
   /**
-   * 设置事件监听器，收集所有事件到历史记录
+   * Setup event listeners to collect all events into history
    */
   private setupEventListeners(): void {
     const eventManager = this.dependencies.getEventManager();
-    
+
     const listeners: Array<() => void> = [];
-    
-    // 监听所有事件类型
+
+    // Listen to all event types
     for (const eventType of ALL_EVENT_TYPES) {
       const unsubscribe = eventManager.on(eventType, (event: Event) => {
         this.addEventToHistory(event);
       });
       listeners.push(unsubscribe);
     }
-    
-    // 保存取消订阅函数
+
+    // Save unsubscribe function
     this.unsubscribe = () => {
       listeners.forEach(unsub => unsub());
     };
   }
 
   /**
-   * 添加事件到历史记录（内部方法）
+   * Add event to history (internal method)
    */
   private addEventToHistory(event: BaseEvent): void {
     this.eventHistory.push(event);
-    
-    // 自动裁剪历史记录
+
+    // Auto-trim history
     if (this.eventHistory.length > this.maxHistorySize) {
       this.eventHistory = this.eventHistory.slice(-this.maxHistorySize);
     }
   }
 
   /**
-   * 清理资源
+   * Cleanup resources
    */
   public dispose(): void {
     if (this.unsubscribe) {
@@ -202,49 +205,49 @@ export class EventResourceAPI extends GenericResourceAPI<BaseEvent, string, Even
   }
 
   // ============================================================================
-  // 实现抽象方法
+  // Implement abstract methods
   // ============================================================================
 
   /**
-   * 获取单个事件
-   * @param id 事件ID
-   * @returns 事件对象，如果不存在则返回null
+   * Get single event
+   * @param id Event ID
+   * @returns Event object, or null if not found
    */
   protected async getResource(id: string): Promise<BaseEvent | null> {
     return this.eventHistory.find(event => `${event.type}-${event.threadId}-${event.timestamp}` === id) || null;
   }
 
   /**
-   * 获取所有事件
-   * @returns 事件数组
+   * Get all events
+   * @returns Event array
    */
   protected async getAllResources(): Promise<BaseEvent[]> {
     return [...this.eventHistory];
   }
 
   /**
-   * 创建事件（事件由系统生成，此方法抛出错误）
+   * Create event (events are generated by system, this method throws error)
    */
   protected async createResource(resource: BaseEvent): Promise<void> {
     throw new Error('Events cannot be created through API, they are generated by the system');
   }
 
   /**
-   * 更新事件（事件不可更新，此方法抛出错误）
+   * Update event (events cannot be updated, this method throws error)
    */
   protected async updateResource(id: string, updates: Partial<BaseEvent>): Promise<void> {
     throw new Error('Events cannot be updated through API');
   }
 
   /**
-   * 删除事件（事件不可删除，此方法抛出错误）
+   * Delete event (events cannot be deleted, this method throws error)
    */
   protected async deleteResource(id: string): Promise<void> {
     throw new Error('Events cannot be deleted through API');
   }
 
   /**
-   * 应用过滤条件
+   * Apply filter conditions
    */
   protected applyFilter(events: BaseEvent[], filter: EventFilter): BaseEvent[] {
     return events.filter(event => {
@@ -271,12 +274,12 @@ export class EventResourceAPI extends GenericResourceAPI<BaseEvent, string, Even
   }
 
   // ============================================================================
-  // 事件特定方法
+  // Event-specific methods
   // ============================================================================
 
   /**
-   * 分发事件到系统总线
-   * @param event 事件对象
+   * Dispatch event to system bus
+   * @param event Event object
    */
   async dispatch(event: BaseEvent): Promise<void> {
     const command = new DispatchEventCommand({ event }, this.dependencies);
@@ -284,14 +287,14 @@ export class EventResourceAPI extends GenericResourceAPI<BaseEvent, string, Even
   }
 
   /**
-   * 获取事件列表
-   * @param filter 过滤条件
-   * @returns 事件数组
+   * Get event list
+   * @param filter Filter conditions
+   * @returns Event array
    */
   async getEvents(filter?: EventFilter): Promise<BaseEvent[]> {
     let events = this.eventHistory;
 
-    // 应用过滤条件
+    // Apply filter conditions
     if (filter) {
       events = this.applyFilter(events, filter);
     }
@@ -300,14 +303,14 @@ export class EventResourceAPI extends GenericResourceAPI<BaseEvent, string, Even
   }
 
   /**
-   * 获取事件统计信息
-   * @param filter 过滤条件
-   * @returns 统计信息
+   * Get event statistics
+   * @param filter Filter conditions
+   * @returns Statistics
    */
   async getEventStats(filter?: EventFilter): Promise<EventStats> {
     let events = this.eventHistory;
 
-    // 应用过滤条件
+    // Apply filter conditions
     if (filter) {
       events = this.applyFilter(events, filter);
     }
@@ -320,13 +323,13 @@ export class EventResourceAPI extends GenericResourceAPI<BaseEvent, string, Even
     };
 
     for (const event of events) {
-      // 按类型统计
+      // Statistics by type
       stats.byType[event.type] = (stats.byType[event.type] || 0) + 1;
 
-      // 按线程统计
+      // Statistics by thread
       stats.byThread[event.threadId] = (stats.byThread[event.threadId] || 0) + 1;
 
-      // 按工作流统计
+      // Statistics by workflow
       if (event.workflowId) {
         stats.byWorkflow[event.workflowId] = (stats.byWorkflow[event.workflowId] || 0) + 1;
       }
@@ -336,41 +339,41 @@ export class EventResourceAPI extends GenericResourceAPI<BaseEvent, string, Even
   }
 
   /**
-   * 获取最近事件
-   * @param count 事件数量
-   * @param filter 过滤条件
-   * @returns 最近事件数组
+   * Get recent events
+   * @param count Event count
+   * @param filter Filter conditions
+   * @returns Recent event array
    */
   async getRecentEvents(count: number, filter?: EventFilter): Promise<BaseEvent[]> {
     let events = this.eventHistory;
 
-    // 应用过滤条件
+    // Apply filter conditions
     if (filter) {
       events = this.applyFilter(events, filter);
     }
 
-    // 按时间戳降序排序，返回最近的count个事件
+    // Sort by timestamp descending, return the most recent count events
     return events
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, count);
   }
 
   /**
-   * 搜索事件
-   * @param query 搜索关键词
-   * @param filter 过滤条件
-   * @returns 匹配的事件数组
+   * Search events
+   * @param query Search keyword
+   * @param filter Filter conditions
+   * @returns Matching event array
    */
   async searchEvents(query: string, filter?: EventFilter): Promise<BaseEvent[]> {
     let events = this.eventHistory;
 
-    // 应用过滤条件
+    // Apply filter conditions
     if (filter) {
       events = this.applyFilter(events, filter);
     }
 
     return events.filter(event => {
-      // 搜索事件类型、线程ID、工作流ID等
+      // Search event type, thread ID, workflow ID, etc.
       const searchableFields = [
         event.type,
         event.threadId,
@@ -389,15 +392,15 @@ export class EventResourceAPI extends GenericResourceAPI<BaseEvent, string, Even
   }
 
   /**
-   * 获取事件时间线
-   * @param threadId 线程ID
-   * @param workflowId 工作流ID
-   * @returns 时间线事件数组
+   * Get event timeline
+   * @param threadId Thread ID
+   * @param workflowId Workflow ID
+   * @returns Timeline event array
    */
   async getEventTimeline(threadId?: string, workflowId?: string): Promise<BaseEvent[]> {
     let events = this.eventHistory;
 
-    // 应用过滤条件
+    // Apply filter conditions
     if (threadId) {
       events = events.filter(event => event.threadId === threadId);
     }
@@ -405,13 +408,13 @@ export class EventResourceAPI extends GenericResourceAPI<BaseEvent, string, Even
       events = events.filter(event => event.workflowId === workflowId);
     }
 
-    // 按时间戳升序排序，形成时间线
+    // Sort by timestamp ascending to form timeline
     return events.sort((a, b) => a.timestamp - b.timestamp);
   }
 
   /**
-   * 获取事件类型统计
-   * @returns 事件类型统计
+   * Get event type statistics
+   * @returns Event type statistics
    */
   async getEventTypeStatistics(): Promise<Record<string, number>> {
     const stats: Record<string, number> = {};
@@ -424,8 +427,8 @@ export class EventResourceAPI extends GenericResourceAPI<BaseEvent, string, Even
   }
 
   /**
-   * 获取线程事件统计
-   * @returns 线程事件统计
+   * Get thread event statistics
+   * @returns Thread event statistics
    */
   async getThreadEventStatistics(): Promise<Record<string, number>> {
     const stats: Record<string, number> = {};
@@ -438,8 +441,8 @@ export class EventResourceAPI extends GenericResourceAPI<BaseEvent, string, Even
   }
 
   /**
-   * 获取工作流事件统计
-   * @returns 工作流事件统计
+   * Get workflow event statistics
+   * @returns Workflow event statistics
    */
   async getWorkflowEventStatistics(): Promise<Record<string, number>> {
     const stats: Record<string, number> = {};
@@ -454,23 +457,23 @@ export class EventResourceAPI extends GenericResourceAPI<BaseEvent, string, Even
   }
 
   /**
-   * 清空事件历史
+   * Clear event history
    */
   async clearEventHistory(): Promise<void> {
     this.eventHistory = [];
   }
 
   /**
-   * 获取事件历史大小
-   * @returns 事件数量
+   * Get event history size
+   * @returns Event count
    */
   async getEventHistorySize(): Promise<number> {
     return this.eventHistory.length;
   }
 
   /**
-   * 获取事件时间范围
-   * @returns 时间范围
+   * Get event time range
+   * @returns Time range
    */
   async getEventTimeRange(): Promise<{ start: number; end: number } | null> {
     if (this.eventHistory.length === 0) {
