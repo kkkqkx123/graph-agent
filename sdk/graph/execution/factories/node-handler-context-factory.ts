@@ -37,6 +37,8 @@ export interface NodeHandlerContextFactoryConfig {
   toolService?: any;
   /** Agent 循环执行器工厂（可选） */
   agentLoopExecutorFactory?: any;
+  /** 线程注册表（可选） */
+  threadRegistry?: any;
 }
 
 /**
@@ -64,7 +66,7 @@ export class NodeHandlerContextFactory {
         return this.createUserInteractionContext(node, threadEntity);
 
       case 'CONTEXT_PROCESSOR':
-        return this.createContextProcessorContext();
+        return this.createContextProcessorContext(threadEntity);
 
       case 'LLM':
         return this.createLLMContext();
@@ -102,9 +104,11 @@ export class NodeHandlerContextFactory {
   /**
    * 创建上下文处理器节点上下文
    */
-  private createContextProcessorContext(): any {
+  private createContextProcessorContext(threadEntity: ThreadEntity): any {
     return {
-      conversationManager: this.config.conversationManager
+      conversationManager: this.config.conversationManager,
+      threadEntity: threadEntity,
+      threadRegistry: this.config.threadRegistry
     };
   }
 

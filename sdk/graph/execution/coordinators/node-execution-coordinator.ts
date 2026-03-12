@@ -135,7 +135,8 @@ export class NodeExecutionCoordinator {
       humanRelayHandler: config.humanRelayHandler,
       toolContextManager: config.toolContextManager,
       toolService: config.toolService,
-      agentLoopExecutorFactory: config.agentLoopExecutorFactory
+      agentLoopExecutorFactory: config.agentLoopExecutorFactory,
+      threadRegistry: config.threadRegistry
     });
   }
 

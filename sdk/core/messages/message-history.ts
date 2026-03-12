@@ -478,7 +478,7 @@ export class MessageHistory {
    * 初始化消息列表
    * @param initialMessages 初始消息列表
    */
-  initialize(initialMessages: LLMMessage[] = []): void {
+  initializeHistory(initialMessages: LLMMessage[] = []): void {
     this.messages = MessageArrayUtils.cloneMessages(initialMessages);
     this.syncMarkMapFromMessages();
   }

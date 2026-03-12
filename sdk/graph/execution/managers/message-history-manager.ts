@@ -1,172 +1,179 @@
 /**
  * MessageHistoryManager - 消息历史管理器
- * 管理单个线程的消息历史和批次快照
+ * 扩展 ConversationManager，增加 Graph 特有功能（工具可见性等）
  *
  * 核心职责：
- * 1. 管理线程的消息历史
- * 2. 支持批次级别的消息版本控制
- * 3. 提供消息历史的查询和清理功能
- * 4. 支持状态快照和恢复（用于检查点）
- *
- * 设计原则：
- * - 线程隔离：每个线程独立持有自己的消息管理器实例
- * - 批次版本控制：支持不同批次的消息快照
- * - 实现 LifecycleCapable 接口，支持快照和恢复
+ * 1. 管理线程的消息历史（继承自 ConversationManager）
+ * 2. Token 统计和事件触发（继承自 ConversationManager）
+ * 3. 工具描述消息管理（Graph 特有）
+ * 4. 批次级别的消息版本控制（支持快照和恢复）
  */
 
-import type { LLMMessage } from '@modular-agent/types';
-import { now } from '@modular-agent/common-utils';
-import type { LifecycleCapable } from '../../../core/managers/lifecycle-capable.js';
+import type { LLMMessage, Tool } from '@modular-agent/types';
+import {
+  ConversationManager,
+  type ConversationManagerConfig
+} from '../../../core/managers/conversation-manager.js';
+import { generateToolListDescription } from '../../../core/utils/tools/tool-description-generator.js';
+import type { ToolService } from '../../../core/services/tool-service.js';
 
 /**
- * 批次消息快照
+ * 工具可用性集合
  */
-interface BatchSnapshot {
-  batchId: number;
-  messages: LLMMessage[];
-  timestamp: number;
+export interface AvailableTools {
+  initial: Set<string>;
+  dynamic: Set<string>;
 }
 
 /**
- * 消息历史状态接口
+ * MessageHistoryManager 配置
  */
-export interface MessageHistoryState {
-  messages: LLMMessage[];
-  batchSnapshots: Map<number, BatchSnapshot>;
+export interface MessageHistoryManagerConfig extends ConversationManagerConfig {
+  /** 工具服务 */
+  toolService?: ToolService;
+  /** 可用工具集合 */
+  availableTools?: AvailableTools;
 }
 
 /**
- * 消息历史管理器类
+ * MessageHistoryManager 类
  */
-export class MessageHistoryManager implements LifecycleCapable<MessageHistoryState> {
-  private messages: LLMMessage[] = [];
-  private batchSnapshots: Map<number, BatchSnapshot> = new Map();
-
-  constructor(private threadId: string) { }
+export class MessageHistoryManager extends ConversationManager {
+  private toolService?: ToolService;
+  private availableTools?: AvailableTools;
 
   /**
-   * 获取线程ID
-   * @returns 线程ID
+   * 构造函数
+   * @param config 配置选项
    */
-  getThreadId(): string {
-    return this.threadId;
+  constructor(config: MessageHistoryManagerConfig) {
+    super(config);
+    this.toolService = config.toolService;
+    this.availableTools = config.availableTools;
   }
+
+  // ============================================================
+  // 工具描述消息管理（Graph 特有）
+  // ============================================================
+
+  /**
+   * 检查是否已经存在工具描述消息
+   * @returns 是否存在工具描述消息
+   */
+  private hasToolDescriptionMessage(): boolean {
+    const allMessages = this.getAllMessages();
+    return allMessages.some(msg =>
+      msg.role === 'system' &&
+      typeof msg.content === 'string' &&
+      msg.content.startsWith('可用工具:')
+    );
+  }
+
+  /**
+   * 获取初始可用工具的描述消息（不包含 dynamicTools）
+   * @returns 工具描述消息，如果没有初始工具则返回 null
+   */
+  getInitialToolDescriptionMessage(): LLMMessage | null {
+    if (!this.availableTools || !this.toolService) {
+      return null;
+    }
+
+    // 只使用 initial 工具集合
+    const initialToolIds = Array.from(this.availableTools.initial);
+    if (initialToolIds.length === 0) {
+      return null;
+    }
+
+    // 获取工具对象列表
+    const tools = initialToolIds
+      .map(id => {
+        try {
+          return this.toolService!.getTool(id);
+        } catch (e) {
+          return null;
+        }
+      })
+      .filter((t): t is Tool => !!t);
+
+    if (tools.length === 0) {
+      return null;
+    }
+
+    // 使用工具描述生成器生成工具列表描述
+    const toolDescriptions = generateToolListDescription(tools, 'list');
+
+    if (toolDescriptions.length > 0) {
+      return {
+        role: 'system',
+        content: `可用工具:\n${toolDescriptions}`
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * 在新批次开始时添加初始工具描述（如果不存在）
+   * @param boundaryIndex 批次边界索引
+   */
+  startNewBatchWithInitialTools(boundaryIndex?: number): number {
+    // 开始新批次
+    const newBatch = this.startNewBatch(boundaryIndex);
+
+    // 检查是否已存在工具描述消息
+    if (!this.hasToolDescriptionMessage()) {
+      // 添加初始工具描述消息
+      const toolDescMessage = this.getInitialToolDescriptionMessage();
+      if (toolDescMessage) {
+        this.addMessage(toolDescMessage);
+      }
+    }
+
+    return newBatch;
+  }
+
+  /**
+   * 执行消息操作并触发完成事件
+   * 增加图特有的工具可见性管理
+   * @param operation 消息操作配置
+   * @returns 操作结果
+   */
+  override async executeMessageOperation(
+    operation: any,
+    onAfterOperation?: (result: any) => Promise<void>
+  ): Promise<any> {
+    const result = await super.executeMessageOperation(operation, onAfterOperation);
+
+    // 如果操作可能涉及可见范围变化（如截断或清空），尝试重新添加工具描述
+    if (operation.operation === 'TRUNCATE' || operation.operation === 'CLEAR') {
+      if (!this.hasToolDescriptionMessage()) {
+        const toolDescMessage = this.getInitialToolDescriptionMessage();
+        if (toolDescMessage) {
+          this.addMessage(toolDescMessage);
+        }
+      }
+    }
+
+    return result;
+  }
+
+  // ============================================================
+  // 兼容旧接口及额外功能
+  // ============================================================
 
   /**
    * 保存消息历史
    * @param messages 消息数组
    */
   saveMessages(messages: LLMMessage[]): void {
-    // 深度复制消息数组，避免外部修改
-    this.messages = messages.map(msg => ({ ...msg }));
+    this.initializeHistory(messages);
   }
 
   /**
    * 获取消息历史
    * @returns 消息数组的副本
    */
-  getMessages(): LLMMessage[] {
-    return this.messages.map(msg => ({ ...msg }));
-  }
-
-  /**
-   * 记录批次消息快照
-   * @param batchId 批次ID
-   * @param messages 当前消息列表
-   */
-  saveBatchSnapshot(batchId: number, messages: LLMMessage[]): void {
-    this.batchSnapshots.set(batchId, {
-      batchId,
-      messages: messages.map(msg => ({ ...msg })),
-      timestamp: now()
-    });
-  }
-
-  /**
-   * 获取批次消息快照
-   * @param batchId 批次ID
-   * @returns 快照中的消息副本，如果不存在则返回 undefined
-   */
-  getBatchSnapshot(batchId: number): LLMMessage[] | undefined {
-    const snapshot = this.batchSnapshots.get(batchId);
-    if (!snapshot) {
-      return undefined;
-    }
-    return snapshot.messages.map(msg => ({ ...msg }));
-  }
-
-  /**
-   * 清理指定线程的批次快照（用于回退操作）
-   * @param keepBatchId 保留此批次及之前的快照，删除之后的快照
-   */
-  cleanupBatchSnapshotsAfter(keepBatchId: number): void {
-    const batchesToRemove: number[] = [];
-    for (const [batchId] of this.batchSnapshots) {
-      if (batchId > keepBatchId) {
-        batchesToRemove.push(batchId);
-      }
-    }
-    batchesToRemove.forEach(batchId => this.batchSnapshots.delete(batchId));
-  }
-
-  /**
-   * 获取统计信息
-   * @returns 统计信息
-   */
-  getStats(): {
-    totalMessages: number;
-    totalBatchSnapshots: number;
-  } {
-    return {
-      totalMessages: this.messages.length,
-      totalBatchSnapshots: this.batchSnapshots.size
-    };
-  }
-
-  /**
-   * 创建状态快照
-   * @returns 消息历史状态快照
-   */
-  createSnapshot(): MessageHistoryState {
-    return {
-      messages: this.getMessages(),
-      batchSnapshots: new Map(
-        Array.from(this.batchSnapshots.entries()).map(([batchId, snapshot]) => [
-          batchId,
-          {
-            batchId: snapshot.batchId,
-            messages: snapshot.messages.map(msg => ({ ...msg })),
-            timestamp: snapshot.timestamp
-          }
-        ])
-      )
-    };
-  }
-
-  /**
-   * 从快照恢复状态
-   * @param snapshot 消息历史状态快照
-   */
-  restoreFromSnapshot(snapshot: MessageHistoryState): void {
-    this.messages = snapshot.messages.map(msg => ({ ...msg }));
-    this.batchSnapshots = new Map(
-      Array.from(snapshot.batchSnapshots.entries()).map(([batchId, snapshot]) => [
-        batchId,
-        {
-          batchId: snapshot.batchId,
-          messages: snapshot.messages.map(msg => ({ ...msg })),
-          timestamp: snapshot.timestamp
-        }
-      ])
-    );
-  }
-
-  /**
-   * 清理资源
-   * 清空消息历史和批次快照
-   */
-  cleanup(): void {
-    this.messages = [];
-    this.batchSnapshots.clear();
+  getHistoryMessages(): LLMMessage[] {
+    return this.getAllMessages();
   }
 }

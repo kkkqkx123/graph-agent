@@ -8,7 +8,7 @@ import type { Thread, ThreadStatus, LLMMessage } from '@modular-agent/types';
 import type { PreprocessedGraph } from '@modular-agent/types';
 import type { SubgraphContext } from './execution-state.js';
 import { ExecutionState } from './execution-state.js';
-import type { ConversationManager } from '../../core/managers/conversation-manager.js';
+import type { MessageHistoryManager } from '../execution/managers/message-history-manager.js';
 
 /**
  * ThreadEntity - Thread实体
@@ -17,29 +17,29 @@ import type { ConversationManager } from '../../core/managers/conversation-manag
 export class ThreadEntity {
   // 公开访问thread对象，用于兼容现有代码
   readonly thread: Thread;
-  
+
   // 暴露id属性用于API访问
   readonly id: string;
-  
+
   // 消息管理
   messages: LLMMessage[] = [];
-  
+
   // 触发器管理
   triggerManager?: any;
-  
+
   // 变量存储
   private variables: Map<string, any> = new Map();
-  
+
   // 中止控制器
   abortController?: AbortController;
 
   // 对话管理器
-  conversationManager?: ConversationManager;
+  conversationManager?: MessageHistoryManager;
 
   constructor(
     thread: Thread,
     private readonly executionState: ExecutionState,
-    conversationManager?: ConversationManager
+    conversationManager?: MessageHistoryManager
   ) {
     this.thread = thread;
     this.id = thread.id;
@@ -413,11 +413,11 @@ export class ThreadEntity {
 
   // ========== 对话管理器访问 ==========
 
-  getConversationManager(): ConversationManager | undefined {
+  getConversationManager(): MessageHistoryManager | undefined {
     return this.conversationManager;
   }
 
-  setConversationManager(conversationManager: ConversationManager): void {
+  setConversationManager(conversationManager: MessageHistoryManager): void {
     this.conversationManager = conversationManager;
   }
 

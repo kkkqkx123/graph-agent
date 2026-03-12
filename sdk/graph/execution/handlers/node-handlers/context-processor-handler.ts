@@ -49,7 +49,11 @@ export interface ContextProcessorExecutionResult {
  */
 export interface ContextProcessorHandlerContext {
   /** 对话管理器 */
-  conversationManager: any; // 简化类型，实际应该使用具体的ConversationManager类型
+  conversationManager: any;
+  /** 线程实体（可选，用于识别父线程） */
+  threadEntity?: any;
+  /** 线程注册表（可选，用于获取父线程实体） */
+  threadRegistry?: any;
   /** 工具可见性协调器（可选） */
   toolVisibilityCoordinator?: any;
   /** 线程上下文（可选，用于刷新工具可见性声明） */
@@ -77,12 +81,29 @@ export async function contextProcessorHandler(
       throw new RuntimeValidationError('operationConfig is required', { operation: 'handle', field: 'operationConfig' });
     }
 
-    // 2. 获取ConversationManager
-    const conversationManager = context.conversationManager;
+    // 2. 获取目标ConversationManager
+    let targetConversationManager = context.conversationManager;
+
+    if (config.operationOptions?.target === 'parent') {
+      const threadEntity = context.threadEntity;
+      const threadRegistry = context.threadRegistry;
+
+      if (threadEntity && threadRegistry && threadEntity.getParentThreadId()) {
+        const parentThreadEntity = threadRegistry.get(threadEntity.getParentThreadId());
+        if (parentThreadEntity) {
+          targetConversationManager = parentThreadEntity.getConversationManager();
+          logger.info(`Targeting parent thread: ${threadEntity.getParentThreadId()} for context processing`, {
+            nodeId: node.id,
+            threadId: thread.id,
+            parentThreadId: threadEntity.getParentThreadId()
+          });
+        }
+      }
+    }
 
     // 3. 获取当前消息状态
-    const allMessages = conversationManager.getAllMessages();
-    const markMap = conversationManager.getIndexManager().getMarkMap();
+    const allMessages = targetConversationManager.getAllMessages();
+    const markMap = targetConversationManager.getMarkMap();
 
     // 4. 构建操作上下文
     const operationContext: MessageOperationContext = {
@@ -91,11 +112,10 @@ export async function contextProcessorHandler(
       options: config.operationOptions
     };
 
-    // 5. 执行消息操作，并在操作后刷新工具可见性声明
-    const result = await executeOperation(
-      operationContext,
+    // 5. 执行消息操作，由 ConversationManager/MessageHistoryManager 内部处理刷新、事件等
+    const result = await targetConversationManager.executeMessageOperation(
       config.operationConfig,
-      async (operationResult: MessageOperationResult) => {
+      async () => {
         // 操作后回调：刷新工具可见性声明
         if (context.toolVisibilityCoordinator && context.threadContext) {
           try {
@@ -109,29 +129,15 @@ export async function contextProcessorHandler(
                 nodeId: node.id,
                 threadId: thread.id,
                 workflowId: thread.workflowId
-              },
-              undefined,
-              error instanceof Error ? error : new Error(String(error))
+              }
             );
           }
         }
       }
     );
 
-    // 6. 更新ConversationManager
-    // 清空当前消息
-    conversationManager.cleanup();
-
-    // 重新添加所有消息
-    for (const msg of result.messages) {
-      await conversationManager.addMessage(msg);
-    }
-
-    // 更新标记映射
-    conversationManager.getIndexManager().setMarkMap(result.markMap);
-
-    // 7. 获取处理后的消息数量
-    const messageCount = conversationManager.getMessages().length;
+    // 6. 获取处理后的消息数量
+    const messageCount = targetConversationManager.getMessages().length;
 
     const executionTime = now() - startTime;
 

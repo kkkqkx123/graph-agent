@@ -15,6 +15,9 @@ import type { GraphRegistry } from '../services/graph-registry.js';
 import { getContainer } from '../../core/di/index.js';
 import * as Identifiers from '../../core/di/service-identifiers.js';
 import { createContextualLogger } from '../../utils/contextual-logger.js';
+import type { EventManager } from '../../core/services/event-manager.js';
+import type { ToolService } from '../../core/services/tool-service.js';
+import { MessageHistoryManager } from './managers/message-history-manager.js';
 
 const logger = createContextualLogger();
 
@@ -48,6 +51,22 @@ export class ThreadBuilder {
   private getVariableStateManager(): any {
     const container = getContainer();
     return container.get(Identifiers.VariableStateManager);
+  }
+
+  /**
+   * 获取事件管理器（从DI容器）
+   */
+  private getEventManager(): EventManager {
+    const container = getContainer();
+    return container.get(Identifiers.EventManager);
+  }
+
+  /**
+   * 获取工具服务（从DI容器）
+   */
+  private getToolService(): ToolService {
+    const container = getContainer();
+    return container.get(Identifiers.ToolService);
   }
 
   /**
@@ -132,8 +151,20 @@ export class ThreadBuilder {
     // 步骤5：创建 ExecutionState
     const executionState = new ExecutionState();
 
-    // 步骤6：创建 ThreadEntity
-    const threadEntity = new ThreadEntity(thread, executionState);
+    // 步骤6：创建 MessageHistoryManager
+    const conversationManager = new MessageHistoryManager({
+      eventManager: this.getEventManager(),
+      toolService: this.getToolService(),
+      threadId: thread.id,
+      workflowId: preprocessedGraph.workflowId,
+      availableTools: {
+        initial: preprocessedGraph.availableTools?.initial || new Set(),
+        dynamic: new Set()
+      }
+    });
+
+    // 步骤7：创建 ThreadEntity
+    const threadEntity = new ThreadEntity(thread, executionState, conversationManager);
 
     return threadEntity;
   }
@@ -198,8 +229,15 @@ export class ThreadBuilder {
     // 创建 ExecutionState
     const executionState = new ExecutionState();
 
+    // 创建 MessageHistoryManager (从源克隆)
+    let conversationManager: MessageHistoryManager | undefined;
+    if (sourceThreadEntity.getConversationManager()) {
+      conversationManager = sourceThreadEntity.getConversationManager()!.clone() as MessageHistoryManager;
+      conversationManager.setContext(copiedThread.workflowId, copiedThread.id);
+    }
+
     // 创建并返回 ThreadEntity
-    const copiedThreadEntity = new ThreadEntity(copiedThread, executionState);
+    const copiedThreadEntity = new ThreadEntity(copiedThread, executionState, conversationManager);
 
     return copiedThreadEntity;
   }
@@ -258,8 +296,15 @@ export class ThreadBuilder {
     // 创建 ExecutionState
     const executionState = new ExecutionState();
 
+    // 创建 MessageHistoryManager (从源克隆)
+    let conversationManager: MessageHistoryManager | undefined;
+    if (parentThreadEntity.getConversationManager()) {
+      conversationManager = parentThreadEntity.getConversationManager()!.clone() as MessageHistoryManager;
+      conversationManager.setContext(forkThread.workflowId, forkThread.id);
+    }
+
     // 创建并返回 ThreadEntity
-    const forkThreadEntity = new ThreadEntity(forkThread, executionState);
+    const forkThreadEntity = new ThreadEntity(forkThread, executionState, conversationManager);
 
     return forkThreadEntity;
   }

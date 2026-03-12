@@ -107,7 +107,9 @@ import type {
   ErrorEvent,
   VariableChangedEvent,
   LLMStreamAbortedEvent,
-  LLMStreamErrorEvent
+  LLMStreamErrorEvent,
+  ContextCompressionRequestedEvent,
+  ContextCompressionCompletedEvent
 } from './system-events.js';
 
 import type { AgentCustomEvent } from './agent-events.js';
@@ -167,6 +169,8 @@ export type Event =
   | HumanRelayFailedEvent
   | LLMStreamAbortedEvent
   | LLMStreamErrorEvent
+  | ContextCompressionRequestedEvent
+  | ContextCompressionCompletedEvent
   | AgentCustomEvent
   | SkillExecutionStartedEvent
   | SkillExecutionCompletedEvent

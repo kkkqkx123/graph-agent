@@ -13,164 +13,110 @@
  * - 快照/恢复
  */
 
-import type { LLMMessage, LLMUsage, TokenUsageHistory, TokenUsageStats } from '@modular-agent/types';
-import { MessageHistory, type MessageHistoryState } from '../messages/message-history.js';
+import type { LLMMessage, TokenUsageStats } from '@modular-agent/types';
+import { MessageHistory } from '../messages/message-history.js';
 import { TokenUsageTracker } from '../utils/token/token-usage-tracker.js';
 import type { EventManager } from '../services/event-manager.js';
 import type { LifecycleCapable } from './lifecycle-capable.js';
 import { createContextualLogger } from '../../utils/contextual-logger.js';
 import { emit } from '../utils/event/event-emitter.js';
-import { buildTokenLimitExceededEvent } from '../../graph/execution/utils/event/event-builder.js';
+import { now } from '@modular-agent/common-utils';
+import {
+  buildTokenLimitExceededEvent,
+  buildContextCompressionRequestedEvent,
+  buildContextCompressionCompletedEvent
+} from '../../graph/execution/utils/event/event-builder.js';
 import { generateToolListDescription } from '../utils/tools/tool-description-generator.js';
+import { executeOperation } from '../utils/messages/message-operation-utils.js';
+import type { MessageOperationConfig, MessageOperationResult } from '@modular-agent/types';
 
 const logger = createContextualLogger();
 
 /**
- * ConversationManager 配置选项
+ * 对话管理器配置
  */
-export interface ConversationManagerOptions {
-  /** Token 限制阈值，超过此值触发消息操作事件 */
-  tokenLimit?: number;
+export interface ConversationManagerConfig {
   /** 事件管理器 */
   eventManager?: EventManager;
-  /** 工作流 ID（用于事件） */
-  workflowId?: string;
-  /** 线程 ID（用于事件） */
+  /** 线程 ID */
   threadId?: string;
-  /** 工具服务（用于工具描述初始化） */
-  toolService?: any;
-  /** 可用工具配置 */
-  availableTools?: {
-    /** 初始可用工具集合 */
-    initial: Set<string>;
-    /** 动态工具配置 */
-    dynamicTools?: {
-      toolIds: string[];
-      descriptionTemplate?: string;
-    };
-  };
-  /** 初始消息列表 */
+  /** 工作流 ID */
+  workflowId?: string;
+  /** Token 限制 */
+  tokenLimit?: number;
+  /** 初始消息 */
   initialMessages?: LLMMessage[];
 }
 
 /**
- * 对话状态接口（扩展 MessageHistoryState）
+ * 对话管理器
  */
-export interface ConversationState extends MessageHistoryState {
-  /** 累积的 Token 使用统计 */
-  tokenUsage: TokenUsageStats | null;
-  /** 当前请求的 Token 使用统计 */
-  currentRequestUsage: TokenUsageStats | null;
-  /** Token 使用历史记录 */
-  usageHistory?: TokenUsageHistory[];
-}
-
-/**
- * 对话管理器类
- * 扩展 MessageHistory，增加 Graph 特有功能
- */
-export class ConversationManager extends MessageHistory implements LifecycleCapable<ConversationState> {
-  private tokenUsageTracker: TokenUsageTracker;
-  private eventManager?: EventManager;
-  private workflowId?: string;
-  private threadId?: string;
-  private toolService?: any;
-  private availableTools?: ConversationManagerOptions['availableTools'];
+export class ConversationManager extends MessageHistory implements LifecycleCapable {
+  protected tokenUsageTracker: TokenUsageTracker;
+  protected eventManager?: EventManager;
+  protected threadId?: string;
+  protected workflowId?: string;
 
   /**
    * 构造函数
-   * @param options 配置选项
+   * @param config 配置选项
    */
-  constructor(options: ConversationManagerOptions = {}) {
-    super({ initialMessages: options.initialMessages });
+  constructor(config: ConversationManagerConfig = {}) {
+    super({ initialMessages: config.initialMessages });
+    this.eventManager = config.eventManager;
+    this.threadId = config.threadId;
+    this.workflowId = config.workflowId;
 
     this.tokenUsageTracker = new TokenUsageTracker({
-      tokenLimit: options.tokenLimit
+      tokenLimit: config.tokenLimit
     });
-    this.eventManager = options.eventManager;
-    this.workflowId = options.workflowId;
-    this.threadId = options.threadId;
-    this.toolService = options.toolService;
-    this.availableTools = options.availableTools;
   }
 
-  // ============================================================
-  // Token 统计功能（Graph 特有）
-  // ============================================================
+  /**
+   * 初始化资源
+   */
+  async initialize(): Promise<void> {
+    // 可以在这里加载历史记录等
+  }
 
   /**
-   * 检查 Token 使用情况，触发消息操作事件
-   *
-   * 说明：
-   * - 当 Token 使用量超过阈值时，触发 TOKEN_LIMIT_EXCEEDED 事件
-   * - 应用层监听此事件并执行相应的消息操作（如 truncate, filter, clear）
-   * - SDK 不提供默认的消息操作实现，由应用层根据业务需求定义
+   * 设置上下文信息
+   * @param workflowId 工作流 ID
+   * @param threadId 线程 ID
+   */
+  setContext(workflowId: string, threadId: string): void {
+    this.workflowId = workflowId;
+    this.threadId = threadId;
+  }
+
+  /**
+   * 获取线程 ID
+   * @returns 线程 ID
+   */
+  getThreadId(): string | undefined {
+    return this.threadId;
+  }
+
+  /**
+   * 获取 Token 使用情况
+   * @returns Token 使用情况统计
+   */
+  getTokenUsage(): TokenUsageStats {
+    const messages = this.getAllMessages();
+    return this.tokenUsageTracker.getTokenUsage(messages);
+  }
+
+  /**
+   * 检查 Token 使用情况并触发事件
    */
   async checkTokenUsage(): Promise<void> {
-    const tokensUsed = this.tokenUsageTracker.getTokenUsage(this.getAllMessages());
+    const tokensUsed = this.getTokenUsage().totalTokens;
 
-    // 如果超过限制，触发 Token 限制事件
+    // 如果超过限制，触发 Token 限制事件和压缩请求事件
     if (this.tokenUsageTracker.isTokenLimitExceeded(this.getAllMessages())) {
       await this.triggerTokenLimitEvent(tokensUsed);
+      await this.triggerCompressionRequestedEvent(tokensUsed);
     }
-  }
-
-  /**
-   * 更新 Token 使用统计
-   * @param usage Token 使用数据
-   */
-  updateTokenUsage(usage?: LLMUsage): void {
-    if (!usage) {
-      return;
-    }
-    this.tokenUsageTracker.updateApiUsage(usage);
-  }
-
-  /**
-   * 累积流式响应的 Token 使用统计
-   * @param usage Token 使用数据（增量）
-   */
-  accumulateStreamUsage(usage: LLMUsage): void {
-    this.tokenUsageTracker.accumulateStreamUsage(usage);
-  }
-
-  /**
-   * 完成当前请求的 Token 统计
-   */
-  finalizeCurrentRequest(): void {
-    this.tokenUsageTracker.finalizeCurrentRequest();
-  }
-
-  /**
-   * 获取 Token 使用统计
-   * @returns Token 使用统计
-   */
-  getTokenUsage(): TokenUsageStats | null {
-    return this.tokenUsageTracker.getCumulativeUsage();
-  }
-
-  /**
-   * 获取当前请求的 Token 使用统计
-   * @returns Token 使用统计
-   */
-  getCurrentRequestUsage(): TokenUsageStats | null {
-    return this.tokenUsageTracker.getCurrentRequestUsage();
-  }
-
-  /**
-   * 获取 Token 使用历史记录
-   * @returns Token 使用历史记录
-   */
-  getUsageHistory(): TokenUsageHistory[] {
-    return this.tokenUsageTracker.getUsageHistory();
-  }
-
-  /**
-   * 获取 Token 使用追踪器实例
-   * @returns TokenUsageTracker 实例
-   */
-  getTokenUsageTracker(): TokenUsageTracker {
-    return this.tokenUsageTracker;
   }
 
   /**
@@ -202,74 +148,74 @@ export class ConversationManager extends MessageHistory implements LifecycleCapa
     );
   }
 
-  // ============================================================
-  // 工具描述消息管理（Graph 特有）
-  // ============================================================
+  /**
+   * 触发上下文压缩请求事件
+   * @param tokensUsed 当前使用的 Token 数量
+   */
+  private async triggerCompressionRequestedEvent(tokensUsed: number): Promise<void> {
+    if (this.eventManager && this.workflowId && this.threadId) {
+      const event = buildContextCompressionRequestedEvent({
+        threadId: this.threadId,
+        tokensUsed,
+        tokenLimit: this.tokenUsageTracker['tokenLimit'],
+        workflowId: this.workflowId,
+        stats: {
+          messageCount: this.getAllMessages().length,
+          lastMessageAt: now()
+        }
+      });
+      await emit(this.eventManager, event);
+    }
+  }
 
   /**
-   * 检查是否已经存在工具描述消息
-   * @returns 是否存在工具描述消息
+   * 执行消息操作并触发完成事件
+   * @param operation 消息操作配置
+   * @returns 操作结果
    */
-  private hasToolDescriptionMessage(): boolean {
+  async executeMessageOperation(
+    operation: MessageOperationConfig,
+    onAfterOperation?: (result: MessageOperationResult) => Promise<void>
+  ): Promise<MessageOperationResult> {
     const allMessages = this.getAllMessages();
-    return allMessages.some(msg =>
-      msg.role === 'system' &&
-      typeof msg.content === 'string' &&
-      msg.content.startsWith('可用工具:')
+    const markMap = this.getMarkMap();
+
+    const result = await executeOperation(
+      { messages: allMessages, markMap },
+      operation,
+      onAfterOperation
     );
+
+    // 更新内部状态
+    this.clear();
+    for (const msg of result.messages) {
+      this.addMessage(msg);
+    }
+    this.setMarkMap(result.markMap);
+
+    // 触发完成事件
+    if (this.eventManager && this.workflowId && this.threadId) {
+      const event = buildContextCompressionCompletedEvent({
+        threadId: this.threadId,
+        workflowId: this.workflowId,
+        tokensAfter: this.getTokenUsage().totalTokens
+      });
+      await emit(this.eventManager, event);
+    }
+
+    return result;
   }
 
   /**
-   * 获取初始可用工具的描述消息（不包含 dynamicTools）
-   * @returns 工具描述消息，如果没有初始工具则返回 null
+   * 获取工具列表描述（基于当前可用工具）
+   * @param tools 工具列表
+   * @returns 工具描述消息
    */
-  getInitialToolDescriptionMessage(): LLMMessage | null {
-    if (!this.availableTools || !this.toolService) {
-      return null;
-    }
-
-    // 只使用 initial 工具集合
-    const initialToolIds = Array.from(this.availableTools.initial);
-    if (initialToolIds.length === 0) {
-      return null;
-    }
-
-    // 获取工具对象列表
-    const tools = initialToolIds
-      .map(id => this.toolService!.getTool(id))
-      .filter(Boolean);
-
-    // 使用工具描述生成器生成工具列表描述
-    const toolDescriptions = generateToolListDescription(tools, 'list');
-
-    if (toolDescriptions.length > 0) {
-      return {
-        role: 'system',
-        content: `可用工具:\n${toolDescriptions}`
-      };
-    }
-
-    return null;
-  }
-
-  /**
-   * 在新批次开始时添加初始工具描述（如果不存在）
-   * @param boundaryIndex 批次边界索引
-   */
-  startNewBatchWithInitialTools(boundaryIndex: number): number {
-    // 开始新批次
-    const newBatch = this.startNewBatch(boundaryIndex);
-
-    // 检查是否已存在工具描述消息
-    if (!this.hasToolDescriptionMessage()) {
-      // 添加初始工具描述消息
-      const toolDescMessage = this.getInitialToolDescriptionMessage();
-      if (toolDescMessage) {
-        this.addMessage(toolDescMessage);
-      }
-    }
-
-    return newBatch;
+  getToolDescriptionMessage(tools: any[]): LLMMessage {
+    return {
+      role: 'system',
+      content: generateToolListDescription(tools)
+    };
   }
 
   // ============================================================
@@ -281,52 +227,40 @@ export class ConversationManager extends MessageHistory implements LifecycleCapa
    * @returns 克隆的 ConversationManager 实例
    */
   override clone(): ConversationManager {
-    const clonedManager = new ConversationManager({
-      tokenLimit: this.tokenUsageTracker['tokenLimit'],
+    const cloned = new ConversationManager({
       eventManager: this.eventManager,
-      workflowId: this.workflowId,
       threadId: this.threadId,
-      toolService: this.toolService,
-      availableTools: this.availableTools,
-      initialMessages: this.getAllMessages()
+      workflowId: this.workflowId,
+      tokenLimit: this.tokenUsageTracker['tokenLimit']
     });
-
-    // 复制 token 使用统计
-    clonedManager.tokenUsageTracker = this.tokenUsageTracker.clone();
-
-    // 复制标记映射
-    clonedManager.setMarkMap(this.getMarkMap());
-
-    return clonedManager;
+    cloned.initializeFromHistory(this);
+    return cloned;
   }
 
   /**
-   * 创建状态快照
-   * @returns 对话状态快照
+   * 从另一个管理器初始化历史
+   * @param other 另一个管理器
    */
-  override createSnapshot(): ConversationState {
-    const baseSnapshot = super.createSnapshot();
-    return {
-      ...baseSnapshot,
-      tokenUsage: this.getTokenUsage(),
-      currentRequestUsage: this.getCurrentRequestUsage(),
-      usageHistory: this.getUsageHistory()
-    };
+  initializeFromHistory(other: ConversationManager): void {
+    this.initializeManagedMessages(other.getAllMessages());
+    this.setMarkMap(other.getMarkMap());
   }
 
   /**
-   * 从快照恢复状态
-   * @param snapshot 对话状态快照
+   * 初始化管理器消息
+   * @param messages 消息列表
    */
-  override restoreFromSnapshot(snapshot: ConversationState): void {
-    super.restoreFromSnapshot(snapshot);
-    // Token 统计不恢复，保持当前状态
+  private initializeManagedMessages(messages: LLMMessage[]): void {
+    super.clear();
+    for (const msg of messages) {
+      super.addMessage(msg);
+    }
   }
 
   /**
    * 清理资源
    */
-  cleanup(): void {
+  override cleanup(): void {
     super.clear();
     this.tokenUsageTracker = new TokenUsageTracker({
       tokenLimit: this.tokenUsageTracker['tokenLimit']

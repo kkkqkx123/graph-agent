@@ -20,5 +20,7 @@ export interface ContextProcessorNodeConfig {
     visibleOnly?: boolean;
     /** 是否自动创建新批次 */
     autoCreateBatch?: boolean;
+    /** 操作目标：self（当前线程，默认）或 parent（父线程） */
+    target?: 'self' | 'parent';
   };
 }

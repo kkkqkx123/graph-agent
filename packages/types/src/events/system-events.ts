@@ -76,3 +76,27 @@ export interface LLMStreamErrorEvent extends BaseEvent {
   /** 错误信息 */
   error: string;
 }
+
+/**
+ * 上下文压缩请求事件类型
+ */
+export interface ContextCompressionRequestedEvent extends BaseEvent {
+  type: 'CONTEXT_COMPRESSION_REQUESTED';
+  /** 当前使用的 Token 数量 */
+  tokensUsed: number;
+  /** Token 限制阈值 */
+  tokenLimit: number;
+  /** 对话统计信息 */
+  stats?: any;
+}
+
+/**
+ * 上下文压缩完成事件类型
+ */
+export interface ContextCompressionCompletedEvent extends BaseEvent {
+  type: 'CONTEXT_COMPRESSION_COMPLETED';
+  /** 压缩结果摘要 */
+  summary?: string;
+  /** 压缩后的 Token 数量（可选） */
+  tokensAfter?: number;
+}

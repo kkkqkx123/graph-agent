@@ -46,6 +46,10 @@ export type EventType =
   'TOKEN_LIMIT_EXCEEDED' |
   /** Token 使用警告 */
   'TOKEN_USAGE_WARNING' |
+  /** 上下文压缩请求 */
+  'CONTEXT_COMPRESSION_REQUESTED' |
+  /** 上下文压缩完成 */
+  'CONTEXT_COMPRESSION_COMPLETED' |
   /** 消息添加 */
   'MESSAGE_ADDED' |
   /** 工具调用开始 */

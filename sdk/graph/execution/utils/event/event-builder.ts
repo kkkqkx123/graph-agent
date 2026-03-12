@@ -47,7 +47,9 @@ import type {
   CheckpointFailedEvent,
   CheckpointDeletedEvent,
   UserInteractionRequestedEvent,
-  UserInteractionProcessedEvent
+  UserInteractionProcessedEvent,
+  ContextCompressionRequestedEvent,
+  ContextCompressionCompletedEvent
 } from '@modular-agent/types';
 
 // =============================================================================
@@ -225,14 +227,14 @@ export const buildCheckpointCreatedEvent = (params: BuildParams<CheckpointCreate
   ({ type: 'CHECKPOINT_CREATED', timestamp: now(), ...params } as CheckpointCreatedEvent);
 
 export const buildCheckpointFailedEvent = (params: Omit<BuildParams<CheckpointFailedEvent>, 'error'> & { error?: Error; workflowId?: string }): CheckpointFailedEvent =>
-  ({
-    type: 'CHECKPOINT_FAILED',
-    timestamp: now(),
-    ...params,
-    error: params.error
-      ? (params.error instanceof SDKError ? JSON.stringify(params.error.toJSON()) : params.error.message)
-      : 'Unknown error'
-  } as CheckpointFailedEvent);
+({
+  type: 'CHECKPOINT_FAILED',
+  timestamp: now(),
+  ...params,
+  error: params.error
+    ? (params.error instanceof SDKError ? JSON.stringify(params.error.toJSON()) : params.error.message)
+    : 'Unknown error'
+} as CheckpointFailedEvent);
 
 export const buildCheckpointDeletedEvent = (params: BuildParams<CheckpointDeletedEvent> & { workflowId?: string }): CheckpointDeletedEvent =>
   ({ type: 'CHECKPOINT_DELETED', timestamp: now(), ...params } as CheckpointDeletedEvent);
@@ -246,3 +248,13 @@ export const buildUserInteractionRequestedEvent = (params: BuildParams<UserInter
 
 export const buildUserInteractionProcessedEvent = (params: BuildParams<UserInteractionProcessedEvent> & { workflowId?: string }): UserInteractionProcessedEvent =>
   ({ type: 'USER_INTERACTION_PROCESSED', timestamp: now(), ...params } as UserInteractionProcessedEvent);
+
+// =============================================================================
+// 上下文压缩事件
+// =============================================================================
+
+export const buildContextCompressionRequestedEvent = (params: BuildParams<ContextCompressionRequestedEvent> & { workflowId?: string }): ContextCompressionRequestedEvent =>
+  ({ type: 'CONTEXT_COMPRESSION_REQUESTED', timestamp: now(), ...params } as ContextCompressionRequestedEvent);
+
+export const buildContextCompressionCompletedEvent = (params: BuildParams<ContextCompressionCompletedEvent> & { workflowId?: string }): ContextCompressionCompletedEvent =>
+  ({ type: 'CONTEXT_COMPRESSION_COMPLETED', timestamp: now(), ...params } as ContextCompressionCompletedEvent);
