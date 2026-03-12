@@ -321,7 +321,7 @@ export class CheckpointCoordinator {
       }
 
       // 恢复Token统计
-      conversationManager.getTokenUsageTracker().setState(
+      conversationManager.setTokenUsageState(
         threadState.conversationState.tokenUsage,
         threadState.conversationState.currentRequestUsage
       );

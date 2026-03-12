@@ -265,7 +265,7 @@ export function initializeContainer(): Container {
     .toDynamicValue((c: any) => {
       // MessageHistoryManager 是线程隔离的，每个线程需要自己的实例
       // 这里使用一个默认的 threadId，实际使用时应该由 ThreadContext 创建
-      return new MessageHistoryManager('default');
+      return new MessageHistoryManager({ threadId: 'default' });
     })
     .inSingletonScope();
 
@@ -440,7 +440,6 @@ export function initializeContainer(): Container {
         create: (threadId?: string, workflowId?: string) => {
           return new ConversationManager({
             eventManager,
-            toolService,
             threadId,
             workflowId
           });
@@ -448,8 +447,7 @@ export function initializeContainer(): Container {
         // 获取共享实例（用于向后兼容和测试）
         getShared: () => {
           return new ConversationManager({
-            eventManager,
-            toolService
+            eventManager
           });
         }
       };

@@ -9,6 +9,7 @@ import type { PreprocessedGraph } from '@modular-agent/types';
 import type { SubgraphContext } from './execution-state.js';
 import { ExecutionState } from './execution-state.js';
 import type { MessageHistoryManager } from '../execution/managers/message-history-manager.js';
+import type { ConversationManager } from '../../core/managers/conversation-manager.js';
 
 /**
  * ThreadEntity - Thread实体
@@ -34,12 +35,12 @@ export class ThreadEntity {
   abortController?: AbortController;
 
   // 对话管理器
-  conversationManager?: MessageHistoryManager;
+  conversationManager?: ConversationManager;
 
   constructor(
     thread: Thread,
     private readonly executionState: ExecutionState,
-    conversationManager?: MessageHistoryManager
+    conversationManager?: ConversationManager
   ) {
     this.thread = thread;
     this.id = thread.id;
@@ -413,11 +414,11 @@ export class ThreadEntity {
 
   // ========== 对话管理器访问 ==========
 
-  getConversationManager(): MessageHistoryManager | undefined {
+  getConversationManager(): ConversationManager | undefined {
     return this.conversationManager;
   }
 
-  setConversationManager(conversationManager: MessageHistoryManager): void {
+  setConversationManager(conversationManager: ConversationManager): void {
     this.conversationManager = conversationManager;
   }
 

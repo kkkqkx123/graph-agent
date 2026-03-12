@@ -14,7 +14,7 @@
  */
 
 import type { LLMMessage, TokenUsageStats } from '@modular-agent/types';
-import { MessageHistory } from '../messages/message-history.js';
+import { MessageHistory, type MessageHistoryState } from '../messages/message-history.js';
 import { TokenUsageTracker } from '../utils/token/token-usage-tracker.js';
 import type { EventManager } from '../services/event-manager.js';
 import type { LifecycleCapable } from './lifecycle-capable.js';
@@ -46,6 +46,19 @@ export interface ConversationManagerConfig {
   tokenLimit?: number;
   /** 初始消息 */
   initialMessages?: LLMMessage[];
+}
+
+/** @deprecated Use ConversationManagerConfig instead */
+export type ConversationManagerOptions = ConversationManagerConfig;
+
+/**
+ * 对话状态（用于检查点）
+ */
+export interface ConversationState extends MessageHistoryState {
+  /** Token 使用情况 */
+  tokenUsage?: TokenUsageStats | null;
+  /** 当前请求的 Token 使用情况 */
+  currentRequestUsage?: TokenUsageStats | null;
 }
 
 /**
@@ -103,7 +116,12 @@ export class ConversationManager extends MessageHistory implements LifecycleCapa
    */
   getTokenUsage(): TokenUsageStats {
     const messages = this.getAllMessages();
-    return this.tokenUsageTracker.getTokenUsage(messages);
+    const tokenCount = this.tokenUsageTracker.getTokenUsage(messages);
+    return this.tokenUsageTracker.getCumulativeUsage() || {
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: tokenCount
+    };
   }
 
   /**
@@ -214,8 +232,48 @@ export class ConversationManager extends MessageHistory implements LifecycleCapa
   getToolDescriptionMessage(tools: any[]): LLMMessage {
     return {
       role: 'system',
-      content: generateToolListDescription(tools)
+      content: generateToolListDescription(tools, 'list')
     };
+  }
+
+  /**
+   * 获取当前请求的 Token 使用情况
+   * @returns 当前请求的 Token 使用情况
+   */
+  getCurrentRequestUsage(): TokenUsageStats {
+    return this.tokenUsageTracker.getCurrentRequestUsage() || {
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0
+    };
+  }
+
+  /**
+   * 设置 Token 使用统计状态
+   * 用于从检查点恢复状态
+   * @param cumulativeUsage 累计 Token 使用统计
+   * @param currentRequestUsage 当前请求 Token 使用统计（可选）
+   */
+  setTokenUsageState(
+    cumulativeUsage: TokenUsageStats | null,
+    currentRequestUsage?: TokenUsageStats | null
+  ): void {
+    this.tokenUsageTracker.setState(cumulativeUsage, currentRequestUsage);
+  }
+
+  /**
+   * 更新 API 返回的 Token 使用统计
+   * @param usage Token 使用数据
+   */
+  updateTokenUsage(usage: any): void {
+    this.tokenUsageTracker.updateApiUsage(usage);
+  }
+
+  /**
+   * 完成当前请求的 Token 统计
+   */
+  finalizeCurrentRequest(): void {
+    this.tokenUsageTracker.finalizeCurrentRequest();
   }
 
   // ============================================================
@@ -260,7 +318,7 @@ export class ConversationManager extends MessageHistory implements LifecycleCapa
   /**
    * 清理资源
    */
-  override cleanup(): void {
+  cleanup(): void {
     super.clear();
     this.tokenUsageTracker = new TokenUsageTracker({
       tokenLimit: this.tokenUsageTracker['tokenLimit']

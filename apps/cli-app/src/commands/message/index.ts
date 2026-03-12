@@ -98,10 +98,6 @@ export function createMessageCommands(): Command {
         Object.entries(stats.byRole).forEach(([role, count]) => {
           console.log(`    ${role}: ${count}`);
         });
-        console.log(`\n  按类型:`);
-        Object.entries(stats.byType).forEach(([type, count]) => {
-          console.log(`    ${type}: ${count}`);
-        });
       } catch (error) {
         logger.error(`获取消息统计失败: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);

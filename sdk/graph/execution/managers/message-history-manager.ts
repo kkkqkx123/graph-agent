@@ -16,6 +16,7 @@ import {
 } from '../../../core/managers/conversation-manager.js';
 import { generateToolListDescription } from '../../../core/utils/tools/tool-description-generator.js';
 import type { ToolService } from '../../../core/services/tool-service.js';
+import type { MessageHistoryState } from '../../../core/messages/message-history.js';
 
 /**
  * 工具可用性集合
@@ -177,3 +178,6 @@ export class MessageHistoryManager extends ConversationManager {
     return this.getAllMessages();
   }
 }
+
+// Re-export MessageHistoryState for convenience
+export type { MessageHistoryState } from '../../../core/messages/message-history.js';

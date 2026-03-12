@@ -9,7 +9,7 @@ export {
   cloneAgentLoop,
   type AgentLoopCheckpointDependencies,
   type AgentLoopCheckpointOptions
-} from './handles/index.js';
+} from './handlers/index.js';
 
 // Hook handlers
 export {

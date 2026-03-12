@@ -756,9 +756,9 @@ export class AgentLoopExecutor {
 
         // 添加已有消息
         if (existingMessages.length > 0) {
-            messageHistory.initialize(existingMessages);
+            messageHistory.initializeHistory(existingMessages);
         } else if (config.initialMessages && config.initialMessages.length > 0) {
-            messageHistory.initialize(config.initialMessages as LLMMessage[]);
+            messageHistory.initializeHistory(config.initialMessages as LLMMessage[]);
         }
     }
 
