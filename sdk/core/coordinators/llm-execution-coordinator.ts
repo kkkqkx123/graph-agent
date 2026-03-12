@@ -25,8 +25,8 @@ import { ExecutionError } from '@modular-agent/types';
 import { checkInterruption, shouldContinue, getInterruptionDescription } from '@modular-agent/common-utils';
 import type { InterruptionCheckResult } from '@modular-agent/common-utils';
 import { createContextualLogger } from '../../utils/contextual-logger.js';
-import { LLMExecutor } from './llm-executor.js';
-import { ToolCallExecutor } from './tool-call-executor.js';
+import { LLMExecutor } from '../executors/llm-executor.js';
+import { ToolCallExecutor } from '../executors/tool-call-executor.js';
 import { prepareToolSchemasFromTools } from '../utils/tools/tool-schema-helper.js';
 import type { EventManager } from '../services/event-manager.js';
 import {
@@ -96,7 +96,7 @@ export class LLMExecutionCoordinator {
   constructor(
     private llmExecutor: LLMExecutor,
     private toolCallExecutor: ToolCallExecutor
-  ) {}
+  ) { }
 
   /**
    * Execute LLM call

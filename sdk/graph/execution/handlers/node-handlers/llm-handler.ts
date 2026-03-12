@@ -14,7 +14,7 @@ import type { GraphLLMExecutionConfig } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
 import { ExecutionError } from '@modular-agent/types';
 import { now, diffTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
-import { LLMExecutionCoordinator } from '../../../../core/executors/llm-execution-coordinator.js';
+import { LLMExecutionCoordinator } from '../../../../core/coordinators/llm-execution-coordinator.js';
 import { LLMWrapper } from '../../../../core/llm/wrapper.js';
 import { executeHumanRelay } from '../human-relay-handler.js';
 import type { EventManager } from '../../../../core/services/event-manager.js';
