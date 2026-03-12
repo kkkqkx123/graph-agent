@@ -165,6 +165,13 @@ export class AgentLoopEntity {
     this.messageHistoryManager.clearMessages();
   }
 
+  /**
+   * 规范化消息历史
+   */
+  normalizeHistory(): void {
+    this.messageHistoryManager.normalizeHistory();
+  }
+
   // ========== 变量管理 ==========
 
   /**

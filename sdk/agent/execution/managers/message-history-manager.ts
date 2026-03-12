@@ -55,12 +55,39 @@ export class MessageHistoryManager implements LifecycleCapable<MessageHistorySta
   }
 
   /**
+   * 分页获取消息
+   * @param options 分页参数
+   */
+  getMessagesPaged(options: { offset?: number; limit?: number } = {}): { total: number; messages: LLMMessage[] } {
+    const total = this.messages.length;
+    const limit = options.limit ?? 100;
+    const offset = options.offset ?? 0;
+    const messages = this.messages.slice(offset, offset + limit).map(msg => ({ ...msg }));
+    return { total, messages };
+  }
+
+  /**
    * 获取最近的消息
    * @param count 消息数量
    * @returns 最近的消息数组
    */
   getRecentMessages(count: number): LLMMessage[] {
-    return this.messages.slice(-count);
+    return this.messages.slice(-count).map(msg => ({ ...msg }));
+  }
+
+  /**
+   * 查找消息（基础实现）
+   * @param filter 过滤器
+   */
+  findMessages(filter: { role?: string; contentContains?: string }): number[] {
+    const results: number[] = [];
+    this.messages.forEach((msg, index) => {
+      let match = true;
+      if (filter.role && msg.role !== filter.role) match = false;
+      if (filter.contentContains && typeof msg.content === 'string' && !msg.content.includes(filter.contentContains)) match = false;
+      if (match) results.push(index);
+    });
+    return results;
   }
 
   /**
@@ -84,10 +111,70 @@ export class MessageHistoryManager implements LifecycleCapable<MessageHistorySta
    */
   getStats(): {
     totalMessages: number;
+    roleDistribution: Record<string, number>;
+    totalTokenUsage: {
+      promptTokens: number;
+      completionTokens: number;
+      totalTokens: number;
+    };
   } {
+    const distribution: Record<string, number> = {};
+    const usage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+
+    this.messages.forEach(msg => {
+      distribution[msg.role] = (distribution[msg.role] || 0) + 1;
+      const msgUsage = msg.metadata?.['usage'];
+      if (msgUsage) {
+        usage.promptTokens += msgUsage.promptTokens || 0;
+        usage.completionTokens += msgUsage.completionTokens || 0;
+        usage.totalTokens += msgUsage.totalTokens || 0;
+      }
+    });
+
     return {
       totalMessages: this.messages.length,
+      roleDistribution: distribution,
+      totalTokenUsage: usage
     };
+  }
+
+  /**
+   * 规范化历史：处理未响应的工具调用
+   * 参考 Lim-Code，确保工具调用序列完整
+   */
+  normalizeHistory(): void {
+    const respondedToolCallIds = new Set<string>();
+
+    // 1. 收集所有已响应的 ID
+    this.messages.forEach(msg => {
+      if (msg.role === 'tool' && msg.toolCallId) {
+        respondedToolCallIds.add(msg.toolCallId);
+      }
+    });
+
+    // 2. 检查是否有未响应的 assistant 消息
+    const normalizedMessages: LLMMessage[] = [];
+    this.messages.forEach(msg => {
+      normalizedMessages.push(msg);
+
+      if (msg.role === 'assistant' && msg.toolCalls) {
+        msg.toolCalls.forEach(call => {
+          if (!respondedToolCallIds.has(call.id)) {
+            // 补齐一个失败/拒绝的响应
+            normalizedMessages.push({
+              role: 'tool',
+              toolCallId: call.id,
+              content: `Error: Tool call ${call.id} was not responded to before session end/reset.`,
+              timestamp: Date.now(),
+              metadata: { normalized: true }
+            });
+            respondedToolCallIds.add(call.id);
+          }
+        });
+      }
+    });
+
+    this.messages = normalizedMessages;
   }
 
   /**

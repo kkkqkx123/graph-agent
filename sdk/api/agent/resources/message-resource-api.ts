@@ -216,34 +216,35 @@ export class AgentLoopMessageResourceAPI extends GenericResourceAPI<LLMMessage, 
    * @param agentLoopId Agent Loop ID
    * @returns 统计信息
    */
-  async getMessageStats(agentLoopId: ID): Promise<AgentLoopMessageStats> {
+  async getMessageStats(agentLoopId: ID): Promise<any> {
     const entity = this.registry.get(agentLoopId);
     if (!entity) {
       return {
         total: 0,
         byRole: {},
-        byType: {}
+        byType: {},
+        totalTokenUsage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
       };
     }
 
-    const messages = entity.getMessages();
+    const stats = entity.messageHistoryManager.getStats();
 
-    const stats: AgentLoopMessageStats = {
-      total: messages.length,
-      byRole: {},
-      byType: {}
+    return {
+      total: stats.totalMessages,
+      byRole: stats.roleDistribution,
+      totalTokenUsage: stats.totalTokenUsage
     };
+  }
 
-    for (const message of messages) {
-      // 按角色统计
-      stats.byRole[message.role] = (stats.byRole[message.role] || 0) + 1;
-
-      // 按类型统计
-      const type = typeof message.content === 'string' ? 'text' : 'object';
-      stats.byType[type] = (stats.byType[type] || 0) + 1;
+  /**
+   * 规范化消息历史
+   * @param agentLoopId Agent Loop ID
+   */
+  async normalizeHistory(agentLoopId: ID): Promise<void> {
+    const entity = this.registry.get(agentLoopId);
+    if (entity) {
+      entity.normalizeHistory();
     }
-
-    return stats;
   }
 
   /**

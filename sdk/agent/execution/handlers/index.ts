@@ -3,3 +3,11 @@
  */
 
 export * from './hook-handlers/index.js';
+
+export {
+    createAgentLoopCheckpoint,
+    cleanupAgentLoop,
+    cloneAgentLoop,
+    type AgentLoopCheckpointDependencies,
+    type AgentLoopCheckpointOptions
+} from './agent-loop-lifecycle.js';

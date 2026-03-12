@@ -48,6 +48,7 @@ export {
 // 协调器层
 export {
     AgentLoopCoordinator,
+    ConversationCoordinator,
     type AgentLoopExecuteOptions
 } from './execution/coordinators/index.js';
 

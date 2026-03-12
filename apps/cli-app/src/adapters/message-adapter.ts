@@ -65,28 +65,42 @@ export class MessageAdapter extends BaseAdapter {
   /**
    * 获取消息统计信息
    */
-  async getMessageStats(threadId?: string): Promise<{
+  async getMessageStats(agentLoopId?: string): Promise<{
     total: number;
     byRole: Record<string, number>;
-    byType: Record<string, number>;
+    totalTokenUsage?: {
+      promptTokens: number;
+      completionTokens: number;
+      totalTokens: number;
+    };
   }> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.messages;
-      if (threadId) {
-        const result = await api.getMessageStats(threadId);
+      if (agentLoopId) {
+        const result = await (api as any).getMessageStats(agentLoopId);
         return {
           total: result.total,
           byRole: result.byRole,
-          byType: result.byType
+          totalTokenUsage: result.totalTokenUsage
         };
       } else {
         const result = await api.getGlobalMessageStats();
         return {
           total: result.total,
-          byRole: result.byRole,
-          byType: {}
+          byRole: result.byRole
         };
       }
     }, '获取消息统计');
+  }
+
+  /**
+   * 规范化消息历史
+   */
+  async normalizeMessages(agentLoopId: string): Promise<void> {
+    return this.executeWithErrorHandling(async () => {
+      const api = this.sdk.messages;
+      await (api as any).normalizeHistory(agentLoopId);
+      this.logger.success(`消息历史已规范化: ${agentLoopId}`);
+    }, '规范化消息');
   }
 }
