@@ -14,6 +14,9 @@
 
 import type { LLMMessage } from '@modular-agent/types';
 import type { LifecycleCapable } from '../../../core/managers/lifecycle-capable.js';
+import { createContextualLogger } from '../../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ component: 'MessageHistoryManager' });
 
 /**
  * 消息历史状态接口
@@ -28,7 +31,9 @@ export interface MessageHistoryState {
 export class MessageHistoryManager implements LifecycleCapable<MessageHistoryState> {
   private messages: LLMMessage[] = [];
 
-  constructor(private agentLoopId: string) { }
+  constructor(private agentLoopId: string) {
+    logger.debug('MessageHistoryManager created', { agentLoopId });
+  }
 
   /**
    * 获取 Agent Loop ID
@@ -95,6 +100,10 @@ export class MessageHistoryManager implements LifecycleCapable<MessageHistorySta
    * @param messages 消息列表
    */
   setMessages(messages: LLMMessage[]): void {
+    logger.debug('Setting message history', {
+      agentLoopId: this.agentLoopId,
+      messageCount: messages.length
+    });
     this.messages = [...messages];
   }
 
@@ -102,6 +111,10 @@ export class MessageHistoryManager implements LifecycleCapable<MessageHistorySta
    * 清空消息历史
    */
   clearMessages(): void {
+    logger.info('Clearing message history', {
+      agentLoopId: this.agentLoopId,
+      previousMessageCount: this.messages.length
+    });
     this.messages = [];
   }
 
@@ -143,6 +156,13 @@ export class MessageHistoryManager implements LifecycleCapable<MessageHistorySta
    * 参考 Lim-Code，确保工具调用序列完整
    */
   normalizeHistory(): void {
+    const originalCount = this.messages.length;
+
+    logger.debug('Normalizing message history', {
+      agentLoopId: this.agentLoopId,
+      originalMessageCount: originalCount
+    });
+
     const respondedToolCallIds = new Set<string>();
 
     // 1. 收集所有已响应的 ID
@@ -154,6 +174,7 @@ export class MessageHistoryManager implements LifecycleCapable<MessageHistorySta
 
     // 2. 检查是否有未响应的 assistant 消息
     const normalizedMessages: LLMMessage[] = [];
+    let addedErrorMessages = 0;
     this.messages.forEach(msg => {
       normalizedMessages.push(msg);
 
@@ -169,12 +190,27 @@ export class MessageHistoryManager implements LifecycleCapable<MessageHistorySta
               metadata: { normalized: true }
             });
             respondedToolCallIds.add(call.id);
+            addedErrorMessages++;
           }
         });
       }
     });
 
     this.messages = normalizedMessages;
+
+    if (addedErrorMessages > 0) {
+      logger.warn('Added error messages for unresponded tool calls during normalization', {
+        agentLoopId: this.agentLoopId,
+        addedErrorCount: addedErrorMessages,
+        originalMessageCount: originalCount,
+        normalizedMessageCount: this.messages.length
+      });
+    } else {
+      logger.debug('Message history normalized without changes', {
+        agentLoopId: this.agentLoopId,
+        messageCount: this.messages.length
+      });
+    }
   }
 
   /**
@@ -200,6 +236,11 @@ export class MessageHistoryManager implements LifecycleCapable<MessageHistorySta
    * 清空消息历史
    */
   cleanup(): void {
+    const messageCount = this.messages.length;
+    logger.debug('Cleaning up MessageHistoryManager', {
+      agentLoopId: this.agentLoopId,
+      messageCount
+    });
     this.messages = [];
   }
 }

@@ -14,6 +14,9 @@
 import { LLMMessage } from '@modular-agent/types';
 import { AgentLoopRegistry } from '../../services/agent-loop-registry.js';
 import { MessageHistoryManager } from '../managers/message-history-manager.js';
+import { createContextualLogger } from '../../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ component: 'ConversationCoordinator' });
 
 export class ConversationCoordinator {
     constructor(private registry: AgentLoopRegistry) { }
@@ -23,8 +26,14 @@ export class ConversationCoordinator {
      * @param agentLoopId Agent Loop ID
      */
     getHistoryManager(agentLoopId: string): MessageHistoryManager | undefined {
+        logger.debug('Getting conversation history manager', { agentLoopId });
+
         const loop = this.registry.get(agentLoopId);
-        if (!loop) return undefined;
+        if (!loop) {
+            logger.warn('Agent Loop not found when getting history manager', { agentLoopId });
+            return undefined;
+        }
+
         return loop.messageHistoryManager;
     }
 
@@ -33,11 +42,23 @@ export class ConversationCoordinator {
      * @param agentLoopId Agent Loop ID
      */
     async getNormalizedHistory(agentLoopId: string): Promise<LLMMessage[]> {
+        logger.debug('Getting normalized conversation history', { agentLoopId });
+
         const manager = this.getHistoryManager(agentLoopId);
-        if (!manager) return [];
+        if (!manager) {
+            logger.warn('Message history manager not found', { agentLoopId });
+            return [];
+        }
 
         manager.normalizeHistory();
-        return manager.getMessages();
+        const messages = manager.getMessages();
+
+        logger.debug('Normalized conversation history retrieved', {
+            agentLoopId,
+            messageCount: messages.length
+        });
+
+        return messages;
     }
 
     /**
@@ -45,9 +66,22 @@ export class ConversationCoordinator {
      * @param agentLoopId Agent Loop ID
      */
     async getConversationStats(agentLoopId: string) {
-        const manager = this.getHistoryManager(agentLoopId);
-        if (!manager) return undefined;
+        logger.debug('Getting conversation statistics', { agentLoopId });
 
-        return manager.getStats();
+        const manager = this.getHistoryManager(agentLoopId);
+        if (!manager) {
+            logger.warn('Message history manager not found when getting stats', { agentLoopId });
+            return undefined;
+        }
+
+        const stats = manager.getStats();
+
+        logger.debug('Conversation statistics retrieved', {
+            agentLoopId,
+            totalMessages: stats.totalMessages,
+            roleDistribution: stats.roleDistribution
+        });
+
+        return stats;
     }
 }

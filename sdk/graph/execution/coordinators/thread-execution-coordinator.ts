@@ -12,6 +12,9 @@ import type { ToolVisibilityCoordinator } from './tool-visibility-coordinator.js
 import type { NodeExecutionCoordinator } from './node-execution-coordinator.js';
 import type { GraphNavigator } from '../../preprocessing/graph-navigator.js';
 import { ThreadInterruptedException } from '@modular-agent/types';
+import { createContextualLogger } from '../../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ component: 'thread-execution-coordinator' });
 
 /**
  * ThreadExecutionCoordinator - Thread执行协调器

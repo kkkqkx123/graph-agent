@@ -20,6 +20,9 @@ import { SDKError as SDKErrorClass } from '@modular-agent/types';
 import { getContainer } from '../../../core/di/index.js';
 import * as Identifiers from '../../../core/di/service-identifiers.js';
 import { isAbortError, checkInterruption } from '@modular-agent/common-utils';
+import { createContextualLogger } from '../../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ component: 'AgentErrorHandler' });
 
 /**
  * 构建 Agent 错误上下文
@@ -80,7 +83,7 @@ function isRecoverableError(error: SDKError): boolean {
 /**
  * 处理 Agent Loop 执行错误
  *
- * @param entity Agent Loop 实体
+ * @param entity Agent Loop 实例
  * @param error 原始错误
  * @param operation 操作类型
  * @param additionalContext 额外的上下文信息
@@ -95,8 +98,22 @@ export async function handleAgentError(
     // 构建错误上下文
     const context = buildAgentErrorContext(entity, operation, additionalContext);
 
+    logger.debug('Handling Agent Loop error', {
+        agentLoopId: entity.id,
+        operation,
+        errorMessage: error.message,
+        iteration: entity.state.currentIteration
+    });
+
     // 标准化错误
     const standardizedError = standardizeAgentError(error, context);
+
+    logger.info('Agent Loop error standardized', {
+        agentLoopId: entity.id,
+        operation,
+        severity: standardizedError.severity,
+        recoverable: isRecoverableError(standardizedError)
+    });
 
     // 使用 ErrorService 处理错误（记录日志和触发事件）
     const container = getContainer();
@@ -106,6 +123,17 @@ export async function handleAgentError(
     // 根据 severity 决定是否停止执行
     if (standardizedError.severity === 'error') {
         entity.state.fail(standardizedError);
+        logger.info('Agent Loop execution failed due to error', {
+            agentLoopId: entity.id,
+            operation,
+            errorMessage: standardizedError.message
+        });
+    } else {
+        logger.info('Agent Loop error is recoverable, continuing execution', {
+            agentLoopId: entity.id,
+            operation,
+            severity: standardizedError.severity
+        });
     }
     // WARNING 和 INFO 级别自动继续执行
 
@@ -131,6 +159,13 @@ export async function handleAgentInterruption(
 
     const result = checkInterruption(entity.getAbortSignal());
 
+    logger.info('Agent Loop interruption detected', {
+        agentLoopId: entity.id,
+        operation,
+        interruptionType: result.type,
+        iteration: entity.state.currentIteration
+    });
+
     // 构建错误上下文
     const context = buildAgentErrorContext(entity, operation, {
         interruptionType: result.type
@@ -152,8 +187,18 @@ export async function handleAgentInterruption(
     // 更新 Agent 状态
     if (result.type === 'paused') {
         entity.state.pause();
+        logger.info('Agent Loop paused', {
+            agentLoopId: entity.id,
+            operation,
+            iteration: entity.state.currentIteration
+        });
     } else {
         entity.state.cancel();
+        logger.info('Agent Loop cancelled', {
+            agentLoopId: entity.id,
+            operation,
+            iteration: entity.state.currentIteration
+        });
     }
 
     return true;

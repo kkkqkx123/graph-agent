@@ -30,7 +30,6 @@ import type {
 } from '@modular-agent/types';
 import { AgentStreamEventType, AgentLoopStatus } from '@modular-agent/types';
 import { AgentLoopEntity } from '../../entities/agent-loop-entity.js';
-import { LLMWrapper } from '../../../core/llm/index.js';
 import { ToolService } from '../../../core/services/tool-service.js';
 import { MessageHistory } from '../../../core/messages/message-history.js';
 import type { MessageStreamEvent } from '../../../core/llm/message-stream-events.js';
@@ -45,6 +44,9 @@ import {
     handleAgentError,
     handleAgentInterruption as handleAgentInterruptionHandler
 } from '../handlers/agent-error-handler.js';
+import { createContextualLogger } from '../../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ component: 'AgentLoopExecutor' });
 
 /**
  * Agent Loop 流式事件
@@ -144,16 +146,45 @@ export class AgentLoopExecutor {
         const maxIterations = config.maxIterations ?? 10;
         const messageHistory = this.createMessageHistory();
 
+        logger.info('Agent Loop execution started', {
+            agentLoopId: entity.id,
+            maxIterations,
+            toolsCount: config.tools?.length || 0,
+            profileId: config.profileId || 'DEFAULT'
+        });
+
         // 初始化消息历史
         this.initializeMessageHistory(messageHistory, config, entity.getMessages());
+
+        logger.debug('Message history initialized', {
+            agentLoopId: entity.id,
+            initialMessagesCount: messageHistory.getMessages().length
+        });
 
         // 准备工具信息
         const toolSchemas = this.prepareToolSchemas(config);
 
+        if (toolSchemas) {
+            logger.debug('Tool schemas prepared', {
+                agentLoopId: entity.id,
+                toolsCount: toolSchemas.length
+            });
+        }
+
         try {
             while (entity.state.currentIteration < maxIterations) {
+                logger.debug('Starting new iteration', {
+                    agentLoopId: entity.id,
+                    iteration: entity.state.currentIteration + 1,
+                    maxIterations
+                });
+
                 // 检查中断信号
                 if (entity.isAborted() || entity.shouldStop()) {
+                    logger.info('Agent Loop execution cancelled', {
+                        agentLoopId: entity.id,
+                        iteration: entity.state.currentIteration
+                    });
                     entity.state.cancel();
                     return {
                         success: false,
@@ -165,6 +196,10 @@ export class AgentLoopExecutor {
 
                 // 检查暂停信号
                 if (entity.shouldPause()) {
+                    logger.info('Agent Loop execution paused', {
+                        agentLoopId: entity.id,
+                        iteration: entity.state.currentIteration
+                    });
                     entity.state.pause();
                     return {
                         success: false,
@@ -183,6 +218,12 @@ export class AgentLoopExecutor {
                 // ========== BEFORE_LLM_CALL Hook ==========
                 await executeAgentHook(entity, 'BEFORE_LLM_CALL', this.emitAgentEvent.bind(this));
 
+                logger.debug('Calling LLM', {
+                    agentLoopId: entity.id,
+                    iteration: entity.state.currentIteration,
+                    messageCount: messageHistory.getMessages().length
+                });
+
                 // 使用 LLMExecutor 调用 LLM
                 const llmResult = await this.llmExecutor.executeLLMCall(
                     messageHistory.getMessages(),
@@ -200,10 +241,18 @@ export class AgentLoopExecutor {
                     }
                 );
 
+                logger.debug('LLM call completed', {
+                    agentLoopId: entity.id,
+                    iteration: entity.state.currentIteration,
+                    success: llmResult.success,
+                    hasToolCalls: llmResult.success ? !!llmResult.result?.toolCalls?.length : false
+                });
+
                 // 处理中断状态
                 if (!llmResult.success) {
                     const interruption = llmResult.interruption;
                     if (interruption.type === 'paused') {
+                        logger.info('LLM call paused', { agentLoopId: entity.id, iteration: entity.state.currentIteration });
                         entity.state.pause();
                         return {
                             success: false,
@@ -213,6 +262,7 @@ export class AgentLoopExecutor {
                         };
                     }
                     if (interruption.type === 'stopped' || interruption.type === 'aborted') {
+                        logger.info('LLM call stopped', { agentLoopId: entity.id, iteration: entity.state.currentIteration });
                         entity.state.cancel();
                         return {
                             success: false,
@@ -264,12 +314,23 @@ export class AgentLoopExecutor {
 
                 // 检查是否需要工具调用
                 if (!response.toolCalls || response.toolCalls.length === 0) {
+                    logger.debug('No tool calls required, completing execution', {
+                        agentLoopId: entity.id,
+                        iteration: entity.state.currentIteration,
+                        contentLength: response.content.length
+                    });
+
                     entity.state.endIteration(response.content);
 
                     // ========== AFTER_ITERATION Hook ==========
                     await executeAgentHook(entity, 'AFTER_ITERATION', this.emitAgentEvent.bind(this));
 
                     entity.state.complete();
+                    logger.info('Agent Loop execution completed successfully', {
+                        agentLoopId: entity.id,
+                        iterations: entity.state.currentIteration,
+                        toolCallCount: entity.state.toolCallCount
+                    });
                     return {
                         success: true,
                         content: response.content,
@@ -280,6 +341,12 @@ export class AgentLoopExecutor {
 
                 // 执行工具调用
                 if (response.toolCalls && response.toolCalls.length > 0) {
+                    logger.debug('Executing tool calls', {
+                        agentLoopId: entity.id,
+                        iteration: entity.state.currentIteration,
+                        toolCallCount: response.toolCalls.length
+                    });
+
                     // 保存原始工具调用信息用于 Hook
                     const originalToolCalls = response.toolCalls;
 
@@ -296,6 +363,13 @@ export class AgentLoopExecutor {
                         { abortSignal: entity.getAbortSignal() }
                     );
 
+                    logger.debug('Tool calls execution completed', {
+                        agentLoopId: entity.id,
+                        iteration: entity.state.currentIteration,
+                        successCount: toolResults.filter(r => r.success).length,
+                        failureCount: toolResults.filter(r => !r.success).length
+                    });
+
                     // 处理结果
                     for (const result of toolResults) {
                         // ========== BEFORE_TOOL_CALL Hook ==========
@@ -303,12 +377,18 @@ export class AgentLoopExecutor {
                         const toolCallInfo = {
                             id: result.toolCallId,
                             name: originalToolCall?.name || '',
-                            arguments: originalToolCall?.arguments ? 
+                            arguments: originalToolCall?.arguments ?
                                 JSON.parse(originalToolCall.arguments) : {}
                         };
                         await executeAgentHook(entity, 'BEFORE_TOOL_CALL', this.emitAgentEvent.bind(this), toolCallInfo);
 
                         if (result.success) {
+                            logger.debug('Tool call succeeded', {
+                                agentLoopId: entity.id,
+                                toolCallId: result.toolCallId,
+                                toolName: toolCallInfo.name
+                            });
+
                             entity.state.recordToolCallEnd(result.toolCallId, result.result);
 
                             // ========== AFTER_TOOL_CALL Hook ==========
@@ -317,6 +397,13 @@ export class AgentLoopExecutor {
                                 result: result.result
                             });
                         } else {
+                            logger.warn('Tool call failed', {
+                                agentLoopId: entity.id,
+                                toolCallId: result.toolCallId,
+                                toolName: toolCallInfo.name,
+                                error: result.error
+                            });
+
                             entity.state.recordToolCallEnd(result.toolCallId, undefined, result.error);
 
                             // ========== AFTER_TOOL_CALL Hook (with error) ==========
@@ -328,6 +415,11 @@ export class AgentLoopExecutor {
                     }
                 }
 
+                logger.debug('Iteration completed', {
+                    agentLoopId: entity.id,
+                    iteration: entity.state.currentIteration
+                });
+
                 entity.state.endIteration(response.content);
 
                 // ========== AFTER_ITERATION Hook ==========
@@ -335,6 +427,12 @@ export class AgentLoopExecutor {
             }
 
             // 达到最大迭代次数
+            logger.info('Agent Loop reached maximum iterations', {
+                agentLoopId: entity.id,
+                maxIterations,
+                toolCallCount: entity.state.toolCallCount
+            });
+
             entity.state.complete();
             return {
                 success: true,
@@ -378,6 +476,13 @@ export class AgentLoopExecutor {
         const maxIterations = config.maxIterations ?? 10;
         const messageHistory = this.createMessageHistory();
 
+        logger.info('Agent Loop stream execution started', {
+            agentLoopId: entity.id,
+            maxIterations,
+            toolsCount: config.tools?.length || 0,
+            profileId: config.profileId || 'DEFAULT'
+        });
+
         // 初始化消息历史
         this.initializeMessageHistory(messageHistory, config, entity.getMessages());
 
@@ -392,8 +497,18 @@ export class AgentLoopExecutor {
 
         try {
             while (entity.state.currentIteration < maxIterations) {
+                logger.debug('Starting new stream iteration', {
+                    agentLoopId: entity.id,
+                    iteration: entity.state.currentIteration + 1,
+                    maxIterations
+                });
+
                 // 检查中断信号
                 if (entity.isAborted() || entity.shouldStop()) {
+                    logger.info('Agent Loop stream execution cancelled', {
+                        agentLoopId: entity.id,
+                        iteration: entity.state.currentIteration
+                    });
                     entity.state.cancel();
                     yield {
                         type: AgentStreamEventType.ERROR,
@@ -405,6 +520,10 @@ export class AgentLoopExecutor {
 
                 // 检查暂停信号
                 if (entity.shouldPause()) {
+                    logger.info('Agent Loop stream execution paused', {
+                        agentLoopId: entity.id,
+                        iteration: entity.state.currentIteration
+                    });
                     entity.state.pause();
                     yield {
                         type: AgentStreamEventType.ERROR,
@@ -423,6 +542,12 @@ export class AgentLoopExecutor {
                 // ========== BEFORE_LLM_CALL Hook ==========
                 await executeAgentHook(entity, 'BEFORE_LLM_CALL', this.emitAgentEvent.bind(this));
 
+                logger.debug('Calling LLM for stream', {
+                    agentLoopId: entity.id,
+                    iteration: entity.state.currentIteration,
+                    messageCount: messageHistory.getMessages().length
+                });
+
                 // 调用 LLM (流式) - 使用 LLMExecutor
                 const llmResult = await this.llmExecutor.executeLLMCall(
                     messageHistory.getMessages(),
@@ -440,10 +565,17 @@ export class AgentLoopExecutor {
                     }
                 );
 
+                logger.debug('LLM stream call completed', {
+                    agentLoopId: entity.id,
+                    iteration: entity.state.currentIteration,
+                    success: llmResult.success
+                });
+
                 // 处理中断状态
                 if (!llmResult.success) {
                     const interruption = llmResult.interruption;
                     if (interruption.type === 'paused') {
+                        logger.info('LLM stream call paused', { agentLoopId: entity.id, iteration: entity.state.currentIteration });
                         entity.state.pause();
                         yield {
                             type: AgentStreamEventType.ERROR,
@@ -453,6 +585,7 @@ export class AgentLoopExecutor {
                         return;
                     }
                     if (interruption.type === 'stopped' || interruption.type === 'aborted') {
+                        logger.info('LLM stream call stopped', { agentLoopId: entity.id, iteration: entity.state.currentIteration });
                         entity.state.cancel();
                         yield {
                             type: AgentStreamEventType.ERROR,
@@ -658,12 +791,23 @@ export class AgentLoopExecutor {
 
                 // 检查是否需要工具调用
                 if (!finalResult.toolCalls || finalResult.toolCalls.length === 0) {
+                    logger.debug('No tool calls required in stream, completing execution', {
+                        agentLoopId: entity.id,
+                        iteration: entity.state.currentIteration,
+                        contentLength: finalResult.content.length
+                    });
+
                     entity.state.endIteration(finalResult.content);
 
                     // ========== AFTER_ITERATION Hook ==========
                     await executeAgentHook(entity, 'AFTER_ITERATION', this.emitAgentEvent.bind(this));
 
                     entity.state.complete();
+                    logger.info('Agent Loop stream execution completed successfully', {
+                        agentLoopId: entity.id,
+                        iterations: entity.state.currentIteration,
+                        toolCallCount: entity.state.toolCallCount
+                    });
                     yield {
                         type: AgentStreamEventType.COMPLETE,
                         timestamp: Date.now(),
@@ -676,6 +820,12 @@ export class AgentLoopExecutor {
                     };
                     return;
                 }
+
+                logger.debug('Executing tool calls in stream', {
+                    agentLoopId: entity.id,
+                    iteration: entity.state.currentIteration,
+                    toolCallCount: finalResult.toolCalls.length
+                });
 
                 // 执行工具调用
                 for (const toolCall of finalResult.toolCalls) {
@@ -811,6 +961,11 @@ export class AgentLoopExecutor {
                     data: { iteration: entity.state.currentIteration }
                 };
 
+                logger.debug('Stream iteration completed', {
+                    agentLoopId: entity.id,
+                    iteration: entity.state.currentIteration
+                });
+
                 entity.state.endIteration(finalResult.content);
 
                 // ========== AFTER_ITERATION Hook ==========
@@ -818,6 +973,12 @@ export class AgentLoopExecutor {
             }
 
             // 达到最大迭代次数
+            logger.info('Agent Loop stream reached maximum iterations', {
+                agentLoopId: entity.id,
+                maxIterations,
+                toolCallCount: entity.state.toolCallCount
+            });
+
             entity.state.complete();
             yield {
                 type: AgentStreamEventType.COMPLETE,

@@ -16,6 +16,9 @@
  */
 
 import { InterruptedException, ThreadInterruptedException } from '@modular-agent/types';
+import { createContextualLogger } from '../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ component: 'InterruptionManager' });
 
 /**
  * 中断类型
@@ -95,6 +98,7 @@ export class InterruptionManager {
       return; // 已经是暂停状态
     }
 
+    logger.info('Execution pause requested', { contextId: this.contextId, nodeId: this.nodeId });
     this.interruptionType = 'PAUSE';
     const error = this.createError('Execution paused', 'PAUSE');
     this.abortController.abort(error);
@@ -108,6 +112,7 @@ export class InterruptionManager {
       return; // 已经是停止状态
     }
 
+    logger.info('Execution stop requested', { contextId: this.contextId, nodeId: this.nodeId });
     this.interruptionType = 'STOP';
     const error = this.createError('Execution stopped', 'STOP');
     this.abortController.abort(error);
@@ -117,6 +122,7 @@ export class InterruptionManager {
    * 恢复执行
    */
   resume(): void {
+    logger.info('Execution resumed', { contextId: this.contextId, nodeId: this.nodeId });
     this.interruptionType = null;
     // 重置 AbortController
     this.abortController = new AbortController();

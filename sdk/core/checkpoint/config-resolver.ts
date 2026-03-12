@@ -6,6 +6,9 @@
  */
 
 import type { CheckpointConfigSource, CheckpointConfigResult } from '@modular-agent/types';
+import { createContextualLogger } from '../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ component: 'CheckpointConfigResolver' });
 
 /**
  * 配置层级定义
@@ -61,6 +64,11 @@ export abstract class CheckpointConfigResolver {
     // 遍历各层级，找到第一个明确配置的
     for (const layer of sortedLayers) {
       if (layer.enabled !== undefined) {
+        logger.debug('Checkpoint config resolved', {
+          layer: layer.name,
+          enabled: layer.enabled,
+          description: layer.description || this.defaultDescription
+        });
         return {
           shouldCreate: layer.enabled,
           description: layer.description || this.defaultDescription,
@@ -70,6 +78,10 @@ export abstract class CheckpointConfigResolver {
     }
 
     // 没有明确配置，使用默认值
+    logger.debug('Checkpoint config using default', {
+      enabled: this.defaultEnabled,
+      description: this.defaultDescription
+    });
     return {
       shouldCreate: this.defaultEnabled,
       description: this.defaultDescription,

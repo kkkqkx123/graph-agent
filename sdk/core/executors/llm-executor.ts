@@ -24,6 +24,9 @@ import type { InterruptionCheckResult } from '@modular-agent/common-utils';
 import type { LLMMessage, LLMResult } from '@modular-agent/types';
 import { LLMWrapper } from '../llm/wrapper.js';
 import { ExecutionError, LLMError } from '@modular-agent/types';
+import { createContextualLogger } from '../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ component: 'LLMExecutor' });
 
 /**
  * LLM执行请求数据
@@ -138,6 +141,15 @@ export class LLMExecutor {
     requestData: LLMExecutionRequestData,
     options?: { abortSignal?: AbortSignal, threadId?: string, nodeId?: string }
   ): Promise<LLMExecutionResultWithInterruption> {
+    logger.debug('LLM call started', {
+      profileId: requestData.profileId,
+      threadId: options?.threadId,
+      nodeId: options?.nodeId,
+      messageCount: messages.length,
+      stream: requestData.stream,
+      hasTools: !!requestData.tools && requestData.tools.length > 0
+    });
+
     // 构建LLM请求
     const llmRequest = {
       profileId: requestData.profileId,
@@ -156,6 +168,7 @@ export class LLMExecutor {
       const streamResult = await this.llmWrapper.generateStream(llmRequest);
 
       if (streamResult.isErr()) {
+        logger.warn('LLM stream call failed', { profileId: requestData.profileId, error: streamResult.error.message });
         return this.handleLLMError(streamResult.error, requestData.profileId, options);
       }
 
@@ -180,6 +193,7 @@ export class LLMExecutor {
       const result = await this.llmWrapper.generate(llmRequest);
 
       if (result.isErr()) {
+        logger.warn('LLM call failed', { profileId: requestData.profileId, error: result.error.message });
         return this.handleLLMError(result.error, requestData.profileId, options);
       }
 
@@ -188,6 +202,7 @@ export class LLMExecutor {
 
     // 检查结果
     if (!finalResult) {
+      logger.error('No LLM result generated', { profileId: requestData.profileId });
       throw new ExecutionError(
         'No LLM result generated',
         undefined,
@@ -195,6 +210,13 @@ export class LLMExecutor {
         { profileId: requestData.profileId }
       );
     }
+
+    logger.debug('LLM call completed', {
+      profileId: requestData.profileId,
+      finishReason: finalResult.finishReason,
+      hasToolCalls: !!finalResult.toolCalls && finalResult.toolCalls.length > 0,
+      toolCallCount: finalResult.toolCalls?.length
+    });
 
     // 构建返回结果
     return {

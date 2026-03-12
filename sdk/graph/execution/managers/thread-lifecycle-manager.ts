@@ -35,6 +35,9 @@ import {
   emit
 } from '../utils/index.js';
 import { now } from '@modular-agent/common-utils';
+import { createContextualLogger } from '../../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ component: 'thread-lifecycle-manager' });
 
 /**
  * ThreadLifecycleManager - Thread生命周期管理器
@@ -52,12 +55,13 @@ export class ThreadLifecycleManager {
 
   /**
    * 启动Thread
-   * 
+   *
    * @param thread Thread实例
    * @throws ValidationError 状态转换不合法
    */
   async startThread(thread: Thread): Promise<void> {
     const previousStatus = thread.status;
+    logger.info('Starting thread', { threadId: thread.id, previousStatus });
 
     // 验证状态转换合法性
     validateTransition(thread.id, thread.status, 'RUNNING' as ThreadStatus);
@@ -72,6 +76,8 @@ export class ThreadLifecycleManager {
     // 触发THREAD_STATE_CHANGED事件
     const stateChangedEvent = buildThreadStateChangedEvent(thread, previousStatus, 'RUNNING');
     await emit(this.eventManager, stateChangedEvent);
+
+    logger.info('Thread started', { threadId: thread.id, status: 'RUNNING' });
   }
 
   /**
@@ -83,10 +89,12 @@ export class ThreadLifecycleManager {
   async pauseThread(thread: Thread): Promise<void> {
     // 幂等性检查：如果已经是PAUSED状态，直接返回
     if (thread.status === 'PAUSED') {
+      logger.debug('Thread already paused, skipping', { threadId: thread.id });
       return;
     }
 
     const previousStatus = thread.status;
+    logger.info('Pausing thread', { threadId: thread.id, previousStatus });
 
     // 验证状态转换合法性
     validateTransition(thread.id, thread.status, 'PAUSED' as ThreadStatus);
@@ -101,6 +109,8 @@ export class ThreadLifecycleManager {
     // 触发THREAD_STATE_CHANGED事件
     const stateChangedEvent = buildThreadStateChangedEvent(thread, previousStatus, 'PAUSED');
     await emit(this.eventManager, stateChangedEvent);
+
+    logger.info('Thread paused', { threadId: thread.id });
   }
 
   /**
@@ -112,10 +122,12 @@ export class ThreadLifecycleManager {
   async resumeThread(thread: Thread): Promise<void> {
     // 幂等性检查：如果已经是RUNNING状态，直接返回
     if (thread.status === 'RUNNING') {
+      logger.debug('Thread already running, skipping resume', { threadId: thread.id });
       return;
     }
 
     const previousStatus = thread.status;
+    logger.info('Resuming thread', { threadId: thread.id, previousStatus });
 
     // 验证状态转换合法性
     validateTransition(thread.id, thread.status, 'RUNNING' as ThreadStatus);
@@ -130,20 +142,24 @@ export class ThreadLifecycleManager {
     // 触发THREAD_STATE_CHANGED事件
     const stateChangedEvent = buildThreadStateChangedEvent(thread, previousStatus, 'RUNNING');
     await emit(this.eventManager, stateChangedEvent);
+
+    logger.info('Thread resumed', { threadId: thread.id });
   }
 
   /**
    * 完成Thread
-   * 
+   *
    * @param thread Thread实例
    * @param result 执行结果
    * @throws ValidationError 状态转换不合法
    */
   async completeThread(thread: Thread, result: ThreadResult): Promise<void> {
     const previousStatus = thread.status;
+    logger.info('Completing thread', { threadId: thread.id, previousStatus });
 
     // 如果已经是COMPLETED状态，只触发事件（幂等性）
     if (thread.status === 'COMPLETED' as ThreadStatus) {
+      logger.debug('Thread already completed, emitting event only', { threadId: thread.id });
       // 确保结束时间已设置
       if (!thread.endTime) {
         thread.endTime = now();
@@ -175,17 +191,23 @@ export class ThreadLifecycleManager {
     // 触发THREAD_STATE_CHANGED事件
     const stateChangedEvent = buildThreadStateChangedEvent(thread, previousStatus, 'COMPLETED');
     await emit(this.eventManager, stateChangedEvent);
+
+    logger.info('Thread completed', {
+      threadId: thread.id,
+      executionTime: thread.endTime - thread.startTime
+    });
   }
 
   /**
    * 失败Thread
-   * 
+   *
    * @param thread Thread实例
    * @param error 错误信息
    * @throws ValidationError 状态转换不合法
    */
   async failThread(thread: Thread, error: Error): Promise<void> {
     const previousStatus = thread.status;
+    logger.info('Failing thread', { threadId: thread.id, previousStatus, errorMessage: error.message });
 
     // 验证状态转换合法性
     validateTransition(thread.id, thread.status, 'FAILED' as ThreadStatus);
@@ -209,6 +231,8 @@ export class ThreadLifecycleManager {
     // 触发THREAD_STATE_CHANGED事件
     const stateChangedEvent = buildThreadStateChangedEvent(thread, previousStatus, 'FAILED');
     await emit(this.eventManager, stateChangedEvent);
+
+    logger.info('Thread failed', { threadId: thread.id, executionTime: thread.endTime - thread.startTime });
   }
 
   /**
@@ -221,10 +245,12 @@ export class ThreadLifecycleManager {
   async cancelThread(thread: Thread, reason?: string): Promise<void> {
     // 幂等性检查：如果已经是CANCELLED状态，直接返回
     if (thread.status === 'CANCELLED') {
+      logger.debug('Thread already cancelled, skipping', { threadId: thread.id });
       return;
     }
 
     const previousStatus = thread.status;
+    logger.info('Cancelling thread', { threadId: thread.id, previousStatus, reason });
 
     // 验证状态转换合法性
     validateTransition(thread.id, thread.status, 'CANCELLED' as ThreadStatus);
@@ -245,5 +271,7 @@ export class ThreadLifecycleManager {
     // 触发THREAD_STATE_CHANGED事件
     const stateChangedEvent = buildThreadStateChangedEvent(thread, previousStatus, 'CANCELLED');
     await emit(this.eventManager, stateChangedEvent);
+
+    logger.info('Thread cancelled', { threadId: thread.id, reason });
   }
 }

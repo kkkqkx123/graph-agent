@@ -17,6 +17,9 @@ import {
   buildCheckpointFailedEvent,
   buildCheckpointDeletedEvent
 } from '../utils/event/event-builder.js';
+import { createContextualLogger } from '../../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ operation: 'checkpoint-state-manager' });
 
 /**
  * 从检查点提取存储元数据
@@ -85,6 +88,8 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
       };
     }
 
+    logger.debug('Executing cleanup policy', { policy: this.cleanupPolicy });
+
     // 获取所有检查点ID
     const checkpointIds = await this.storageCallback.list();
 
@@ -118,6 +123,12 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
       this.checkpointSizes.delete(checkpointId);
     }
 
+    logger.info('Cleanup policy executed', {
+      deletedCount: toDeleteIds.length,
+      freedSpaceBytes,
+      remainingCount: checkpointIds.length - toDeleteIds.length
+    });
+
     return {
       deletedCheckpointIds: toDeleteIds,
       deletedCount: toDeleteIds.length,
@@ -133,11 +144,15 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
    * @returns 删除的检查点数量
    */
   async cleanupThreadCheckpoints(threadId: string): Promise<number> {
+    logger.info('Cleaning up thread checkpoints', { threadId });
+
     const checkpointIds = await this.storageCallback.list({ threadId });
 
     for (const checkpointId of checkpointIds) {
       await this.delete(checkpointId, 'cleanup');
     }
+
+    logger.info('Thread checkpoints cleaned up', { threadId, deletedCount: checkpointIds.length });
 
     return checkpointIds.length;
   }
@@ -148,14 +163,20 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
    * @returns 检查点ID
    */
   async create(checkpointData: Checkpoint): Promise<string> {
+    const threadId = checkpointData.threadId;
+    const checkpointId = checkpointData.id;
+
+    logger.debug('Creating checkpoint', { threadId, checkpointId, workflowId: checkpointData.workflowId });
+
     try {
       // 使用传入的 checkpointData.id，而不是生成新的 ID
-      const checkpointId = checkpointData.id;
       const data = serializeCheckpoint(checkpointData);
       const storageMetadata = extractStorageMetadata(checkpointData);
 
       await this.storageCallback.save(checkpointId, data, storageMetadata);
       this.checkpointSizes.set(checkpointId, data.length);
+
+      logger.info('Checkpoint created', { threadId, checkpointId, sizeBytes: data.length });
 
       // 触发检查点创建事件
       const createdEvent = buildCheckpointCreatedEvent({
@@ -234,12 +255,16 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
    * @param reason 删除原因
    */
   async delete(checkpointId: string, reason: 'manual' | 'cleanup' | 'policy' = 'manual'): Promise<void> {
+    logger.debug('Deleting checkpoint', { checkpointId, reason });
+
     try {
       // 先获取检查点信息（用于触发事件）
       const checkpoint = await this.get(checkpointId);
 
       await this.storageCallback.delete(checkpointId);
       this.checkpointSizes.delete(checkpointId);
+
+      logger.info('Checkpoint deleted', { checkpointId, reason, threadId: checkpoint?.threadId });
 
       // 触发检查点删除事件
       if (checkpoint) {

@@ -16,6 +16,9 @@ import { ConfigurationValidationError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 import { validateConfig } from './utils.js';
+import { createContextualLogger } from '../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ component: 'ToolStaticValidator' });
 
 /**
  * 工具参数属性schema（基于JSON Schema Draft 2020-12）
@@ -153,7 +156,17 @@ export class StaticValidator {
    * @returns 验证结果
    */
   validateTool(tool: Tool): Result<Tool, ConfigurationValidationError[]> {
-    return validateConfig(tool, toolSchema, 'tool', 'tool');
+    const result = validateConfig(tool, toolSchema, 'tool', 'tool');
+
+    if (result.isErr()) {
+      logger.debug('Tool validation failed', {
+        toolId: tool.id,
+        toolType: tool.type,
+        errors: result.error.map(e => e.message)
+      });
+    }
+
+    return result;
   }
 
   /**

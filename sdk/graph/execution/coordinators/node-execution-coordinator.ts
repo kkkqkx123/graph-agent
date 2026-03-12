@@ -45,6 +45,9 @@ import {
 import type { InterruptionDetector } from '../managers/interruption-detector.js';
 import { checkInterruption, shouldContinue, getInterruptionDescription } from '@modular-agent/common-utils';
 import { NodeHandlerContextFactory } from '../factories/node-handler-context-factory.js';
+import { createContextualLogger } from '../../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ operation: 'node-execution-coordinator' });
 
 /**
  * 节点执行协调器配置
@@ -167,12 +170,16 @@ export class NodeExecutionCoordinator {
    * @param type 中断类型（PAUSE 或 STOP）
    */
   async handleInterruption(threadId: string, nodeId: string, type: 'PAUSE' | 'STOP'): Promise<void> {
+    logger.info('Handling interruption', { threadId, nodeId, type });
+
     if (!this.threadRegistry) {
+      logger.debug('ThreadRegistry not available, skipping interruption handling', { threadId });
       return;
     }
 
     const threadContext = this.threadRegistry.get(threadId);
     if (!threadContext) {
+      logger.warn('ThreadContext not found for interruption', { threadId, nodeId });
       return;
     }
 
@@ -193,7 +200,9 @@ export class NodeExecutionCoordinator {
           },
           this.checkpointDependencies
         );
+        logger.debug('Interruption checkpoint created', { threadId, nodeId, type });
       } catch (error) {
+        logger.error('Failed to create interruption checkpoint', { threadId, nodeId, type, error: getErrorOrNew(error) });
         // 抛出检查点错误，由 ErrorService 统一处理
         throw new CheckpointError(
           'Failed to create interruption checkpoint',
@@ -211,11 +220,13 @@ export class NodeExecutionCoordinator {
       threadContext.setStatus('PAUSED');
       const pausedEvent = buildThreadPausedEvent(threadContext.thread);
       await emit(this.eventManager, pausedEvent);
+      logger.info('Thread paused event emitted', { threadId, nodeId });
     } else if (type === 'STOP') {
       threadContext.setStatus('CANCELLED');
       threadContext.setEndTime(now());
       const cancelledEvent = buildThreadCancelledEvent(threadContext.thread, 'user_requested');
       await emit(this.eventManager, cancelledEvent);
+      logger.info('Thread cancelled event emitted', { threadId, nodeId });
     }
   }
 
@@ -231,10 +242,13 @@ export class NodeExecutionCoordinator {
     const threadId = threadEntity.getThreadId();
     const abortSignal = this.interruptionManager.getAbortSignal();
 
+    logger.debug('Starting node execution', { threadId, nodeId, nodeType, nodeName: node.name });
+
     // 使用返回值标记体系检查中断
     const interruption = checkInterruption(abortSignal);
 
     if (!shouldContinue(interruption)) {
+      logger.info('Node execution interrupted', { threadId, nodeId, interruptionType: interruption.type });
       // 如果已中止，处理中断（创建检查点、触发事件）
       const interruptionType = interruption.type === 'paused' ? 'PAUSE' : 'STOP';
       await this.handleInterruption(threadId, nodeId, interruptionType);
@@ -260,6 +274,7 @@ export class NodeExecutionCoordinator {
 
     // 检查是否是子图边界节点
     if (graphNode?.internalMetadata?.[SUBGRAPH_METADATA_KEYS.BOUNDARY_TYPE]) {
+      logger.debug('Handling subgraph boundary', { threadId, nodeId, boundaryType: graphNode.internalMetadata[SUBGRAPH_METADATA_KEYS.BOUNDARY_TYPE] });
       await this.handleSubgraphBoundary(threadEntity, graphNode);
     }
 
@@ -288,6 +303,7 @@ export class NodeExecutionCoordinator {
         );
 
         if (configResult.shouldCreate) {
+          logger.debug('Creating checkpoint before node execution', { threadId, nodeId });
           try {
             await createCheckpoint(
               {
@@ -298,6 +314,7 @@ export class NodeExecutionCoordinator {
               this.checkpointDependencies
             );
           } catch (error) {
+            logger.error('Failed to create checkpoint before node', { threadId, nodeId, error: getErrorOrNew(error) });
             // 抛出检查点错误，由 ErrorService 统一处理
             throw new CheckpointError(
               `Failed to create checkpoint before node "${node.name}"`,
@@ -313,6 +330,7 @@ export class NodeExecutionCoordinator {
 
       // 步骤3：执行BEFORE_EXECUTE类型的Hook
       if (node.hooks && node.hooks.length > 0) {
+        logger.debug('Executing BEFORE_EXECUTE hooks', { threadId, nodeId, hookCount: node.hooks.length });
         await executeHook(
           {
             thread: threadEntity.getThread(),
@@ -325,6 +343,7 @@ export class NodeExecutionCoordinator {
       }
 
       // 步骤4：执行节点逻辑
+      logger.debug('Executing node logic', { threadId, nodeId, nodeType });
       const nodeResult = await this.executeNodeLogic(threadEntity, node);
 
       // 步骤5：记录节点执行结果
@@ -332,6 +351,7 @@ export class NodeExecutionCoordinator {
 
       // 步骤6：执行AFTER_EXECUTE类型的Hook
       if (node.hooks && node.hooks.length > 0) {
+        logger.debug('Executing AFTER_EXECUTE hooks', { threadId, nodeId, hookCount: node.hooks.length });
         await executeHook(
           {
             thread: threadEntity.getThread(),
@@ -359,6 +379,7 @@ export class NodeExecutionCoordinator {
         );
 
         if (configResult.shouldCreate) {
+          logger.debug('Creating checkpoint after node execution', { threadId, nodeId });
           try {
             await createCheckpoint(
               {
@@ -369,6 +390,7 @@ export class NodeExecutionCoordinator {
               this.checkpointDependencies
             );
           } catch (error) {
+            logger.error('Failed to create checkpoint after node', { threadId, nodeId, error: getErrorOrNew(error) });
             // 抛出检查点错误，由 ErrorService 统一处理
             throw new CheckpointError(
               `Failed to create checkpoint after node "${node.name}"`,
@@ -392,6 +414,7 @@ export class NodeExecutionCoordinator {
           executionTime: nodeResult.executionTime || 0
         });
         await emit(this.eventManager, nodeCompletedEvent);
+        logger.debug('Node execution completed', { threadId, nodeId, executionTime: nodeResult.executionTime });
       } else if (nodeResult.status === 'FAILED') {
         const nodeFailedEvent = buildNodeFailedEvent({
           threadId: threadEntity.getThreadId(),
@@ -400,10 +423,12 @@ export class NodeExecutionCoordinator {
           error: getErrorOrNew(nodeResult.error)
         });
         await emit(this.eventManager, nodeFailedEvent);
+        logger.warn('Node execution failed', { threadId, nodeId, error: getErrorOrNew(nodeResult.error) });
       }
 
       return nodeResult;
     } catch (error) {
+      logger.error('Node execution error', { threadId, nodeId, error: getErrorOrNew(error) });
       // 处理节点执行错误
       const errorResult: NodeExecutionResult = {
         nodeId,
@@ -437,8 +462,10 @@ export class NodeExecutionCoordinator {
    */
   private async handleSubgraphBoundary(threadEntity: ThreadEntity, graphNode: any): Promise<void> {
     const boundaryType = graphNode.internalMetadata[SUBGRAPH_METADATA_KEYS.BOUNDARY_TYPE] as SubgraphBoundaryType;
+    const threadId = threadEntity.getThreadId();
 
     if (boundaryType === 'entry') {
+      logger.info('Entering subgraph', { threadId, subgraphId: graphNode.workflowId, parentWorkflowId: graphNode.parentWorkflowId });
       // 进入子图
       const input = getSubgraphInput(threadEntity);
       await enterSubgraph(
@@ -462,6 +489,12 @@ export class NodeExecutionCoordinator {
       const subgraphContext = threadEntity.getCurrentSubgraphContext();
       if (subgraphContext) {
         const output = getSubgraphOutput(threadEntity);
+
+        logger.info('Exiting subgraph', {
+          threadId,
+          subgraphId: subgraphContext.workflowId,
+          executionTime: diffTimestamp(subgraphContext.startTime, now())
+        });
 
         // 触发子图完成事件
         const subgraphCompletedEvent = buildSubgraphCompletedEvent({

@@ -12,6 +12,9 @@ import { AgentLoopStatus } from '@modular-agent/types';
 import { AgentLoopFactory, type AgentLoopEntityOptions } from '../../execution/factories/index.js';
 import { AgentLoopRegistry } from '../../services/agent-loop-registry.js';
 import { AgentLoopExecutor, type AgentLoopStreamEvent } from '../executors/agent-loop-executor.js';
+import { createContextualLogger } from '../../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ component: 'AgentLoopCoordinator' });
 
 /**
  * 执行选项
@@ -70,11 +73,25 @@ export class AgentLoopCoordinator {
     // 1. 构建实体
     const entity = this.buildEntity(config, options);
 
+    logger.info('Agent Loop entity created', {
+      agentLoopId: entity.id,
+      maxIterations: config.maxIterations,
+      toolsCount: config.tools?.length || 0
+    });
+
     // 2. 注册实体
     this.registry.register(entity);
 
+    logger.debug('Agent Loop registered', { agentLoopId: entity.id });
+
     // 3. 开始执行
     entity.state.start();
+
+    logger.info('Agent Loop execution started', {
+      agentLoopId: entity.id,
+      nodeId: entity.nodeId,
+      parentThreadId: entity.parentThreadId
+    });
 
     try {
       // 4. 执行循环
@@ -83,13 +100,27 @@ export class AgentLoopCoordinator {
       // 5. 更新状态
       if (result.success) {
         entity.state.complete();
+        logger.info('Agent Loop execution completed successfully', {
+          agentLoopId: entity.id,
+          iterations: result.iterations,
+          toolCallCount: result.toolCallCount
+        });
       } else {
         entity.state.fail(result.error);
+        logger.warn('Agent Loop execution failed', {
+          agentLoopId: entity.id,
+          iterations: result.iterations,
+          error: result.error
+        });
       }
 
       return result;
     } catch (error) {
       entity.state.fail(error);
+      logger.error('Agent Loop execution unexpected error', {
+        agentLoopId: entity.id,
+        error: error instanceof Error ? error.message : String(error)
+      });
       return {
         success: false,
         iterations: entity.state.currentIteration,
@@ -112,11 +143,25 @@ export class AgentLoopCoordinator {
     // 1. 构建实体
     const entity = this.buildEntity(config, options);
 
+    logger.info('Agent Loop entity created for stream execution', {
+      agentLoopId: entity.id,
+      maxIterations: config.maxIterations,
+      toolsCount: config.tools?.length || 0
+    });
+
     // 2. 注册实体
     this.registry.register(entity);
 
+    logger.debug('Agent Loop registered for stream execution', { agentLoopId: entity.id });
+
     // 3. 开始执行
     entity.state.start();
+
+    logger.info('Agent Loop stream execution started', {
+      agentLoopId: entity.id,
+      nodeId: entity.nodeId,
+      parentThreadId: entity.parentThreadId
+    });
 
     try {
       // 4. 流式执行循环
@@ -126,18 +171,28 @@ export class AgentLoopCoordinator {
         // 检查中断信号
         if (entity.shouldPause()) {
           entity.state.pause();
+          logger.info('Agent Loop stream execution paused', { agentLoopId: entity.id });
           return;
         }
         if (entity.shouldStop()) {
           entity.state.cancel();
+          logger.info('Agent Loop stream execution stopped', { agentLoopId: entity.id });
           return;
         }
       }
 
       // 5. 完成状态
       entity.state.complete();
+      logger.info('Agent Loop stream execution completed', {
+        agentLoopId: entity.id,
+        iterations: entity.state.currentIteration
+      });
     } catch (error) {
       entity.state.fail(error);
+      logger.error('Agent Loop stream execution error', {
+        agentLoopId: entity.id,
+        error: error instanceof Error ? error.message : String(error)
+      });
       throw error;
     }
   }
@@ -152,23 +207,51 @@ export class AgentLoopCoordinator {
     // 1. 构建实体
     const entity = this.buildEntity(config, options);
 
+    logger.info('Agent Loop entity created for async execution', {
+      agentLoopId: entity.id,
+      maxIterations: config.maxIterations,
+      toolsCount: config.tools?.length || 0
+    });
+
     // 2. 注册实体
     this.registry.register(entity);
 
+    logger.debug('Agent Loop registered for async execution', { agentLoopId: entity.id });
+
     // 3. 开始执行
     entity.state.start();
+
+    logger.info('Agent Loop async execution started', {
+      agentLoopId: entity.id,
+      nodeId: entity.nodeId,
+      parentThreadId: entity.parentThreadId
+    });
 
     // 4. 异步执行（不等待结果）
     this.executor.execute(entity)
       .then(result => {
         if (result.success) {
           entity.state.complete();
+          logger.info('Agent Loop async execution completed', {
+            agentLoopId: entity.id,
+            iterations: result.iterations,
+            toolCallCount: result.toolCallCount
+          });
         } else {
           entity.state.fail(result.error);
+          logger.warn('Agent Loop async execution failed', {
+            agentLoopId: entity.id,
+            iterations: result.iterations,
+            error: result.error
+          });
         }
       })
       .catch(error => {
         entity.state.fail(error);
+        logger.error('Agent Loop async execution unexpected error', {
+          agentLoopId: entity.id,
+          error: error instanceof Error ? error.message : String(error)
+        });
       });
 
     return entity.id;
@@ -179,17 +262,25 @@ export class AgentLoopCoordinator {
    * @param id 实例 ID
    */
   async pause(id: ID): Promise<void> {
+    logger.debug('Attempting to pause Agent Loop', { agentLoopId: id });
+
     const entity = this.registry.get(id);
     if (!entity) {
+      logger.warn('Agent Loop not found for pause operation', { agentLoopId: id });
       throw new Error(`AgentLoop not found: ${id}`);
     }
 
     if (!entity.isRunning()) {
+      logger.warn('Agent Loop is not running, cannot pause', {
+        agentLoopId: id,
+        currentStatus: entity.getStatus()
+      });
       throw new Error(`AgentLoop is not running: ${id}`);
     }
 
     // 设置暂停标志
     entity.interrupt('PAUSE');
+    logger.info('Agent Loop pause requested', { agentLoopId: id });
   }
 
   /**
@@ -198,12 +289,19 @@ export class AgentLoopCoordinator {
    * @returns 执行结果
    */
   async resume(id: ID): Promise<AgentLoopResult> {
+    logger.debug('Attempting to resume Agent Loop', { agentLoopId: id });
+
     const entity = this.registry.get(id);
     if (!entity) {
+      logger.warn('Agent Loop not found for resume operation', { agentLoopId: id });
       throw new Error(`AgentLoop not found: ${id}`);
     }
 
     if (!entity.isPaused()) {
+      logger.warn('Agent Loop is not paused, cannot resume', {
+        agentLoopId: id,
+        currentStatus: entity.getStatus()
+      });
       throw new Error(`AgentLoop is not paused: ${id}`);
     }
 
@@ -213,18 +311,37 @@ export class AgentLoopCoordinator {
     // 恢复执行
     entity.state.resume();
 
+    logger.info('Agent Loop resumed', {
+      agentLoopId: id,
+      currentIteration: entity.state.currentIteration
+    });
+
     try {
       const result = await this.executor.execute(entity);
 
       if (result.success) {
         entity.state.complete();
+        logger.info('Agent Loop resumed execution completed successfully', {
+          agentLoopId: id,
+          iterations: result.iterations,
+          toolCallCount: result.toolCallCount
+        });
       } else {
         entity.state.fail(result.error);
+        logger.warn('Agent Loop resumed execution failed', {
+          agentLoopId: id,
+          iterations: result.iterations,
+          error: result.error
+        });
       }
 
       return result;
     } catch (error) {
       entity.state.fail(error);
+      logger.error('Agent Loop resumed execution unexpected error', {
+        agentLoopId: id,
+        error: error instanceof Error ? error.message : String(error)
+      });
       return {
         success: false,
         iterations: entity.state.currentIteration,
@@ -239,14 +356,23 @@ export class AgentLoopCoordinator {
    * @param id 实例 ID
    */
   async stop(id: ID): Promise<void> {
+    logger.debug('Attempting to stop Agent Loop', { agentLoopId: id });
+
     const entity = this.registry.get(id);
     if (!entity) {
+      logger.warn('Agent Loop not found for stop operation', { agentLoopId: id });
       throw new Error(`AgentLoop not found: ${id}`);
     }
 
     // 设置停止标志并中止
     entity.interrupt('STOP');
     entity.state.cancel();
+
+    logger.info('Agent Loop stopped', {
+      agentLoopId: id,
+      iterations: entity.state.currentIteration,
+      toolCallCount: entity.state.toolCallCount
+    });
   }
 
   /**
@@ -283,6 +409,10 @@ export class AgentLoopCoordinator {
    * 清理已完成的实例
    */
   cleanup(): number {
-    return this.registry.cleanupCompleted();
+    const count = this.registry.cleanupCompleted();
+    if (count > 0) {
+      logger.info('Agent Loop completed instances cleaned up', { count });
+    }
+    return count;
   }
 }

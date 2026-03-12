@@ -7,6 +7,9 @@
 
 import type { BaseTriggerDefinition, BaseEventData, TriggerExecutionResult, BaseTriggerAction } from '../types.js';
 import { now } from '@modular-agent/common-utils';
+import { createContextualLogger } from '../../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ component: 'CustomTriggerHandler' });
 
 /**
  * 自定义动作参数
@@ -32,11 +35,14 @@ export async function executeCustomAction(
   const startTime = now();
   const { action } = trigger;
 
+  logger.debug('Custom trigger action executing', { triggerId: trigger.id, actionType: action.type });
+
   try {
     const params = action.parameters as CustomActionParameters;
     const { handler } = params;
 
     if (!handler || typeof handler !== 'function') {
+      logger.warn('Custom action missing handler function', { triggerId: trigger.id });
       return {
         triggerId: trigger.id,
         success: false,
@@ -49,6 +55,7 @@ export async function executeCustomAction(
     // 执行自定义处理函数
     const result = await handler(action, eventData);
 
+    logger.debug('Custom trigger action completed', { triggerId: trigger.id, executionTime: now() - startTime });
     return {
       triggerId: trigger.id,
       success: true,
@@ -57,6 +64,7 @@ export async function executeCustomAction(
       result
     };
   } catch (error) {
+    logger.error('Custom trigger action failed', { triggerId: trigger.id, error: error instanceof Error ? error.message : String(error) });
     return {
       triggerId: trigger.id,
       success: false,

@@ -19,6 +19,9 @@ import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
 import { StaticValidator } from '../validation/tool-static-validator.js';
 import { RuntimeValidator } from '../validation/tool-runtime-validator.js';
+import { createContextualLogger } from '../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ component: 'ToolService' });
 
 /**
  * 工具服务类
@@ -55,11 +58,13 @@ class ToolService {
     // 静态验证工具定义
     const result = this.staticValidator.validateTool(tool);
     if (result.isErr()) {
+      logger.error('Tool validation failed', { toolId: tool.id, errors: result.error.map(e => e.message) });
       throw result.error[0];
     }
 
     // 检查工具 ID 是否已存在
     if (this.tools.has(tool.id)) {
+      logger.warn('Tool already exists', { toolId: tool.id });
       throw new ConfigurationValidationError(
         `Tool with id '${tool.id}' already exists`,
         {
@@ -71,6 +76,7 @@ class ToolService {
     }
 
     this.tools.set(tool.id, tool);
+    logger.info('Tool registered', { toolId: tool.id, toolType: tool.type, toolName: tool.name });
   }
 
   /**
@@ -90,12 +96,14 @@ class ToolService {
    */
   unregisterTool(toolId: string): void {
     if (!this.tools.has(toolId)) {
+      logger.warn('Attempted to unregister non-existent tool', { toolId });
       throw new ToolNotFoundError(
         `Tool with id '${toolId}' not found`,
         toolId
       );
     }
     this.tools.delete(toolId);
+    logger.info('Tool unregistered', { toolId });
   }
 
   /**
@@ -191,12 +199,15 @@ class ToolService {
     options: ToolExecutionOptions = {},
     threadId?: string
   ): Promise<Result<ToolExecutionResult, ToolError>> {
+    logger.debug('Tool execution started', { toolId, threadId, hasParameters: Object.keys(parameters).length > 0 });
+
     // 获取工具定义
     const tool = this.getTool(toolId);
 
     // 获取对应的执行器
     const executor = this.executors.get(tool.type);
     if (!executor) {
+      logger.error('No executor found for tool type', { toolId, toolType: tool.type });
       return err(new ToolError(
         `No executor found for tool type '${tool.type}'`,
         toolId,
@@ -210,6 +221,7 @@ class ToolService {
       this.runtimeValidator.validate(tool, parameters);
     } catch (error) {
       if (error instanceof RuntimeValidationError) {
+        logger.warn('Tool parameter validation failed', { toolId, error: error.message });
         return err(new ToolError(
           error.message,
           toolId,
@@ -218,6 +230,7 @@ class ToolService {
           error
         ));
       }
+      logger.warn('Tool parameter validation failed', { toolId, error: String(error) });
       return err(new ToolError(
         'Parameter validation failed',
         toolId,
@@ -234,9 +247,11 @@ class ToolService {
     );
 
     if (result.isErr()) {
+      logger.error('Tool execution failed', { toolId, toolType: tool.type, error: result.error.message });
       return err(this.convertToToolError(result.error, toolId, tool.type, parameters));
     }
 
+    logger.debug('Tool execution completed', { toolId, success: result.value.success });
     return ok(result.value);
   }
 
@@ -300,7 +315,9 @@ class ToolService {
    * 清空所有工具
    */
   clear(): void {
+    const count = this.tools.size;
     this.tools.clear();
+    logger.info('All tools cleared', { count });
   }
 
   /**
@@ -308,9 +325,11 @@ class ToolService {
    * @param threadId 线程 ID
    */
   cleanupThread(threadId: string): void {
+    logger.debug('Cleaning up thread stateful tools', { threadId });
     const statefulExecutor = this.executors.get('STATEFUL');
     if (statefulExecutor && typeof (statefulExecutor as any).cleanupThread === 'function') {
       (statefulExecutor as any).cleanupThread(threadId);
+      logger.debug('Thread stateful tools cleaned up', { threadId });
     }
   }
 
@@ -318,11 +337,13 @@ class ToolService {
    * 清理所有执行器的资源
    */
   async cleanupAll(): Promise<void> {
+    logger.info('Cleaning up all tool executors');
     for (const executor of this.executors.values()) {
       if (typeof executor.cleanup === 'function') {
         await executor.cleanup();
       }
     }
+    logger.info('All tool executors cleaned up');
   }
 
   /**

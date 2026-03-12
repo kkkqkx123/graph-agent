@@ -13,6 +13,9 @@
  */
 
 import { AgentLoopEntity } from '../../entities/agent-loop-entity.js';
+import { createContextualLogger } from '../../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ component: 'AgentLoopLifecycle' });
 
 /**
  * 检查点依赖项
@@ -43,23 +46,56 @@ export async function createAgentLoopCheckpoint(
   dependencies: AgentLoopCheckpointDependencies,
   options?: AgentLoopCheckpointOptions
 ): Promise<string> {
-  const { AgentLoopCheckpointCoordinator } = await import('../../checkpoint/index.js');
-  return await AgentLoopCheckpointCoordinator.createCheckpoint(
-    entity,
-    dependencies,
-    options
-  );
+  logger.info('Creating Agent Loop checkpoint', {
+    agentLoopId: entity.id,
+    iteration: entity.state.currentIteration,
+    status: entity.getStatus()
+  });
+
+  try {
+    const { AgentLoopCheckpointCoordinator } = await import('../../checkpoint/index.js');
+    const checkpointId = await AgentLoopCheckpointCoordinator.createCheckpoint(
+      entity,
+      dependencies,
+      options
+    );
+
+    logger.info('Agent Loop checkpoint created successfully', {
+      agentLoopId: entity.id,
+      checkpointId,
+      iteration: entity.state.currentIteration
+    });
+
+    return checkpointId;
+  } catch (error) {
+    logger.error('Failed to create Agent Loop checkpoint', {
+      agentLoopId: entity.id,
+      error: error instanceof Error ? error.message : String(error)
+    });
+    throw error;
+  }
 }
 
 /**
  * 清理 Agent Loop 资源
- * @param entity Agent Loop 实体
+ * @param entity Agent Loop 实例
  */
 export function cleanupAgentLoop(entity: AgentLoopEntity): void {
+  logger.debug('Cleaning up Agent Loop resources', {
+    agentLoopId: entity.id,
+    iteration: entity.state.currentIteration,
+    status: entity.getStatus()
+  });
+
   entity.state.cleanup();
   entity.messageHistoryManager.cleanup();
   entity.variableStateManager.cleanup();
   entity.abortController = undefined;
+
+  logger.info('Agent Loop resources cleaned up', {
+    agentLoopId: entity.id,
+    iteration: entity.state.currentIteration
+  });
 }
 
 /**
@@ -68,6 +104,12 @@ export function cleanupAgentLoop(entity: AgentLoopEntity): void {
  * @returns 克隆的实体
  */
 export function cloneAgentLoop(entity: AgentLoopEntity): AgentLoopEntity {
+  logger.debug('Cloning Agent Loop entity', {
+    agentLoopId: entity.id,
+    iteration: entity.state.currentIteration,
+    status: entity.getStatus()
+  });
+
   const cloned = new AgentLoopEntity(
     entity.id,
     { ...entity.config },
@@ -85,5 +127,12 @@ export function cloneAgentLoop(entity: AgentLoopEntity): AgentLoopEntity {
   cloned.parentThreadId = entity.parentThreadId;
   cloned.nodeId = entity.nodeId;
   cloned.conversationManager = entity.conversationManager;
+
+  logger.info('Agent Loop entity cloned successfully', {
+    agentLoopId: entity.id,
+    clonedAgentLoopId: cloned.id,
+    iteration: entity.state.currentIteration
+  });
+
   return cloned;
 }

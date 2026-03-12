@@ -27,6 +27,9 @@ import type { ThreadResult } from '@modular-agent/types';
 import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { GraphRegistry } from '../../services/graph-registry.js';
 import type { ThreadExecutionCoordinator } from '../coordinators/thread-execution-coordinator.js';
+import { createContextualLogger } from '../../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ component: 'thread-executor' });
 
 /**
  * 线程隔离管理器工厂接口
@@ -81,11 +84,15 @@ export class ThreadExecutor {
    * @returns 执行结果
    */
   async executeThread(threadEntity: ThreadEntity): Promise<ThreadResult> {
+    const threadId = threadEntity.getThreadId();
     const workflowId = threadEntity.getWorkflowId();
+
+    logger.info('Starting thread execution', { threadId, workflowId });
 
     // 验证工作流图存在
     const preprocessedGraph = this.graphRegistry.get(workflowId);
     if (!preprocessedGraph) {
+      logger.error('Graph not found for workflow', { threadId, workflowId });
       throw new Error(`Graph not found for workflow: ${workflowId}`);
     }
 
@@ -93,6 +100,14 @@ export class ThreadExecutor {
     const threadExecutionCoordinator = this.threadExecutionCoordinatorFactory.create(threadEntity);
 
     // 执行Thread
-    return await threadExecutionCoordinator.execute();
+    const result = await threadExecutionCoordinator.execute();
+
+    logger.info('Thread execution completed', {
+      threadId,
+      workflowId,
+      nodeCount: result.nodeResults?.length ?? 0
+    });
+
+    return result;
   }
 }

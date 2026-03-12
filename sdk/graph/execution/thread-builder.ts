@@ -19,7 +19,7 @@ import type { EventManager } from '../../core/services/event-manager.js';
 import type { ToolService } from '../../core/services/tool-service.js';
 import { MessageHistoryManager } from './managers/message-history-manager.js';
 
-const logger = createContextualLogger();
+const logger = createContextualLogger({ operation: 'thread-builder' });
 
 /**
  * ThreadBuilder - Thread构建器
@@ -77,10 +77,13 @@ export class ThreadBuilder {
    * @returns ThreadEntity实例
    */
   async build(workflowId: string, options: ThreadOptions = {}): Promise<ThreadEntity> {
+    logger.info('Building thread from workflow', { workflowId });
+
     // 从 graph-registry 获取已预处理的图
     const preprocessedGraph = this.getGraphRegistry().get(workflowId);
 
     if (!preprocessedGraph) {
+      logger.error('Workflow not found or not preprocessed', { workflowId });
       throw new ExecutionError(
         `Workflow '${workflowId}' not found or not preprocessed`,
         undefined,
@@ -89,7 +92,11 @@ export class ThreadBuilder {
     }
 
     // 从PreprocessedGraph构建
-    return this.buildFromPreprocessedGraph(preprocessedGraph, options);
+    const threadEntity = await this.buildFromPreprocessedGraph(preprocessedGraph, options);
+
+    logger.info('Thread built successfully', { threadId: threadEntity.getThreadId(), workflowId });
+
+    return threadEntity;
   }
 
   /**
@@ -193,6 +200,12 @@ export class ThreadBuilder {
   async createCopy(sourceThreadEntity: ThreadEntity): Promise<ThreadEntity> {
     const sourceThread = sourceThreadEntity.getThread();
     const copiedThreadId = generateId();
+
+    logger.info('Creating thread copy', {
+      sourceThreadId: sourceThread.id,
+      copiedThreadId
+    });
+
     const now = getCurrentTimestamp();
 
     const copiedThread: Thread = {
@@ -239,6 +252,8 @@ export class ThreadBuilder {
     // 创建并返回 ThreadEntity
     const copiedThreadEntity = new ThreadEntity(copiedThread, executionState, conversationManager);
 
+    logger.debug('Thread copy created', { copiedThreadId, sourceThreadId: sourceThread.id });
+
     return copiedThreadEntity;
   }
 
@@ -251,6 +266,14 @@ export class ThreadBuilder {
   async createFork(parentThreadEntity: ThreadEntity, forkConfig: any): Promise<ThreadEntity> {
     const parentThread = parentThreadEntity.getThread();
     const forkThreadId = generateId();
+
+    logger.info('Creating fork thread', {
+      parentThreadId: parentThread.id,
+      forkThreadId,
+      forkId: forkConfig.forkId,
+      forkPathId: forkConfig.forkPathId
+    });
+
     const now = getCurrentTimestamp();
 
     // 分离 thread 和 global 变量
@@ -305,6 +328,8 @@ export class ThreadBuilder {
 
     // 创建并返回 ThreadEntity
     const forkThreadEntity = new ThreadEntity(forkThread, executionState, conversationManager);
+
+    logger.debug('Fork thread created', { forkThreadId, parentThreadId: parentThread.id });
 
     return forkThreadEntity;
   }

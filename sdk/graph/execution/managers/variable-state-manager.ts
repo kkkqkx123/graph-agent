@@ -20,6 +20,9 @@ import type { VariableScope, VariableScopes } from '@modular-agent/types';
 import type { WorkflowVariable } from '@modular-agent/types';
 import { ValidationError, RuntimeValidationError } from '@modular-agent/types';
 import type { LifecycleCapable } from '../../../core/managers/lifecycle-capable.js';
+import { createContextualLogger } from '../../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ component: 'variable-state-manager' });
 
 /**
  * VariableStateManager - 变量状态管理器
@@ -174,6 +177,8 @@ export class VariableStateManager implements LifecycleCapable<{
    * @param scope 作用域
    */
   setVariableValue(name: string, value: any, scope: VariableScope): void {
+    logger.debug('Setting variable value', { name, scope });
+
     switch (scope) {
       case 'global':
         this.variableScopes.global[name] = value;
@@ -239,6 +244,8 @@ export class VariableStateManager implements LifecycleCapable<{
    * 进入本地作用域（原子操作）
    */
   enterLocalScope(): void {
+    logger.debug('Entering local scope', { currentDepth: this.variableScopes.local.length });
+
     const newScope: Record<string, any> = {};
 
     // 初始化该作用域的所有local变量
@@ -259,12 +266,15 @@ export class VariableStateManager implements LifecycleCapable<{
       throw new RuntimeValidationError('No local scope to exit', { operation: 'exitLocalScope', field: 'scope' });
     }
     this.variableScopes.local.pop();
+    logger.debug('Exited local scope', { newDepth: this.variableScopes.local.length });
   }
 
   /**
    * 进入循环作用域（原子操作）
    */
   enterLoopScope(): void {
+    logger.debug('Entering loop scope', { currentDepth: this.variableScopes.loop.length });
+
     const newScope: Record<string, any> = {};
 
     // 初始化该作用域的所有loop变量
@@ -285,6 +295,7 @@ export class VariableStateManager implements LifecycleCapable<{
       throw new RuntimeValidationError('No loop scope to exit', { operation: 'exitLoopScope', field: 'scope' });
     }
     this.variableScopes.loop.pop();
+    logger.debug('Exited loop scope', { newDepth: this.variableScopes.loop.length });
   }
 
   /**

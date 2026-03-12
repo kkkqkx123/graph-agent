@@ -30,6 +30,9 @@ import { ThreadInterruptedException, CheckpointError } from '@modular-agent/type
 import { MessageBuilder } from '../messages/message-builder.js';
 import type { CheckpointDependencies } from '../../graph/execution/handlers/checkpoint-handlers/checkpoint-utils.js';
 import type { ToolVisibilityCoordinator } from '../../graph/execution/coordinators/tool-visibility-coordinator.js';
+import { createContextualLogger } from '../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ component: 'ToolCallExecutor' });
 
 /**
  * 工具调用任务信息
@@ -122,6 +125,13 @@ export class ToolCallExecutor {
     nodeId?: string,
     options?: { abortSignal?: AbortSignal }
   ): Promise<ToolExecutionResult[]> {
+    logger.debug('Tool calls execution started', {
+      threadId,
+      nodeId,
+      toolCallCount: toolCalls.length,
+      toolNames: toolCalls.map(tc => tc.name)
+    });
+
     // 检查中断信号
     if (options?.abortSignal && options.abortSignal.aborted) {
       const result = checkInterruption(options.abortSignal);
@@ -168,6 +178,18 @@ export class ToolCallExecutor {
     );
 
     const settledResults = await Promise.allSettled(executionPromises);
+
+    const successCount = settledResults.filter(r => r.status === 'fulfilled' && r.value.success).length;
+    const failedCount = settledResults.length - successCount;
+
+    logger.debug('Tool calls execution completed', {
+      batchId,
+      threadId,
+      nodeId,
+      totalCount: toolCalls.length,
+      successCount,
+      failedCount
+    });
 
     // 转换结果为统一的 ToolExecutionResult[] 格式
     return settledResults.map((result, index) => {

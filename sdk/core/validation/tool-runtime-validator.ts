@@ -7,6 +7,9 @@
 import { z } from 'zod';
 import type { Tool } from '@modular-agent/types';
 import { RuntimeValidationError } from '@modular-agent/types';
+import { createContextualLogger } from '../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ component: 'ToolRuntimeValidator' });
 
 /**
  * 运行时验证器
@@ -26,13 +29,15 @@ export class RuntimeValidator {
     if (!result.success) {
       const firstError = result.error.issues[0];
       if (!firstError) {
-        throw new RuntimeValidationError('Parameter validation failed', { 
-          operation: 'validate', 
-          field: 'parameters', 
-          value: parameters 
+        logger.debug('Tool parameter validation failed', { toolId: tool.id, reason: 'Unknown validation error' });
+        throw new RuntimeValidationError('Parameter validation failed', {
+          operation: 'validate',
+          field: 'parameters',
+          value: parameters
         });
       }
       const field = firstError.path.join('.');
+      logger.debug('Tool parameter validation failed', { toolId: tool.id, field, message: firstError.message });
       throw new RuntimeValidationError(
         firstError.message,
         {

@@ -13,6 +13,9 @@ import { ScriptExecutionError, ScriptNotFoundError, ConfigurationValidationError
 import { tryCatchAsyncWithSignal, all } from '@modular-agent/common-utils';
 import type { Result } from '@modular-agent/types';
 import { ok, err } from '@modular-agent/common-utils';
+import { createContextualLogger } from '../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ component: 'ScriptService' });
 
 /**
  * 脚本服务类
@@ -55,6 +58,7 @@ class ScriptService {
 
     // 检查脚本名称是否已存在
     if (this.scripts.has(script.name)) {
+      logger.warn('Script already exists', { scriptName: script.name });
       throw new ConfigurationValidationError(
         `Script with name '${script.name}' already exists`,
         {
@@ -66,6 +70,7 @@ class ScriptService {
 
     // 注册脚本
     this.scripts.set(script.name, scriptWithDefaults);
+    logger.info('Script registered', { scriptName: script.name, scriptType: script.type });
   }
 
   /**
@@ -85,12 +90,14 @@ class ScriptService {
    */
   unregisterScript(scriptName: string): void {
     if (!this.scripts.has(scriptName)) {
+      logger.warn('Attempted to unregister non-existent script', { scriptName });
       throw new ScriptNotFoundError(
         `Script '${scriptName}' not found`,
         scriptName
       );
     }
     this.scripts.delete(scriptName);
+    logger.info('Script unregistered', { scriptName });
   }
 
   /**
@@ -177,7 +184,9 @@ class ScriptService {
    * 清空所有脚本
    */
   clearScripts(): void {
+    const count = this.scripts.size;
     this.scripts.clear();
+    logger.info('All scripts cleared', { count });
   }
 
   /**
@@ -382,12 +391,15 @@ class ScriptService {
     scriptName: string,
     options: Partial<ScriptExecutionOptions> = {}
   ): Promise<Result<ScriptExecutionResult, ScriptExecutionError>> {
+    logger.debug('Script execution started', { scriptName });
+
     // 获取脚本定义
     const script = this.getScript(scriptName);
 
     // 获取对应的执行器
     const executor = this.executors.get(script.type);
     if (!executor) {
+      logger.error('No executor found for script type', { scriptName, scriptType: script.type });
       return err(new ScriptExecutionError(
         `No executor found for script type '${script.type}'`,
         scriptName,
@@ -409,6 +421,7 @@ class ScriptService {
     );
 
     if (result.isErr()) {
+      logger.error('Script execution failed', { scriptName, scriptType: script.type, error: result.error.message });
       return err(this.convertToScriptExecutionError(
         result.error,
         scriptName,
@@ -417,6 +430,7 @@ class ScriptService {
       ));
     }
 
+    logger.debug('Script execution completed', { scriptName, success: result.value.success });
     return ok(result.value);
   }
 

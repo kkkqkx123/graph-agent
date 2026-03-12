@@ -16,6 +16,9 @@
  */
 
 import type { LifecycleCapable } from '../../../core/managers/lifecycle-capable.js';
+import { createContextualLogger } from '../../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ component: 'VariableStateManager' });
 
 /**
  * 变量状态接口
@@ -42,7 +45,9 @@ export interface VariableState {
 export class VariableStateManager implements LifecycleCapable<VariableState> {
   private variables: Map<string, any> = new Map();
 
-  constructor(private agentLoopId: string) { }
+  constructor(private agentLoopId: string) {
+    logger.debug('VariableStateManager created', { agentLoopId });
+  }
 
   /**
    * 获取 Agent Loop ID
@@ -67,6 +72,10 @@ export class VariableStateManager implements LifecycleCapable<VariableState> {
    * @param value 变量值
    */
   setVariable(name: string, value: any): void {
+    logger.debug('Setting variable', {
+      agentLoopId: this.agentLoopId,
+      variableName: name
+    });
     this.variables.set(name, value);
   }
 
@@ -84,6 +93,10 @@ export class VariableStateManager implements LifecycleCapable<VariableState> {
    * @returns 是否删除成功
    */
   deleteVariable(name: string): boolean {
+    logger.debug('Deleting variable', {
+      agentLoopId: this.agentLoopId,
+      variableName: name
+    });
     return this.variables.delete(name);
   }
 
@@ -127,6 +140,11 @@ export class VariableStateManager implements LifecycleCapable<VariableState> {
    * 清空所有变量状态
    */
   cleanup(): void {
+    const variableCount = this.variables.size;
+    logger.debug('Cleaning up VariableStateManager', {
+      agentLoopId: this.agentLoopId,
+      variableCount
+    });
     this.variables.clear();
   }
 }
