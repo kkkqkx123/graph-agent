@@ -147,10 +147,6 @@ export class AgentLoopFactory {
 
       return entity;
     } catch (error) {
-      logger.error('Failed to restore Agent Loop from checkpoint', {
-        checkpointId,
-        error: error instanceof Error ? error.message : String(error)
-      });
       throw error;
     }
   }

@@ -92,7 +92,6 @@ export class ThreadExecutor {
     // 验证工作流图存在
     const preprocessedGraph = this.graphRegistry.get(workflowId);
     if (!preprocessedGraph) {
-      logger.error('Graph not found for workflow', { threadId, workflowId });
       throw new Error(`Graph not found for workflow: ${workflowId}`);
     }
 

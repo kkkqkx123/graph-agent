@@ -399,7 +399,6 @@ class ScriptService {
     // 获取对应的执行器
     const executor = this.executors.get(script.type);
     if (!executor) {
-      logger.error('No executor found for script type', { scriptName, scriptType: script.type });
       return err(new ScriptExecutionError(
         `No executor found for script type '${script.type}'`,
         scriptName,
@@ -421,7 +420,6 @@ class ScriptService {
     );
 
     if (result.isErr()) {
-      logger.error('Script execution failed', { scriptName, scriptType: script.type, error: result.error.message });
       return err(this.convertToScriptExecutionError(
         result.error,
         scriptName,

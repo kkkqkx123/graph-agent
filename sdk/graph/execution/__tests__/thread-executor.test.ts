@@ -21,10 +21,6 @@ vi.mock('../coordinators/llm-execution-coordinator.js', () => ({
     execute = vi.fn();
   }
 }));
-vi.mock('../handlers/error-handler.js', () => ({
-  handleNodeFailure: vi.fn(),
-  handleExecutionError: vi.fn()
-}));
 
 // 创建一个 mock ExecutionContext 实例用于 createDefault
 const mockDefaultExecutionContext = {
@@ -63,7 +59,6 @@ import { NodeExecutionCoordinator } from '../coordinators/node-execution-coordin
 import { LLMExecutionCoordinator } from '../coordinators/llm-execution-coordinator.js';
 import { ConversationManager } from '../managers/conversation-manager.js';
 import { GraphNavigator } from '../preprocessing/graph-navigator.js';
-import { handleNodeFailure, handleExecutionError } from '../handlers/error-handler.js';
 
 describe('ThreadExecutor', () => {
   let threadExecutor: ThreadExecutor;
@@ -409,46 +404,7 @@ describe('ThreadExecutor', () => {
       expect(result).toBeDefined();
     });
 
-    it('应该正确处理执行错误', async () => {
-      // 准备测试数据
-      const mockNode: Node = {
-        id: 'node-1',
-        type: 'SCRIPT',
-        name: 'Test Node',
-        config: {},
-        outgoingEdgeIds: [],
-        incomingEdgeIds: []
-      };
-
-      const mockGraphNode: GraphNode = {
-        id: 'node-1',
-        type: 'SCRIPT',
-        name: 'Test Node',
-        workflowId: 'test-workflow-id',
-        originalNode: mockNode,
-        internalMetadata: {}
-      };
-
-      const testError = new Error('Execution error');
-
-      // 设置 mock 返回值
-      mockGraph.getNode = vi.fn().mockReturnValue(mockGraphNode);
-      mockNavigator.getNextNode = vi.fn().mockReturnValue({
-        nextNodeId: null,
-        isEnd: true,
-        hasMultiplePaths: false,
-        possibleNextNodeIds: []
-      });
-      
-      (handleExecutionError as any).mockResolvedValue(undefined);
-
-      // 执行测试
-      const result = await threadExecutor.executeThread(mockThreadEntity);
-
-      // 验证结果
-      expect(handleExecutionError).toHaveBeenCalled();
     });
-  });
 
   describe('createThreadResult', () => {
     it('应该正确创建 ThreadResult', async () => {

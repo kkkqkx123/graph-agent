@@ -1,25 +1,26 @@
 /**
- * 交互相关事件类型定义
+ * Interaction-related event type definitions
  */
 
 import type { ID } from '../common.js';
-import type { BaseEvent, EventType } from './base.js';
+import type { BaseEvent } from './base.js';
+import type { UserInteractionOperationType } from '../interaction.js';
 
 /**
- * 用户交互请求事件类型
+ * User interaction requested event type
  */
 export interface UserInteractionRequestedEvent extends BaseEvent {
   type: 'USER_INTERACTION_REQUESTED';
-  /** 节点ID */
-  nodeId: ID;
-  /** 交互ID */
+  /** Interaction ID */
   interactionId: ID;
-  /** 操作类型 */
-  operationType: string;
-  /** 提示信息 */
+  /** Operation type */
+  operationType: UserInteractionOperationType;
+  /** Prompt message */
   prompt: string;
-  /** 超时时间 */
+  /** Timeout in milliseconds */
   timeout: number;
+  /** Additional context data (optional) */
+  contextData?: Record<string, any>;
 }
 
 /**
@@ -58,19 +59,17 @@ export interface UserInteractionFailedEvent extends BaseEvent {
 }
 
 /**
- * HumanRelay 请求事件类型
+ * HumanRelay requested event type
  */
 export interface HumanRelayRequestedEvent extends BaseEvent {
   type: 'HUMAN_RELAY_REQUESTED';
-  /** 节点ID */
-  nodeId: ID;
-  /** 请求ID */
+  /** Request ID */
   requestId: ID;
-  /** 提示信息 */
+  /** Prompt message */
   prompt: string;
-  /** 消息数量 */
+  /** Message count */
   messageCount: number;
-  /** 超时时间 */
+  /** Timeout in milliseconds */
   timeout: number;
 }
 

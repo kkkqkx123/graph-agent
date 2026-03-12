@@ -58,7 +58,6 @@ class ToolService {
     // 静态验证工具定义
     const result = this.staticValidator.validateTool(tool);
     if (result.isErr()) {
-      logger.error('Tool validation failed', { toolId: tool.id, errors: result.error.map(e => e.message) });
       throw result.error[0];
     }
 
@@ -207,7 +206,6 @@ class ToolService {
     // 获取对应的执行器
     const executor = this.executors.get(tool.type);
     if (!executor) {
-      logger.error('No executor found for tool type', { toolId, toolType: tool.type });
       return err(new ToolError(
         `No executor found for tool type '${tool.type}'`,
         toolId,
@@ -247,7 +245,6 @@ class ToolService {
     );
 
     if (result.isErr()) {
-      logger.error('Tool execution failed', { toolId, toolType: tool.type, error: result.error.message });
       return err(this.convertToToolError(result.error, toolId, tool.type, parameters));
     }
 

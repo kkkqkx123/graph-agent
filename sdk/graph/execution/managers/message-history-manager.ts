@@ -99,10 +99,9 @@ export class MessageHistoryManager extends ConversationManager {
             `Failed to get tool '${id}', skipping from tool description`,
             {
               toolId: id,
-              context: 'getInitialToolDescriptionMessage'
-            },
-            undefined,
-            getErrorOrNew(e)
+              context: 'getInitialToolDescriptionMessage',
+              error: getErrorOrNew(e)
+            }
           );
           return null;
         }

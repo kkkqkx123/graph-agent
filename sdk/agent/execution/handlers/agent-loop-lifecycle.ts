@@ -68,10 +68,6 @@ export async function createAgentLoopCheckpoint(
 
     return checkpointId;
   } catch (error) {
-    logger.error('Failed to create Agent Loop checkpoint', {
-      agentLoopId: entity.id,
-      error: error instanceof Error ? error.message : String(error)
-    });
     throw error;
   }
 }

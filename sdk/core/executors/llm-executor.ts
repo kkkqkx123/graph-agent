@@ -202,7 +202,6 @@ export class LLMExecutor {
 
     // 检查结果
     if (!finalResult) {
-      logger.error('No LLM result generated', { profileId: requestData.profileId });
       throw new ExecutionError(
         'No LLM result generated',
         undefined,

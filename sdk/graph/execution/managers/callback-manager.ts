@@ -14,7 +14,8 @@
  */
 
 import type { DynamicThreadEvent } from '../types/dynamic-thread.types.js';
-import { now } from '@modular-agent/common-utils';
+import { now, getErrorOrNew } from '@modular-agent/common-utils';
+import { buildDynamicThreadCompletedEvent, buildDynamicThreadFailedEvent } from '../utils/event/event-builder.js';
 import { logger } from '../../../utils/logger.js';
 
 /**
@@ -88,12 +89,7 @@ export class CallbackManager<T = any> {
       callbackInfo.resolve(result);
 
       // 通知所有事件监听器
-      const event: DynamicThreadEvent = {
-        type: 'DYNAMIC_THREAD_COMPLETED',
-        threadId,
-        timestamp: now(),
-        data: { result }
-      };
+      const event = buildDynamicThreadCompletedEvent({ threadId, result });
 
       callbackInfo.eventListeners.forEach(listener => {
         try {
@@ -131,12 +127,7 @@ export class CallbackManager<T = any> {
       callbackInfo.reject(error);
 
       // 通知所有事件监听器
-      const event: DynamicThreadEvent = {
-        type: 'DYNAMIC_THREAD_FAILED',
-        threadId,
-        timestamp: now(),
-        data: { error }
-      };
+      const event = buildDynamicThreadFailedEvent({ threadId, error });
 
       callbackInfo.eventListeners.forEach(listener => {
         try {

@@ -202,7 +202,6 @@ export class NodeExecutionCoordinator {
         );
         logger.debug('Interruption checkpoint created', { threadId, nodeId, type });
       } catch (error) {
-        logger.error('Failed to create interruption checkpoint', { threadId, nodeId, type, error: getErrorOrNew(error) });
         // 抛出检查点错误，由 ErrorService 统一处理
         throw new CheckpointError(
           'Failed to create interruption checkpoint',
@@ -314,7 +313,6 @@ export class NodeExecutionCoordinator {
               this.checkpointDependencies
             );
           } catch (error) {
-            logger.error('Failed to create checkpoint before node', { threadId, nodeId, error: getErrorOrNew(error) });
             // 抛出检查点错误，由 ErrorService 统一处理
             throw new CheckpointError(
               `Failed to create checkpoint before node "${node.name}"`,
@@ -390,7 +388,6 @@ export class NodeExecutionCoordinator {
               this.checkpointDependencies
             );
           } catch (error) {
-            logger.error('Failed to create checkpoint after node', { threadId, nodeId, error: getErrorOrNew(error) });
             // 抛出检查点错误，由 ErrorService 统一处理
             throw new CheckpointError(
               `Failed to create checkpoint after node "${node.name}"`,
@@ -428,7 +425,7 @@ export class NodeExecutionCoordinator {
 
       return nodeResult;
     } catch (error) {
-      logger.error('Node execution error', { threadId, nodeId, error: getErrorOrNew(error) });
+      logger.warn('Node execution error', { threadId, nodeId, error: getErrorOrNew(error) });
       // 处理节点执行错误
       const errorResult: NodeExecutionResult = {
         nodeId,

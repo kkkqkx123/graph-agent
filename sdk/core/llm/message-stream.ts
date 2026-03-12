@@ -19,6 +19,10 @@ import {
   MessageStreamAbortEvent,
   MessageStreamEndEvent
 } from './message-stream-events.js';
+import { getErrorOrNew } from '@modular-agent/common-utils';
+import { createContextualLogger } from '../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ component: 'MessageStream' });
 
 /**
  * 事件监听器

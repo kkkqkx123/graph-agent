@@ -19,7 +19,6 @@ export * from './agent/index.js';
 
 // 执行相关类型
 export * from './thread/index.js';
-export * from './workflow/index.js';
 export * from './events/index.js';
 export * from './errors/index.js';
 export * from './trigger/index.js';
@@ -37,9 +36,6 @@ export * from './interaction.js';
 export * from './human-relay.js';
 export * from './result.js';
 export * from './http.js';
-
-// 存储类型
-export * from './storage/index.js';
 
 // Skill 类型
 export * from './skill.js';

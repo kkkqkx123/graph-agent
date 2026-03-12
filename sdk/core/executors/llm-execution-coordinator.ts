@@ -29,6 +29,11 @@ import { LLMExecutor } from './llm-executor.js';
 import { ToolCallExecutor } from './tool-call-executor.js';
 import { prepareToolSchemasFromTools } from '../utils/tools/tool-schema-helper.js';
 import type { EventManager } from '../services/event-manager.js';
+import {
+  buildMessageAddedEvent,
+  buildTokenUsageWarningEvent,
+  buildConversationStateChangedEvent
+} from '../utils/event/builders/index.js';
 
 const logger = createContextualLogger();
 
@@ -323,8 +328,6 @@ export class LLMExecutionCoordinator {
     nodeId?: string
   ): Promise<void> {
     try {
-      // Import event builder dynamically to avoid circular dependency
-      const { buildMessageAddedEvent } = await import('../../graph/execution/utils/event/event-builder.js');
       const event = buildMessageAddedEvent({
         threadId: contextId,
         role: message.role,
@@ -348,7 +351,6 @@ export class LLMExecutionCoordinator {
     usagePercentage: number
   ): Promise<void> {
     try {
-      const { buildTokenUsageWarningEvent } = await import('../../graph/execution/utils/event/event-builder.js');
       const event = buildTokenUsageWarningEvent({
         threadId: contextId,
         tokensUsed,
@@ -372,7 +374,6 @@ export class LLMExecutionCoordinator {
     nodeId?: string
   ): Promise<void> {
     try {
-      const { buildConversationStateChangedEvent } = await import('../../graph/execution/utils/event/event-builder.js');
       const event = buildConversationStateChangedEvent({
         threadId: contextId,
         messageCount,

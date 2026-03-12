@@ -17,3 +17,6 @@ export * from './tool-config.js';
 
 // 导出执行相关类型
 export * from './execution.js';
+
+// 导出工具审批相关类型
+export * from './approval.js';

@@ -19,8 +19,7 @@
 
 import type { EventManager } from './event-manager.js';
 import { SDKError, ErrorContext, ErrorSeverity } from '@modular-agent/types';
-import type { ErrorEvent } from '@modular-agent/types';
-import { now } from '@modular-agent/common-utils';
+import { buildErrorEvent } from '../utils/event/builders/index.js';
 import { logger } from '../../utils/logger.js';
 
 /**
@@ -94,14 +93,12 @@ class ErrorService {
     error: SDKError,
     context: ErrorContext
   ): void {
-    const errorEvent: ErrorEvent = {
-      type: 'ERROR',
+    const errorEvent = buildErrorEvent({
       threadId: context.threadId || '',
       workflowId: context.workflowId || '',
       nodeId: context.nodeId,
-      error,
-      timestamp: now()
-    };
+      error
+    });
 
     // 异步触发事件，不等待处理完成
     this.eventManager.emit(errorEvent).catch(err => {

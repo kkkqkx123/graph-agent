@@ -154,6 +154,12 @@ export const LLMExecutor = Symbol('LLMExecutor') as ServiceIdentifier<any>;
  */
 export const ToolCallExecutor = Symbol('ToolCallExecutor') as ServiceIdentifier<any>;
 
+/**
+ * ToolApprovalCoordinator - 工具审批协调器
+ * 协调工具审批流程
+ */
+export const ToolApprovalCoordinator = Symbol('ToolApprovalCoordinator') as ServiceIdentifier<any>;
+
 // ============================================================
 // 执行层 - Coordinators（协调器）
 // ============================================================

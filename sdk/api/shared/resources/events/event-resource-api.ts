@@ -327,7 +327,9 @@ export class EventResourceAPI extends GenericResourceAPI<BaseEvent, string, Even
       stats.byType[event.type] = (stats.byType[event.type] || 0) + 1;
 
       // Statistics by thread
-      stats.byThread[event.threadId] = (stats.byThread[event.threadId] || 0) + 1;
+      if (event.threadId) {
+        stats.byThread[event.threadId] = (stats.byThread[event.threadId] || 0) + 1;
+      }
 
       // Statistics by workflow
       if (event.workflowId) {
@@ -434,7 +436,9 @@ export class EventResourceAPI extends GenericResourceAPI<BaseEvent, string, Even
     const stats: Record<string, number> = {};
 
     for (const event of this.eventHistory) {
-      stats[event.threadId] = (stats[event.threadId] || 0) + 1;
+      if (event.threadId) {
+        stats[event.threadId] = (stats[event.threadId] || 0) + 1;
+      }
     }
 
     return stats;

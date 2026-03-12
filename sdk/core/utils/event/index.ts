@@ -1,5 +1,8 @@
 /**
- * 事件工具函数统一导出
+ * Event utility functions unified export
  */
 export * from './event-emitter.js';
 export * from './condition-waiter.js';
+
+// Export all event builders
+export * from './builders/index.js';

@@ -137,8 +137,8 @@ export interface BaseEvent {
   timestamp: Timestamp;
   /** 工作流ID（可选） */
   workflowId?: ID;
-  /** 线程ID */
-  threadId: ID;
+  /** 线程ID（可选，用于 core 层等不依赖 graph 层的事件） */
+  threadId?: ID;
   /** 事件元数据 */
   metadata?: Metadata;
 }

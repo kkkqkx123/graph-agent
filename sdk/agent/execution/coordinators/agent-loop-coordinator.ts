@@ -117,7 +117,7 @@ export class AgentLoopCoordinator {
       return result;
     } catch (error) {
       entity.state.fail(error);
-      logger.error('Agent Loop execution unexpected error', {
+      logger.warn('Agent Loop execution unexpected error', {
         agentLoopId: entity.id,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -189,10 +189,6 @@ export class AgentLoopCoordinator {
       });
     } catch (error) {
       entity.state.fail(error);
-      logger.error('Agent Loop stream execution error', {
-        agentLoopId: entity.id,
-        error: error instanceof Error ? error.message : String(error)
-      });
       throw error;
     }
   }
@@ -248,7 +244,7 @@ export class AgentLoopCoordinator {
       })
       .catch(error => {
         entity.state.fail(error);
-        logger.error('Agent Loop async execution unexpected error', {
+        logger.warn('Agent Loop async execution unexpected error', {
           agentLoopId: entity.id,
           error: error instanceof Error ? error.message : String(error)
         });
@@ -338,7 +334,7 @@ export class AgentLoopCoordinator {
       return result;
     } catch (error) {
       entity.state.fail(error);
-      logger.error('Agent Loop resumed execution unexpected error', {
+      logger.warn('Agent Loop resumed execution unexpected error', {
         agentLoopId: entity.id,
         error: error instanceof Error ? error.message : String(error)
       });
