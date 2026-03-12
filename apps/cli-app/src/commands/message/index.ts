@@ -104,5 +104,33 @@ export function createMessageCommands(): Command {
       }
     });
 
+  // 压缩上下文命令
+  messageCmd
+    .command('compress <threadId>')
+    .description('手动触发上下文压缩')
+    .option('-s, --strategy <strategy>', '压缩策略（TRUNCATE/CLEAR 等）', 'TRUNCATE')
+    .option('--keep-recent <count>', '保留最近消息的数量', '10')
+    .action(async (threadId: string, options: any) => {
+      try {
+        const { EventAdapter } = await import('../../adapters/event-adapter.js');
+        const adapter = new EventAdapter();
+        const event = {
+          type: 'CONTEXT_COMPRESSION_REQUESTED',
+          timestamp: Date.now(),
+          threadId,
+          data: {
+            strategy: options.strategy,
+            keepRecent: parseInt(options.keepRecent, 10)
+          }
+        };
+        await adapter.dispatchEvent(event as any);
+        console.log(`\n已向线程 ${threadId} 发送上下文压缩请求 (策略: ${options.strategy})`);
+        console.log(`注意: 需要在工作流中配置对应的触发器 (触发事件: CONTEXT_COMPRESSION_REQUESTED) 才会执行。`);
+      } catch (error) {
+        logger.error(`触发上下文压缩失败: ${error instanceof Error ? error.message : String(error)}`);
+        process.exit(1);
+      }
+    });
+
   return messageCmd;
 }

@@ -41,6 +41,8 @@ export type TriggerActionType =
   'send_notification' |
   /** 自定义动作 */
   'custom' |
+  /** 应用消息操作（上下文压缩等） */
+  'apply_message_operation' |
   /** 执行触发子工作流 */
   'execute_triggered_subgraph';
 

@@ -52,13 +52,33 @@ export class EventAdapter extends BaseAdapter {
   }
 
   /**
-   * 清除事件历史
+   * 分发自定义事件
    */
-  async clearEvents(filter?: EventFilter): Promise<void> {
+  async dispatchEvent(event: BaseEvent): Promise<void> {
     return this.executeWithErrorHandling(async () => {
-      const api = this.sdk.events;
-      await api.clear();
-      this.logger.success(`已清除事件历史`);
-    }, '清除事件');
+      const api = this.sdk.events as any;
+      if (typeof api.dispatch === 'function') {
+        await api.dispatch(event);
+        this.logger.success(`已分发事件: ${event.type}`);
+      } else {
+        throw new Error('SDK 当前版本不支持事件分发');
+      }
+    }, '分发事件');
+  }
+
+  /**
+   * 裁剪事件历史
+   */
+  async trimEventHistory(maxSize: number): Promise<number> {
+    return this.executeWithErrorHandling(async () => {
+      const api = this.sdk.events as any;
+      if (typeof api.trimEventHistory === 'function') {
+        const removed = await api.trimEventHistory(maxSize);
+        this.logger.success(`已裁剪事件历史，移除了 ${removed} 条旧事件`);
+        return removed;
+      } else {
+        throw new Error('SDK 当前版本不支持裁剪事件历史');
+      }
+    }, '裁剪事件历史');
   }
 }

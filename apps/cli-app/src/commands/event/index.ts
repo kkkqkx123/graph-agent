@@ -85,7 +85,7 @@ export function createEventCommands(): Command {
         if (options.type) filter.type = options.type;
         if (options.threadId) filter.threadId = options.threadId;
         if (options.workflowId) filter.workflowId = options.workflowId;
-        
+
         const stats = await adapter.getEventStats(filter);
 
         console.log(`\n事件统计:`);
@@ -108,37 +108,32 @@ export function createEventCommands(): Command {
       }
     });
 
-  // 清除事件命令
+  // 裁剪事件历史命令
   eventCmd
-    .command('clear')
-    .description('清除事件历史')
-    .option('--type <type>', '按事件类型过滤')
-    .option('--thread-id <threadId>', '按线程ID过滤')
-    .option('--workflow-id <workflowId>', '按工作流ID过滤')
-    .option('-f, --force', '强制清除，不提示确认')
-    .action(async (options: {
-      type?: string;
-      threadId?: string;
-      workflowId?: string;
+    .command('trim <maxSize>')
+    .description('裁剪事件历史，保留最新的 N 条事件')
+    .option('-f, --force', '强制裁剪，不提示确认')
+    .action(async (maxSize: string, options: {
       force?: boolean;
     }) => {
       try {
+        const size = parseInt(maxSize, 10);
+        if (isNaN(size) || size < 0) {
+          logger.error('无效的大小参数，必须是非负整数');
+          process.exit(1);
+        }
+
         if (!options.force) {
-          logger.warn('即将清除事件历史');
-          // 在实际应用中，这里可以添加交互式确认
+          logger.warn(`即将裁剪事件历史，仅保留最新的 ${size} 条事件`);
           logger.info('使用 --force 选项跳过确认');
           return;
         }
 
-        const filter: any = {};
-        if (options.type) filter.type = options.type;
-        if (options.threadId) filter.threadId = options.threadId;
-        if (options.workflowId) filter.workflowId = options.workflowId;
-
         const adapter = new EventAdapter();
-        await adapter.clearEvents(filter);
+        const removed = await adapter.trimEventHistory(size);
+        logger.info(`裁剪完成，保留了最新的 ${size} 条事件，移除了 ${removed} 条旧事件`);
       } catch (error) {
-        logger.error(`清除事件失败: ${error instanceof Error ? error.message : String(error)}`);
+        logger.error(`裁剪事件失败: ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
     });

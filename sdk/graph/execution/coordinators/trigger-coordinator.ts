@@ -345,6 +345,7 @@ export class TriggerCoordinator {
         break;
 
       case 'set_variable':
+      case 'apply_message_operation':
         if (!threadRegistry) {
           throw new DependencyInjectionError('ThreadRegistry not provided', 'ThreadRegistry');
         }

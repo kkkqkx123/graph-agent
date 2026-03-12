@@ -170,6 +170,11 @@ export {
 } from './graph/operations/subscriptions/events/off-event-subscription.js';
 export type { OffEventParams } from './graph/operations/subscriptions/events/off-event-subscription.js';
 
+export {
+  DispatchEventCommand
+} from './graph/operations/events/dispatch-event-command.js';
+export type { DispatchEventParams } from './graph/operations/events/dispatch-event-command.js';
+
 // ============================================================================
 // Graph - 构建器
 // ============================================================================

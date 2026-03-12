@@ -55,6 +55,7 @@ import { setVariableHandler } from './set-variable-handler.js';
 import { sendNotificationHandler } from './send-notification-handler.js';
 import { customHandler } from './custom-handler.js';
 import { executeTriggeredSubgraphHandler } from './execute-triggered-subgraph-handler.js';
+import { applyMessageOperationHandler } from './apply-message-operation-handler.js';
 
 /**
  * 触发器处理函数映射
@@ -83,6 +84,7 @@ export const triggerHandlers: Record<TriggerActionType, TriggerHandler> = {
   ['set_variable']: setVariableHandler,
   ['send_notification']: sendNotificationHandler,
   ['custom']: customHandler,
+  ['apply_message_operation']: applyMessageOperationHandler,
   ['execute_triggered_subgraph']: executeTriggeredSubgraphHandler
 } as Record<TriggerActionType, TriggerHandler>;
 
@@ -109,3 +111,4 @@ export { setVariableHandler } from './set-variable-handler.js';
 export { sendNotificationHandler } from './send-notification-handler.js';
 export { customHandler } from './custom-handler.js';
 export { executeTriggeredSubgraphHandler } from './execute-triggered-subgraph-handler.js';
+export { applyMessageOperationHandler } from './apply-message-operation-handler.js';

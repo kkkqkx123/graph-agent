@@ -96,7 +96,7 @@ export function createResourceAPIs(dependencies: APIDependencyManager) {
     messages: new MessageResourceAPI(),
     variables: new VariableResourceAPI(),
     triggers: new TriggerResourceAPI(),
-    events: new EventResourceAPI(),
+    events: new EventResourceAPI(dependencies),
     workflows: new WorkflowRegistryAPI(dependencies),
     threads: new ThreadRegistryAPI(dependencies),
     tools: new ToolRegistryAPI(dependencies),
