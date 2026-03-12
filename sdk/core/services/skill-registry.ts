@@ -16,6 +16,8 @@ import type {
   SkillValidationError
 } from '@modular-agent/types';
 import { SkillParseError as SkillParseErrorClass, SkillValidationError as SkillValidationErrorClass } from '@modular-agent/types';
+import { logger } from '../../utils/logger.js';
+import { getErrorOrNew } from '@modular-agent/common-utils';
 
 /**
  * Skill 注册表类
@@ -77,7 +79,7 @@ export class SkillRegistry {
       }
     } catch (error) {
       // 目录不存在或无法访问，忽略
-      console.warn(`Failed to scan skills directory: ${absolutePath}`, error);
+      logger.warn(`Failed to scan skills directory: ${absolutePath}`, { path: absolutePath, error: getErrorOrNew(error) });
     }
   }
 

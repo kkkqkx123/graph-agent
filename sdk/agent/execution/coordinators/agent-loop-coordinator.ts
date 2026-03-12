@@ -339,7 +339,7 @@ export class AgentLoopCoordinator {
     } catch (error) {
       entity.state.fail(error);
       logger.error('Agent Loop resumed execution unexpected error', {
-        agentLoopId: id,
+        agentLoopId: entity.id,
         error: error instanceof Error ? error.message : String(error)
       });
       return {

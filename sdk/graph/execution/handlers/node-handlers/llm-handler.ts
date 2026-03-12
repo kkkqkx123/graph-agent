@@ -5,14 +5,16 @@
  * 设计原则：
  * - 只包含核心执行逻辑
  * - 依赖LLMExecutionCoordinator进行实际的LLM调用
+ * - 工具审批等业务逻辑由Graph模块处理
  * - 返回执行结果
  */
 
 import type { Node, LLMNodeConfig } from '@modular-agent/types';
+import type { GraphLLMExecutionConfig } from '@modular-agent/types';
 import type { Thread } from '@modular-agent/types';
 import { ExecutionError } from '@modular-agent/types';
 import { now, diffTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
-import { LLMExecutionCoordinator } from '../../coordinators/llm-execution-coordinator.js';
+import { LLMExecutionCoordinator } from '../../../../core/executors/llm-execution-coordinator.js';
 import { LLMWrapper } from '../../../../core/llm/wrapper.js';
 import { executeHumanRelay } from '../human-relay-handler.js';
 import type { EventManager } from '../../../../core/services/event-manager.js';
@@ -78,15 +80,24 @@ export async function llmHandler(
       return await executeHumanRelayLLMNode(thread, node, executionData, context, startTime);
     }
 
-    // 3. 调用 LLMExecutionCoordinator，传入 conversationState
+    // 3. 创建执行配置
+    const executionConfig: GraphLLMExecutionConfig = {
+      profileId: executionData.profileId,
+      parameters: executionData.parameters,
+      maxToolCallsPerRequest: executionData.maxToolCallsPerRequest,
+      workflowId: thread.workflowId,
+      nodeId: node.id,
+      threadId: thread.id
+    };
+
+    // 4. 调用 LLMExecutionCoordinator
     const result = await context.llmCoordinator.executeLLM(
       {
-        threadId: thread.id,
-        nodeId: node.id,
+        contextId: thread.id,
         prompt: executionData.prompt,
-        profileId: executionData.profileId,
-        parameters: executionData.parameters,
-        maxToolCallsPerRequest: executionData.maxToolCallsPerRequest
+        config: executionConfig,
+        eventManager: context.eventManager,
+        nodeId: node.id
       },
       context.conversationManager
     );

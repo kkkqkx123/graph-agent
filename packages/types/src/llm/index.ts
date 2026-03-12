@@ -20,3 +20,6 @@ export * from './usage.js';
 
 // 导出客户端类型
 export * from './client.js';
+
+// 导出执行配置类型
+export * from './execution-config.js';

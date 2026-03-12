@@ -9,6 +9,7 @@
  */
 
 import { getErrorOrNew, now, diffTimestamp } from '@modular-agent/common-utils';
+import { logger } from '../../utils/logger.js';
 
 /**
  * 包装回调函数，添加错误处理
@@ -22,7 +23,7 @@ export function wrapCallback<T extends (...args: any[]) => any>(
     try {
       return callback(...args);
     } catch (error) {
-      console.error('Error in callback:', error);
+      logger.error('Error in callback', { error: getErrorOrNew(error) });
       throw error;
     }
   }) as T;
@@ -89,7 +90,7 @@ export function createSafeCallback<T extends (...args: any[]) => any>(
       }
       return defaultValue;
     } catch (error) {
-      console.error('Error in safe callback:', error);
+      logger.error('Error in safe callback', { error: getErrorOrNew(error) });
       return defaultValue;
     }
   }) as T;

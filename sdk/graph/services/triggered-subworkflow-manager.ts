@@ -17,6 +17,7 @@
 
 import type { ThreadEntity } from '../entities/thread-entity.js';
 import { getErrorOrNew, now } from '@modular-agent/common-utils';
+import { logger } from '../../utils/logger.js';
 import { TaskRegistry, type TaskManager } from './task-registry.js';
 import { ThreadPoolService } from './thread-pool-service.js';
 import { TaskQueueManager } from '../execution/managers/task-queue-manager.js';
@@ -466,7 +467,7 @@ export class TriggeredSubworkflowManager implements TaskManager {
       try {
         await this.cancelTask(task.taskId);
       } catch (error) {
-        console.error(`Failed to cancel task ${task.taskId}:`, error);
+        logger.error(`Failed to cancel task ${task.taskId}`, { taskId: task.taskId, error: getErrorOrNew(error) });
       }
     }
 

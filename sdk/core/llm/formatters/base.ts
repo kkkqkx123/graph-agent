@@ -6,6 +6,8 @@
  */
 
 import type { LLMRequest, LLMResult, LLMProfile, LLMMessage, LLMToolCall } from '@modular-agent/types';
+import { logger } from '../../../utils/logger.js';
+import { getErrorOrNew } from '@modular-agent/common-utils';
 import type { ToolSchema } from '@modular-agent/types';
 import type {
   FormatterConfig,
@@ -387,7 +389,7 @@ export abstract class BaseFormatter {
           const customData = JSON.parse(customBody.json);
           result = this.deepMerge(result, customData);
         } catch (error) {
-          console.warn('Failed to parse custom body JSON:', error);
+          logger.warn('Failed to parse custom body JSON', { error: getErrorOrNew(error) });
         }
       }
     }

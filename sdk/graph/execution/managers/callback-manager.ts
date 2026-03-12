@@ -15,6 +15,7 @@
 
 import type { DynamicThreadEvent } from '../types/dynamic-thread.types.js';
 import { now } from '@modular-agent/common-utils';
+import { logger } from '../../../utils/logger.js';
 
 /**
  * 回调信息接口（泛型版本）
@@ -99,7 +100,7 @@ export class CallbackManager<T = any> {
           listener(event);
         } catch (error) {
           // 监听器错误不影响其他监听器
-          console.error(`Error in event listener for thread ${threadId}:`, error);
+          logger.error(`Error in event listener for thread ${threadId}`, { threadId, error: getErrorOrNew(error) });
         }
       });
 
@@ -107,7 +108,7 @@ export class CallbackManager<T = any> {
       this.callbacks.delete(threadId);
       return true;
     } catch (error) {
-      console.error(`Error triggering callback for thread ${threadId}:`, error);
+      logger.error(`Error triggering callback for thread ${threadId}`, { threadId, error: getErrorOrNew(error) });
       this.callbacks.delete(threadId);
       return false;
     }

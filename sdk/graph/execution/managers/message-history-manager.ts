@@ -17,6 +17,10 @@ import {
 import { generateToolListDescription } from '../../../core/utils/tools/tool-description-generator.js';
 import type { ToolService } from '../../../core/services/tool-service.js';
 import type { MessageHistoryState } from '../../../core/messages/message-history.js';
+import { getErrorOrNew } from '@modular-agent/common-utils';
+import { createContextualLogger } from '../../../utils/contextual-logger.js';
+
+const logger = createContextualLogger({ component: 'MessageHistoryManager' });
 
 /**
  * 工具可用性集合
@@ -91,6 +95,15 @@ export class MessageHistoryManager extends ConversationManager {
         try {
           return this.toolService!.getTool(id);
         } catch (e) {
+          logger.debug(
+            `Failed to get tool '${id}', skipping from tool description`,
+            {
+              toolId: id,
+              context: 'getInitialToolDescriptionMessage'
+            },
+            undefined,
+            getErrorOrNew(e)
+          );
           return null;
         }
       })

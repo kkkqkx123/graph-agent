@@ -36,6 +36,7 @@ import {
 } from '../utils/event/event-builder.js';
 import { LLMContextFactory, type LLMContextFactoryConfig } from '../factories/llm-context-factory.js';
 import { ToolCallExecutor } from '../../../core/executors/tool-call-executor.js';
+import { prepareToolSchemasFromTools } from '../../../core/utils/tools/tool-schema-helper.js';
 
 const logger = createContextualLogger();
 
@@ -259,22 +260,22 @@ export class LLMExecutionCoordinator {
     let availableToolSchemas = tools;
     const toolContextManager = this.contextFactory.getToolContextManager();
     if (toolContextManager) {
-      if (toolContextManager) {
-        const availableToolIds = toolContextManager.getTools(threadId);
+      const availableToolIds = toolContextManager.getTools(threadId);
 
-        if (availableToolIds.size > 0) {
-          const toolService = this.contextFactory.getToolService();
-          const availableTools = Array.from(availableToolIds as Set<string>)
-            .map((id) => toolService.getTool(id) as any)
-            .filter(Boolean);
+      if (availableToolIds.size > 0) {
+        const toolService = this.contextFactory.getToolService();
+        const availableTools = Array.from(availableToolIds as Set<string>)
+          .map((id) => {
+            try {
+              return toolService.getTool(id);
+            } catch {
+              return null;
+            }
+          })
+          .filter(Boolean);
 
-          // 直接转换为ToolSchema格式（由外部模块负责，符合设计文档）
-          availableToolSchemas = availableTools.map(tool => ({
-            id: tool.id,
-            description: tool.description,
-            parameters: tool.parameters
-          }));
-        }
+        // Use shared helper to convert to ToolSchema format
+        availableToolSchemas = prepareToolSchemasFromTools(availableTools as any);
       }
     }
 
@@ -532,7 +533,8 @@ export class LLMExecutionCoordinator {
             operation: 'create_checkpoint',
             toolCallId: toolCall.id,
             threadId,
-            nodeId
+            nodeId,
+            suggestion: 'Check checkpoint storage configuration and retry'
           },
           undefined,
           getErrorOrNew(error)
@@ -585,7 +587,8 @@ export class LLMExecutionCoordinator {
               operation: 'cleanup_checkpoint',
               checkpointId,
               threadId,
-              nodeId
+              nodeId,
+              suggestion: 'Checkpoint cleanup failed, may leave stale data. Check storage permissions and retry'
             },
             undefined,
             getErrorOrNew(error)

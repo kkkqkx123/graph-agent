@@ -3,6 +3,8 @@
  * 提供轻量级的 Observable 接口，支持创建和订阅事件流
  */
 
+import { logger } from '../../../utils/logger.js';
+
 /**
  * 订阅者接口
  */
@@ -101,10 +103,10 @@ export class ObservableImpl<T> implements Observable<T> {
             if (observer.error) {
               observer.error(err);
             } else {
-              console.error('Observable error:', err);
+              logger.error('Observable error', { error: err });
             }
           } catch (err) {
-            console.error('Error in error handler:', err);
+            logger.error('Error in error handler', { error: err });
           }
           this.unsubscribeAll(teardowns);
         }
@@ -117,7 +119,7 @@ export class ObservableImpl<T> implements Observable<T> {
               observer.complete();
             }
           } catch (err) {
-            console.error('Error in complete handler:', err);
+            logger.error('Error in complete handler', { error: err });
           }
           this.unsubscribeAll(teardowns);
         }
@@ -165,7 +167,7 @@ export class ObservableImpl<T> implements Observable<T> {
           teardown.unsubscribe();
         }
       } catch (err) {
-        console.error('Error during teardown:', err);
+        logger.error('Error during teardown', { error: err });
       }
     }
     teardowns.length = 0;

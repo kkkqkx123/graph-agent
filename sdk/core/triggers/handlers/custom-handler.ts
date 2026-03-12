@@ -64,7 +64,6 @@ export async function executeCustomAction(
       result
     };
   } catch (error) {
-    logger.error('Custom trigger action failed', { triggerId: trigger.id, error: error instanceof Error ? error.message : String(error) });
     return {
       triggerId: trigger.id,
       success: false,

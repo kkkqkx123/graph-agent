@@ -123,13 +123,16 @@ export async function contextProcessorHandler(
           } catch (error) {
             // 记录警告日志，不中断执行
             logger.warn(
-              `Failed to refresh tool visibility declaration after message operation: ${error instanceof Error ? error.message : String(error)}`,
+              'Failed to refresh tool visibility declaration after message operation',
               {
                 operation: config.operationConfig.operation,
                 nodeId: node.id,
                 threadId: thread.id,
-                workflowId: thread.workflowId
-              }
+                workflowId: thread.workflowId,
+                suggestion: 'Tool visibility may be stale. Check tool visibility coordinator configuration and retry'
+              },
+              undefined,
+              getErrorOrNew(error)
             );
           }
         }

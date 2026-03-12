@@ -399,7 +399,7 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
         }
       } catch (error) {
         // 监听器抛出异常不影响其他监听器
-        console.error(`Error in event listener for ${event}:`, error);
+        logger.error(`Error in event listener for ${event}`, { event, error: getErrorOrNew(error) });
       }
     }
     this.listeners.set(event, persistentListeners);

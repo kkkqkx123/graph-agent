@@ -30,7 +30,7 @@ import type { BaseEvent, NodeCustomEvent } from '@modular-agent/types';
 import type { ID } from '@modular-agent/types';
 import { getTriggerHandler } from '../handlers/trigger-handlers/index.js';
 import { ExecutionError, ConfigurationValidationError, RuntimeValidationError, DependencyInjectionError } from '@modular-agent/types';
-import { now, getErrorOrNew } from '@modular-agent/common-utils';
+import { generateId, now, getErrorOrNew } from '@modular-agent/common-utils';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
 import { convertToTrigger } from '@modular-agent/types';
@@ -311,7 +311,7 @@ export class TriggerCoordinator {
           );
         } catch (error) {
           // 检查点创建失败不应影响触发器执行，仅记录错误
-          logger.error(
+          logger.warn(
             'Failed to create checkpoint for trigger',
             { triggerName: trigger.name, triggerId: trigger.id },
             undefined,

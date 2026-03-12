@@ -86,7 +86,8 @@ function createCheckpointHandler(): HookHandler<HookExecutionContext> {
           nodeId: context.node.id,
           threadId: context.thread.id,
           workflowId: context.thread.workflowId,
-          operation: 'checkpoint_creation'
+          operation: 'checkpoint_creation',
+          suggestion: 'Check checkpoint storage configuration and retry'
         },
         undefined,
         getErrorOrNew(error)

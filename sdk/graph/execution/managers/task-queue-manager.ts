@@ -21,6 +21,7 @@ import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { ThreadResult } from '@modular-agent/types';
 import { type QueueTask, type ExecutedSubgraphResult, type TaskSubmissionResult } from '../types/triggered-subworkflow.types.js';
 import { now, diffTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
+import { logger } from '../../../utils/logger.js';
 import { emit } from '../utils/index.js';
 import {
   buildTriggeredSubgraphCompletedEvent,
@@ -158,7 +159,7 @@ export class TaskQueueManager {
         this.executeTask(executor, queueTask);
       }
     } catch (error) {
-      console.error('Error processing queue:', error);
+      logger.error('Error processing queue', { error: getErrorOrNew(error) });
     } finally {
       this.isProcessing = false;
     }

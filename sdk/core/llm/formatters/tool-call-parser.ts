@@ -6,6 +6,8 @@
  */
 
 import type { LLMToolCall } from '@modular-agent/types';
+import { logger } from '../../../utils/logger.js';
+import { getErrorOrNew } from '@modular-agent/common-utils';
 
 /**
  * XML工具调用格式
@@ -99,7 +101,7 @@ export class ToolCallParser {
         });
       } catch (error) {
         // 解析失败，跳过这个块
-        console.warn('Failed to parse XML tool call block:', error);
+        logger.warn('Failed to parse XML tool call block', { error: getErrorOrNew(error) });
       }
     }
 
@@ -247,7 +249,7 @@ export class ToolCallParser {
           results.push(toolCall);
         }
       } catch (error) {
-        console.warn('Failed to parse JSON tool call:', error);
+        logger.warn('Failed to parse JSON tool call', { error: getErrorOrNew(error) });
       }
     }
 

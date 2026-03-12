@@ -20,7 +20,7 @@
  * - Graph 特有功能通过可选依赖注入
  */
 
-import { isAbortError, checkInterruption } from '@modular-agent/common-utils';
+import { isAbortError, checkInterruption, getErrorOrNew } from '@modular-agent/common-utils';
 import type { ToolService } from '../services/tool-service.js';
 import type { EventManager } from '../services/event-manager.js';
 import type { Tool, ID } from '@modular-agent/types';
@@ -285,7 +285,17 @@ export class ToolCallExecutor {
     try {
       toolConfig = this.toolService.getTool(toolCall.name);
     } catch (error) {
-      // 工具不存在，继续执行
+      logger.warn(
+        `Tool '${toolCall.name}' not found in registry, will fail during execution`,
+        {
+          toolCallId: toolCall.id,
+          toolName: toolCall.name,
+          threadId,
+          nodeId
+        },
+        undefined,
+        getErrorOrNew(error)
+      );
     }
 
     // 检查工具是否在当前可见性上下文中
