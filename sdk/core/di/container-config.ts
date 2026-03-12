@@ -30,7 +30,8 @@ import { WorkflowRegistry } from '../../graph/services/workflow-registry.js';
 import { ThreadPoolService } from '../../graph/services/thread-pool-service.js';
 
 // 执行层服务 - Core 层通用执行器
-import { LLMExecutor, ToolCallExecutor, ToolApprovalCoordinator } from '../executors/index.js';
+import { LLMExecutor, ToolCallExecutor } from '../executors/index.js';
+import { ToolApprovalCoordinator } from '../coordinators/tool-approval-coordinator.js';
 import { SkillRegistry } from '../services/skill-registry.js';
 import { SkillLoader } from '../services/skill-loader.js';
 import { safeEmit } from '../../graph/execution/utils/index.js';
