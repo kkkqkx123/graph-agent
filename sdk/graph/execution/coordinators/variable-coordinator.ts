@@ -18,7 +18,7 @@
 import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { Thread } from '@modular-agent/types';
 import type { VariableScope } from '@modular-agent/types';
-import type { EventManager } from '../../../core/services/event-manager.js';
+import type { EventManager } from '../../../core/managers/event-manager.js';
 import { getErrorOrNew } from '@modular-agent/common-utils';
 import { RuntimeValidationError, EventSystemError } from '@modular-agent/types';
 import { VariableStateManager } from '../managers/variable-state-manager.js';

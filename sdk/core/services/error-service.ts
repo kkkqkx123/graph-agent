@@ -17,7 +17,7 @@
  * 实例通过 SingletonRegistry 统一管理
  */
 
-import type { EventManager } from './event-manager.js';
+import type { EventManager } from '../managers/event-manager.js';
 import { SDKError, ErrorContext, ErrorSeverity } from '@modular-agent/types';
 import { buildErrorEvent } from '../utils/event/builders/index.js';
 import { logger } from '../../utils/logger.js';

@@ -14,7 +14,7 @@ import { getContainer } from '../../../core/di/index.js';
 import * as Identifiers from '../../../core/di/service-identifiers.js';
 import type { WorkflowRegistry } from '../../../graph/services/workflow-registry.js';
 import type { ThreadRegistry } from '../../../graph/services/thread-registry.js';
-import type { EventManager } from '../../../core/services/event-manager.js';
+import type { EventManager } from '../../../core/managers/event-manager.js';
 import type { CheckpointStateManager } from '../../../graph/execution/managers/checkpoint-state-manager.js';
 import type { ToolService } from '../../../core/services/tool-service.js';
 import type { LLMExecutor } from '../../../core/executors/llm-executor.js';

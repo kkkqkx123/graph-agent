@@ -15,7 +15,7 @@ import { ClientFactory, MessageStream } from './index.js';
 import { tryCatchAsyncWithSignal, isAbortError, now, diffTimestamp, generateId, ok, err, checkInterruption, getInterruptionDescription } from '@modular-agent/common-utils';
 import { ConfigurationError, LLMError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
-import type { EventManager } from '../services/event-manager.js';
+import type { EventManager } from '../managers/event-manager.js';
 import { EventType } from '@modular-agent/types';
 import { buildLLMStreamAbortedEvent, buildLLMStreamErrorEvent } from '../utils/event/builders/index.js';
 

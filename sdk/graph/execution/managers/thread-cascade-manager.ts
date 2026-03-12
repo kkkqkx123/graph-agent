@@ -14,7 +14,7 @@
 
 import type { ThreadRegistry } from '../../services/thread-registry.js';
 import { ThreadLifecycleManager } from './thread-lifecycle-manager.js';
-import type { EventManager } from '../../../core/services/event-manager.js';
+import type { EventManager } from '../../../core/managers/event-manager.js';
 import { TaskRegistry } from '../../services/task-registry.js';
 import { StateManagementError } from '@modular-agent/types';
 import { getErrorOrNew } from '@modular-agent/common-utils';

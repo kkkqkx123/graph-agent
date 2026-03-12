@@ -28,7 +28,7 @@ import { createContextualLogger } from '../../utils/contextual-logger.js';
 import { LLMExecutor } from '../executors/llm-executor.js';
 import { ToolCallExecutor } from '../executors/tool-call-executor.js';
 import { prepareToolSchemasFromTools } from '../utils/tools/tool-schema-helper.js';
-import type { EventManager } from '../services/event-manager.js';
+import type { EventManager } from '../managers/event-manager.js';
 import {
   buildMessageAddedEvent,
   buildTokenUsageWarningEvent,

@@ -17,7 +17,7 @@
 import type { ForkConfig, JoinResult } from '../utils/thread-operations.js';
 import { type ThreadRegistry } from '../../services/thread-registry.js';
 import { ThreadBuilder } from '../thread-builder.js';
-import type { EventManager } from '../../../core/services/event-manager.js';
+import type { EventManager } from '../../../core/managers/event-manager.js';
 import type { WorkflowRegistry } from '../../services/workflow-registry.js';
 import type { ToolService } from '../../../core/services/tool-service.js';
 import type { GraphRegistry } from '../../services/graph-registry.js';

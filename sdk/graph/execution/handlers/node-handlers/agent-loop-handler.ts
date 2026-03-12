@@ -14,7 +14,7 @@ import type {
 import { ExecutionError } from '@modular-agent/types';
 import { now, diffTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
 import type { ConversationManager } from '../../../../core/managers/conversation-manager.js';
-import type { EventManager } from '../../../../core/services/event-manager.js';
+import type { EventManager } from '../../../../core/managers/event-manager.js';
 import {
   AgentLoopCoordinator,
   AgentLoopRegistry,

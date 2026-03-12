@@ -12,7 +12,7 @@
 import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { WorkflowRegistry } from '../../services/workflow-registry.js';
 import type { GraphRegistry } from '../../services/graph-registry.js';
-import type { EventManager } from '../../../core/services/event-manager.js';
+import type { EventManager } from '../../../core/managers/event-manager.js';
 import type { ToolService } from '../../../core/services/tool-service.js';
 import type { LLMExecutor } from '../../../core/executors/llm-executor.js';
 import type { ToolCallExecutor } from '../../../core/executors/tool-call-executor.js';

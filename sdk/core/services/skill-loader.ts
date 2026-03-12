@@ -14,8 +14,10 @@ import type {
   SkillLoadType
 } from '@modular-agent/types';
 import type { SkillRegistry } from './skill-registry.js';
-import type { EventManager } from './event-manager.js';
+import type { EventManager } from '../managers/event-manager.js';
+import { CacheService } from './cache-service.js';
 import { buildSkillLoadStartedEvent, buildSkillLoadCompletedEvent, buildSkillLoadFailedEvent } from '../utils/event/builders/index.js';
+import { generateSkillMetadataListPrompt, generateSkillContentPrompt } from '@modular-agent/prompt-templates';
 
 /**
  * Skill 加载器类
@@ -26,18 +28,15 @@ import { buildSkillLoadStartedEvent, buildSkillLoadCompletedEvent, buildSkillLoa
  * - Level 3: 加载嵌套资源（loadResources）
  */
 export class SkillLoader {
-  /** 内容缓存 */
-  private contentCache: Map<string, { content: string; timestamp: number }> = new Map();
-
-  /** 缓存过期时间（毫秒） */
-  private readonly cacheTTL: number;
+  /** 内容缓存服务 */
+  private contentCache: CacheService<string>;
 
   constructor(
     private skillRegistry: SkillRegistry,
     private eventManager: EventManager,
     cacheTTL: number = 300000 // 默认 5 分钟
   ) {
-    this.cacheTTL = cacheTTL;
+    this.contentCache = new CacheService<string>({ ttl: cacheTTL });
   }
 
   /**
@@ -56,23 +55,12 @@ export class SkillLoader {
       return '';
     }
 
-    const skillList = skills.map(skill => {
-      const meta = skill.metadata;
-      if (!meta) return '';
-      let desc = `- \`${meta['name']}\`: ${meta['description']}`;
-      if (meta['version']) {
-        desc += ` (v${meta['version']})`;
-      }
-      return desc;
-    }).filter(Boolean).join('\n');
-
-    return `## Available Skills
-
-The following skills are available for use. Use the \`get_skill\` tool to load the complete content of a skill when needed.
-
-${skillList}
-
-To use a skill, call the \`get_skill\` tool with the skill name.`;
+    // Use template from prompt-templates package
+    return generateSkillMetadataListPrompt(skills.map(skill => ({
+      name: skill.name,
+      description: skill.description,
+      version: skill.version
+    })));
   }
 
   /**
@@ -94,14 +82,14 @@ To use a skill, call the \`get_skill\` tool with the skill name.`;
 
     try {
       // 检查缓存
-      const cached = this.getFromCache(skillName);
-      if (cached) {
+      const cached = this.contentCache.get(skillName);
+      if (cached !== null) {
         // 发送 Skill 加载完成事件（来自缓存）
         await this.emitLoadCompleted(skillName, loadType, true, startTime);
 
         return {
           success: true,
-          content: cached.content,
+          content: cached,
           cached: true,
           loadTime: Date.now() - startTime
         };
@@ -139,7 +127,7 @@ To use a skill, call the \`get_skill\` tool with the skill name.`;
       const content = await this.skillRegistry.loadSkillContent(skillName);
 
       // 存入缓存
-      this.setCache(skillName, content);
+      this.contentCache.set(skillName, content);
 
       // 发送 Skill 加载完成事件
       await this.emitLoadCompleted(skillName, loadType, false, startTime);
@@ -258,18 +246,13 @@ To use a skill, call the \`get_skill\` tool with the skill name.`;
       throw new Error(`Skill not found: ${skillName}`);
     }
 
-    // 构建提示词
-    let prompt = `# Skill: ${skill.metadata.name}\n\n`;
-    prompt += `**Description:** ${skill.metadata.description}\n\n`;
-
-    if (skill.metadata.version) {
-      prompt += `**Version:** ${skill.metadata.version}\n\n`;
-    }
-
-    prompt += `---\n\n`;
-    prompt += result.content;
-
-    return prompt;
+    // Use template from prompt-templates package
+    return generateSkillContentPrompt({
+      name: skill.metadata.name,
+      description: skill.metadata.description,
+      version: skill.metadata.version,
+      content: result.content
+    });
   }
 
   /**
@@ -284,37 +267,17 @@ To use a skill, call the \`get_skill\` tool with the skill name.`;
     }
   }
 
+  /**
+   * 获取缓存统计信息
+   * @returns 缓存统计
+   */
+  getCacheStats() {
+    return this.contentCache.getStats();
+  }
+
   // ============================================================
   // 私有方法
   // ============================================================
-
-  /**
-   * 从缓存获取内容
-   */
-  private getFromCache(skillName: string): { content: string; timestamp: number } | null {
-    const cached = this.contentCache.get(skillName);
-    if (!cached) {
-      return null;
-    }
-
-    // 检查是否过期
-    if (Date.now() - cached.timestamp > this.cacheTTL) {
-      this.contentCache.delete(skillName);
-      return null;
-    }
-
-    return cached;
-  }
-
-  /**
-   * 设置缓存
-   */
-  private setCache(skillName: string, content: string): void {
-    this.contentCache.set(skillName, {
-      content,
-      timestamp: Date.now()
-    });
-  }
 
   /**
    * 发送 Skill 加载开始事件

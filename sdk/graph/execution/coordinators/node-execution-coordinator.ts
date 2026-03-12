@@ -18,7 +18,7 @@
 import type { ThreadEntity } from '../../entities/thread-entity.js';
 import type { Node } from '@modular-agent/types';
 import type { NodeExecutionResult } from '@modular-agent/types';
-import type { EventManager } from '../../../core/services/event-manager.js';
+import type { EventManager } from '../../../core/managers/event-manager.js';
 import type { ConversationManager } from '../../../core/managers/conversation-manager.js';
 import type { InterruptionManager } from '../../../core/managers/interruption-manager.js';
 import type { GraphNavigator } from '../../preprocessing/graph-navigator.js';

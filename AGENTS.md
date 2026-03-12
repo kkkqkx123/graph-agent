@@ -65,20 +65,23 @@ pnpm --filter <package-name> test
 
 ```
 modular-agent-framework/
-├── apps/                       # Application modules
-│   ├── web-app/               # Web application
+├── apps/  # Application modules
+│   ├── web-app/  # Web application
 │   └── ...
-├── packages/                   # Shared packages
-│   ├── common-utils/          # Common utilities
-│   ├── types/                 # Type Definition
+├── packages/  # Shared packages
+│   ├── common-utils/  # Common utilities
+│   ├── types/  # Type Definition
+│   ├── prompt-templates/  # contain all basic prompt definition
 │   └── ...
-├── sdk/                        # Core SDK module
-│   ├── core/                  # Core execution logic
-│   ├── api/                   # External API interfaces
-│   └── utils/                 # Utility functions
-├── package.json               # Root workspace config
-├── pnpm-workspace.yaml        # Workspace definitions
-└── turbo.json                 # Build orchestration
+├── sdk/  # Core SDK module
+│   ├── core/  # Core execution logic(shared by agent and graph)
+│   ├── api/  # External API interfaces
+│   ├── agent/  # Agent-loop implemention
+│   ├── graph/  # Graph-workflow implemention
+│   └── utils/  # Utility functions
+├── package.json  # Root workspace config
+├── pnpm-workspace.yaml  # Workspace definitions
+└── turbo.json  # Build orchestration
 ```
 
 ## Dependency Management

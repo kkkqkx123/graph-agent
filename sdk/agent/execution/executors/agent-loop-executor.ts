@@ -35,7 +35,7 @@ import { isAbortError, checkInterruption } from '@modular-agent/common-utils';
 import { LLMExecutor } from '../../../core/executors/llm-executor.js';
 import { ToolCallExecutor } from '../../../core/executors/tool-call-executor.js';
 import type { ErrorService } from '../../../core/services/error-service.js';
-import type { EventManager } from '../../../core/services/event-manager.js';
+import type { EventManager } from '../../../core/managers/event-manager.js';
 import { safeEmit } from '../../../core/utils/event/event-emitter.js';
 import { handleAgentError } from '../handlers/agent-error-handler.js';
 import { createContextualLogger } from '../../../utils/contextual-logger.js';

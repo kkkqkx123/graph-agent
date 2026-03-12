@@ -24,7 +24,7 @@ import type {
   ToolApprovalRequest
 } from '@modular-agent/types';
 import { generateId, now } from '@modular-agent/common-utils';
-import type { EventManager } from '../services/event-manager.js';
+import type { EventManager } from '../managers/event-manager.js';
 import { createContextualLogger } from '../../utils/contextual-logger.js';
 import { buildUserInteractionRequestedEvent, buildUserInteractionProcessedEvent } from '../utils/event/builders/index.js';
 

@@ -15,7 +15,7 @@ import type { GraphRegistry } from '../services/graph-registry.js';
 import { getContainer } from '../../core/di/index.js';
 import * as Identifiers from '../../core/di/service-identifiers.js';
 import { createContextualLogger } from '../../utils/contextual-logger.js';
-import type { EventManager } from '../../core/services/event-manager.js';
+import type { EventManager } from '../../core/managers/event-manager.js';
 import type { ToolService } from '../../core/services/tool-service.js';
 import { MessageHistoryManager } from './managers/message-history-manager.js';
 

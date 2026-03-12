@@ -13,3 +13,6 @@ export * from './user-commands/index.js';
 
 // 工具相关模板
 export * from './tools/index.js';
+
+// Skill 相关模板
+export * from './skills/index.js';

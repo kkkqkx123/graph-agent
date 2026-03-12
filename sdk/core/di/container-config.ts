@@ -19,7 +19,7 @@ import { ThreadRegistry } from '../../graph/services/thread-registry.js';
 import { LLMWrapper } from '../llm/wrapper.js';
 
 // 业务层服务
-import { EventManager } from '../services/event-manager.js';
+import { EventManager } from '../managers/event-manager.js';
 import { ToolService } from '../services/tool-service.js';
 import { ScriptService } from '../services/script-service.js';
 import { NodeTemplateRegistry } from '../services/node-template-registry.js';

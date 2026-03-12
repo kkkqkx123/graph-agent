@@ -19,7 +19,7 @@
  */
 
 import type { Thread, ThreadStatus, ThreadResult } from '@modular-agent/types';
-import type { EventManager } from '../../../core/services/event-manager.js';
+import type { EventManager } from '../../../core/managers/event-manager.js';
 import { MessageHistoryManager } from './message-history-manager.js';
 import { validateTransition } from '../utils/thread-state-validator.js';
 import {

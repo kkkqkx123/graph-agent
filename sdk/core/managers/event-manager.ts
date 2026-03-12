@@ -1,12 +1,12 @@
 /**
- * EventManager - 事件管理器
- * 管理工作流执行过程中的事件，提供事件监听和分发机制
- * 仅支持全局事件，用于对外暴露工作流执行状态
+ * EventManager - Event Manager
+ * Manages events during workflow execution, provides event listening and dispatching mechanism
+ * Only supports global events, used for exposing workflow execution status externally
  *
- * 注意：内部事件机制已移除，改用直接方法调用
+ * Note: Internal event mechanism has been removed, replaced with direct method calls
  *
- * 本模块只导出类定义，不导出实例
- * 实例通过 SingletonRegistry 统一管理
+ * This module only exports class definition, not instances
+ * Instances are managed uniformly through SingletonRegistry
  */
 
 import type { BaseEvent, EventType, EventListener } from '@modular-agent/types';
@@ -15,7 +15,7 @@ import { generateId } from '../../utils/index.js';
 import { now, getErrorOrNew } from '@modular-agent/common-utils';
 
 /**
- * 监听器包装器
+ * Listener wrapper
  */
 interface ListenerWrapper<T> {
   listener: (event: T) => void | Promise<void>;
@@ -27,26 +27,26 @@ interface ListenerWrapper<T> {
 }
 
 /**
- * EventManager - 事件管理器
+ * EventManager - Event Manager
  *
- * 职责：
- * - 全局事件：对外暴露，用户可监听（如 NODE_COMPLETED）
- * - 提供事件注册、注销、触发等核心功能
+ * Responsibilities:
+ * - Global events: Exposed externally, users can listen (e.g., NODE_COMPLETED)
+ * - Provides core functions like event registration, unregistration, triggering
  *
- * 设计原则：
- * - 仅支持全局事件，用于工作流状态通知
- * - 内部协调改用直接方法调用
+ * Design Principles:
+ * - Only supports global events for workflow status notification
+ * - Internal coordination uses direct method calls
  */
 class EventManager {
-  // 全局事件监听器（对外暴露）
+  // Global event listeners (exposed externally)
   private globalListeners: Map<string, ListenerWrapper<any>[]> = new Map();
 
   /**
-   * 注册事件监听器（全局事件）
-   * @param eventType 事件类型
-   * @param listener 事件监听器
-   * @param options 选项（优先级、过滤器、超时等）
-   * @returns 注销函数
+   * Register event listener (global event)
+   * @param eventType Event type
+   * @param listener Event listener
+   * @param options Options (priority, filter, timeout, etc.)
+   * @returns Unregister function
    */
   on<T extends BaseEvent>(
     eventType: EventType,
@@ -61,11 +61,11 @@ class EventManager {
   }
 
   /**
-   * 注册全局事件监听器
-   * @param eventType 事件类型
-   * @param listener 事件监听器
-   * @param options 选项
-   * @returns 注销函数
+   * Register global event listener
+   * @param eventType Event type
+   * @param listener Event listener
+   * @param options Options
+   * @returns Unregister function
    */
   private registerGlobalListener<T>(
     eventType: string,
@@ -76,7 +76,7 @@ class EventManager {
       timeout?: number;
     }
   ): () => void {
-    // 验证参数
+    // Validate parameters
     if (!eventType) {
       throw new RuntimeValidationError('EventType is required', { field: 'eventType' });
     }
@@ -84,7 +84,7 @@ class EventManager {
       throw new RuntimeValidationError('Listener must be a function', { field: 'listener' });
     }
 
-    // 创建监听器包装器
+    // Create listener wrapper
     const wrapper: ListenerWrapper<T> = {
       listener,
       id: generateId(),
@@ -94,37 +94,37 @@ class EventManager {
       timeout: options?.timeout
     };
 
-    // 添加到全局监听器列表
+    // Add to global listeners list
     if (!this.globalListeners.has(eventType)) {
       this.globalListeners.set(eventType, []);
     }
     this.globalListeners.get(eventType)!.push(wrapper);
 
-    // 按优先级排序（优先级高的在前）
+    // Sort by priority (higher priority first)
     this.globalListeners.get(eventType)!.sort((a, b) => b.priority - a.priority);
 
-    // 返回注销函数
+    // Return unregister function
     return () => this.unregisterGlobalListener(eventType, listener);
   }
 
   /**
-   * 注销事件监听器（全局事件）
-   * @param eventType 事件类型
-   * @param listener 事件监听器
-   * @returns 是否成功注销
+   * Unregister event listener (global event)
+   * @param eventType Event type
+   * @param listener Event listener
+   * @returns Whether successfully unregistered
    */
   off<T extends BaseEvent>(eventType: EventType, listener: EventListener<T>): boolean {
     return this.unregisterGlobalListener(eventType, listener);
   }
 
   /**
-   * 注销全局事件监听器
-   * @param eventType 事件类型
-   * @param listener 事件监听器
-   * @returns 是否成功注销
+   * Unregister global event listener
+   * @param eventType Event type
+   * @param listener Event listener
+   * @returns Whether successfully unregistered
    */
   private unregisterGlobalListener<T>(eventType: string, listener: (event: T) => void | Promise<void>): boolean {
-    // 验证参数
+    // Validate parameters
     if (!eventType) {
       throw new RuntimeValidationError('EventType is required', { field: 'eventType' });
     }
@@ -132,13 +132,13 @@ class EventManager {
       throw new RuntimeValidationError('Listener must be a function', { field: 'listener' });
     }
 
-    // 获取监听器数组
+    // Get listeners array
     const wrappers = this.globalListeners.get(eventType);
     if (!wrappers) {
       return false;
     }
 
-    // 查找并移除监听器
+    // Find and remove listener
     const index = wrappers.findIndex(w => w.listener === listener);
     if (index === -1) {
       return false;
@@ -146,7 +146,7 @@ class EventManager {
 
     wrappers.splice(index, 1);
 
-    // 如果数组为空，删除映射
+    // If array is empty, delete mapping
     if (wrappers.length === 0) {
       this.globalListeners.delete(eventType);
     }
@@ -155,12 +155,12 @@ class EventManager {
   }
 
   /**
-   * 触发事件
-   * @param event 事件对象
-   * @returns Promise，等待所有监听器完成
+   * Emit event
+   * @param event Event object
+   * @returns Promise that waits for all listeners to complete
    */
   async emit<T extends BaseEvent>(event: T): Promise<void> {
-    // 验证事件
+    // Validate event
     if (!event) {
       throw new RuntimeValidationError('Event is required', { field: 'event' });
     }
@@ -168,18 +168,18 @@ class EventManager {
       throw new RuntimeValidationError('Event type is required', { field: 'event.type' });
     }
 
-    // 获取监听器
+    // Get listeners
     const wrappers = this.globalListeners.get(event.type) || [];
 
-    // 执行监听器
+    // Execute listeners
     for (const wrapper of wrappers) {
-      // 检查过滤器
+      // Check filter
       if (wrapper.filter && !wrapper.filter(event)) {
         continue;
       }
 
       try {
-        // 执行监听器（带超时控制）
+        // Execute listener (with timeout control)
         if (wrapper.timeout) {
           await Promise.race([
             wrapper.listener(event),
@@ -191,7 +191,7 @@ class EventManager {
           await wrapper.listener(event);
         }
       } catch (error) {
-        // 抛出错误，由调用方决定如何处理
+        // Throw error, let caller decide how to handle
         throw new ExecutionError(
           'Event listener execution failed',
           undefined,
@@ -207,11 +207,11 @@ class EventManager {
   }
 
   /**
-   * 注册一次性事件监听器
-   * @param eventType 事件类型
-   * @param listener 事件监听器
-   * @param options 选项
-   * @returns 注销函数
+   * Register one-time event listener
+   * @param eventType Event type
+   * @param listener Event listener
+   * @param options Options
+   * @returns Unregister function
    */
   once<T extends BaseEvent>(
     eventType: EventType,
@@ -222,7 +222,7 @@ class EventManager {
       timeout?: number;
     }
   ): () => void {
-    // 验证参数
+    // Validate parameters
     if (!eventType) {
       throw new RuntimeValidationError('EventType is required', { field: 'eventType' });
     }
@@ -230,23 +230,23 @@ class EventManager {
       throw new RuntimeValidationError('Listener must be a function', { field: 'listener' });
     }
 
-    // 创建包装监听器
+    // Create wrapper listener
     const wrapper: EventListener<T> = async (event: T) => {
       await listener(event);
-      // 自动注销
+      // Auto unregister
       this.off(eventType, wrapper);
     };
 
-    // 注册包装监听器
+    // Register wrapper listener
     return this.on(eventType, wrapper, options);
   }
 
   /**
-   * 等待特定事件触发
-   * @param eventType 事件类型
-   * @param timeout 超时时间（毫秒）
-   * @param filter 事件过滤器函数，返回true时才解析Promise
-   * @returns Promise，解析为事件对象
+   * Wait for specific event to be emitted
+   * @param eventType Event type
+   * @param timeout Timeout (milliseconds)
+   * @param filter Event filter function, only resolve Promise when returns true
+   * @returns Promise that resolves to event object
    */
   waitFor<T extends BaseEvent>(
     eventType: EventType,
@@ -257,30 +257,30 @@ class EventManager {
       let timeoutId: NodeJS.Timeout | undefined;
       let resolved = false;
 
-      // 创建监听器（不使用once，因为filter可能返回false）
+      // Create listener (don't use once, because filter may return false)
       const listener = (event: T) => {
-        // 检查过滤器
+        // Check filter
         if (filter && !filter(event)) {
-          return; // 不匹配，继续等待
+          return; // Not matched, continue waiting
         }
 
-        // 标记为已解决
+        // Mark as resolved
         resolved = true;
 
-        // 清理资源
+        // Clean up resources
         if (timeoutId) {
           clearTimeout(timeoutId);
         }
         this.off(eventType, listener);
 
-        // 解析Promise
+        // Resolve Promise
         resolve(event);
       };
 
-      // 注册监听器
+      // Register listener
       this.on(eventType, listener);
 
-      // 设置超时
+      // Set timeout
       if (timeout) {
         timeoutId = setTimeout(() => {
           if (!resolved) {
@@ -295,6 +295,6 @@ class EventManager {
 }
 
 /**
- * 导出EventManager类
+ * Export EventManager class
  */
 export { EventManager };

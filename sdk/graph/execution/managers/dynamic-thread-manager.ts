@@ -15,7 +15,7 @@
  */
 
 import type { ThreadEntity } from '../../entities/thread-entity.js';
-import type { EventManager } from '../../../core/services/event-manager.js';
+import type { EventManager } from '../../../core/managers/event-manager.js';
 import type { ThreadRegistry } from '../../services/thread-registry.js';
 import type { ThreadExecutor } from '../executors/thread-executor.js';
 import { now, diffTimestamp, getErrorMessage } from '@modular-agent/common-utils';

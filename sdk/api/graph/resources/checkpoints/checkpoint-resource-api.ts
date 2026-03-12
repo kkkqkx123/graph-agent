@@ -11,7 +11,7 @@ import { CheckpointCoordinator } from '../../../../graph/execution/coordinators/
 import { getContainer } from '../../../../core/di/index.js';
 import * as Identifiers from '../../../../core/di/service-identifiers.js';
 import { getErrorMessage, isSuccess, getData } from '../../../shared/types/execution-result.js';
-import type { EventManager } from '../../../../core/services/event-manager.js';
+import type { EventManager } from '../../../../core/managers/event-manager.js';
 import type { Timestamp } from '@modular-agent/types';
 import { ThreadStatus } from '@modular-agent/types';
 import { CheckpointTriggerType } from '@modular-agent/types';

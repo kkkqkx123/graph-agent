@@ -15,7 +15,7 @@
  * - 事件驱动，避免轮询
  */
 
-import type { EventManager } from '../../../../core/services/event-manager.js';
+import type { EventManager } from '../../../../core/managers/event-manager.js';
 import { EventType } from '@modular-agent/types';
 import {
   WAIT_FOREVER,

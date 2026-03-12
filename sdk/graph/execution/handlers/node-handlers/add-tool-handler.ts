@@ -13,7 +13,7 @@ import type { Thread } from '@modular-agent/types';
 import { ExecutionError } from '@modular-agent/types';
 import { now, diffTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
 import { ToolContextManager } from '../../managers/tool-context-manager.js';
-import type { EventManager } from '../../../../core/services/event-manager.js';
+import type { EventManager } from '../../../../core/managers/event-manager.js';
 import type { ThreadEntity } from '../../../entities/thread-entity.js';
 import { buildToolAddedEvent } from '../../../../core/utils/event/builders/index.js';
 

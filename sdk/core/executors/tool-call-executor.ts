@@ -22,7 +22,7 @@
 
 import { isAbortError, checkInterruption, getErrorOrNew } from '@modular-agent/common-utils';
 import type { ToolService } from '../services/tool-service.js';
-import type { EventManager } from '../services/event-manager.js';
+import type { EventManager } from '../managers/event-manager.js';
 import type { Tool, ID } from '@modular-agent/types';
 import { now, diffTimestamp, generateId } from '@modular-agent/common-utils';
 import type { ConversationManager } from '../managers/conversation-manager.js';

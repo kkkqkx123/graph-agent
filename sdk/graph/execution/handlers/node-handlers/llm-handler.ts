@@ -17,7 +17,7 @@ import { now, diffTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
 import { LLMExecutionCoordinator } from '../../../../core/coordinators/llm-execution-coordinator.js';
 import { LLMWrapper } from '../../../../core/llm/wrapper.js';
 import { executeHumanRelay } from '../human-relay-handler.js';
-import type { EventManager } from '../../../../core/services/event-manager.js';
+import type { EventManager } from '../../../../core/managers/event-manager.js';
 
 /**
  * LLM节点执行结果

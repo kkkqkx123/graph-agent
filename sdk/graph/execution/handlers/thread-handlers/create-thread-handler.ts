@@ -18,7 +18,7 @@
 
 import type { ThreadRegistry } from '../../../services/thread-registry.js';
 import type { TaskRegistry } from '../../../services/task-registry.js';
-import type { EventManager } from '../../../../core/services/event-manager.js';
+import type { EventManager } from '../../../../core/managers/event-manager.js';
 import type { ThreadBuilder } from '../../thread-builder.js';
 import type { TaskQueueManager } from '../../managers/task-queue-manager.js';
 import { DynamicThreadManager } from '../../managers/dynamic-thread-manager.js';

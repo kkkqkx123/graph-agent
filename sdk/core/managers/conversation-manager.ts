@@ -16,7 +16,7 @@
 import type { LLMMessage, TokenUsageStats } from '@modular-agent/types';
 import { MessageHistory, type MessageHistoryState } from '../messages/message-history.js';
 import { TokenUsageTracker } from '../utils/token/token-usage-tracker.js';
-import type { EventManager } from '../services/event-manager.js';
+import type { EventManager } from './event-manager.js';
 import type { LifecycleCapable } from './lifecycle-capable.js';
 import { createContextualLogger } from '../../utils/contextual-logger.js';
 import { emit } from '../utils/event/event-emitter.js';
