@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod';
-import type { WorkflowTrigger, TriggerCondition, TriggerAction, ExecuteTriggeredSubgraphActionConfig } from '@modular-agent/types';
+import type { WorkflowTrigger, TriggerCondition, TriggerAction, ExecuteTriggeredSubgraphActionConfig, ExecuteScriptActionConfig } from '@modular-agent/types';
 import type { TriggerReference } from '@modular-agent/types';
 import { TriggerActionType } from '@modular-agent/types';
 import { EventType } from '@modular-agent/types';
@@ -96,11 +96,22 @@ const executeTriggeredSubgraphActionConfigSchema = z.object({
 });
 
 /**
+ * 执行脚本动作配置schema
+ */
+const executeScriptActionConfigSchema = z.object({
+  scriptName: z.string().min(1, 'Script name is required'),
+  parameters: z.record(z.string(), z.any()).optional(),
+  timeout: z.number().int().positive('Timeout must be a positive integer').optional(),
+  ignoreError: z.boolean().optional(),
+  validateExistence: z.boolean().optional()
+});
+
+/**
  * 触发动作schema
  */
 const triggerActionSchema = z.object({
   type: z.custom<TriggerActionType>((val): val is TriggerActionType =>
-    ['start_workflow', 'stop_workflow', 'pause_thread', 'resume_thread', 'skip_node', 'set_variable', 'send_notification', 'custom', 'execute_triggered_subgraph'].includes(val as TriggerActionType)
+    ['start_workflow', 'stop_workflow', 'pause_thread', 'resume_thread', 'skip_node', 'set_variable', 'send_notification', 'custom', 'execute_triggered_subgraph', 'execute_script'].includes(val as TriggerActionType)
   ),
   parameters: z.record(z.string(), z.any()),
   metadata: z.record(z.string(), z.any()).optional()
@@ -133,7 +144,7 @@ const triggerConfigOverrideSchema = z.object({
   }).optional(),
   action: z.object({
     type: z.custom<TriggerActionType>((val): val is TriggerActionType =>
-      ['start_workflow', 'stop_workflow', 'pause_thread', 'resume_thread', 'skip_node', 'set_variable', 'send_notification', 'custom', 'execute_triggered_subgraph'].includes(val as TriggerActionType)
+      ['start_workflow', 'stop_workflow', 'pause_thread', 'resume_thread', 'skip_node', 'set_variable', 'send_notification', 'custom', 'execute_triggered_subgraph', 'execute_script'].includes(val as TriggerActionType)
     ).optional(),
     parameters: z.record(z.string(), z.any()).optional(),
     metadata: z.record(z.string(), z.any()).optional()
@@ -176,6 +187,19 @@ export function validateExecuteTriggeredSubgraphActionConfig(
 }
 
 /**
+ * 验证执行脚本动作配置
+ * @param config 执行脚本动作配置
+ * @param path 字段路径（用于错误路径）
+ * @throws ValidationError 当配置无效时抛出
+ */
+export function validateExecuteScriptActionConfig(
+  config: ExecuteScriptActionConfig,
+  path: string = 'action.parameters'
+): Result<ExecuteScriptActionConfig, ConfigurationValidationError[]> {
+  return validateConfig(config, executeScriptActionConfigSchema, path, 'trigger');
+}
+
+/**
  * 验证触发动作
  * @param action 触发动作
  * @param path 字段路径（用于错误路径）
@@ -191,6 +215,17 @@ export function validateTriggerAction(action: TriggerAction, path: string = 'act
   if (action.type === 'execute_triggered_subgraph') {
     const paramResult = validateExecuteTriggeredSubgraphActionConfig(
       action.parameters as ExecuteTriggeredSubgraphActionConfig,
+      `${path}.parameters`
+    );
+    if (paramResult.isErr()) {
+      return err(paramResult.error);
+    }
+  }
+
+  // 特殊处理：当 action.type 为 EXECUTE_SCRIPT 时，验证 parameters
+  if (action.type === 'execute_script') {
+    const paramResult = validateExecuteScriptActionConfig(
+      action.parameters as ExecuteScriptActionConfig,
       `${path}.parameters`
     );
     if (paramResult.isErr()) {

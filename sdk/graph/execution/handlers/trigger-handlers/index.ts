@@ -54,6 +54,7 @@ import { skipNodeHandler } from './skip-node-handler.js';
 import { setVariableHandler } from './set-variable-handler.js';
 import { sendNotificationHandler } from './send-notification-handler.js';
 import { customHandler } from './custom-handler.js';
+import { executeScriptHandler } from './execute-script-handler.js';
 import { executeTriggeredSubgraphHandler } from './execute-triggered-subgraph-handler.js';
 import { applyMessageOperationHandler } from './apply-message-operation-handler.js';
 
@@ -84,6 +85,7 @@ export const triggerHandlers: Record<TriggerActionType, TriggerHandler> = {
   ['set_variable']: setVariableHandler,
   ['send_notification']: sendNotificationHandler,
   ['custom']: customHandler,
+  ['execute_script']: executeScriptHandler,
   ['apply_message_operation']: applyMessageOperationHandler,
   ['execute_triggered_subgraph']: executeTriggeredSubgraphHandler
 } as Record<TriggerActionType, TriggerHandler>;

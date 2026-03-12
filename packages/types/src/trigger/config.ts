@@ -44,7 +44,9 @@ export type TriggerActionType =
   /** 应用消息操作（上下文压缩等） */
   'apply_message_operation' |
   /** 执行触发子工作流 */
-  'execute_triggered_subgraph';
+  'execute_triggered_subgraph' |
+  /** 执行脚本 */
+  'execute_script';
 
 /**
  * 触发动作接口
@@ -71,6 +73,23 @@ export interface ExecuteTriggeredSubgraphActionConfig {
   timeout?: number;
   /** 是否记录历史 */
   recordHistory?: boolean;
+}
+
+/**
+ * 执行脚本动作配置
+ * 用于触发器执行已注册的脚本
+ */
+export interface ExecuteScriptActionConfig {
+  /** 脚本名称（必须在 ScriptService 中已注册） */
+  scriptName: string;
+  /** 传递给脚本的参数（可在脚本内通过环境变量访问） */
+  parameters?: Record<string, any>;
+  /** 执行超时时间（毫秒，覆盖脚本默认配置） */
+  timeout?: number;
+  /** 脚本执行失败时是否忽略错误（不影响触发器执行结果，默认false） */
+  ignoreError?: boolean;
+  /** 执行前是否验证脚本存在性（默认true） */
+  validateExistence?: boolean;
 }
 
 /**
