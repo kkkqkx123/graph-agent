@@ -70,3 +70,11 @@ export {
 
 // 服务层
 export { AgentLoopRegistry } from './services/index.js';
+
+// 错误处理器
+export {
+    handleAgentError,
+    handleAgentInterruption as handleAgentInterruptionError,
+    isRecoverableAgentError,
+    createAgentExecutionError
+} from './execution/handlers/agent-error-handler.js';

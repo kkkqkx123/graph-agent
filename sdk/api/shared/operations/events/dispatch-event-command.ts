@@ -8,7 +8,7 @@
 import { BaseCommand, CommandValidationResult } from '../../types/command.js';
 import type { APIDependencyManager } from '../../core/sdk-dependencies.js';
 import type { BaseEvent } from '@modular-agent/types';
-import { emit } from '../../../core/utils/event/event-emitter.js';
+import { emit } from '../../../../core/utils/event/event-emitter.js';
 
 /**
  * Dispatch event parameters

@@ -38,6 +38,13 @@ import { isAbortError, checkInterruption } from '@modular-agent/common-utils';
 import { LLMExecutor } from '../../../core/executors/llm-executor.js';
 import { ToolCallExecutor } from '../../../core/executors/tool-call-executor.js';
 import { executeAgentHook } from '../handlers/hook-handlers/index.js';
+import type { ErrorService } from '../../../core/services/error-service.js';
+import type { EventManager } from '../../../core/services/event-manager.js';
+import { safeEmit } from '../../../core/utils/event/event-emitter.js';
+import {
+    handleAgentError,
+    handleAgentInterruption as handleAgentInterruptionHandler
+} from '../handlers/agent-error-handler.js';
 
 /**
  * Agent Loop 流式事件
@@ -62,15 +69,21 @@ export class AgentLoopExecutor {
     private llmExecutor: LLMExecutor;
     private toolCallExecutor: ToolCallExecutor;
     private toolService: ToolService;  // 保留用于 prepareToolSchemas
+    private errorService?: ErrorService;
+    private eventManager?: EventManager;
     private emitEvent?: (event: AgentCustomEvent) => Promise<void>;
 
     constructor(
         llmExecutor: LLMExecutor,
         toolService: ToolService,
+        errorService?: ErrorService,
+        eventManager?: EventManager,
         emitEvent?: (event: AgentCustomEvent) => Promise<void>
     ) {
         this.llmExecutor = llmExecutor;
         this.toolService = toolService;
+        this.errorService = errorService;
+        this.eventManager = eventManager;
         this.toolCallExecutor = new ToolCallExecutor(toolService);
         this.emitEvent = emitEvent;
     }
@@ -81,6 +94,35 @@ export class AgentLoopExecutor {
      */
     setEventEmitter(emitEvent: (event: AgentCustomEvent) => Promise<void>): void {
         this.emitEvent = emitEvent;
+    }
+
+    /**
+     * 设置错误处理服务
+     * @param errorService 错误处理服务
+     */
+    setErrorService(errorService: ErrorService): void {
+        this.errorService = errorService;
+    }
+
+    /**
+     * 设置事件管理器
+     * @param eventManager 事件管理器
+     */
+    setEventManager(eventManager: EventManager): void {
+        this.eventManager = eventManager;
+    }
+
+    /**
+     * 统一的事件发射方法
+     * 优先使用 EventManager，否则使用 emitEvent 回调
+     * @param event Agent 自定义事件
+     */
+    private async emitAgentEvent(event: AgentCustomEvent): Promise<void> {
+        if (this.eventManager) {
+            await safeEmit(this.eventManager, event);
+        } else if (this.emitEvent) {
+            await this.emitEvent(event);
+        }
     }
 
     /**
@@ -101,7 +143,6 @@ export class AgentLoopExecutor {
         const config = entity.config;
         const maxIterations = config.maxIterations ?? 10;
         const messageHistory = this.createMessageHistory();
-        const emitEvent = this.emitEvent || this.getDefaultEmitter();
 
         // 初始化消息历史
         this.initializeMessageHistory(messageHistory, config, entity.getMessages());
@@ -134,13 +175,13 @@ export class AgentLoopExecutor {
                 }
 
                 // ========== BEFORE_ITERATION Hook ==========
-                await executeAgentHook(entity, 'BEFORE_ITERATION', emitEvent);
+                await executeAgentHook(entity, 'BEFORE_ITERATION', this.emitAgentEvent.bind(this));
 
                 // 开始新迭代
                 entity.state.startIteration();
 
                 // ========== BEFORE_LLM_CALL Hook ==========
-                await executeAgentHook(entity, 'BEFORE_LLM_CALL', emitEvent);
+                await executeAgentHook(entity, 'BEFORE_LLM_CALL', this.emitAgentEvent.bind(this));
 
                 // 使用 LLMExecutor 调用 LLM
                 const llmResult = await this.llmExecutor.executeLLMCall(
@@ -190,7 +231,7 @@ export class AgentLoopExecutor {
                 await executeAgentHook(
                     entity,
                     'AFTER_LLM_CALL',
-                    emitEvent,
+                    this.emitAgentEvent.bind(this),
                     undefined,
                     { content: response.content, toolCalls: response.toolCalls }
                 );
@@ -226,7 +267,7 @@ export class AgentLoopExecutor {
                     entity.state.endIteration(response.content);
 
                     // ========== AFTER_ITERATION Hook ==========
-                    await executeAgentHook(entity, 'AFTER_ITERATION', emitEvent);
+                    await executeAgentHook(entity, 'AFTER_ITERATION', this.emitAgentEvent.bind(this));
 
                     entity.state.complete();
                     return {
@@ -265,13 +306,13 @@ export class AgentLoopExecutor {
                             arguments: originalToolCall?.arguments ? 
                                 JSON.parse(originalToolCall.arguments) : {}
                         };
-                        await executeAgentHook(entity, 'BEFORE_TOOL_CALL', emitEvent, toolCallInfo);
+                        await executeAgentHook(entity, 'BEFORE_TOOL_CALL', this.emitAgentEvent.bind(this), toolCallInfo);
 
                         if (result.success) {
                             entity.state.recordToolCallEnd(result.toolCallId, result.result);
 
                             // ========== AFTER_TOOL_CALL Hook ==========
-                            await executeAgentHook(entity, 'AFTER_TOOL_CALL', emitEvent, {
+                            await executeAgentHook(entity, 'AFTER_TOOL_CALL', this.emitAgentEvent.bind(this), {
                                 ...toolCallInfo,
                                 result: result.result
                             });
@@ -279,7 +320,7 @@ export class AgentLoopExecutor {
                             entity.state.recordToolCallEnd(result.toolCallId, undefined, result.error);
 
                             // ========== AFTER_TOOL_CALL Hook (with error) ==========
-                            await executeAgentHook(entity, 'AFTER_TOOL_CALL', emitEvent, {
+                            await executeAgentHook(entity, 'AFTER_TOOL_CALL', this.emitAgentEvent.bind(this), {
                                 ...toolCallInfo,
                                 error: result.error
                             });
@@ -290,7 +331,7 @@ export class AgentLoopExecutor {
                 entity.state.endIteration(response.content);
 
                 // ========== AFTER_ITERATION Hook ==========
-                await executeAgentHook(entity, 'AFTER_ITERATION', emitEvent);
+                await executeAgentHook(entity, 'AFTER_ITERATION', this.emitAgentEvent.bind(this));
             }
 
             // 达到最大迭代次数
@@ -303,12 +344,18 @@ export class AgentLoopExecutor {
             };
 
         } catch (error) {
-            entity.state.fail(error);
+            // 使用统一的错误处理器
+            const standardizedError = await handleAgentError(
+                entity,
+                error as Error,
+                'agent_loop_execution'
+            );
+
             return {
                 success: false,
                 iterations: entity.state.currentIteration,
                 toolCallCount: entity.state.toolCallCount,
-                error: error
+                error: standardizedError
             };
         }
     }
@@ -330,7 +377,6 @@ export class AgentLoopExecutor {
         const config = entity.config;
         const maxIterations = config.maxIterations ?? 10;
         const messageHistory = this.createMessageHistory();
-        const emitEvent = this.emitEvent || this.getDefaultEmitter();
 
         // 初始化消息历史
         this.initializeMessageHistory(messageHistory, config, entity.getMessages());
@@ -369,13 +415,13 @@ export class AgentLoopExecutor {
                 }
 
                 // ========== BEFORE_ITERATION Hook ==========
-                await executeAgentHook(entity, 'BEFORE_ITERATION', emitEvent);
+                await executeAgentHook(entity, 'BEFORE_ITERATION', this.emitAgentEvent.bind(this));
 
                 // 开始新迭代
                 entity.state.startIteration();
 
                 // ========== BEFORE_LLM_CALL Hook ==========
-                await executeAgentHook(entity, 'BEFORE_LLM_CALL', emitEvent);
+                await executeAgentHook(entity, 'BEFORE_LLM_CALL', this.emitAgentEvent.bind(this));
 
                 // 调用 LLM (流式) - 使用 LLMExecutor
                 const llmResult = await this.llmExecutor.executeLLMCall(
@@ -436,43 +482,55 @@ export class AgentLoopExecutor {
 
                     // 处理中断错误
                     if (isAbortError(error)) {
-                        const result = checkInterruption(entity.getAbortSignal());
-                        entity.state.fail(error);
-                        yield {
-                            type: AgentStreamEventType.ERROR,
-                            timestamp: Date.now(),
-                            data: { error: result.type === 'paused' ? 'Execution paused' : 'Execution cancelled' }
-                        };
-                        return;
+                        const isInterruption = await handleAgentInterruptionHandler(
+                            entity,
+                            error,
+                            'llm_stream_call'
+                        );
+                        if (isInterruption) {
+                            yield {
+                                type: AgentStreamEventType.ERROR,
+                                timestamp: Date.now(),
+                                data: { error: entity.state.error?.message || 'Execution interrupted' }
+                            };
+                            return;
+                        }
                     }
 
-                    // 其他错误
-                    entity.state.fail(error);
+                    // 其他错误 - 使用统一的错误处理器
+                    const standardizedError = await handleAgentError(
+                        entity,
+                        error,
+                        'llm_stream_call'
+                    );
+
                     yield {
                         type: AgentStreamEventType.ERROR,
                         timestamp: Date.now(),
-                        data: { error: error }
+                        data: { error: standardizedError }
                     };
                     return;
                 }
 
                 const messageStream = llmWrapperResult.value;
 
-                // 订阅 MessageStream 事件并转发
-                // 使用事件监听器模式收集 LLM 层事件
-                // 注意：MessageStream 的 on 方法在 emit 时会展开参数，所以需要使用展开参数的监听器类型
-                const llmEvents: MessageStreamEvent[] = [];
+                // 实时转发 MessageStream 事件
+                // 使用事件队列实现实时转发，避免批量收集
+                const eventQueue: MessageStreamEvent[] = [];
+                let streamDone = false;
+                let streamError: Error | null = null;
 
+                // 订阅 MessageStream 事件并放入队列
                 messageStream
                     .on('text', ((delta: string, snapshot: string) => {
-                        llmEvents.push({
+                        eventQueue.push({
                             type: 'text',
                             delta,
                             snapshot
                         });
                     }) as any)
                     .on('inputJson', ((partialJson: string, parsedSnapshot: unknown, snapshot: LLMMessage) => {
-                        llmEvents.push({
+                        eventQueue.push({
                             type: 'inputJson',
                             partialJson,
                             parsedSnapshot,
@@ -480,38 +538,28 @@ export class AgentLoopExecutor {
                         });
                     }) as any)
                     .on('message', ((message: LLMMessage) => {
-                        llmEvents.push({
+                        eventQueue.push({
                             type: 'message',
                             message
                         });
                     }) as any)
                     .on('error', ((error: Error) => {
-                        llmEvents.push({
+                        eventQueue.push({
                             type: 'error',
                             error
                         });
                     }) as any);
 
-                // 等待流完成，同时转发事件
-                try {
-                    await messageStream.done();
-                } catch (error) {
-                    // 处理流式完成时的中断错误
-                    if (isAbortError(error)) {
-                        const result = checkInterruption(entity.getAbortSignal());
-                        entity.state.fail(error);
-                        yield {
-                            type: AgentStreamEventType.ERROR,
-                            timestamp: Date.now(),
-                            data: { error: result.type === 'paused' ? 'Execution paused' : 'Execution cancelled' }
-                        };
-                        return;
-                    }
-                    throw error;
-                }
+                // 启动流完成等待（不阻塞）
+                const donePromise = messageStream.done().then(() => {
+                    streamDone = true;
+                }).catch((error) => {
+                    streamError = error;
+                    streamDone = true;
+                });
 
-                // 转发收集到的 LLM 层事件
-                for (const event of llmEvents) {
+                // 实时转发事件
+                while (!streamDone || eventQueue.length > 0) {
                     // 检查中断信号
                     if (entity.isAborted() || entity.shouldStop()) {
                         const result = checkInterruption(entity.getAbortSignal());
@@ -523,7 +571,52 @@ export class AgentLoopExecutor {
                         };
                         return;
                     }
-                    yield event;
+
+                    // 转发队列中的事件
+                    while (eventQueue.length > 0) {
+                        const event = eventQueue.shift()!;
+                        yield event;
+                    }
+
+                    // 等待一小段时间让新事件进入队列
+                    if (!streamDone) {
+                        await new Promise(resolve => setTimeout(resolve, 0));
+                    }
+                }
+
+                // 处理流完成时的错误
+                if (streamError) {
+                    const error = streamError;
+                    // 处理流式完成时的中断错误
+                    if (isAbortError(error)) {
+                        const isInterruption = await handleAgentInterruptionHandler(
+                            entity,
+                            error,
+                            'message_stream_done'
+                        );
+                        if (isInterruption) {
+                            yield {
+                                type: AgentStreamEventType.ERROR,
+                                timestamp: Date.now(),
+                                data: { error: entity.state.error?.message || 'Execution interrupted' }
+                            };
+                            return;
+                        }
+                    }
+
+                    // 其他错误 - 使用统一的错误处理器
+                    const standardizedError = await handleAgentError(
+                        entity,
+                        error,
+                        'message_stream_done'
+                    );
+
+                    yield {
+                        type: AgentStreamEventType.ERROR,
+                        timestamp: Date.now(),
+                        data: { error: standardizedError }
+                    };
+                    return;
                 }
 
                 const finalResult = await messageStream.getFinalResult();
@@ -532,7 +625,7 @@ export class AgentLoopExecutor {
                 await executeAgentHook(
                     entity,
                     'AFTER_LLM_CALL',
-                    emitEvent,
+                    this.emitAgentEvent.bind(this),
                     undefined,
                     { content: finalResult.content, toolCalls: finalResult.toolCalls }
                 );
@@ -568,7 +661,7 @@ export class AgentLoopExecutor {
                     entity.state.endIteration(finalResult.content);
 
                     // ========== AFTER_ITERATION Hook ==========
-                    await executeAgentHook(entity, 'AFTER_ITERATION', emitEvent);
+                    await executeAgentHook(entity, 'AFTER_ITERATION', this.emitAgentEvent.bind(this));
 
                     entity.state.complete();
                     yield {
@@ -607,7 +700,7 @@ export class AgentLoopExecutor {
                         name: toolCall.function.name,
                         arguments: args
                     };
-                    await executeAgentHook(entity, 'BEFORE_TOOL_CALL', emitEvent, toolCallInfo);
+                    await executeAgentHook(entity, 'BEFORE_TOOL_CALL', this.emitAgentEvent.bind(this), toolCallInfo);
 
                     yield {
                         type: AgentStreamEventType.TOOL_CALL_START,
@@ -636,7 +729,7 @@ export class AgentLoopExecutor {
                         entity.state.recordToolCallEnd(toolCall.id, result);
 
                         // ========== AFTER_TOOL_CALL Hook ==========
-                        await executeAgentHook(entity, 'AFTER_TOOL_CALL', emitEvent, {
+                        await executeAgentHook(entity, 'AFTER_TOOL_CALL', this.emitAgentEvent.bind(this), {
                             ...toolCallInfo,
                             result: result
                         });
@@ -658,17 +751,32 @@ export class AgentLoopExecutor {
 
                         // 处理中断错误
                         if (isAbortError(error)) {
-                            const result = checkInterruption(entity.getAbortSignal());
-                            entity.state.fail(error);
-                            yield {
-                                type: AgentStreamEventType.ERROR,
-                                timestamp: Date.now(),
-                                data: { error: result.type === 'paused' ? 'Execution paused during tool call' : 'Execution cancelled during tool call' }
-                            };
-                            return;
+                            const isInterruption = await handleAgentInterruptionHandler(
+                                entity,
+                                error,
+                                'tool_call_execution'
+                            );
+                            if (isInterruption) {
+                                yield {
+                                    type: AgentStreamEventType.ERROR,
+                                    timestamp: Date.now(),
+                                    data: { error: entity.state.error?.message || 'Execution interrupted during tool call' }
+                                };
+                                return;
+                            }
                         }
 
-                        // 其他错误
+                        // 其他错误 - 使用统一的错误处理器
+                        const standardizedError = await handleAgentError(
+                            entity,
+                            error,
+                            'tool_call_execution',
+                            {
+                                toolCallId: toolCall.id,
+                                toolName: toolCall.function.name
+                            }
+                        );
+
                         const errorMessage = error.message;
                         messageHistory.addToolResultMessage(
                             toolCall.id,
@@ -677,7 +785,7 @@ export class AgentLoopExecutor {
                         entity.state.recordToolCallEnd(toolCall.id, undefined, errorMessage);
 
                         // ========== AFTER_TOOL_CALL Hook (with error) ==========
-                        await executeAgentHook(entity, 'AFTER_TOOL_CALL', emitEvent, {
+                        await executeAgentHook(entity, 'AFTER_TOOL_CALL', this.emitAgentEvent.bind(this), {
                             ...toolCallInfo,
                             error: errorMessage
                         });
@@ -706,7 +814,7 @@ export class AgentLoopExecutor {
                 entity.state.endIteration(finalResult.content);
 
                 // ========== AFTER_ITERATION Hook ==========
-                await executeAgentHook(entity, 'AFTER_ITERATION', emitEvent);
+                await executeAgentHook(entity, 'AFTER_ITERATION', this.emitAgentEvent.bind(this));
             }
 
             // 达到最大迭代次数
@@ -723,11 +831,17 @@ export class AgentLoopExecutor {
             };
 
         } catch (error) {
-            entity.state.fail(error);
+            // 使用统一的错误处理器
+            const standardizedError = await handleAgentError(
+                entity,
+                error as Error,
+                'agent_loop_stream_execution'
+            );
+
             yield {
                 type: AgentStreamEventType.ERROR,
                 timestamp: Date.now(),
-                data: { error }
+                data: { error: standardizedError }
             };
         }
     }

@@ -3,6 +3,7 @@
  */
 
 export * from './hook-handlers/index.js';
+export * from './agent-error-handler.js';
 
 export {
     createAgentLoopCheckpoint,
