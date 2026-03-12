@@ -3,10 +3,25 @@
  * 配置 DI 容器的所有服务绑定，定义服务间的依赖关系
  *
  * 设计原则：
- * - 按依赖顺序配置服务绑定
- * - 所有服务默认为单例生命周期
- * - 使用工厂函数处理复杂依赖
- * - 支持循环依赖检测
+ * - 按依赖顺序配置服务绑定，避免循环依赖
+ * - 全局无状态服务使用单例生命周期（如 Registry、Manager）
+ * - 线程隔离服务使用工厂模式（如 MessageHistoryManager、ConversationManager）
+ * - 工厂函数用于创建需要运行时参数的实例（如 threadId、nodeId）
+ *
+ * 服务分层：
+ * - 第一层：无依赖的存储层服务（GraphRegistry、ThreadRegistry）
+ * - 第二层：无依赖的业务层服务（EventManager、ToolService等）
+ * - 第三层：依赖第二层的业务层服务（ErrorService）
+ * - 第四层：依赖存储层的业务层服务（WorkflowRegistry）
+ * - 第五层：执行层基础服务（LLMExecutor、ToolCallExecutor）
+ * - 第六层：依赖第五层的执行层服务（ThreadCascadeManager、CheckpointStateManager）
+ * - 第七层：ThreadExecutor（依赖 GraphRegistry 和 ThreadExecutionCoordinator 工厂）
+ * - 第八层：ThreadLifecycleCoordinator（工厂模式）
+ * - 第九层：ThreadBuilder（无依赖）
+ * - 第十层：执行层基础 Managers（部分为工厂模式）
+ * - 第十一层：执行层 Coordinators（部分为工厂模式）
+ * - 第十二层：执行层 Coordinators（中低优先级）
+ * - 第十三层：ThreadPoolService（必须最后绑定，因为它依赖 ThreadExecutor）
  */
 
 import { Container } from '@modular-agent/common-utils';
@@ -104,14 +119,20 @@ export function getStorageCallback(): CheckpointStorageCallback {
  * 初始化 DI 容器
  * 按依赖顺序配置所有服务绑定
  *
+ * @param storageCallback 存储回调接口实现（可选，如果未提供则必须在初始化前调用 setStorageCallback）
  * @returns 已配置的容器实例
  */
-export function initializeContainer(): Container {
+export function initializeContainer(storageCallback?: CheckpointStorageCallback): Container {
   if (container) {
     return container;
   }
 
   container = new Container();
+
+  // 如果提供了 storageCallback，设置它
+  if (storageCallback) {
+    setStorageCallback(storageCallback);
+  }
 
   // ============================================================
   // 第一层：无依赖的存储层服务
@@ -125,7 +146,8 @@ export function initializeContainer(): Container {
     .to(ThreadRegistry)
     .inSingletonScope();
 
-  container.bind(Identifiers.LLMWrapper)
+  // LLMWrapper - LLM 包装器，依赖 EventManager 用于事件发布
+container.bind(Identifiers.LLMWrapper)
     .toDynamicValue((c: any) => new LLMWrapper(c.get(Identifiers.EventManager)))
     .inSingletonScope();
 
@@ -157,20 +179,6 @@ export function initializeContainer(): Container {
     .toDynamicValue(() => TaskRegistry.getInstance())
     .inSingletonScope();
 
-  // ThreadPoolService 需要 executorFactory，使用工厂函数创建
-  container.bind(Identifiers.ThreadPoolService)
-    .toDynamicValue((c: any) => {
-      const config = {
-        minExecutors: 1,
-        maxExecutors: 10,
-        idleTimeout: 30000,
-        defaultTimeout: 30000
-      };
-
-      return ThreadPoolService.getInstance(() => c.get(Identifiers.ThreadExecutor), config);
-    })
-    .inSingletonScope();
-
   // ============================================================
   // 第三层：依赖第二层的业务层服务
   // ============================================================
@@ -188,10 +196,9 @@ export function initializeContainer(): Container {
 
   // SkillRegistry - Skill 注册表，需要配置路径
   // 使用工厂模式，允许应用层提供配置
+  // 默认配置使用空路径列表，应用层应该在初始化时重新绑定此服务并提供实际配置
   container.bind(Identifiers.SkillRegistry)
     .toDynamicValue(() => {
-      // 默认配置：空路径列表
-      // 应用层应该在初始化时重新绑定此服务并提供实际配置
       const config = {
         paths: [],
         autoScan: true,
@@ -202,7 +209,7 @@ export function initializeContainer(): Container {
     })
     .inSingletonScope();
 
-  // SkillLoader - Skill 加载器
+  // SkillLoader - Skill 加载器，依赖 SkillRegistry 和 EventManager
   container.bind(Identifiers.SkillLoader)
     .toDynamicValue((c: any) => {
       return new SkillLoader(
@@ -216,7 +223,7 @@ export function initializeContainer(): Container {
   // 第四层：依赖存储层的业务层服务
   // ============================================================
 
-  // WorkflowRegistry 依赖 ThreadRegistry 进行引用检查
+  // WorkflowRegistry - 工作流注册表，依赖 ThreadRegistry 进行引用检查
   container.bind(Identifiers.WorkflowRegistry)
     .toDynamicValue((c: any) => {
       const threadRegistry = c.get(Identifiers.ThreadRegistry);
@@ -228,6 +235,7 @@ export function initializeContainer(): Container {
   // 第五层：执行层基础服务
   // ============================================================
 
+  // LLMExecutor - LLM 执行器，依赖 LLMWrapper
   container.bind(Identifiers.LLMExecutor)
     .toDynamicValue((c: any) => {
       const llmWrapper = c.get(Identifiers.LLMWrapper);
@@ -235,6 +243,7 @@ export function initializeContainer(): Container {
     })
     .inSingletonScope();
 
+  // ToolCallExecutor - 工具调用执行器，依赖多个服务和协调器
   container.bind(Identifiers.ToolCallExecutor)
     .toDynamicValue((c: any) => {
       // Graph 模块特有的事件构建器
@@ -262,7 +271,7 @@ export function initializeContainer(): Container {
     })
     .inSingletonScope();
 
-  // ToolApprovalCoordinator - 工具审批协调器
+  // ToolApprovalCoordinator - 工具审批协调器，依赖 EventManager
   container.bind(Identifiers.ToolApprovalCoordinator)
     .toDynamicValue((c: any) => {
       const eventManager = c.get(Identifiers.EventManager);
@@ -270,26 +279,38 @@ export function initializeContainer(): Container {
     })
     .inSingletonScope();
 
+  // MessageHistoryManager - 消息历史管理器工厂
+  // MessageHistoryManager 是线程隔离的，每个线程需要独立的实例
+  // 使用工厂模式创建实例，确保线程间的数据隔离
   container.bind(Identifiers.MessageHistoryManager)
     .toDynamicValue((c: any) => {
-      // MessageHistoryManager 是线程隔离的，每个线程需要自己的实例
-      // 这里使用一个默认的 threadId，实际使用时应该由 ThreadContext 创建
-      return new MessageHistoryManager({ threadId: 'default' });
+      return {
+        create: (threadId: string) => new MessageHistoryManager({ threadId })
+      };
     })
     .inSingletonScope();
 
+  // ThreadLifecycleManager - 线程生命周期管理器工厂
+  // 每个线程需要独立的生命周期管理器实例
   container.bind(Identifiers.ThreadLifecycleManager)
     .toDynamicValue((c: any) => {
       const eventManager = c.get(Identifiers.EventManager);
-      const messageHistoryManager = c.get(Identifiers.MessageHistoryManager);
-      return new ThreadLifecycleManager(eventManager, messageHistoryManager);
+      const messageHistoryManagerFactory = c.get(Identifiers.MessageHistoryManager);
+      return {
+        create: (threadId: string) => {
+          const messageHistoryManager = messageHistoryManagerFactory.create(threadId);
+          return new ThreadLifecycleManager(eventManager, messageHistoryManager);
+        }
+      };
     })
     .inSingletonScope();
 
+  // ToolContextManager - 工具上下文管理器，无依赖
   container.bind(Identifiers.ToolContextManager)
     .to(ToolContextManager)
     .inSingletonScope();
 
+  // ToolVisibilityManager - 工具可见性管理器，无依赖
   container.bind(Identifiers.ToolVisibilityManager)
     .to(ToolVisibilityManager)
     .inSingletonScope();
@@ -298,20 +319,29 @@ export function initializeContainer(): Container {
   // 第六层：依赖第五层的执行层服务
   // ============================================================
 
-  container.bind(Identifiers.ThreadCascadeManager)
+  // ThreadCascadeManager - 线程级联管理器工厂
+// 每个线程需要独立的级联管理器实例
+container.bind(Identifiers.ThreadCascadeManager)
     .toDynamicValue((c: any) => {
       const threadRegistry = c.get(Identifiers.ThreadRegistry);
-      const lifecycleManager = c.get(Identifiers.ThreadLifecycleManager);
       const eventManager = c.get(Identifiers.EventManager);
       const taskRegistry = c.get(Identifiers.TaskRegistry);
-      return new ThreadCascadeManager(threadRegistry, lifecycleManager, eventManager, taskRegistry);
+      const lifecycleManagerFactory = c.get(Identifiers.ThreadLifecycleManager);
+      return {
+        create: (threadId: string) => {
+          const lifecycleManager = lifecycleManagerFactory.create(threadId);
+          return new ThreadCascadeManager(threadRegistry, lifecycleManager, eventManager, taskRegistry);
+        }
+      };
     })
     .inSingletonScope();
 
-  // CheckpointStateManager 需要应用层提供 CheckpointStorageCallback 实现
-  // 应用层需要在初始化 SDK 时注入存储回调
-  // 这里使用工厂函数，允许应用层覆盖
-  container.bind(Identifiers.CheckpointStateManager)
+  // CheckpointStateManager - 检查点状态管理器
+// 需要应用层提供 CheckpointStorageCallback 实现
+// 存储回调可以通过以下两种方式提供：
+// 1. 在调用 initializeContainer() 时传入 storageCallback 参数
+// 2. 在初始化容器前调用 setStorageCallback() 函数
+container.bind(Identifiers.CheckpointStateManager)
     .toDynamicValue((c: any) => {
       const eventManager = c.get(Identifiers.EventManager);
       const callback = getStorageCallback();
@@ -319,7 +349,8 @@ export function initializeContainer(): Container {
       if (!callback) {
         throw new Error(
           'CheckpointStateManager requires a CheckpointStorageCallback implementation. ' +
-          'Please provide it via SDK initialization options using setStorageCallback().'
+          'Please provide it either via initializeContainer(storageCallback) parameter ' +
+          'or by calling setStorageCallback() before initialization.'
         );
       }
 
@@ -328,9 +359,10 @@ export function initializeContainer(): Container {
     .inSingletonScope();
 
   // ============================================================
-  // 第七层：ThreadExecutor（依赖GraphRegistry和ThreadExecutionCoordinator工厂）
+  // 第七层：ThreadExecutor（依赖 GraphRegistry 和 ThreadExecutionCoordinator 工厂）
   // ============================================================
 
+  // ThreadExecutor - 线程执行器，依赖 GraphRegistry 和 ThreadExecutionCoordinator 工厂
   container.bind(Identifiers.ThreadExecutor)
     .toDynamicValue((c: any) => {
       return new ThreadExecutor({
@@ -341,57 +373,69 @@ export function initializeContainer(): Container {
     .inSingletonScope();
 
   // ============================================================
-  // 第八层：ThreadLifecycleCoordinator
+  // 第八层：ThreadLifecycleCoordinator（工厂模式）
   // ============================================================
 
-  container.bind(Identifiers.ThreadLifecycleCoordinator)
+  // ThreadLifecycleCoordinator - 线程生命周期协调器工厂
+// 每个线程需要独立的生命周期协调器实例
+container.bind(Identifiers.ThreadLifecycleCoordinator)
     .toDynamicValue((c: any) => {
       const threadRegistry = c.get(Identifiers.ThreadRegistry);
-      const threadLifecycleManager = c.get(Identifiers.ThreadLifecycleManager);
-      const threadCascadeManager = c.get(Identifiers.ThreadCascadeManager);
       const threadExecutor = c.get(Identifiers.ThreadExecutor);
       const workflowRegistry = c.get(Identifiers.WorkflowRegistry);
       const threadBuilder = c.get(Identifiers.ThreadBuilder);
+      const lifecycleManagerFactory = c.get(Identifiers.ThreadLifecycleManager);
+      const cascadeManagerFactory = c.get(Identifiers.ThreadCascadeManager);
 
-      return new ThreadLifecycleCoordinator(
-        threadRegistry,
-        threadLifecycleManager,
-        threadCascadeManager,
-        threadBuilder,
-        threadExecutor,
-        workflowRegistry
-      );
+      return {
+        create: (threadId: string) => {
+          const threadLifecycleManager = lifecycleManagerFactory.create(threadId);
+          const threadCascadeManager = cascadeManagerFactory.create(threadId);
+          return new ThreadLifecycleCoordinator(
+            threadRegistry,
+            threadLifecycleManager,
+            threadCascadeManager,
+            threadBuilder,
+            threadExecutor,
+            workflowRegistry
+          );
+        }
+      };
     })
     .inSingletonScope();
 
   // ============================================================
-  // 第九层：ThreadBuilder
+  // 第九层：ThreadBuilder（无依赖）
   // ============================================================
 
+  // ThreadBuilder - 线程构建器，无依赖
   container.bind(Identifiers.ThreadBuilder)
     .to(ThreadBuilder)
     .inSingletonScope();
 
   // ============================================================
-  // 第十层：执行层基础 Managers（无依赖或简单依赖）
+  // 第十层：执行层基础 Managers（无依赖或工厂模式）
   // ============================================================
 
+  // VariableStateManager - 变量状态管理器，无依赖
   container.bind(Identifiers.VariableStateManager)
     .to(VariableStateManager)
     .inSingletonScope();
 
-  container.bind(Identifiers.TriggerStateManager)
+  // TriggerStateManager - 触发器状态管理器工厂
+// TriggerStateManager 需要 threadId，使用工厂模式创建实例
+container.bind(Identifiers.TriggerStateManager)
     .toDynamicValue((c: any) => {
-      // TriggerStateManager 需要 threadId，使用工厂模式
       return {
         create: (threadId: string) => new TriggerStateManager(threadId)
       };
     })
     .inSingletonScope();
 
-  container.bind(Identifiers.InterruptionManager)
+// InterruptionManager - 中断管理器工厂
+// InterruptionManager 需要 threadId 和 nodeId，使用工厂模式创建实例
+container.bind(Identifiers.InterruptionManager)
     .toDynamicValue((c: any) => {
-      // InterruptionManager 需要 threadId 和 nodeId，使用工厂模式
       return {
         create: (threadId: string, nodeId: string) => new InterruptionManager(threadId, nodeId)
       };
@@ -402,7 +446,7 @@ export function initializeContainer(): Container {
   // 第十一层：执行层 Coordinators（高优先级）
   // ============================================================
 
-  // VariableCoordinator - 依赖 VariableStateManager 和 EventManager
+  // VariableCoordinator - 变量协调器，依赖 VariableStateManager 和 EventManager
   container.bind(Identifiers.VariableCoordinator)
     .toDynamicValue((c: any) => {
       const stateManager = c.get(Identifiers.VariableStateManager);
@@ -411,7 +455,7 @@ export function initializeContainer(): Container {
     })
     .inSingletonScope();
 
-  // ToolVisibilityCoordinator - 依赖 ToolService 和 ToolVisibilityManager
+  // ToolVisibilityCoordinator - 工具可见性协调器，依赖 ToolService 和 ToolVisibilityManager
   container.bind(Identifiers.ToolVisibilityCoordinator)
     .toDynamicValue((c: any) => {
       const toolService = c.get(Identifiers.ToolService);
@@ -421,7 +465,8 @@ export function initializeContainer(): Container {
     .inSingletonScope();
 
   // LLMExecutionCoordinator - 依赖 LLMExecutor、ToolService、EventManager、ToolCallExecutor
-  container.bind(Identifiers.LLMExecutionCoordinator)
+  // LLMExecutionCoordinator - LLM 执行协调器，依赖 LLMExecutor、ToolService、EventManager、ToolCallExecutor
+container.bind(Identifiers.LLMExecutionCoordinator)
     .toDynamicValue((c: any) => {
       const llmExecutor = c.get(Identifiers.LLMExecutor);
       const toolService = c.get(Identifiers.ToolService);
@@ -436,27 +481,20 @@ export function initializeContainer(): Container {
     })
     .inSingletonScope();
 
-  // ConversationManager - 工厂模式，每个线程可以创建独立实例
-  // 注意：虽然 ConversationManager 是有状态的，但在某些场景下（如测试）可以作为单例使用
-  // 在生产环境中，建议每个 ThreadEntity 拥有独立的 ConversationManager 实例
-  container.bind(Identifiers.ConversationManager)
+  // ConversationManager - 会话管理器工厂
+// ConversationManager 是有状态的，每个线程需要独立的实例以实现线程隔离
+// 使用工厂模式创建实例，确保每个线程的会话数据相互独立
+container.bind(Identifiers.ConversationManager)
     .toDynamicValue((c: any) => {
       const eventManager = c.get(Identifiers.EventManager);
       const toolService = c.get(Identifiers.ToolService);
 
       return {
-        // 创建新的实例（用于线程隔离）
         create: (threadId?: string, workflowId?: string) => {
           return new ConversationManager({
             eventManager,
             threadId,
             workflowId
-          });
-        },
-        // 获取共享实例（用于向后兼容和测试）
-        getShared: () => {
-          return new ConversationManager({
-            eventManager
           });
         }
       };
@@ -464,53 +502,77 @@ export function initializeContainer(): Container {
     .inSingletonScope();
 
   // NodeExecutionCoordinator - 依赖多个服务和协调器
-  container.bind(Identifiers.NodeExecutionCoordinator)
+  // NodeExecutionCoordinator - 节点执行协调器工厂
+// 每个线程需要独立的节点执行协调器实例
+container.bind(Identifiers.NodeExecutionCoordinator)
     .toDynamicValue((c: any) => {
-      // 获取 ConversationManager 工厂
       const conversationManagerFactory = c.get(Identifiers.ConversationManager);
+      const interruptionManagerFactory = c.get(Identifiers.InterruptionManager);
+      const agentLoopExecutorFactory = c.get(Identifiers.AgentLoopExecutor);
 
-      const config = {
-        eventManager: c.get(Identifiers.EventManager),
-        llmCoordinator: c.get(Identifiers.LLMExecutionCoordinator),
-        // 使用共享实例保持向后兼容
-        // TODO: 在长期方案中，应该为每个线程创建独立的 ConversationManager 实例
-        conversationManager: conversationManagerFactory.getShared(),
-        interruptionManager: c.get(Identifiers.InterruptionManager),
-        navigator: c.get(Identifiers.GraphRegistry),
-        toolService: c.get(Identifiers.ToolService),
-        toolContextManager: c.get(Identifiers.ToolContextManager),
-        checkpointDependencies: {
-          threadRegistry: c.get(Identifiers.ThreadRegistry),
-          checkpointStateManager: c.get(Identifiers.CheckpointStateManager),
-          workflowRegistry: c.get(Identifiers.WorkflowRegistry),
-          graphRegistry: c.get(Identifiers.GraphRegistry)
-        },
-        agentLoopExecutorFactory: c.get(Identifiers.AgentLoopExecutor)
+      return {
+        create: (threadId: string, nodeId: string) => {
+          const config = {
+            eventManager: c.get(Identifiers.EventManager),
+            llmCoordinator: c.get(Identifiers.LLMExecutionCoordinator),
+            conversationManager: conversationManagerFactory.create(threadId),
+            interruptionManager: interruptionManagerFactory.create(threadId, nodeId),
+            navigator: c.get(Identifiers.GraphRegistry),
+            toolService: c.get(Identifiers.ToolService),
+            toolContextManager: c.get(Identifiers.ToolContextManager),
+            checkpointDependencies: {
+              threadRegistry: c.get(Identifiers.ThreadRegistry),
+              checkpointStateManager: c.get(Identifiers.CheckpointStateManager),
+              workflowRegistry: c.get(Identifiers.WorkflowRegistry),
+              graphRegistry: c.get(Identifiers.GraphRegistry)
+            },
+            agentLoopExecutorFactory: agentLoopExecutorFactory.create()
+          };
+          return new NodeExecutionCoordinator(config);
+        }
       };
-      return new NodeExecutionCoordinator(config);
     })
     .inSingletonScope();
 
   // TriggerCoordinator - 依赖多个服务和协调器
-  container.bind(Identifiers.TriggerCoordinator)
+  // TriggerCoordinator - 触发器协调器工厂
+// 每个线程需要独立的触发器协调器实例
+container.bind(Identifiers.TriggerCoordinator)
     .toDynamicValue((c: any) => {
-      return new TriggerCoordinator({
-        threadRegistry: c.get(Identifiers.ThreadRegistry),
-        workflowRegistry: c.get(Identifiers.WorkflowRegistry),
-        stateManager: c.get(Identifiers.TriggerStateManager),
-        checkpointStateManager: c.get(Identifiers.CheckpointStateManager),
-        graphRegistry: c.get(Identifiers.GraphRegistry),
-        eventManager: c.get(Identifiers.EventManager),
-        threadBuilder: c.get(Identifiers.ThreadBuilder),
-        taskQueueManager: c.get(Identifiers.TaskRegistry),
-        threadLifecycleCoordinator: c.get(Identifiers.ThreadLifecycleCoordinator)
-      });
+      const threadRegistry = c.get(Identifiers.ThreadRegistry);
+      const workflowRegistry = c.get(Identifiers.WorkflowRegistry);
+      const graphRegistry = c.get(Identifiers.GraphRegistry);
+      const eventManager = c.get(Identifiers.EventManager);
+      const threadBuilder = c.get(Identifiers.ThreadBuilder);
+      const taskQueueManager = c.get(Identifiers.TaskRegistry);
+      const stateManagerFactory = c.get(Identifiers.TriggerStateManager);
+      const checkpointStateManager = c.get(Identifiers.CheckpointStateManager);
+      const lifecycleCoordinatorFactory = c.get(Identifiers.ThreadLifecycleCoordinator);
+
+      return {
+        create: (threadId: string) => {
+          const stateManager = stateManagerFactory.create(threadId);
+          const threadLifecycleCoordinator = lifecycleCoordinatorFactory.create(threadId);
+          return new TriggerCoordinator({
+            threadRegistry,
+            workflowRegistry,
+            stateManager,
+            checkpointStateManager,
+            graphRegistry,
+            eventManager,
+            threadBuilder,
+            taskQueueManager,
+            threadLifecycleCoordinator
+          });
+        }
+      };
     })
     .inSingletonScope();
 
-  // TriggeredSubworkflowManager - 依赖多个服务和管理器
-  // 作为单例服务，所有触发子工作流共享同一个 Manager 实例
-  container.bind(Identifiers.TriggeredSubworkflowManager)
+  // TriggeredSubworkflowManager - 触发子工作流管理器
+// 作为单例服务，所有触发子工作流共享同一个 Manager 实例
+// 依赖多个服务和管理器
+container.bind(Identifiers.TriggeredSubworkflowManager)
     .toDynamicValue((c: any) => {
       return new TriggeredSubworkflowManager(
         c.get(Identifiers.ThreadRegistry),
@@ -522,21 +584,29 @@ export function initializeContainer(): Container {
     })
     .inSingletonScope();
 
-  // ThreadExecutionCoordinator - 依赖多个协调器和管理器
-  container.bind(Identifiers.ThreadExecutionCoordinator)
+  // ThreadExecutionCoordinator - 线程执行协调器工厂
+// ThreadExecutionCoordinator 负责协调线程的执行流程，需要 ThreadEntity 作为参数
+// 使用工厂模式创建实例，每个线程对应一个执行协调器
+// 注意：VariableCoordinator、TriggerCoordinator、InterruptionManager、ToolVisibilityCoordinator、NodeExecutionCoordinator 都需要根据 threadId 创建实例
+container.bind(Identifiers.ThreadExecutionCoordinator)
     .toDynamicValue((c: any) => {
-      // 注意：ThreadExecutionCoordinator 需要 ThreadEntity 作为参数
-      // 这里提供一个工厂方法来创建实例
+      const variableCoordinator = c.get(Identifiers.VariableCoordinator);
+      const graphRegistry = c.get(Identifiers.GraphRegistry);
+      const toolVisibilityCoordinator = c.get(Identifiers.ToolVisibilityCoordinator);
+      const triggerCoordinatorFactory = c.get(Identifiers.TriggerCoordinator);
+      const interruptionManagerFactory = c.get(Identifiers.InterruptionManager);
+      const nodeExecutionCoordinatorFactory = c.get(Identifiers.NodeExecutionCoordinator);
+
       return {
-        create: (threadEntity: any) => {
+        create: (threadEntity: any, threadId: string, nodeId: string) => {
           return new ThreadExecutionCoordinator(
             threadEntity,
-            c.get(Identifiers.VariableCoordinator),
-            c.get(Identifiers.TriggerCoordinator),
-            c.get(Identifiers.InterruptionManager),
-            c.get(Identifiers.ToolVisibilityCoordinator),
-            c.get(Identifiers.NodeExecutionCoordinator),
-            c.get(Identifiers.GraphRegistry)
+            variableCoordinator,
+            triggerCoordinatorFactory.create(threadId),
+            interruptionManagerFactory.create(threadId, nodeId),
+            toolVisibilityCoordinator,
+            nodeExecutionCoordinatorFactory.create(threadId, nodeId),
+            graphRegistry
           );
         }
       };
@@ -547,7 +617,7 @@ export function initializeContainer(): Container {
   // 第十二层：执行层 Coordinators（中低优先级）
   // ============================================================
 
-  // ThreadOperationCoordinator - 依赖多个服务
+  // ThreadOperationCoordinator - 线程操作协调器，依赖 ThreadRegistry 和 WorkflowRegistry
   container.bind(Identifiers.ThreadOperationCoordinator)
     .toDynamicValue((c: any) => {
       return new ThreadOperationCoordinator(
@@ -557,11 +627,11 @@ export function initializeContainer(): Container {
     })
     .inSingletonScope();
 
-  // AgentLoopExecutor - 工厂模式，每次执行创建新实例
-  container.bind(Identifiers.AgentLoopExecutor)
+  // AgentLoopExecutor - Agent Loop 执行器工厂
+// 每次执行创建新的 AgentLoopExecutor 实例
+container.bind(Identifiers.AgentLoopExecutor)
     .toDynamicValue((c: any) => {
       return {
-        // 创建新的 AgentLoopExecutor 实例
         create: () => {
           const llmExecutor = c.get(Identifiers.LLMExecutor);
           const toolService = c.get(Identifiers.ToolService);
@@ -571,13 +641,14 @@ export function initializeContainer(): Container {
     })
     .inSingletonScope();
 
-  // AgentLoopRegistry - Agent Loop 注册表，全局单例
-  container.bind(Identifiers.AgentLoopRegistry)
+// AgentLoopRegistry - Agent Loop 注册表，全局单例
+container.bind(Identifiers.AgentLoopRegistry)
     .to(AgentLoopRegistry)
     .inSingletonScope();
 
-  // AgentLoopCoordinator - Agent Loop 生命周期协调器，工厂模式
-  container.bind(Identifiers.AgentLoopCoordinator)
+// AgentLoopCoordinator - Agent Loop 生命周期协调器工厂
+// 每次创建新的 AgentLoopCoordinator 实例
+container.bind(Identifiers.AgentLoopCoordinator)
     .toDynamicValue((c: any) => {
       return {
         create: () => {
@@ -590,9 +661,10 @@ export function initializeContainer(): Container {
     })
     .inSingletonScope();
 
-  // CheckpointCoordinator - 使用静态方法，不需要实例化
-  // 提供一个工厂方法来获取依赖对象
-  container.bind(Identifiers.CheckpointCoordinator)
+  // CheckpointCoordinator - 检查点协调器
+// 使用静态方法，不需要实例化
+// 提供一个工厂方法来封装依赖对象和静态方法调用
+container.bind(Identifiers.CheckpointCoordinator)
     .toDynamicValue((c: any) => {
       return {
         dependencies: {
@@ -621,6 +693,25 @@ export function initializeContainer(): Container {
     })
     .inSingletonScope();
 
+  // ============================================================
+  // 第十三层：ThreadPoolService（需要 ThreadExecutor，必须在所有依赖之后绑定）
+  // ============================================================
+
+  // ThreadPoolService - 线程池服务，用于并发执行线程
+  // 注意：必须放在所有依赖之后绑定，因为它需要 ThreadExecutor
+  container.bind(Identifiers.ThreadPoolService)
+    .toDynamicValue((c: any) => {
+      const config = {
+        minExecutors: 1,
+        maxExecutors: 10,
+        idleTimeout: 30000,
+        defaultTimeout: 30000
+      };
+
+      return ThreadPoolService.getInstance(() => c.get(Identifiers.ThreadExecutor), config);
+    })
+    .inSingletonScope();
+
   return container;
 }
 
@@ -640,6 +731,7 @@ export function getContainer(): Container {
 /**
  * 重置 DI 容器
  * 清除所有缓存和服务实例，主要用于测试环境
+ * 调用后需要重新调用 initializeContainer() 来初始化容器
  */
 export function resetContainer(): void {
   if (container) {
