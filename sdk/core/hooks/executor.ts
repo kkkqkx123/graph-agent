@@ -21,6 +21,7 @@ import type {
 import type { EvaluationContext } from '@modular-agent/types';
 import { conditionEvaluator } from '@modular-agent/common-utils';
 import { getErrorMessage, now } from '@modular-agent/common-utils';
+import { buildHookExecutedEvent } from '../utils/event/builders/index.js';
 
 /**
  * 默认执行器配置
@@ -127,12 +128,10 @@ export async function executeSingleHook<TContext extends BaseHookContext>(
 
     // 发送事件
     if (emitEvent) {
-      await emitEvent({
-        type: 'HOOK_EXECUTED',
+      await emitEvent(buildHookExecutedEvent({
         eventName: hook.eventName,
-        data: eventData,
-        timestamp: now()
-      });
+        data: eventData
+      }));
     }
 
     return {

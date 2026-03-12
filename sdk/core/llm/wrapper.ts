@@ -17,6 +17,7 @@ import { ConfigurationError, LLMError } from '@modular-agent/types';
 import type { Result } from '@modular-agent/types';
 import type { EventManager } from '../services/event-manager.js';
 import { EventType } from '@modular-agent/types';
+import { buildLLMStreamAbortedEvent, buildLLMStreamErrorEvent } from '../utils/event/builders/index.js';
 
 /**
  * LLM包装器类
@@ -324,26 +325,22 @@ export class LLMWrapper {
         reason = 'Stream aborted';
       }
 
-      this.eventManager.emit({
-        type: 'LLM_STREAM_ABORTED' as EventType,
-        timestamp: now(),
+      this.eventManager.emit(buildLLMStreamAbortedEvent({
         workflowId: workflowId || '',
         threadId: threadId || '',
         nodeId: nodeId || '',
         reason
-      });
+      }));
     } else {
       // 其他错误
       const errorMessage = error instanceof Error ? error.message : String(error);
 
-      this.eventManager.emit({
-        type: 'LLM_STREAM_ERROR' as EventType,
-        timestamp: now(),
+      this.eventManager.emit(buildLLMStreamErrorEvent({
         workflowId: workflowId || '',
         threadId: threadId || '',
         nodeId: nodeId || '',
         error: errorMessage
-      });
+      }));
     }
   }
 }

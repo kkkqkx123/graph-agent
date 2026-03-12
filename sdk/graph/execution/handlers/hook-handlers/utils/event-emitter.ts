@@ -6,7 +6,8 @@
 import type { HookExecutionContext } from '../index.js';
 import type { NodeCustomEvent } from '@modular-agent/types';
 import { EventSystemError } from '@modular-agent/types';
-import { getErrorOrNew, now } from '@modular-agent/common-utils';
+import { getErrorOrNew } from '@modular-agent/common-utils';
+import { buildNodeCustomEvent } from '../../../../../core/utils/event/builders/index.js';
 
 /**
  * 触发自定义事件
@@ -23,9 +24,7 @@ export async function emitHookEvent(
 ): Promise<void> {
   const { thread, node } = context;
 
-  const event: NodeCustomEvent = {
-    type: 'NODE_CUSTOM_EVENT',
-    timestamp: now(),
+  const event = buildNodeCustomEvent({
     workflowId: thread.workflowId,
     threadId: thread.id,
     nodeId: node.id,
@@ -33,7 +32,7 @@ export async function emitHookEvent(
     eventName,
     eventData,
     metadata: node.metadata
-  };
+  });
 
   try {
     await emitEvent(event);

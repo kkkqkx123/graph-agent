@@ -461,7 +461,7 @@ export class DynamicThreadManager implements TaskManager {
       triggerId: request.triggerId,
       input: request.input,
       timestamp: now()
-    });
+    } as any);
   }
 
   /**
@@ -484,7 +484,7 @@ export class DynamicThreadManager implements TaskManager {
       output: childThreadEntity.getOutput(),
       executionTime: result.executionTime,
       timestamp: now()
-    });
+    } as any);
   }
 
   /**
@@ -506,7 +506,7 @@ export class DynamicThreadManager implements TaskManager {
       triggerId: '',
       error: getErrorMessage(error),
       timestamp: now()
-    });
+    } as any);
   }
 
   /**
@@ -526,7 +526,7 @@ export class DynamicThreadManager implements TaskManager {
       subgraphId: childThreadEntity.getTriggeredSubworkflowId() || '',
       triggerId: '',
       timestamp: now()
-    });
+    } as any);
   }
 
   /**

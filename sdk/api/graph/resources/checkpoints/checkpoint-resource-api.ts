@@ -15,6 +15,7 @@ import type { EventManager } from '../../../../core/services/event-manager.js';
 import type { Timestamp } from '@modular-agent/types';
 import { ThreadStatus } from '@modular-agent/types';
 import { CheckpointTriggerType } from '@modular-agent/types';
+import { buildCheckpointRestoredEvent } from '../../../../core/utils/event/builders/index.js';
 
 /**
  * 检查点过滤器
@@ -229,14 +230,12 @@ export class CheckpointResourceAPI extends GenericResourceAPI<Checkpoint, string
     if (this.eventManager) {
       const checkpoint = await this.stateManager.get(checkpointId);
       if (checkpoint) {
-        await this.eventManager.emit({
-          type: 'CHECKPOINT_RESTORED' as any,
-          timestamp: now(),
+        await this.eventManager.emit(buildCheckpointRestoredEvent({
           workflowId: checkpoint.workflowId,
           threadId: threadContext.getThreadId(),
           checkpointId,
           description: checkpoint.metadata?.description
-        });
+        }));
       }
     }
     

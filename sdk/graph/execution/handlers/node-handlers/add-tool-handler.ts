@@ -15,6 +15,7 @@ import { now, diffTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
 import { ToolContextManager } from '../../managers/tool-context-manager.js';
 import type { EventManager } from '../../../../core/services/event-manager.js';
 import type { ThreadEntity } from '../../../entities/thread-entity.js';
+import { buildToolAddedEvent } from '../../../../core/utils/event/builders/index.js';
 
 /**
  * 工具添加节点执行结果
@@ -106,9 +107,7 @@ export async function addToolHandler(
     }
 
     // 5. 触发工具添加事件
-    await context.eventManager.emit({
-      type: 'TOOL_ADDED',
-      timestamp: now(),
+    await context.eventManager.emit(buildToolAddedEvent({
       workflowId: thread.workflowId,
       threadId: thread.id,
       nodeId: node.id,
@@ -116,7 +115,7 @@ export async function addToolHandler(
       scope,
       addedCount,
       skippedCount
-    });
+    }));
 
     const endTime = now();
 

@@ -26,6 +26,7 @@ import type {
 import { generateId, now } from '@modular-agent/common-utils';
 import type { EventManager } from '../services/event-manager.js';
 import { createContextualLogger } from '../../utils/contextual-logger.js';
+import { buildUserInteractionRequestedEvent, buildUserInteractionProcessedEvent } from '../utils/event/builders/index.js';
 
 const logger = createContextualLogger();
 
@@ -146,9 +147,7 @@ export class ToolApprovalCoordinator {
     timeout: number
   ): Promise<void> {
     try {
-      const event = {
-        type: 'USER_INTERACTION_REQUESTED' as const,
-        timestamp: now(),
+      await this.eventManager!.emit(buildUserInteractionRequestedEvent({
         threadId: request.contextId || '',
         interactionId: request.interactionId,
         operationType: 'TOOL_APPROVAL' as const,
@@ -159,8 +158,7 @@ export class ToolApprovalCoordinator {
           toolDescription: request.toolDescription,
           toolCall: request.toolCall
         }
-      };
-      await this.eventManager!.emit(event);
+      }));
     } catch (error) {
       logger.warn('Failed to trigger approval requested event', {
         contextId: request.contextId,
@@ -177,15 +175,12 @@ export class ToolApprovalCoordinator {
     result: ToolApprovalResult
   ): Promise<void> {
     try {
-      const event = {
-        type: 'USER_INTERACTION_PROCESSED' as const,
-        timestamp: now(),
+      await this.eventManager!.emit(buildUserInteractionProcessedEvent({
         threadId: request.contextId || '',
         interactionId: request.interactionId,
         operationType: 'TOOL_APPROVAL' as const,
         results: result
-      };
-      await this.eventManager!.emit(event);
+      }));
     } catch (error) {
       logger.warn('Failed to trigger approval processed event', {
         contextId: request.contextId,

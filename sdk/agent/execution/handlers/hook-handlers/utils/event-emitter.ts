@@ -8,7 +8,8 @@
 import type { AgentLoopEntity } from '../../../../entities/agent-loop-entity.js';
 import type { AgentCustomEvent } from '@modular-agent/types';
 import { EventSystemError } from '@modular-agent/types';
-import { getErrorOrNew, now } from '@modular-agent/common-utils';
+import { getErrorOrNew } from '@modular-agent/common-utils';
+import { buildAgentCustomEvent } from '../../../../../core/utils/event/builders/index.js';
 
 /**
  * Agent 自定义事件类型
@@ -44,9 +45,7 @@ export async function emitAgentHookEvent(
   eventData: Record<string, any>,
   emitEvent: (event: AgentCustomEvent) => Promise<void>
 ): Promise<void> {
-  const event: AgentCustomEvent = {
-    type: 'AGENT_CUSTOM_EVENT',
-    timestamp: now(),
+  const event = buildAgentCustomEvent({
     threadId: entity.parentThreadId || entity.id,  // 使用 parentThreadId 或 entity.id 作为 threadId
     agentLoopId: entity.id,
     eventName,
@@ -58,7 +57,7 @@ export async function emitAgentHookEvent(
       profileId: entity.config.profileId,
       toolCallCount: entity.state.toolCallCount
     }
-  };
+  });
 
   try {
     await emitEvent(event);

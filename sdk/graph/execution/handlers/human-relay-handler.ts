@@ -25,6 +25,7 @@ import type { EventManager } from '../../../core/services/event-manager.js';
 import type { ThreadEntity } from '../../entities/thread-entity.js';
 import { MessageRole } from '@modular-agent/types';
 import { generateId, now, diffTimestamp, getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
+import { buildHumanRelayRequestedEvent, buildHumanRelayRespondedEvent, buildHumanRelayProcessedEvent, buildHumanRelayFailedEvent } from '../../../core/utils/event/builders/index.js';
 
 /**
  * HumanRelay 任务接口
@@ -107,17 +108,14 @@ export async function emitHumanRelayRequestedEvent(
   request: HumanRelayRequest,
   eventManager: EventManager
 ): Promise<void> {
-  await eventManager.emit({
-    type: 'HUMAN_RELAY_REQUESTED',
-    timestamp: now(),
+  await eventManager.emit(buildHumanRelayRequestedEvent({
     workflowId: task.threadEntity.getWorkflowId(),
     threadId: task.threadEntity.getThreadId(),
-    nodeId: task.nodeId,
     requestId: request.requestId,
     prompt: request.prompt,
     messageCount: request.messages.length,
     timeout: request.timeout
-  });
+  }));
 }
 
 /**
@@ -131,14 +129,12 @@ export async function emitHumanRelayRespondedEvent(
   response: HumanRelayResponse,
   eventManager: EventManager
 ): Promise<void> {
-  await eventManager.emit({
-    type: 'HUMAN_RELAY_RESPONDED',
-    timestamp: now(),
+  await eventManager.emit(buildHumanRelayRespondedEvent({
     workflowId: task.threadEntity.getWorkflowId(),
     threadId: task.threadEntity.getThreadId(),
     requestId: response.requestId,
     content: response.content
-  });
+  }));
 }
 
 /**
@@ -154,18 +150,16 @@ export async function emitHumanRelayProcessedEvent(
   executionTime: number,
   eventManager: EventManager
 ): Promise<void> {
-  await eventManager.emit({
-    type: 'HUMAN_RELAY_PROCESSED',
-    timestamp: now(),
+  await eventManager.emit(buildHumanRelayProcessedEvent({
     workflowId: task.threadEntity.getWorkflowId(),
     threadId: task.threadEntity.getThreadId(),
     requestId: task.requestId,
     message: {
       role: message.role,
-      content: message.content
+      content: typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
     },
     executionTime
-  });
+  }));
 }
 
 /**
@@ -179,14 +173,12 @@ export async function emitHumanRelayFailedEvent(
   error: Error | string,
   eventManager: EventManager
 ): Promise<void> {
-  await eventManager.emit({
-    type: 'HUMAN_RELAY_FAILED',
-    timestamp: now(),
+  await eventManager.emit(buildHumanRelayFailedEvent({
     workflowId: task.threadEntity.getWorkflowId(),
     threadId: task.threadEntity.getThreadId(),
     requestId: task.requestId,
     reason: getErrorMessage(error)
-  });
+  }));
 }
 
 /**

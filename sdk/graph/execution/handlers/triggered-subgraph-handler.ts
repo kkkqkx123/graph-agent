@@ -21,6 +21,7 @@ import type { EventManager } from '../../../core/services/event-manager.js';
 import { now, diffTimestamp, getErrorMessage, getErrorOrNew } from '@modular-agent/common-utils';
 import { createSubgraphMetadata } from './subgraph-handler.js';
 import type { TriggeredSubgraphTask, ExecutedSubgraphResult } from '../types/triggered-subworkflow.types.js';
+import { buildTriggeredSubgraphStartedEvent, buildTriggeredSubgraphCompletedEvent, buildTriggeredSubgraphFailedEvent } from '../../../core/utils/event/builders/index.js';
 
 /**
  * 子工作流执行器接口
@@ -69,15 +70,13 @@ export async function emitSubgraphStartedEvent(
   task: TriggeredSubgraphTask,
   eventManager: EventManager
 ): Promise<void> {
-  await eventManager.emit({
-    type: 'TRIGGERED_SUBGRAPH_STARTED',
+  await eventManager.emit(buildTriggeredSubgraphStartedEvent({
     threadId: mainThreadEntity.getThreadId(),
     workflowId: mainThreadEntity.getWorkflowId(),
     subgraphId: task.subgraphId,
     triggerId: task.triggerId,
-    input: task.input,
-    timestamp: now()
-  });
+    input: task.input
+  }));
 }
 
 /**
@@ -95,16 +94,14 @@ export async function emitSubgraphCompletedEvent(
   executionTime: number,
   eventManager: EventManager
 ): Promise<void> {
-  await eventManager.emit({
-    type: 'TRIGGERED_SUBGRAPH_COMPLETED',
+  await eventManager.emit(buildTriggeredSubgraphCompletedEvent({
     threadId: mainThreadEntity.getThreadId(),
     workflowId: mainThreadEntity.getWorkflowId(),
     subgraphId: task.subgraphId,
     triggerId: task.triggerId,
     output: subgraphEntity.getOutput(),
-    executionTime,
-    timestamp: now()
-  });
+    executionTime
+  }));
 }
 
 /**
@@ -122,16 +119,14 @@ export async function emitSubgraphFailedEvent(
   executionTime: number,
   eventManager: EventManager
 ): Promise<void> {
-  await eventManager.emit({
-    type: 'TRIGGERED_SUBGRAPH_FAILED',
+  await eventManager.emit(buildTriggeredSubgraphFailedEvent({
     threadId: mainThreadEntity.getThreadId(),
     workflowId: mainThreadEntity.getWorkflowId(),
     subgraphId: task.subgraphId,
     triggerId: task.triggerId,
-    error: getErrorMessage(error),
-    executionTime,
-    timestamp: now()
-  });
+    error: error instanceof Error ? error : new Error(getErrorMessage(error)),
+    executionTime
+  }));
 }
 
 /**

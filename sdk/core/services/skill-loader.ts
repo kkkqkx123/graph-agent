@@ -10,14 +10,12 @@ import type {
   Skill,
   SkillLoadContext,
   SkillLoadResult,
-  SkillLoadStartedEvent,
-  SkillLoadCompletedEvent,
-  SkillLoadFailedEvent,
   SkillResourceType,
   SkillLoadType
 } from '@modular-agent/types';
 import type { SkillRegistry } from './skill-registry.js';
 import type { EventManager } from './event-manager.js';
+import { buildSkillLoadStartedEvent, buildSkillLoadCompletedEvent, buildSkillLoadFailedEvent } from '../utils/event/builders/index.js';
 
 /**
  * Skill 加载器类
@@ -326,13 +324,11 @@ To use a skill, call the \`get_skill\` tool with the skill name.`;
     loadType: SkillLoadType,
     context?: Partial<SkillLoadContext>
   ): Promise<void> {
-    await this.eventManager.emit<SkillLoadStartedEvent>({
-      type: 'SKILL_LOAD_STARTED',
+    await this.eventManager.emit(buildSkillLoadStartedEvent({
       skillName,
       loadType,
-      timestamp: Date.now(),
       threadId: context?.agentContext?.threadId || 'skill-loader'
-    });
+    }));
   }
 
   /**
@@ -344,16 +340,14 @@ To use a skill, call the \`get_skill\` tool with the skill name.`;
     cached: boolean,
     startTime: number
   ): Promise<void> {
-    await this.eventManager.emit<SkillLoadCompletedEvent>({
-      type: 'SKILL_LOAD_COMPLETED',
+    await this.eventManager.emit(buildSkillLoadCompletedEvent({
       skillName,
       loadType,
       success: true,
       cached,
       loadTime: Date.now() - startTime,
-      timestamp: Date.now(),
       threadId: 'skill-loader'
-    });
+    }));
   }
 
   /**
@@ -365,24 +359,12 @@ To use a skill, call the \`get_skill\` tool with the skill name.`;
     error: unknown,
     startTime: number
   ): Promise<void> {
-    await this.eventManager.emit<SkillLoadFailedEvent>({
-      type: 'SKILL_LOAD_FAILED',
+    await this.eventManager.emit(buildSkillLoadFailedEvent({
       skillName,
       loadType,
-      error: error instanceof Error ? error.message : String(error),
+      error: error instanceof Error ? error : new Error(String(error)),
       loadTime: Date.now() - startTime,
-      timestamp: Date.now(),
       threadId: 'skill-loader'
-    });
+    }));
   }
 }
-
-// ============================================================
-// 向后兼容的类别名（已弃用，将在未来版本移除）
-// ============================================================
-
-/**
- * @deprecated 使用 SkillLoader 代替
- * Skill 执行器类
- */
-export const SkillExecutor = SkillLoader;
