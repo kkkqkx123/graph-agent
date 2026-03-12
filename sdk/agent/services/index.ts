@@ -8,4 +8,3 @@
  */
 
 export { AgentLoopRegistry } from './agent-loop-registry.js';
-export { ConversationService } from './conversation-service.js';
