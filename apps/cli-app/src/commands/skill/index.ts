@@ -7,6 +7,8 @@ import { Command } from 'commander';
 import { SkillAdapter } from '../../adapters/skill-adapter.js';
 import { getLogger } from '../../utils/logger.js';
 import type { CommandOptions } from '../../types/cli-types.js';
+import { handleError } from '../../utils/error-handler.js';
+import { ValidationError } from '../../types/cli-types.js';
 
 const logger = getLogger();
 
@@ -128,8 +130,10 @@ export function createSkillCommands(): Command {
           }
         }
       } catch (error) {
-        logger.error(`列出 Skill 失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'listSkills',
+          additionalInfo: { filter: { name: options.name } }
+        });
       }
     });
 
@@ -146,8 +150,11 @@ export function createSkillCommands(): Command {
         const skill = await adapter.getSkill(name);
 
         if (!skill) {
-          logger.error(`Skill 不存在: ${name}`);
-          process.exit(1);
+          handleError(new ValidationError(`Skill 不存在: ${name}`), {
+            operation: 'getSkill',
+            additionalInfo: { name }
+          });
+          return;
         }
 
         console.log(formatSkillMetadata(skill, options.verbose));
@@ -160,8 +167,10 @@ export function createSkillCommands(): Command {
           console.log('─'.repeat(60));
         }
       } catch (error) {
-        logger.error(`获取 Skill 详情失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'getSkill',
+          additionalInfo: { name }
+        });
       }
     });
 
@@ -182,8 +191,10 @@ export function createSkillCommands(): Command {
           console.log(content);
         }
       } catch (error) {
-        logger.error(`加载 Skill 失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'loadSkill',
+          additionalInfo: { name, toPrompt: options.prompt }
+        });
       }
     });
 
@@ -198,8 +209,10 @@ export function createSkillCommands(): Command {
 
         console.log(formatMatchResults(results));
       } catch (error) {
-        logger.error(`搜索 Skill 失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'matchSkills',
+          additionalInfo: { query }
+        });
       }
     });
 
@@ -228,8 +241,10 @@ export function createSkillCommands(): Command {
           console.log(`  • ${resource}`);
         }
       } catch (error) {
-        logger.error(`列出资源失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'listSkillResources',
+          additionalInfo: { name, type: options.type }
+        });
       }
     });
 
@@ -250,8 +265,10 @@ export function createSkillCommands(): Command {
 
         console.log('\n✓ Skill 已重新加载');
       } catch (error) {
-        logger.error(`重新加载失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'reloadSkills',
+          additionalInfo: { dir: options.dir }
+        });
       }
     });
 
@@ -267,8 +284,10 @@ export function createSkillCommands(): Command {
 
         console.log('\n✓ 缓存已清除');
       } catch (error) {
-        logger.error(`清除缓存失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'clearSkillCache',
+          additionalInfo: { name: options.name }
+        });
       }
     });
 
@@ -287,8 +306,9 @@ export function createSkillCommands(): Command {
           console.log('没有可用的 Skill');
         }
       } catch (error) {
-        logger.error(`生成元数据提示失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'generateMetadataPrompt'
+        });
       }
     });
 
@@ -304,8 +324,9 @@ export function createSkillCommands(): Command {
         console.log('\n✓ get_skill 工具已注册');
         console.log('  Agent 现在可以使用 get_skill 工具按需加载 Skill');
       } catch (error) {
-        logger.error(`注册工具失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'registerGetSkillTool'
+        });
       }
     });
 
@@ -321,8 +342,10 @@ export function createSkillCommands(): Command {
         console.log('\n✓ Skill 目录已初始化');
         console.log(`  目录: ${directory}`);
       } catch (error) {
-        logger.error(`初始化失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'initializeSkillDirectory',
+          additionalInfo: { directory }
+        });
       }
     });
 

@@ -6,6 +6,7 @@
 import { BaseAdapter } from './base-adapter.js';
 import { resolve } from 'path';
 import { ConfigManager, type ConfigLoadOptions } from '../config/config-manager.js';
+import { CLINotFoundError } from '../types/cli-types.js';
 
 /**
  * 模板适配器
@@ -189,7 +190,7 @@ export class TemplateAdapter extends BaseAdapter {
       const template = (result as any).data || result;
 
       if (!template) {
-        throw new Error(`节点模板不存在: ${id}`);
+        throw new CLINotFoundError(`节点模板不存在: ${id}`, 'NodeTemplate', id);
       }
 
       return template;
@@ -206,7 +207,7 @@ export class TemplateAdapter extends BaseAdapter {
       const template = (result as any).data || result;
 
       if (!template) {
-        throw new Error(`触发器模板不存在: ${id}`);
+        throw new CLINotFoundError(`触发器模板不存在: ${id}`, 'TriggerTemplate', id);
       }
 
       return template;

@@ -14,6 +14,7 @@ import type {
   SkillMatchResult,
   SkillResourceType
 } from '@modular-agent/types';
+import { CLINotFoundError } from '../types/cli-types.js';
 
 /**
  * Skill 适配器
@@ -79,7 +80,7 @@ export class SkillAdapter extends BaseAdapter {
       const result = await api.loadContent(name);
 
       if ((result as any).error) {
-        throw new Error((result as any).error.message);
+        throw new CLINotFoundError(`Skill 加载失败: ${name}`, 'Skill', name);
       }
 
       this.logger.success(`已加载 Skill 内容: ${name}`);
@@ -102,7 +103,7 @@ export class SkillAdapter extends BaseAdapter {
       const result = await api.loadResources(name, resourceType);
 
       if ((result as any).error) {
-        throw new Error((result as any).error.message);
+        throw new CLINotFoundError(`Skill 资源加载失败: ${name}/${resourceType}`, 'SkillResource', name);
       }
 
       this.logger.success(`已加载 Skill 资源: ${name}/${resourceType}`);
@@ -121,7 +122,7 @@ export class SkillAdapter extends BaseAdapter {
       const result = await api.toPrompt(name);
 
       if ((result as any).error) {
-        throw new Error((result as any).error.message);
+        throw new CLINotFoundError(`Skill 转换失败: ${name}`, 'Skill', name);
       }
 
       return (result as any).data || result;

@@ -7,6 +7,8 @@ import { LLMProfileAdapter } from '../../adapters/llm-profile-adapter.js';
 import { getLogger } from '../../utils/logger.js';
 import { formatLLMProfile, formatLLMProfileList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
+import { handleError } from '../../utils/error-handler.js';
+import { ValidationError } from '../../types/cli-types.js';
 
 const logger = getLogger();
 
@@ -32,8 +34,10 @@ export function createLLMProfileCommands(): Command {
 
         console.log(formatLLMProfile(profile, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`注册 LLM Profile 失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'registerLLMProfile',
+          additionalInfo: { file }
+        });
       }
     });
 
@@ -49,19 +53,19 @@ export function createLLMProfileCommands(): Command {
     }) => {
       try {
         logger.info(`正在批量注册 LLM Profile: ${directory}`);
-        
+
         // 解析文件模式
         const filePattern = options.pattern
           ? new RegExp(options.pattern)
           : undefined;
-        
+
         const adapter = new LLMProfileAdapter();
         const result = await adapter.registerFromDirectory({
           configDir: directory,
           recursive: options.recursive,
           filePattern
         });
-        
+
         // 显示结果
         console.log(`\n成功注册 ${result.success.length} 个 LLM Profile`);
         if (result.failures.length > 0) {
@@ -71,8 +75,10 @@ export function createLLMProfileCommands(): Command {
           });
         }
       } catch (error) {
-        logger.error(`批量注册 LLM Profile 失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'registerLLMProfilesBatch',
+          additionalInfo: { directory, recursive: options.recursive, pattern: options.pattern }
+        });
       }
     });
 
@@ -89,8 +95,9 @@ export function createLLMProfileCommands(): Command {
 
         console.log(formatLLMProfileList(profiles, { table: options.table }));
       } catch (error) {
-        logger.error(`列出 LLM Profile 失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'listLLMProfiles'
+        });
       }
     });
 
@@ -106,8 +113,10 @@ export function createLLMProfileCommands(): Command {
 
         console.log(formatLLMProfile(profile, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`获取 LLM Profile 详情失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'getLLMProfile',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -128,8 +137,10 @@ export function createLLMProfileCommands(): Command {
         const adapter = new LLMProfileAdapter();
         await adapter.deleteProfile(id);
       } catch (error) {
-        logger.error(`删除 LLM Profile 失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'deleteLLMProfile',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -169,8 +180,10 @@ export function createLLMProfileCommands(): Command {
         const profile = await adapter.updateProfile(id, updates);
         console.log(formatLLMProfile(profile, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`更新 LLM Profile 失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'updateLLMProfile',
+          additionalInfo: { id, updates }
+        });
       }
     });
 
@@ -192,11 +205,17 @@ export function createLLMProfileCommands(): Command {
           result.errors.forEach(error => {
             console.log(`  - ${error}`);
           });
-          process.exit(1);
+          handleError(new ValidationError('配置验证失败'), {
+            operation: 'validateLLMProfile',
+            additionalInfo: { file, errors: result.errors }
+          });
+          return;
         }
       } catch (error) {
-        logger.error(`验证 LLM Profile 配置失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'validateLLMProfile',
+          additionalInfo: { file }
+        });
       }
     });
 
@@ -211,8 +230,10 @@ export function createLLMProfileCommands(): Command {
         const adapter = new LLMProfileAdapter();
         await adapter.setDefaultProfile(id);
       } catch (error) {
-        logger.error(`设置默认 LLM Profile 失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'setDefaultLLMProfile',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -232,8 +253,9 @@ export function createLLMProfileCommands(): Command {
           console.log('未设置默认 LLM Profile');
         }
       } catch (error) {
-        logger.error(`获取默认 LLM Profile 失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'getDefaultLLMProfile'
+        });
       }
     });
 
@@ -247,8 +269,10 @@ export function createLLMProfileCommands(): Command {
         const json = await adapter.exportProfile(id);
         console.log(json);
       } catch (error) {
-        logger.error(`导出 LLM Profile 失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'exportLLMProfile',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -266,8 +290,9 @@ export function createLLMProfileCommands(): Command {
 
         console.log(formatLLMProfile(profile, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`导入 LLM Profile 失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'importLLMProfile'
+        });
       }
     });
 

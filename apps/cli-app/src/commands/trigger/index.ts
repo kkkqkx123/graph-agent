@@ -6,6 +6,7 @@ import { Command } from 'commander';
 import { TriggerAdapter } from '../../adapters/trigger-adapter.js';
 import { getLogger } from '../../utils/logger.js';
 import { formatTrigger, formatTriggerList } from '../../utils/formatter.js';
+import { handleError } from '../../utils/error-handler.js';
 import type { CommandOptions } from '../../types/cli-types.js';
 
 const logger = getLogger();
@@ -30,8 +31,9 @@ export function createTriggerCommands(): Command {
 
         console.log(formatTriggerList(triggers, { table: options.table }));
       } catch (error) {
-        logger.error(`列出触发器失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'list-triggers'
+        });
       }
     });
 
@@ -47,8 +49,10 @@ export function createTriggerCommands(): Command {
 
         console.log(formatTrigger(trigger, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`获取触发器详情失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'show-trigger',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -63,8 +67,10 @@ export function createTriggerCommands(): Command {
         const adapter = new TriggerAdapter();
         await adapter.enableTrigger(threadId, triggerId);
       } catch (error) {
-        logger.error(`启用触发器失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'enable-trigger',
+          additionalInfo: { threadId, triggerId }
+        });
       }
     });
 
@@ -79,8 +85,10 @@ export function createTriggerCommands(): Command {
         const adapter = new TriggerAdapter();
         await adapter.disableTrigger(threadId, triggerId);
       } catch (error) {
-        logger.error(`禁用触发器失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'disable-trigger',
+          additionalInfo: { threadId, triggerId }
+        });
       }
     });
 
@@ -97,8 +105,10 @@ export function createTriggerCommands(): Command {
 
         console.log(formatTriggerList(triggers, { table: options.table }));
       } catch (error) {
-        logger.error(`列出线程触发器失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'list-triggers-by-thread',
+          additionalInfo: { threadId }
+        });
       }
     });
 

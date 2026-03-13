@@ -7,6 +7,7 @@ import { TemplateAdapter } from '../../adapters/template-adapter.js';
 import { getLogger } from '../../utils/logger.js';
 import { formatWorkflow, formatWorkflowList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
+import { handleError } from '../../utils/error-handler.js';
 
 const logger = getLogger();
 
@@ -31,8 +32,10 @@ export function createTemplateCommands(): Command {
 
         console.log(formatWorkflow(template, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`注册节点模板失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'registerNodeTemplateFromFile',
+          additionalInfo: { file }
+        });
       }
     });
 
@@ -48,19 +51,19 @@ export function createTemplateCommands(): Command {
     }) => {
       try {
         logger.info(`正在批量注册节点模板: ${directory}`);
-        
+
         // 解析文件模式
         const filePattern = options.pattern
           ? new RegExp(options.pattern)
           : undefined;
-        
+
         const adapter = new TemplateAdapter();
         const result = await adapter.registerNodeTemplatesFromDirectory({
           configDir: directory,
           recursive: options.recursive,
           filePattern
         });
-        
+
         // 显示结果
         console.log(`\n成功注册 ${result.success.length} 个节点模板`);
         if (result.failures.length > 0) {
@@ -70,8 +73,10 @@ export function createTemplateCommands(): Command {
           });
         }
       } catch (error) {
-        logger.error(`批量注册节点模板失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'registerNodeTemplatesFromDirectory',
+          additionalInfo: { directory, recursive: options.recursive, pattern: options.pattern }
+        });
       }
     });
 
@@ -89,8 +94,10 @@ export function createTemplateCommands(): Command {
 
         console.log(formatWorkflow(template, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`注册触发器模板失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'registerTriggerTemplateFromFile',
+          additionalInfo: { file }
+        });
       }
     });
 
@@ -106,19 +113,19 @@ export function createTemplateCommands(): Command {
     }) => {
       try {
         logger.info(`正在批量注册触发器模板: ${directory}`);
-        
+
         // 解析文件模式
         const filePattern = options.pattern
           ? new RegExp(options.pattern)
           : undefined;
-        
+
         const adapter = new TemplateAdapter();
         const result = await adapter.registerTriggerTemplatesFromDirectory({
           configDir: directory,
           recursive: options.recursive,
           filePattern
         });
-        
+
         // 显示结果
         console.log(`\n成功注册 ${result.success.length} 个触发器模板`);
         if (result.failures.length > 0) {
@@ -128,8 +135,10 @@ export function createTemplateCommands(): Command {
           });
         }
       } catch (error) {
-        logger.error(`批量注册触发器模板失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'registerTriggerTemplatesFromDirectory',
+          additionalInfo: { directory, recursive: options.recursive, pattern: options.pattern }
+        });
       }
     });
 
@@ -146,8 +155,9 @@ export function createTemplateCommands(): Command {
 
         console.log(formatWorkflowList(templates, { table: options.table }));
       } catch (error) {
-        logger.error(`列出节点模板失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'listNodeTemplates'
+        });
       }
     });
 
@@ -164,8 +174,9 @@ export function createTemplateCommands(): Command {
 
         console.log(formatWorkflowList(templates, { table: options.table }));
       } catch (error) {
-        logger.error(`列出触发器模板失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'listTriggerTemplates'
+        });
       }
     });
 
@@ -181,8 +192,10 @@ export function createTemplateCommands(): Command {
 
         console.log(formatWorkflow(template, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`获取节点模板详情失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'getNodeTemplate',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -198,8 +211,10 @@ export function createTemplateCommands(): Command {
 
         console.log(formatWorkflow(template, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`获取触发器模板详情失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'getTriggerTemplate',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -220,8 +235,10 @@ export function createTemplateCommands(): Command {
         const adapter = new TemplateAdapter();
         await adapter.deleteNodeTemplate(id);
       } catch (error) {
-        logger.error(`删除节点模板失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'deleteNodeTemplate',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -242,8 +259,10 @@ export function createTemplateCommands(): Command {
         const adapter = new TemplateAdapter();
         await adapter.deleteTriggerTemplate(id);
       } catch (error) {
-        logger.error(`删除触发器模板失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'deleteTriggerTemplate',
+          additionalInfo: { id }
+        });
       }
     });
 

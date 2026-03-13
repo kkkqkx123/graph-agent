@@ -17,6 +17,7 @@ import {
 } from '@modular-agent/sdk';
 import type { AgentLoopConfig, AgentLoopResult, ID } from '@modular-agent/types';
 import { LLMWrapper, ToolService } from '@modular-agent/sdk';
+import { CLINotFoundError } from '../types/cli-types.js';
 
 /**
  * Agent Loop 适配器
@@ -244,7 +245,7 @@ export class AgentLoopAdapter extends BaseAdapter {
     return this.executeWithErrorHandling(async () => {
       const entity = this.registry.get(id);
       if (!entity) {
-        throw new Error(`Agent Loop 不存在: ${id}`);
+        throw new CLINotFoundError(`Agent Loop 不存在: ${id}`, 'AgentLoop', id);
       }
 
       const checkpointId = await createAgentLoopCheckpoint(entity, dependencies, { metadata });
@@ -279,7 +280,7 @@ export class AgentLoopAdapter extends BaseAdapter {
     return this.executeWithErrorHandling(async () => {
       const entity = this.registry.get(id);
       if (!entity) {
-        throw new Error(`Agent Loop 不存在: ${id}`);
+        throw new CLINotFoundError(`Agent Loop 不存在: ${id}`, 'AgentLoop', id);
       }
 
       const cloned = cloneAgentLoop(entity);
@@ -298,7 +299,7 @@ export class AgentLoopAdapter extends BaseAdapter {
     return this.executeWithErrorHandling(async () => {
       const entity = this.registry.get(id);
       if (!entity) {
-        throw new Error(`Agent Loop 不存在: ${id}`);
+        throw new CLINotFoundError(`Agent Loop 不存在: ${id}`, 'AgentLoop', id);
       }
 
       cleanupAgentLoop(entity);
@@ -315,7 +316,7 @@ export class AgentLoopAdapter extends BaseAdapter {
   getAgentLoopMessages(id: ID): any[] {
     const entity = this.registry.get(id);
     if (!entity) {
-      throw new Error(`Agent Loop 不存在: ${id}`);
+      throw new CLINotFoundError(`Agent Loop 不存在: ${id}`, 'AgentLoop', id);
     }
 
     return entity.getMessages();
@@ -328,7 +329,7 @@ export class AgentLoopAdapter extends BaseAdapter {
   getAgentLoopVariables(id: ID): Record<string, any> {
     const entity = this.registry.get(id);
     if (!entity) {
-      throw new Error(`Agent Loop 不存在: ${id}`);
+      throw new CLINotFoundError(`Agent Loop 不存在: ${id}`, 'AgentLoop', id);
     }
 
     return entity.getAllVariables();
@@ -344,7 +345,7 @@ export class AgentLoopAdapter extends BaseAdapter {
     return this.executeWithErrorHandling(async () => {
       const entity = this.registry.get(id);
       if (!entity) {
-        throw new Error(`Agent Loop 不存在: ${id}`);
+        throw new CLINotFoundError(`Agent Loop 不存在: ${id}`, 'AgentLoop', id);
       }
 
       entity.setVariable(name, value);

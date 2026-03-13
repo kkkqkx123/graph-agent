@@ -7,6 +7,8 @@ import { Command } from 'commander';
 import { McpAdapter, createMcpAdapter } from '../../adapters/mcp-adapter.js';
 import { getLogger } from '../../utils/logger.js';
 import { formatToolList } from '../../utils/formatter.js';
+import { handleError } from '../../utils/error-handler.js';
+import { ValidationError } from '../../types/cli-types.js';
 
 const logger = getLogger();
 
@@ -37,8 +39,10 @@ export function createMcpCommands(): Command {
           console.log(formatToolList(tools, { table: false }));
         }
       } catch (error) {
-        logger.error(`Failed to connect to MCP servers: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'connectMcpServers',
+          additionalInfo: { configFile }
+        });
       }
     });
 
@@ -55,8 +59,9 @@ export function createMcpCommands(): Command {
         console.log('MCP tools listing command');
         console.log('(This command requires integration with ToolRegistry)');
       } catch (error) {
-        logger.error(`Failed to list MCP tools: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'listMcpTools'
+        });
       }
     });
 
@@ -70,8 +75,9 @@ export function createMcpCommands(): Command {
         console.log('MCP server status command');
         console.log('(This command requires integration with ToolRegistry)');
       } catch (error) {
-        logger.error(`Failed to get MCP status: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'getMcpStatus'
+        });
       }
     });
 
@@ -85,8 +91,10 @@ export function createMcpCommands(): Command {
         console.log(`Disconnecting from MCP server: ${serverName}`);
         console.log('(This command requires integration with ToolRegistry)');
       } catch (error) {
-        logger.error(`Failed to disconnect from server: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'disconnectMcpServer',
+          additionalInfo: { serverName }
+        });
       }
     });
 
@@ -100,8 +108,9 @@ export function createMcpCommands(): Command {
         console.log('Disconnecting from all MCP servers');
         console.log('(This command requires integration with ToolRegistry)');
       } catch (error) {
-        logger.error(`Failed to disconnect from all servers: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'disconnectAllMcpServers'
+        });
       }
     });
 
@@ -119,8 +128,11 @@ export function createMcpCommands(): Command {
 
         // Basic validation
         if (!config.mcpServers || typeof config.mcpServers !== 'object') {
-          console.log('✗ Invalid config: missing or invalid mcpServers');
-          process.exit(1);
+          handleError(new ValidationError('Invalid config: missing or invalid mcpServers'), {
+            operation: 'validateMcpConfig',
+            additionalInfo: { configFile }
+          });
+          return;
         }
 
         const servers = Object.entries(config.mcpServers);
@@ -133,8 +145,10 @@ export function createMcpCommands(): Command {
           console.log(`  - ${name} ${status}`);
         }
       } catch (error) {
-        logger.error(`Failed to validate MCP config: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'validateMcpConfig',
+          additionalInfo: { configFile }
+        });
       }
     });
 

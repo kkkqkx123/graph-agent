@@ -7,6 +7,7 @@ import { HumanRelayAdapter } from '../../adapters/human-relay-adapter.js';
 import { getLogger } from '../../utils/logger.js';
 import { formatHumanRelay, formatHumanRelayList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
+import { handleError } from '../../utils/error-handler.js';
 
 const logger = getLogger();
 
@@ -37,8 +38,10 @@ export function createHumanRelayCommands(): Command {
 
         console.log(formatHumanRelay(result, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`注册 Human Relay 配置失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'registerHumanRelayConfig',
+          additionalInfo: { file }
+        });
       }
     });
 
@@ -57,8 +60,10 @@ export function createHumanRelayCommands(): Command {
 
         console.log(formatHumanRelayList(configs, { table: options.table }));
       } catch (error) {
-        logger.error(`列出 Human Relay 配置失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'listHumanRelayConfigs',
+          additionalInfo: { enabled: options.enabled }
+        });
       }
     });
 
@@ -74,8 +79,10 @@ export function createHumanRelayCommands(): Command {
 
         console.log(formatHumanRelay(config, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`获取 Human Relay 配置详情失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'getHumanRelayConfig',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -96,8 +103,10 @@ export function createHumanRelayCommands(): Command {
         const adapter = new HumanRelayAdapter();
         await adapter.deleteConfig(id);
       } catch (error) {
-        logger.error(`删除 Human Relay 配置失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'deleteHumanRelayConfig',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -125,8 +134,10 @@ export function createHumanRelayCommands(): Command {
         const config = await adapter.updateConfig(id, updates);
         console.log(formatHumanRelay(config, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`更新 Human Relay 配置失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'updateHumanRelayConfig',
+          additionalInfo: { id, updates }
+        });
       }
     });
 
@@ -141,8 +152,10 @@ export function createHumanRelayCommands(): Command {
         const adapter = new HumanRelayAdapter();
         await adapter.enableConfig(id);
       } catch (error) {
-        logger.error(`启用 Human Relay 配置失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'enableHumanRelayConfig',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -157,8 +170,10 @@ export function createHumanRelayCommands(): Command {
         const adapter = new HumanRelayAdapter();
         await adapter.disableConfig(id);
       } catch (error) {
-        logger.error(`禁用 Human Relay 配置失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'disableHumanRelayConfig',
+          additionalInfo: { id }
+        });
       }
     });
 

@@ -7,6 +7,8 @@ import { ToolAdapter } from '../../adapters/tool-adapter.js';
 import { getLogger } from '../../utils/logger.js';
 import { formatTool, formatToolList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
+import { handleError } from '../../utils/error-handler.js';
+import { ValidationError } from '../../types/cli-types.js';
 
 const logger = getLogger();
 
@@ -31,8 +33,10 @@ export function createToolCommands(): Command {
 
         console.log(formatTool(tool, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`注册工具失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'registerTool',
+          additionalInfo: { file }
+        });
       }
     });
 
@@ -48,19 +52,19 @@ export function createToolCommands(): Command {
     }) => {
       try {
         logger.info(`正在批量注册工具: ${directory}`);
-        
+
         // 解析文件模式
         const filePattern = options.pattern
           ? new RegExp(options.pattern)
           : undefined;
-        
+
         const adapter = new ToolAdapter();
         const result = await adapter.registerFromDirectory({
           configDir: directory,
           recursive: options.recursive,
           filePattern
         });
-        
+
         // 显示结果
         console.log(`\n成功注册 ${result.success.length} 个工具`);
         if (result.failures.length > 0) {
@@ -70,8 +74,10 @@ export function createToolCommands(): Command {
           });
         }
       } catch (error) {
-        logger.error(`批量注册工具失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'registerToolsBatch',
+          additionalInfo: { directory, recursive: options.recursive, pattern: options.pattern }
+        });
       }
     });
 
@@ -88,8 +94,9 @@ export function createToolCommands(): Command {
 
         console.log(formatToolList(tools, { table: options.table }));
       } catch (error) {
-        logger.error(`列出工具失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'listTools'
+        });
       }
     });
 
@@ -105,8 +112,10 @@ export function createToolCommands(): Command {
 
         console.log(formatTool(tool, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`获取工具详情失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'getTool',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -127,8 +136,10 @@ export function createToolCommands(): Command {
         const adapter = new ToolAdapter();
         await adapter.deleteTool(id);
       } catch (error) {
-        logger.error(`删除工具失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'deleteTool',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -153,8 +164,10 @@ export function createToolCommands(): Command {
         const tool = await adapter.updateTool(id, updates);
         console.log(formatTool(tool, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`更新工具失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'updateTool',
+          additionalInfo: { id, updates }
+        });
       }
     });
 
@@ -176,11 +189,17 @@ export function createToolCommands(): Command {
           result.errors.forEach(error => {
             console.log(`  - ${error}`);
           });
-          process.exit(1);
+          handleError(new ValidationError('配置验证失败'), {
+            operation: 'validateTool',
+            additionalInfo: { file, errors: result.errors }
+          });
+          return;
         }
       } catch (error) {
-        logger.error(`验证工具配置失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'validateTool',
+          additionalInfo: { file }
+        });
       }
     });
 
@@ -210,8 +229,11 @@ export function createToolCommands(): Command {
           try {
             parameters = JSON.parse(options.params);
           } catch (error) {
-            logger.error('参数必须是有效的JSON格式');
-            process.exit(1);
+            handleError(new ValidationError('参数必须是有效的JSON格式'), {
+              operation: 'executeTool',
+              additionalInfo: { id, params: options.params }
+            });
+            return;
           }
         }
 
@@ -234,8 +256,10 @@ export function createToolCommands(): Command {
           }
         }
       } catch (error) {
-        logger.error(`执行工具失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'executeTool',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -254,8 +278,11 @@ export function createToolCommands(): Command {
           try {
             parameters = JSON.parse(options.params);
           } catch (error) {
-            logger.error('参数必须是有效的JSON格式');
-            process.exit(1);
+            handleError(new ValidationError('参数必须是有效的JSON格式'), {
+              operation: 'validateToolParameters',
+              additionalInfo: { id, params: options.params }
+            });
+            return;
           }
         }
 
@@ -269,11 +296,17 @@ export function createToolCommands(): Command {
           result.errors.forEach(error => {
             console.log(`  - ${error}`);
           });
-          process.exit(1);
+          handleError(new ValidationError('参数验证失败'), {
+            operation: 'validateToolParameters',
+            additionalInfo: { id, errors: result.errors }
+          });
+          return;
         }
       } catch (error) {
-        logger.error(`验证工具参数失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'validateToolParameters',
+          additionalInfo: { id }
+        });
       }
     });
 

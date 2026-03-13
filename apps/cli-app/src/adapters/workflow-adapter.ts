@@ -6,6 +6,7 @@
 import { BaseAdapter } from './base-adapter.js';
 import { ConfigManager, type ConfigLoadOptions } from '../config/config-manager.js';
 import { resolve } from 'path';
+import { CLINotFoundError } from '../types/cli-types.js';
 
 /**
  * 工作流适配器
@@ -114,7 +115,7 @@ export class WorkflowAdapter extends BaseAdapter {
       const workflow = (result as any).data || result;
 
       if (!workflow) {
-        throw new Error(`工作流不存在: ${id}`);
+        throw new CLINotFoundError(`工作流不存在: ${id}`, 'Workflow', id);
       }
 
       return workflow;

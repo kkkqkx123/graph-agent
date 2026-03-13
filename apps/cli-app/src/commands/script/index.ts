@@ -7,6 +7,8 @@ import { ScriptAdapter } from '../../adapters/script-adapter.js';
 import { getLogger } from '../../utils/logger.js';
 import { formatScript, formatScriptList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
+import { handleError } from '../../utils/error-handler.js';
+import { ValidationError } from '../../types/cli-types.js';
 
 const logger = getLogger();
 
@@ -31,8 +33,10 @@ export function createScriptCommands(): Command {
 
         console.log(formatScript(script, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`注册脚本失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'registerScript',
+          additionalInfo: { file }
+        });
       }
     });
 
@@ -48,19 +52,19 @@ export function createScriptCommands(): Command {
     }) => {
       try {
         logger.info(`正在批量注册脚本: ${directory}`);
-        
+
         // 解析文件模式
         const filePattern = options.pattern
           ? new RegExp(options.pattern)
           : undefined;
-        
+
         const adapter = new ScriptAdapter();
         const result = await adapter.registerFromDirectory({
           configDir: directory,
           recursive: options.recursive,
           filePattern
         });
-        
+
         // 显示结果
         console.log(`\n成功注册 ${result.success.length} 个脚本`);
         if (result.failures.length > 0) {
@@ -70,8 +74,10 @@ export function createScriptCommands(): Command {
           });
         }
       } catch (error) {
-        logger.error(`批量注册脚本失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'registerScriptsBatch',
+          additionalInfo: { directory, recursive: options.recursive, pattern: options.pattern }
+        });
       }
     });
 
@@ -88,8 +94,9 @@ export function createScriptCommands(): Command {
 
         console.log(formatScriptList(scripts, { table: options.table }));
       } catch (error) {
-        logger.error(`列出脚本失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'listScripts'
+        });
       }
     });
 
@@ -105,8 +112,10 @@ export function createScriptCommands(): Command {
 
         console.log(formatScript(script, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`获取脚本详情失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'getScript',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -127,8 +136,10 @@ export function createScriptCommands(): Command {
         const adapter = new ScriptAdapter();
         await adapter.deleteScript(id);
       } catch (error) {
-        logger.error(`删除脚本失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'deleteScript',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -153,8 +164,10 @@ export function createScriptCommands(): Command {
         const script = await adapter.updateScript(id, updates);
         console.log(formatScript(script, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`更新脚本失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'updateScript',
+          additionalInfo: { id, updates }
+        });
       }
     });
 
@@ -176,11 +189,17 @@ export function createScriptCommands(): Command {
           result.errors.forEach(error => {
             console.log(`  - ${error}`);
           });
-          process.exit(1);
+          handleError(new ValidationError('配置验证失败'), {
+            operation: 'validateScript',
+            additionalInfo: { file, errors: result.errors }
+          });
+          return;
         }
       } catch (error) {
-        logger.error(`验证脚本配置失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'validateScript',
+          additionalInfo: { file }
+        });
       }
     });
 
@@ -214,8 +233,11 @@ export function createScriptCommands(): Command {
           try {
             inputData = JSON.parse(options.input);
           } catch (error) {
-            logger.error('输入数据必须是有效的JSON格式');
-            process.exit(1);
+            handleError(new ValidationError('输入数据必须是有效的JSON格式'), {
+              operation: 'executeScript',
+              additionalInfo: { name, input: options.input }
+            });
+            return;
           }
         }
 
@@ -225,8 +247,11 @@ export function createScriptCommands(): Command {
           try {
             environment = JSON.parse(options.env);
           } catch (error) {
-            logger.error('环境变量必须是有效的JSON格式');
-            process.exit(1);
+            handleError(new ValidationError('环境变量必须是有效的JSON格式'), {
+              operation: 'executeScript',
+              additionalInfo: { name, env: options.env }
+            });
+            return;
           }
         }
 
@@ -251,8 +276,10 @@ export function createScriptCommands(): Command {
           }
         }
       } catch (error) {
-        logger.error(`执行脚本失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'executeScript',
+          additionalInfo: { name }
+        });
       }
     });
 

@@ -7,6 +7,8 @@ import { EventAdapter } from '../../adapters/event-adapter.js';
 import { getLogger } from '../../utils/logger.js';
 import { formatEvent, formatEventList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
+import { handleError } from '../../utils/error-handler.js';
+import { ValidationError } from '../../types/cli-types.js';
 
 const logger = getLogger();
 
@@ -40,13 +42,15 @@ export function createEventCommands(): Command {
         if (options.threadId) filter.threadId = options.threadId;
         if (options.workflowId) filter.workflowId = options.workflowId;
         if (options.limit) filter.limit = parseInt(options.limit, 10);
-        
+
         const events = await adapter.listEvents(filter);
 
         console.log(formatEventList(events, { table: options.table }));
       } catch (error) {
-        logger.error(`列出事件失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'listEvents',
+          additionalInfo: { filter: { type: options.type, threadId: options.threadId, workflowId: options.workflowId, limit: options.limit } }
+        });
       }
     });
 
@@ -62,8 +66,10 @@ export function createEventCommands(): Command {
 
         console.log(formatEvent(event, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`获取事件详情失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'getEvent',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -103,8 +109,10 @@ export function createEventCommands(): Command {
           console.log(`    ${workflowId.substring(0, 8)}: ${count}`);
         });
       } catch (error) {
-        logger.error(`获取事件统计失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'getEventStats',
+          additionalInfo: { filter: { type: options.type, threadId: options.threadId, workflowId: options.workflowId } }
+        });
       }
     });
 
@@ -119,8 +127,11 @@ export function createEventCommands(): Command {
       try {
         const size = parseInt(maxSize, 10);
         if (isNaN(size) || size < 0) {
-          logger.error('无效的大小参数，必须是非负整数');
-          process.exit(1);
+          handleError(new ValidationError('无效的大小参数，必须是非负整数'), {
+            operation: 'trimEventHistory',
+            additionalInfo: { maxSize }
+          });
+          return;
         }
 
         if (!options.force) {
@@ -133,8 +144,10 @@ export function createEventCommands(): Command {
         const removed = await adapter.trimEventHistory(size);
         logger.info(`裁剪完成，保留了最新的 ${size} 条事件，移除了 ${removed} 条旧事件`);
       } catch (error) {
-        logger.error(`裁剪事件失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'trimEventHistory',
+          additionalInfo: { maxSize }
+        });
       }
     });
 

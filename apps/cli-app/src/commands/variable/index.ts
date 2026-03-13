@@ -7,6 +7,8 @@ import { VariableAdapter } from '../../adapters/variable-adapter.js';
 import { getLogger } from '../../utils/logger.js';
 import { formatVariable, formatVariableList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
+import { handleError } from '../../utils/error-handler.js';
+import { ValidationError } from '../../types/cli-types.js';
 
 const logger = getLogger();
 
@@ -30,8 +32,10 @@ export function createVariableCommands(): Command {
 
         console.log(formatVariableList(variables, { table: options.table }));
       } catch (error) {
-        logger.error(`列出变量失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'listVariables',
+          additionalInfo: { threadId }
+        });
       }
     });
 
@@ -47,8 +51,10 @@ export function createVariableCommands(): Command {
 
         console.log(formatVariable(variableName, value, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`获取变量值失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'getVariable',
+          additionalInfo: { threadId, variableName }
+        });
       }
     });
 
@@ -67,16 +73,21 @@ export function createVariableCommands(): Command {
           try {
             parsedValue = JSON.parse(value);
           } catch (error) {
-            logger.error('值必须是有效的JSON格式');
-            process.exit(1);
+            handleError(new ValidationError('值必须是有效的JSON格式'), {
+              operation: 'setVariable',
+              additionalInfo: { threadId, variableName, value }
+            });
+            return;
           }
         }
 
         const adapter = new VariableAdapter();
         await adapter.setVariable(threadId, variableName, parsedValue);
       } catch (error) {
-        logger.error(`设置变量失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'setVariable',
+          additionalInfo: { threadId, variableName }
+        });
       }
     });
 
@@ -97,8 +108,10 @@ export function createVariableCommands(): Command {
         const adapter = new VariableAdapter();
         await adapter.deleteVariable(threadId, variableName);
       } catch (error) {
-        logger.error(`删除变量失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'deleteVariable',
+          additionalInfo: { threadId, variableName }
+        });
       }
     });
 
@@ -128,8 +141,10 @@ export function createVariableCommands(): Command {
           console.log('未找到变量定义');
         }
       } catch (error) {
-        logger.error(`获取变量定义失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'getVariableDefinition',
+          additionalInfo: { threadId, variableName }
+        });
       }
     });
 

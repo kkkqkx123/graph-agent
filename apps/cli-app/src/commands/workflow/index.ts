@@ -6,6 +6,7 @@ import { Command } from 'commander';
 import { WorkflowAdapter } from '../../adapters/workflow-adapter.js';
 import { getLogger } from '../../utils/logger.js';
 import { formatWorkflow, formatWorkflowList } from '../../utils/formatter.js';
+import { handleError } from '../../utils/error-handler.js';
 import type { CommandOptions } from '../../types/cli-types.js';
 
 const logger = getLogger();
@@ -38,8 +39,11 @@ export function createWorkflowCommands(): Command {
 
         console.log(formatWorkflow(workflow, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`注册失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'register-workflow',
+          filePath: file,
+          additionalInfo: { params: options.params }
+        });
       }
     });
 
@@ -85,8 +89,10 @@ export function createWorkflowCommands(): Command {
           });
         }
       } catch (error) {
-        logger.error(`批量注册失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'register-workflow-batch',
+          additionalInfo: { directory, recursive: options.recursive, pattern: options.pattern }
+        });
       }
     });
 
@@ -103,8 +109,9 @@ export function createWorkflowCommands(): Command {
 
         console.log(formatWorkflowList(workflows, { table: options.table }));
       } catch (error) {
-        logger.error(`列出工作流失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'list-workflows'
+        });
       }
     });
 
@@ -120,8 +127,10 @@ export function createWorkflowCommands(): Command {
 
         console.log(formatWorkflow(workflow, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`获取工作流详情失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'show-workflow',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -142,8 +151,10 @@ export function createWorkflowCommands(): Command {
         const adapter = new WorkflowAdapter();
         await adapter.deleteWorkflow(id);
       } catch (error) {
-        logger.error(`删除工作流失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'delete-workflow',
+          additionalInfo: { id }
+        });
       }
     });
 

@@ -6,19 +6,7 @@
 import { z } from 'zod';
 import { existsSync } from 'fs';
 import { resolve } from 'path';
-
-/**
- * 验证错误类
- */
-export class ValidationError extends Error {
-  constructor(
-    message: string,
-    public field?: string
-  ) {
-    super(message);
-    this.name = 'ValidationError';
-  }
-}
+import { CLIValidationError } from '../types/cli-types.js';
 
 /**
  * 验证文件路径
@@ -288,3 +276,8 @@ export function validateWithZod<T>(schema: z.ZodSchema<T>, data: unknown): { val
   const errors = (result.error as z.ZodError).issues.map((e: z.ZodIssue) => `${e.path.join('.')}: ${e.message}`).join(', ');
   return { valid: false, error: errors };
 }
+
+/**
+ * 重新导出 CLIValidationError 以保持向后兼容
+ */
+export { CLIValidationError as ValidationError };

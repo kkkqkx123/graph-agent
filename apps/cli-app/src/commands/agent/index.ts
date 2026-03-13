@@ -8,6 +8,8 @@ import { getLogger } from '../../utils/logger.js';
 import { formatAgentLoop, formatAgentLoopList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
 import type { AgentLoopConfig } from '@modular-agent/types';
+import { handleError } from '../../utils/error-handler.js';
+import { ValidationError } from '../../types/cli-types.js';
 
 const logger = getLogger();
 
@@ -59,8 +61,11 @@ export function createAgentCommands(): Command {
               initialMessages = [{ role: 'user', content: inputData.message }];
             }
           } catch (error) {
-            logger.error('输入数据必须是有效的JSON格式');
-            process.exit(1);
+            handleError(new ValidationError('输入数据必须是有效的JSON格式'), {
+              operation: 'runAgentLoop',
+              additionalInfo: { input: options.input }
+            });
+            return;
           }
         }
 
@@ -97,8 +102,10 @@ export function createAgentCommands(): Command {
           console.log(formatAgentLoop(result, { verbose: options.verbose }));
         }
       } catch (error) {
-        logger.error(`执行 Agent Loop 失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'runAgentLoop',
+          additionalInfo: { profileId: options.profile, maxIterations: options.maxIterations }
+        });
       }
     });
 
@@ -138,8 +145,11 @@ export function createAgentCommands(): Command {
               initialMessages = [{ role: 'user', content: inputData.message }];
             }
           } catch (error) {
-            logger.error('输入数据必须是有效的JSON格式');
-            process.exit(1);
+            handleError(new ValidationError('输入数据必须是有效的JSON格式'), {
+              operation: 'startAgentLoop',
+              additionalInfo: { input: options.input }
+            });
+            return;
           }
         }
 
@@ -150,8 +160,10 @@ export function createAgentCommands(): Command {
         console.log(`  ID: ${id}`);
         console.log(`\n提示: 使用 'modular-agent agent status ${id}' 查看状态`);
       } catch (error) {
-        logger.error(`启动 Agent Loop 失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'startAgentLoop',
+          additionalInfo: { profileId: options.profile, maxIterations: options.maxIterations }
+        });
       }
     });
 
@@ -166,8 +178,10 @@ export function createAgentCommands(): Command {
         const adapter = new AgentLoopAdapter();
         await adapter.pauseAgentLoop(id);
       } catch (error) {
-        logger.error(`暂停 Agent Loop 失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'pauseAgentLoop',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -184,8 +198,10 @@ export function createAgentCommands(): Command {
 
         console.log(formatAgentLoop(result));
       } catch (error) {
-        logger.error(`恢复 Agent Loop 失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'resumeAgentLoop',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -200,8 +216,10 @@ export function createAgentCommands(): Command {
         const adapter = new AgentLoopAdapter();
         await adapter.stopAgentLoop(id);
       } catch (error) {
-        logger.error(`停止 Agent Loop 失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'stopAgentLoop',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -215,16 +233,21 @@ export function createAgentCommands(): Command {
         const status = adapter.getAgentLoopStatus(id);
 
         if (!status) {
-          logger.error(`Agent Loop 不存在: ${id}`);
-          process.exit(1);
+          handleError(new ValidationError(`Agent Loop 不存在: ${id}`), {
+            operation: 'getAgentLoopStatus',
+            additionalInfo: { id }
+          });
+          return;
         }
 
         console.log(`\nAgent Loop 状态:`);
         console.log(`  ID: ${id}`);
         console.log(`  状态: ${status}`);
       } catch (error) {
-        logger.error(`获取状态失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'getAgentLoopStatus',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -239,14 +262,19 @@ export function createAgentCommands(): Command {
         const agentLoop = adapter.getAgentLoop(id);
 
         if (!agentLoop) {
-          logger.error(`Agent Loop 不存在: ${id}`);
-          process.exit(1);
+          handleError(new ValidationError(`Agent Loop 不存在: ${id}`), {
+            operation: 'getAgentLoop',
+            additionalInfo: { id }
+          });
+          return;
         }
 
         console.log(formatAgentLoop(agentLoop, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`获取详情失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'getAgentLoop',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -272,8 +300,10 @@ export function createAgentCommands(): Command {
 
         console.log(formatAgentLoopList(agentLoops, { table: options.table }));
       } catch (error) {
-        logger.error(`列出 Agent Loop 失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'listAgentLoops',
+          additionalInfo: { running: options.running, paused: options.paused }
+        });
       }
     });
 
@@ -305,8 +335,10 @@ export function createAgentCommands(): Command {
         const checkpointId = await adapter.createCheckpoint(id, dependencies, { name: options.name });
         console.log(`\n✓ 检查点已创建: ${checkpointId}`);
       } catch (error) {
-        logger.error(`创建检查点失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'createCheckpoint',
+          additionalInfo: { id, name: options.name }
+        });
       }
     });
 
@@ -336,8 +368,10 @@ export function createAgentCommands(): Command {
         const result = await adapter.restoreFromCheckpoint(checkpointId, dependencies);
         console.log(`\n✓ Agent Loop 已恢复: ${result.id}`);
       } catch (error) {
-        logger.error(`从检查点恢复失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'restoreFromCheckpoint',
+          additionalInfo: { checkpointId }
+        });
       }
     });
 
@@ -355,8 +389,10 @@ export function createAgentCommands(): Command {
         console.log(`\n✓ Agent Loop 已克隆`);
         console.log(`  新 ID: ${result.id}`);
       } catch (error) {
-        logger.error(`克隆 Agent Loop 失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'cloneAgentLoop',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -371,8 +407,9 @@ export function createAgentCommands(): Command {
 
         console.log(`\n✓ 已清理 ${count} 个完成的 Agent Loop`);
       } catch (error) {
-        logger.error(`清理失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'cleanupAgentLoops'
+        });
       }
     });
 
@@ -397,8 +434,10 @@ export function createAgentCommands(): Command {
           });
         }
       } catch (error) {
-        logger.error(`获取消息历史失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'getAgentLoopMessages',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -432,8 +471,10 @@ export function createAgentCommands(): Command {
           });
         }
       } catch (error) {
-        logger.error(`获取变量失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'getAgentLoopVariables',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -456,8 +497,10 @@ export function createAgentCommands(): Command {
         adapter.setAgentLoopVariable(id, name, parsedValue);
         console.log(`\n✓ 变量已设置: ${name}`);
       } catch (error) {
-        logger.error(`设置变量失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'setAgentLoopVariable',
+          additionalInfo: { id, name, value }
+        });
       }
     });
 
@@ -477,8 +520,10 @@ export function createAgentCommands(): Command {
         const adapter = new AgentLoopAdapter();
         adapter.cleanupAgentLoop(id);
       } catch (error) {
-        logger.error(`删除 Agent Loop 失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'deleteAgentLoop',
+          additionalInfo: { id }
+        });
       }
     });
 

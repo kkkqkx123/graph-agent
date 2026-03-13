@@ -4,6 +4,7 @@
  */
 
 import { BaseAdapter } from './base-adapter.js';
+import { CLINotFoundError } from '../types/cli-types.js';
 
 /**
  * 线程适配器
@@ -87,7 +88,7 @@ export class ThreadAdapter extends BaseAdapter {
       const thread = (result as any).data || result;
 
       if (!thread) {
-        throw new Error(`线程不存在: ${threadId}`);
+        throw new CLINotFoundError(`线程不存在: ${threadId}`, 'Thread', threadId);
       }
 
       return thread;

@@ -6,6 +6,7 @@ import { Command } from 'commander';
 import { ThreadCheckpointAdapter } from '../../adapters/thread-checkpoint-adapter.js';
 import { getLogger } from '../../utils/logger.js';
 import { formatCheckpoint, formatCheckpointList } from '../../utils/formatter.js';
+import { handleError } from '../../utils/error-handler.js';
 import type { CommandOptions } from '../../types/cli-types.js';
 
 const logger = getLogger();
@@ -32,8 +33,10 @@ export function createCheckpointCommands(): Command {
 
         console.log(formatCheckpoint(checkpoint, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`创建检查点失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'create-checkpoint',
+          additionalInfo: { threadId, name: options.name }
+        });
       }
     });
 
@@ -48,8 +51,10 @@ export function createCheckpointCommands(): Command {
         const adapter = new ThreadCheckpointAdapter();
         await adapter.loadCheckpoint(checkpointId);
       } catch (error) {
-        logger.error(`载入检查点失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'load-checkpoint',
+          additionalInfo: { checkpointId }
+        });
       }
     });
 
@@ -66,8 +71,9 @@ export function createCheckpointCommands(): Command {
 
         console.log(formatCheckpointList(checkpoints, { table: options.table }));
       } catch (error) {
-        logger.error(`列出检查点失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'list-checkpoints'
+        });
       }
     });
 
@@ -83,8 +89,10 @@ export function createCheckpointCommands(): Command {
 
         console.log(formatCheckpoint(checkpoint, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`获取检查点详情失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'show-checkpoint',
+          additionalInfo: { checkpointId }
+        });
       }
     });
 
@@ -105,8 +113,10 @@ export function createCheckpointCommands(): Command {
         const adapter = new ThreadCheckpointAdapter();
         await adapter.deleteCheckpoint(checkpointId);
       } catch (error) {
-        logger.error(`删除检查点失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'delete-checkpoint',
+          additionalInfo: { checkpointId }
+        });
       }
     });
 

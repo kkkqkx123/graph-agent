@@ -7,6 +7,8 @@ import { ThreadAdapter } from '../../adapters/thread-adapter.js';
 import { getLogger } from '../../utils/logger.js';
 import { formatThread, formatThreadList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
+import { handleError } from '../../utils/error-handler.js';
+import { ValidationError } from '../../types/cli-types.js';
 
 // 新增导入
 import { TerminalManager } from '../../terminal/terminal-manager.js';
@@ -50,8 +52,11 @@ export function createThreadCommands(): Command {
           try {
             inputData = JSON.parse(options.input);
           } catch (error) {
-            logger.error('输入数据必须是有效的JSON格式');
-            process.exit(1);
+            handleError(new ValidationError('输入数据必须是有效的JSON格式'), {
+              operation: 'runThread',
+              additionalInfo: { workflowId, input: options.input }
+            });
+            return;
           }
         }
 
@@ -89,8 +94,10 @@ export function createThreadCommands(): Command {
           }
         }
       } catch (error) {
-        logger.error(`执行线程失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'runThread',
+          additionalInfo: { workflowId }
+        });
       }
     });
 
@@ -108,8 +115,10 @@ export function createThreadCommands(): Command {
         console.log(`  消息: ${status.message || '无'}`);
         console.log(`  最后更新: ${status.lastUpdate.toISOString()}`);
       } catch (error) {
-        logger.error(`获取任务状态失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'getTaskStatus',
+          additionalInfo: { taskId }
+        });
       }
     });
 
@@ -122,8 +131,10 @@ export function createThreadCommands(): Command {
         await taskExecutor.stopTask(taskId);
         logger.success(`任务已取消: ${taskId}`);
       } catch (error) {
-        logger.error(`取消任务失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'cancelTask',
+          additionalInfo: { taskId }
+        });
       }
     });
 
@@ -159,8 +170,10 @@ export function createThreadCommands(): Command {
         const adapter = new ThreadAdapter();
         await adapter.pauseThread(threadId);
       } catch (error) {
-        logger.error(`暂停线程失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'pauseThread',
+          additionalInfo: { threadId }
+        });
       }
     });
 
@@ -175,8 +188,10 @@ export function createThreadCommands(): Command {
         const adapter = new ThreadAdapter();
         await adapter.resumeThread(threadId);
       } catch (error) {
-        logger.error(`恢复线程失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'resumeThread',
+          additionalInfo: { threadId }
+        });
       }
     });
 
@@ -191,8 +206,10 @@ export function createThreadCommands(): Command {
         const adapter = new ThreadAdapter();
         await adapter.stopThread(threadId);
       } catch (error) {
-        logger.error(`停止线程失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'stopThread',
+          additionalInfo: { threadId }
+        });
       }
     });
 
@@ -209,8 +226,9 @@ export function createThreadCommands(): Command {
 
         console.log(formatThreadList(threads, { table: options.table }));
       } catch (error) {
-        logger.error(`列出线程失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'listThreads'
+        });
       }
     });
 
@@ -226,8 +244,10 @@ export function createThreadCommands(): Command {
 
         console.log(formatThread(thread, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`获取线程详情失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'getThread',
+          additionalInfo: { threadId }
+        });
       }
     });
 
@@ -248,8 +268,10 @@ export function createThreadCommands(): Command {
         const adapter = new ThreadAdapter();
         await adapter.deleteThread(threadId);
       } catch (error) {
-        logger.error(`删除线程失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'deleteThread',
+          additionalInfo: { threadId }
+        });
       }
     });
 

@@ -7,6 +7,7 @@ import { MessageAdapter } from '../../adapters/message-adapter.js';
 import { getLogger } from '../../utils/logger.js';
 import { formatMessage, formatMessageList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
+import { handleError } from '../../utils/error-handler.js';
 
 const logger = getLogger();
 
@@ -37,13 +38,15 @@ export function createMessageCommands(): Command {
         if (options.threadId) filter.threadId = options.threadId;
         if (options.role) filter.role = options.role;
         if (options.content) filter.content = options.content;
-        
+
         const messages = await adapter.listMessages(filter);
 
         console.log(formatMessageList(messages, { table: options.table }));
       } catch (error) {
-        logger.error(`列出消息失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'listMessages',
+          additionalInfo: { filter: { threadId: options.threadId, role: options.role, content: options.content } }
+        });
       }
     });
 
@@ -59,8 +62,10 @@ export function createMessageCommands(): Command {
 
         console.log(formatMessage(message, { verbose: options.verbose }));
       } catch (error) {
-        logger.error(`获取消息详情失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'getMessage',
+          additionalInfo: { id }
+        });
       }
     });
 
@@ -77,8 +82,10 @@ export function createMessageCommands(): Command {
 
         console.log(formatMessageList(messages, { table: options.table }));
       } catch (error) {
-        logger.error(`列出线程消息失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'listMessagesByThread',
+          additionalInfo: { threadId }
+        });
       }
     });
 
@@ -99,8 +106,10 @@ export function createMessageCommands(): Command {
           console.log(`    ${role}: ${count}`);
         });
       } catch (error) {
-        logger.error(`获取消息统计失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'getMessageStats',
+          additionalInfo: { threadId: options.threadId }
+        });
       }
     });
 
@@ -127,8 +136,10 @@ export function createMessageCommands(): Command {
         console.log(`\n已向线程 ${threadId} 发送上下文压缩请求 (策略: ${options.strategy})`);
         console.log(`注意: 需要在工作流中配置对应的触发器 (触发事件: CONTEXT_COMPRESSION_REQUESTED) 才会执行。`);
       } catch (error) {
-        logger.error(`触发上下文压缩失败: ${error instanceof Error ? error.message : String(error)}`);
-        process.exit(1);
+        handleError(error, {
+          operation: 'dispatchContextCompressionEvent',
+          additionalInfo: { threadId, strategy: options.strategy, keepRecent: options.keepRecent }
+        });
       }
     });
 
