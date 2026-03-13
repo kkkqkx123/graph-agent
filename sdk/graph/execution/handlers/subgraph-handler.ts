@@ -61,11 +61,11 @@ export function getSubgraphOutput(threadEntity: ThreadEntity): any {
   if (!subgraphContext) return {};
 
   // 获取子图的END节点输出
-  const navigator = threadEntity.getNavigator();
-  const endNodes = navigator.getGraph().endNodeIds;
+  const graph = threadEntity.getGraph();
+  const endNodes = graph.endNodeIds;
 
   for (const endNodeId of endNodes) {
-    const graphNode = navigator.getGraph().getNode(endNodeId);
+    const graphNode = graph.getNode(endNodeId);
     if (graphNode?.workflowId === subgraphContext.workflowId) {
       // 找到子图的END节点，获取其输出
       const nodeResult = threadEntity.getNodeResults()

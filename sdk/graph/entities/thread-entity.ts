@@ -57,10 +57,6 @@ export class ThreadEntity {
     return this.thread.workflowId;
   }
 
-  getWorkflowVersion(): string {
-    return this.thread.workflowVersion;
-  }
-
   getStatus(): ThreadStatus {
     return this.thread.status;
   }
@@ -111,10 +107,6 @@ export class ThreadEntity {
 
   // ========== 错误信息 ==========
 
-  addError(error: any): void {
-    this.thread.errors.push(error);
-  }
-
   getErrors(): any[] {
     return this.thread.errors;
   }
@@ -149,10 +141,6 @@ export class ThreadEntity {
     this.executionState.exitSubgraph();
   }
 
-  getCurrentWorkflowId(): ID {
-    return this.executionState.getCurrentWorkflowId(this.thread.workflowId);
-  }
-
   getCurrentSubgraphContext(): SubgraphContext | null {
     return this.executionState.getCurrentSubgraphContext();
   }
@@ -161,25 +149,13 @@ export class ThreadEntity {
     return this.executionState.getSubgraphStack();
   }
 
-  isInSubgraph(): boolean {
-    return this.executionState.isInSubgraph();
-  }
-
   // ========== Fork/Join上下文 ==========
-
-  getForkId(): string | undefined {
-    return this.thread.forkJoinContext?.forkId;
-  }
 
   setForkId(forkId: string): void {
     if (!this.thread.forkJoinContext) {
       this.thread.forkJoinContext = { forkId, forkPathId: '' };
     }
     this.thread.forkJoinContext.forkId = forkId;
-  }
-
-  getForkPathId(): string | undefined {
-    return this.thread.forkJoinContext?.forkPathId;
   }
 
   setForkPathId(forkPathId: string): void {
@@ -190,10 +166,6 @@ export class ThreadEntity {
   }
 
   // ========== 触发子工作流上下文 ==========
-
-  getChildThreadIds(): ID[] {
-    return this.thread.triggeredSubworkflowContext?.childThreadIds || [];
-  }
 
   registerChildThread(childThreadId: ID): void {
     if (!this.thread.triggeredSubworkflowContext) {
@@ -274,25 +246,6 @@ export class ThreadEntity {
     return this.thread;
   }
 
-  // ========== 获取ExecutionState ==========
-
-  getExecutionState(): ExecutionState {
-    return this.executionState;
-  }
-
-  // ========== 清理资源 ==========
-
-  cleanup(): void {
-    this.executionState.cleanup();
-  }
-
-  // ========== 克隆 ==========
-
-  clone(): ThreadEntity {
-    const clonedExecutionState = this.executionState.clone();
-    return new ThreadEntity(this.thread, clonedExecutionState);
-  }
-
   // ========== 中止控制 ==========
 
   getAbortSignal(): AbortSignal {
@@ -316,63 +269,7 @@ export class ThreadEntity {
     return Object.fromEntries(this.variables);
   }
 
-  // ========== 消息管理 ==========
-
-  addMessage(message: LLMMessage): void {
-    this.messages.push(message);
-  }
-
-  getMessages(): LLMMessage[] {
-    return this.messages;
-  }
-
-  getRecentMessages(count: number): LLMMessage[] {
-    return this.messages.slice(-count);
-  }
-
-  // ========== 导航器 ==========
-
-  getNavigator(): any {
-    // 返回一个简单的导航器mock
-    return {
-      getNextNode: () => ({ nextNodeId: null, isEnd: true })
-    };
-  }
-
   // ========== 中断控制 ==========
-
-  /**
-   * 暂停执行
-   */
-  pause(): void {
-    this.setShouldPause(true);
-  }
-
-  /**
-   * 恢复执行
-   */
-  resume(): void {
-    this.setShouldPause(false);
-    this.setShouldStop(false);
-  }
-
-  /**
-   * 停止执行
-   */
-  stop(): void {
-    this.setShouldStop(true);
-    this.abort();
-  }
-
-  /**
-   * 中止执行
-   * @param reason 中止原因（可选）
-   */
-  abort(reason?: string): void {
-    if (this.abortController) {
-      this.abortController.abort(reason);
-    }
-  }
 
   interrupt(type: 'PAUSE' | 'STOP'): void {
     if (type === 'PAUSE') {
@@ -390,14 +287,14 @@ export class ThreadEntity {
   // ========== 对话管理 ==========
 
   addMessageToConversation(message: LLMMessage): void {
-    this.addMessage(message);
+    this.messages.push(message);
   }
 
   getConversationHistory(count?: number): LLMMessage[] {
     if (count) {
-      return this.getRecentMessages(count);
+      return this.messages.slice(-count);
     }
-    return this.getMessages();
+    return this.messages;
   }
 
   // ========== 触发器状态 ==========
@@ -432,14 +329,6 @@ export class ThreadEntity {
     }
   }
 
-  // ========== 工具可见性初始化 ==========
-
-  initializeToolVisibility(): void {
-    // 工具可见性初始化逻辑由ToolVisibilityCoordinator处理
-    // 这里只是占位符，实际初始化在协调器中完成
-
-  }
-
   // ========== 事件构建（自动填充上下文）==========
 
   /**
@@ -466,23 +355,4 @@ export class ThreadEntity {
 
   // ========== 上下文日志记录器 ==========
 
-  /**
-   * 获取上下文日志记录器（自动包含 threadId, workflowId, nodeId）
-   * @param operation 操作名称
-   * @returns ContextualLogger 实例
-   *
-   * @example
-   * const logger = threadEntity.getLogger('node-execution');
-   * logger.debug('Starting execution'); // 自动包含上下文
-   */
-
-  getLogger(operation?: string): import('../../utils/contextual-logger.js').ContextualLogger {
-    const { createContextualLogger } = require('../../utils/contextual-logger.js');
-    return createContextualLogger({
-      threadId: this.id,
-      workflowId: this.getWorkflowId(),
-      nodeId: this.getCurrentNodeId(),
-      operation
-    });
-  }
 }

@@ -332,9 +332,6 @@ export class CheckpointCoordinator {
     const executionState = new ExecutionState();
     const threadEntity = new ThreadEntity(thread as Thread, executionState, conversationManager);
 
-    // 步骤11：初始化工具可见性上下文
-    threadEntity.initializeToolVisibility();
-
     // 步骤12：恢复触发器状态
     if (threadState.triggerStates) {
       threadEntity.restoreTriggerState(threadState.triggerStates);
