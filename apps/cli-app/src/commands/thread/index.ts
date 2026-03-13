@@ -8,7 +8,7 @@ import { getLogger } from '../../utils/logger.js';
 import { formatThread, formatThreadList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
 import { handleError } from '../../utils/error-handler.js';
-import { ValidationError } from '../../types/cli-types.js';
+import { CLIValidationError } from '../../types/cli-types.js';
 
 // 新增导入
 import { TerminalManager } from '../../terminal/terminal-manager.js';
@@ -52,7 +52,7 @@ export function createThreadCommands(): Command {
           try {
             inputData = JSON.parse(options.input);
           } catch (error) {
-            handleError(new ValidationError('输入数据必须是有效的JSON格式'), {
+            handleError(new CLIValidationError('输入数据必须是有效的JSON格式'), {
               operation: 'runThread',
               additionalInfo: { workflowId, input: options.input }
             });

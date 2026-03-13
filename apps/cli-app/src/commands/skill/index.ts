@@ -6,9 +6,10 @@
 import { Command } from 'commander';
 import { SkillAdapter } from '../../adapters/skill-adapter.js';
 import { getLogger } from '../../utils/logger.js';
+import { formatSkill } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
 import { handleError } from '../../utils/error-handler.js';
-import { ValidationError } from '../../types/cli-types.js';
+import { CLIValidationError } from '../../types/cli-types.js';
 
 const logger = getLogger();
 
@@ -150,7 +151,7 @@ export function createSkillCommands(): Command {
         const skill = await adapter.getSkill(name);
 
         if (!skill) {
-          handleError(new ValidationError(`Skill 不存在: ${name}`), {
+          handleError(new CLIValidationError(`Skill 不存在: ${name}`), {
             operation: 'getSkill',
             additionalInfo: { name }
           });

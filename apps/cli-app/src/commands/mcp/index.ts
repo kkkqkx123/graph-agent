@@ -4,11 +4,11 @@
  */
 
 import { Command } from 'commander';
-import { McpAdapter, createMcpAdapter } from '../../adapters/mcp-adapter.js';
+import { McpAdapter, type McpServerDefinition, createMcpAdapter } from '../../adapters/mcp-adapter.js';
 import { getLogger } from '../../utils/logger.js';
-import { formatToolList } from '../../utils/formatter.js';
 import { handleError } from '../../utils/error-handler.js';
-import { ValidationError } from '../../types/cli-types.js';
+import { CLIValidationError } from '../../types/cli-types.js';
+import { formatToolList } from '../../utils/formatter.js';
 
 const logger = getLogger();
 
@@ -128,7 +128,7 @@ export function createMcpCommands(): Command {
 
         // Basic validation
         if (!config.mcpServers || typeof config.mcpServers !== 'object') {
-          handleError(new ValidationError('Invalid config: missing or invalid mcpServers'), {
+          handleError(new CLIValidationError('Invalid config: missing or invalid mcpServers'), {
             operation: 'validateMcpConfig',
             additionalInfo: { configFile }
           });

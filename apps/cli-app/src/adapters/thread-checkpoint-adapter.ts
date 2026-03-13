@@ -5,6 +5,7 @@
 
 import { BaseAdapter } from './base-adapter.js';
 import { CheckpointResourceAPI } from '@modular-agent/sdk';
+import { CLINotFoundError } from '../types/cli-types.js';
 
 /**
  * Thread 检查点适配器
@@ -51,7 +52,7 @@ export class ThreadCheckpointAdapter extends BaseAdapter {
       const checkpoint = (result as any).data || result;
 
       if (!checkpoint) {
-        throw new Error(`Thread 检查点不存在: ${checkpointId}`);
+        throw new CLINotFoundError(`Thread 检查点不存在: ${checkpointId}`, 'ThreadCheckpoint', checkpointId);
       }
 
       // 恢复检查点
@@ -91,7 +92,7 @@ export class ThreadCheckpointAdapter extends BaseAdapter {
       const checkpoint = (result as any).data || result;
 
       if (!checkpoint) {
-        throw new Error(`Thread 检查点不存在: ${checkpointId}`);
+        throw new CLINotFoundError(`Thread 检查点不存在: ${checkpointId}`, 'ThreadCheckpoint', checkpointId);
       }
 
       return checkpoint;

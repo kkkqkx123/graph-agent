@@ -4,6 +4,7 @@
  */
 
 import { BaseAdapter } from './base-adapter.js';
+import { CLINotFoundError } from '../types/cli-types.js';
 
 /**
  * 变量适配器
@@ -30,7 +31,7 @@ export class VariableAdapter extends BaseAdapter {
       const registry = api.getRegistry();
       const threadContext = registry.get(threadId);
       if (!threadContext) {
-        throw new Error(`Thread not found: ${threadId}`);
+        throw new CLINotFoundError(`Thread not found: ${threadId}`, 'Thread', threadId);
       }
       await threadContext.setVariable(variableName, value);
       this.logger.success(`变量已设置: ${variableName}`);

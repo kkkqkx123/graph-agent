@@ -12,6 +12,7 @@ import {
 } from '@modular-agent/sdk';
 import { AgentLoopCheckpointResourceAPI } from '@modular-agent/sdk';
 import type { AgentLoopEntity } from '@modular-agent/sdk';
+import { CLINotFoundError } from '../types/cli-types.js';
 
 /**
  * Agent Loop 检查点适配器
@@ -87,7 +88,7 @@ export class AgentLoopCheckpointAdapter extends BaseAdapter {
     return this.executeWithErrorHandling(async () => {
       const checkpoint = await this.checkpointAPI.get(checkpointId);
       if (!checkpoint) {
-        throw new Error(`Agent Loop 检查点不存在: ${checkpointId}`);
+        throw new CLINotFoundError(`Agent Loop 检查点不存在: ${checkpointId}`, 'AgentLoopCheckpoint', checkpointId);
       }
 
       return checkpoint;
@@ -113,7 +114,7 @@ export class AgentLoopCheckpointAdapter extends BaseAdapter {
     return this.executeWithErrorHandling(async () => {
       const checkpoint = await this.checkpointAPI.getLatestCheckpoint(agentLoopId);
       if (!checkpoint) {
-        throw new Error(`Agent Loop 检查点不存在: ${agentLoopId}`);
+        throw new CLINotFoundError(`Agent Loop 检查点不存在: ${agentLoopId}`, 'AgentLoopCheckpoint', agentLoopId);
       }
 
       return checkpoint;

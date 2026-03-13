@@ -8,7 +8,7 @@ import { getLogger } from '../../utils/logger.js';
 import { formatEvent, formatEventList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
 import { handleError } from '../../utils/error-handler.js';
-import { ValidationError } from '../../types/cli-types.js';
+import { CLIValidationError } from '../../types/cli-types.js';
 
 const logger = getLogger();
 
@@ -127,7 +127,7 @@ export function createEventCommands(): Command {
       try {
         const size = parseInt(maxSize, 10);
         if (isNaN(size) || size < 0) {
-          handleError(new ValidationError('无效的大小参数，必须是非负整数'), {
+          handleError(new CLIValidationError('无效的大小参数，必须是非负整数'), {
             operation: 'trimEventHistory',
             additionalInfo: { maxSize }
           });

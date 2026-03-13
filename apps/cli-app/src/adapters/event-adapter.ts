@@ -6,6 +6,7 @@
 import { BaseAdapter } from './base-adapter.js';
 import type { BaseEvent } from '@modular-agent/types';
 import type { EventFilter } from '@modular-agent/sdk';
+import { CLINotFoundError, CLIAPIError } from '../types/cli-types.js';
 
 /**
  * 事件适配器
@@ -61,7 +62,7 @@ export class EventAdapter extends BaseAdapter {
         await api.dispatch(event);
         this.logger.success(`已分发事件: ${event.type}`);
       } else {
-        throw new Error('SDK 当前版本不支持事件分发');
+        throw new CLIAPIError('SDK 当前版本不支持事件分发', 501, 'events/dispatch');
       }
     }, '分发事件');
   }
@@ -77,7 +78,7 @@ export class EventAdapter extends BaseAdapter {
         this.logger.success(`已裁剪事件历史，移除了 ${removed} 条旧事件`);
         return removed;
       } else {
-        throw new Error('SDK 当前版本不支持裁剪事件历史');
+        throw new CLIAPIError('SDK 当前版本不支持裁剪事件历史', 501, 'events/trimEventHistory');
       }
     }, '裁剪事件历史');
   }

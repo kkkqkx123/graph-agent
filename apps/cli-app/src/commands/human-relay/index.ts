@@ -136,7 +136,7 @@ export function createHumanRelayCommands(): Command {
       } catch (error) {
         handleError(error, {
           operation: 'updateHumanRelayConfig',
-          additionalInfo: { id, updates }
+          additionalInfo: { id }
         });
       }
     });

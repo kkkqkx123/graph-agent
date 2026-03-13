@@ -8,7 +8,7 @@ import { getLogger } from '../../utils/logger.js';
 import { formatScript, formatScriptList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
 import { handleError } from '../../utils/error-handler.js';
-import { ValidationError } from '../../types/cli-types.js';
+import { CLIValidationError } from '../../types/cli-types.js';
 
 const logger = getLogger();
 
@@ -154,9 +154,9 @@ export function createScriptCommands(): Command {
       name?: string;
       description?: string;
     }) => {
+      const updates: any = {};
       try {
         const adapter = new ScriptAdapter();
-        const updates: any = {};
 
         if (options.name) updates.name = options.name;
         if (options.description) updates.description = options.description;
@@ -189,7 +189,7 @@ export function createScriptCommands(): Command {
           result.errors.forEach(error => {
             console.log(`  - ${error}`);
           });
-          handleError(new ValidationError('配置验证失败'), {
+          handleError(new CLIValidationError('配置验证失败'), {
             operation: 'validateScript',
             additionalInfo: { file, errors: result.errors }
           });
@@ -233,7 +233,7 @@ export function createScriptCommands(): Command {
           try {
             inputData = JSON.parse(options.input);
           } catch (error) {
-            handleError(new ValidationError('输入数据必须是有效的JSON格式'), {
+            handleError(new CLIValidationError('输入数据必须是有效的JSON格式'), {
               operation: 'executeScript',
               additionalInfo: { name, input: options.input }
             });
@@ -247,7 +247,7 @@ export function createScriptCommands(): Command {
           try {
             environment = JSON.parse(options.env);
           } catch (error) {
-            handleError(new ValidationError('环境变量必须是有效的JSON格式'), {
+            handleError(new CLIValidationError('环境变量必须是有效的JSON格式'), {
               operation: 'executeScript',
               additionalInfo: { name, env: options.env }
             });

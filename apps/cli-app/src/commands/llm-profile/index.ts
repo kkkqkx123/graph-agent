@@ -8,7 +8,7 @@ import { getLogger } from '../../utils/logger.js';
 import { formatLLMProfile, formatLLMProfileList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
 import { handleError } from '../../utils/error-handler.js';
-import { ValidationError } from '../../types/cli-types.js';
+import { CLIValidationError } from '../../types/cli-types.js';
 
 const logger = getLogger();
 
@@ -165,9 +165,9 @@ export function createLLMProfileCommands(): Command {
       maxRetries?: string;
       retryDelay?: string;
     }) => {
+      const updates: any = {};
       try {
         const adapter = new LLMProfileAdapter();
-        const updates: any = {};
 
         if (options.name) updates.name = options.name;
         if (options.model) updates.model = options.model;
@@ -205,7 +205,7 @@ export function createLLMProfileCommands(): Command {
           result.errors.forEach(error => {
             console.log(`  - ${error}`);
           });
-          handleError(new ValidationError('配置验证失败'), {
+          handleError(new CLIValidationError('配置验证失败'), {
             operation: 'validateLLMProfile',
             additionalInfo: { file, errors: result.errors }
           });

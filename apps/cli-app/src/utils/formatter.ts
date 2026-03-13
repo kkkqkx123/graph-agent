@@ -540,3 +540,40 @@ export function formatAgentLoopList(agentLoops: any[], options: { table?: boolea
 
   return agentLoops.map(al => formatAgentLoop(al)).join('\n');
 }
+
+/**
+ * 格式化 Skill 信息
+ */
+export function formatSkill(skill: any, options: { verbose?: boolean } = {}): string {
+  if (options.verbose) {
+    return JSON.stringify(skill, null, 2);
+  }
+
+  const name = skill.name || 'N/A';
+  const version = skill.version || 'N/A';
+  const description = skill.description || '-';
+
+  return `${chalk.blue(name)} (${chalk.yellow(version)}) - ${chalk.gray(description)}`;
+}
+
+/**
+ * 格式化 Skill 列表
+ */
+export function formatSkillList(skills: any[], options: { table?: boolean } = {}): string {
+  if (skills.length === 0) {
+    return chalk.yellow('没有找到 Skill');
+  }
+
+  if (options.table) {
+    const headers = ['名称', '版本', '描述'];
+    const rows = skills.map(s => [
+      chalk.cyan(s.name || 'N/A'),
+      chalk.yellow(s.version || 'N/A'),
+      s.description || '-'
+    ]);
+
+    return formatTable(headers, rows);
+  }
+
+  return skills.map(s => formatSkill(s)).join('\n');
+}

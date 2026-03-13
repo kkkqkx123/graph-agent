@@ -9,7 +9,7 @@ import { formatAgentLoop, formatAgentLoopList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
 import type { AgentLoopConfig } from '@modular-agent/types';
 import { handleError } from '../../utils/error-handler.js';
-import { ValidationError } from '../../types/cli-types.js';
+import { CLIValidationError } from '../../types/cli-types.js';
 
 const logger = getLogger();
 
@@ -61,7 +61,7 @@ export function createAgentCommands(): Command {
               initialMessages = [{ role: 'user', content: inputData.message }];
             }
           } catch (error) {
-            handleError(new ValidationError('输入数据必须是有效的JSON格式'), {
+            handleError(new CLIValidationError('输入数据必须是有效的JSON格式'), {
               operation: 'runAgentLoop',
               additionalInfo: { input: options.input }
             });
@@ -145,7 +145,7 @@ export function createAgentCommands(): Command {
               initialMessages = [{ role: 'user', content: inputData.message }];
             }
           } catch (error) {
-            handleError(new ValidationError('输入数据必须是有效的JSON格式'), {
+            handleError(new CLIValidationError('输入数据必须是有效的JSON格式'), {
               operation: 'startAgentLoop',
               additionalInfo: { input: options.input }
             });
@@ -233,7 +233,7 @@ export function createAgentCommands(): Command {
         const status = adapter.getAgentLoopStatus(id);
 
         if (!status) {
-          handleError(new ValidationError(`Agent Loop 不存在: ${id}`), {
+          handleError(new CLIValidationError(`Agent Loop 不存在: ${id}`), {
             operation: 'getAgentLoopStatus',
             additionalInfo: { id }
           });
@@ -262,7 +262,7 @@ export function createAgentCommands(): Command {
         const agentLoop = adapter.getAgentLoop(id);
 
         if (!agentLoop) {
-          handleError(new ValidationError(`Agent Loop 不存在: ${id}`), {
+          handleError(new CLIValidationError(`Agent Loop 不存在: ${id}`), {
             operation: 'getAgentLoop',
             additionalInfo: { id }
           });

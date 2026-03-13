@@ -8,7 +8,7 @@ import { getLogger } from '../../utils/logger.js';
 import { formatVariable, formatVariableList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
 import { handleError } from '../../utils/error-handler.js';
-import { ValidationError } from '../../types/cli-types.js';
+import { CLIValidationError } from '../../types/cli-types.js';
 
 const logger = getLogger();
 
@@ -73,7 +73,7 @@ export function createVariableCommands(): Command {
           try {
             parsedValue = JSON.parse(value);
           } catch (error) {
-            handleError(new ValidationError('值必须是有效的JSON格式'), {
+            handleError(new CLIValidationError('值必须是有效的JSON格式'), {
               operation: 'setVariable',
               additionalInfo: { threadId, variableName, value }
             });

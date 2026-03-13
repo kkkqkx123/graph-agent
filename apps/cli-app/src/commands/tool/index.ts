@@ -8,7 +8,7 @@ import { getLogger } from '../../utils/logger.js';
 import { formatTool, formatToolList } from '../../utils/formatter.js';
 import type { CommandOptions } from '../../types/cli-types.js';
 import { handleError } from '../../utils/error-handler.js';
-import { ValidationError } from '../../types/cli-types.js';
+import { CLIValidationError } from '../../types/cli-types.js';
 
 const logger = getLogger();
 
@@ -154,9 +154,9 @@ export function createToolCommands(): Command {
       name?: string;
       description?: string;
     }) => {
+      const updates: any = {};
       try {
         const adapter = new ToolAdapter();
-        const updates: any = {};
 
         if (options.name) updates.name = options.name;
         if (options.description) updates.description = options.description;
@@ -189,7 +189,7 @@ export function createToolCommands(): Command {
           result.errors.forEach(error => {
             console.log(`  - ${error}`);
           });
-          handleError(new ValidationError('配置验证失败'), {
+          handleError(new CLIValidationError('配置验证失败'), {
             operation: 'validateTool',
             additionalInfo: { file, errors: result.errors }
           });
@@ -229,7 +229,7 @@ export function createToolCommands(): Command {
           try {
             parameters = JSON.parse(options.params);
           } catch (error) {
-            handleError(new ValidationError('参数必须是有效的JSON格式'), {
+            handleError(new CLIValidationError('参数必须是有效的JSON格式'), {
               operation: 'executeTool',
               additionalInfo: { id, params: options.params }
             });
@@ -278,7 +278,7 @@ export function createToolCommands(): Command {
           try {
             parameters = JSON.parse(options.params);
           } catch (error) {
-            handleError(new ValidationError('参数必须是有效的JSON格式'), {
+            handleError(new CLIValidationError('参数必须是有效的JSON格式'), {
               operation: 'validateToolParameters',
               additionalInfo: { id, params: options.params }
             });
@@ -296,7 +296,7 @@ export function createToolCommands(): Command {
           result.errors.forEach(error => {
             console.log(`  - ${error}`);
           });
-          handleError(new ValidationError('参数验证失败'), {
+          handleError(new CLIValidationError('参数验证失败'), {
             operation: 'validateToolParameters',
             additionalInfo: { id, errors: result.errors }
           });
