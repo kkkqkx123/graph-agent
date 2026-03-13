@@ -37,7 +37,6 @@ export async function emitHookEvent(
   try {
     await emitEvent(event);
   } catch (error) {
-    // 抛出事件系统错误，由 ErrorService 统一处理
     throw new EventSystemError(
       `Failed to emit custom event "${eventName}" for node "${node.id}"`,
       'emit',

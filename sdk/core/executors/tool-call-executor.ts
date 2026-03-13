@@ -365,7 +365,6 @@ export class ToolCallExecutor {
             this.checkpointDependencies
           );
         } catch (error) {
-          // 抛出检查点错误，由 ErrorService 统一处理
           throw new CheckpointError(
             `Failed to create checkpoint before tool "${toolCall.name}"`,
             'create',
@@ -517,7 +516,6 @@ export class ToolCallExecutor {
             this.checkpointDependencies
           );
         } catch (error) {
-          // 抛出检查点错误，由 ErrorService 统一处理
           throw new CheckpointError(
             `Failed to create checkpoint after tool "${toolCall.name}"`,
             'create',

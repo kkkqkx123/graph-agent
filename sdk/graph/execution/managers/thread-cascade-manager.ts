@@ -58,7 +58,6 @@ export class ThreadCascadeManager {
           cancelledCount++;
         }
       } catch (error) {
-        // 抛出状态管理错误，由 ErrorService 统一处理
         throw new StateManagementError(
           `Failed to cancel child thread ${childThreadId}`,
           'thread',

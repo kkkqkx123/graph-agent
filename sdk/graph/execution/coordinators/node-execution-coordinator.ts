@@ -24,8 +24,9 @@ import type { InterruptionManager } from '../../../core/managers/interruption-ma
 import type { GraphNavigator } from '../../preprocessing/graph-navigator.js';
 import { LLMExecutionCoordinator } from './llm-execution-coordinator.js';
 import { enterSubgraph, exitSubgraph, getSubgraphInput, getSubgraphOutput } from '../handlers/subgraph-handler.js';
-import { CheckpointError } from '@modular-agent/types';
+import { CheckpointError, SDKError } from '@modular-agent/types';
 import { executeHook } from '../handlers/hook-handlers/index.js';
+import { handleErrorWithContext } from '../../../core/utils/error-utils.js';
 import { now, diffTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
 import { getNodeHandler } from '../handlers/node-handlers/index.js';
 import { SUBGRAPH_METADATA_KEYS, SubgraphBoundaryType } from '@modular-agent/types';
@@ -202,15 +203,14 @@ export class NodeExecutionCoordinator {
         );
         logger.debug('Interruption checkpoint created', { threadId, nodeId, type });
       } catch (error) {
-        // 抛出检查点错误，由 ErrorService 统一处理
-        throw new CheckpointError(
-          'Failed to create interruption checkpoint',
-          'create',
-          undefined,
-          nodeId,
-          undefined,
-          { nodeId, originalError: getErrorOrNew(error) }
+        // threadContext 是 ThreadEntity 类型
+        await handleErrorWithContext(
+          this.eventManager,
+          getErrorOrNew(error) as SDKError,
+          threadContext,
+          'CREATE_INTERRUPTION_CHECKPOINT'
         );
+        throw error;
       }
     }
 
@@ -313,15 +313,13 @@ export class NodeExecutionCoordinator {
               this.checkpointDependencies
             );
           } catch (error) {
-            // 抛出检查点错误，由 ErrorService 统一处理
-            throw new CheckpointError(
-              `Failed to create checkpoint before node "${node.name}"`,
-              'create',
-              undefined,
-              node.id,
-              undefined,
-              { nodeId: node.id, nodeName: node.name, originalError: getErrorOrNew(error) }
+            await handleErrorWithContext(
+              this.eventManager,
+              getErrorOrNew(error) as SDKError,
+              threadEntity,
+              'CREATE_CHECKPOINT'
             );
+            throw error;
           }
         }
       }
@@ -388,15 +386,13 @@ export class NodeExecutionCoordinator {
               this.checkpointDependencies
             );
           } catch (error) {
-            // 抛出检查点错误，由 ErrorService 统一处理
-            throw new CheckpointError(
-              `Failed to create checkpoint after node "${node.name}"`,
-              'create',
-              undefined,
-              node.id,
-              undefined,
-              { nodeId: node.id, nodeName: node.name, originalError: getErrorOrNew(error) }
+            await handleErrorWithContext(
+              this.eventManager,
+              getErrorOrNew(error) as SDKError,
+              threadEntity,
+              'CREATE_CHECKPOINT_AFTER'
             );
+            throw error;
           }
         }
       }
@@ -425,14 +421,21 @@ export class NodeExecutionCoordinator {
 
       return nodeResult;
     } catch (error) {
-      logger.warn('Node execution error', { threadId, nodeId, error: getErrorOrNew(error) });
+      // 使用统一的错误处理器处理错误
+      const enhancedError = await handleErrorWithContext(
+        this.eventManager,
+        getErrorOrNew(error) as SDKError,
+        threadEntity,
+        'EXECUTE_NODE'
+      );
+
       // 处理节点执行错误
       const errorResult: NodeExecutionResult = {
         nodeId,
         nodeType,
         status: 'FAILED',
         step: threadEntity.getNodeResults().length + 1,
-        error,
+        error: enhancedError,
         startTime: now(),
         endTime: now(),
         executionTime: 0
@@ -444,7 +447,7 @@ export class NodeExecutionCoordinator {
         threadId: threadEntity.getThreadId(),
         workflowId: threadEntity.getWorkflowId(),
         nodeId,
-        error: getErrorOrNew(error)
+        error: enhancedError
       });
       await emit(this.eventManager, nodeFailedEvent);
 
