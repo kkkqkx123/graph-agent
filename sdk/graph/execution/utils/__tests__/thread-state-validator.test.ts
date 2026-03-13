@@ -113,8 +113,8 @@ describe('validateTransition', () => {
     } catch (error) {
       expect(error).toBeInstanceOf(RuntimeValidationError);
       const validationError = error as RuntimeValidationError;
-      expect(validationError.context?.operation).toBe('validateStateTransition');
-      expect(validationError.context?.field).toBe('thread.status');
+      expect(validationError.context?.['operation']).toBe('validateStateTransition');
+      expect(validationError.context?.['field']).toBe('thread.status');
     }
   });
 });

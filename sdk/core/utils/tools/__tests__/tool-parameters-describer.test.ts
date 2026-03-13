@@ -10,7 +10,7 @@ import {
   getRequiredParameters,
   getOptionalParameters,
   hasParameters
-} from '../tool-parameters-describer';
+} from '../tool-parameters-describer.js';
 import type { Tool } from '@modular-agent/types';
 
 // Mock 模板和工具

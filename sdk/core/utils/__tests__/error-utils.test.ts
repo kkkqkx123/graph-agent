@@ -8,9 +8,9 @@ import {
   logError,
   emitErrorEvent,
   handleError
-} from '../error-utils';
+} from '../error-utils.js';
 import { SDKError } from '@modular-agent/types';
-import type { EventManager } from '../../managers/event-manager';
+import type { EventManager } from '../../managers/event-manager.js';
 
 // Mock logger
 vi.mock('../../../utils/logger', () => ({
@@ -45,8 +45,8 @@ describe('Error Utils', () => {
     vi.clearAllMocks();
 
     // 获取 mocked modules
-    const { logger } = await import('../../../utils/logger');
-    const { safeEmit } = await import('../event/event-emitter');
+    const { logger } = await import('../../../utils/logger.js');
+    const { safeEmit } = await import('../event/event-emitter.js');
 
     mockLogger = logger;
     mockSafeEmit = safeEmit;

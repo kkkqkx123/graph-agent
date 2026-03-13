@@ -62,8 +62,8 @@ describe('createThreadStateCheckHook', () => {
     expect(hook.eventName).toBe('validation.thread_status_check');
     expect(hook.weight).toBe(200);
     expect(hook.eventPayload).toBeDefined();
-    expect(hook.eventPayload!.allowedStates).toEqual(['RUNNING']);
-    expect(hook.eventPayload!.handler).toBeInstanceOf(Function);
+    expect(hook.eventPayload!['allowedStates']).toEqual(['RUNNING']);
+    expect(hook.eventPayload!['handler']).toBeInstanceOf(Function);
   });
 
   it('当线程状态在允许列表中时，不抛出错误', async () => {
@@ -73,7 +73,7 @@ describe('createThreadStateCheckHook', () => {
     });
 
     // 不应该抛出错误
-    await expect(hook.eventPayload!.handler(context)).resolves.toBeUndefined();
+    await expect(hook.eventPayload!['handler'](context)).resolves.toBeUndefined();
   });
 
   it('当线程状态不在允许列表中时，抛出 ExecutionError', async () => {
@@ -82,11 +82,11 @@ describe('createThreadStateCheckHook', () => {
       thread: { ...createMockExecutionContext().thread, status: 'COMPLETED' }
     });
 
-    await expect(hook.eventPayload!.handler(context))
+    await expect(hook.eventPayload!['handler'](context))
       .rejects
       .toThrow(ExecutionError);
 
-    await expect(hook.eventPayload!.handler(context))
+    await expect(hook.eventPayload!['handler'](context))
       .rejects
       .toThrow('Thread is in COMPLETED state, expected: RUNNING');
   });
@@ -98,25 +98,25 @@ describe('createThreadStateCheckHook', () => {
     const context1 = createMockExecutionContext({
       thread: { ...createMockExecutionContext().thread, status: 'RUNNING' }
     });
-    await expect(hook.eventPayload!.handler(context1)).resolves.toBeUndefined();
+    await expect(hook.eventPayload!['handler'](context1)).resolves.toBeUndefined();
 
     // 测试 PAUSED 状态
     const context2 = createMockExecutionContext({
       thread: { ...createMockExecutionContext().thread, status: 'PAUSED' }
     });
-    await expect(hook.eventPayload!.handler(context2)).resolves.toBeUndefined();
+    await expect(hook.eventPayload!['handler'](context2)).resolves.toBeUndefined();
 
     // 测试 CREATED 状态
     const context3 = createMockExecutionContext({
       thread: { ...createMockExecutionContext().thread, status: 'CREATED' }
     });
-    await expect(hook.eventPayload!.handler(context3)).resolves.toBeUndefined();
+    await expect(hook.eventPayload!['handler'](context3)).resolves.toBeUndefined();
 
     // 测试不允许的状态
     const context4 = createMockExecutionContext({
       thread: { ...createMockExecutionContext().thread, status: 'FAILED' }
     });
-    await expect(hook.eventPayload!.handler(context4)).rejects.toThrow();
+    await expect(hook.eventPayload!['handler'](context4)).rejects.toThrow();
   });
 
   it('使用默认允许状态列表', async () => {
@@ -125,7 +125,7 @@ describe('createThreadStateCheckHook', () => {
       thread: { ...createMockExecutionContext().thread, status: 'RUNNING' }
     });
 
-    await expect(hook.eventPayload!.handler(context)).resolves.toBeUndefined();
+    await expect(hook.eventPayload!['handler'](context)).resolves.toBeUndefined();
   });
 });
 
@@ -138,7 +138,7 @@ describe('createCustomValidationHook', () => {
     expect(hook.eventName).toBe('validation.custom_check');
     expect(hook.weight).toBe(150);
     expect(hook.eventPayload).toBeDefined();
-    expect(hook.eventPayload!.handler).toBe(validator);
+    expect(hook.eventPayload!['handler']).toBe(validator);
   });
 
   it('支持自定义事件名称', () => {
@@ -162,7 +162,7 @@ describe('createCustomValidationHook', () => {
     const hook = createCustomValidationHook(validator);
     const context = createMockExecutionContext();
 
-    await expect(hook.eventPayload!.handler(context)).resolves.toBeUndefined();
+    await expect(hook.eventPayload!['handler'](context)).resolves.toBeUndefined();
     expect(validator).toHaveBeenCalledWith(context);
   });
 
@@ -171,7 +171,7 @@ describe('createCustomValidationHook', () => {
     const hook = createCustomValidationHook(validator);
     const context = createMockExecutionContext();
 
-    await expect(hook.eventPayload!.handler(context)).rejects.toThrow('Validation failed');
+    await expect(hook.eventPayload!['handler'](context)).rejects.toThrow('Validation failed');
   });
 
   it('支持同步验证函数', async () => {
@@ -180,7 +180,7 @@ describe('createCustomValidationHook', () => {
     const context = createMockExecutionContext();
 
     // 同步函数直接调用，不返回 Promise
-    const result = hook.eventPayload!.handler(context);
+    const result = hook.eventPayload!['handler'](context);
     expect(result).toBeUndefined();
     expect(validator).toHaveBeenCalledWith(context);
   });
@@ -195,7 +195,7 @@ describe('createCustomValidationHook', () => {
     const hook = createCustomValidationHook(validator);
     const context = createMockExecutionContext();
 
-    await hook.eventPayload!.handler(context);
+    await hook.eventPayload!['handler'](context);
     expect(validator).toHaveBeenCalled();
   });
 });
@@ -208,8 +208,8 @@ describe('createPermissionCheckHook', () => {
     expect(hook.eventName).toBe('business.permission_check');
     expect(hook.weight).toBe(100);
     expect(hook.eventPayload).toBeDefined();
-    expect(hook.eventPayload!.requiredPermissions).toEqual(['read', 'write']);
-    expect(hook.eventPayload!.handler).toBeInstanceOf(Function);
+    expect(hook.eventPayload!['requiredPermissions']).toEqual(['read', 'write']);
+    expect(hook.eventPayload!['handler']).toBeInstanceOf(Function);
   });
 
   it('当用户有所需权限时，不抛出错误', async () => {
@@ -225,7 +225,7 @@ describe('createPermissionCheckHook', () => {
       }
     });
 
-    await expect(hook.eventPayload!.handler(context)).resolves.toBeUndefined();
+    await expect(hook.eventPayload!['handler'](context)).resolves.toBeUndefined();
   });
 
   it('当用户缺少权限时，抛出 ExecutionError', async () => {
@@ -241,11 +241,11 @@ describe('createPermissionCheckHook', () => {
       }
     });
 
-    await expect(hook.eventPayload!.handler(context))
+    await expect(hook.eventPayload!['handler'](context))
       .rejects
       .toThrow(ExecutionError);
 
-    await expect(hook.eventPayload!.handler(context))
+    await expect(hook.eventPayload!['handler'](context))
       .rejects
       .toThrow('Missing permissions: write, admin');
   });
@@ -263,7 +263,7 @@ describe('createPermissionCheckHook', () => {
       }
     });
 
-    await expect(hook.eventPayload!.handler(context))
+    await expect(hook.eventPayload!['handler'](context))
       .rejects
       .toThrow('Missing permissions: read, write');
   });
@@ -281,7 +281,7 @@ describe('createPermissionCheckHook', () => {
       }
     });
 
-    await expect(hook.eventPayload!.handler(context))
+    await expect(hook.eventPayload!['handler'](context))
       .rejects
       .toThrow('Missing permissions: read');
   });
@@ -296,7 +296,7 @@ describe('createAuditLoggingHook', () => {
     expect(hook.eventName).toBe('monitoring.execution_audit');
     expect(hook.weight).toBe(50);
     expect(hook.eventPayload).toBeDefined();
-    expect(hook.eventPayload!.handler).toBeInstanceOf(Function);
+    expect(hook.eventPayload!['handler']).toBeInstanceOf(Function);
   });
 
   it('调用审计服务记录日志', async () => {
@@ -322,7 +322,7 @@ describe('createAuditLoggingHook', () => {
       }
     }) as any;
 
-    await hook.eventPayload!.handler(context);
+    await hook.eventPayload!['handler'](context);
 
     expect(mockLog).toHaveBeenCalledTimes(1);
     expect(mockLog).toHaveBeenCalledWith(expect.objectContaining({
@@ -344,9 +344,9 @@ describe('createAuditLoggingHook', () => {
     const context = createMockExecutionContext();
 
     if (hook.eventPayload) {
-      await hook.eventPayload.handler(context);
+      await hook.eventPayload['handler'](context);
 
-      const loggedEvent = mockLog.mock.calls[0][0];
+      const loggedEvent = mockLog.mock.calls[0]![0];
       expect(loggedEvent.timestamp).toBeInstanceOf(Date);
     }
   });
@@ -357,6 +357,6 @@ describe('createAuditLoggingHook', () => {
     const hook = createAuditLoggingHook(auditService);
     const context = createMockExecutionContext();
 
-    await expect(hook.eventPayload!.handler(context)).rejects.toThrow('Audit service error');
+    await expect(hook.eventPayload!['handler'](context)).rejects.toThrow('Audit service error');
   });
 });

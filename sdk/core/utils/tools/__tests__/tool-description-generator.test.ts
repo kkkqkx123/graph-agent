@@ -10,7 +10,7 @@ import {
   generateToolTableRow,
   generateToolTable,
   type ToolDescriptionFormat
-} from '../tool-description-generator';
+} from '../tool-description-generator.js';
 import type { Tool } from '@modular-agent/types';
 
 // Mock 模板和工具
