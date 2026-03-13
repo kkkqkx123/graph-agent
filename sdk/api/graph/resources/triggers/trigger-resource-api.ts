@@ -240,7 +240,7 @@ export class TriggerResourceAPI extends GenericResourceAPI<Trigger, string, Trig
     };
 
     for (const context of threadContexts) {
-      const threadId = context.thread.id;
+      const threadId = context.id;
       const triggers = context.triggerManager.getAll();
       
       stats.byThread[threadId] = triggers.length;

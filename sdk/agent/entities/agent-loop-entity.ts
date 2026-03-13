@@ -267,24 +267,10 @@ export class AgentLoopEntity {
   }
 
   /**
-   * 设置暂停标志
-   */
-  setShouldPause(value: boolean): void {
-    this.state.setShouldPause(value);
-  }
-
-  /**
    * 检查是否应该停止
    */
   shouldStop(): boolean {
     return this.state.shouldStop();
-  }
-
-  /**
-   * 设置停止标志
-   */
-  setShouldStop(value: boolean): void {
-    this.state.setShouldStop(value);
   }
 
   /**

@@ -179,7 +179,7 @@ export class ThreadBuilder {
     });
 
     // 步骤7：创建 ThreadEntity
-    const threadEntity = new ThreadEntity(thread, executionState, conversationManager);
+    const threadEntity = new ThreadEntity(thread, executionState, undefined, conversationManager);
 
     return threadEntity;
   }
@@ -258,7 +258,7 @@ export class ThreadBuilder {
     }
 
     // 创建并返回 ThreadEntity
-    const copiedThreadEntity = new ThreadEntity(copiedThread, executionState, conversationManager);
+    const copiedThreadEntity = new ThreadEntity(copiedThread, executionState, undefined, conversationManager);
 
     logger.debug('Thread copy created', { copiedThreadId, sourceThreadId: sourceThread.id });
 
@@ -335,7 +335,7 @@ export class ThreadBuilder {
     }
 
     // 创建并返回 ThreadEntity
-    const forkThreadEntity = new ThreadEntity(forkThread, executionState, conversationManager);
+    const forkThreadEntity = new ThreadEntity(forkThread, executionState, undefined, conversationManager);
 
     logger.debug('Fork thread created', { forkThreadId, parentThreadId: parentThread.id });
 

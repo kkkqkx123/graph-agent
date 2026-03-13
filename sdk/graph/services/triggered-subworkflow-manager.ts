@@ -355,8 +355,8 @@ export class TriggeredSubworkflowManager implements TaskManager {
     subgraphEntity: ThreadEntity
   ): Promise<void> {
     const startedEvent = buildTriggeredSubgraphStartedEvent({
-      threadId: task.mainThreadEntity.thread.id,
-      workflowId: task.mainThreadEntity.thread.workflowId,
+      threadId: task.mainThreadEntity.id,
+      workflowId: task.mainThreadEntity.getWorkflowId(),
       subgraphId: task.subgraphId,
       triggerId: task.triggerId,
       input: task.input
@@ -376,8 +376,8 @@ export class TriggeredSubworkflowManager implements TaskManager {
     }
 
     const completedEvent = buildTriggeredSubgraphCompletedEvent({
-      threadId: subgraphEntity.thread.id,
-      workflowId: subgraphEntity.thread.workflowId,
+      threadId: subgraphEntity.id,
+      workflowId: subgraphEntity.getWorkflowId(),
       subgraphId: subgraphEntity.getTriggeredSubworkflowId() || '',
       triggerId: '',
       output: subgraphEntity.getOutput(),

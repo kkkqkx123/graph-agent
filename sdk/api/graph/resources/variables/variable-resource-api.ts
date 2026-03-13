@@ -197,7 +197,8 @@ export class VariableResourceAPI extends GenericResourceAPI<any, string, Variabl
 
     for (const threadEntity of threadContexts) {
       const threadId = threadEntity.id;
-      const variables = threadEntity.thread.variableScopes.thread;
+      const thread = threadEntity.getThread();
+      const variables = thread.variableScopes.thread;
       
       stats.byThread[threadId] = Object.keys(variables).length;
       stats.totalVariables += Object.keys(variables).length;
@@ -306,7 +307,7 @@ export class VariableResourceAPI extends GenericResourceAPI<any, string, Variabl
     if (!threadContext) {
       throw new ThreadContextNotFoundError(`Thread not found: ${threadId}`, threadId);
     }
-    return threadContext.thread;
+    return threadContext.getThread();
   }
 
   /**

@@ -56,6 +56,6 @@ export class RestoreFromCheckpointCommand extends BaseCommand<Thread> {
       this.params.checkpointId,
       dependencies
     );
-    return threadContext.thread;
+    return threadContext.getThread();
   }
 }

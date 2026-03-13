@@ -60,7 +60,7 @@ export class CheckpointCoordinator {
       throw new ThreadContextNotFoundError(`ThreadEntity not found`, threadId);
     }
 
-    const thread = threadEntity.thread;
+    const thread = threadEntity.getThread();
 
     // 步骤2：提取 ThreadStateSnapshot
     const currentState = CheckpointCoordinator.extractThreadState(threadEntity, thread);
@@ -330,7 +330,7 @@ export class CheckpointCoordinator {
     // 步骤10：创建 ThreadEntity
     const { ExecutionState } = await import('../../entities/execution-state.js');
     const executionState = new ExecutionState();
-    const threadEntity = new ThreadEntity(thread as Thread, executionState, conversationManager);
+    const threadEntity = new ThreadEntity(thread as Thread, executionState, undefined, conversationManager);
 
     // 步骤12：恢复触发器状态
     if (threadState.triggerStates) {

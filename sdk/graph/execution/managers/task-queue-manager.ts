@@ -228,8 +228,8 @@ export class TaskQueueManager {
 
     // 触发完成事件
     const completedEvent = buildTriggeredSubgraphCompletedEvent({
-      threadId: queueTask.threadEntity.thread.id,
-      workflowId: queueTask.threadEntity.thread.workflowId,
+      threadId: queueTask.threadEntity.id,
+      workflowId: queueTask.threadEntity.getWorkflowId(),
       subgraphId: queueTask.threadEntity.getTriggeredSubworkflowId() || '',
       triggerId: '',
       output: queueTask.threadEntity.getOutput(),
@@ -267,8 +267,8 @@ export class TaskQueueManager {
 
     // 触发失败事件
     const failedEvent = buildTriggeredSubgraphFailedEvent({
-      threadId: queueTask.threadEntity.thread.id,
-      workflowId: queueTask.threadEntity.thread.workflowId,
+      threadId: queueTask.threadEntity.id,
+      workflowId: queueTask.threadEntity.getWorkflowId(),
       subgraphId: queueTask.threadEntity.getTriggeredSubworkflowId() || '',
       triggerId: '',
       error: getErrorOrNew(error)
@@ -299,8 +299,8 @@ export class TaskQueueManager {
 
       // 触发取消事件（使用 FAILED 事件类型，因为 CANCELLED 事件类型不存在）
       const cancelledEvent = buildTriggeredSubgraphFailedEvent({
-        threadId: queueTask.threadEntity.thread.id,
-        workflowId: queueTask.threadEntity.thread.workflowId,
+        threadId: queueTask.threadEntity.id,
+        workflowId: queueTask.threadEntity.getWorkflowId(),
         subgraphId: queueTask.threadEntity.getTriggeredSubworkflowId() || '',
         triggerId: '',
         error: new Error('Task cancelled')

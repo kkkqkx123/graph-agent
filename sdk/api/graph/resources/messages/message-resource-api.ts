@@ -63,7 +63,7 @@ export class MessageResourceAPI extends GenericResourceAPI<LLMMessage, string, M
     // 消息通常通过线程实体获取，这里需要遍历所有线程
     const threadEntities = this.registry.getAll();
     for (const threadEntity of threadEntities) {
-      const messages = threadEntity.messages || [];
+      const messages = threadEntity.getMessages() || [];
       const message = messages.find((m: LLMMessage, index: number) => `${threadEntity.id}-${index}` === id);
       if (message) {
         return message;
@@ -79,12 +79,12 @@ export class MessageResourceAPI extends GenericResourceAPI<LLMMessage, string, M
   protected async getAllResources(): Promise<LLMMessage[]> {
     const threadEntities = this.registry.getAll();
     const allMessages: LLMMessage[] = [];
-    
+
     for (const threadEntity of threadEntities) {
-      const messages = threadEntity.messages || [];
+      const messages = threadEntity.getMessages() || [];
       allMessages.push(...messages);
     }
-    
+
     return allMessages;
   }
 
@@ -153,7 +153,7 @@ export class MessageResourceAPI extends GenericResourceAPI<LLMMessage, string, M
       throw new ThreadContextNotFoundError(`Thread not found: ${threadId}`, threadId);
     }
 
-    let messages = threadEntity.messages || [];
+    let messages = threadEntity.getMessages() || [];
 
     // 应用排序
     if (orderBy === 'desc') {
@@ -182,7 +182,7 @@ export class MessageResourceAPI extends GenericResourceAPI<LLMMessage, string, M
       throw new ThreadContextNotFoundError(`Thread not found: ${threadId}`, threadId);
     }
 
-    const messages = threadEntity.messages || [];
+    const messages = threadEntity.getMessages() || [];
     return messages.slice(-count);
   }
 
@@ -198,7 +198,7 @@ export class MessageResourceAPI extends GenericResourceAPI<LLMMessage, string, M
       throw new ThreadContextNotFoundError(`Thread not found: ${threadId}`, threadId);
     }
 
-    const messages = threadEntity.messages || [];
+    const messages = threadEntity.getMessages() || [];
     return messages.filter((message: LLMMessage) => {
       const content = typeof message.content === 'string'
         ? message.content
@@ -218,7 +218,7 @@ export class MessageResourceAPI extends GenericResourceAPI<LLMMessage, string, M
       throw new ThreadContextNotFoundError(`Thread not found: ${threadId}`, threadId);
     }
 
-    const messages = threadEntity.messages || [];
+    const messages = threadEntity.getMessages() || [];
 
     const stats: MessageStats = {
       total: messages.length,
@@ -255,7 +255,7 @@ export class MessageResourceAPI extends GenericResourceAPI<LLMMessage, string, M
     };
 
     for (const threadEntity of threadEntities) {
-      const messages = threadEntity.messages || [];
+      const messages = threadEntity.getMessages() || [];
       const threadId = threadEntity.id;
       
       stats.byThread[threadId] = messages.length;

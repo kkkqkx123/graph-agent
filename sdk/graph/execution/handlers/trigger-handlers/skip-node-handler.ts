@@ -96,8 +96,8 @@ export async function skipNodeHandler(
 
     // 触发NODE_COMPLETED事件（状态为SKIPPED）
     const completedEvent = buildNodeCompletedEvent({
-      threadId: threadEntity.thread.id,
-      workflowId: threadEntity.thread.workflowId,
+      threadId: threadEntity.id,
+      workflowId: threadEntity.getWorkflowId(),
       nodeId,
       output: null,
       executionTime: 0

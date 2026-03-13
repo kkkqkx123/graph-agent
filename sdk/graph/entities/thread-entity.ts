@@ -1,50 +1,89 @@
 /**
  * ThreadEntity - Thread实体
- * 自包含的数据实体，封装Thread实例的数据访问操作
+ *
+ * 纯数据实体，封装Thread实例的数据访问操作。
+ * 参考 AgentLoopEntity 的设计模式。
+ *
+ * 注意：
+ * - 工厂方法由 ThreadFactory 提供
+ * - 生命周期管理由 ThreadLifecycle 提供
+ * - 快照功能由 ThreadSnapshotManager 提供
  */
 
-import type { ID } from '@modular-agent/types';
-import type { Thread, ThreadStatus, LLMMessage } from '@modular-agent/types';
+import type { ID, LLMMessage } from '@modular-agent/types';
+import type { Thread, ThreadStatus, ThreadType } from '@modular-agent/types';
 import type { PreprocessedGraph } from '@modular-agent/types';
 import type { SubgraphContext } from './execution-state.js';
 import { ExecutionState } from './execution-state.js';
-import type { MessageHistoryManager } from '../execution/managers/message-history-manager.js';
+import { ThreadState } from './thread-state.js';
+import { MessageHistoryManager, VariableStateManager } from '../../agent/execution/managers/index.js';
 import type { ConversationManager } from '../../core/managers/conversation-manager.js';
 
 /**
  * ThreadEntity - Thread实体
- * 封装Thread实例的数据访问操作
+ *
+ * 核心职责：
+ * - 封装执行实例的所有数据
+ * - 提供数据访问接口（getter/setter）
+ * - 持有状态管理器实例
+ *
+ * 设计原则：
+ * - 纯数据实体：只包含数据和访问方法
+ * - 不包含工厂方法：由 ThreadFactory 负责
+ * - 不包含生命周期方法：由 ThreadLifecycle 负责
+ * - 与 ConversationManager 可选集成
  */
 export class ThreadEntity {
-  // 公开访问thread对象，用于兼容现有代码
-  readonly thread: Thread;
-
-  // 暴露id属性用于API访问
+  /** 执行实例 ID */
   readonly id: string;
 
-  // 消息管理
-  messages: LLMMessage[] = [];
+  /** Thread 数据对象（私有，不暴露） */
+  private readonly thread: Thread;
 
-  // 触发器管理
-  triggerManager?: any;
+  /** 执行状态 */
+  readonly state: ThreadState;
 
-  // 变量存储
-  private variables: Map<string, any> = new Map();
+  /** 执行状态管理器（子图执行栈） */
+  private readonly executionState: ExecutionState;
 
-  // 中止控制器
+  /** 消息历史管理器 */
+  readonly messageHistoryManager: MessageHistoryManager;
+
+  /** 变量状态管理器 */
+  readonly variableStateManager: VariableStateManager;
+
+  /** 中止控制器 */
   abortController?: AbortController;
 
-  // 对话管理器
+  /** 对话管理器（可选集成） */
   conversationManager?: ConversationManager;
 
+  /** 触发器管理 */
+  triggerManager?: any;
+
+  /** 工具可见性协调器 */
+  toolVisibilityCoordinator?: any;
+
+  /**
+   * 构造函数
+   * @param thread Thread 数据对象
+   * @param executionState 执行状态管理器
+   * @param state 执行状态（可选，默认创建新实例）
+   * @param conversationManager 对话管理器（可选）
+   */
   constructor(
     thread: Thread,
-    private readonly executionState: ExecutionState,
+    executionState: ExecutionState,
+    state?: ThreadState,
     conversationManager?: ConversationManager
   ) {
-    this.thread = thread;
     this.id = thread.id;
+    this.thread = thread;
+    this.executionState = executionState;
+    this.state = state ?? new ThreadState();
     this.conversationManager = conversationManager;
+    this.messageHistoryManager = new MessageHistoryManager(thread.id);
+    this.variableStateManager = new VariableStateManager(thread.id);
   }
 
   // ========== 基础属性访问 ==========
@@ -58,19 +97,19 @@ export class ThreadEntity {
   }
 
   getStatus(): ThreadStatus {
-    return this.thread.status;
+    return this.state.status;
   }
 
   setStatus(status: ThreadStatus): void {
-    this.thread.status = status;
+    this.state.status = status;
   }
 
-  getThreadType(): string {
+  getThreadType(): ThreadType {
     return this.thread.threadType || 'MAIN';
   }
 
-  setThreadType(threadType: string): void {
-    this.thread.threadType = threadType as any;
+  setThreadType(threadType: ThreadType): void {
+    this.thread.threadType = threadType;
   }
 
   getCurrentNodeId(): string {
@@ -222,32 +261,97 @@ export class ThreadEntity {
     this.thread.triggeredSubworkflowContext.triggeredSubworkflowId = subworkflowId;
   }
 
-  // ========== 运行时控制 ==========
+  // ========== 消息管理 ==========
 
-  shouldPause(): boolean {
-    return this.thread.shouldPause || false;
+  /**
+   * 添加消息
+   * @param message LLM 消息
+   */
+  addMessage(message: LLMMessage): void {
+    this.messageHistoryManager.addMessage(message);
+
+    // 同步到 ConversationManager（如果存在）
+    if (this.conversationManager) {
+      this.conversationManager.addMessage(message);
+    }
   }
 
-  setShouldPause(shouldPause: boolean): void {
-    this.thread.shouldPause = shouldPause;
+  /**
+   * 获取所有消息
+   */
+  getMessages(): LLMMessage[] {
+    return this.messageHistoryManager.getMessages();
   }
 
-  shouldStop(): boolean {
-    return this.thread.shouldStop || false;
+  /**
+   * 获取最近的消息
+   * @param count 消息数量
+   */
+  getRecentMessages(count: number): LLMMessage[] {
+    return this.messageHistoryManager.getRecentMessages(count);
   }
 
-  setShouldStop(shouldStop: boolean): void {
-    this.thread.shouldStop = shouldStop;
+  /**
+   * 设置消息历史
+   * @param messages 消息列表
+   */
+  setMessages(messages: LLMMessage[]): void {
+    this.messageHistoryManager.setMessages(messages);
   }
 
-  // ========== 获取原始Thread对象 ==========
+  /**
+   * 清空消息历史
+   */
+  clearMessages(): void {
+    this.messageHistoryManager.clearMessages();
+  }
 
-  getThread(): Thread {
-    return this.thread;
+  /**
+   * 规范化消息历史
+   */
+  normalizeHistory(): void {
+    this.messageHistoryManager.normalizeHistory();
+  }
+
+  // ========== 变量管理 ==========
+
+  /**
+   * 获取变量
+   * @param name 变量名
+   */
+  getVariable(name: string): any {
+    return this.variableStateManager.getVariable(name);
+  }
+
+  /**
+   * 设置变量
+   * @param name 变量名
+   * @param value 变量值
+   */
+  setVariable(name: string, value: any): void {
+    this.variableStateManager.setVariable(name, value);
+  }
+
+  /**
+   * 获取所有变量
+   */
+  getAllVariables(): Record<string, any> {
+    return this.variableStateManager.getAllVariables();
+  }
+
+  /**
+   * 删除变量
+   * @param name 变量名
+   */
+  deleteVariable(name: string): boolean {
+    return this.variableStateManager.deleteVariable(name);
   }
 
   // ========== 中止控制 ==========
 
+  /**
+   * 获取中止信号
+   */
   getAbortSignal(): AbortSignal {
     if (!this.abortController) {
       this.abortController = new AbortController();
@@ -255,46 +359,93 @@ export class ThreadEntity {
     return this.abortController.signal;
   }
 
-  // ========== 变量管理 ==========
-
-  getVariable(name: string): any {
-    return this.variables.get(name);
+  /**
+   * 检查是否已中止
+   */
+  isAborted(): boolean {
+    return this.abortController?.signal.aborted ?? false;
   }
 
-  setVariable(name: string, value: any): void {
-    this.variables.set(name, value);
-  }
-
-  getAllVariables(): Record<string, any> {
-    return Object.fromEntries(this.variables);
+  /**
+   * 中止执行
+   * @param reason 中止原因（可选）
+   */
+  abort(reason?: string): void {
+    if (this.abortController) {
+      this.abortController.abort(reason);
+    }
   }
 
   // ========== 中断控制 ==========
 
+  /**
+   * 暂停执行
+   */
+  pause(): void {
+    this.state.pause();
+  }
+
+  /**
+   * 恢复执行
+   */
+  resume(): void {
+    this.state.resume();
+  }
+
+  /**
+   * 停止执行
+   */
+  stop(): void {
+    this.state.cancel();
+    this.abort();
+  }
+
+  /**
+   * 检查是否应该暂停
+   */
+  shouldPause(): boolean {
+    return this.state.shouldPause();
+  }
+
+  /**
+   * 检查是否应该停止
+   */
+  shouldStop(): boolean {
+    return this.state.shouldStop();
+  }
+
+  /**
+   * 中断执行
+   * @param type 中断类型
+   */
   interrupt(type: 'PAUSE' | 'STOP'): void {
-    if (type === 'PAUSE') {
-      this.setShouldPause(true);
-    } else {
-      this.setShouldStop(true);
+    this.state.interrupt(type);
+    if (type === 'STOP') {
+      this.abort();
     }
   }
 
+  /**
+   * 重置中断标志
+   */
   resetInterrupt(): void {
-    this.setShouldPause(false);
-    this.setShouldStop(false);
+    this.state.resetInterrupt();
   }
 
-  // ========== 对话管理 ==========
+  // ========== 对话管理器 ==========
 
-  addMessageToConversation(message: LLMMessage): void {
-    this.messages.push(message);
+  /**
+   * 获取对话管理器
+   */
+  getConversationManager(): ConversationManager | undefined {
+    return this.conversationManager;
   }
 
-  getConversationHistory(count?: number): LLMMessage[] {
-    if (count) {
-      return this.messages.slice(-count);
-    }
-    return this.messages;
+  /**
+   * 设置对话管理器
+   */
+  setConversationManager(conversationManager: ConversationManager): void {
+    this.conversationManager = conversationManager;
   }
 
   // ========== 触发器状态 ==========
@@ -304,22 +455,6 @@ export class ThreadEntity {
       triggers: this.triggerManager?.getAll() || []
     };
   }
-
-  // ========== 工具可见性协调器 ==========
-
-  toolVisibilityCoordinator?: any;
-
-  // ========== 对话管理器访问 ==========
-
-  getConversationManager(): ConversationManager | undefined {
-    return this.conversationManager;
-  }
-
-  setConversationManager(conversationManager: ConversationManager): void {
-    this.conversationManager = conversationManager;
-  }
-
-  // ========== 触发器状态恢复 ==========
 
   restoreTriggerState(triggerStates: any): void {
     if (this.triggerManager && triggerStates?.triggers) {
@@ -350,9 +485,16 @@ export class ThreadEntity {
       workflowId: this.getWorkflowId(),
       nodeId: this.getCurrentNodeId(),
     } as T);
-
   }
 
-  // ========== 上下文日志记录器 ==========
+  // ========== 获取原始Thread对象（只读访问）==========
 
+  /**
+   * 获取 Thread 对象的只读引用
+   * 注意：此方法仅用于兼容现有代码，应避免直接修改返回的对象
+   * @deprecated 应使用 Entity 的访问方法
+   */
+  getThread(): Thread {
+    return this.thread;
+  }
 }

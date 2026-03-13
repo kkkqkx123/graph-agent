@@ -89,7 +89,7 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
     if (!threadEntity) {
       return null;
     }
-    return threadEntity.thread;
+    return threadEntity.getThread();
   }
 
   /**
@@ -97,7 +97,7 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
    * @returns 线程实例数组
    */
   protected async getAllResources(): Promise<Thread[]> {
-    return this.dependencies.getThreadRegistry().getAll().map((threadEntity: any) => threadEntity.thread);
+    return this.dependencies.getThreadRegistry().getAll().map((threadEntity: any) => threadEntity.getThread());
   }
 
   /**

@@ -137,7 +137,7 @@ export class ToolVisibilityCoordinator {
       )
     };
 
-    threadEntity.addMessageToConversation(llmMessage);
+    threadEntity.addMessage(llmMessage);
 
     // 更新声明历史
     const declaration: VisibilityDeclaration = {
@@ -145,7 +145,7 @@ export class ToolVisibilityCoordinator {
       scope: newScope,
       scopeId: newScopeId,
       toolIds: [...availableTools],
-      messageIndex: threadEntity.getConversationHistory().length - 1,
+      messageIndex: threadEntity.getMessages().length - 1,
       changeType
     };
 
@@ -316,12 +316,12 @@ export class ToolVisibilityCoordinator {
     }
 
     const errors: string[] = [];
-    const conversationHistory = threadEntity.getConversationHistory();
+    const conversationHistory = threadEntity.getMessages();
 
     // 检查每个声明记录
     for (let i = 0; i < context.declarationHistory.length; i++) {
       const declaration = context.declarationHistory[i]!;
-      
+
       // 检查消息索引是否有效
       if (declaration.messageIndex < 0 ||
           declaration.messageIndex >= conversationHistory.length) {
@@ -346,7 +346,7 @@ export class ToolVisibilityCoordinator {
 
     // 检查是否有孤立的声明消息（在历史中但不在记录中）
     const declarationMessages = conversationHistory.filter(
-      msg => msg && msg.metadata && msg.metadata['type'] === 'tool_visibility_declaration'
+      (msg: any) => msg && msg.metadata && msg.metadata['type'] === 'tool_visibility_declaration'
     );
     
     if (declarationMessages.length !== context.declarationHistory.length) {
@@ -376,7 +376,7 @@ export class ToolVisibilityCoordinator {
       return;
     }
 
-    const conversationHistory = threadEntity.getConversationHistory();
+    const conversationHistory = threadEntity.getMessages();
 
     if (operation === 'clear') {
       // 清空所有声明历史
@@ -431,7 +431,7 @@ export class ToolVisibilityCoordinator {
       return;
     }
 
-    const conversationHistory = threadEntity.getConversationHistory();
+    const conversationHistory = threadEntity.getMessages();
     
     // 1. 扫描对话历史中的所有工具可见性声明消息
     const declarationMessages: Array<{ index: number; message: LLMMessage }> = [];

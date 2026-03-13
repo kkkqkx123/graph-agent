@@ -86,8 +86,8 @@ export async function fork(
 
   // 触发THREAD_FORK_STARTED事件
   const forkStartedEvent = buildThreadForkStartedEvent({
-    threadId: parentThreadEntity.thread.id,
-    workflowId: parentThreadEntity.thread.workflowId,
+    threadId: parentThreadEntity.id,
+    workflowId: parentThreadEntity.getWorkflowId(),
     parentThreadId: parentThreadEntity.getThreadId(),
     forkConfig
   });
@@ -98,8 +98,8 @@ export async function fork(
 
   // 触发THREAD_FORK_COMPLETED事件
   const forkCompletedEvent = buildThreadForkCompletedEvent({
-    threadId: parentThreadEntity.thread.id,
-    workflowId: parentThreadEntity.thread.workflowId,
+    threadId: parentThreadEntity.id,
+    workflowId: parentThreadEntity.getWorkflowId(),
     parentThreadId: parentThreadEntity.getThreadId(),
     childThreadIds: [childThreadEntity.getThreadId()]
   });
@@ -153,8 +153,8 @@ export async function join(
     const parentThreadEntity = threadRegistry.get(parentThreadId);
     if (parentThreadEntity) {
       const joinStartedEvent = buildThreadJoinStartedEvent({
-        threadId: parentThreadEntity.thread.id,
-        workflowId: parentThreadEntity.thread.workflowId,
+        threadId: parentThreadEntity.id,
+        workflowId: parentThreadEntity.getWorkflowId(),
         parentThreadId: parentThreadEntity.getThreadId(),
         childThreadIds,
         joinStrategy
@@ -286,9 +286,9 @@ export async function copy(
 
   // 触发THREAD_COPY_STARTED事件
   const copyStartedEvent = buildThreadCopyStartedEvent({
-    threadId: sourceThreadEntity.thread.id,
-    workflowId: sourceThreadEntity.thread.workflowId,
-    sourceThreadId: sourceThreadEntity.thread.id
+    threadId: sourceThreadEntity.id,
+    workflowId: sourceThreadEntity.getWorkflowId(),
+    sourceThreadId: sourceThreadEntity.id
   });
   await safeEmit(eventManager, copyStartedEvent);
 
@@ -297,9 +297,9 @@ export async function copy(
 
   // 触发THREAD_COPY_COMPLETED事件
   const copyCompletedEvent = buildThreadCopyCompletedEvent({
-    threadId: sourceThreadEntity.thread.id,
-    workflowId: sourceThreadEntity.thread.workflowId,
-    sourceThreadId: sourceThreadEntity.thread.id,
+    threadId: sourceThreadEntity.id,
+    workflowId: sourceThreadEntity.getWorkflowId(),
+    sourceThreadId: sourceThreadEntity.id,
     copiedThreadId: copiedThreadEntity.getThreadId()
   });
   await safeEmit(eventManager, copyCompletedEvent);
@@ -442,8 +442,8 @@ async function waitForCompletion(
     const parentThreadEntity = threadRegistry.get(parentThreadId);
     if (parentThreadEntity) {
       const joinConditionMetEvent = buildThreadJoinConditionMetEvent({
-        threadId: parentThreadEntity.thread.id,
-        workflowId: parentThreadEntity.thread.workflowId,
+        threadId: parentThreadEntity.id,
+        workflowId: parentThreadEntity.getWorkflowId(),
         parentThreadId: parentThreadEntity.getThreadId(),
         childThreadIds,
         condition: joinStrategy
@@ -510,8 +510,8 @@ async function waitForCompletionByPolling(
     const parentThreadEntity = threadRegistry.get(parentThreadId);
     if (parentThreadEntity) {
       const joinConditionMetEvent = buildThreadJoinConditionMetEvent({
-        threadId: parentThreadEntity.thread.id,
-        workflowId: parentThreadEntity.thread.workflowId,
+        threadId: parentThreadEntity.id,
+        workflowId: parentThreadEntity.getWorkflowId(),
         parentThreadId: parentThreadEntity.getThreadId(),
         childThreadIds,
         condition: joinStrategy

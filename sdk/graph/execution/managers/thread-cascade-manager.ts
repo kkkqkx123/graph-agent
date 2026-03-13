@@ -43,7 +43,8 @@ export class ThreadCascadeManager {
     }
 
     // 从 triggeredSubworkflowContext 获取子线程ID列表
-    const childThreadIds = parentContext.thread.triggeredSubworkflowContext?.childThreadIds || [];
+    const parentThread = parentContext.getThread();
+    const childThreadIds = parentThread.triggeredSubworkflowContext?.childThreadIds || [];
     if (childThreadIds.length === 0) {
       return 0;
     }
@@ -86,7 +87,7 @@ export class ThreadCascadeManager {
       return false;
     }
 
-    const childThread = childContext.thread;
+    const childThread = childContext.getThread();
     const childStatus = childContext.getStatus();
 
     // 只取消运行中或暂停的子线程
@@ -119,7 +120,8 @@ export class ThreadCascadeManager {
     }
 
     // 从 triggeredSubworkflowContext 获取子线程ID列表
-    const childThreadIds = parentContext.thread.triggeredSubworkflowContext?.childThreadIds || [];
+    const parentThread = parentContext.getThread();
+    const childThreadIds = parentThread.triggeredSubworkflowContext?.childThreadIds || [];
     const statusMap = new Map<string, string>();
 
     for (const childThreadId of childThreadIds) {
@@ -164,7 +166,8 @@ export class ThreadCascadeManager {
     }
 
     // 获取子线程ID列表
-    const childThreadIds = parentContext.thread.triggeredSubworkflowContext?.childThreadIds || [];
+    const parentThread = parentContext.getThread();
+    const childThreadIds = parentThread.triggeredSubworkflowContext?.childThreadIds || [];
     if (childThreadIds.length === 0) {
       return true;
     }
@@ -280,7 +283,8 @@ export class ThreadCascadeManager {
     }
 
     // 从 triggeredSubworkflowContext 获取父线程ID
-    const parentThreadId = context.thread.triggeredSubworkflowContext?.parentThreadId;
+    const thread = context.getThread();
+    const parentThreadId = thread.triggeredSubworkflowContext?.parentThreadId;
     if (!parentThreadId) {
       return 1;
     }
@@ -301,7 +305,8 @@ export class ThreadCascadeManager {
     }
 
     // 从 triggeredSubworkflowContext 获取子线程ID列表
-    const childThreadIds = context.thread.triggeredSubworkflowContext?.childThreadIds || [];
+    const thread = context.getThread();
+    const childThreadIds = thread.triggeredSubworkflowContext?.childThreadIds || [];
     const allDescendants: string[] = [...childThreadIds];
 
     // 递归获取所有子线程的后代
