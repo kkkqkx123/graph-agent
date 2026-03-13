@@ -279,10 +279,7 @@ export class NodeExecutionCoordinator {
 
     try {
       // 步骤1：触发节点开始事件
-      const nodeStartedEvent = buildNodeStartedEvent({
-        threadId: threadEntity.getThreadId(),
-        workflowId: threadEntity.getWorkflowId(),
-        nodeId,
+      const nodeStartedEvent = threadEntity.buildEvent(buildNodeStartedEvent, {
         nodeType
       });
       await emit(this.eventManager, nodeStartedEvent);
@@ -399,20 +396,14 @@ export class NodeExecutionCoordinator {
 
       // 步骤8：触发节点完成事件
       if (nodeResult.status === 'COMPLETED') {
-        const nodeCompletedEvent = buildNodeCompletedEvent({
-          threadId: threadEntity.getThreadId(),
-          workflowId: threadEntity.getWorkflowId(),
-          nodeId,
+        const nodeCompletedEvent = threadEntity.buildEvent(buildNodeCompletedEvent, {
           output: threadEntity.getThread().output,
           executionTime: nodeResult.executionTime || 0
         });
         await emit(this.eventManager, nodeCompletedEvent);
         logger.debug('Node execution completed', { threadId, nodeId, executionTime: nodeResult.executionTime });
       } else if (nodeResult.status === 'FAILED') {
-        const nodeFailedEvent = buildNodeFailedEvent({
-          threadId: threadEntity.getThreadId(),
-          workflowId: threadEntity.getWorkflowId(),
-          nodeId,
+        const nodeFailedEvent = threadEntity.buildEvent(buildNodeFailedEvent, {
           error: getErrorOrNew(nodeResult.error)
         });
         await emit(this.eventManager, nodeFailedEvent);
@@ -443,10 +434,7 @@ export class NodeExecutionCoordinator {
 
       threadEntity.addNodeResult(errorResult);
 
-      const nodeFailedEvent = buildNodeFailedEvent({
-        threadId: threadEntity.getThreadId(),
-        workflowId: threadEntity.getWorkflowId(),
-        nodeId,
+      const nodeFailedEvent = threadEntity.buildEvent(buildNodeFailedEvent, {
         error: enhancedError
       });
       await emit(this.eventManager, nodeFailedEvent);
@@ -476,9 +464,7 @@ export class NodeExecutionCoordinator {
       );
 
       // 触发子图开始事件
-      const subgraphStartedEvent = buildSubgraphStartedEvent({
-        threadId: threadEntity.getThreadId(),
-        workflowId: threadEntity.getWorkflowId(),
+      const subgraphStartedEvent = threadEntity.buildEvent(buildSubgraphStartedEvent, {
         subgraphId: graphNode.workflowId,
         parentWorkflowId: graphNode.parentWorkflowId!,
         input
@@ -497,9 +483,7 @@ export class NodeExecutionCoordinator {
         });
 
         // 触发子图完成事件
-        const subgraphCompletedEvent = buildSubgraphCompletedEvent({
-          threadId: threadEntity.getThreadId(),
-          workflowId: threadEntity.getWorkflowId(),
+        const subgraphCompletedEvent = threadEntity.buildEvent(buildSubgraphCompletedEvent, {
           subgraphId: subgraphContext.workflowId,
           output,
           executionTime: diffTimestamp(subgraphContext.startTime, now())

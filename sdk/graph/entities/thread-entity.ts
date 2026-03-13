@@ -437,5 +437,52 @@ export class ThreadEntity {
   initializeToolVisibility(): void {
     // 工具可见性初始化逻辑由ToolVisibilityCoordinator处理
     // 这里只是占位符，实际初始化在协调器中完成
+
+  }
+
+  // ========== 事件构建（自动填充上下文）==========
+
+  /**
+   * 构建事件（自动填充 threadId, workflowId, nodeId）
+   * @param builder 事件构建器函数
+   * @param params 事件参数（不含上下文字段）
+   * @returns 完整事件对象
+   *
+   * @example
+   * const event = threadEntity.buildEvent(buildNodeStartedEvent, { nodeType: 'LLM' });
+   */
+  buildEvent<T extends { threadId?: string; workflowId?: string; nodeId?: string; timestamp: number; type: string }>(
+    builder: (params: T) => T,
+    params: Omit<T, 'threadId' | 'workflowId' | 'nodeId' | 'timestamp' | 'type'>
+  ): T {
+    return builder({
+      ...params,
+      threadId: this.id,
+      workflowId: this.getWorkflowId(),
+      nodeId: this.getCurrentNodeId(),
+    } as T);
+
+  }
+
+  // ========== 上下文日志记录器 ==========
+
+  /**
+   * 获取上下文日志记录器（自动包含 threadId, workflowId, nodeId）
+   * @param operation 操作名称
+   * @returns ContextualLogger 实例
+   *
+   * @example
+   * const logger = threadEntity.getLogger('node-execution');
+   * logger.debug('Starting execution'); // 自动包含上下文
+   */
+
+  getLogger(operation?: string): import('../../utils/contextual-logger.js').ContextualLogger {
+    const { createContextualLogger } = require('../../utils/contextual-logger.js');
+    return createContextualLogger({
+      threadId: this.id,
+      workflowId: this.getWorkflowId(),
+      nodeId: this.getCurrentNodeId(),
+      operation
+    });
   }
 }
