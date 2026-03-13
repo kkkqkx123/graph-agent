@@ -19,6 +19,7 @@ import type { MessageStreamEvent } from '../../../core/llm/message-stream-events
 import type { LLMExecutor } from '../../../core/executors/llm-executor.js';
 import type { ToolCallExecutor } from '../../../core/executors/tool-call-executor.js';
 import type { ToolService } from '../../../core/services/tool-service.js';
+import type { EventManager } from '../../../core/managers/event-manager.js';
 import { isAbortError, checkInterruption } from '@modular-agent/common-utils';
 import { executeAgentHook } from '../handlers/hook-handlers/index.js';
 import {
@@ -51,7 +52,8 @@ export class AgentStreamExecutor {
         private llmExecutor: LLMExecutor,
         private toolCallExecutor: ToolCallExecutor,
         private toolService: ToolService,
-        private emitAgentEvent: (event: any) => Promise<void>
+        private emitAgentEvent: (event: any) => Promise<void>,
+        private eventManager?: EventManager
     ) {}
 
     /**
@@ -206,7 +208,8 @@ export class AgentStreamExecutor {
                 const isInterruption = await handleAgentInterruptionHandler(
                     entity,
                     error,
-                    'llm_stream_call'
+                    'llm_stream_call',
+                    this.eventManager
                 );
                 if (isInterruption) {
                     yield {
@@ -221,7 +224,9 @@ export class AgentStreamExecutor {
             const standardizedError = await handleAgentError(
                 entity,
                 error,
-                'llm_stream_call'
+                'llm_stream_call',
+                undefined,
+                this.eventManager
             );
 
             yield {
@@ -294,7 +299,8 @@ export class AgentStreamExecutor {
                 const isInterruption = await handleAgentInterruptionHandler(
                     entity,
                     error,
-                    'message_stream_done'
+                    'message_stream_done',
+                    this.eventManager
                 );
                 if (isInterruption) {
                     yield {
@@ -309,7 +315,9 @@ export class AgentStreamExecutor {
             const standardizedError = await handleAgentError(
                 entity,
                 error,
-                'message_stream_done'
+                'message_stream_done',
+                undefined,
+                this.eventManager
             );
 
             yield {

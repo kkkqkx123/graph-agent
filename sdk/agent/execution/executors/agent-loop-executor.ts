@@ -34,7 +34,6 @@ import type { MessageStreamEvent } from '../../../core/llm/message-stream-events
 import { isAbortError, checkInterruption } from '@modular-agent/common-utils';
 import { LLMExecutor } from '../../../core/executors/llm-executor.js';
 import { ToolCallExecutor } from '../../../core/executors/tool-call-executor.js';
-import type { ErrorService } from '../../../core/services/error-service.js';
 import type { EventManager } from '../../../core/managers/event-manager.js';
 import { safeEmit } from '../../../core/utils/event/event-emitter.js';
 import { handleAgentError } from '../handlers/agent-error-handler.js';
@@ -73,7 +72,6 @@ export class AgentLoopExecutor {
     private llmExecutor: LLMExecutor;
     private toolCallExecutor: ToolCallExecutor;
     private toolService: ToolService;
-    private errorService?: ErrorService;
     private eventManager?: EventManager;
     private emitEvent?: (event: AgentCustomEvent) => Promise<void>;
 
@@ -84,13 +82,11 @@ export class AgentLoopExecutor {
     constructor(
         llmExecutor: LLMExecutor,
         toolService: ToolService,
-        errorService?: ErrorService,
         eventManager?: EventManager,
         emitEvent?: (event: AgentCustomEvent) => Promise<void>
     ) {
         this.llmExecutor = llmExecutor;
         this.toolService = toolService;
-        this.errorService = errorService;
         this.eventManager = eventManager;
         this.emitEvent = emitEvent;
         this.toolCallExecutor = new ToolCallExecutor(toolService);
@@ -105,7 +101,8 @@ export class AgentLoopExecutor {
             llmExecutor,
             this.toolCallExecutor,
             toolService,
-            this.emitAgentEvent.bind(this)
+            this.emitAgentEvent.bind(this),
+            eventManager
         );
     }
 
@@ -125,16 +122,9 @@ export class AgentLoopExecutor {
             this.llmExecutor,
             this.toolCallExecutor,
             this.toolService,
-            this.emitAgentEvent.bind(this)
+            this.emitAgentEvent.bind(this),
+            this.eventManager
         );
-    }
-
-    /**
-     * Set error service
-     * @param errorService Error service
-     */
-    setErrorService(errorService: ErrorService): void {
-        this.errorService = errorService;
     }
 
     /**
@@ -289,7 +279,9 @@ export class AgentLoopExecutor {
             const standardizedError = await handleAgentError(
                 entity,
                 error as Error,
-                'agent_loop_execution'
+                'agent_loop_execution',
+                undefined,
+                this.eventManager
             );
 
             return {

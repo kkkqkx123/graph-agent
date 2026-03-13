@@ -27,6 +27,8 @@ import {
   buildTriggeredSubgraphCompletedEvent,
   buildTriggeredSubgraphFailedEvent
 } from '../utils/event/event-builder.js';
+import { SDKError } from '@modular-agent/types';
+import { logError, emitErrorEvent } from '../../../core/utils/error-utils.js';
 
 /**
  * TaskQueueManager - 任务队列管理器
@@ -159,7 +161,19 @@ export class TaskQueueManager {
         this.executeTask(executor, queueTask);
       }
     } catch (error) {
-      logger.error('Error processing queue', { error: getErrorOrNew(error) });
+      const errorObj = getErrorOrNew(error);
+      const sdkError = new SDKError(
+        'Error processing queue',
+        'error',
+        {},
+        errorObj
+      );
+      logError(sdkError);
+      emitErrorEvent(this.eventManager, {
+        threadId: '',
+        workflowId: '',
+        error: sdkError
+      });
     } finally {
       this.isProcessing = false;
     }

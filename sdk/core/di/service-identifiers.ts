@@ -78,12 +78,6 @@ export const TriggerTemplateRegistry = Symbol('TriggerTemplateRegistry') as Serv
  */
 export const TaskRegistry = Symbol('TaskRegistry') as ServiceIdentifier<any>;
 
-/**
- * ErrorService - 错误服务
- * 管理错误的收集和处理
- */
-export const ErrorService = Symbol('ErrorService') as ServiceIdentifier<any>;
-
 // ============================================================
 // 执行层服务
 // ============================================================

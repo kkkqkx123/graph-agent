@@ -33,7 +33,8 @@ import {
   buildTriggeredSubgraphCompletedEvent,
   buildTriggeredSubgraphFailedEvent
 } from '../../graph/execution/utils/event/event-builder.js';
-import { RuntimeValidationError } from '@modular-agent/types';
+import { RuntimeValidationError, SDKError } from '@modular-agent/types';
+import { logError, emitErrorEvent } from '../../core/utils/error-utils.js';
 
 /**
  * TriggeredSubworkflowManager - 触发子工作流管理器（全局单例服务）
@@ -467,7 +468,19 @@ export class TriggeredSubworkflowManager implements TaskManager {
       try {
         await this.cancelTask(task.taskId);
       } catch (error) {
-        logger.error(`Failed to cancel task ${task.taskId}`, { taskId: task.taskId, error: getErrorOrNew(error) });
+        const errorObj = getErrorOrNew(error);
+        const sdkError = new SDKError(
+          `Failed to cancel task ${task.taskId}`,
+          'warning',
+          { threadId, taskId: task.taskId },
+          errorObj
+        );
+        logError(sdkError, { threadId, taskId: task.taskId });
+        emitErrorEvent(this.eventManager, {
+          threadId,
+          workflowId: '',
+          error: sdkError
+        });
       }
     }
 

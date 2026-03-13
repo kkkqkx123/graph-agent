@@ -4,23 +4,23 @@
  * 职责：
  * - 处理 Agent Loop 执行过程中的错误
  * - 统一错误标准化和上下文构建
- * - 集成 ErrorService 记录日志和触发事件
+ * - 集成错误处理工具函数记录日志和触发事件
  * - 管理 Agent Loop 状态
  *
  * 设计原则：
  * - 函数式实现，无状态
- * - 通过 DI 获取 ErrorService 单例
+ * - 使用无状态的错误处理工具函数
  * - severity 驱动：仅 ERROR 级别停止执行
  * - 与 Graph 模块的 error-handler.ts 保持一致
  */
 
 import type { AgentLoopEntity } from '../../entities/agent-loop-entity.js';
 import type { ErrorContext, SDKError } from '@modular-agent/types';
+import type { EventManager } from '../../../core/managers/event-manager.js';
 import { SDKError as SDKErrorClass } from '@modular-agent/types';
-import { getContainer } from '../../../core/di/index.js';
-import * as Identifiers from '../../../core/di/service-identifiers.js';
 import { isAbortError, checkInterruption } from '@modular-agent/common-utils';
 import { createContextualLogger } from '../../../utils/contextual-logger.js';
+import { handleError } from '../../../core/utils/error-utils.js';
 
 const logger = createContextualLogger({ component: 'AgentErrorHandler' });
 
@@ -87,13 +87,15 @@ function isRecoverableError(error: SDKError): boolean {
  * @param error 原始错误
  * @param operation 操作类型
  * @param additionalContext 额外的上下文信息
+ * @param eventManager 事件管理器
  * @returns 标准化后的错误
  */
 export async function handleAgentError(
     entity: AgentLoopEntity,
     error: Error,
     operation: string,
-    additionalContext?: Partial<ErrorContext>
+    additionalContext?: Partial<ErrorContext>,
+    eventManager?: EventManager
 ): Promise<SDKError> {
     // 构建错误上下文
     const context = buildAgentErrorContext(entity, operation, additionalContext);
@@ -115,10 +117,12 @@ export async function handleAgentError(
         recoverable: isRecoverableError(standardizedError)
     });
 
-    // 使用 ErrorService 处理错误（记录日志和触发事件）
-    const container = getContainer();
-    const errorService = container.get(Identifiers.ErrorService);
-    await errorService.handleError(standardizedError, context);
+    // 使用无状态的错误处理工具函数（记录日志和触发事件）
+    await handleError(eventManager, standardizedError, {
+        threadId: entity.id,
+        workflowId: context.workflowId || '',
+        nodeId: context.nodeId
+    });
 
     // 根据 severity 决定是否停止执行
     if (standardizedError.severity === 'error') {
@@ -146,12 +150,14 @@ export async function handleAgentError(
  * @param entity Agent Loop 实体
  * @param error 原始错误
  * @param operation 操作类型
+ * @param eventManager 事件管理器
  * @returns 是否为中断错误
  */
 export async function handleAgentInterruption(
     entity: AgentLoopEntity,
     error: Error,
-    operation: string
+    operation: string,
+    eventManager?: EventManager
 ): Promise<boolean> {
     if (!isAbortError(error)) {
         return false;
@@ -179,10 +185,12 @@ export async function handleAgentInterruption(
         error
     );
 
-    // 使用 ErrorService 处理
-    const container = getContainer();
-    const errorService = container.get(Identifiers.ErrorService);
-    await errorService.handleError(interruptionError, context);
+    // 使用无状态的错误处理工具函数
+    await handleError(eventManager, interruptionError, {
+        threadId: entity.id,
+        workflowId: context.workflowId || '',
+        nodeId: context.nodeId
+    });
 
     // 更新 Agent 状态
     if (result.type === 'paused') {

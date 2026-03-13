@@ -18,6 +18,7 @@ import {
   buildCheckpointDeletedEvent
 } from '../utils/event/event-builder.js';
 import { createContextualLogger } from '../../../utils/contextual-logger.js';
+import { logError, emitErrorEvent } from '../../../core/utils/error-utils.js';
 
 const logger = createContextualLogger({ operation: 'checkpoint-state-manager' });
 
@@ -192,8 +193,8 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
         try {
           await this.executeCleanup();
         } catch (error) {
-          // 抛出状态管理错误，由 ErrorService 统一处理
-          throw new StateManagementError(
+          // 创建状态管理错误
+          const stateManagementError = new StateManagementError(
             'Error executing cleanup policy',
             'checkpoint',
             'delete',
@@ -202,6 +203,21 @@ export class CheckpointStateManager implements LifecycleCapable<void> {
             undefined,
             { originalError: getErrorOrNew(error) }
           );
+
+          // 记录错误日志
+          logError(stateManagementError, {
+            threadId: checkpointData.threadId,
+            workflowId: checkpointData.workflowId
+          });
+
+          // 触发错误事件
+          await emitErrorEvent(this.eventManager, {
+            threadId: checkpointData.threadId,
+            workflowId: checkpointData.workflowId,
+            error: stateManagementError
+          });
+
+          throw stateManagementError;
         }
       }
 

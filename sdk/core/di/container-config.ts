@@ -40,7 +40,6 @@ import { ScriptService } from '../services/script-service.js';
 import { NodeTemplateRegistry } from '../services/node-template-registry.js';
 import { TriggerTemplateRegistry } from '../services/trigger-template-registry.js';
 import { TaskRegistry } from '../../graph/services/task-registry.js';
-import { ErrorService } from '../services/error-service.js';
 import { WorkflowRegistry } from '../../graph/services/workflow-registry.js';
 import { ThreadPoolService } from '../../graph/services/thread-pool-service.js';
 
@@ -177,17 +176,6 @@ container.bind(Identifiers.LLMWrapper)
 
   container.bind(Identifiers.TaskRegistry)
     .toDynamicValue(() => TaskRegistry.getInstance())
-    .inSingletonScope();
-
-  // ============================================================
-  // 第三层：依赖第二层的业务层服务
-  // ============================================================
-
-  container.bind(Identifiers.ErrorService)
-    .toDynamicValue((c: any) => {
-      const eventManager = c.get(Identifiers.EventManager);
-      return new ErrorService(eventManager);
-    })
     .inSingletonScope();
 
   // ============================================================

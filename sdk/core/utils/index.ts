@@ -24,3 +24,6 @@ export * from './hook/index.js';
 
 // Token 工具
 export * from './token/index.js';
+
+// 错误处理工具
+export * from './error-utils.js';

@@ -25,6 +25,7 @@ import { VariableStateManager } from '../managers/variable-state-manager.js';
 import { VariableAccessor } from '../utils/variable-accessor.js';
 import { safeEmit } from '../utils/index.js';
 import { buildVariableChangedEvent } from '../utils/event/event-builder.js';
+import { logError, emitErrorEvent } from '../../../core/utils/error-utils.js';
 
 /**
  * VariableCoordinator - 变量协调器
@@ -374,8 +375,8 @@ export class VariableCoordinator {
       });
       await safeEmit(this.eventManager, event);
     } catch (error) {
-      // 抛出事件系统错误，由 ErrorService 统一处理
-      throw new EventSystemError(
+      // 创建事件系统错误
+      const eventSystemError = new EventSystemError(
         'Failed to emit variable changed event',
         'emit',
         'VARIABLE_CHANGED',
@@ -383,6 +384,22 @@ export class VariableCoordinator {
         undefined,
         { variableName: name, originalError: getErrorOrNew(error) }
       );
+
+      // 记录错误日志
+      logError(eventSystemError, {
+        threadId: this.threadId,
+        workflowId: this.workflowId,
+        variableName: name
+      });
+
+      // 触发错误事件
+      await emitErrorEvent(this.eventManager, {
+        threadId: this.threadId || '',
+        workflowId: this.workflowId || '',
+        error: eventSystemError
+      });
+
+      throw eventSystemError;
     }
   }
 

@@ -10,7 +10,7 @@ import type { Thread, ThreadOptions, ThreadStatus } from '@modular-agent/types';
 import { ThreadEntity } from '../entities/thread-entity.js';
 import { ExecutionState } from '../entities/execution-state.js';
 import { generateId, now as getCurrentTimestamp, getErrorOrNew } from '@modular-agent/common-utils';
-import { ExecutionError, RuntimeValidationError } from '@modular-agent/types';
+import { ExecutionError, RuntimeValidationError, SDKError } from '@modular-agent/types';
 import type { GraphRegistry } from '../services/graph-registry.js';
 import { getContainer } from '../../core/di/index.js';
 import * as Identifiers from '../../core/di/service-identifiers.js';
@@ -18,6 +18,7 @@ import { createContextualLogger } from '../../utils/contextual-logger.js';
 import type { EventManager } from '../../core/managers/event-manager.js';
 import type { ToolService } from '../../core/services/tool-service.js';
 import { MessageHistoryManager } from './managers/message-history-manager.js';
+import { logError, emitErrorEvent } from '../../core/utils/error-utils.js';
 
 const logger = createContextualLogger({ operation: 'thread-builder' });
 
@@ -83,12 +84,19 @@ export class ThreadBuilder {
     const preprocessedGraph = this.getGraphRegistry().get(workflowId);
 
     if (!preprocessedGraph) {
-      logger.error('Workflow not found or not preprocessed', { workflowId });
-      throw new ExecutionError(
+      const error = new ExecutionError(
         `Workflow '${workflowId}' not found or not preprocessed`,
         undefined,
         workflowId
       );
+      const eventManager = this.getEventManager();
+      logError(error, { workflowId });
+      emitErrorEvent(eventManager, {
+        threadId: '',
+        workflowId,
+        error
+      });
+      throw error;
     }
 
     // 从PreprocessedGraph构建

@@ -17,6 +17,8 @@ import type { DynamicThreadEvent } from '../types/dynamic-thread.types.js';
 import { now, getErrorOrNew } from '@modular-agent/common-utils';
 import { buildDynamicThreadCompletedEvent, buildDynamicThreadFailedEvent } from '../utils/event/event-builder.js';
 import { logger } from '../../../utils/logger.js';
+import { SDKError } from '@modular-agent/types';
+import { logError } from '../../../core/utils/error-utils.js';
 
 /**
  * 回调信息接口（泛型版本）
@@ -96,7 +98,14 @@ export class CallbackManager<T = any> {
           listener(event);
         } catch (error) {
           // 监听器错误不影响其他监听器
-          logger.error(`Error in event listener for thread ${threadId}`, { threadId, error: getErrorOrNew(error) });
+          const errorObj = getErrorOrNew(error);
+          const sdkError = new SDKError(
+            `Error in event listener for thread ${threadId}`,
+            'warning',
+            { threadId },
+            errorObj
+          );
+          logError(sdkError, { threadId });
         }
       });
 
@@ -104,7 +113,14 @@ export class CallbackManager<T = any> {
       this.callbacks.delete(threadId);
       return true;
     } catch (error) {
-      logger.error(`Error triggering callback for thread ${threadId}`, { threadId, error: getErrorOrNew(error) });
+      const errorObj = getErrorOrNew(error);
+      const sdkError = new SDKError(
+        `Error triggering callback for thread ${threadId}`,
+        'warning',
+        { threadId },
+        errorObj
+      );
+      logError(sdkError, { threadId });
       this.callbacks.delete(threadId);
       return false;
     }
