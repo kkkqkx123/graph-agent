@@ -27,6 +27,22 @@ class MockLLMExecutor {
   async *executeStream(): AsyncIterable<LLMResult> {
     yield await this.execute();
   }
+
+  async executeLLMCall(
+    messages: any[],
+    requestData: any,
+    options?: any
+  ): Promise<{ success: true; result: any } | { success: false; interruption: any }> {
+    return {
+      success: true,
+      result: {
+        content: 'Response',
+        usage: {},
+        finishReason: 'stop',
+        toolCalls: undefined
+      }
+    };
+  }
 }
 
 describe('Agent Loop Coordinator', () => {

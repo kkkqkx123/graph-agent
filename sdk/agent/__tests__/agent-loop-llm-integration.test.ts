@@ -50,6 +50,30 @@ class MockLLMExecutor {
   async *executeStream(request: any): AsyncIterable<LLMResult> {
     yield await this.execute(request);
   }
+
+  async executeLLMCall(
+    messages: any[],
+    requestData: any,
+    options?: any
+  ): Promise<{ success: true; result: any } | { success: false; interruption: any }> {
+    if (this.shouldFail) {
+      throw new Error('LLM call failed');
+    }
+
+    if (this.delayMs > 0) {
+      await new Promise(resolve => setTimeout(resolve, this.delayMs));
+    }
+
+    return {
+      success: true,
+      result: {
+        content: this.responseContent,
+        usage: {},
+        finishReason: 'stop',
+        toolCalls: undefined
+      }
+    };
+  }
 }
 
 describe('Agent Loop LLM Integration', () => {

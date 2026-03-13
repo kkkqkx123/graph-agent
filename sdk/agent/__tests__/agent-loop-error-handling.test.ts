@@ -11,7 +11,7 @@ import {
   createAgentExecutionError
 } from '../execution/handlers/agent-error-handler.js';
 import { EventManager } from '../../core/managers/event-manager.js';
-import { SDKError } from '@modular-agent/types';
+import { SDKError, AbortError } from '@modular-agent/types';
 import type { AgentLoopConfig } from '@modular-agent/types';
 
 describe('Agent Loop Error Handling', () => {
@@ -124,8 +124,7 @@ describe('Agent Loop Error Handling', () => {
       const controller = new AbortController();
       controller.abort();
 
-      const error = new Error('Aborted');
-      error.name = 'AbortError';
+      const error = new AbortError('Aborted');
 
       const isInterruption = await handleAgentInterruption(
         entity,

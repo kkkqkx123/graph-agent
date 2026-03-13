@@ -118,30 +118,55 @@ export class AgentLoopCheckpointCoordinator {
           metadata: options?.metadata
         };
       } else {
-        // 计算差异
-        const delta = AgentLoopCheckpointCoordinator.diffCalculator.calculateDelta(
-          previousCheckpoint.snapshot!,
-          currentState,
-          previousCheckpoint.snapshot!.messages.length,
-          entity.getMessages()
-        );
-
-        // 找到基线检查点ID
-        let baseCheckpointId = previousCheckpoint.baseCheckpointId;
-        if (!baseCheckpointId && previousCheckpoint.type === CheckpointType['FULL']) {
-          baseCheckpointId = previousCheckpoint.id;
+        // 找到基线检查点（包含 snapshot 的完整检查点）
+        let baseCheckpoint = previousCheckpoint;
+        if (previousCheckpoint.type === CheckpointType['DELTA']) {
+          // 如果上一个检查点是 delta，需要找到最近的完整检查点
+          const baseCheckpointId = previousCheckpoint.baseCheckpointId;
+          if (baseCheckpointId) {
+            const base = await getCheckpoint(baseCheckpointId);
+            if (base && base.snapshot) {
+              baseCheckpoint = base;
+            }
+          }
         }
 
-        checkpoint = {
-          id: checkpointId,
-          agentLoopId: entity.id,
-          timestamp,
-          type: CheckpointType['DELTA']!,
-          baseCheckpointId,
-          previousCheckpointId,
-          delta,
-          metadata: options?.metadata
-        };
+        // 如果仍然没有找到包含 snapshot 的检查点，降级为完整检查点
+        if (!baseCheckpoint.snapshot) {
+          checkpoint = {
+            id: checkpointId,
+            agentLoopId: entity.id,
+            timestamp,
+            type: CheckpointType['FULL']!,
+            snapshot: currentState,
+            metadata: options?.metadata
+          };
+        } else {
+          // 计算差异
+          const delta = AgentLoopCheckpointCoordinator.diffCalculator.calculateDelta(
+            baseCheckpoint.snapshot,
+            currentState,
+            baseCheckpoint.snapshot.messages.length,
+            entity.getMessages()
+          );
+
+          // 找到基线检查点ID
+          let baseCheckpointId = previousCheckpoint.baseCheckpointId;
+          if (!baseCheckpointId && previousCheckpoint.type === CheckpointType['FULL']) {
+            baseCheckpointId = previousCheckpoint.id;
+          }
+
+          checkpoint = {
+            id: checkpointId,
+            agentLoopId: entity.id,
+            timestamp,
+            type: CheckpointType['DELTA']!,
+            baseCheckpointId,
+            previousCheckpointId,
+            delta,
+            metadata: options?.metadata
+          };
+        }
       }
     }
 
@@ -238,7 +263,9 @@ export class AgentLoopCheckpointCoordinator {
     }
 
     // 每隔 baselineInterval 个检查点创建一个完整检查点
-    if (checkpointCount % config.baselineInterval === 0) {
+    // 使用 (checkpointCount + 1) 因为 checkpointCount 是已有检查点数量，
+    // 而我们需要判断下一个检查点的序号是否是 baselineInterval 的倍数
+    if ((checkpointCount + 1) % config.baselineInterval === 0) {
       return CheckpointType['FULL']!;
     }
 
