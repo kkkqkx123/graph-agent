@@ -391,6 +391,7 @@ describe('GraphValidator - 图验证', () => {
               { pathId: 'path-a', childNodeId: 'branch-a' },
               { pathId: 'path-b', childNodeId: 'branch-b' },
             ],
+            forkStrategy: 'parallel',
           },
           outgoingEdgeIds: [],
           incomingEdgeIds: [],
@@ -433,6 +434,8 @@ describe('GraphValidator - 图验证', () => {
           name: 'Join',
           config: {
             forkPathIds: ['path-a', 'path-b'],
+            joinStrategy: 'ALL_COMPLETED',
+            mainPathId: 'path-a',
           },
           outgoingEdgeIds: [],
           incomingEdgeIds: [],
@@ -482,6 +485,7 @@ describe('GraphValidator - 图验证', () => {
               { pathId: 'path-a', childNodeId: 'branch-a' },
               { pathId: 'path-b', childNodeId: 'branch-b' },
             ],
+            forkStrategy: 'parallel',
           },
           outgoingEdgeIds: [],
           incomingEdgeIds: [],
@@ -497,6 +501,8 @@ describe('GraphValidator - 图验证', () => {
           name: 'Join',
           config: {
             forkPathIds: ['path-x', 'path-y'], // 不匹配
+            joinStrategy: 'ALL_COMPLETED',
+            mainPathId: 'path-x',
           },
           outgoingEdgeIds: [],
           incomingEdgeIds: [],
