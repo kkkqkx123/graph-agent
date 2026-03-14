@@ -70,10 +70,6 @@ export async function pauseThreadHandler(
 
     const { threadId } = action.parameters;
 
-    if (!threadId) {
-      throw new RuntimeValidationError('threadId is required for PAUSE_THREAD action', { operation: 'handle', field: 'parameters.threadId' });
-    }
-
     // 通过Coordinator进行暂停流程协调
     // Coordinator负责：
     // 1. 设置暂停标志

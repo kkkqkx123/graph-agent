@@ -67,10 +67,6 @@ export async function setVariableHandler(
 
     const { threadId, variables } = action.parameters;
 
-    if (!threadId || !variables) {
-      throw new RuntimeValidationError('Missing required parameters: threadId and variables', { operation: 'handle' });
-    }
-
     // 获取ThreadEntity
     const threadEntity = threadRegistry.get(threadId);
 

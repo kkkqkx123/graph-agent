@@ -70,10 +70,6 @@ export async function resumeThreadHandler(
 
     const { threadId } = action.parameters;
 
-    if (!threadId) {
-      throw new RuntimeValidationError('threadId is required for RESUME_THREAD action', { operation: 'handle', field: 'parameters.threadId' });
-    }
-
     // 通过Coordinator进行恢复流程协调
     // Coordinator负责：
     // 1. 更新线程状态为RUNNING

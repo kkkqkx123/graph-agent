@@ -69,10 +69,6 @@ export async function stopThreadHandler(
 
     const { threadId } = action.parameters;
 
-    if (!threadId) {
-      throw new RuntimeValidationError('threadId is required for STOP_THREAD action', { operation: 'handle', field: 'parameters.threadId' });
-    }
-
     // 通过Coordinator进行停止流程协调
     // Coordinator负责：
     // 1. 设置停止标志

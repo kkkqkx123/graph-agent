@@ -71,14 +71,6 @@ export async function skipNodeHandler(
 
     const { threadId, nodeId } = action.parameters;
 
-    if (!threadId) {
-      throw new ValidationError('threadId is required for SKIP_NODE action', 'parameters.threadId');
-    }
-
-    if (!nodeId) {
-      throw new ValidationError('nodeId is required for SKIP_NODE action', 'parameters.nodeId');
-    }
-
     // 从ThreadRegistry获取ThreadEntity
     const threadEntity = threadRegistry.get(threadId);
 
