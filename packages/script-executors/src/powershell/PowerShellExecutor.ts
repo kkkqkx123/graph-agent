@@ -6,6 +6,9 @@
 import { CommandLineExecutor } from '../core/base/CommandLineExecutor.js';
 import type { Script } from '@modular-agent/types';
 import type { ExecutorConfig } from '../core/types.js';
+import { createPackageLogger } from '@modular-agent/common-utils';
+
+const logger = createPackageLogger('script-executors').child('powershell-executor');
 
 /**
  * PowerShell 执行器
@@ -20,6 +23,7 @@ export class PowerShellExecutor extends CommandLineExecutor<'POWERSHELL'> {
     });
     // 默认使用 pwsh (PowerShell Core)，如果不存在则使用 powershell (Windows PowerShell)
     this.powerShellCommand = 'pwsh';
+    logger.debug('PowerShell executor initialized', { powerShellCommand: this.powerShellCommand });
   }
 
   /**
@@ -28,6 +32,7 @@ export class PowerShellExecutor extends CommandLineExecutor<'POWERSHELL'> {
    */
   setPowerShellCommand(command: string): void {
     this.powerShellCommand = command;
+    logger.debug('PowerShell command updated', { powerShellCommand: command });
   }
 
   /**

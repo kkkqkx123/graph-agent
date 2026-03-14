@@ -6,6 +6,9 @@
 import { CommandLineExecutor } from '../core/base/CommandLineExecutor.js';
 import type { Script } from '@modular-agent/types';
 import type { ExecutorConfig } from '../core/types.js';
+import { createPackageLogger } from '@modular-agent/common-utils';
+
+const logger = createPackageLogger('script-executors').child('python-executor');
 
 /**
  * Python 执行器
@@ -20,6 +23,7 @@ export class PythonExecutor extends CommandLineExecutor<'PYTHON'> {
     });
     // 默认使用 python3，如果不存在则使用 python
     this.pythonCommand = 'python3';
+    logger.debug('Python executor initialized', { pythonCommand: this.pythonCommand });
   }
 
   /**
@@ -28,6 +32,7 @@ export class PythonExecutor extends CommandLineExecutor<'PYTHON'> {
    */
   setPythonCommand(command: string): void {
     this.pythonCommand = command;
+    logger.debug('Python command updated', { pythonCommand: command });
   }
 
   /**

@@ -18,6 +18,17 @@
  * - SQLite 数据库存储
  */
 
+import { createPackageLogger } from '@modular-agent/common-utils';
+
+/**
+ * 包级别日志器
+ * 用于记录存储包的日志信息
+ */
+export const logger = createPackageLogger('storage', {
+  level: (process.env['STORAGE_LOG_LEVEL'] as any) || 'info',
+  json: process.env['NODE_ENV'] === 'production'
+});
+
 // 核心类型定义
 export * from './types/index.js';
 

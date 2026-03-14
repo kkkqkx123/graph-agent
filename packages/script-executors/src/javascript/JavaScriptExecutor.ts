@@ -6,6 +6,9 @@
 import { CommandLineExecutor } from '../core/base/CommandLineExecutor.js';
 import type { Script } from '@modular-agent/types';
 import type { ExecutorConfig } from '../core/types.js';
+import { createPackageLogger } from '@modular-agent/common-utils';
+
+const logger = createPackageLogger('script-executors').child('javascript-executor');
 
 /**
  * JavaScript 执行器
@@ -20,6 +23,7 @@ export class JavaScriptExecutor extends CommandLineExecutor<'JAVASCRIPT'> {
     });
     // 默认使用 node
     this.nodeCommand = 'node';
+    logger.debug('JavaScript executor initialized', { nodeCommand: this.nodeCommand });
   }
 
   /**
@@ -28,6 +32,7 @@ export class JavaScriptExecutor extends CommandLineExecutor<'JAVASCRIPT'> {
    */
   setNodeCommand(command: string): void {
     this.nodeCommand = command;
+    logger.debug('Node command updated', { nodeCommand: command });
   }
 
   /**

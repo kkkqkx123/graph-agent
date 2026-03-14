@@ -9,7 +9,9 @@ import { IScriptExecutor } from '../interfaces/IScriptExecutor.js';
 import { RetryStrategy } from './RetryStrategy.js';
 import { TimeoutController } from './TimeoutController.js';
 import type { ExecutionContext, ExecutionOutput, ExecutorConfig } from '../types.js';
-import { now, diffTimestamp } from '@modular-agent/common-utils';
+import { now, diffTimestamp, createPackageLogger } from '@modular-agent/common-utils';
+
+const logger = createPackageLogger('script-executors').child('base-executor');
 
 /**
  * 脚本执行器抽象基类
@@ -52,6 +54,13 @@ export abstract class BaseScriptExecutor implements IScriptExecutor {
       exponentialBackoff = this.config.exponentialBackoff ?? true
     } = options;
 
+    logger.debug('Starting script execution', {
+      scriptName: script.name,
+      scriptType: script.type,
+      timeout,
+      retries
+    });
+
     // 创建临时重试策略（使用选项中的配置）
     const tempRetryStrategy = new RetryStrategy({
       maxRetries: retries,
@@ -74,6 +83,14 @@ export abstract class BaseScriptExecutor implements IScriptExecutor {
 
         const executionTime = diffTimestamp(startTime, now());
 
+        logger.info('Script execution completed', {
+          scriptName: script.name,
+          scriptType: script.type,
+          exitCode: output.exitCode,
+          executionTime,
+          retryCount: i
+        });
+
         return {
           success: output.exitCode === 0,
           scriptName: script.name,
@@ -88,10 +105,24 @@ export abstract class BaseScriptExecutor implements IScriptExecutor {
         lastError = error instanceof Error ? error : new Error(String(error));
         retryCount = i;
 
+        logger.warn('Script execution failed, checking retry', {
+          scriptName: script.name,
+          scriptType: script.type,
+          attempt: i + 1,
+          maxRetries: retries,
+          error: lastError.message
+        });
+
         // 检查是否应该重试
         if (i < retries && tempRetryStrategy.shouldRetry(lastError, i)) {
           // 计算重试延迟
           const delay = tempRetryStrategy.getRetryDelay(i);
+
+          logger.debug('Retrying script execution', {
+            scriptName: script.name,
+            delay,
+            nextAttempt: i + 2
+          });
 
           // 等待重试延迟
           await this.sleep(delay);
@@ -106,6 +137,14 @@ export abstract class BaseScriptExecutor implements IScriptExecutor {
     // 执行失败
     const executionTime = diffTimestamp(startTime, now());
     const errorMessage = lastError?.message || 'Unknown error';
+
+    logger.error('Script execution failed after all retries', {
+      scriptName: script.name,
+      scriptType: script.type,
+      error: errorMessage,
+      executionTime,
+      retryCount
+    });
 
     return {
       success: false,

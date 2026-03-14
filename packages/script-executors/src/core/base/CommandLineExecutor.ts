@@ -8,6 +8,9 @@ import { spawn } from 'child_process';
 import { BaseScriptExecutor } from './BaseScriptExecutor.js';
 import type { Script, ScriptType } from '@modular-agent/types';
 import type { ExecutionContext, ExecutionOutput, ExecutorConfig, ExecutorType } from '../types.js';
+import { createPackageLogger } from '@modular-agent/common-utils';
+
+const logger = createPackageLogger('script-executors').child('cmd-executor');
 
 /**
  * 命令行执行配置
@@ -55,6 +58,7 @@ export abstract class CommandLineExecutor<T extends ExecutorType> extends BaseSc
       // 获取脚本内容
       const scriptContent = script.content || '';
       if (!scriptContent) {
+        logger.error('Script content is empty', { scriptName: script.name });
         reject(new Error('Script content is empty'));
         return;
       }
@@ -71,6 +75,13 @@ export abstract class CommandLineExecutor<T extends ExecutorType> extends BaseSc
 
       // 准备工作目录
       const cwd = context?.workingDirectory || script.options.workingDirectory || process.cwd();
+
+      logger.debug('Spawning command process', {
+        scriptName: script.name,
+        command: config.command,
+        args: config.args,
+        cwd
+      });
 
       // 执行命令
       const child = spawn(config.command, config.args, {
@@ -96,6 +107,13 @@ export abstract class CommandLineExecutor<T extends ExecutorType> extends BaseSc
 
       // 处理进程退出
       child.on('close', (code) => {
+        logger.debug('Command process closed', {
+          scriptName: script.name,
+          exitCode: code,
+          stdoutLength: stdout.length,
+          stderrLength: stderr.length
+        });
+
         resolve({
           stdout,
           stderr,
@@ -105,12 +123,21 @@ export abstract class CommandLineExecutor<T extends ExecutorType> extends BaseSc
 
       // 处理错误
       child.on('error', (error) => {
+        logger.error('Command process error', {
+          scriptName: script.name,
+          command: config.command,
+          error: error.message
+        });
         reject(error);
       });
 
       // 处理中止信号
       if (context?.signal) {
         const abortHandler = () => {
+          logger.info('Command process aborted', {
+            scriptName: script.name,
+            command: config.command
+          });
           child.kill('SIGTERM');
         };
         context.signal.addEventListener('abort', abortHandler, { once: true });

@@ -6,6 +6,9 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { StorageError, SerializationError } from '../types/storage-errors.js';
+import { createPackageLogger } from '@modular-agent/common-utils';
+
+const logger = createPackageLogger('storage').child('json-storage');
 
 /**
  * JSON 存储基础配置
@@ -50,9 +53,16 @@ export abstract class BaseJsonStorage<TMetadata> {
    * 创建必要的目录结构并加载元数据索引
    */
   async initialize(): Promise<void> {
+    logger.debug('Initializing JSON storage', { baseDir: this.config.baseDir });
+
     await fs.mkdir(this.config.baseDir, { recursive: true });
     await this.loadMetadataIndex();
     this.initialized = true;
+
+    logger.info('JSON storage initialized', {
+      baseDir: this.config.baseDir,
+      indexSize: this.metadataIndex.size
+    });
   }
 
   /**
@@ -148,6 +158,8 @@ export abstract class BaseJsonStorage<TMetadata> {
     const filePath = this.getFilePath(id);
     const releaseLock = await this.acquireLock(filePath);
 
+    logger.debug('Saving data to JSON file', { id, filePath, dataSize: data.length });
+
     try {
       const content: StorageFileContent<TMetadata> = {
         id,
@@ -159,7 +171,10 @@ export abstract class BaseJsonStorage<TMetadata> {
         const jsonContent = JSON.stringify(content, null, 2);
         await fs.writeFile(filePath, jsonContent, 'utf-8');
         this.metadataIndex.set(id, { metadata, filePath });
+
+        logger.debug('Data saved to JSON file', { id, filePath });
       } catch (error) {
+        logger.error('Failed to save data to JSON file', { id, filePath, error: (error as Error).message });
         throw new SerializationError(
           `Failed to serialize data: ${id}`,
           id,
@@ -179,17 +194,21 @@ export abstract class BaseJsonStorage<TMetadata> {
 
     const indexEntry = this.metadataIndex.get(id);
     if (!indexEntry) {
+      logger.debug('Data not found in index', { id });
       return null;
     }
 
     try {
       const content = await fs.readFile(indexEntry.filePath, 'utf-8');
       const parsed = JSON.parse(content) as StorageFileContent<TMetadata>;
+      logger.debug('Data loaded from JSON file', { id, dataSize: parsed.data.length });
       return new Uint8Array(parsed.data);
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        logger.debug('JSON file not found', { id, filePath: indexEntry.filePath });
         return null;
       }
+      logger.error('Failed to load data from JSON file', { id, error: (error as Error).message });
       throw new StorageError(
         `Failed to load data: ${id}`,
         'load',
@@ -207,6 +226,7 @@ export abstract class BaseJsonStorage<TMetadata> {
 
     const indexEntry = this.metadataIndex.get(id);
     if (!indexEntry) {
+      logger.debug('Data not found for deletion', { id });
       return;
     }
 
@@ -216,6 +236,7 @@ export abstract class BaseJsonStorage<TMetadata> {
       try {
         await fs.unlink(indexEntry.filePath);
         this.metadataIndex.delete(id);
+        logger.debug('Data deleted from JSON file', { id, filePath: indexEntry.filePath });
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
           throw error;
@@ -256,6 +277,8 @@ export abstract class BaseJsonStorage<TMetadata> {
   async clear(): Promise<void> {
     this.ensureInitialized();
 
+    logger.debug('Clearing all JSON storage data', { count: this.metadataIndex.size });
+
     for (const [id, entry] of this.metadataIndex) {
       try {
         await fs.unlink(entry.filePath);
@@ -266,13 +289,17 @@ export abstract class BaseJsonStorage<TMetadata> {
       }
     }
     this.metadataIndex.clear();
+
+    logger.info('JSON storage cleared');
   }
 
   /**
    * 关闭存储连接
    */
   async close(): Promise<void> {
+    logger.debug('Closing JSON storage');
     this.metadataIndex.clear();
     this.initialized = false;
+    logger.info('JSON storage closed');
   }
 }

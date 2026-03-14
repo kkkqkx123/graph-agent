@@ -6,6 +6,9 @@
 import { CommandLineExecutor } from '../core/base/CommandLineExecutor.js';
 import type { Script } from '@modular-agent/types';
 import type { ExecutorConfig } from '../core/types.js';
+import { createPackageLogger } from '@modular-agent/common-utils';
+
+const logger = createPackageLogger('script-executors').child('shell-executor');
 
 /**
  * Shell 执行器
@@ -16,6 +19,7 @@ export class ShellExecutor extends CommandLineExecutor<'SHELL'> {
       ...config,
       type: 'SHELL'
     });
+    logger.debug('Shell executor initialized');
   }
 
   /**

@@ -5,6 +5,9 @@
 
 import Database, { SqliteError } from 'better-sqlite3';
 import { StorageError, StorageInitializationError } from '../types/storage-errors.js';
+import { createPackageLogger } from '@modular-agent/common-utils';
+
+const logger = createPackageLogger('storage').child('sqlite-storage');
 
 /**
  * SQLite 存储基础配置
@@ -49,6 +52,11 @@ export abstract class BaseSqliteStorage<TMetadata> {
    * 创建数据库连接和表结构
    */
   async initialize(): Promise<void> {
+    logger.debug('Initializing SQLite storage', {
+      dbPath: this.config.dbPath,
+      readonly: this.config.readonly
+    });
+
     try {
       const options: Database.Options = {
         readonly: this.config.readonly ?? false,
@@ -70,8 +78,17 @@ export abstract class BaseSqliteStorage<TMetadata> {
       if (!this.config.readonly) {
         this.createTableSchema();
       }
+
+      logger.info('SQLite storage initialized', {
+        dbPath: this.config.dbPath,
+        tableName: this.getTableName()
+      });
     } catch (error) {
       this.initialized = false;
+      logger.error('Failed to initialize SQLite storage', {
+        dbPath: this.config.dbPath,
+        error: (error as Error).message
+      });
       throw new StorageInitializationError(
         `Failed to initialize SQLite storage: ${this.config.dbPath}`,
         error as Error
@@ -103,6 +120,8 @@ export abstract class BaseSqliteStorage<TMetadata> {
    * 处理 SQLite 错误
    */
   protected handleSqliteError(error: unknown, operation: string, context?: Record<string, unknown>): never {
+    logger.error('SQLite operation failed', { operation, context, error: (error as Error).message });
+
     if (error instanceof SqliteError) {
       throw new StorageError(
         `SQLite error [${error.code}]: ${error.message}`,
@@ -131,9 +150,11 @@ export abstract class BaseSqliteStorage<TMetadata> {
       const row = stmt.get(id) as { data: Buffer } | undefined;
 
       if (!row) {
+        logger.debug('Data not found in SQLite', { id, table: this.getTableName() });
         return null;
       }
 
+      logger.debug('Data loaded from SQLite', { id, dataSize: row.data.length });
       return new Uint8Array(row.data);
     } catch (error) {
       this.handleSqliteError(error, 'load', { id });
@@ -149,6 +170,7 @@ export abstract class BaseSqliteStorage<TMetadata> {
     try {
       const stmt = db.prepare(`DELETE FROM ${this.getTableName()} WHERE id = ?`);
       stmt.run(id);
+      logger.debug('Data deleted from SQLite', { id, table: this.getTableName() });
     } catch (error) {
       this.handleSqliteError(error, 'delete', { id });
     }
@@ -178,6 +200,7 @@ export abstract class BaseSqliteStorage<TMetadata> {
     try {
       const stmt = db.prepare(`DELETE FROM ${this.getTableName()}`);
       stmt.run();
+      logger.info('SQLite table cleared', { table: this.getTableName() });
     } catch (error) {
       this.handleSqliteError(error, 'clear', {});
     }
@@ -190,10 +213,12 @@ export abstract class BaseSqliteStorage<TMetadata> {
     if (this.db) {
       try {
         this.db.close();
+        logger.info('SQLite storage closed', { dbPath: this.config.dbPath });
       } catch (error) {
-        if (this.config.enableLogging) {
-          console.error('Error closing database:', error);
-        }
+        logger.error('Error closing SQLite database', {
+          dbPath: this.config.dbPath,
+          error: (error as Error).message
+        });
       } finally {
         this.db = null;
         this.initialized = false;

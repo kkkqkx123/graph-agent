@@ -2,6 +2,17 @@
  * 脚本执行器包统一导出
  */
 
+import { createPackageLogger } from '@modular-agent/common-utils';
+
+/**
+ * 包级别日志器
+ * 用于记录脚本执行器包的日志信息
+ */
+export const logger = createPackageLogger('script-executors', {
+  level: (process.env['SCRIPT_EXECUTORS_LOG_LEVEL'] as any) || 'info',
+  json: process.env['NODE_ENV'] === 'production'
+});
+
 // 核心接口和类型
 export { IScriptExecutor } from './core/interfaces/IScriptExecutor.js';
 export type { ExecutorType, ExecutorConfig, ExecutionContext, ExecutionOutput, ValidationResult, ExecutorMetadata } from './core/types.js';
