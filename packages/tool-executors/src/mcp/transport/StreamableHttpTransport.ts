@@ -4,9 +4,7 @@
  * 支持 HTTP POST 发送消息和 SSE 接收消息
  */
 
-import { HttpClient } from '@modular-agent/common-utils';
-import { SseTransport } from '@modular-agent/common-utils';
-import { createPackageLogger } from '@modular-agent/common-utils';
+import { HttpClient, SseTransport } from '@modular-agent/common-utils';
 import { NetworkError, TimeoutError } from '@modular-agent/types';
 import type {
   JSONRPCMessage,
@@ -15,8 +13,9 @@ import type {
   RequestId,
 } from '../types-protocol.js';
 import type { IMcpTransport, TransportConfig } from './types.js';
+import { logger as pkgLogger } from '../../index.js';
 
-const logger = createPackageLogger('mcp-transport');
+const logger = pkgLogger.child('mcp-transport-http');
 
 /**
  * StreamableHTTP 传输层配置

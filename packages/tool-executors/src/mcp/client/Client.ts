@@ -4,7 +4,6 @@
  * 支持工具、资源、提示操作
  */
 
-import { createPackageLogger } from '@modular-agent/common-utils';
 import { NetworkError, ConfigurationError } from '@modular-agent/types';
 import type {
   JSONRPCMessage,
@@ -29,8 +28,9 @@ import type {
 } from '../types-protocol.js';
 import { LATEST_PROTOCOL_VERSION } from '../types-protocol.js';
 import type { IMcpTransport } from '../transport/types.js';
+import { logger as pkgLogger } from '../../index.js';
 
-const logger = createPackageLogger('mcp-client');
+const logger = pkgLogger.child('mcp-client');
 
 /**
  * MCP 客户端配置

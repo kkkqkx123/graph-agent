@@ -3,6 +3,17 @@
  * 提供各种工具执行器的实现
  */
 
+import { createPackageLogger } from '@modular-agent/common-utils';
+
+/**
+ * 包级别日志器
+ * 用于记录工具执行器包的日志信息
+ */
+export const logger = createPackageLogger('tool-executors', {
+  level: (process.env['TOOL_EXECUTORS_LOG_LEVEL'] as any) || 'info',
+  json: process.env['NODE_ENV'] === 'production'
+});
+
 // 核心接口和基类
 export { IToolExecutor } from './core/interfaces/IToolExecutor.js';
 export { BaseExecutor } from './core/base/BaseExecutor.js';

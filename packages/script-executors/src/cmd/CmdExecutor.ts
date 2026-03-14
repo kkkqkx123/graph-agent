@@ -6,7 +6,6 @@
 import { CommandLineExecutor } from '../core/base/CommandLineExecutor.js';
 import type { Script } from '@modular-agent/types';
 import type { ExecutorConfig } from '../core/types.js';
-import type { ScriptType } from '@modular-agent/types';
 
 /**
  * CMD 执行器

@@ -9,9 +9,9 @@ import { EventEmitter } from 'events';
 import type { IMcpTransport } from './types.js';
 import type { JSONRPCMessage, JSONRPCRequest, JSONRPCResponse, RequestId } from '../types-protocol.js';
 import { NetworkError, ConfigurationError } from '@modular-agent/types';
-import { createPackageLogger } from '@modular-agent/common-utils';
+import { logger as pkgLogger } from '../../index.js';
 
-const logger = createPackageLogger('mcp-transport');
+const logger = pkgLogger.child('mcp-transport-stdio');
 
 /**
  * Stdio传输配置
