@@ -44,7 +44,7 @@ const createTool = (params: {
 }): Tool => ({
   id: 'test-tool',
   name: 'Test Tool',
-  type: 'builtin',
+  type: 'STATELESS',
   description: 'A test tool',
   parameters: {
     type: 'object',

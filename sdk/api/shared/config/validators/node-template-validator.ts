@@ -84,6 +84,7 @@ export function validateNodeTemplateConfig(config: ConfigFile): Result<NodeTempl
   // 验证节点配置 - 委托给 NodeValidator
   if (template.config) {
     // 创建临时节点对象用于验证配置
+    // 使用类型断言，因为这是临时验证对象
     const tempNode = {
       id: 'temp-node-id',
       type: template.type,
@@ -93,7 +94,7 @@ export function validateNodeTemplateConfig(config: ConfigFile): Result<NodeTempl
       metadata: template.metadata,
       outgoingEdgeIds: [],
       incomingEdgeIds: []
-    };
+    } as any;
 
     const configResult = nodeValidator.validateNode(tempNode);
     if (configResult.isErr()) {

@@ -262,14 +262,15 @@ class NodeTemplateRegistry {
     }
 
     // 使用现有的验证函数验证节点配置
-    const mockNode: Node = {
+    // 使用类型断言，因为这是临时验证对象
+    const mockNode = {
       id: 'validation',
       type: template.type,
       name: template.name,
       config: template.config,
       outgoingEdgeIds: [],
       incomingEdgeIds: []
-    };
+    } as Node;
 
     try {
       validateNodeByType(mockNode);

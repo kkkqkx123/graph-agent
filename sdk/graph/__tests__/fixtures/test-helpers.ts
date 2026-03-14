@@ -19,6 +19,7 @@ import { GraphData } from '../../entities/graph-data.js';
 
 /**
  * 创建测试节点
+ * 使用类型断言，因为测试场景需要灵活创建各种节点类型
  */
 export function createTestNode(
   id: ID,
@@ -37,7 +38,7 @@ export function createTestNode(
     description: options.description,
     outgoingEdgeIds: [],
     incomingEdgeIds: [],
-  };
+  } as Node;
 }
 
 /**

@@ -5,7 +5,7 @@
  * 核心逻辑：传入完整上下文 → LLM压缩 → 提取结果 → 回传
  */
 
-import type { TriggerTemplate, WorkflowDefinition, Node, Edge } from '@modular-agent/types';
+import type { TriggerTemplate, WorkflowDefinition, Node, Edge, TruncateMessageOperation } from '@modular-agent/types';
 import { now, generateId } from '@modular-agent/common-utils';
 
 /**
@@ -104,14 +104,9 @@ export function createContextCompressionWorkflow(
       name: 'Compress Context',
       description: '使用LLM压缩对话历史',
       config: {
-        // LLM节点配置
-        prompt: compressionPrompt || DEFAULT_COMPRESSION_PROMPT,
-        // 使用系统默认模型配置
-        useSystemModel: true,
-        // 不启用工具调用
-        tools: [],
-        // 单轮调用，不启用迭代
-        iteration: false
+        // LLM节点配置：使用默认 profile
+        profileId: 'DEFAULT',
+        prompt: compressionPrompt || DEFAULT_COMPRESSION_PROMPT
       },
       outgoingEdgeIds: [],
       incomingEdgeIds: []
@@ -122,9 +117,11 @@ export function createContextCompressionWorkflow(
       name: 'Extract Result',
       description: '保留LLM压缩结果，截断原始上下文',
       config: {
-        operation: 'REPLACE',
-        // 保留最后一条消息（LLM的压缩结果），清空前面的消息
-        keepLastN: 1
+        // 使用 TRUNCATE 操作保留最后一条消息
+        operationConfig: {
+          operation: 'TRUNCATE',
+          strategy: { type: 'KEEP_LAST', count: 1 }
+        } as TruncateMessageOperation
       },
       outgoingEdgeIds: [],
       incomingEdgeIds: []
@@ -135,10 +132,13 @@ export function createContextCompressionWorkflow(
       name: 'Complete Compression',
       description: '将压缩结果回传到主线程',
       config: {
-        // 对话历史回传配置
+        // 对话历史回传配置：使用 TRUNCATE 回传最后一条消息
         conversationHistoryCallback: {
-          operation: 'REPLACE',
-          includeSystemMessage: true
+          operation: 'TRUNCATE',
+          truncate: {
+            operation: 'TRUNCATE',
+            strategy: { type: 'KEEP_LAST', count: 1 }
+          }
         }
       },
       outgoingEdgeIds: [],

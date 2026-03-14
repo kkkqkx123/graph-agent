@@ -116,6 +116,7 @@ export class NodeBuilder extends BaseBuilder<Node> {
       this._name = this._id;
     }
 
+    // 使用类型断言，因为运行时验证已确保类型正确
     return {
       id: this._id,
       type: this._type,
@@ -123,7 +124,7 @@ export class NodeBuilder extends BaseBuilder<Node> {
       config: this._config,
       outgoingEdgeIds: this._outgoingEdgeIds,
       incomingEdgeIds: this._incomingEdgeIds
-    };
+    } as Node;
   }
 
   // 以下为快捷方法，用于快速创建特定类型节点

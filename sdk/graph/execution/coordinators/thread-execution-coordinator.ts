@@ -4,7 +4,7 @@
  */
 
 import type { ThreadEntity } from '../../entities/thread-entity.js';
-import type { ThreadResult } from '@modular-agent/types';
+import type { ThreadResult, Node as WorkflowNode } from '@modular-agent/types';
 import type { VariableCoordinator } from './variable-coordinator.js';
 import type { TriggerCoordinator } from './trigger-coordinator.js';
 import type { InterruptionManager } from '../../../core/managers/interruption-manager.js';
@@ -73,6 +73,7 @@ export class ThreadExecutionCoordinator {
       }
 
       // 使用originalNode或创建Node
+      // 使用类型断言，因为 graphNode.type 是动态的
       const currentNode = graphNode.originalNode || {
         id: graphNode.id,
         type: graphNode.type,
@@ -80,7 +81,7 @@ export class ThreadExecutionCoordinator {
         config: {},
         outgoingEdgeIds: [],
         incomingEdgeIds: []
-      };
+      } as WorkflowNode;
 
       // 执行节点
       const result = await this.nodeExecutionCoordinator.executeNode(
