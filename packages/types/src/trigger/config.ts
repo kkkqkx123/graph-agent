@@ -20,7 +20,7 @@ export interface TriggerCondition {
 }
 
 /**
- * 触发动作类型（后续需要重新设计）
+ * 触发动作类型
  */
 export type TriggerActionType =
   /** 启动工作流 */
@@ -48,16 +48,268 @@ export type TriggerActionType =
   /** 执行脚本 */
   'execute_script';
 
+// ============================================================================
+// 各动作类型的参数定义
+// ============================================================================
+
 /**
- * 触发动作接口
+ * 启动工作流动作参数
  */
-export interface TriggerAction {
-  /** 动作类型 */
-  type: TriggerActionType;
-  /** 动作参数 */
-  parameters: Record<string, any>;
+export interface StartWorkflowActionParameters {
+  /** 工作流ID */
+  workflowId: ID;
+  /** 输入参数 */
+  input?: Record<string, any>;
+  /** 是否等待完成 */
+  waitForCompletion?: boolean;
+}
+
+/**
+ * 停止工作流动作参数
+ */
+export interface StopWorkflowActionParameters {
+  /** 工作流ID */
+  workflowId: ID;
+  /** 是否强制停止 */
+  force?: boolean;
+}
+
+/**
+ * 停止线程动作参数
+ */
+export interface StopThreadActionParameters {
+  /** 线程ID */
+  threadId: ID;
+  /** 是否强制停止 */
+  force?: boolean;
+}
+
+/**
+ * 暂停线程动作参数
+ */
+export interface PauseThreadActionParameters {
+  /** 线程ID */
+  threadId: ID;
+  /** 暂停原因 */
+  reason?: string;
+}
+
+/**
+ * 恢复线程动作参数
+ */
+export interface ResumeThreadActionParameters {
+  /** 线程ID */
+  threadId: ID;
+}
+
+/**
+ * 跳过节点动作参数
+ */
+export interface SkipNodeActionParameters {
+  /** 线程ID */
+  threadId: ID;
+  /** 节点ID */
+  nodeId: ID;
+}
+
+/**
+ * 设置变量动作参数
+ */
+export interface SetVariableActionParameters {
+  /** 线程ID */
+  threadId: ID;
+  /** 变量键值对 */
+  variables: Record<string, any>;
+  /** 变量作用域 */
+  scope?: 'global' | 'thread' | 'local' | 'loop';
+}
+
+/**
+ * 发送通知动作参数
+ */
+export interface SendNotificationActionParameters {
+  /** 通知消息 */
+  message: string;
+  /** 接收者列表 */
+  recipients?: string[];
+  /** 通知级别 */
+  level?: 'info' | 'warning' | 'error' | 'success';
+  /** 通知渠道 */
+  channel?: 'email' | 'sms' | 'push' | 'webhook' | 'in_app';
+}
+
+/**
+ * 自定义动作参数
+ */
+export interface CustomActionParameters {
+  /** 自定义处理器名称 */
+  handlerName: string;
+  /** 自定义参数 */
+  data?: Record<string, any>;
+}
+
+/**
+ * 应用消息操作动作参数
+ */
+export interface ApplyMessageOperationActionParameters {
+  /** 线程ID */
+  threadId: ID;
+  /** 操作类型 */
+  operationType: 'compress' | 'truncate' | 'summarize' | 'mark' | 'unmark';
+  /** 操作配置 */
+  config?: Record<string, any>;
+}
+
+/**
+ * 执行脚本动作参数
+ */
+export interface ExecuteScriptActionParameters {
+  /** 脚本名称（必须在 ScriptService 中已注册） */
+  scriptName: string;
+  /** 传递给脚本的参数（可在脚本内通过环境变量访问） */
+  parameters?: Record<string, any>;
+  /** 执行超时时间（毫秒，覆盖脚本默认配置） */
+  timeout?: number;
+  /** 脚本执行失败时是否忽略错误（不影响触发器执行结果，默认false） */
+  ignoreError?: boolean;
+  /** 执行前是否验证脚本存在性（默认true） */
+  validateExistence?: boolean;
+}
+
+// ============================================================================
+// 触发动作可辨识联合类型
+// ============================================================================
+
+/**
+ * 触发动作基接口
+ */
+interface BaseTriggerAction {
   /** 动作元数据 */
   metadata?: Metadata;
+}
+
+/**
+ * 启动工作流动作
+ */
+export interface StartWorkflowAction extends BaseTriggerAction {
+  type: 'start_workflow';
+  parameters: StartWorkflowActionParameters;
+}
+
+/**
+ * 停止工作流动作
+ */
+export interface StopWorkflowAction extends BaseTriggerAction {
+  type: 'stop_workflow';
+  parameters: StopWorkflowActionParameters;
+}
+
+/**
+ * 停止线程动作
+ */
+export interface StopThreadAction extends BaseTriggerAction {
+  type: 'stop_thread';
+  parameters: StopThreadActionParameters;
+}
+
+/**
+ * 暂停线程动作
+ */
+export interface PauseThreadAction extends BaseTriggerAction {
+  type: 'pause_thread';
+  parameters: PauseThreadActionParameters;
+}
+
+/**
+ * 恢复线程动作
+ */
+export interface ResumeThreadAction extends BaseTriggerAction {
+  type: 'resume_thread';
+  parameters: ResumeThreadActionParameters;
+}
+
+/**
+ * 跳过节点动作
+ */
+export interface SkipNodeAction extends BaseTriggerAction {
+  type: 'skip_node';
+  parameters: SkipNodeActionParameters;
+}
+
+/**
+ * 设置变量动作
+ */
+export interface SetVariableAction extends BaseTriggerAction {
+  type: 'set_variable';
+  parameters: SetVariableActionParameters;
+}
+
+/**
+ * 发送通知动作
+ */
+export interface SendNotificationAction extends BaseTriggerAction {
+  type: 'send_notification';
+  parameters: SendNotificationActionParameters;
+}
+
+/**
+ * 自定义动作
+ */
+export interface CustomAction extends BaseTriggerAction {
+  type: 'custom';
+  parameters: CustomActionParameters;
+}
+
+/**
+ * 应用消息操作动作
+ */
+export interface ApplyMessageOperationAction extends BaseTriggerAction {
+  type: 'apply_message_operation';
+  parameters: ApplyMessageOperationActionParameters;
+}
+
+/**
+ * 执行触发子工作流动作
+ */
+export interface ExecuteTriggeredSubgraphAction extends BaseTriggerAction {
+  type: 'execute_triggered_subgraph';
+  parameters: ExecuteTriggeredSubgraphActionConfig;
+}
+
+/**
+ * 执行脚本动作
+ */
+export interface ExecuteScriptAction extends BaseTriggerAction {
+  type: 'execute_script';
+  parameters: ExecuteScriptActionParameters;
+}
+
+/**
+ * 触发动作联合类型
+ * 使用可辨识联合实现类型安全
+ */
+export type TriggerAction =
+  | StartWorkflowAction
+  | StopWorkflowAction
+  | StopThreadAction
+  | PauseThreadAction
+  | ResumeThreadAction
+  | SkipNodeAction
+  | SetVariableAction
+  | SendNotificationAction
+  | CustomAction
+  | ApplyMessageOperationAction
+  | ExecuteTriggeredSubgraphAction
+  | ExecuteScriptAction;
+
+/**
+ * 类型守卫：检查是否为特定类型的触发动作
+ */
+export function isTriggerActionType<T extends TriggerActionType>(
+  action: TriggerAction,
+  type: T
+): action is TriggerAction & { type: T } {
+  return action.type === type;
 }
 
 /**

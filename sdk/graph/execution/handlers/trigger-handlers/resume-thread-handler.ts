@@ -63,6 +63,11 @@ export async function resumeThreadHandler(
   const executionTime = now();
 
   try {
+    // 检查动作类型
+    if (action.type !== 'resume_thread') {
+      throw new RuntimeValidationError('Action type must be resume_thread', { operation: 'handle', field: 'type' });
+    }
+
     const { threadId } = action.parameters;
 
     if (!threadId) {

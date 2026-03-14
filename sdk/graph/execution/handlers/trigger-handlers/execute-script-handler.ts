@@ -14,18 +14,18 @@ export const executeScriptHandler: TriggerHandler = async (
   triggerId,
   ...dependencies
 ) => {
+  // 类型断言确保参数符合 ExecuteScriptActionConfig
+  const config = action.parameters as {
+    scriptName: string;
+    parameters?: Record<string, any>;
+    timeout?: number;
+    ignoreError?: boolean;
+    validateExistence?: boolean;
+  };
+
   try {
     // 获取脚本服务（假设通过依赖注入传递）
     const scriptService = dependencies[0] as ScriptService;
-    
-    // 类型断言确保参数符合 ExecuteScriptActionConfig
-    const config = action.parameters as {
-      scriptName: string;
-      parameters?: Record<string, any>;
-      timeout?: number;
-      ignoreError?: boolean;
-      validateExistence?: boolean;
-    };
 
     // 执行脚本
     const result = await scriptService.execute(
@@ -44,7 +44,7 @@ export const executeScriptHandler: TriggerHandler = async (
       result
     };
   } catch (error) {
-    if (action.parameters['ignoreError']) {
+    if (config.ignoreError) {
       return {
         triggerId,
         success: true,

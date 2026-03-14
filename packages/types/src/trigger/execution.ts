@@ -4,7 +4,7 @@
 
 import type { ID, Timestamp, Metadata } from '../common.js';
 import type { TriggerAction } from './config.js';
-import type { Trigger, WorkflowTrigger } from './definition.js';
+import type { Trigger } from './definition.js';
 
 /**
  * 触发器执行结果接口
@@ -27,29 +27,22 @@ export interface TriggerExecutionResult {
 }
 
 /**
- * 将WorkflowTrigger转换为Trigger
- * @param workflowTrigger workflow触发器定义
+ * 将定义时的 Trigger 转换为运行时的 Trigger
+ * 补充运行时字段（status, triggerCount, createdAt, updatedAt, workflowId）
+ * @param trigger 触发器定义
  * @param workflowId 工作流ID
  * @returns 运行时触发器实例
  */
 export function convertToTrigger(
-  workflowTrigger: WorkflowTrigger,
+  trigger: Trigger,
   workflowId: ID
 ): Trigger {
   return {
-    id: workflowTrigger.id,
-    name: workflowTrigger.name,
-    description: workflowTrigger.description,
-    condition: workflowTrigger.condition,
-    action: workflowTrigger.action,
-    status: workflowTrigger.enabled !== false ? 'enabled' : 'disabled',
+    ...trigger,
+    status: trigger.enabled !== false ? 'enabled' : 'disabled',
     workflowId: workflowId,
-    maxTriggers: workflowTrigger.maxTriggers,
-    triggerCount: 0,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    metadata: workflowTrigger.metadata,
-    createCheckpoint: workflowTrigger.createCheckpoint,
-    checkpointDescription: workflowTrigger.checkpointDescription
+    triggerCount: trigger.triggerCount ?? 0,
+    createdAt: trigger.createdAt ?? Date.now(),
+    updatedAt: trigger.updatedAt ?? Date.now()
   };
 }

@@ -106,16 +106,174 @@ const executeScriptActionConfigSchema = z.object({
   validateExistence: z.boolean().optional()
 });
 
+// ============================================================================
+// 各动作类型参数的专门 schema
+// ============================================================================
+
 /**
- * 触发动作schema
+ * 启动工作流动作参数 schema
  */
-const triggerActionSchema = z.object({
-  type: z.custom<TriggerActionType>((val): val is TriggerActionType =>
-    ['start_workflow', 'stop_workflow', 'pause_thread', 'resume_thread', 'skip_node', 'set_variable', 'send_notification', 'custom', 'execute_triggered_subgraph', 'execute_script'].includes(val as TriggerActionType)
-  ),
-  parameters: z.record(z.string(), z.any()),
-  metadata: z.record(z.string(), z.any()).optional()
+const startWorkflowActionParametersSchema = z.object({
+  workflowId: z.string().min(1, 'Workflow ID is required'),
+  input: z.record(z.string(), z.any()).optional(),
+  waitForCompletion: z.boolean().optional()
 });
+
+/**
+ * 停止工作流动作参数 schema
+ */
+const stopWorkflowActionParametersSchema = z.object({
+  workflowId: z.string().min(1, 'Workflow ID is required'),
+  force: z.boolean().optional()
+});
+
+/**
+ * 停止线程动作参数 schema
+ */
+const stopThreadActionParametersSchema = z.object({
+  threadId: z.string().min(1, 'Thread ID is required'),
+  force: z.boolean().optional()
+});
+
+/**
+ * 暂停线程动作参数 schema
+ */
+const pauseThreadActionParametersSchema = z.object({
+  threadId: z.string().min(1, 'Thread ID is required'),
+  reason: z.string().optional()
+});
+
+/**
+ * 恢复线程动作参数 schema
+ */
+const resumeThreadActionParametersSchema = z.object({
+  threadId: z.string().min(1, 'Thread ID is required')
+});
+
+/**
+ * 跳过节点动作参数 schema
+ */
+const skipNodeActionParametersSchema = z.object({
+  threadId: z.string().min(1, 'Thread ID is required'),
+  nodeId: z.string().min(1, 'Node ID is required')
+});
+
+/**
+ * 设置变量动作参数 schema
+ */
+const setVariableActionParametersSchema = z.object({
+  threadId: z.string().min(1, 'Thread ID is required'),
+  variables: z.record(z.string(), z.any()).refine(
+    (vars) => Object.keys(vars).length > 0,
+    'At least one variable must be specified'
+  ),
+  scope: z.enum(['global', 'thread', 'local', 'loop']).optional()
+});
+
+/**
+ * 发送通知动作参数 schema
+ */
+const sendNotificationActionParametersSchema = z.object({
+  message: z.string().min(1, 'Message is required'),
+  recipients: z.array(z.string()).optional(),
+  level: z.enum(['info', 'warning', 'error', 'success']).optional(),
+  channel: z.enum(['email', 'sms', 'push', 'webhook', 'in_app']).optional()
+});
+
+/**
+ * 自定义动作参数 schema
+ */
+const customActionParametersSchema = z.object({
+  handlerName: z.string().min(1, 'Handler name is required'),
+  data: z.record(z.string(), z.any()).optional()
+});
+
+/**
+ * 应用消息操作动作参数 schema
+ */
+const applyMessageOperationActionParametersSchema = z.object({
+  threadId: z.string().min(1, 'Thread ID is required'),
+  operationType: z.enum(['compress', 'truncate', 'summarize', 'mark', 'unmark']),
+  config: z.record(z.string(), z.any()).optional()
+});
+
+/**
+ * 触发动作schema - 使用 discriminatedUnion 实现类型安全
+ */
+const triggerActionSchema = z.discriminatedUnion('type', [
+  // start_workflow
+  z.object({
+    type: z.literal('start_workflow'),
+    parameters: startWorkflowActionParametersSchema,
+    metadata: z.record(z.string(), z.any()).optional()
+  }),
+  // stop_workflow
+  z.object({
+    type: z.literal('stop_workflow'),
+    parameters: stopWorkflowActionParametersSchema,
+    metadata: z.record(z.string(), z.any()).optional()
+  }),
+  // stop_thread
+  z.object({
+    type: z.literal('stop_thread'),
+    parameters: stopThreadActionParametersSchema,
+    metadata: z.record(z.string(), z.any()).optional()
+  }),
+  // pause_thread
+  z.object({
+    type: z.literal('pause_thread'),
+    parameters: pauseThreadActionParametersSchema,
+    metadata: z.record(z.string(), z.any()).optional()
+  }),
+  // resume_thread
+  z.object({
+    type: z.literal('resume_thread'),
+    parameters: resumeThreadActionParametersSchema,
+    metadata: z.record(z.string(), z.any()).optional()
+  }),
+  // skip_node
+  z.object({
+    type: z.literal('skip_node'),
+    parameters: skipNodeActionParametersSchema,
+    metadata: z.record(z.string(), z.any()).optional()
+  }),
+  // set_variable
+  z.object({
+    type: z.literal('set_variable'),
+    parameters: setVariableActionParametersSchema,
+    metadata: z.record(z.string(), z.any()).optional()
+  }),
+  // send_notification
+  z.object({
+    type: z.literal('send_notification'),
+    parameters: sendNotificationActionParametersSchema,
+    metadata: z.record(z.string(), z.any()).optional()
+  }),
+  // custom
+  z.object({
+    type: z.literal('custom'),
+    parameters: customActionParametersSchema,
+    metadata: z.record(z.string(), z.any()).optional()
+  }),
+  // apply_message_operation
+  z.object({
+    type: z.literal('apply_message_operation'),
+    parameters: applyMessageOperationActionParametersSchema,
+    metadata: z.record(z.string(), z.any()).optional()
+  }),
+  // execute_triggered_subgraph
+  z.object({
+    type: z.literal('execute_triggered_subgraph'),
+    parameters: executeTriggeredSubgraphActionConfigSchema,
+    metadata: z.record(z.string(), z.any()).optional()
+  }),
+  // execute_script
+  z.object({
+    type: z.literal('execute_script'),
+    parameters: executeScriptActionConfigSchema,
+    metadata: z.record(z.string(), z.any()).optional()
+  })
+]);
 
 /**
  * WorkflowTrigger schema
@@ -128,7 +286,9 @@ const workflowTriggerSchema = z.object({
   action: triggerActionSchema,
   enabled: z.boolean().optional(),
   maxTriggers: z.number().int().min(0, 'Max triggers must be a non-negative integer').optional(),
-  metadata: z.record(z.string(), z.any()).optional()
+  metadata: z.record(z.string(), z.any()).optional(),
+  createCheckpoint: z.boolean().optional(),
+  checkpointDescription: z.string().optional()
 });
 
 /**
@@ -144,7 +304,7 @@ const triggerConfigOverrideSchema = z.object({
   }).optional(),
   action: z.object({
     type: z.custom<TriggerActionType>((val): val is TriggerActionType =>
-      ['start_workflow', 'stop_workflow', 'pause_thread', 'resume_thread', 'skip_node', 'set_variable', 'send_notification', 'custom', 'execute_triggered_subgraph', 'execute_script'].includes(val as TriggerActionType)
+      ['start_workflow', 'stop_workflow', 'stop_thread', 'pause_thread', 'resume_thread', 'skip_node', 'set_variable', 'send_notification', 'custom', 'apply_message_operation', 'execute_triggered_subgraph', 'execute_script'].includes(val as TriggerActionType)
     ).optional(),
     parameters: z.record(z.string(), z.any()).optional(),
     metadata: z.record(z.string(), z.any()).optional()
@@ -206,34 +366,8 @@ export function validateExecuteScriptActionConfig(
  * @throws ValidationError 当配置无效时抛出
  */
 export function validateTriggerAction(action: TriggerAction, path: string = 'action'): Result<TriggerAction, ConfigurationValidationError[]> {
-  const result = validateConfig(action, triggerActionSchema, path, 'trigger');
-  if (result.isErr()) {
-    return result;
-  }
-
-  // 特殊处理：当 action.type 为 EXECUTE_TRIGGERED_SUBGRAPH 时，验证 parameters
-  if (action.type === 'execute_triggered_subgraph') {
-    const paramResult = validateExecuteTriggeredSubgraphActionConfig(
-      action.parameters as ExecuteTriggeredSubgraphActionConfig,
-      `${path}.parameters`
-    );
-    if (paramResult.isErr()) {
-      return err(paramResult.error);
-    }
-  }
-
-  // 特殊处理：当 action.type 为 EXECUTE_SCRIPT 时，验证 parameters
-  if (action.type === 'execute_script') {
-    const paramResult = validateExecuteScriptActionConfig(
-      action.parameters as ExecuteScriptActionConfig,
-      `${path}.parameters`
-    );
-    if (paramResult.isErr()) {
-      return err(paramResult.error);
-    }
-  }
-
-  return ok(action);
+  // 使用 discriminatedUnion 的 triggerActionSchema 会自动验证每种类型的参数
+  return validateConfig(action, triggerActionSchema, path, 'trigger') as Result<TriggerAction, ConfigurationValidationError[]>;
 }
 
 /**
@@ -243,7 +377,7 @@ export function validateTriggerAction(action: TriggerAction, path: string = 'act
  * @throws ValidationError 当配置无效时抛出
  */
 export function validateWorkflowTrigger(trigger: WorkflowTrigger, path: string = 'triggers'): Result<WorkflowTrigger, ConfigurationValidationError[]> {
-  return validateConfig(trigger, workflowTriggerSchema, path, 'trigger');
+  return validateConfig(trigger, workflowTriggerSchema, path, 'trigger') as Result<WorkflowTrigger, ConfigurationValidationError[]>;
 }
 
 /**
@@ -253,7 +387,7 @@ export function validateWorkflowTrigger(trigger: WorkflowTrigger, path: string =
  * @throws ValidationError 当配置无效时抛出
  */
 export function validateTriggerReference(reference: TriggerReference, path: string = 'triggers'): Result<TriggerReference, ConfigurationValidationError[]> {
-  return validateConfig(reference, triggerReferenceSchema, path, 'trigger');
+  return validateConfig(reference, triggerReferenceSchema, path, 'trigger') as Result<TriggerReference, ConfigurationValidationError[]>;
 }
 
 /**

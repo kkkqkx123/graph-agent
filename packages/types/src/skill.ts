@@ -83,7 +83,7 @@ export interface Skill {
    * - 值：文件内容
    * - 懒加载
    */
-  references?: Map<string, string>;
+  references?: Record<string, string>;
 
   /**
    * 示例代码
@@ -91,7 +91,7 @@ export interface Skill {
    * - 值：文件内容
    * - 懒加载
    */
-  examples?: Map<string, string>;
+  examples?: Record<string, string>;
 
   /**
    * 工具脚本
@@ -99,7 +99,7 @@ export interface Skill {
    * - 值：文件内容
    * - 懒加载
    */
-  scripts?: Map<string, string>;
+  scripts?: Record<string, string>;
 
   /**
    * 资源文件
@@ -107,7 +107,7 @@ export interface Skill {
    * - 值：文件内容或 Buffer
    * - 懒加载
    */
-  assets?: Map<string, string | Buffer>;
+  assets?: Record<string, string | Buffer>;
 }
 
 /**

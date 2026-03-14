@@ -6,6 +6,11 @@ import type { Metadata } from '../common.js';
 import type { VariableScope } from './scopes.js';
 
 /**
+ * 变量值类型
+ */
+export type VariableValueType = 'number' | 'string' | 'boolean' | 'array' | 'object';
+
+/**
  * 线程变量类型
  */
 export interface ThreadVariable {
@@ -14,7 +19,7 @@ export interface ThreadVariable {
   /** 变量值 */
   value: any;
   /** 变量类型 */
-  type: string;
+  type: VariableValueType;
   /** 变量作用域 */
   scope: VariableScope;
   /** 是否只读 */

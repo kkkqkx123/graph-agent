@@ -249,7 +249,7 @@ export class TriggerCoordinator {
     for (const trigger of enabledTriggers) {
       try {
         // 检查触发次数限制
-        if (trigger.maxTriggers && trigger.maxTriggers > 0 && trigger.triggerCount >= trigger.maxTriggers) {
+        if (trigger.maxTriggers && trigger.maxTriggers > 0 && (trigger.triggerCount ?? 0) >= trigger.maxTriggers) {
           continue;
         }
 

@@ -63,6 +63,11 @@ export async function pauseThreadHandler(
   const executionTime = now();
 
   try {
+    // 检查动作类型
+    if (action.type !== 'pause_thread') {
+      throw new RuntimeValidationError('Action type must be pause_thread', { operation: 'handle', field: 'type' });
+    }
+
     const { threadId } = action.parameters;
 
     if (!threadId) {

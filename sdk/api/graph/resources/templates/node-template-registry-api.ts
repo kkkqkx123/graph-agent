@@ -221,7 +221,7 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
       ));
     }
 
-    if (!template.type || !['START', 'END', 'VARIABLE', 'FORK', 'JOIN', 'SUBGRAPH', 'SCRIPT', 'LLM', 'tool', 'ADD_TOOL', 'USER_INTERACTION', 'ROUTE', 'CONTEXT_PROCESSOR', 'LOOP_START', 'LOOP_END', 'START_FROM_TRIGGER', 'CONTINUE_FROM_TRIGGER'].includes(template.type)) {
+    if (!template.type || !['START', 'END', 'VARIABLE', 'FORK', 'JOIN', 'SUBGRAPH', 'SCRIPT', 'LLM', 'ADD_TOOL', 'USER_INTERACTION', 'ROUTE', 'CONTEXT_PROCESSOR', 'LOOP_START', 'LOOP_END', 'START_FROM_TRIGGER', 'CONTINUE_FROM_TRIGGER'].includes(template.type)) {
       errors.push(new ConfigurationValidationError(
         `Invalid node type: ${template.type}`,
         {

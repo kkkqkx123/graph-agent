@@ -15,8 +15,10 @@ const logger = createContextualLogger({ component: 'CustomTriggerHandler' });
  * 自定义动作参数
  */
 export interface CustomActionParameters {
-  /** 自定义处理函数 */
-  handler: (action: BaseTriggerAction, eventData: BaseEventData) => Promise<any>;
+  /** 自定义处理器名称 */
+  handlerName: string;
+  /** 自定义参数 */
+  data?: Record<string, any>;
   /** 其他参数 */
   [key: string]: any;
 }
@@ -39,29 +41,28 @@ export async function executeCustomAction(
 
   try {
     const params = action.parameters as CustomActionParameters;
-    const { handler } = params;
+    const { handlerName, data } = params;
 
-    if (!handler || typeof handler !== 'function') {
-      logger.warn('Custom action missing handler function', { triggerId: trigger.id });
+    if (!handlerName || typeof handlerName !== 'string') {
+      logger.warn('Custom action missing handlerName', { triggerId: trigger.id });
       return {
         triggerId: trigger.id,
         success: false,
         action,
         executionTime: now() - startTime,
-        error: 'Custom action requires a handler function'
+        error: 'Custom action requires a handlerName'
       };
     }
 
-    // 执行自定义处理函数
-    const result = await handler(action, eventData);
-
-    logger.debug('Custom trigger action completed', { triggerId: trigger.id, executionTime: now() - startTime });
+    // TODO: 实现通过 handlerName 查找并执行对应的 handler 函数
+    // 目前先抛出错误，等待实现 handler 注册机制
+    logger.warn('Custom handler execution not fully implemented', { triggerId: trigger.id, handlerName });
     return {
       triggerId: trigger.id,
-      success: true,
+      success: false,
       action,
       executionTime: now() - startTime,
-      result
+      error: `Custom handler '${handlerName}' not found. Handler registration mechanism not yet implemented.`
     };
   } catch (error) {
     return {
@@ -88,15 +89,15 @@ export function createCustomHandler<TContext>(
   return async (trigger, eventData) => {
     const params = trigger.action.parameters as CustomActionParameters;
 
-    if (params.handler && typeof params.handler === 'function') {
-      // 将上下文注入到处理函数
-      const result = await params.handler.call(context, trigger.action, eventData);
+    if (params.handlerName && typeof params.handlerName === 'string') {
+      // TODO: 实现通过 handlerName 查找并执行对应的 handler 函数
+      // 目前先返回错误，等待实现 handler 注册机制
       return {
         triggerId: trigger.id,
-        success: true,
+        success: false,
         action: trigger.action,
         executionTime: now(),
-        result
+        error: `Custom handler '${params.handlerName}' not found. Handler registration mechanism not yet implemented.`
       };
     }
 
@@ -105,7 +106,7 @@ export function createCustomHandler<TContext>(
       success: false,
       action: trigger.action,
       executionTime: now(),
-      error: 'No handler provided'
+      error: 'No handlerName provided'
     };
   };
 }

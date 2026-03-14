@@ -98,7 +98,7 @@ export class NodeValidator {
     // type 字段检查
     const validTypes = [
       'START', 'END', 'VARIABLE', 'FORK', 'JOIN', 'SUBGRAPH', 'SCRIPT',
-      'LLM', 'TOOL', 'ADD_TOOL', 'USER_INTERACTION', 'ROUTE',
+      'LLM', 'ADD_TOOL', 'USER_INTERACTION', 'ROUTE',
       'CONTEXT_PROCESSOR', 'LOOP_START', 'LOOP_END', 'AGENT_LOOP',
       'START_FROM_TRIGGER', 'CONTINUE_FROM_TRIGGER'
     ];

@@ -3,6 +3,7 @@
  */
 
 import type { VariableScope } from '../thread/scopes.js';
+import type { VariableValueType } from '../thread/variables.js';
 
 /**
  * 工作流变量定义类型
@@ -35,7 +36,7 @@ export interface WorkflowVariable {
   /** 变量名称 */
   name: string;
   /** 变量类型 */
-  type: 'number' | 'string' | 'boolean' | 'array' | 'object';
+  type: VariableValueType;
   /** 变量初始值 */
   defaultValue?: any;
   /** 变量描述 */

@@ -64,6 +64,11 @@ export async function skipNodeHandler(
   const executionTime = now();
 
   try {
+    // 检查动作类型
+    if (action.type !== 'skip_node') {
+      throw new ValidationError('Action type must be skip_node', 'type');
+    }
+
     const { threadId, nodeId } = action.parameters;
 
     if (!threadId) {

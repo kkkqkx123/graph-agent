@@ -60,6 +60,11 @@ export async function setVariableHandler(
   const startTime = now();
 
   try {
+    // 检查动作类型
+    if (action.type !== 'set_variable') {
+      throw new RuntimeValidationError('Action type must be set_variable', { operation: 'handle', field: 'type' });
+    }
+
     const { threadId, variables } = action.parameters;
 
     if (!threadId || !variables) {

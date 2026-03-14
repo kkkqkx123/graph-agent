@@ -57,6 +57,11 @@ export async function sendNotificationHandler(
   const executionTime = now();
 
   try {
+    // 检查动作类型
+    if (action.type !== 'send_notification') {
+      throw new RuntimeValidationError('Action type must be send_notification', { operation: 'handle', field: 'type' });
+    }
+
     const { message, recipients, level } = action.parameters;
 
     if (!message) {

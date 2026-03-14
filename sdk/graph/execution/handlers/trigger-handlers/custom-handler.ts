@@ -61,12 +61,20 @@ export async function customHandler(
   const startTime = now();
 
   try {
-    const { handler } = action.parameters;
-
-    if (!handler || typeof handler !== 'function') {
+    // 检查动作类型
+    if (action.type !== 'custom') {
       throw new RuntimeValidationError(
-        'handler is required and must be a function for CUSTOM action',
-        { operation: 'handle', field: 'parameters.handler' }
+        'Action type must be custom',
+        { operation: 'handle', field: 'type' }
+      );
+    }
+
+    const { handlerName, data } = action.parameters;
+
+    if (!handlerName || typeof handlerName !== 'string') {
+      throw new RuntimeValidationError(
+        'handlerName is required and must be a string for CUSTOM action',
+        { operation: 'handle', field: 'parameters.handlerName' }
       );
     }
 

@@ -15,8 +15,7 @@ import type {
 import type { VariableNodeConfig } from './configs/variable-configs.js';
 
 import type {
-  ForkNodeConfig,
-  ForkPath
+  ForkNodeConfig
 } from './configs/fork-join-configs.js';
 
 import type { JoinNodeConfig } from './configs/fork-join-configs.js';
@@ -64,8 +63,6 @@ export type NodeType =
   'SCRIPT' |
   /** LLM节点。用于执行LLM api调用。不添加提示词，提示词操作有上下文处理节点负责。 */
   'LLM' |
-  /** 工具节点。通过内部事件通知llm执行器。 */
-  'TOOL' |
   /** 工具添加节点。用于动态添加工具到工具上下文。 */
   'ADD_TOOL' |
   /** 用户交互节点。用于触发展示前端用户交互。仅提供输入、输出渠道，不关心前端实现细节。 */
@@ -133,152 +130,130 @@ interface BaseNodeProps {
 }
 
 // ============================================================================
-// 具体节点类型定义（可辨识联合）
+// 节点类型到配置类型的映射
+// ============================================================================
+
+/**
+ * 节点类型到配置类型的映射接口
+ * 用于类型推导和自动生成节点类型
+ */
+export interface NodeConfigMap {
+  'START': StartNodeConfig;
+  'END': EndNodeConfig;
+  'VARIABLE': VariableNodeConfig;
+  'FORK': ForkNodeConfig;
+  'JOIN': JoinNodeConfig;
+  'SUBGRAPH': SubgraphNodeConfig;
+  'SCRIPT': ScriptNodeConfig;
+  'LLM': LLMNodeConfig;
+  'ADD_TOOL': AddToolNodeConfig;
+  'USER_INTERACTION': UserInteractionNodeConfig;
+  'ROUTE': RouteNodeConfig;
+  'CONTEXT_PROCESSOR': ContextProcessorNodeConfig;
+  'LOOP_START': LoopStartNodeConfig;
+  'LOOP_END': LoopEndNodeConfig;
+  'AGENT_LOOP': AgentLoopNodeConfig;
+  'START_FROM_TRIGGER': StartFromTriggerNodeConfig;
+  'CONTINUE_FROM_TRIGGER': ContinueFromTriggerNodeConfig;
+}
+
+/**
+ * 根据节点类型获取对应的具体节点类型
+ * 辅助类型，用于类型推导
+ */
+export type NodeOfType<T extends NodeType> = BaseNodeProps & {
+  type: T;
+  config: NodeConfigMap[T];
+};
+
+// ============================================================================
+// 具体节点类型定义（使用映射类型自动生成）
 // ============================================================================
 
 /**
  * 开始节点
  */
-export interface StartNode extends BaseNodeProps {
-  type: 'START';
-  config: StartNodeConfig;
-}
+export type StartNode = NodeOfType<'START'>;
 
 /**
  * 结束节点
  */
-export interface EndNode extends BaseNodeProps {
-  type: 'END';
-  config: EndNodeConfig;
-}
+export type EndNode = NodeOfType<'END'>;
 
 /**
  * 变量节点
  */
-export interface VariableNode extends BaseNodeProps {
-  type: 'VARIABLE';
-  config: VariableNodeConfig;
-}
+export type VariableNode = NodeOfType<'VARIABLE'>;
 
 /**
  * 分叉节点
  */
-export interface ForkNode extends BaseNodeProps {
-  type: 'FORK';
-  config: ForkNodeConfig;
-}
+export type ForkNode = NodeOfType<'FORK'>;
 
 /**
  * 连接节点
  */
-export interface JoinNode extends BaseNodeProps {
-  type: 'JOIN';
-  config: JoinNodeConfig;
-}
+export type JoinNode = NodeOfType<'JOIN'>;
 
 /**
  * 子图节点
  */
-export interface SubgraphNode extends BaseNodeProps {
-  type: 'SUBGRAPH';
-  config: SubgraphNodeConfig;
-}
+export type SubgraphNode = NodeOfType<'SUBGRAPH'>;
 
 /**
  * 脚本节点
  */
-export interface ScriptNode extends BaseNodeProps {
-  type: 'SCRIPT';
-  config: ScriptNodeConfig;
-}
+export type ScriptNode = NodeOfType<'SCRIPT'>;
 
 /**
  * LLM节点
  */
-export interface LLMNode extends BaseNodeProps {
-  type: 'LLM';
-  config: LLMNodeConfig;
-}
-
-/**
- * 工具节点
- */
-export interface ToolNode extends BaseNodeProps {
-  type: 'TOOL';
-  config: AddToolNodeConfig;
-}
+export type LLMNode = NodeOfType<'LLM'>;
 
 /**
  * 工具添加节点
  */
-export interface AddToolNode extends BaseNodeProps {
-  type: 'ADD_TOOL';
-  config: AddToolNodeConfig;
-}
+export type AddToolNode = NodeOfType<'ADD_TOOL'>;
 
 /**
  * 用户交互节点
  */
-export interface UserInteractionNode extends BaseNodeProps {
-  type: 'USER_INTERACTION';
-  config: UserInteractionNodeConfig;
-}
+export type UserInteractionNode = NodeOfType<'USER_INTERACTION'>;
 
 /**
  * 路由节点
  */
-export interface RouteNode extends BaseNodeProps {
-  type: 'ROUTE';
-  config: RouteNodeConfig;
-}
+export type RouteNode = NodeOfType<'ROUTE'>;
 
 /**
  * 上下文处理器节点
  */
-export interface ContextProcessorNode extends BaseNodeProps {
-  type: 'CONTEXT_PROCESSOR';
-  config: ContextProcessorNodeConfig;
-}
+export type ContextProcessorNode = NodeOfType<'CONTEXT_PROCESSOR'>;
 
 /**
  * 循环开始节点
  */
-export interface LoopStartNode extends BaseNodeProps {
-  type: 'LOOP_START';
-  config: LoopStartNodeConfig;
-}
+export type LoopStartNode = NodeOfType<'LOOP_START'>;
 
 /**
  * 循环结束节点
  */
-export interface LoopEndNode extends BaseNodeProps {
-  type: 'LOOP_END';
-  config: LoopEndNodeConfig;
-}
+export type LoopEndNode = NodeOfType<'LOOP_END'>;
 
 /**
  * Agent Loop节点
  */
-export interface AgentLoopNode extends BaseNodeProps {
-  type: 'AGENT_LOOP';
-  config: AgentLoopNodeConfig;
-}
+export type AgentLoopNode = NodeOfType<'AGENT_LOOP'>;
 
 /**
  * 从触发器开始节点
  */
-export interface StartFromTriggerNode extends BaseNodeProps {
-  type: 'START_FROM_TRIGGER';
-  config: StartFromTriggerNodeConfig;
-}
+export type StartFromTriggerNode = NodeOfType<'START_FROM_TRIGGER'>;
 
 /**
  * 从触发器继续节点
  */
-export interface ContinueFromTriggerNode extends BaseNodeProps {
-  type: 'CONTINUE_FROM_TRIGGER';
-  config: ContinueFromTriggerNodeConfig;
-}
+export type ContinueFromTriggerNode = NodeOfType<'CONTINUE_FROM_TRIGGER'>;
 
 // ============================================================================
 // 节点联合类型
@@ -297,7 +272,6 @@ export type Node =
   | SubgraphNode
   | ScriptNode
   | LLMNode
-  | ToolNode
   | AddToolNode
   | UserInteractionNode
   | RouteNode
@@ -313,127 +287,121 @@ export type Node =
 // ============================================================================
 
 /**
+ * 通用类型守卫工厂函数
+ * 用于创建特定节点类型的类型守卫
+ *
+ * @example
+ * const isStartNode = createNodeTypeGuard('START');
+ * if (isStartNode(node)) {
+ *   // node 自动收窄为 StartNode
+ * }
+ */
+export function createNodeTypeGuard<T extends NodeType>(type: T) {
+  return (node: unknown): node is NodeOfType<T> =>
+    typeof node === 'object' && node !== null && (node as Node).type === type;
+}
+
+/**
+ * 检查节点是否为指定类型
+ * 通用类型守卫函数，适用于所有节点类型
+ *
+ * @example
+ * if (isNodeType(node, 'START')) {
+ *   // node 自动收窄为 StartNode
+ * }
+ */
+export function isNodeType<T extends NodeType>(
+  node: unknown,
+  type: T
+): node is NodeOfType<T> {
+  return typeof node === 'object' && node !== null && (node as Node).type === type;
+}
+
+// ============================================================================
+// 具体类型守卫函数（使用工厂函数创建，保持向后兼容）
+// ============================================================================
+
+/**
  * 检查节点是否为 START 类型
  */
-export function isStartNode(node: Node): node is StartNode {
-  return node.type === 'START';
-}
+export const isStartNode = createNodeTypeGuard('START');
 
 /**
  * 检查节点是否为 END 类型
  */
-export function isEndNode(node: Node): node is EndNode {
-  return node.type === 'END';
-}
+export const isEndNode = createNodeTypeGuard('END');
 
 /**
  * 检查节点是否为 VARIABLE 类型
  */
-export function isVariableNode(node: Node): node is VariableNode {
-  return node.type === 'VARIABLE';
-}
+export const isVariableNode = createNodeTypeGuard('VARIABLE');
 
 /**
  * 检查节点是否为 FORK 类型
  */
-export function isForkNode(node: Node): node is ForkNode {
-  return node.type === 'FORK';
-}
+export const isForkNode = createNodeTypeGuard('FORK');
 
 /**
  * 检查节点是否为 JOIN 类型
  */
-export function isJoinNode(node: Node): node is JoinNode {
-  return node.type === 'JOIN';
-}
+export const isJoinNode = createNodeTypeGuard('JOIN');
 
 /**
  * 检查节点是否为 SUBGRAPH 类型
  */
-export function isSubgraphNode(node: Node): node is SubgraphNode {
-  return node.type === 'SUBGRAPH';
-}
+export const isSubgraphNode = createNodeTypeGuard('SUBGRAPH');
 
 /**
  * 检查节点是否为 SCRIPT 类型
  */
-export function isScriptNode(node: Node): node is ScriptNode {
-  return node.type === 'SCRIPT';
-}
+export const isScriptNode = createNodeTypeGuard('SCRIPT');
 
 /**
  * 检查节点是否为 LLM 类型
  */
-export function isLLMNode(node: Node): node is LLMNode {
-  return node.type === 'LLM';
-}
-
-/**
- * 检查节点是否为 TOOL 类型
- */
-export function isToolNode(node: Node): node is ToolNode {
-  return node.type === 'TOOL';
-}
+export const isLLMNode = createNodeTypeGuard('LLM');
 
 /**
  * 检查节点是否为 ADD_TOOL 类型
  */
-export function isAddToolNode(node: Node): node is AddToolNode {
-  return node.type === 'ADD_TOOL';
-}
+export const isAddToolNode = createNodeTypeGuard('ADD_TOOL');
 
 /**
  * 检查节点是否为 USER_INTERACTION 类型
  */
-export function isUserInteractionNode(node: Node): node is UserInteractionNode {
-  return node.type === 'USER_INTERACTION';
-}
+export const isUserInteractionNode = createNodeTypeGuard('USER_INTERACTION');
 
 /**
  * 检查节点是否为 ROUTE 类型
  */
-export function isRouteNode(node: Node): node is RouteNode {
-  return node.type === 'ROUTE';
-}
+export const isRouteNode = createNodeTypeGuard('ROUTE');
 
 /**
  * 检查节点是否为 CONTEXT_PROCESSOR 类型
  */
-export function isContextProcessorNode(node: Node): node is ContextProcessorNode {
-  return node.type === 'CONTEXT_PROCESSOR';
-}
+export const isContextProcessorNode = createNodeTypeGuard('CONTEXT_PROCESSOR');
 
 /**
  * 检查节点是否为 LOOP_START 类型
  */
-export function isLoopStartNode(node: Node): node is LoopStartNode {
-  return node.type === 'LOOP_START';
-}
+export const isLoopStartNode = createNodeTypeGuard('LOOP_START');
 
 /**
  * 检查节点是否为 LOOP_END 类型
  */
-export function isLoopEndNode(node: Node): node is LoopEndNode {
-  return node.type === 'LOOP_END';
-}
+export const isLoopEndNode = createNodeTypeGuard('LOOP_END');
 
 /**
  * 检查节点是否为 AGENT_LOOP 类型
  */
-export function isAgentLoopNode(node: Node): node is AgentLoopNode {
-  return node.type === 'AGENT_LOOP';
-}
+export const isAgentLoopNode = createNodeTypeGuard('AGENT_LOOP');
 
 /**
  * 检查节点是否为 START_FROM_TRIGGER 类型
  */
-export function isStartFromTriggerNode(node: Node): node is StartFromTriggerNode {
-  return node.type === 'START_FROM_TRIGGER';
-}
+export const isStartFromTriggerNode = createNodeTypeGuard('START_FROM_TRIGGER');
 
 /**
  * 检查节点是否为 CONTINUE_FROM_TRIGGER 类型
  */
-export function isContinueFromTriggerNode(node: Node): node is ContinueFromTriggerNode {
-  return node.type === 'CONTINUE_FROM_TRIGGER';
-}
+export const isContinueFromTriggerNode = createNodeTypeGuard('CONTINUE_FROM_TRIGGER');

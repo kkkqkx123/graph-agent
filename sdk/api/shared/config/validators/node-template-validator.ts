@@ -50,7 +50,7 @@ export function validateNodeTemplateConfig(config: ConfigFile): Result<NodeTempl
     errors.push(...validateEnumField(
       template.type,
       'NodeTemplate.type',
-      ['START', 'END', 'VARIABLE', 'FORK', 'JOIN', 'SUBGRAPH', 'SCRIPT', 'LLM', 'tool', 'ADD_TOOL', 'USER_INTERACTION', 'ROUTE', 'CONTEXT_PROCESSOR', 'LOOP_START', 'LOOP_END', 'START_FROM_TRIGGER', 'CONTINUE_FROM_TRIGGER']
+      ['START', 'END', 'VARIABLE', 'FORK', 'JOIN', 'SUBGRAPH', 'SCRIPT', 'LLM', 'ADD_TOOL', 'USER_INTERACTION', 'ROUTE', 'CONTEXT_PROCESSOR', 'LOOP_START', 'LOOP_END', 'START_FROM_TRIGGER', 'CONTINUE_FROM_TRIGGER']
     ));
   }
 
