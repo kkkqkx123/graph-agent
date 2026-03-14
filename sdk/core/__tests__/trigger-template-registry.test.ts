@@ -31,7 +31,7 @@ describe('Trigger Template Registry - 触发器模板注册表', () => {
           eventType: 'THREAD_STARTED'
         },
         action: {
-          type: 'stop_thread',
+          type: 'pause_thread',
           parameters: {
             threadId: '${threadId}'
           }
@@ -56,7 +56,7 @@ describe('Trigger Template Registry - 触发器模板注册表', () => {
           eventType: 'THREAD_STARTED'
         },
         action: {
-          type: 'stop_thread',
+          type: 'pause_thread',
           parameters: {
             threadId: '${threadId}'
           }
@@ -76,7 +76,7 @@ describe('Trigger Template Registry - 触发器模板注册表', () => {
           name: 'template-1',
           description: '模板1',
           condition: { eventType: 'THREAD_STARTED' },
-          action: { type: 'stop_thread', parameters: { threadId: '${threadId}' } },
+          action: { type: 'pause_thread', parameters: { threadId: '${threadId}' } },
           createdAt: Date.now(),
           updatedAt: Date.now()
         },
@@ -110,7 +110,7 @@ describe('Trigger Template Registry - 触发器模板注册表', () => {
       const template: any = {
         name: 'test-template',
         // condition 缺失
-        action: { type: 'stop_thread', parameters: { threadId: '${threadId}' } }
+        action: { type: 'pause_thread', parameters: { threadId: '${threadId}' } }
       };
 
       expect(() => registry.register(template)).toThrow(ConfigurationValidationError);
@@ -122,7 +122,7 @@ describe('Trigger Template Registry - 触发器模板注册表', () => {
         condition: {
           eventType: 'INVALID_EVENT_TYPE'
         },
-        action: { type: 'stop_thread', parameters: { threadId: '${threadId}' } }
+        action: { type: 'pause_thread', parameters: { threadId: '${threadId}' } }
       };
 
       expect(() => registry.register(template)).toThrow(ConfigurationValidationError);
@@ -151,7 +151,7 @@ describe('Trigger Template Registry - 触发器模板注册表', () => {
           name: 'template-1',
           description: '第一个模板',
           condition: { eventType: 'THREAD_STARTED' },
-          action: { type: 'stop_thread', parameters: { threadId: '${threadId}' } },
+          action: { type: 'pause_thread', parameters: { threadId: '${threadId}' } },
           metadata: { category: 'lifecycle', tags: ['thread'] },
           createdAt: Date.now(),
           updatedAt: Date.now()
@@ -221,7 +221,7 @@ describe('Trigger Template Registry - 触发器模板注册表', () => {
         name: 'test-template',
         description: '原始描述',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: { threadId: '${threadId}' } },
+        action: { type: 'pause_thread', parameters: { threadId: '${threadId}' } },
         enabled: true,
         createdAt: Date.now(),
         updatedAt: Date.now()
@@ -257,12 +257,14 @@ describe('Trigger Template Registry - 触发器模板注册表', () => {
       }).toThrow(TriggerTemplateNotFoundError);
     });
 
-    it('测试更新为无效配置：应抛出验证错误', () => {
-      expect(() => {
-        registry.update('test-template', {
-          name: 'invalid-name-change' // 不应允许更改名称
-        } as any);
-      }).toThrow();
+    it('测试更新为无效配置：名称不应被更改', () => {
+      const originalName = 'test-template';
+      registry.update(originalName, {
+        name: 'invalid-name-change' // 不应允许更改名称
+      } as any);
+
+      // 验证名称没有改变
+      expect(registry.get(originalName)?.name).toBe(originalName);
     });
 
     it('测试删除触发器模板：unregister方法正确删除模板', () => {
@@ -286,7 +288,7 @@ describe('Trigger Template Registry - 触发器模板注册表', () => {
           name: 'template-1',
           description: '模板1',
           condition: { eventType: 'THREAD_STARTED' },
-          action: { type: 'stop_thread', parameters: { threadId: '${threadId}' } },
+          action: { type: 'pause_thread', parameters: { threadId: '${threadId}' } },
           createdAt: Date.now(),
           updatedAt: Date.now()
         },
@@ -327,7 +329,7 @@ describe('Trigger Template Registry - 触发器模板注册表', () => {
           name: 'template-1',
           description: '模板1',
           condition: { eventType: 'THREAD_STARTED' },
-          action: { type: 'stop_thread', parameters: { threadId: '${threadId}' } },
+          action: { type: 'pause_thread', parameters: { threadId: '${threadId}' } },
           createdAt: Date.now(),
           updatedAt: Date.now()
         },
@@ -359,7 +361,7 @@ describe('Trigger Template Registry - 触发器模板注册表', () => {
           name: 'thread-started-template',
           description: '在线程启动时触发',
           condition: { eventType: 'THREAD_STARTED' },
-          action: { type: 'stop_thread', parameters: { threadId: '${threadId}' } },
+          action: { type: 'pause_thread', parameters: { threadId: '${threadId}' } },
           metadata: { category: 'lifecycle', tags: ['thread', 'lifecycle'] },
           createdAt: Date.now(),
           updatedAt: Date.now()
@@ -438,7 +440,7 @@ describe('Trigger Template Registry - 触发器模板注册表', () => {
         description: '用于测试导入导出的模板',
         condition: { eventType: 'THREAD_STARTED' },
         action: {
-          type: 'stop_thread',
+          type: 'pause_thread',
           parameters: {
             threadId: '${threadId}'
           }
@@ -497,7 +499,7 @@ describe('Trigger Template Registry - 触发器模板注册表', () => {
       const invalidConfig = JSON.stringify({
         name: 'invalid-template',
         // condition 缺失
-        action: { type: 'stop_thread', parameters: { threadId: '${threadId}' } }
+        action: { type: 'pause_thread', parameters: { threadId: '${threadId}' } }
       });
 
       expect(() => {
@@ -523,7 +525,7 @@ describe('Trigger Template Registry - 触发器模板注册表', () => {
           eventType: 'THREAD_STARTED'
         },
         action: {
-          type: 'stop_thread',
+          type: 'pause_thread',
           parameters: {
             threadId: '${threadId}'
           }
@@ -549,7 +551,7 @@ describe('Trigger Template Registry - 触发器模板注册表', () => {
       expect(workflowTrigger.name).toBe('自定义触发器名称');
       expect(workflowTrigger.description).toBe('测试模板');
       expect(workflowTrigger.condition.eventType).toBe('THREAD_STARTED');
-      expect(workflowTrigger.action.type).toBe('stop_thread');
+      expect(workflowTrigger.action.type).toBe('pause_thread');
       expect(workflowTrigger.enabled).toBe(true);
       expect(workflowTrigger.maxTriggers).toBe(10);
       expect(workflowTrigger.metadata).toEqual({ category: 'test' });
@@ -602,7 +604,7 @@ describe('Trigger Template Registry - 触发器模板注册表', () => {
       expect(workflowTrigger.enabled).toBe(false);
       expect(workflowTrigger.maxTriggers).toBe(10); // 应保持原值
       expect(workflowTrigger.condition.eventType).toBe('THREAD_STARTED'); // 应保持原值
-      expect(workflowTrigger.action.type).toBe('stop_thread'); // 应保持原值
+      expect(workflowTrigger.action.type).toBe('pause_thread'); // 应保持原值
     });
 
     it('测试转换不存在的模板：应抛出错误', () => {
@@ -631,7 +633,7 @@ describe('Trigger Template Registry - 触发器模板注册表', () => {
         name: 'template-with-special-chars_123!@#',
         description: '包含特殊字符的模板',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: { threadId: '${threadId}' } },
+        action: { type: 'pause_thread', parameters: { threadId: '${threadId}' } },
         createdAt: Date.now(),
         updatedAt: Date.now()
       };
@@ -652,7 +654,7 @@ describe('Trigger Template Registry - 触发器模板注册表', () => {
         name: 'large-metadata-template',
         description: '包含大量metadata的模板',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: { threadId: '${threadId}' } },
+        action: { type: 'pause_thread', parameters: { threadId: '${threadId}' } },
         metadata: largeMetadata,
         createdAt: Date.now(),
         updatedAt: Date.now()

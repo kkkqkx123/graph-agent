@@ -121,7 +121,7 @@ describe('Trigger Matcher - 触发器匹配器', () => {
           id: 'trigger-1',
           name: 'Trigger 1',
           condition: { eventType: 'THREAD_STARTED' },
-          action: { type: 'stop_thread', parameters: {} },
+          action: { type: 'pause_thread', parameters: {} },
           enabled: true
         },
         {
@@ -158,7 +158,7 @@ describe('Trigger Matcher - 触发器匹配器', () => {
           id: 'trigger-1',
           name: 'Trigger 1',
           condition: { eventType: 'THREAD_STARTED' },
-          action: { type: 'stop_thread', parameters: {} },
+          action: { type: 'pause_thread', parameters: {} },
           enabled: true
         },
         {
@@ -194,7 +194,7 @@ describe('Trigger Matcher - 触发器匹配器', () => {
           id: 'trigger-1',
           name: 'Trigger 1',
           condition: { eventType: 'THREAD_STARTED' },
-          action: { type: 'stop_thread', parameters: {} }
+          action: { type: 'pause_thread', parameters: {} }
           // enabled 未设置
         }
       ];
@@ -215,7 +215,7 @@ describe('Trigger Matcher - 触发器匹配器', () => {
           id: 'trigger-1',
           name: 'Trigger 1',
           condition: { eventType: 'NODE_CUSTOM_EVENT', eventName: 'event-1' },
-          action: { type: 'stop_thread', parameters: {} },
+          action: { type: 'pause_thread', parameters: {} },
           enabled: true
         },
         {

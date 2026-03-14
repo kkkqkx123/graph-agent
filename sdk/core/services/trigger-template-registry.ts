@@ -266,7 +266,7 @@ class TriggerTemplateRegistry {
     }
 
     // 验证动作类型是否有效
-    const validActionTypes = ['start_workflow', 'stop_workflow', 'pause_thread', 'resume_thread', 'skip_node', 'set_variable', 'send_notification', 'custom', 'execute_triggered_subgraph'];
+    const validActionTypes = ['start_thread', 'stop_thread', 'pause_thread', 'resume_thread', 'skip_node', 'set_variable', 'send_notification', 'custom', 'execute_triggered_subgraph', 'execute_script', 'apply_message_operation'];
     if (!validActionTypes.includes(template.action.type)) {
       throw new ConfigurationValidationError(
         `Invalid action type: ${template.action.type}`,

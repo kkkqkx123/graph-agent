@@ -8,7 +8,7 @@ import { Readable, Writable } from 'stream';
 import { EventEmitter } from 'events';
 import type { IMcpTransport } from './types.js';
 import type { JSONRPCMessage, JSONRPCRequest, JSONRPCResponse, RequestId } from '../types-protocol.js';
-import { NetworkError, ConfigurationError } from '@modular-agent/types';
+import { NetworkError } from '@modular-agent/types';
 import { logger as pkgLogger } from '../../index.js';
 
 const logger = pkgLogger.child('mcp-transport-stdio');

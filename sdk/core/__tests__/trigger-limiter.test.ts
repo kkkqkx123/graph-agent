@@ -25,7 +25,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true
       };
 
@@ -33,7 +33,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-2',
         name: 'Trigger 2',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} }
+        action: { type: 'pause_thread', parameters: {} }
         // enabled 未设置
       };
 
@@ -46,7 +46,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: false
       };
 
@@ -58,7 +58,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         maxTriggers: 5,
         triggerCount: 2
@@ -72,7 +72,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         maxTriggers: 5,
         triggerCount: 5
@@ -86,7 +86,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         maxTriggers: 5,
         triggerCount: 6
@@ -100,7 +100,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         maxTriggers: 0,
         triggerCount: 1000
@@ -110,7 +110,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-2',
         name: 'Trigger 2',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         triggerCount: 1000
         // maxTriggers 未设置
@@ -125,7 +125,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         maxTriggers: 3
         // triggerCount 未设置，默认为 0
@@ -141,7 +141,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true
         // triggerCount 未设置，默认为 0
       };
@@ -154,7 +154,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         triggerCount: 1
       };
@@ -167,7 +167,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: false,
         triggerCount: 0
       };
@@ -180,7 +180,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: false,
         triggerCount: 5
       };
@@ -193,7 +193,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         maxTriggers: 5,
         triggerCount: 5
@@ -207,7 +207,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         maxTriggers: 5,
         triggerCount: 5
@@ -221,7 +221,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         maxTriggers: 5,
         triggerCount: 6
@@ -237,7 +237,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         triggerCount: 2
       };
@@ -253,7 +253,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true
         // triggerCount 未设置，默认为 undefined
       };
@@ -269,7 +269,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         triggerCount: 10
       };
@@ -284,7 +284,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true
       };
 
@@ -300,7 +300,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         maxTriggers: 5,
         triggerCount: 2
@@ -316,7 +316,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         maxTriggers: 5,
         triggerCount: 5
@@ -332,7 +332,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         maxTriggers: 0,
         triggerCount: 100
@@ -348,7 +348,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         triggerCount: 100
         // maxTriggers 未设置
@@ -364,7 +364,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         maxTriggers: 5,
         triggerCount: 7
@@ -380,7 +380,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         maxTriggers: 3
       };
@@ -417,7 +417,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         maxTriggers: 5,
         triggerCount: 2
@@ -431,7 +431,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         maxTriggers: 5,
         triggerCount: 5
@@ -445,7 +445,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         maxTriggers: 5,
         triggerCount: 6
@@ -459,7 +459,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         maxTriggers: 0,
         triggerCount: 1000
@@ -469,7 +469,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-2',
         name: 'Trigger 2',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         triggerCount: 1000
         // maxTriggers 未设置
@@ -484,7 +484,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         maxTriggers: 1
       };
@@ -503,7 +503,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         maxTriggers: -1,
         triggerCount: 100
@@ -519,7 +519,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: true,
         maxTriggers: 1
       };
@@ -533,7 +533,7 @@ describe('Trigger Limiter - 触发器限制器', () => {
         id: 'trigger-1',
         name: 'Trigger 1',
         condition: { eventType: 'THREAD_STARTED' },
-        action: { type: 'stop_thread', parameters: {} },
+        action: { type: 'pause_thread', parameters: {} },
         enabled: false,
         maxTriggers: 5,
         triggerCount: 5

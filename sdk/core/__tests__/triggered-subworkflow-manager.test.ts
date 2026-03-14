@@ -419,6 +419,9 @@ describe('Triggered Subworkflow Manager - 触发子工作流管理器', () => {
         executionTime: 50
       });
 
+      // 设置 mockThreadRegistry.get 返回 mockMainThreadEntity
+      mockThreadRegistry.get.mockReturnValue(mockMainThreadEntity);
+
       await manager.executeTriggeredSubgraph(task);
 
       // 验证父子关系已注销

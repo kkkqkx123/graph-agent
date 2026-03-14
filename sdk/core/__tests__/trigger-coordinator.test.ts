@@ -110,7 +110,7 @@ describe('Trigger Coordinator - 触发器协调器', () => {
           eventType: 'THREAD_STARTED' as EventType
         },
         action: {
-          type: 'stop_thread',
+          type: 'pause_thread',
           parameters: { threadId: 'test-thread' }
         },
         enabled: true,
@@ -136,7 +136,7 @@ describe('Trigger Coordinator - 触发器协调器', () => {
           eventType: 'THREAD_STARTED' as EventType
         },
         action: {
-          type: 'stop_thread',
+          type: 'pause_thread',
           parameters: { threadId: 'test-thread' }
         },
         enabled: true
@@ -157,7 +157,7 @@ describe('Trigger Coordinator - 触发器协调器', () => {
           eventType: 'THREAD_STARTED' as EventType
         },
         action: {
-          type: 'stop_thread',
+          type: 'pause_thread',
           parameters: { threadId: 'test-thread' }
         },
         enabled: true
@@ -187,7 +187,7 @@ describe('Trigger Coordinator - 触发器协调器', () => {
           eventType: 'THREAD_STARTED' as EventType
         },
         action: {
-          type: 'stop_thread',
+          type: 'pause_thread',
           parameters: { threadId: 'test-thread' }
         },
         enabled: true
@@ -258,7 +258,7 @@ describe('Trigger Coordinator - 触发器协调器', () => {
           eventName: 'custom-event'
         },
         action: {
-          type: 'stop_thread',
+          type: 'pause_thread',
           parameters: { threadId: 'test-thread' }
         },
         enabled: true,
@@ -281,7 +281,7 @@ describe('Trigger Coordinator - 触发器协调器', () => {
       expect(trigger?.description).toBe('这是一个测试触发器');
       expect(trigger?.condition.eventType).toBe('THREAD_STARTED');
       expect(trigger?.condition.eventName).toBe('custom-event');
-      expect(trigger?.action.type).toBe('stop_thread');
+      expect(trigger?.action.type).toBe('pause_thread');
       expect(trigger?.enabled).toBe(true);
       expect(trigger?.maxTriggers).toBe(5);
       expect(trigger?.metadata).toEqual({ key: 'value' });
@@ -336,7 +336,7 @@ describe('Trigger Coordinator - 触发器协调器', () => {
           eventType: 'THREAD_STARTED' as EventType
         },
         action: {
-          type: 'stop_thread',
+          type: 'pause_thread',
           parameters: { threadId: 'test-thread' }
         },
         enabled: true,
@@ -444,7 +444,7 @@ describe('Trigger Coordinator - 触发器协调器', () => {
           eventName: 'my-custom-event'
         },
         action: {
-          type: 'stop_thread',
+          type: 'pause_thread',
           parameters: { threadId: 'test-thread' }
         },
         enabled: true
@@ -478,7 +478,7 @@ describe('Trigger Coordinator - 触发器协调器', () => {
           eventName: 'my-custom-event'
         },
         action: {
-          type: 'stop_thread',
+          type: 'pause_thread',
           parameters: { threadId: 'test-thread' }
         },
         enabled: true
@@ -513,7 +513,7 @@ describe('Trigger Coordinator - 触发器协调器', () => {
           eventType: 'THREAD_STARTED' as EventType
         },
         action: {
-          type: 'stop_thread',
+          type: 'pause_thread',
           parameters: { threadId: 'test-thread' }
         },
         enabled: true,
@@ -563,7 +563,7 @@ describe('Trigger Coordinator - 触发器协调器', () => {
         id: 'trigger-1',
         name: '触发器1',
         condition: { eventType: 'THREAD_STARTED' as EventType },
-        action: { type: 'stop_thread', parameters: { threadId: 'test-thread' } },
+        action: { type: 'pause_thread', parameters: { threadId: 'test-thread' } },
         enabled: true
       };
 
@@ -605,7 +605,7 @@ describe('Trigger Coordinator - 触发器协调器', () => {
         id: 'trigger-1',
         name: '触发器1',
         condition: { eventType: 'THREAD_STARTED' as EventType },
-        action: { type: 'stop_thread', parameters: { threadId: 'test-thread' } },
+        action: { type: 'pause_thread', parameters: { threadId: 'test-thread' } },
         enabled: true
       };
 

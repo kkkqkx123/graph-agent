@@ -113,18 +113,13 @@ const executeScriptActionConfigSchema = z.object({
 /**
  * 启动工作流动作参数 schema
  */
-const startWorkflowActionParametersSchema = z.object({
-  workflowId: z.string().min(1, 'Workflow ID is required'),
+/**
+ * 启动线程动作参数 schema
+ */
+const startThreadActionParametersSchema = z.object({
+  graphId: z.string().min(1, 'Graph ID is required'),
   input: z.record(z.string(), z.any()).optional(),
   waitForCompletion: z.boolean().optional()
-});
-
-/**
- * 停止工作流动作参数 schema
- */
-const stopWorkflowActionParametersSchema = z.object({
-  workflowId: z.string().min(1, 'Workflow ID is required'),
-  force: z.boolean().optional()
 });
 
 /**
@@ -201,16 +196,10 @@ const applyMessageOperationActionParametersSchema = z.object({
  * 触发动作schema - 使用 discriminatedUnion 实现类型安全
  */
 const triggerActionSchema = z.discriminatedUnion('type', [
-  // start_workflow
+  // start_thread
   z.object({
-    type: z.literal('start_workflow'),
-    parameters: startWorkflowActionParametersSchema,
-    metadata: z.record(z.string(), z.any()).optional()
-  }),
-  // stop_workflow
-  z.object({
-    type: z.literal('stop_workflow'),
-    parameters: stopWorkflowActionParametersSchema,
+    type: z.literal('start_thread'),
+    parameters: startThreadActionParametersSchema,
     metadata: z.record(z.string(), z.any()).optional()
   }),
   // stop_thread
@@ -304,7 +293,7 @@ const triggerConfigOverrideSchema = z.object({
   }).optional(),
   action: z.object({
     type: z.custom<TriggerActionType>((val): val is TriggerActionType =>
-      ['start_workflow', 'stop_workflow', 'stop_thread', 'pause_thread', 'resume_thread', 'skip_node', 'set_variable', 'send_notification', 'custom', 'apply_message_operation', 'execute_triggered_subgraph', 'execute_script'].includes(val as TriggerActionType)
+      ['start_thread', 'stop_thread', 'pause_thread', 'resume_thread', 'skip_node', 'set_variable', 'send_notification', 'custom', 'apply_message_operation', 'execute_triggered_subgraph', 'execute_script'].includes(val as TriggerActionType)
     ).optional(),
     parameters: z.record(z.string(), z.any()).optional(),
     metadata: z.record(z.string(), z.any()).optional()

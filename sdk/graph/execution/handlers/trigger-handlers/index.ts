@@ -47,6 +47,7 @@ export type TriggerHandler = (
 ) => Promise<TriggerExecutionResult>;
 
 // 导入各个触发器处理函数
+import { startThreadHandler } from './start-thread-handler.js';
 import { stopThreadHandler } from './stop-thread-handler.js';
 import { pauseThreadHandler } from './pause-thread-handler.js';
 import { resumeThreadHandler } from './resume-thread-handler.js';
@@ -64,20 +65,7 @@ import { applyMessageOperationHandler } from './apply-message-operation-handler.
  * 注意：触发器动作类型是固定的（TriggerActionType 枚举），处理器在模块加载时静态映射
  */
 export const triggerHandlers: Record<TriggerActionType, TriggerHandler> = {
-  ['start_workflow']: async (action, triggerId) => ({
-    triggerId,
-    success: false,
-    action,
-    executionTime: now(),
-    error: new Error('start_workflow not implemented')
-  }),
-  ['stop_workflow']: async (action, triggerId) => ({
-    triggerId,
-    success: false,
-    action,
-    executionTime: now(),
-    error: new Error('stop_workflow not implemented')
-  }),
+  ['start_thread']: startThreadHandler,
   ['stop_thread']: stopThreadHandler,
   ['pause_thread']: pauseThreadHandler,
   ['resume_thread']: resumeThreadHandler,
@@ -105,6 +93,7 @@ export function getTriggerHandler(actionType: TriggerActionType): TriggerHandler
 }
 
 // 导出各个触发器处理函数（用于外部使用）
+export { startThreadHandler } from './start-thread-handler.js';
 export { stopThreadHandler } from './stop-thread-handler.js';
 export { pauseThreadHandler } from './pause-thread-handler.js';
 export { resumeThreadHandler } from './resume-thread-handler.js';

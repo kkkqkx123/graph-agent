@@ -23,10 +23,8 @@ export interface TriggerCondition {
  * 触发动作类型
  */
 export type TriggerActionType =
-  /** 启动工作流 */
-  'start_workflow' |
-  /** 停止工作流 */
-  'stop_workflow' |
+  /** 启动线程 */
+  'start_thread' |
   /** 停止线程 */
   'stop_thread' |
   /** 暂停线程 */
@@ -53,25 +51,15 @@ export type TriggerActionType =
 // ============================================================================
 
 /**
- * 启动工作流动作参数
+ * 启动线程动作参数
  */
-export interface StartWorkflowActionParameters {
-  /** 工作流ID */
-  workflowId: ID;
+export interface StartThreadActionParameters {
+  /** 图ID（工作流蓝图ID） */
+  graphId: ID;
   /** 输入参数 */
   input?: Record<string, any>;
   /** 是否等待完成 */
   waitForCompletion?: boolean;
-}
-
-/**
- * 停止工作流动作参数
- */
-export interface StopWorkflowActionParameters {
-  /** 工作流ID */
-  workflowId: ID;
-  /** 是否强制停止 */
-  force?: boolean;
 }
 
 /**
@@ -92,6 +80,8 @@ export interface PauseThreadActionParameters {
   threadId: ID;
   /** 暂停原因 */
   reason?: string;
+  /** 是否强制暂停 */
+  force?: boolean;
 }
 
 /**
@@ -189,19 +179,11 @@ interface BaseTriggerAction {
 }
 
 /**
- * 启动工作流动作
+ * 启动线程动作
  */
-export interface StartWorkflowAction extends BaseTriggerAction {
-  type: 'start_workflow';
-  parameters: StartWorkflowActionParameters;
-}
-
-/**
- * 停止工作流动作
- */
-export interface StopWorkflowAction extends BaseTriggerAction {
-  type: 'stop_workflow';
-  parameters: StopWorkflowActionParameters;
+export interface StartThreadAction extends BaseTriggerAction {
+  type: 'start_thread';
+  parameters: StartThreadActionParameters;
 }
 
 /**
@@ -289,8 +271,7 @@ export interface ExecuteScriptAction extends BaseTriggerAction {
  * 使用可辨识联合实现类型安全
  */
 export type TriggerAction =
-  | StartWorkflowAction
-  | StopWorkflowAction
+  | StartThreadAction
   | StopThreadAction
   | PauseThreadAction
   | ResumeThreadAction

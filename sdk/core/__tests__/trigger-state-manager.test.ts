@@ -138,7 +138,7 @@ describe('Trigger State Manager - 触发器状态管理器', () => {
       const state: TriggerRuntimeState = {
         triggerId: 'trigger-1',
         threadId: 'test-thread',
-        workflowId: 'workflow-123',
+        workflowId: null as any,
         status: 'enabled',
         triggerCount: 0,
         updatedAt: Date.now()

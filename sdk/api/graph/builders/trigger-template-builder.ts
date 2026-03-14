@@ -112,19 +112,6 @@ export class TriggerTemplateBuilder extends TemplateBuilder<TriggerTemplate> {
   }
 
   /**
-   * 设置启动工作流动动作
-   * @param workflowId 要启动的工作流ID
-   * @param parameters 额外参数
-   * @returns this
-   */
-  startWorkflow(workflowId: string, parameters: Record<string, any> = {}): this {
-    return this.withAction('start_workflow', {
-      workflowId,
-      ...parameters
-    });
-  }
-
-  /**
    * 设置停止线程动作
    * @param reason 停止原因
    * @param parameters 额外参数

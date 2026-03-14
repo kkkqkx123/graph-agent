@@ -124,7 +124,7 @@ describe('Trigger End-to-End - 端到端集成测试', () => {
           eventType: 'THREAD_STARTED' as EventType
         },
         action: {
-          type: 'stop_thread',
+          type: 'pause_thread',
           parameters: { threadId: 'test-thread' }
         },
         enabled: true,
@@ -159,7 +159,7 @@ describe('Trigger End-to-End - 端到端集成测试', () => {
           id: 'trigger-1',
           name: '触发器1',
           condition: { eventType: 'THREAD_STARTED' as EventType },
-          action: { type: 'stop_thread', parameters: { threadId: 'test-thread' } },
+          action: { type: 'pause_thread', parameters: { threadId: 'test-thread' } },
           enabled: true
         },
         {
@@ -207,7 +207,7 @@ describe('Trigger End-to-End - 端到端集成测试', () => {
         id: 'trigger-a',
         name: '触发器A',
         condition: { eventType: 'THREAD_STARTED' as EventType },
-        action: { type: 'stop_thread', parameters: { threadId: 'test-thread' } },
+        action: { type: 'pause_thread', parameters: { threadId: 'test-thread' } },
         enabled: true
       };
 
@@ -258,7 +258,7 @@ describe('Trigger End-to-End - 端到端集成测试', () => {
         id: 'trigger-1',
         name: '测试触发器',
         condition: { eventType: 'THREAD_STARTED' as EventType },
-        action: { type: 'stop_thread', parameters: { threadId: 'test-thread' } },
+        action: { type: 'pause_thread', parameters: { threadId: 'test-thread' } },
         enabled: true,
         maxTriggers: 3
       };
@@ -298,7 +298,7 @@ describe('Trigger End-to-End - 端到端集成测试', () => {
         id: 'trigger-1',
         name: '测试触发器',
         condition: { eventType: 'THREAD_STARTED' as EventType },
-        action: { type: 'stop_thread', parameters: { threadId: 'test-thread' } },
+        action: { type: 'pause_thread', parameters: { threadId: 'test-thread' } },
         enabled: true,
         maxTriggers: 10
       };
@@ -326,7 +326,7 @@ describe('Trigger End-to-End - 端到端集成测试', () => {
         id: 'trigger-1',
         name: '测试触发器',
         condition: { eventType: 'THREAD_STARTED' as EventType },
-        action: { type: 'stop_thread', parameters: { threadId: 'test-thread' } },
+        action: { type: 'pause_thread', parameters: { threadId: 'test-thread' } },
         enabled: true,
         maxTriggers: 5
       };
@@ -356,7 +356,7 @@ describe('Trigger End-to-End - 端到端集成测试', () => {
         id: 'trigger-1',
         name: '测试触发器',
         condition: { eventType: 'THREAD_STARTED' as EventType },
-        action: { type: 'stop_thread', parameters: { threadId: 'test-thread' } },
+        action: { type: 'pause_thread', parameters: { threadId: 'test-thread' } },
         enabled: true
       };
 
@@ -382,7 +382,7 @@ describe('Trigger End-to-End - 端到端集成测试', () => {
           id: 'trigger-1',
           name: '失败的触发器',
           condition: { eventType: 'THREAD_STARTED' as EventType },
-          action: { type: 'stop_thread', parameters: { threadId: 'test-thread' } },
+          action: { type: 'pause_thread', parameters: { threadId: 'test-thread' } },
           enabled: true
         },
         {
@@ -425,7 +425,7 @@ describe('Trigger End-to-End - 端到端集成测试', () => {
         id: 'trigger-1',
         name: '测试触发器',
         condition: { eventType: 'THREAD_STARTED' as EventType },
-        action: { type: 'stop_thread', parameters: { threadId: 'test-thread' } },
+        action: { type: 'pause_thread', parameters: { threadId: 'test-thread' } },
         enabled: true
       };
 
@@ -454,7 +454,7 @@ describe('Trigger End-to-End - 端到端集成测试', () => {
           id: `trigger-${i}`,
           name: `触发器${i}`,
           condition: { eventType: 'THREAD_STARTED' as EventType },
-          action: { type: 'stop_thread', parameters: { threadId: 'test-thread' } },
+          action: { type: 'pause_thread', parameters: { threadId: 'test-thread' } },
           enabled: true
         });
       }
@@ -482,7 +482,7 @@ describe('Trigger End-to-End - 端到端集成测试', () => {
         id: 'trigger-1',
         name: '测试触发器',
         condition: { eventType: 'THREAD_STARTED' as EventType },
-        action: { type: 'stop_thread', parameters: { threadId: 'test-thread' } },
+        action: { type: 'pause_thread', parameters: { threadId: 'test-thread' } },
         enabled: true
       };
 
@@ -518,7 +518,7 @@ describe('Trigger End-to-End - 端到端集成测试', () => {
         id: 'trigger-1',
         name: '测试触发器',
         condition: { eventType: 'THREAD_STARTED' as EventType },
-        action: { type: 'stop_thread', parameters: { threadId: 'test-thread' } },
+        action: { type: 'pause_thread', parameters: { threadId: 'test-thread' } },
         enabled: true,
         maxTriggers: 100
       };
@@ -575,7 +575,7 @@ describe('Trigger End-to-End - 端到端集成测试', () => {
           eventName: 'my-custom-event'
         },
         action: {
-          type: 'stop_thread',
+          type: 'pause_thread',
           parameters: { threadId: 'test-thread' }
         },
         enabled: true
@@ -609,7 +609,7 @@ describe('Trigger End-to-End - 端到端集成测试', () => {
           id: 'trigger-1',
           name: '触发器1',
           condition: { eventType: 'THREAD_STARTED' as EventType },
-          action: { type: 'stop_thread', parameters: { threadId: 'test-thread' } },
+          action: { type: 'pause_thread', parameters: { threadId: 'test-thread' } },
           enabled: true
         },
         {

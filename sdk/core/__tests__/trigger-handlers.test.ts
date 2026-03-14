@@ -47,40 +47,6 @@ const mockTaskQueueManager = {
 } as any;
 
 describe('Trigger Handlers - 触发器处理器', () => {
-  describe('停止线程处理器', () => {
-    it('测试停止线程：stopThreadHandler正确停止指定线程', async () => {
-      const action: TriggerAction = {
-        type: 'stop_thread',
-        parameters: {
-          threadId: 'thread-123',
-          force: false
-        }
-      };
-
-      const handler = getTriggerHandler('stop_thread');
-      const result = await handler(action, 'trigger-1', mockThreadLifecycleCoordinator);
-
-      expect(mockThreadLifecycleCoordinator.stopThread).toHaveBeenCalledWith('thread-123', false);
-      expect(result.success).toBe(true);
-      expect(result.triggerId).toBe('trigger-1');
-    });
-
-    it('测试强制停止：force参数控制强制停止行为', async () => {
-      const action: TriggerAction = {
-        type: 'stop_thread',
-        parameters: {
-          threadId: 'thread-123',
-          force: true
-        }
-      };
-
-      const handler = getTriggerHandler('stop_thread');
-      await handler(action, 'trigger-1', mockThreadLifecycleCoordinator);
-
-      expect(mockThreadLifecycleCoordinator.stopThread).toHaveBeenCalledWith('thread-123', true);
-    });
-  });
-
   describe('暂停线程处理器', () => {
     it('测试暂停线程：pauseThreadHandler正确暂停指定线程', async () => {
       const action: TriggerAction = {
@@ -433,31 +399,15 @@ describe('Trigger Handlers - 触发器处理器', () => {
   });
 
   describe('未实现的处理器', () => {
-    it('测试start_workflow处理器：应返回未实现错误', async () => {
+    it('测试start_thread处理器：应返回未实现错误', async () => {
       const action: TriggerAction = {
-        type: 'start_workflow',
+        type: 'start_thread',
         parameters: {
-          workflowId: 'workflow-123'
+          graphId: 'graph-123'
         }
       };
 
-      const handler = getTriggerHandler('start_workflow');
-      const result = await handler(action, 'trigger-1');
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
-      expect(result.error?.message).toContain('not implemented');
-    });
-
-    it('测试stop_workflow处理器：应返回未实现错误', async () => {
-      const action: TriggerAction = {
-        type: 'stop_workflow',
-        parameters: {
-          workflowId: 'workflow-123'
-        }
-      };
-
-      const handler = getTriggerHandler('stop_workflow');
+      const handler = getTriggerHandler('start_thread');
       const result = await handler(action, 'trigger-1');
 
       expect(result.success).toBe(false);
@@ -469,7 +419,7 @@ describe('Trigger Handlers - 触发器处理器', () => {
   describe('处理器执行结果', () => {
     it('测试所有处理器返回正确的结果格式', async () => {
       const actionConfigs = [
-        { type: 'stop_thread', parameters: { threadId: 'thread-123' } },
+        { type: 'start_thread', parameters: { graphId: 'graph-123' } },
         { type: 'pause_thread', parameters: { threadId: 'thread-123' } },
         { type: 'resume_thread', parameters: { threadId: 'thread-123' } },
         { type: 'skip_node', parameters: { threadId: 'thread-123', nodeId: 'node-456' } },

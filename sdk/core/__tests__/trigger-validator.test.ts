@@ -103,7 +103,7 @@ describe('Trigger Validator - 触发器验证器', () => {
   describe('触发动作验证', () => {
     it('测试有效触发动作：有效的action应通过验证', () => {
       const action: TriggerAction = {
-        type: 'stop_thread',
+        type: 'pause_thread',
         parameters: {
           threadId: 'thread-123',
           force: false
@@ -126,9 +126,9 @@ describe('Trigger Validator - 触发器验证器', () => {
       expect(result.isErr()).toBe(true);
     });
 
-    it('测试动作参数验证：stop_thread动作参数应正确验证', () => {
+    it('测试动作参数验证：pause_thread动作参数应正确验证', () => {
       const action1: TriggerAction = {
-        type: 'stop_thread',
+        type: 'pause_thread',
         parameters: {
           threadId: 'thread-123',
           force: false
@@ -136,7 +136,7 @@ describe('Trigger Validator - 触发器验证器', () => {
       };
 
       const action2: any = {
-        type: 'stop_thread',
+        type: 'pause_thread',
         parameters: {
           force: false
           // threadId 缺失
@@ -253,7 +253,7 @@ describe('Trigger Validator - 触发器验证器', () => {
 
     it('测试动作metadata：metadata应为可选对象', () => {
       const action: TriggerAction = {
-        type: 'stop_thread',
+        type: 'pause_thread',
         parameters: {
           threadId: 'thread-123'
         },
@@ -278,7 +278,7 @@ describe('Trigger Validator - 触发器验证器', () => {
           eventType: 'THREAD_STARTED' as EventType
         },
         action: {
-          type: 'stop_thread',
+          type: 'pause_thread',
           parameters: {
             threadId: 'thread-123'
           }
@@ -299,7 +299,7 @@ describe('Trigger Validator - 触发器验证器', () => {
           eventType: 'THREAD_STARTED' as EventType
         },
         action: {
-          type: 'stop_thread',
+          type: 'pause_thread',
           parameters: {
             threadId: 'thread-123'
           }
@@ -319,7 +319,7 @@ describe('Trigger Validator - 触发器验证器', () => {
           eventType: 'THREAD_STARTED' as EventType
         },
         action: {
-          type: 'stop_thread',
+          type: 'pause_thread',
           parameters: {
             threadId: 'thread-123'
           }
@@ -337,7 +337,7 @@ describe('Trigger Validator - 触发器验证器', () => {
         id: 'trigger-123',
         name: '测试触发器',
         action: {
-          type: 'stop_thread',
+          type: 'pause_thread',
           parameters: {
             threadId: 'thread-123'
           }
@@ -373,7 +373,7 @@ describe('Trigger Validator - 触发器验证器', () => {
           eventType: 'THREAD_STARTED' as EventType
         },
         action: {
-          type: 'stop_thread',
+          type: 'pause_thread',
           parameters: {
             threadId: 'thread-123'
           }
@@ -394,7 +394,7 @@ describe('Trigger Validator - 触发器验证器', () => {
           eventType: 'THREAD_STARTED' as EventType
         },
         action: {
-          type: 'stop_thread',
+          type: 'pause_thread',
           parameters: {
             threadId: 'thread-123'
           }
@@ -415,7 +415,7 @@ describe('Trigger Validator - 触发器验证器', () => {
           eventType: 'THREAD_STARTED' as EventType
         },
         action: {
-          type: 'stop_thread',
+          type: 'pause_thread',
           parameters: {
             threadId: 'thread-123'
           }
@@ -436,7 +436,7 @@ describe('Trigger Validator - 触发器验证器', () => {
           eventType: 'INVALID_EVENT_TYPE'
         },
         action: {
-          type: 'stop_thread',
+          type: 'pause_thread',
           parameters: {
             threadId: 'thread-123'
           }
@@ -456,7 +456,7 @@ describe('Trigger Validator - 触发器验证器', () => {
           id: 'trigger-1',
           name: '触发器1',
           condition: { eventType: 'THREAD_STARTED' as EventType },
-          action: { type: 'stop_thread', parameters: { threadId: 'thread-123' } }
+          action: { type: 'pause_thread', parameters: { threadId: 'thread-123' } }
         },
         {
           id: 'trigger-2',
@@ -477,7 +477,7 @@ describe('Trigger Validator - 触发器验证器', () => {
           id: 'trigger-1',
           name: '触发器1',
           condition: { eventType: 'THREAD_STARTED' as EventType },
-          action: { type: 'stop_thread', parameters: { threadId: 'thread-123' } }
+          action: { type: 'pause_thread', parameters: { threadId: 'thread-123' } }
         },
         {
           id: 'trigger-1',
@@ -513,7 +513,7 @@ describe('Trigger Validator - 触发器验证器', () => {
         id: 'trigger-1',
         name: '触发器1',
         condition: { eventType: 'THREAD_STARTED' as EventType },
-        action: { type: 'stop_thread', parameters: { threadId: 'thread-123' } }
+        action: { type: 'pause_thread', parameters: { threadId: 'thread-123' } }
       };
 
       const triggerReference: TriggerReference = {
@@ -532,7 +532,7 @@ describe('Trigger Validator - 触发器验证器', () => {
           id: 'trigger-1',
           name: '触发器1',
           condition: { eventType: 'INVALID_EVENT_TYPE' },
-          action: { type: 'stop_thread', parameters: { threadId: 'thread-123' } }
+          action: { type: 'pause_thread', parameters: { threadId: 'thread-123' } }
         },
         {
           id: 'trigger-1',
@@ -595,7 +595,7 @@ describe('Trigger Validator - 触发器验证器', () => {
             eventType: 'THREAD_STARTED' as EventType
           },
           action: {
-            type: 'stop_thread'
+            type: 'pause_thread'
           },
           enabled: true,
           maxTriggers: 10
