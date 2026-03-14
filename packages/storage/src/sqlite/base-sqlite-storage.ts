@@ -63,13 +63,15 @@ export abstract class BaseSqliteStorage<TMetadata> {
       this.db.pragma('wal_autocheckpoint = 1000');
       this.db.pragma('synchronous = NORMAL');
 
+      // 标记为已初始化，以便 createTableSchema 可以使用 getDb
+      this.initialized = true;
+
       // 创建表结构（只读模式下跳过）
       if (!this.config.readonly) {
         this.createTableSchema();
       }
-
-      this.initialized = true;
     } catch (error) {
+      this.initialized = false;
       throw new StorageInitializationError(
         `Failed to initialize SQLite storage: ${this.config.dbPath}`,
         error as Error

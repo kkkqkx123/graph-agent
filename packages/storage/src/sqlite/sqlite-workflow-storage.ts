@@ -211,7 +211,11 @@ export class SqliteWorkflowStorage extends BaseSqliteStorage<WorkflowStorageMeta
 
       const sortBy = options?.sortBy ?? 'updatedAt';
       const sortOrder = options?.sortOrder ?? 'desc';
-      sql += ` ORDER BY ${sortBy} ${sortOrder.toUpperCase()}`;
+      // Convert camelCase to snake_case for SQL column names
+      const sortColumn = sortBy === 'updatedAt' ? 'updated_at' :
+                         sortBy === 'createdAt' ? 'created_at' :
+                         sortBy;
+      sql += ` ORDER BY ${sortColumn} ${sortOrder.toUpperCase()}`;
 
       if (options?.limit !== undefined) {
         sql += ' LIMIT ?';
@@ -241,8 +245,19 @@ export class SqliteWorkflowStorage extends BaseSqliteStorage<WorkflowStorageMeta
     try {
       const stmt = db.prepare(`
         SELECT
-          id, name, version, description, author, category, tags, enabled,
-          node_count, edge_count, created_at, updated_at, custom_fields
+          id,
+          name,
+          version,
+          description,
+          author,
+          category,
+          tags,
+          enabled,
+          node_count as "nodeCount",
+          edge_count as "edgeCount",
+          created_at as "createdAt",
+          updated_at as "updatedAt",
+          custom_fields as "customFields"
         FROM workflows WHERE id = ?
       `);
       const row = stmt.get(workflowId) as {
@@ -254,11 +269,11 @@ export class SqliteWorkflowStorage extends BaseSqliteStorage<WorkflowStorageMeta
         category: string | null;
         tags: string | null;
         enabled: number;
-        node_count: number;
-        edge_count: number;
-        created_at: number;
-        updated_at: number;
-        custom_fields: string | null;
+        nodeCount: number;
+        edgeCount: number;
+        createdAt: number;
+        updatedAt: number;
+        customFields: string | null;
       } | undefined;
 
       if (!row) {
@@ -274,11 +289,11 @@ export class SqliteWorkflowStorage extends BaseSqliteStorage<WorkflowStorageMeta
         category: row.category ?? undefined,
         tags: row.tags ? JSON.parse(row.tags) : undefined,
         enabled: row.enabled === 1,
-        nodeCount: row.node_count,
-        edgeCount: row.edge_count,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-        customFields: row.custom_fields ? JSON.parse(row.custom_fields) : undefined
+        nodeCount: row.nodeCount,
+        edgeCount: row.edgeCount,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+        customFields: row.customFields ? JSON.parse(row.customFields) : undefined
       };
     } catch (error) {
       this.handleSqliteError(error, 'getMetadata', { workflowId });
@@ -378,7 +393,11 @@ export class SqliteWorkflowStorage extends BaseSqliteStorage<WorkflowStorageMeta
 
     try {
       let sql = `
-        SELECT version, created_at, created_by, change_note
+        SELECT
+          version,
+          created_at as "createdAt",
+          created_by as "createdBy",
+          change_note as "changeNote"
         FROM workflow_versions
         WHERE workflow_id = ?
         ORDER BY created_at DESC
@@ -398,9 +417,9 @@ export class SqliteWorkflowStorage extends BaseSqliteStorage<WorkflowStorageMeta
       const stmt = db.prepare(sql);
       const rows = stmt.all(...params) as Array<{
         version: string;
-        created_at: number;
-        created_by: string | null;
-        change_note: string | null;
+        createdAt: number;
+        createdBy: string | null;
+        changeNote: string | null;
       }>;
 
       // 获取当前版本
@@ -409,9 +428,9 @@ export class SqliteWorkflowStorage extends BaseSqliteStorage<WorkflowStorageMeta
 
       return rows.map(row => ({
         version: row.version,
-        createdAt: row.created_at,
-        createdBy: row.created_by ?? undefined,
-        changeNote: row.change_note ?? undefined,
+        createdAt: row.createdAt,
+        createdBy: row.createdBy ?? undefined,
+        changeNote: row.changeNote ?? undefined,
         isCurrent: row.version === currentVersion
       }));
     } catch (error) {

@@ -152,15 +152,20 @@ export class SqliteCheckpointStorage extends BaseSqliteStorage<CheckpointStorage
 
     try {
       const stmt = db.prepare(`
-        SELECT thread_id, workflow_id, timestamp, tags, custom_fields
+        SELECT
+          thread_id as "threadId",
+          workflow_id as "workflowId",
+          timestamp,
+          tags,
+          custom_fields as "customFields"
         FROM checkpoints WHERE id = ?
       `);
       const row = stmt.get(id) as {
-        thread_id: string;
-        workflow_id: string;
+        threadId: string;
+        workflowId: string;
         timestamp: number;
         tags: string | null;
-        custom_fields: string | null;
+        customFields: string | null;
       } | undefined;
 
       if (!row) {
@@ -168,11 +173,11 @@ export class SqliteCheckpointStorage extends BaseSqliteStorage<CheckpointStorage
       }
 
       return {
-        threadId: row.thread_id,
-        workflowId: row.workflow_id,
+        threadId: row.threadId,
+        workflowId: row.workflowId,
         timestamp: row.timestamp,
         tags: row.tags ? JSON.parse(row.tags) : undefined,
-        customFields: row.custom_fields ? JSON.parse(row.custom_fields) : undefined
+        customFields: row.customFields ? JSON.parse(row.customFields) : undefined
       };
     } catch (error) {
       this.handleSqliteError(error, 'getMetadata', { id });

@@ -192,7 +192,12 @@ export class SqliteTaskStorage extends BaseSqliteStorage<TaskStorageMetadata> im
 
       const sortBy = options?.sortBy ?? 'submitTime';
       const sortOrder = options?.sortOrder ?? 'desc';
-      sql += ` ORDER BY ${sortBy} ${sortOrder.toUpperCase()}`;
+      // Convert camelCase to snake_case for SQL column names
+      const sortColumn = sortBy === 'submitTime' ? 'submit_time' :
+                         sortBy === 'startTime' ? 'start_time' :
+                         sortBy === 'completeTime' ? 'complete_time' :
+                         sortBy;
+      sql += ` ORDER BY ${sortColumn} ${sortOrder.toUpperCase()}`;
 
       if (options?.limit !== undefined) {
         sql += ' LIMIT ?';
@@ -222,23 +227,33 @@ export class SqliteTaskStorage extends BaseSqliteStorage<TaskStorageMetadata> im
     try {
       const stmt = db.prepare(`
         SELECT
-          id, thread_id, workflow_id, status, submit_time, start_time,
-          complete_time, timeout, error, error_stack, tags, custom_fields
+          id,
+          thread_id as "threadId",
+          workflow_id as "workflowId",
+          status,
+          submit_time as "submitTime",
+          start_time as "startTime",
+          complete_time as "completeTime",
+          timeout,
+          error,
+          error_stack as "errorStack",
+          tags,
+          custom_fields as "customFields"
         FROM tasks WHERE id = ?
       `);
       const row = stmt.get(taskId) as {
         id: string;
-        thread_id: string;
-        workflow_id: string;
+        threadId: string;
+        workflowId: string;
         status: string;
-        submit_time: number;
-        start_time: number | null;
-        complete_time: number | null;
+        submitTime: number;
+        startTime: number | null;
+        completeTime: number | null;
         timeout: number | null;
         error: string | null;
-        error_stack: string | null;
+        errorStack: string | null;
         tags: string | null;
-        custom_fields: string | null;
+        customFields: string | null;
       } | undefined;
 
       if (!row) {
@@ -247,17 +262,17 @@ export class SqliteTaskStorage extends BaseSqliteStorage<TaskStorageMetadata> im
 
       return {
         taskId: row.id,
-        threadId: row.thread_id,
-        workflowId: row.workflow_id,
+        threadId: row.threadId,
+        workflowId: row.workflowId,
         status: row.status as TaskStatus,
-        submitTime: row.submit_time,
-        startTime: row.start_time ?? undefined,
-        completeTime: row.complete_time ?? undefined,
+        submitTime: row.submitTime,
+        startTime: row.startTime ?? undefined,
+        completeTime: row.completeTime ?? undefined,
         timeout: row.timeout ?? undefined,
         error: row.error ?? undefined,
-        errorStack: row.error_stack ?? undefined,
+        errorStack: row.errorStack ?? undefined,
         tags: row.tags ? JSON.parse(row.tags) : undefined,
-        customFields: row.custom_fields ? JSON.parse(row.custom_fields) : undefined
+        customFields: row.customFields ? JSON.parse(row.customFields) : undefined
       };
     } catch (error) {
       this.handleSqliteError(error, 'getMetadata', { taskId });
@@ -328,13 +343,15 @@ export class SqliteTaskStorage extends BaseSqliteStorage<TaskStorageMetadata> im
       }
 
       // 计算执行时间统计
+      const timeWhereClause = whereClause
+        ? `${whereClause} AND status = 'COMPLETED' AND start_time IS NOT NULL AND complete_time IS NOT NULL`
+        : 'WHERE status = \'COMPLETED\' AND start_time IS NOT NULL AND complete_time IS NOT NULL';
       const timeStmt = db.prepare(`
         SELECT
           AVG(complete_time - start_time) as avg_time,
           MAX(complete_time - start_time) as max_time,
           MIN(complete_time - start_time) as min_time
-        FROM tasks ${whereClause}
-        WHERE status = 'COMPLETED' AND start_time IS NOT NULL AND complete_time IS NOT NULL
+        FROM tasks ${timeWhereClause}
       `);
       const timeRow = timeStmt.get(...params) as {
         avg_time: number | null;

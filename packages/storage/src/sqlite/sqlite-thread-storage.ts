@@ -183,7 +183,11 @@ export class SqliteThreadStorage extends BaseSqliteStorage<ThreadStorageMetadata
       // 排序
       const sortBy = options?.sortBy ?? 'startTime';
       const sortOrder = options?.sortOrder ?? 'desc';
-      sql += ` ORDER BY ${sortBy} ${sortOrder.toUpperCase()}`;
+      // Convert camelCase to snake_case for SQL column names
+      const sortColumn = sortBy === 'startTime' ? 'start_time' :
+                         sortBy === 'endTime' ? 'end_time' :
+                         sortBy;
+      sql += ` ORDER BY ${sortColumn} ${sortOrder.toUpperCase()}`;
 
       // 分页
       if (options?.limit !== undefined) {
@@ -214,23 +218,31 @@ export class SqliteThreadStorage extends BaseSqliteStorage<ThreadStorageMetadata
     try {
       const stmt = db.prepare(`
         SELECT
-          id, workflow_id, workflow_version, status, thread_type,
-          current_node_id, parent_thread_id, start_time, end_time,
-          tags, custom_fields
+          id,
+          workflow_id as "workflowId",
+          workflow_version as "workflowVersion",
+          status,
+          thread_type as "threadType",
+          current_node_id as "currentNodeId",
+          parent_thread_id as "parentThreadId",
+          start_time as "startTime",
+          end_time as "endTime",
+          tags,
+          custom_fields as "customFields"
         FROM threads WHERE id = ?
       `);
       const row = stmt.get(id) as {
         id: string;
-        workflow_id: string;
-        workflow_version: string;
+        workflowId: string;
+        workflowVersion: string;
         status: string;
-        thread_type: string | null;
-        current_node_id: string | null;
-        parent_thread_id: string | null;
-        start_time: number;
-        end_time: number | null;
+        threadType: string | null;
+        currentNodeId: string | null;
+        parentThreadId: string | null;
+        startTime: number;
+        endTime: number | null;
         tags: string | null;
-        custom_fields: string | null;
+        customFields: string | null;
       } | undefined;
 
       if (!row) {
@@ -239,16 +251,16 @@ export class SqliteThreadStorage extends BaseSqliteStorage<ThreadStorageMetadata
 
       return {
         threadId: row.id,
-        workflowId: row.workflow_id,
-        workflowVersion: row.workflow_version,
+        workflowId: row.workflowId,
+        workflowVersion: row.workflowVersion,
         status: row.status as ThreadStatus,
-        threadType: row.thread_type as import('@modular-agent/types').ThreadType | undefined,
-        currentNodeId: row.current_node_id ?? undefined,
-        parentThreadId: row.parent_thread_id ?? undefined,
-        startTime: row.start_time,
-        endTime: row.end_time ?? undefined,
+        threadType: row.threadType as import('@modular-agent/types').ThreadType | undefined,
+        currentNodeId: row.currentNodeId ?? undefined,
+        parentThreadId: row.parentThreadId ?? undefined,
+        startTime: row.startTime,
+        endTime: row.endTime ?? undefined,
         tags: row.tags ? JSON.parse(row.tags) : undefined,
-        customFields: row.custom_fields ? JSON.parse(row.custom_fields) : undefined
+        customFields: row.customFields ? JSON.parse(row.customFields) : undefined
       };
     } catch (error) {
       this.handleSqliteError(error, 'getMetadata', { id });
