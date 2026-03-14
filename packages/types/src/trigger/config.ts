@@ -23,8 +23,8 @@ export interface TriggerCondition {
  * 触发动作类型
  */
 export type TriggerActionType =
-  /** 启动线程 */
-  'start_thread' |
+  /** 启动动态子线程（与父线程建立关系，支持回调） */
+  'start_dynamic_child' |
   /** 停止线程 */
   'stop_thread' |
   /** 暂停线程 */
@@ -51,15 +51,18 @@ export type TriggerActionType =
 // ============================================================================
 
 /**
- * 启动线程动作参数
+ * 启动动态子线程动作参数
+ * 创建与父线程建立关系的子线程，支持回调机制
  */
-export interface StartThreadActionParameters {
+export interface StartDynamicChildActionParameters {
   /** 图ID（工作流蓝图ID） */
   graphId: ID;
   /** 输入参数 */
   input?: Record<string, any>;
-  /** 是否等待完成 */
+  /** 是否等待完成（默认true） */
   waitForCompletion?: boolean;
+  /** 超时时间（毫秒） */
+  timeout?: number;
 }
 
 /**
@@ -179,11 +182,11 @@ interface BaseTriggerAction {
 }
 
 /**
- * 启动线程动作
+ * 启动动态子线程动作
  */
-export interface StartThreadAction extends BaseTriggerAction {
-  type: 'start_thread';
-  parameters: StartThreadActionParameters;
+export interface StartDynamicChildAction extends BaseTriggerAction {
+  type: 'start_dynamic_child';
+  parameters: StartDynamicChildActionParameters;
 }
 
 /**
@@ -271,7 +274,7 @@ export interface ExecuteScriptAction extends BaseTriggerAction {
  * 使用可辨识联合实现类型安全
  */
 export type TriggerAction =
-  | StartThreadAction
+  | StartDynamicChildAction
   | StopThreadAction
   | PauseThreadAction
   | ResumeThreadAction

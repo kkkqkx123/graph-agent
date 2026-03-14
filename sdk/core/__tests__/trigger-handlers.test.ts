@@ -369,6 +369,7 @@ describe('Trigger Handlers - 触发器处理器', () => {
   describe('处理器映射', () => {
     it('测试触发器处理器映射：triggerHandlers包含所有处理器', () => {
       expect(triggerHandlers).toBeDefined();
+      expect(triggerHandlers['start_dynamic_child']).toBeDefined();
       expect(triggerHandlers['stop_thread']).toBeDefined();
       expect(triggerHandlers['pause_thread']).toBeDefined();
       expect(triggerHandlers['resume_thread']).toBeDefined();
@@ -398,28 +399,28 @@ describe('Trigger Handlers - 触发器处理器', () => {
     });
   });
 
-  describe('未实现的处理器', () => {
-    it('测试start_thread处理器：应返回未实现错误', async () => {
+  describe('start_dynamic_child处理器', () => {
+    it('测试start_dynamic_child处理器：需要currentThreadId', async () => {
       const action: TriggerAction = {
-        type: 'start_thread',
+        type: 'start_dynamic_child',
         parameters: {
           graphId: 'graph-123'
         }
       };
 
-      const handler = getTriggerHandler('start_thread');
-      const result = await handler(action, 'trigger-1');
+      const handler = getTriggerHandler('start_dynamic_child');
+      // 没有currentThreadId应该返回失败
+      const result = await handler(action, 'trigger-1', mockThreadRegistry, mockEventManager, mockThreadBuilder, mockTaskQueueManager);
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
-      expect(result.error?.message).toContain('not implemented');
     });
   });
 
   describe('处理器执行结果', () => {
     it('测试所有处理器返回正确的结果格式', async () => {
       const actionConfigs = [
-        { type: 'start_thread', parameters: { graphId: 'graph-123' } },
+        { type: 'start_dynamic_child', parameters: { graphId: 'graph-123' } },
         { type: 'pause_thread', parameters: { threadId: 'thread-123' } },
         { type: 'resume_thread', parameters: { threadId: 'thread-123' } },
         { type: 'skip_node', parameters: { threadId: 'thread-123', nodeId: 'node-456' } },

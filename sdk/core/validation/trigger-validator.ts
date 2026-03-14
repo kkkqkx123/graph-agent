@@ -111,15 +111,13 @@ const executeScriptActionConfigSchema = z.object({
 // ============================================================================
 
 /**
- * 启动工作流动作参数 schema
+ * 启动动态子线程动作参数 schema
  */
-/**
- * 启动线程动作参数 schema
- */
-const startThreadActionParametersSchema = z.object({
+const startDynamicChildActionParametersSchema = z.object({
   graphId: z.string().min(1, 'Graph ID is required'),
   input: z.record(z.string(), z.any()).optional(),
-  waitForCompletion: z.boolean().optional()
+  waitForCompletion: z.boolean().optional(),
+  timeout: z.number().int().positive('Timeout must be a positive integer').optional()
 });
 
 /**
@@ -196,10 +194,10 @@ const applyMessageOperationActionParametersSchema = z.object({
  * 触发动作schema - 使用 discriminatedUnion 实现类型安全
  */
 const triggerActionSchema = z.discriminatedUnion('type', [
-  // start_thread
+  // start_dynamic_child
   z.object({
-    type: z.literal('start_thread'),
-    parameters: startThreadActionParametersSchema,
+    type: z.literal('start_dynamic_child'),
+    parameters: startDynamicChildActionParametersSchema,
     metadata: z.record(z.string(), z.any()).optional()
   }),
   // stop_thread
@@ -293,7 +291,7 @@ const triggerConfigOverrideSchema = z.object({
   }).optional(),
   action: z.object({
     type: z.custom<TriggerActionType>((val): val is TriggerActionType =>
-      ['start_thread', 'stop_thread', 'pause_thread', 'resume_thread', 'skip_node', 'set_variable', 'send_notification', 'custom', 'apply_message_operation', 'execute_triggered_subgraph', 'execute_script'].includes(val as TriggerActionType)
+      ['start_dynamic_child', 'stop_thread', 'pause_thread', 'resume_thread', 'skip_node', 'set_variable', 'send_notification', 'custom', 'apply_message_operation', 'execute_triggered_subgraph', 'execute_script'].includes(val as TriggerActionType)
     ).optional(),
     parameters: z.record(z.string(), z.any()).optional(),
     metadata: z.record(z.string(), z.any()).optional()

@@ -192,8 +192,8 @@ export class TriggeredSubworkflowManager implements TaskManager {
       input
     });
 
-    // 设置线程类型为 TRIGGERED
-    subgraphEntity.setThreadType('TRIGGERED');
+    // 设置线程类型为 TRIGGERED_SUBWORKFLOW
+    subgraphEntity.setThreadType('TRIGGERED_SUBWORKFLOW');
 
     return subgraphEntity;
   }

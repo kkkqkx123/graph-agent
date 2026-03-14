@@ -1,21 +1,22 @@
 /**
- * 启动线程处理函数
- * 负责执行启动新线程的触发动作
+ * 启动动态子线程处理函数
+ * 负责执行启动动态子线程的触发动作
  *
  * 职责：
- * - 启动新的工作流线程
+ * - 启动新的动态子线程（DYNAMIC_CHILD类型）
+ * - 建立父子线程关系
  * - 支持同步和异步执行模式
- * - 支持从现有线程触发（作为子线程）或独立启动
+ * - 传递父线程的输入输出数据
  * - 使用 ThreadBuilder 创建线程实体
  *
  * 注意：
- * - 与 execute_triggered_subgraph 不同，start_thread 启动的是普通工作流
+ * - 与 execute_triggered_subgraph 不同，start_dynamic_child 启动的是普通工作流
  * - 不需要特殊的 START_FROM_TRIGGER 节点
- * - 如果有当前线程，会建立父子关系
+ * - 建立父子关系，支持级联取消和回调机制
  */
 
 import type { TriggerAction, TriggerExecutionResult } from '@modular-agent/types';
-import type { StartThreadActionParameters } from '@modular-agent/types';
+import type { StartDynamicChildActionParameters } from '@modular-agent/types';
 import { RuntimeValidationError, ThreadContextNotFoundError, WorkflowNotFoundError } from '@modular-agent/types';
 import type { ThreadRegistry } from '../../../services/thread-registry.js';
 import type { EventManager } from '../../../../core/managers/event-manager.js';
@@ -43,7 +44,7 @@ function createSyncSuccessResult(
     action,
     executionTime,
     result: {
-      message: `Thread execution completed: ${data.graphId}`,
+      message: `Dynamic child thread execution completed: ${data.graphId}`,
       graphId: data.graphId,
       threadId: data.threadId,
       input: data.input,
@@ -71,7 +72,7 @@ function createAsyncSuccessResult(
     action,
     executionTime,
     result: {
-      message: `Thread submitted: ${data.graphId}`,
+      message: `Dynamic child thread submitted: ${data.graphId}`,
       graphId: data.graphId,
       threadId: data.threadId,
       status: data.status,
@@ -102,17 +103,18 @@ function createFailureResult(
 }
 
 /**
- * 启动线程处理函数
+ * 启动动态子线程处理函数
+ *
  * @param action 触发动作
  * @param triggerId 触发器ID
  * @param threadRegistry 线程注册表
  * @param eventManager 事件管理器
  * @param threadBuilder 线程构建器
  * @param taskQueueManager 任务队列管理器
- * @param currentThreadId 当前线程ID（可选）
+ * @param currentThreadId 当前线程ID（必需，用于建立父子关系）
  * @returns 执行结果
  */
-export async function startThreadHandler(
+export async function startDynamicChildHandler(
   action: TriggerAction,
   triggerId: string,
   threadRegistry: ThreadRegistry,
@@ -125,12 +127,17 @@ export async function startThreadHandler(
 
   try {
     // 验证动作类型
-    if (action.type !== 'start_thread') {
-      throw new RuntimeValidationError('Action type must be start_thread', { operation: 'handle', field: 'type' });
+    if (action.type !== 'start_dynamic_child') {
+      throw new RuntimeValidationError('Action type must be start_dynamic_child', { operation: 'handle', field: 'type' });
     }
 
-    const parameters = action.parameters as StartThreadActionParameters;
-    const { graphId, input = {}, waitForCompletion = true } = parameters;
+    // 验证当前线程ID（必需，用于建立父子关系）
+    if (!currentThreadId) {
+      throw new ThreadContextNotFoundError('Current thread ID is required for start_dynamic_child', 'current');
+    }
+
+    const parameters = action.parameters as StartDynamicChildActionParameters;
+    const { graphId, input = {}, waitForCompletion = true, timeout: customTimeout } = parameters;
 
     // 验证必需参数
     if (!graphId) {
@@ -146,53 +153,49 @@ export async function startThreadHandler(
       throw new WorkflowNotFoundError(`Graph not found or not preprocessed: ${graphId}`, graphId);
     }
 
-    // 获取主线程实体（如果存在）
-    let mainThreadEntity: ThreadEntity | null = null;
-    if (currentThreadId) {
-      mainThreadEntity = threadRegistry.get(currentThreadId);
+    // 获取主线程实体
+    const mainThreadEntity = threadRegistry.get(currentThreadId);
+    if (!mainThreadEntity) {
+      throw new ThreadContextNotFoundError(`Main thread entity not found: ${currentThreadId}`, currentThreadId);
     }
 
-    // 准备输入数据
+    // 准备输入数据（包含父线程的输入输出）
     const threadInput: Record<string, any> = {
       triggerId,
+      parentOutput: mainThreadEntity.getOutput(),
+      parentInput: mainThreadEntity.getInput(),
       ...input,
     };
 
-    // 如果有主线程，传递主线程的输出
-    if (mainThreadEntity) {
-      threadInput['parentOutput'] = mainThreadEntity.getOutput();
-      threadInput['parentInput'] = mainThreadEntity.getInput();
-    }
-
-    // 创建线程实体
-    const threadEntity = await threadBuilder.build(graphId, {
+    // 创建子线程实体
+    const childThreadEntity = await threadBuilder.build(graphId, {
       input: threadInput,
     });
 
+    // 设置线程类型为 DYNAMIC_CHILD
+    childThreadEntity.setThreadType('DYNAMIC_CHILD');
+
     // 注册到线程注册表
-    threadRegistry.register(threadEntity);
+    threadRegistry.register(childThreadEntity);
 
-    const threadId = threadEntity.getThreadId();
+    const childThreadId = childThreadEntity.getThreadId();
 
-    // 建立父子关系（如果有主线程）
-    if (mainThreadEntity && currentThreadId) {
-      mainThreadEntity.registerChildThread(threadId);
-      threadEntity.setParentThreadId(currentThreadId);
-      threadEntity.setThreadType('DYNAMIC_CHILD');
-    }
+    // 建立父子关系
+    mainThreadEntity.registerChildThread(childThreadId);
+    childThreadEntity.setParentThreadId(currentThreadId);
 
     // 获取线程池服务和任务注册表
     const threadPoolService = container.get(Identifiers.ThreadPoolService) as ThreadPoolService;
     const taskRegistry = container.get(Identifiers.TaskRegistry) as TaskRegistry;
 
     // 获取超时配置
-    const timeout = threadPoolService.getConfig().defaultTimeout;
+    const timeout = customTimeout || threadPoolService.getConfig().defaultTimeout;
 
     // 根据执行模式选择执行方式
     if (waitForCompletion) {
       // 同步执行
       const result = await executeSync(
-        threadEntity,
+        childThreadEntity,
         taskRegistry,
         taskQueueManager,
         threadPoolService,
@@ -200,17 +203,14 @@ export async function startThreadHandler(
       );
 
       // 注销父子关系
-      if (mainThreadEntity) {
-        mainThreadEntity.unregisterChildThread(threadId);
-        // Note: setParentThreadId requires a string, so we don't reset it to undefined
-      }
+      mainThreadEntity.unregisterChildThread(childThreadId);
 
       return createSyncSuccessResult(
         triggerId,
         action,
         {
           graphId,
-          threadId,
+          threadId: childThreadId,
           input: threadInput,
           output: result.output,
           executionTime: result.executionTime,
@@ -220,11 +220,14 @@ export async function startThreadHandler(
     } else {
       // 异步执行
       const result = executeAsync(
-        threadEntity,
+        childThreadEntity,
         taskRegistry,
         taskQueueManager,
         threadPoolService,
-        timeout
+        timeout,
+        threadRegistry,
+        mainThreadEntity,
+        childThreadId
       );
 
       return createAsyncSuccessResult(
@@ -232,7 +235,7 @@ export async function startThreadHandler(
         action,
         {
           graphId,
-          threadId,
+          threadId: childThreadId,
           status: result.status,
           executionTime: diffTimestamp(startTime, now()),
         },
@@ -298,13 +301,17 @@ async function executeSync(
 
 /**
  * 异步执行线程
+ * 注册完成回调以清理父子关系
  */
 function executeAsync(
   threadEntity: ThreadEntity,
   taskRegistry: TaskRegistry,
   taskQueueManager: TaskQueueManager,
   threadPoolService: ThreadPoolService,
-  timeout: number
+  timeout: number,
+  threadRegistry: ThreadRegistry,
+  parentThreadEntity: ThreadEntity,
+  childThreadId: string
 ): { threadId: string; status: string } {
   const threadId = threadEntity.getThreadId();
 
@@ -323,6 +330,20 @@ function executeAsync(
 
   // 提交到任务队列（异步）
   taskQueueManager.submitAsync(taskId, threadEntity, timeout);
+
+  // 设置完成回调以清理父子关系
+  const checkCompletion = () => {
+    const status = threadEntity.getStatus();
+    if (status === 'COMPLETED' || status === 'FAILED' || status === 'CANCELLED') {
+      // 清理父子关系
+      parentThreadEntity.unregisterChildThread(childThreadId);
+    } else {
+      // 继续检查
+      setTimeout(checkCompletion, 100);
+    }
+  };
+  // 开始检查
+  setTimeout(checkCompletion, 100);
 
   return {
     threadId,
