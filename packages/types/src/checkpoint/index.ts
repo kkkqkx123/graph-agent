@@ -11,7 +11,10 @@ export {
   DeltaStorageConfig,
   DEFAULT_DELTA_STORAGE_CONFIG,
   CheckpointConfigResult,
-  CheckpointListOptions
+  CheckpointListOptions,
+  CheckpointConfigSource,
+  GraphCheckpointTriggerType,
+  AgentLoopCheckpointTriggerType
 } from './base.js';
 
 // 导出 Agent Loop 检查点类型

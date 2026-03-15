@@ -13,10 +13,7 @@ export type { AgentLoopStateSnapshot } from './snapshot.js';
 
 // 配置类型
 export type {
-  AgentLoopCheckpointConfigSource,
   AgentLoopCheckpointConfigContext,
-  AgentLoopCheckpointConfig
+  AgentLoopCheckpointConfig,
+  AgentLoopCheckpointConfigLayer
 } from './config.js';
-
-// 配置解析函数
-export { resolveAgentLoopCheckpointConfig } from './config.js';

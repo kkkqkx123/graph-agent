@@ -32,7 +32,7 @@ import { getNodeHandler } from '../handlers/node-handlers/index.js';
 import { SUBGRAPH_METADATA_KEYS, SubgraphBoundaryType } from '@modular-agent/types';
 import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
 import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils.js';
-import { resolveCheckpointConfig } from '../handlers/checkpoint-handlers/checkpoint-config-resolver.js';
+import { resolveCheckpointConfig, buildNodeCheckpointLayers } from '../handlers/checkpoint-handlers/checkpoint-config-resolver.js';
 import { emit } from '../utils/index.js';
 import {
   buildThreadPausedEvent,
@@ -286,17 +286,12 @@ export class NodeExecutionCoordinator {
 
       // 步骤2：节点执行前创建检查点（如果配置了）
       if (this.checkpointDependencies) {
-        const configResult = resolveCheckpointConfig(
-          this.globalCheckpointConfig,
-          node,
-          undefined,
-          undefined,
-          undefined,
-          {
-            triggerType: 'NODE_BEFORE_EXECUTE',
-            nodeId
-          }
-        );
+        const context = {
+          triggerType: 'NODE_BEFORE_EXECUTE' as const,
+          nodeId
+        };
+        const layers = buildNodeCheckpointLayers(this.globalCheckpointConfig, node, context);
+        const configResult = resolveCheckpointConfig(layers, context);
 
         if (configResult.shouldCreate) {
           logger.debug('Creating checkpoint before node execution', { threadId, nodeId });
@@ -359,17 +354,12 @@ export class NodeExecutionCoordinator {
 
       // 步骤7：节点执行后创建检查点（如果配置了）
       if (this.checkpointDependencies) {
-        const configResult = resolveCheckpointConfig(
-          this.globalCheckpointConfig,
-          node,
-          undefined,
-          undefined,
-          undefined,
-          {
-            triggerType: 'NODE_AFTER_EXECUTE',
-            nodeId
-          }
-        );
+        const context = {
+          triggerType: 'NODE_AFTER_EXECUTE' as const,
+          nodeId
+        };
+        const layers = buildNodeCheckpointLayers(this.globalCheckpointConfig, node, context);
+        const configResult = resolveCheckpointConfig(layers, context);
 
         if (configResult.shouldCreate) {
           logger.debug('Creating checkpoint after node execution', { threadId, nodeId });

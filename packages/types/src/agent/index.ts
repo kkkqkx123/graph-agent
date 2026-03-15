@@ -27,13 +27,10 @@ export type {
   AgentLoopDelta,
   AgentLoopStateSnapshot,
   AgentLoopCheckpoint,
-  AgentLoopCheckpointConfigSource,
   AgentLoopCheckpointConfigContext,
-  AgentLoopCheckpointConfig
+  AgentLoopCheckpointConfig,
+  AgentLoopCheckpointConfigLayer
 } from '../checkpoint/agent/index.js';
-
-// 检查点配置解析函数
-export { resolveAgentLoopCheckpointConfig } from '../checkpoint/agent/config.js';
 
 // 重新导出通用检查点类型（为了向后兼容）
 export type { CheckpointType as TCheckpointType, CheckpointMetadata, CheckpointConfigResult } from '../checkpoint/base.js';

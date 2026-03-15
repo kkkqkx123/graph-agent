@@ -16,8 +16,6 @@ const logger = createContextualLogger({ component: 'CheckpointConfigResolver' })
 export interface ConfigLayer {
   /** 层级名称 */
   name: string;
-  /** 层级优先级（数字越大优先级越高） */
-  priority: number;
   /** 是否启用检查点 */
   enabled?: boolean;
   /** 检查点描述 */
@@ -53,16 +51,14 @@ export abstract class CheckpointConfigResolver {
    * 解析配置
    *
    * 按优先级从高到低检查各层配置，返回第一个明确配置的结果。
+   * 调用方应按优先级顺序传入 layers（索引 0 优先级最高）。
    *
-   * @param layers 配置层级列表（已按优先级排序）
+   * @param layers 配置层级列表（按优先级从高到低排序）
    * @returns 解析结果
    */
   resolve(layers: ConfigLayer[]): CheckpointConfigResult {
-    // 按优先级排序（高到低）
-    const sortedLayers = [...layers].sort((a, b) => b.priority - a.priority);
-
     // 遍历各层级，找到第一个明确配置的
-    for (const layer of sortedLayers) {
+    for (const layer of layers) {
       if (layer.enabled !== undefined) {
         logger.debug('Checkpoint config resolved', {
           layer: layer.name,
@@ -72,7 +68,7 @@ export abstract class CheckpointConfigResolver {
         return {
           shouldCreate: layer.enabled,
           description: layer.description || this.defaultDescription,
-          source: layer.name as CheckpointConfigSource
+          effectiveSource: layer.name as CheckpointConfigSource
         };
       }
     }
@@ -85,7 +81,7 @@ export abstract class CheckpointConfigResolver {
     return {
       shouldCreate: this.defaultEnabled,
       description: this.defaultDescription,
-      source: 'disabled'
+      effectiveSource: 'default'
     };
   }
 
@@ -95,13 +91,11 @@ export abstract class CheckpointConfigResolver {
    * 工厂方法，用于创建配置层级对象。
    *
    * @param name 层级名称
-   * @param priority 优先级
    * @param config 配置内容
    * @returns 配置层级
    */
   protected createLayer(
     name: string,
-    priority: number,
     config?: {
       enabled?: boolean;
       description?: string;
@@ -109,7 +103,6 @@ export abstract class CheckpointConfigResolver {
   ): ConfigLayer {
     return {
       name,
-      priority,
       ...config
     };
   }

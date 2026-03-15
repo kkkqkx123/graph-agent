@@ -57,6 +57,36 @@ export const DEFAULT_DELTA_STORAGE_CONFIG: DeltaStorageConfig = {
 };
 
 /**
+ * 检查点配置来源
+ * 表示配置定义的位置
+ */
+export type CheckpointConfigSource =
+  | 'runtime'   // 运行时传入
+  | 'workflow'  // 工作流定义
+  | 'node'      // 节点定义
+  | 'agent'     // Agent Loop 配置
+  | 'global'    // 全局配置
+  | 'default';  // 默认值
+
+/**
+ * Graph 检查点触发时机
+ */
+export type GraphCheckpointTriggerType =
+  | 'NODE_BEFORE_EXECUTE'
+  | 'NODE_AFTER_EXECUTE'
+  | 'TOOL_BEFORE'
+  | 'TOOL_AFTER'
+  | 'HOOK'
+  | 'TRIGGER';
+
+/**
+ * Agent Loop 检查点触发时机
+ */
+export type AgentLoopCheckpointTriggerType =
+  | 'ITERATION_END'
+  | 'ERROR';
+
+/**
  * 检查点配置结果（通用）
  */
 export interface CheckpointConfigResult {
@@ -64,8 +94,10 @@ export interface CheckpointConfigResult {
   shouldCreate: boolean;
   /** 检查点描述 */
   description?: string;
-  /** 使用的配置来源 */
-  source: string;
+  /** 实际生效的配置来源 */
+  effectiveSource: CheckpointConfigSource;
+  /** 触发时机 */
+  triggerType?: GraphCheckpointTriggerType | AgentLoopCheckpointTriggerType;
 }
 
 /**

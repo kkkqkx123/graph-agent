@@ -15,7 +15,8 @@ export type { ThreadStateSnapshot } from './snapshot.js';
 export type {
   CheckpointTriggerType,
   CheckpointConfigContext,
-  CheckpointConfigSource
+  GraphCheckpointConfigLayer,
+  CheckpointConfigContent
 } from './config.js';
 
 // 重新导出通用配置类型
