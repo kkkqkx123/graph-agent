@@ -17,7 +17,7 @@ import {
   CONTEXT_COMPRESSION_TRIGGER_NAME,
   CONTEXT_COMPRESSION_WORKFLOW_ID,
   DEFAULT_COMPRESSION_PROMPT
-} from '../triggers/predefined/context-compression.js';
+} from '../../resources/predefined/index.js';
 
 const logger = createContextualLogger();
 
@@ -64,7 +64,6 @@ export function registerContextCompressionTrigger(
         logger.debug(`Context compression trigger already exists, skipping`);
         return false;
       }
-      registry.unregister(CONTEXT_COMPRESSION_TRIGGER_NAME);
     }
 
     // 创建并注册模板
@@ -72,7 +71,7 @@ export function registerContextCompressionTrigger(
       ? createCustomContextCompressionTrigger(config)
       : createContextCompressionTriggerTemplate();
 
-    registry.register(template);
+    registry.register(template, { force: !skipIfExists });
     logger.info(`Registered context compression trigger template`);
     return true;
 
@@ -102,7 +101,6 @@ export function registerContextCompressionWorkflow(
         logger.debug(`Context compression workflow already exists, skipping`);
         return false;
       }
-      registry.unregister(CONTEXT_COMPRESSION_WORKFLOW_ID, { force: true });
     }
 
     // 创建工作流
@@ -110,7 +108,7 @@ export function registerContextCompressionWorkflow(
       ? createCustomContextCompressionWorkflow(config)
       : createContextCompressionWorkflow();
 
-    registry.register(workflow);
+    registry.register(workflow, { force: !skipIfExists });
     logger.info(`Registered context compression workflow`);
     return true;
 
@@ -133,14 +131,15 @@ export function registerContextCompressionWorkflow(
 export function registerContextCompression(
   triggerRegistry: TriggerTemplateRegistry,
   workflowRegistry: WorkflowRegistry,
-  config?: ContextCompressionConfig
+  config?: ContextCompressionConfig,
+  skipIfExists: boolean = true
 ): {
   triggerRegistered: boolean;
   workflowRegistered: boolean;
 } {
   // 必须先注册工作流，因为触发器引用了工作流ID
-  const workflowRegistered = registerContextCompressionWorkflow(workflowRegistry, config);
-  const triggerRegistered = registerContextCompressionTrigger(triggerRegistry, config);
+  const workflowRegistered = registerContextCompressionWorkflow(workflowRegistry, config, skipIfExists);
+  const triggerRegistered = registerContextCompressionTrigger(triggerRegistry, config, skipIfExists);
 
   return {
     triggerRegistered,
@@ -215,4 +214,4 @@ export {
   CONTEXT_COMPRESSION_TRIGGER_NAME,
   CONTEXT_COMPRESSION_WORKFLOW_ID,
   DEFAULT_COMPRESSION_PROMPT
-} from '../triggers/predefined/context-compression.js';
+} from '../../resources/predefined/index.js';

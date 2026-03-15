@@ -14,7 +14,9 @@ import { getData } from '../types/execution-result.js';
 import type { SDKOptions } from '../types/core-types.js';
 import { logger } from '../../../utils/index.js';
 import { getErrorMessage } from '@modular-agent/common-utils';
-import { setStorageCallback } from '../../../core/di/container-config.js';
+import { setStorageCallback, getContainer } from '../../../core/di/container-config.js';
+import * as Identifiers from '../../../core/di/service-identifiers.js';
+import { registerContextCompression } from '../../../core/services/predefined-triggers.js';
 
 /**
  * SDK主类 - 统一API入口（内部类，不导出）
@@ -37,6 +39,32 @@ class SDK {
     this.factory = APIFactory.getInstance();
     // 初始化依赖管理器
     this.dependencies = new APIDependencyManager();
+
+    // 初始化预加载内容
+    this.bootstrap(options);
+  }
+
+  /**
+   * 初始化预置功能
+   * @param options SDK配置选项
+   */
+  private bootstrap(options?: SDKOptions): void {
+    const presets = options?.presets;
+    
+    // 默认启用上下文压缩，除非显式禁用
+    if (presets?.contextCompression?.enabled !== false) {
+      try {
+        const container = getContainer();
+        const triggerRegistry = container.get(Identifiers.TriggerTemplateRegistry);
+        const workflowRegistry = container.get(Identifiers.WorkflowRegistry);
+        
+        registerContextCompression(triggerRegistry, workflowRegistry, presets?.contextCompression, false);
+      } catch (error) {
+        logger.error(`Failed to bootstrap context compression preset: ${getErrorMessage(error)}`);
+      }
+    }
+    
+    // 后续可以根据 options 自动注册其他 L1/L2 内容
   }
 
   /**
@@ -228,11 +256,20 @@ class SDK {
 }
 
 /**
+ * 全局SDK实例
+ */
+let globalSDK: SDK | null = null;
+
+/**
  * 获取全局SDK实例
  * 延迟初始化，避免在模块加载时就初始化 DI 容器
+ * @param options SDK配置选项（仅在首次初始化时生效）
  */
-export function getSDK(): SDK {
-  return new SDK();
+export function getSDK(options?: SDKOptions): SDK {
+  if (!globalSDK) {
+    globalSDK = new SDK(options);
+  }
+  return globalSDK;
 }
 
 // 导出依赖管理类

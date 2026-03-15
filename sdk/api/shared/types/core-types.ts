@@ -22,6 +22,17 @@ export interface SDKOptions {
   checkpointStorageCallback?: any;
   /** 是否启用验证 */
   enableValidation?: boolean;
+  /** 预置功能选项 */
+  presets?: {
+    /** 上下文压缩功能配置 */
+    contextCompression?: {
+      enabled?: boolean;
+      prompt?: string;
+      timeout?: number;
+      maxTriggers?: number;
+    };
+    /** 其他预置功能可以后续添加 */
+  };
 }
 
 /**

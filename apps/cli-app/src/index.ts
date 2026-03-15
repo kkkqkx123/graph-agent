@@ -7,6 +7,8 @@
 
 import { Command } from 'commander';
 import { initializeLogger, getLogger, type CLILogger } from './utils/logger.js';
+import { loadConfig } from './config/config-loader.js';
+import { getSDK } from '@modular-agent/sdk';
 import { createWorkflowCommands } from './commands/workflow/index.js';
 import { createThreadCommands } from './commands/thread/index.js';
 import { createCheckpointCommands } from './commands/checkpoint/index.js';
@@ -34,13 +36,21 @@ program
   .option('-v, --verbose', '启用详细输出模式')
   .option('-d, --debug', '启用调试模式')
   .option('-l, --log-file <path>', '指定日志文件路径')
-  .hook('preAction', (thisCommand) => {
+  .hook('preAction', async (thisCommand) => {
     // 在执行任何命令前初始化日志记录器
     const options = thisCommand.opts() as { verbose?: boolean; debug?: boolean; logFile?: string };
     initializeLogger({
       verbose: options.verbose,
       debug: options.debug,
       logFile: options.logFile
+    });
+
+    // 加载全局配置并初始化 SDK
+    const config = await loadConfig();
+    getSDK({
+      debug: options.debug,
+      logLevel: options.debug ? 'debug' : (options.verbose ? 'info' : 'warn'),
+      presets: config.presets
     });
   });
 

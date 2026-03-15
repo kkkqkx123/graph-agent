@@ -18,6 +18,14 @@ const ConfigSchema = z.object({
   logLevel: z.enum(['error', 'warn', 'info', 'debug']).optional(),
   outputFormat: z.enum(['json', 'table', 'plain']).optional(),
   maxConcurrentThreads: z.number().positive().optional(),
+  presets: z.object({
+    contextCompression: z.object({
+      enabled: z.boolean().optional(),
+      prompt: z.string().optional(),
+      timeout: z.number().optional(),
+      maxTriggers: z.number().optional(),
+    }).optional(),
+  }).optional(),
 });
 
 /**

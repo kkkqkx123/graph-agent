@@ -27,7 +27,7 @@ import {
   createContextCompressionWorkflow,
   createCustomContextCompressionTrigger,
   createCustomContextCompressionWorkflow
-} from '../triggers/predefined/context-compression.js';
+} from '../../resources/predefined/index.js';
 import type { TriggerTemplate, WorkflowDefinition } from '@modular-agent/types';
 import { EventType, TriggerActionType } from '@modular-agent/types';
 

@@ -207,9 +207,10 @@ export class WorkflowRegistry {
   /**
    * 注册工作流定义
    * @param workflow 工作流定义
+   * @param options 注册选项
    * @throws ValidationError 如果工作流定义无效或ID已存在
    */
-  register(workflow: WorkflowDefinition): void {
+  register(workflow: WorkflowDefinition, options?: { force?: boolean }): void {
     // 验证工作流定义
     const validationResult = this.validate(workflow);
     if (!validationResult.valid) {
@@ -223,7 +224,7 @@ export class WorkflowRegistry {
     }
 
     // 检查ID是否已存在
-    if (this.workflows.has(workflow.id)) {
+    if (this.workflows.has(workflow.id) && !options?.force) {
       throw new ConfigurationValidationError(
         `Workflow with ID '${workflow.id}' already exists`,
         {

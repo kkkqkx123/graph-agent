@@ -25,14 +25,15 @@ class TriggerTemplateRegistry {
   /**
    * 注册触发器模板
    * @param template 触发器模板
+   * @param options 注册选项
    * @throws ValidationError 如果触发器配置无效或名称已存在
    */
-  register(template: TriggerTemplate): void {
+  register(template: TriggerTemplate, options?: { force?: boolean }): void {
     // 验证触发器配置
     this.validateTemplate(template);
 
     // 检查名称是否已存在
-    if (this.templates.has(template.name)) {
+    if (this.templates.has(template.name) && !options?.force) {
       throw new ConfigurationValidationError(
         `Trigger template with name '${template.name}' already exists`,
         {
