@@ -18,6 +18,7 @@ import { getErrorMessage, now } from "@wf-agent/common-utils";
 import type { NodeTemplateStorageAdapter } from "@wf-agent/storage";
 import { persistNodeTemplate, removeNodeTemplate } from "./utils/node-template-storage-utils.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
+import { createRegistry } from "./utils/registry-utils.js";
 
 const logger = createContextualLogger({ component: "NodeTemplateRegistry" });
 
@@ -25,7 +26,7 @@ const logger = createContextualLogger({ component: "NodeTemplateRegistry" });
  * Node Registry Class
  */
 class NodeTemplateRegistry {
-  private templates: Map<string, NodeTemplate> = new Map();
+  private items = createRegistry<NodeTemplate>();
 
   constructor(private readonly storageAdapter: NodeTemplateStorageAdapter | null = null) {}
 
@@ -39,7 +40,7 @@ class NodeTemplateRegistry {
     this.validateTemplate(template);
 
     // Check if the name already exists.
-    if (this.templates.has(template.name)) {
+    if (this.items.has(template.name)) {
       throw new ConfigurationValidationError(
         `Node template with name '${template.name}' already exists`,
         {
@@ -50,7 +51,7 @@ class NodeTemplateRegistry {
     }
 
     // Register Node Template
-    this.templates.set(template.name, template);
+    this.items.set(template.name, template);
   }
 
   /**
@@ -71,7 +72,7 @@ class NodeTemplateRegistry {
   async registerNodeTemplate(template: NodeTemplate): Promise<void> {
     this.validateTemplate(template);
 
-    if (this.templates.has(template.name)) {
+    if (this.items.has(template.name)) {
       throw new ConfigurationValidationError(
         `Node template with name '${template.name}' already exists`,
         {
@@ -86,7 +87,7 @@ class NodeTemplateRegistry {
       await persistNodeTemplate(template, this.storageAdapter);
     }
 
-    this.templates.set(template.name, template);
+    this.items.set(template.name, template);
   }
 
   /**
@@ -97,7 +98,7 @@ class NodeTemplateRegistry {
    * @throws ValidationError If the updated configuration is invalid
    */
   async updateNodeTemplate(name: string, updates: Partial<NodeTemplate>): Promise<void> {
-    const template = this.templates.get(name);
+    const template = this.items.get(name);
     if (!template) {
       throw new NodeTemplateNotFoundError(`Node template '${name}' not found`, name);
     }
@@ -116,7 +117,7 @@ class NodeTemplateRegistry {
       await persistNodeTemplate(updatedTemplate, this.storageAdapter);
     }
 
-    this.templates.set(name, updatedTemplate);
+    this.items.set(name, updatedTemplate);
   }
 
   /**
@@ -125,7 +126,7 @@ class NodeTemplateRegistry {
    * @throws NodeTemplateNotFoundError If the node template does not exist
    */
   async unregisterNodeTemplate(name: string): Promise<void> {
-    if (!this.templates.has(name)) {
+    if (!this.items.has(name)) {
       throw new NodeTemplateNotFoundError(`Node template '${name}' not found`, name);
     }
 
@@ -134,7 +135,7 @@ class NodeTemplateRegistry {
       await removeNodeTemplate(name, this.storageAdapter);
     }
 
-    this.templates.delete(name);
+    this.items.delete(name);
   }
 
   /**
@@ -161,7 +162,7 @@ class NodeTemplateRegistry {
    * @returns The node template; returns undefined if it does not exist
    */
   get(name: string): NodeTemplate | undefined {
-    return this.templates.get(name);
+    return this.items.get(name);
   }
 
   /**
@@ -170,7 +171,7 @@ class NodeTemplateRegistry {
    * @returns Whether it exists
    */
   has(name: string): boolean {
-    return this.templates.has(name);
+    return this.items.has(name);
   }
 
   /**
@@ -181,7 +182,7 @@ class NodeTemplateRegistry {
    * @throws ValidationError If the updated configuration is invalid
    */
   update(name: string, updates: Partial<NodeTemplate>): void {
-    const template = this.templates.get(name);
+    const template = this.items.get(name);
     if (!template) {
       throw new NodeTemplateNotFoundError(`Node template '${name}' not found`, name);
     }
@@ -198,7 +199,7 @@ class NodeTemplateRegistry {
     this.validateTemplate(updatedTemplate);
 
     // Update the template
-    this.templates.set(name, updatedTemplate);
+    this.items.set(name, updatedTemplate);
   }
 
   /**
@@ -207,10 +208,10 @@ class NodeTemplateRegistry {
    * @throws NotFoundError If the node template does not exist
    */
   unregister(name: string): void {
-    if (!this.templates.has(name)) {
+    if (!this.items.has(name)) {
       throw new NodeTemplateNotFoundError(`Node template '${name}' not found`, name);
     }
-    this.templates.delete(name);
+    this.items.delete(name);
   }
 
   /**
@@ -228,7 +229,7 @@ class NodeTemplateRegistry {
    * @returns Array of node templates
    */
   list(): NodeTemplate[] {
-    return Array.from(this.templates.values());
+    return this.items.list();
   }
 
   /**
@@ -290,7 +291,7 @@ class NodeTemplateRegistry {
    * Clear all node templates.
    */
   clear(): void {
-    this.templates.clear();
+    this.items.clear();
   }
 
   /**
@@ -298,7 +299,7 @@ class NodeTemplateRegistry {
    * @returns The number of node templates
    */
   size(): number {
-    return this.templates.size;
+    return this.items.size;
   }
 
   /**
@@ -402,7 +403,7 @@ class NodeTemplateRegistry {
    * @throws: NotFoundError if the node template does not exist
    */
   export(name: string): string {
-    const template = this.templates.get(name);
+    const template = this.items.get(name);
     if (!template) {
       throw new NodeTemplateNotFoundError(`Node template '${name}' not found`, name);
     }

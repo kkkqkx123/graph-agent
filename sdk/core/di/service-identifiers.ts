@@ -53,6 +53,8 @@ import type { AgentLoopCoordinator as AgentLoopCoordinatorType } from "../../age
 import type { SkillRegistry as SkillRegistryType } from "../registry/skill-registry.js";
 import type { AgentProfileRegistry as AgentProfileRegistryType } from "../registry/agent-profile-registry.js";
 import type { TimeoutRegistry as TimeoutRegistryType } from "../registry/timeout-registry.js";
+import type { PromptTemplateRegistry as PromptTemplateRegistryType } from "../registry/prompt-template-registry.js";
+import type { FragmentRegistry as FragmentRegistryType } from "../registry/fragment-registry.js";
 import type {
   CheckpointStorageAdapter as CheckpointStorageAdapterType,
   WorkflowStorageAdapter as WorkflowStorageAdapterType,
@@ -146,6 +148,20 @@ export const TriggerTemplateRegistry: ServiceIdentifier<TriggerTemplateRegistryT
  */
 export const HookTemplateRegistry: ServiceIdentifier<HookTemplateRegistryType> =
   Symbol("HookTemplateRegistry");
+
+/**
+ * PromptTemplateRegistry - Prompt Template Registry
+ * Manages the registration and rendering of prompt templates.
+ */
+export const PromptTemplateRegistry: ServiceIdentifier<PromptTemplateRegistryType> =
+  Symbol("PromptTemplateRegistry");
+
+/**
+ * FragmentRegistry - System Prompt Fragment Registry
+ * Manages system prompt fragments with dependency tracking.
+ */
+export const FragmentRegistry: ServiceIdentifier<FragmentRegistryType> =
+  Symbol("FragmentRegistry");
 
 /**
  * TaskRegistry - Task Registry

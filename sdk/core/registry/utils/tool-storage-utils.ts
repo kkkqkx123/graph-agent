@@ -115,7 +115,7 @@ export async function loadTool(
  */
 export async function initializeToolsFromStorage(
   adapter: ToolStorageAdapter | null,
-  tools: Map<string, Tool>,
+  tools: { set: (key: string, value: Tool) => void; has: (key: string) => boolean; size: number },
 ): Promise<void> {
   if (!adapter) {
     logger.debug("No storage adapter configured, skipping tool initialization from storage");

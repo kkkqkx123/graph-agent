@@ -15,3 +15,11 @@ export {
 
 // Timeout Management
 export { TimeoutRegistry } from "./timeout-registry.js";
+
+// Prompt Template & Fragment Registries
+export { PromptTemplateRegistry } from "./prompt-template-registry.js";
+export { FragmentRegistry } from "./fragment-registry.js";
+export type { UnregisterResult } from "./fragment-registry.js";
+
+// Registry Utilities
+export { createRegistry, type Registry, type MutableRegistry } from "./utils/registry-utils.js";

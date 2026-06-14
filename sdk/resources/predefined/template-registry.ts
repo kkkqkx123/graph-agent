@@ -1,34 +1,100 @@
 /**
  * PromptTemplateRegistry - Prompt Template Registry
  *
- * Provides unified template management and rendering capabilities
- * Supports template registration, retrieval, and rendering
+ * Backward-compatible wrapper for sdk/core/registry/prompt-template-registry.ts.
+ * Maintains the old singleton-based API for existing consumers.
+ * New code should use GlobalContext.promptTemplateRegistry instead.
  *
- * Design Principles:
- * - Singleton pattern: A globally unique instance of the registry
- * - Lazy initialization: Predefined templates are loaded only the first time they are used
- * - Type safety: Full TypeScript type support
+ * @deprecated Import from sdk/core/registry/prompt-template-registry.ts instead
  */
 
+import { PromptTemplateRegistry as CorePromptTemplateRegistry } from "../../core/registry/prompt-template-registry.js";
 import type { PromptTemplate } from "@wf-agent/types";
-import { renderTemplate } from "../../core/utils/template-renderer/index.js";
-import { createContextualLogger } from "../../utils/contextual-logger.js";
-import type { FragmentRegistry } from "./prompt-templates/fragment-registry.js";
-
-const logger = createContextualLogger({ component: "PromptTemplateRegistry" });
 
 /**
- * Template Registry Class
+ * Backward-compatible wrapper that provides the old single-arg register(template) API.
+ */
+class TemplateRegistryWrapper {
+  private core: CorePromptTemplateRegistry;
+
+  constructor(core: CorePromptTemplateRegistry) {
+    this.core = core;
+  }
+
+  /** Old API: register(template) — single argument */
+  register(template: PromptTemplate): void {
+    this.core.register(template.id, template);
+  }
+
+  registerAll(templates: PromptTemplate[]): void {
+    this.core.registerAll(templates);
+  }
+
+  get(id: string): PromptTemplate | undefined {
+    return this.core.get(id);
+  }
+
+  has(id: string): boolean {
+    return this.core.has(id);
+  }
+
+  getAll(): PromptTemplate[] {
+    return this.core.list();
+  }
+
+  getByCategory(category: string): PromptTemplate[] {
+    return this.core.getByCategory(category);
+  }
+
+  unregister(id: string): boolean {
+    return this.core.unregister(id);
+  }
+
+  clear(): void {
+    this.core.clear();
+  }
+
+  render(id: string, variables: Record<string, unknown>): string | null {
+    return this.core.render(id, variables);
+  }
+
+  renderSafe(id: string, variables: Record<string, unknown>, defaultValue: string = ""): string {
+    return this.core.renderSafe(id, variables, defaultValue);
+  }
+
+  getTemplateIds(): string[] {
+    return this.core.getTemplateIds();
+  }
+
+  get size(): number {
+    return this.core.size;
+  }
+
+  isInitialized(): boolean {
+    return this.core.isInitialized();
+  }
+
+  setFragmentRegistry(registry: any): void {
+    this.core.setFragmentRegistry(registry);
+  }
+}
+
+/**
+ * @deprecated Use GlobalContext.promptTemplateRegistry instead
+ */
+export const templateRegistry = new TemplateRegistryWrapper(new CorePromptTemplateRegistry());
+
+/**
+ * @deprecated Use PromptTemplateRegistry from sdk/core/registry/ instead
  */
 export class PromptTemplateRegistry {
   private static instance: PromptTemplateRegistry | null = null;
-  private templates = new Map<string, PromptTemplate>();
-  private initialized = false;
-  private fragmentRegistry: FragmentRegistry | null = null;
+  private wrapper: TemplateRegistryWrapper;
 
-  /**
-   * Obtain a registry instance (singleton).
-   */
+  private constructor() {
+    this.wrapper = templateRegistry;
+  }
+
   static getInstance(): PromptTemplateRegistry {
     if (!PromptTemplateRegistry.instance) {
       PromptTemplateRegistry.instance = new PromptTemplateRegistry();
@@ -36,199 +102,95 @@ export class PromptTemplateRegistry {
     return PromptTemplateRegistry.instance;
   }
 
-  /**
-   * Resetting the registry instance (mainly for testing purposes)
-   */
   static resetInstance(): void {
     PromptTemplateRegistry.instance = null;
+    templateRegistry.clear();
   }
 
-  /**
-   * Private constructor
-   */
-  private constructor() {}
-
-  /**
-   * Set the fragment registry for cross-registry reference validation.
-   *
-   * When set, registering a template with a `fragments` field will validate
-   * that all referenced fragment IDs exist in the fragment registry.
-   *
-   * @param registry The FragmentRegistry instance
-   */
-  setFragmentRegistry(registry: FragmentRegistry): void {
-    this.fragmentRegistry = registry;
-  }
-
-  /**
-   * Check if it has been initialized.
-   */
-  isInitialized(): boolean {
-    return this.initialized;
-  }
-
-  /**
-   * Register a single template
-   * @param template Template definition
-   */
   register(template: PromptTemplate): void {
-    if (this.templates.has(template.id)) {
-      logger.warn(`Template with id '${template.id}' already exists, will be overwritten`);
-    }
-
-    // Validate cross-registry references: if template references fragments,
-    // check they exist in the fragment registry (if one is configured).
-    if (template.fragments && template.fragments.length > 0 && this.fragmentRegistry) {
-      for (const fragmentId of template.fragments) {
-        if (!this.fragmentRegistry.has(fragmentId)) {
-          logger.warn(
-            `Template '${template.id}' references fragment '${fragmentId}' ` +
-            `which is not registered in FragmentRegistry`,
-          );
-        } else {
-          // Record the dependency so fragment deletion can notify affected templates
-          this.fragmentRegistry.addDependent(fragmentId, template.id);
-        }
-      }
-    }
-
-    this.templates.set(template.id, template);
+    this.wrapper.register(template);
   }
 
-  /**
-   * Batch registration template
-   * @param templates Array of templates
-   */
   registerAll(templates: PromptTemplate[]): void {
-    for (const template of templates) {
-      this.register(template);
-    }
+    this.wrapper.registerAll(templates);
   }
 
-  /**
-   * Get the template
-   * @param id: Template ID
-   * @returns: Template definition; returns undefined if not found
-   */
   get(id: string): PromptTemplate | undefined {
-    return this.templates.get(id);
+    return this.wrapper.get(id);
   }
 
-  /**
-   * Check if the template exists
-   * @param id Template ID
-   */
   has(id: string): boolean {
-    return this.templates.has(id);
+    return this.wrapper.has(id);
   }
 
-  /**
-   * Get all registered templates
-   */
   getAll(): PromptTemplate[] {
-    return Array.from(this.templates.values());
+    return this.wrapper.getAll();
   }
 
-  /**
-   * Get templates of the specified category
-   * @param category Template category
-   */
   getByCategory(category: string): PromptTemplate[] {
-    return this.getAll().filter(t => t.category === category);
+    return this.wrapper.getByCategory(category);
   }
 
-  /**
-   * Remove the template
-   * @param id Template ID
-   */
   unregister(id: string): boolean {
-    return this.templates.delete(id);
+    return this.wrapper.unregister(id);
   }
 
-  /**
-   * Clear all templates.
-   */
   clear(): void {
-    this.templates.clear();
-    this.initialized = false;
-    this.fragmentRegistry = null;
+    this.wrapper.clear();
   }
 
-  /**
-   * Render template
-   * @param id: Template ID
-   * @param variables: Template variables
-   * @returns: The rendered string; returns null if the template does not exist
-   */
   render(id: string, variables: Record<string, unknown>): string | null {
-    const template = this.get(id);
-    if (!template) {
-      return null;
-    }
-    return renderTemplate(template.content, variables);
+    return this.wrapper.render(id, variables);
   }
 
-  /**
-   * Securely render a template (with default values)
-   * @param id The template ID
-   * @param variables The template variables
-   * @param defaultValue The default value when the template does not exist
-   * @returns The rendered string or the default value
-   */
   renderSafe(id: string, variables: Record<string, unknown>, defaultValue: string = ""): string {
-    const result = this.render(id, variables);
-    return result ?? defaultValue;
+    return this.wrapper.renderSafe(id, variables, defaultValue);
   }
 
-  /**
-   * Get all template IDs
-   */
   getTemplateIds(): string[] {
-    return Array.from(this.templates.keys());
+    return this.wrapper.getTemplateIds();
   }
 
-  /**
-   * Get the number of templates
-   */
   get size(): number {
-    return this.templates.size;
+    return this.wrapper.size;
+  }
+
+  isInitialized(): boolean {
+    return this.wrapper.isInitialized();
+  }
+
+  setFragmentRegistry(registry: any): void {
+    this.wrapper.setFragmentRegistry(registry);
   }
 }
 
 /**
- * Global Registry Instance
- */
-export const templateRegistry = PromptTemplateRegistry.getInstance();
-
-/**
- * Quick registration template
- * @param template Template definition
+ * @deprecated Use templateRegistry.register() directly
  */
 export function registerTemplate(template: PromptTemplate): void {
   templateRegistry.register(template);
 }
 
 /**
- * Quick batch registration template
- * @param templates Array of templates
+ * @deprecated Use templateRegistry.registerAll() directly
  */
 export function registerTemplates(templates: PromptTemplate[]): void {
   templateRegistry.registerAll(templates);
 }
 
 /**
- * Quickly retrieve a template
- * @param id Template ID
+ * @deprecated Use templateRegistry.get() directly
  */
 export function getTemplate(id: string): PromptTemplate | undefined {
   return templateRegistry.get(id);
 }
 
 /**
- * Quick template rendering
- * @param id Template ID
- * @param variables Template variables
+ * @deprecated Use templateRegistry.render() directly
  */
-export function renderTemplateById(id: string, variables: Record<string, unknown>): string | null {
+export function renderTemplateById(
+  id: string,
+  variables: Record<string, unknown>,
+): string | null {
   return templateRegistry.render(id, variables);
 }

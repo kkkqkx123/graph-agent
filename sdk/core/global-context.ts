@@ -27,6 +27,8 @@ import type { EventRegistry } from "./registry/event-registry.js";
 import type { NodeTemplateRegistry } from "./registry/node-template-registry.js";
 import type { TriggerTemplateRegistry } from "./registry/trigger-template-registry.js";
 import type { HookTemplateRegistry } from "./registry/hook-template-registry.js";
+import type { PromptTemplateRegistry } from "./registry/prompt-template-registry.js";
+import type { FragmentRegistry } from "./registry/fragment-registry.js";
 import type { LLMExecutor } from "./executors/llm-executor.js";
 import type { ToolCallExecutor } from "./executors/tool-call-executor.js";
 import type { WorkflowExecutor } from "../workflow/execution/executors/workflow-executor.js";
@@ -49,6 +51,8 @@ export class GlobalContext {
   private _nodeTemplateRegistry?: NodeTemplateRegistry;
   private _triggerTemplateRegistry?: TriggerTemplateRegistry;
   private _hookTemplateRegistry?: HookTemplateRegistry;
+  private _promptTemplateRegistry?: PromptTemplateRegistry;
+  private _fragmentRegistry?: FragmentRegistry;
   private _llmExecutor?: LLMExecutor;
   private _toolCallExecutor?: ToolCallExecutor;
   private _workflowExecutor?: WorkflowExecutor;
@@ -124,6 +128,24 @@ export class GlobalContext {
       );
     }
     return this._hookTemplateRegistry;
+  }
+
+  get promptTemplateRegistry(): PromptTemplateRegistry {
+    if (!this._promptTemplateRegistry) {
+      this._promptTemplateRegistry = this.container.get(
+        Identifiers.PromptTemplateRegistry as ServiceIdentifier<PromptTemplateRegistry>,
+      );
+    }
+    return this._promptTemplateRegistry;
+  }
+
+  get fragmentRegistry(): FragmentRegistry {
+    if (!this._fragmentRegistry) {
+      this._fragmentRegistry = this.container.get(
+        Identifiers.FragmentRegistry as ServiceIdentifier<FragmentRegistry>,
+      );
+    }
+    return this._fragmentRegistry;
   }
 
   // Lazy getters for executors

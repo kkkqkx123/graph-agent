@@ -27,11 +27,13 @@ import {
   removeTrigger,
   initializeTriggersFromStorage,
 } from "./utils/trigger-storage-utils.js";
+import { createRegistry } from "./utils/registry-utils.js";
+
 /**
  * Trigger Template Registry Class
  */
 class TriggerTemplateRegistry {
-  private templates: Map<string, TriggerTemplate> = new Map();
+  private items = createRegistry<TriggerTemplate>();
 
   constructor(private readonly storageAdapter: TriggerStorageAdapter | null = null) {}
 
@@ -46,7 +48,7 @@ class TriggerTemplateRegistry {
     this.validateTemplate(template);
 
     // Check if the name already exists.
-    if (this.templates.has(template.name)) {
+    if (this.items.has(template.name)) {
       if (options?.skipIfExists) {
         // Idempotent operation: Skip existing items
         return;
@@ -61,7 +63,7 @@ class TriggerTemplateRegistry {
     }
 
     // Register Trigger Template
-    this.templates.set(template.name, template);
+    this.items.set(template.name, template);
   }
 
   /**
@@ -79,7 +81,7 @@ class TriggerTemplateRegistry {
     this.validateTemplate(template);
 
     // Check if the name already exists
-    if (this.templates.has(template.name)) {
+    if (this.items.has(template.name)) {
       if (options?.skipIfExists) {
         return;
       }
@@ -98,7 +100,7 @@ class TriggerTemplateRegistry {
     }
 
     // Save to memory cache after successful persistence.
-    this.templates.set(template.name, template);
+    this.items.set(template.name, template);
   }
 
   /**
@@ -132,7 +134,7 @@ class TriggerTemplateRegistry {
     updates: Partial<TriggerTemplate>,
     options?: UpdateOptions,
   ): Promise<void> {
-    const template = this.templates.get(name);
+    const template = this.items.get(name);
     if (!template) {
       if (options?.createIfNotExists) {
         // Allow for automatic creation.
@@ -163,7 +165,7 @@ class TriggerTemplateRegistry {
     }
 
     // Update the template in memory after successful persistence.
-    this.templates.set(name, updatedTemplate);
+    this.items.set(name, updatedTemplate);
   }
 
   /**
@@ -171,7 +173,7 @@ class TriggerTemplateRegistry {
    * @param template Trigger template
    */
   async upsert(template: TriggerTemplate): Promise<void> {
-    if (this.templates.has(template.name)) {
+    if (this.items.has(template.name)) {
       await this.update(template.name, template);
     } else {
       await this.registerAsync(template);
@@ -184,7 +186,7 @@ class TriggerTemplateRegistry {
    * @returns The trigger template; returns undefined if it does not exist
    */
   get(name: string): TriggerTemplate | undefined {
-    return this.templates.get(name);
+    return this.items.get(name);
   }
 
   /**
@@ -193,7 +195,7 @@ class TriggerTemplateRegistry {
    * @returns Whether it exists
    */
   has(name: string): boolean {
-    return this.templates.has(name);
+    return this.items.has(name);
   }
 
   /**
@@ -204,7 +206,7 @@ class TriggerTemplateRegistry {
    * @throws ConfigurationValidationError If the template is referenced and force is not set
    */
   async unregister(name: string, options?: UnregisterOptions): Promise<void> {
-    if (!this.templates.has(name)) {
+    if (!this.items.has(name)) {
       throw new TriggerTemplateNotFoundError(`Trigger template '${name}' not found`, name);
     }
 
@@ -224,7 +226,7 @@ class TriggerTemplateRegistry {
       await removeTrigger(name, this.storageAdapter);
     }
 
-    this.templates.delete(name);
+    this.items.delete(name);
   }
 
   /**
@@ -250,7 +252,7 @@ class TriggerTemplateRegistry {
    * @returns Array of trigger templates
    */
   list(): TriggerTemplate[] {
-    return Array.from(this.templates.values());
+    return this.items.list();
   }
 
   /**
@@ -281,7 +283,7 @@ class TriggerTemplateRegistry {
    * Clear all trigger templates.
    */
   clear(): void {
-    this.templates.clear();
+    this.items.clear();
   }
 
   /**
@@ -289,7 +291,7 @@ class TriggerTemplateRegistry {
    * @returns The number of trigger templates
    */
   size(): number {
-    return this.templates.size;
+    return this.items.size;
   }
 
   /**
@@ -452,7 +454,7 @@ class TriggerTemplateRegistry {
    * @throws NotFoundError If the trigger template does not exist
    */
   export(name: string): string {
-    const template = this.templates.get(name);
+    const template = this.items.get(name);
     if (!template) {
       throw new TriggerTemplateNotFoundError(`Trigger template '${name}' not found`, name);
     }
@@ -550,7 +552,7 @@ class TriggerTemplateRegistry {
       return;
     }
 
-    await initializeTriggersFromStorage(this.storageAdapter, this.templates);
+    await initializeTriggersFromStorage(this.storageAdapter, this.items);
   }
 }
 

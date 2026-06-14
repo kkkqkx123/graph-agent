@@ -66,6 +66,8 @@ import { ScriptRegistry } from "../registry/script-registry.js";
 import { NodeTemplateRegistry } from "../registry/node-template-registry.js";
 import { HookTemplateRegistry } from "../registry/hook-template-registry.js";
 import { TriggerTemplateRegistry } from "../registry/trigger-template-registry.js";
+import { PromptTemplateRegistry } from "../registry/prompt-template-registry.js";
+import { FragmentRegistry } from "../registry/fragment-registry.js";
 import { TimeoutRegistry } from "../registry/timeout-registry.js";
 
 import { TaskRegistry } from "../../workflow/stores/task/task-registry.js";
@@ -398,6 +400,22 @@ export function configureContainerBindings(
         Identifiers.AgentProfileStorageAdapter,
       ) as AgentProfileStorageAdapter | null;
       return new AgentProfileRegistry(storageAdapter);
+    })
+    .inSingletonScope();
+
+  // PromptTemplateRegistry - Prompt Template Registry (no storage adapter needed)
+  container
+    .bind(Identifiers.PromptTemplateRegistry)
+    .toDynamicValue((): PromptTemplateRegistry => {
+      return new PromptTemplateRegistry();
+    })
+    .inSingletonScope();
+
+  // FragmentRegistry - System Prompt Fragment Registry (no storage adapter needed)
+  container
+    .bind(Identifiers.FragmentRegistry)
+    .toDynamicValue((): FragmentRegistry => {
+      return new FragmentRegistry();
     })
     .inSingletonScope();
 

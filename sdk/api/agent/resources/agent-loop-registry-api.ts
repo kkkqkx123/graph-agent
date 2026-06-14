@@ -269,6 +269,8 @@ export class AgentLoopRegistryAPI extends CrudResourceAPI<AgentLoopEntity, ID, A
       [AgentLoopStatus.COMPLETED]: 0,
       [AgentLoopStatus.FAILED]: 0,
       [AgentLoopStatus.CANCELLED]: 0,
+      [AgentLoopStatus.STOPPED]: 0,
+      [AgentLoopStatus.TIMEOUT]: 0,
     };
 
     for (const entity of entities) {

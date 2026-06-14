@@ -120,7 +120,7 @@ export async function loadTrigger(
  */
 export async function initializeTriggersFromStorage(
   adapter: TriggerStorageAdapter | null,
-  templates: Map<string, TriggerTemplate>,
+  templates: { set: (key: string, value: TriggerTemplate) => void; has: (key: string) => boolean; size: number },
 ): Promise<void> {
   if (!adapter) {
     logger.debug("No storage adapter configured, skipping trigger initialization from storage");

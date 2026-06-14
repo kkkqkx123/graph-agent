@@ -14,12 +14,13 @@ import {
 import { getErrorMessage, now } from "@wf-agent/common-utils";
 import type { HookTemplateStorageAdapter } from "@wf-agent/storage";
 import { persistHookTemplate, removeHookTemplate } from "./utils/hook-template-storage-utils.js";
+import { createRegistry } from "./utils/registry-utils.js";
 
 /**
  * HookTemplate Registry Class
  */
 class HookTemplateRegistry {
-  private templates: Map<string, HookTemplate> = new Map();
+  private items = createRegistry<HookTemplate>();
 
   constructor(private readonly storageAdapter: HookTemplateStorageAdapter | null = null) {}
 
@@ -31,7 +32,7 @@ class HookTemplateRegistry {
   register(template: HookTemplate): void {
     this.validateTemplate(template);
 
-    if (this.templates.has(template.name)) {
+    if (this.items.has(template.name)) {
       throw new ConfigurationValidationError(
         `Hook template with name '${template.name}' already exists`,
         {
@@ -41,7 +42,7 @@ class HookTemplateRegistry {
       );
     }
 
-    this.templates.set(template.name, template);
+    this.items.set(template.name, template);
   }
 
   /**
@@ -62,7 +63,7 @@ class HookTemplateRegistry {
   async registerHookTemplate(template: HookTemplate): Promise<void> {
     this.validateTemplate(template);
 
-    if (this.templates.has(template.name)) {
+    if (this.items.has(template.name)) {
       throw new ConfigurationValidationError(
         `Hook template with name '${template.name}' already exists`,
         {
@@ -77,7 +78,7 @@ class HookTemplateRegistry {
       await persistHookTemplate(template, this.storageAdapter);
     }
 
-    this.templates.set(template.name, template);
+    this.items.set(template.name, template);
   }
 
   /**
@@ -88,7 +89,7 @@ class HookTemplateRegistry {
    * @throws ValidationError If the updated configuration is invalid
    */
   async updateHookTemplate(name: string, updates: Partial<HookTemplate>): Promise<void> {
-    const template = this.templates.get(name);
+    const template = this.items.get(name);
     if (!template) {
       throw new HookTemplateNotFoundError(`Hook template '${name}' not found`, name);
     }
@@ -107,7 +108,7 @@ class HookTemplateRegistry {
       await persistHookTemplate(updatedTemplate, this.storageAdapter);
     }
 
-    this.templates.set(name, updatedTemplate);
+    this.items.set(name, updatedTemplate);
   }
 
   /**
@@ -116,7 +117,7 @@ class HookTemplateRegistry {
    * @throws HookTemplateNotFoundError If the hook template does not exist
    */
   async unregisterHookTemplate(name: string): Promise<void> {
-    if (!this.templates.has(name)) {
+    if (!this.items.has(name)) {
       throw new HookTemplateNotFoundError(`Hook template '${name}' not found`, name);
     }
 
@@ -125,7 +126,7 @@ class HookTemplateRegistry {
       await removeHookTemplate(name, this.storageAdapter);
     }
 
-    this.templates.delete(name);
+    this.items.delete(name);
   }
 
   /**
@@ -134,7 +135,7 @@ class HookTemplateRegistry {
    * @returns The hook template, or undefined if it does not exist
    */
   get(name: string): HookTemplate | undefined {
-    return this.templates.get(name);
+    return this.items.get(name);
   }
 
   /**
@@ -143,7 +144,7 @@ class HookTemplateRegistry {
    * @returns Whether it exists
    */
   has(name: string): boolean {
-    return this.templates.has(name);
+    return this.items.has(name);
   }
 
   /**
@@ -154,7 +155,7 @@ class HookTemplateRegistry {
    * @throws ValidationError If the updated configuration is invalid
    */
   update(name: string, updates: Partial<HookTemplate>): void {
-    const template = this.templates.get(name);
+    const template = this.items.get(name);
     if (!template) {
       throw new HookTemplateNotFoundError(`Hook template '${name}' not found`, name);
     }
@@ -167,7 +168,7 @@ class HookTemplateRegistry {
     };
 
     this.validateTemplate(updatedTemplate);
-    this.templates.set(name, updatedTemplate);
+    this.items.set(name, updatedTemplate);
   }
 
   /**
@@ -176,10 +177,10 @@ class HookTemplateRegistry {
    * @throws HookTemplateNotFoundError If the hook template does not exist
    */
   unregister(name: string): void {
-    if (!this.templates.has(name)) {
+    if (!this.items.has(name)) {
       throw new HookTemplateNotFoundError(`Hook template '${name}' not found`, name);
     }
-    this.templates.delete(name);
+    this.items.delete(name);
   }
 
   /**
@@ -197,7 +198,7 @@ class HookTemplateRegistry {
    * @returns Array of hook templates
    */
   list(): HookTemplate[] {
-    return Array.from(this.templates.values());
+    return this.items.list();
   }
 
   /**
@@ -259,7 +260,7 @@ class HookTemplateRegistry {
    * Clear all hook templates.
    */
   clear(): void {
-    this.templates.clear();
+    this.items.clear();
   }
 
   /**
@@ -267,7 +268,7 @@ class HookTemplateRegistry {
    * @returns The count
    */
   size(): number {
-    return this.templates.size;
+    return this.items.size;
   }
 
   /**
@@ -336,7 +337,7 @@ class HookTemplateRegistry {
    * @throws HookTemplateNotFoundError If the hook template does not exist
    */
   export(name: string): string {
-    const template = this.templates.get(name);
+    const template = this.items.get(name);
     if (!template) {
       throw new HookTemplateNotFoundError(`Hook template '${name}' not found`, name);
     }

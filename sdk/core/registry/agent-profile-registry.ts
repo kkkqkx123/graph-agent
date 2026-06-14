@@ -16,6 +16,7 @@
 
 import type { AgentProfileStorageAdapter } from "@wf-agent/storage";
 import { persistAgentProfile, removeAgentProfile } from "./utils/agent-profile-storage-utils.js";
+import { createRegistry } from "./utils/registry-utils.js";
 
 /**
  * Agent profile metadata stored in the registry
@@ -33,7 +34,7 @@ export interface AgentProfileMeta {
  * Agent Profile Registry Class
  */
 export class AgentProfileRegistry {
-  private profiles: Map<string, AgentProfileMeta> = new Map();
+  private items = createRegistry<AgentProfileMeta>();
 
   constructor(private readonly storageAdapter: AgentProfileStorageAdapter | null = null) {}
 
@@ -44,7 +45,7 @@ export class AgentProfileRegistry {
    */
   register(profile: AgentProfileMeta): void {
     this.validateProfile(profile);
-    this.profiles.set(profile.id, { ...profile });
+    this.items.set(profile.id, { ...profile });
   }
 
   /**
@@ -60,7 +61,7 @@ export class AgentProfileRegistry {
       await persistAgentProfile(profile, this.storageAdapter);
     }
 
-    this.profiles.set(profile.id, { ...profile });
+    this.items.set(profile.id, { ...profile });
   }
 
   /**
@@ -70,7 +71,7 @@ export class AgentProfileRegistry {
    * @returns Agent profile metadata or undefined if not found
    */
   get(id: string): AgentProfileMeta | undefined {
-    return this.profiles.get(id);
+    return this.items.get(id);
   }
 
   /**
@@ -79,7 +80,7 @@ export class AgentProfileRegistry {
    * @returns Array of agent profile metadata
    */
   list(): AgentProfileMeta[] {
-    return Array.from(this.profiles.values());
+    return this.items.list();
   }
 
   /**
@@ -88,7 +89,7 @@ export class AgentProfileRegistry {
    * @param id Profile ID to remove
    */
   remove(id: string): void {
-    this.profiles.delete(id);
+    this.items.delete(id);
   }
 
   /**
@@ -102,7 +103,7 @@ export class AgentProfileRegistry {
       await removeAgentProfile(id, this.storageAdapter);
     }
 
-    this.profiles.delete(id);
+    this.items.delete(id);
   }
 
   /**
@@ -112,7 +113,7 @@ export class AgentProfileRegistry {
    * @returns Whether the profile exists
    */
   has(id: string): boolean {
-    return this.profiles.has(id);
+    return this.items.has(id);
   }
 
   /**
@@ -121,14 +122,14 @@ export class AgentProfileRegistry {
    * @returns Number of profiles
    */
   size(): number {
-    return this.profiles.size;
+    return this.items.size;
   }
 
   /**
    * Clear all registered agent profiles
    */
   clear(): void {
-    this.profiles.clear();
+    this.items.clear();
   }
 
   /**

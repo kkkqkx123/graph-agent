@@ -29,6 +29,7 @@ import { createContextualLogger } from "../../utils/contextual-logger.js";
 import { createBuiltinTools } from "../../resources/predefined/tools/builtin/index.js";
 import type { ToolStorageAdapter } from "@wf-agent/storage";
 import { persistTool, removeTool, initializeToolsFromStorage } from "./utils/tool-storage-utils.js";
+import { createRegistry } from "./utils/registry-utils.js";
 
 const logger = createContextualLogger({ component: "ToolRegistry" });
 
@@ -36,7 +37,7 @@ const logger = createContextualLogger({ component: "ToolRegistry" });
  * Tool Registry Class
  */
 class ToolRegistry {
-  private tools: Map<string, Tool> = new Map();
+  private items = createRegistry<Tool>();
   private executors: Map<string, IToolExecutor> = new Map();
   private staticValidator: StaticValidator;
   private runtimeValidator: RuntimeValidator;
@@ -80,7 +81,7 @@ class ToolRegistry {
     }
 
     // Check if the tool ID already exists.
-    if (this.tools.has(tool.id)) {
+    if (this.items.has(tool.id)) {
       if (options?.skipIfExists) {
         logger.info("Tool already exists, skipping", { toolId: tool.id });
         return;
@@ -93,7 +94,7 @@ class ToolRegistry {
       });
     }
 
-    this.tools.set(tool.id, tool);
+    this.items.set(tool.id, tool);
     logger.info("Tool registered (memory-only)", { toolId: tool.id, toolType: tool.type });
   }
 
@@ -111,7 +112,7 @@ class ToolRegistry {
     }
 
     // Check if the tool ID already exists.
-    if (this.tools.has(tool.id)) {
+    if (this.items.has(tool.id)) {
       if (options?.skipIfExists) {
         logger.info("Tool already exists, skipping", { toolId: tool.id });
         return;
@@ -129,7 +130,7 @@ class ToolRegistry {
       await persistTool(tool, this.storageAdapter);
     }
 
-    this.tools.set(tool.id, tool);
+    this.items.set(tool.id, tool);
     logger.info("Tool registered", { toolId: tool.id, toolType: tool.type });
   }
 
@@ -150,7 +151,7 @@ class ToolRegistry {
    * @throws ToolNotFoundError If the tool does not exist
    */
   async unregisterTool(toolId: string): Promise<void> {
-    if (!this.tools.has(toolId)) {
+    if (!this.items.has(toolId)) {
       logger.warn("Attempted to unregister non-existent tool", { toolId });
       throw new ToolNotFoundError(`Tool with id '${toolId}' not found`, toolId);
     }
@@ -160,7 +161,7 @@ class ToolRegistry {
       await removeTool(toolId, this.storageAdapter);
     }
 
-    this.tools.delete(toolId);
+    this.items.delete(toolId);
     logger.info("Tool unregistered", { toolId });
   }
 
@@ -171,7 +172,7 @@ class ToolRegistry {
    * @throws ToolNotFoundError If the tool does not exist
    */
   getTool(toolId: string): Tool {
-    const tool = this.tools.get(toolId);
+    const tool = this.items.get(toolId);
     if (!tool) {
       throw new ToolNotFoundError(`Tool with id '${toolId}' not found`, toolId);
     }
@@ -184,7 +185,16 @@ class ToolRegistry {
    * @returns Whether it exists
    */
   has(toolId: string): boolean {
-    return this.tools.has(toolId);
+    return this.items.has(toolId);
+  }
+
+  /**
+   * Check if the tool exists (alias for has)
+   * @param toolId Tool ID
+   * @returns Whether it exists
+   */
+  hasTool(toolId: string): boolean {
+    return this.items.has(toolId);
   }
 
   /**
@@ -192,7 +202,7 @@ class ToolRegistry {
    * @returns An array of tool definitions
    */
   listTools(): Tool[] {
-    return Array.from(this.tools.values());
+    return this.items.list();
   }
 
   /**
@@ -231,20 +241,11 @@ class ToolRegistry {
   }
 
   /**
-   * Check if the tool exists
-   * @param toolId Tool ID
-   * @returns Whether it exists
-   */
-  hasTool(toolId: string): boolean {
-    return this.tools.has(toolId);
-  }
-
-  /**
    * Get the number of tools
    * @returns The number of tools
    */
   size(): number {
-    return this.tools.size;
+    return this.items.size;
   }
 
   /**
@@ -375,8 +376,8 @@ class ToolRegistry {
    * Clear all tools
    */
   clear(): void {
-    const count = this.tools.size;
-    this.tools.clear();
+    const count = this.items.size;
+    this.items.clear();
     logger.info("All tools cleared", { count });
   }
 
@@ -422,7 +423,7 @@ class ToolRegistry {
     const tool = this.getTool(toolId);
     const updatedTool = { ...tool, ...updates };
     // Delete the old tool first, then register the new one (re-verification will be required).
-    this.tools.delete(toolId);
+    this.items.delete(toolId);
     await this.registerTool(updatedTool);
   }
 
@@ -504,7 +505,7 @@ class ToolRegistry {
       return;
     }
 
-    await initializeToolsFromStorage(this.storageAdapter, this.tools);
+    await initializeToolsFromStorage(this.storageAdapter, this.items);
   }
 }
 

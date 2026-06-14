@@ -22,6 +22,7 @@ import {
 } from "../execution/hierarchy-integrity-service.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
 import { getErrorOrNew } from "@wf-agent/common-utils";
+import { createRegistry } from "./utils/registry-utils.js";
 
 const logger = createContextualLogger({ component: "ExecutionHierarchyRegistry" });
 
@@ -63,7 +64,7 @@ export interface ExecutionsByRoot {
  * ```
  */
 export class ExecutionHierarchyRegistry implements IHierarchyRegistry {
-  private executions: Map<ID, AnyExecutionEntity> = new Map();
+  private items = createRegistry<AnyExecutionEntity>();
 
   /**
    * Registers an execution instance
@@ -71,7 +72,7 @@ export class ExecutionHierarchyRegistry implements IHierarchyRegistry {
    * @param execution - The execution entity to register (Workflow or Agent)
    */
   register(execution: AnyExecutionEntity): void {
-    this.executions.set(execution.id, execution);
+    this.items.set(execution.id, execution);
   }
 
   /**
@@ -81,7 +82,7 @@ export class ExecutionHierarchyRegistry implements IHierarchyRegistry {
    * @returns true if the execution was found and removed, false otherwise
    */
   unregister(executionId: ID): boolean {
-    return this.executions.delete(executionId);
+    return this.items.delete(executionId);
   }
 
   /**
@@ -91,7 +92,7 @@ export class ExecutionHierarchyRegistry implements IHierarchyRegistry {
    * @returns The execution entity, or undefined if not found
    */
   get(executionId: ID): AnyExecutionEntity | undefined {
-    return this.executions.get(executionId);
+    return this.items.get(executionId);
   }
 
   /**
@@ -101,7 +102,7 @@ export class ExecutionHierarchyRegistry implements IHierarchyRegistry {
    * @returns true if the execution exists, false otherwise
    */
   has(executionId: ID): boolean {
-    return this.executions.has(executionId);
+    return this.items.has(executionId);
   }
 
   /**
@@ -110,7 +111,7 @@ export class ExecutionHierarchyRegistry implements IHierarchyRegistry {
    * @returns Array of all execution entities
    */
   getAll(): AnyExecutionEntity[] {
-    return Array.from(this.executions.values());
+    return this.items.list();
   }
 
   /**
@@ -119,7 +120,7 @@ export class ExecutionHierarchyRegistry implements IHierarchyRegistry {
    * @returns Array of all execution IDs
    */
   getAllIds(): ID[] {
-    return Array.from(this.executions.keys());
+    return this.items.keys();
   }
 
   /**
@@ -128,14 +129,14 @@ export class ExecutionHierarchyRegistry implements IHierarchyRegistry {
    * @returns The count of registered executions
    */
   size(): number {
-    return this.executions.size;
+    return this.items.size;
   }
 
   /**
    * Clears all registered executions
    */
   clear(): void {
-    this.executions.clear();
+    this.items.clear();
   }
 
   /**
