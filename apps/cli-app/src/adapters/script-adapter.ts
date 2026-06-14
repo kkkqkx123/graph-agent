@@ -205,9 +205,9 @@ export class ScriptAdapter extends BaseAdapter {
    */
   async executeScript(scriptName: string, options?: ScriptExecutionOptions): Promise<unknown> {
     return this.executeWithErrorHandling(async () => {
-      const api = this.sdk.scripts;
-      const service = api.getService();
-      const result = await service.execute(scriptName, options);
+      const registry = this.sdk.scripts.getService();
+      const executor = this.sdk.getScriptExecutor();
+      const result = await executor.execute(scriptName, options, registry);
 
       // Handling the Result type
       if (result.isErr()) {

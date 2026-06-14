@@ -18,7 +18,7 @@ import type { RuntimeNode, ScriptNodeConfig } from "@wf-agent/types";
 import type { WorkflowExecutionEntity } from "../../../entities/workflow-execution-entity.js";
 import { now, getErrorMessage } from "@wf-agent/common-utils";
 import * as Identifiers from "../../../../core/di/service-identifiers.js";
-import type { ScriptRegistry } from "../../../../core/registry/script-registry.js";
+import type { ScriptRegistry, ScriptExecutionService } from "../../../../core/registry/script-registry.js";
 import type { GlobalContext } from "../../../../core/global-context.js";
 
 /**
@@ -42,11 +42,12 @@ export async function scriptHandler(
 
   try {
     const scriptService = globalContext.container.get(Identifiers.ScriptRegistry) as ScriptRegistry;
+    const scriptExecutor = globalContext.container.get(Identifiers.ScriptExecutionService) as ScriptExecutionService;
 
     let result;
 
     if (config.flowId) {
-      result = await scriptService.executeFlow(config.flowId);
+      result = await scriptExecutor.executeFlow(config.flowId, scriptService);
     } else if (config.template) {
       const { ScriptEngine } = await import("../../../../core/script/engine/script-engine.js");
       const engine = new ScriptEngine();
@@ -75,7 +76,7 @@ export async function scriptHandler(
       };
       result = await engine.execute(script);
     } else {
-      result = await scriptService.execute(config.scriptName);
+      result = await scriptExecutor.execute(config.scriptName, {}, scriptService);
     }
 
     if (

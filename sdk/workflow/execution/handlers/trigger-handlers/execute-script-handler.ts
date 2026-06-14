@@ -3,7 +3,7 @@ import { RuntimeValidationError, ExecutionError } from "@wf-agent/types";
 import { now, diffTimestamp } from "@wf-agent/common-utils";
 import type { GlobalContext } from "../../../../core/global-context.js";
 import * as Identifiers from "../../../../core/di/service-identifiers.js";
-import type { ScriptRegistry } from "../../../../core/registry/script-registry.js";
+import type { ScriptRegistry, ScriptExecutionService } from "../../../../core/registry/script-registry.js";
 import { createSuccessResult, createFailureResult } from "./trigger-handler-utils.js";
 
 export async function executeScriptHandler(
@@ -37,15 +37,16 @@ export async function executeScriptHandler(
     }
 
     const scriptService = globalContext.container.get(Identifiers.ScriptRegistry) as ScriptRegistry;
+    const scriptExecutor = globalContext.container.get(Identifiers.ScriptExecutionService) as ScriptExecutionService;
 
     if (!scriptService) {
       throw new ExecutionError("ScriptRegistry not available in DI container");
     }
 
-    const result = await scriptService.execute(scriptName, {
+    const result = await scriptExecutor.execute(scriptName, {
       ...parameters,
       timeout,
-    });
+    }, scriptService);
 
     const executionTime = diffTimestamp(startTime, now());
 

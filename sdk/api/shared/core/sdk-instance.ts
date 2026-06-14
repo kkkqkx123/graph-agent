@@ -676,6 +676,15 @@ export class SDKInstance {
   }
 
   /**
+   * Get the script execution service
+   * @returns ScriptExecutionService instance
+   */
+  getScriptExecutor() {
+    this.ensureReady();
+    return this.globalContext.scriptExecutor;
+  }
+
+  /**
    * Get Profile API
    */
   get profiles() {

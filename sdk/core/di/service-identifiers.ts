@@ -15,7 +15,7 @@ import type { WorkflowGraphRegistry as WorkflowGraphRegistryType } from "../../w
 import type { WorkflowExecutionRegistry as WorkflowExecutionRegistryType } from "../../workflow/stores/workflow-execution-registry.js";
 import type { EventRegistry as EventRegistryType } from "../registry/event-registry.js";
 import type { ToolRegistry as ToolRegistryType } from "../registry/tool-registry.js";
-import type { ScriptRegistry as ScriptRegistryType } from "../registry/script-registry.js";
+import type { ScriptRegistry as ScriptRegistryType, ScriptExecutionService as ScriptExecutionServiceType } from "../registry/script-registry.js";
 import type { WorkflowRegistry as WorkflowRegistryType } from "../../workflow/stores/workflow-registry.js";
 import type { WorkflowRelationshipRegistry as WorkflowRelationshipRegistryType } from "../../workflow/stores/workflow-relationship-registry.js";
 import type { NodeTemplateRegistry as NodeTemplateRegistryType } from "../registry/node-template-registry.js";
@@ -111,9 +111,15 @@ export const ToolRegistry: ServiceIdentifier<ToolRegistryType> = Symbol("ToolReg
 
 /**
  * ScriptRegistry - Script Service
- * Manages the registration and execution of scripts
+ * Manages the registration and persistence of scripts
  */
 export const ScriptRegistry: ServiceIdentifier<ScriptRegistryType> = Symbol("ScriptRegistry");
+
+/**
+ * ScriptExecutor - Script Execution Service
+ * Handles script and flow execution logic
+ */
+export const ScriptExecutionService: ServiceIdentifier<ScriptExecutionServiceType> = Symbol("ScriptExecutionService");
 
 /**
  * WorkflowRegistry - Workflow Registry

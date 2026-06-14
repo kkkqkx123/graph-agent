@@ -42,8 +42,8 @@ export class ExecuteScriptCommand extends BaseCommand<ScriptExecutionResult> {
 
     // Execute the script.
     const result = await this.dependencies
-      .getScriptService()
-      .execute(this.scriptName, executionOptions);
+      .getScriptExecutor()
+      .execute(this.scriptName, executionOptions, this.dependencies.getScriptService());
     const executionTime = diffTimestamp(startTime, now());
 
     // Handle the Result type, either extracting the successful result or throwing an error.

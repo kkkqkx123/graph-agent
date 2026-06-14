@@ -22,7 +22,7 @@ import type { ExecutionEntityServiceFactory, IdBasedServiceFactory } from "./di/
 // Import types
 import type { WorkflowRegistry } from "../workflow/stores/workflow-registry.js";
 import type { ToolRegistry } from "./registry/tool-registry.js";
-import type { ScriptRegistry } from "./registry/script-registry.js";
+import type { ScriptRegistry, ScriptExecutionService } from "./registry/script-registry.js";
 import type { EventRegistry } from "./registry/event-registry.js";
 import type { NodeTemplateRegistry } from "./registry/node-template-registry.js";
 import type { TriggerTemplateRegistry } from "./registry/trigger-template-registry.js";
@@ -47,6 +47,7 @@ export class GlobalContext {
   private _workflowRegistry?: WorkflowRegistry;
   private _toolRegistry?: ToolRegistry;
   private _scriptRegistry?: ScriptRegistry;
+  private _scriptExecutor?: ScriptExecutionService;
   private _eventRegistry?: EventRegistry;
   private _nodeTemplateRegistry?: NodeTemplateRegistry;
   private _triggerTemplateRegistry?: TriggerTemplateRegistry;
@@ -92,6 +93,15 @@ export class GlobalContext {
       );
     }
     return this._scriptRegistry;
+  }
+
+  get scriptExecutor(): ScriptExecutionService {
+    if (!this._scriptExecutor) {
+      this._scriptExecutor = this.container.get(
+        Identifiers.ScriptExecutionService as ServiceIdentifier<ScriptExecutionService>,
+      );
+    }
+    return this._scriptExecutor;
   }
 
   get eventRegistry(): EventRegistry {

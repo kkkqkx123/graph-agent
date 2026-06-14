@@ -62,7 +62,7 @@ import { LLMWrapper } from "../llm/wrapper.js";
 import type { ExecutionDomainContext } from "@wf-agent/types";
 import { EventRegistry } from "../registry/event-registry.js";
 import { ToolRegistry } from "../registry/tool-registry.js";
-import { ScriptRegistry } from "../registry/script-registry.js";
+import { ScriptRegistry, ScriptExecutionService } from "../registry/script-registry.js";
 import { NodeTemplateRegistry } from "../registry/node-template-registry.js";
 import { HookTemplateRegistry } from "../registry/hook-template-registry.js";
 import { TriggerTemplateRegistry } from "../registry/trigger-template-registry.js";
@@ -317,8 +317,13 @@ export function configureContainerBindings(
     .bind(Identifiers.ScriptRegistry)
     .toDynamicValue((c: IContainer): ScriptRegistry => {
       const storageAdapter = c.get(Identifiers.ScriptStorageAdapter) as ScriptStorageAdapter | null;
-      return new ScriptRegistry(undefined, storageAdapter);
+      return new ScriptRegistry(storageAdapter);
     })
+    .inSingletonScope();
+
+  container
+    .bind(Identifiers.ScriptExecutionService)
+    .toDynamicValue((): ScriptExecutionService => new ScriptExecutionService())
     .inSingletonScope();
 
   container

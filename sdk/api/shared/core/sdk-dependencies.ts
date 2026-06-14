@@ -17,7 +17,7 @@ import type { EventRegistry } from "../../../core/registry/event-registry.js";
 import type { CheckpointState } from "../../../workflow/checkpoint/checkpoint-state-manager.js";
 import type { ToolRegistry } from "../../../core/registry/tool-registry.js";
 import type { LLMExecutor } from "../../../core/executors/llm-executor.js";
-import type { ScriptRegistry } from "../../../core/registry/script-registry.js";
+import type { ScriptRegistry, ScriptExecutionService } from "../../../core/registry/script-registry.js";
 import type { NodeTemplateRegistry } from "../../../core/registry/node-template-registry.js";
 import type { TriggerTemplateRegistry } from "../../../core/registry/trigger-template-registry.js";
 import type { HookTemplateRegistry } from "../../../core/registry/hook-template-registry.js";
@@ -98,10 +98,17 @@ export class APIDependencyManager {
   }
 
   /**
-   * Obtain code services
+   * Obtain script registry (pure registry: CRUD, validation, persistence)
    */
   getScriptService(): ScriptRegistry {
     return this.globalContext.scriptRegistry;
+  }
+
+  /**
+   * Obtain script executor (execution logic: execute, executeWithEngine, executeBatch, executeFlow)
+   */
+  getScriptExecutor(): ScriptExecutionService {
+    return this.globalContext.scriptExecutor;
   }
 
   /**

@@ -1,9 +1,14 @@
 /**
  * Script Registry
- * Provides a unified interface for script management and execution
+ * Manages script and flow blueprint registration, retrieval, and persistence.
+ *
+ * Responsibilities:
+ * - Script CRUD (register, unregister, update, get, list, search)
+ * - Flow blueprint management (register, get, list)
+ * - Script validation
+ * - Storage persistence (write-through)
  *
  * This module only exports class definitions; instances are managed by the DI container as singletons.
- *
  */
 
 import type {
@@ -12,16 +17,11 @@ import type {
   ScriptExecutionResult,
   ScriptFlow,
 } from "@wf-agent/types";
-import { ScriptExecutor } from "../executors/script-executor.js";
-import { ScriptEngine } from "../script/engine/script-engine.js";
-import { ScriptFlowEngine } from "../script/engine/script-flow-engine.js";
 import {
-  ScriptExecutionError,
   ScriptNotFoundError,
   ConfigurationValidationError,
+  ScriptExecutionError,
 } from "@wf-agent/types";
-import { all, ok, err } from "@wf-agent/common-utils";
-import type { Result } from "@wf-agent/types";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
 import type { ScriptStorageAdapter } from "@wf-agent/storage";
 import {
@@ -34,21 +34,18 @@ const logger = createContextualLogger({ component: "ScriptRegistry" });
 
 /**
  * Script Registry Class
- * Integrates script registry and executor management functions
+ * Pure registry for script definitions and flow blueprints.
+ * Execution logic is delegated to ScriptExecutor.
  */
 class ScriptRegistry {
   private scripts: Map<string, Script> = new Map();
   private flows: Map<string, ScriptFlow> = new Map();
-  private executor: ScriptExecutor;
-  private scriptEngine: ScriptEngine | null = null;
-  private flowEngine: ScriptFlowEngine | null = null;
 
-  constructor(
-    executor?: ScriptExecutor,
-    private readonly storageAdapter: ScriptStorageAdapter | null = null,
-  ) {
-    this.executor = executor ?? new ScriptExecutor();
-  }
+  constructor(private readonly storageAdapter: ScriptStorageAdapter | null = null) {}
+
+  // ============================================================
+  // Script CRUD
+  // ============================================================
 
   /**
    * Register script (memory-only, no persistence).
@@ -57,16 +54,13 @@ class ScriptRegistry {
    * @throws ValidationError If the script definition is invalid or the name already exists
    */
   register(script: Script): void {
-    // Verify script definitions
     this.validateScript(script);
 
-    // Set default values
     const scriptWithDefaults: Script = {
       ...script,
       enabled: script.enabled !== undefined ? script.enabled : true,
     };
 
-    // Check if the script name already exists.
     if (this.scripts.has(script.name)) {
       logger.warn("Script already exists", { scriptName: script.name });
       throw new ConfigurationValidationError(`Script with name '${script.name}' already exists`, {
@@ -75,7 +69,6 @@ class ScriptRegistry {
       });
     }
 
-    // Registration script
     this.scripts.set(script.name, scriptWithDefaults);
     logger.info("Script registered (memory-only)", { scriptName: script.name });
   }
@@ -86,16 +79,13 @@ class ScriptRegistry {
    * @throws ValidationError If the script definition is invalid or the name already exists
    */
   async registerScript(script: Script): Promise<void> {
-    // Verify script definitions
     this.validateScript(script);
 
-    // Set default values
     const scriptWithDefaults: Script = {
       ...script,
       enabled: script.enabled !== undefined ? script.enabled : true,
     };
 
-    // Check if the script name already exists.
     if (this.scripts.has(script.name)) {
       logger.warn("Script already exists", { scriptName: script.name });
       throw new ConfigurationValidationError(`Script with name '${script.name}' already exists`, {
@@ -109,7 +99,6 @@ class ScriptRegistry {
       await persistScript(scriptWithDefaults, this.storageAdapter);
     }
 
-    // Registration script
     this.scripts.set(script.name, scriptWithDefaults);
     logger.info("Script registered", { scriptName: script.name });
   }
@@ -239,7 +228,6 @@ class ScriptRegistry {
     const updatedScript = {
       ...script,
       ...updates,
-      // Make sure the 'enabled' field has a default value.
       enabled: updates.enabled !== undefined ? updates.enabled : (script.enabled ?? true),
     };
 
@@ -289,7 +277,6 @@ class ScriptRegistry {
    * @throws ValidationError If the script definition is invalid
    */
   validateScript(script: Script): boolean {
-    // Verify required fields
     if (!script.name || typeof script.name !== "string") {
       throw new ConfigurationValidationError("Script name is required and must be a string", {
         configType: "script",
@@ -307,7 +294,6 @@ class ScriptRegistry {
       );
     }
 
-    // Verify that the script content or file path or template contains at least one of the following:
     if (!script.content && !script.filePath && !script.template) {
       throw new ConfigurationValidationError(
         "Script must have either content, filePath, or template",
@@ -318,7 +304,6 @@ class ScriptRegistry {
       );
     }
 
-    // Verify execution options
     if (!script.options) {
       throw new ConfigurationValidationError("Script options are required", {
         configType: "script",
@@ -326,7 +311,6 @@ class ScriptRegistry {
       });
     }
 
-    // Verify the timeout period
     if (script.options.timeout !== undefined && script.options.timeout < 0) {
       throw new ConfigurationValidationError("Script timeout must be a positive number", {
         configType: "script",
@@ -334,7 +318,6 @@ class ScriptRegistry {
       });
     }
 
-    // Verify the number of retries.
     if (script.options.retries !== undefined && script.options.retries < 0) {
       throw new ConfigurationValidationError("Script retries must be a non-negative number", {
         configType: "script",
@@ -342,7 +325,6 @@ class ScriptRegistry {
       });
     }
 
-    // Verify retry delay
     if (script.options.retryDelay !== undefined && script.options.retryDelay < 0) {
       throw new ConfigurationValidationError("Script retryDelay must be a non-negative number", {
         configType: "script",
@@ -350,7 +332,6 @@ class ScriptRegistry {
       });
     }
 
-    // Verify the `enabled` field (if provided).
     if (script.enabled !== undefined && typeof script.enabled !== "boolean") {
       throw new ConfigurationValidationError("Script enabled must be a boolean", {
         configType: "script",
@@ -361,67 +342,9 @@ class ScriptRegistry {
     return true;
   }
 
-  /**
-   * Execute the script
-   * @param scriptName: The name of the script
-   * @param options: Execution options that override the script's default settings
-   * @returns: Result<ScriptExecutionResult, ScriptExecutionError>
-   */
-  async execute(
-    scriptName: string,
-    options: Partial<ScriptExecutionOptions> = {},
-  ): Promise<Result<ScriptExecutionResult, ScriptExecutionError>> {
-    logger.debug("Script execution started", { scriptName });
-
-    // Get script definition
-    const script = this.getScript(scriptName);
-
-    // Execute using the simplified ScriptExecutor
-    const result = await this.executor.execute(script, options);
-
-    if (!result.success) {
-      return err(
-        new ScriptExecutionError(result.error || "Script execution failed", scriptName, {
-          options,
-        }),
-      );
-    }
-
-    logger.debug("Script execution completed", { scriptName, success: result.success });
-    return ok(result);
-  }
-
-  /**
-   * Execute the script with ScriptEngine (supports template + executor mode)
-   * @param scriptName The name of the script
-   * @param options Execution options
-   * @param args Runtime argument values for template rendering
-   * @returns Execution result
-   */
-  async executeWithEngine(
-    scriptName: string,
-    options: Partial<ScriptExecutionOptions> = {},
-    args: Record<string, unknown> = {},
-  ): Promise<Result<ScriptExecutionResult, ScriptExecutionError>> {
-    const script = this.getScript(scriptName);
-
-    if (!this.scriptEngine) {
-      this.scriptEngine = new ScriptEngine();
-    }
-
-    const result = await this.scriptEngine.execute(script, options, { args });
-
-    if (!result.success) {
-      return err(
-        new ScriptExecutionError(result.error || "Script execution failed", scriptName, {
-          options,
-          args,
-        }),
-      );
-    }
-
-    return ok(result);
-  }
+  // ============================================================
+  // Flow Blueprint Management
+  // ============================================================
 
   /**
    * Register a flow blueprint
@@ -460,46 +383,6 @@ class ScriptRegistry {
     return Array.from(this.flows.values());
   }
 
-  /**
-   * Execute a flow blueprint
-   * @param flowName Flow name
-   * @returns Flow execution result
-   */
-  async executeFlow(
-    flowName: string,
-  ): Promise<import("../script/engine/script-flow-engine.js").FlowExecutionResult> {
-    const flow = this.getFlow(flowName);
-
-    if (!this.scriptEngine) {
-      this.scriptEngine = new ScriptEngine();
-    }
-    if (!this.flowEngine) {
-      this.flowEngine = new ScriptFlowEngine(this.scriptEngine, this.scripts);
-    }
-
-    return this.flowEngine.execute(flow);
-  }
-
-  /**
-   * 批量执行脚本
-   * @param executions 执行任务数组
-   * @returns Result<ScriptExecutionResult[], ScriptExecutionError>
-   */
-  async executeBatch(
-    executions: Array<{
-      scriptName: string;
-      options?: Partial<ScriptExecutionOptions>;
-    }>,
-  ): Promise<Result<ScriptExecutionResult[], ScriptExecutionError>> {
-    // Execute all scripts in parallel.
-    const results = await Promise.all(
-      executions.map(exec => this.execute(exec.scriptName, exec.options)),
-    );
-
-    // Combine the results; return "success" if everything is successful, otherwise return the first error.
-    return all(results);
-  }
-
   // ============================================================
   // Storage Initialization
   // ============================================================
@@ -518,6 +401,128 @@ class ScriptRegistry {
 }
 
 /**
- * Export the ScriptRegistry class
+ * Script Execution Service
+ * Handles script and flow execution, independent of registry concerns.
+ *
+ * Responsibilities:
+ * - Script execution (simple, engine-based, batch)
+ * - Flow blueprint execution
  */
-export { ScriptRegistry };
+class ScriptExecutionService {
+  private scriptEngine: ScriptEngine | null = null;
+  private flowEngine: ScriptFlowEngine | null = null;
+
+  constructor(
+    private readonly executor: ScriptExecutor_ = new ScriptExecutor_(),
+  ) {}
+
+  /**
+   * Execute the script
+   * @param scriptName The name of the script
+   * @param options Execution options that override the script's default settings
+   * @param registry ScriptRegistry instance to look up script definitions
+   */
+  async execute(
+    scriptName: string,
+    options: Partial<ScriptExecutionOptions> = {},
+    registry: ScriptRegistry,
+  ): Promise<Result<ScriptExecutionResult, ScriptExecutionError>> {
+    logger.debug("Script execution started", { scriptName });
+
+    const script = registry.getScript(scriptName);
+    const result = await this.executor.execute(script, options);
+
+    if (!result.success) {
+      return err(
+        new ScriptExecutionError(result.error || "Script execution failed", scriptName, {
+          options,
+        }),
+      );
+    }
+
+    logger.debug("Script execution completed", { scriptName, success: result.success });
+    return ok(result);
+  }
+
+  /**
+   * Execute the script with ScriptEngine (supports template + executor mode)
+   * @param scriptName The name of the script
+   * @param options Execution options
+   * @param args Runtime argument values for template rendering
+   * @param registry ScriptRegistry instance to look up script definitions
+   */
+  async executeWithEngine(
+    scriptName: string,
+    options: Partial<ScriptExecutionOptions> = {},
+    args: Record<string, unknown> = {},
+    registry: ScriptRegistry,
+  ): Promise<Result<ScriptExecutionResult, ScriptExecutionError>> {
+    const script = registry.getScript(scriptName);
+
+    if (!this.scriptEngine) {
+      this.scriptEngine = new ScriptEngine();
+    }
+
+    const result = await this.scriptEngine.execute(script, options, { args });
+
+    if (!result.success) {
+      return err(
+        new ScriptExecutionError(result.error || "Script execution failed", scriptName, {
+          options,
+          args,
+        }),
+      );
+    }
+
+    return ok(result);
+  }
+
+  /**
+   * Execute a flow blueprint
+   * @param flowName Flow name
+   * @param registry ScriptRegistry instance to look up flow and script definitions
+   */
+  async executeFlow(
+    flowName: string,
+    registry: ScriptRegistry,
+  ): Promise<import("../script/engine/script-flow-engine.js").FlowExecutionResult> {
+    const flow = registry.getFlow(flowName);
+
+    if (!this.scriptEngine) {
+      this.scriptEngine = new ScriptEngine();
+    }
+    if (!this.flowEngine) {
+      this.flowEngine = new ScriptFlowEngine(this.scriptEngine, registry["scripts"]);
+    }
+
+    return this.flowEngine.execute(flow);
+  }
+
+  /**
+   * Batch execute scripts
+   * @param executions Execution task array
+   * @param registry ScriptRegistry instance to look up script definitions
+   */
+  async executeBatch(
+    executions: Array<{
+      scriptName: string;
+      options?: Partial<ScriptExecutionOptions>;
+    }>,
+    registry: ScriptRegistry,
+  ): Promise<Result<ScriptExecutionResult[], ScriptExecutionError>> {
+    const results = await Promise.all(
+      executions.map(exec => this.execute(exec.scriptName, exec.options, registry)),
+    );
+
+    return all(results);
+  }
+}
+
+// Re-export types for convenience
+import type { Result } from "@wf-agent/types";
+import { ok, err, all } from "@wf-agent/common-utils";
+import { ScriptExecutor as ScriptExecutor_ } from "../executors/script-executor.js";
+import { ScriptEngine } from "../script/engine/script-engine.js";
+import { ScriptFlowEngine } from "../script/engine/script-flow-engine.js";
+
+export { ScriptRegistry, ScriptExecutionService };
