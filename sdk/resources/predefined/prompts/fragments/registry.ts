@@ -8,6 +8,9 @@
 // Reuse the FragmentRegistry class and types from the packages layer.
 import type { SystemPromptFragment } from "@wf-agent/types";
 import { FragmentRegistry } from "../../prompt-templates/fragment-registry.js";
+import { createContextualLogger } from "@sdk/utils/contextual-logger.js";
+
+const logger = createContextualLogger({ component: "FragmentRegistry" });
 
 // Import all fragments
 import {
@@ -79,6 +82,15 @@ export const fragmentRegistry = new FragmentRegistry();
  */
 export function initializeFragmentRegistry(): void {
   fragmentRegistry.registerAll(ALL_PREDEFINED_FRAGMENTS);
+
+  // Verify all predefined fragments were registered successfully
+  const missingIds = ALL_PREDEFINED_FRAGMENTS
+    .filter(f => !fragmentRegistry.has(f.id))
+    .map(f => f.id);
+
+  if (missingIds.length > 0) {
+    logger.error(`Failed to register fragments: ${missingIds.join(", ")}`);
+  }
 }
 
 /**

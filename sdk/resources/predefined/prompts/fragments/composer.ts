@@ -25,6 +25,8 @@ export interface CompleteSystemPromptConfig {
   separator?: string;
   /** Variable values for task-instruction fragments (fragmentId → variables map) */
   fragmentVariables?: Map<string, Record<string, unknown>>;
+  /** When true, throw an error if any fragment is not found (default: false) */
+  strict?: boolean;
 }
 
 /**
@@ -36,6 +38,7 @@ export interface CompleteSystemPromptConfig {
 export function composeSystemPrompt(
   config: FragmentCompositionConfig,
   fragmentVariables?: Map<string, Record<string, unknown>>,
+  strict: boolean = false,
 ): string {
   const separator = config.separator ?? "\n\n";
   const contents: string[] = [];
@@ -51,6 +54,9 @@ export function composeSystemPrompt(
         contents.push(fragment.content);
       }
     } else {
+      if (strict) {
+        throw new Error(`Fragment '${fragmentId}' not found in registry`);
+      }
       logger.warn(`Fragment '${fragmentId}' not found`);
     }
   }
@@ -68,6 +74,7 @@ export function buildCompleteSystemPrompt(config: CompleteSystemPromptConfig): s
   const basePrompt = composeSystemPrompt(
     { fragmentIds: config.fragmentIds, separator: config.separator },
     config.fragmentVariables,
+    config.strict,
   );
 
   // If there are any instructions for the dynamic tool, add them after the tool-usage section.
@@ -84,8 +91,8 @@ export function buildCompleteSystemPrompt(config: CompleteSystemPromptConfig): s
  * @param fragmentIds List of fragment IDs
  * @returns Combined system prompt words
  */
-export function composeFragments(fragmentIds: string[]): string {
-  return composeSystemPrompt({ fragmentIds });
+export function composeFragments(fragmentIds: string[], strict: boolean = false): string {
+  return composeSystemPrompt({ fragmentIds }, undefined, strict);
 }
 
 /**

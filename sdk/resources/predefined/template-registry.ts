@@ -13,6 +13,7 @@
 import type { PromptTemplate } from "@wf-agent/types";
 import { renderTemplate } from "../../core/utils/template-renderer/index.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
+import type { FragmentRegistry } from "./prompt-templates/fragment-registry.js";
 
 const logger = createContextualLogger({ component: "PromptTemplateRegistry" });
 
@@ -23,6 +24,7 @@ export class PromptTemplateRegistry {
   private static instance: PromptTemplateRegistry | null = null;
   private templates = new Map<string, PromptTemplate>();
   private initialized = false;
+  private fragmentRegistry: FragmentRegistry | null = null;
 
   /**
    * Obtain a registry instance (singleton).
@@ -47,6 +49,18 @@ export class PromptTemplateRegistry {
   private constructor() {}
 
   /**
+   * Set the fragment registry for cross-registry reference validation.
+   *
+   * When set, registering a template with a `fragments` field will validate
+   * that all referenced fragment IDs exist in the fragment registry.
+   *
+   * @param registry The FragmentRegistry instance
+   */
+  setFragmentRegistry(registry: FragmentRegistry): void {
+    this.fragmentRegistry = registry;
+  }
+
+  /**
    * Check if it has been initialized.
    */
   isInitialized(): boolean {
@@ -61,6 +75,23 @@ export class PromptTemplateRegistry {
     if (this.templates.has(template.id)) {
       logger.warn(`Template with id '${template.id}' already exists, will be overwritten`);
     }
+
+    // Validate cross-registry references: if template references fragments,
+    // check they exist in the fragment registry (if one is configured).
+    if (template.fragments && template.fragments.length > 0 && this.fragmentRegistry) {
+      for (const fragmentId of template.fragments) {
+        if (!this.fragmentRegistry.has(fragmentId)) {
+          logger.warn(
+            `Template '${template.id}' references fragment '${fragmentId}' ` +
+            `which is not registered in FragmentRegistry`,
+          );
+        } else {
+          // Record the dependency so fragment deletion can notify affected templates
+          this.fragmentRegistry.addDependent(fragmentId, template.id);
+        }
+      }
+    }
+
     this.templates.set(template.id, template);
   }
 
@@ -120,6 +151,7 @@ export class PromptTemplateRegistry {
   clear(): void {
     this.templates.clear();
     this.initialized = false;
+    this.fragmentRegistry = null;
   }
 
   /**

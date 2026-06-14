@@ -1,4 +1,4 @@
-import type { PromptTemplate, PromptVariableDefinition } from "./prompt-template.js";
+import type { PromptVariableDefinition } from "./prompt-template.js";
 
 export interface SystemPromptFragment {
   id: string;
@@ -14,10 +14,4 @@ export interface FragmentCompositionConfig {
   separator?: string;
   prefix?: string;
   suffix?: string;
-}
-
-export interface TemplateComposition {
-  baseTemplateId: string;
-  overrides: Partial<PromptTemplate>;
-  fragmentReplacements?: Record<string, string>;
 }
