@@ -1,25 +1,26 @@
 /**
- * WorkflowGraphData Structure
+ * Workflow Graph Structure
  *
  * Design Notes:
- * - WorkflowGraphData is an implementation class of the WorkflowGraphStructure interface.
- * - It provides basic data storage and querying functions for workflow graphs.
- * - As a core entity, it is located in the workflow/entities directory.
+ * - WorkflowGraphStructure represents the core graph topology
+ * - Immutable after construction for thread safety
+ * - All preprocessing data is separated into WorkflowGraphMetadata
  *
  * Core Responsibilities:
  * - Stores graph nodes, edges, and their adjacency relationships.
  * - Provides methods for querying and traversing the graph.
- * - Acts as a stateless data structure, without any state management logic.
+ * - Acts as a stateless data structure without any state management logic.
  *
- * Use Cases:
+ * Usage:
  * - Representation of graph structures defined in workflows.
  * - Graph data during WorkflowExecution execution (immutable).
  * - Graph validation and analysis.
  *
- * Precautions:
- * - WorkflowGraphData is a stateless data structure; once constructed, it should not be modified.
- * - The construction of the graph is handled by the WorkflowGraphBuilder.
- * - At runtime, it is managed by the WorkflowGraphRegistry to ensure immutability.
+ * Design Principles:
+ * - WorkflowGraphStructure is immutable once constructed.
+ * - Construction is handled by the WorkflowGraphBuilder.
+ * - At runtime, managed by WorkflowGraphRegistry to ensure immutability.
+ * - Preprocessing data is stored separately in WorkflowGraphMetadata.
  */
 
 import type {
@@ -29,16 +30,15 @@ import type {
   ReverseAdjacencyList,
   NodeMap,
   EdgeMap,
-  WorkflowGraphStructure,
 } from "@wf-agent/types";
 import type { ID } from "@wf-agent/types";
 
 /**
- * Workflow Graph Data Structure Class
+ * Workflow Graph Structure Class
  * Core Responsibilities: Store and manage the nodes, edges, and adjacency relationships of a graph.
- * Does not include complex algorithms; only provides basic graph operations.
+ * Does not include complex algorithms or preprocessing data; only provides basic graph operations.
  */
-export class WorkflowGraphData implements WorkflowGraphStructure {
+export class WorkflowGraphStructure {
   /** Node set */
   public nodes: NodeMap;
   /** Edge Set */

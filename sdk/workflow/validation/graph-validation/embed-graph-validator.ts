@@ -10,7 +10,7 @@
  */
 
 import { ConfigurationValidationError } from "@wf-agent/types";
-import type { WorkflowGraphData } from "../../entities/workflow-graph-data.js";
+import type { WorkflowGraphStructure } from "../../entities/workflow-graph-data.js";
 
 /**
  * Validate EMBED_GRAPH node existence and configuration
@@ -18,7 +18,7 @@ import type { WorkflowGraphData } from "../../entities/workflow-graph-data.js";
  * @returns List of validation errors
  */
 export function validateEmbedGraphExistence(
-  graph: WorkflowGraphData,
+  graph: WorkflowGraphStructure,
 ): ConfigurationValidationError[] {
   const errors: ConfigurationValidationError[] = [];
 
@@ -64,7 +64,7 @@ export function validateEmbedGraphExistence(
  * @returns List of validation errors
  */
 export function validateEmbedGraphConstraints(
-  graph: WorkflowGraphData,
+  graph: WorkflowGraphStructure,
 ): ConfigurationValidationError[] {
   const errors: ConfigurationValidationError[] = [];
 

@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from "vitest";
 import { analyzeReachability } from "../workflow-reachability-analyzer.js";
-import { WorkflowGraphData } from "../../../entities/workflow-graph-data.js";
+import { WorkflowGraphStructure } from "../../../entities/workflow-graph-data.js";
 import type { WorkflowNode, WorkflowEdge } from "@wf-agent/types";
 
 // Helper function to create a simple node
@@ -37,7 +37,7 @@ function createEdge(id: string, sourceNodeId: string, targetNodeId: string): Wor
 
 describe("analyzeReachability", () => {
   it("should analyze a simple linear graph correctly", () => {
-    const graph = new WorkflowGraphData();
+    const graph = new WorkflowGraphStructure();
     graph.addNode(createNode("start", "START"));
     graph.addNode(createNode("a", "TASK"));
     graph.addNode(createNode("b", "TASK"));
@@ -70,7 +70,7 @@ describe("analyzeReachability", () => {
   });
 
   it("should detect unreachable nodes", () => {
-    const graph = new WorkflowGraphData();
+    const graph = new WorkflowGraphStructure();
     graph.addNode(createNode("start", "START"));
     graph.addNode(createNode("a", "TASK"));
     graph.addNode(createNode("orphan", "TASK")); // This node is not connected
@@ -87,7 +87,7 @@ describe("analyzeReachability", () => {
   });
 
   it("should detect dead-end nodes", () => {
-    const graph = new WorkflowGraphData();
+    const graph = new WorkflowGraphStructure();
     graph.addNode(createNode("start", "START"));
     graph.addNode(createNode("a", "TASK"));
     graph.addNode(createNode("dead-end", "TASK")); // Can't reach END
@@ -108,7 +108,7 @@ describe("analyzeReachability", () => {
   });
 
   it("should handle graph with no start node", () => {
-    const graph = new WorkflowGraphData();
+    const graph = new WorkflowGraphStructure();
     graph.addNode(createNode("a", "TASK"));
     graph.addNode(createNode("b", "TASK"));
     graph.addEdge(createEdge("e1", "a", "b"));
@@ -122,7 +122,7 @@ describe("analyzeReachability", () => {
   });
 
   it("should handle graph with multiple end nodes", () => {
-    const graph = new WorkflowGraphData();
+    const graph = new WorkflowGraphStructure();
     graph.addNode(createNode("start", "START"));
     graph.addNode(createNode("a", "TASK"));
     graph.addNode(createNode("end1", "END"));
@@ -148,7 +148,7 @@ describe("analyzeReachability", () => {
   });
 
   it("should handle complex graph with multiple paths", () => {
-    const graph = new WorkflowGraphData();
+    const graph = new WorkflowGraphStructure();
     graph.addNode(createNode("start", "START"));
     graph.addNode(createNode("a", "TASK"));
     graph.addNode(createNode("b", "TASK"));
@@ -173,7 +173,7 @@ describe("analyzeReachability", () => {
   });
 
   it("should handle empty graph", () => {
-    const graph = new WorkflowGraphData();
+    const graph = new WorkflowGraphStructure();
 
     const result = analyzeReachability(graph);
 

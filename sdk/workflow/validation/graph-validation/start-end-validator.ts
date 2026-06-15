@@ -12,14 +12,14 @@
 
 import type { ID, StaticNodeType } from "@wf-agent/types";
 import { ConfigurationValidationError } from "@wf-agent/types";
-import type { WorkflowGraphData } from "../../entities/workflow-graph-data.js";
+import type { WorkflowGraphStructure } from "../../entities/workflow-graph-data.js";
 
 /**
  * Validate START and END node constraints for normal workflows
  * @param graph Graph data
  * @returns List of validation errors
  */
-export function validateStartEndNodes(graph: WorkflowGraphData): ConfigurationValidationError[] {
+export function validateStartEndNodes(graph: WorkflowGraphStructure): ConfigurationValidationError[] {
   const errors: ConfigurationValidationError[] = [];
 
   // Check START node
@@ -93,7 +93,7 @@ export function validateStartEndNodes(graph: WorkflowGraphData): ConfigurationVa
  * @returns List of validation errors
  */
 export function validateTriggeredSubgraphNodes(
-  graph: WorkflowGraphData,
+  graph: WorkflowGraphStructure,
 ): ConfigurationValidationError[] {
   const errors: ConfigurationValidationError[] = [];
 

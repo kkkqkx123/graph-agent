@@ -42,7 +42,7 @@ import type { WorkflowGraphAnalysis } from "../../types/graph/analysis.js";
 import { ConfigurationValidationError } from "@wf-agent/types";
 import type { Result } from "@wf-agent/types";
 import { ok, err } from "@wf-agent/common-utils";
-import type { WorkflowGraphData } from "../../entities/workflow-graph-data.js";
+import type { WorkflowGraphStructure } from "../../entities/workflow-graph-data.js";
 import { analyzeWorkflowGraph } from "../../builder/utils/workflow-graph-analyzer.js";
 import { detectCycles } from "../../builder/utils/workflow-cycle-detector.js";
 import { analyzeReachability } from "../../builder/utils/workflow-reachability-analyzer.js";
@@ -72,8 +72,8 @@ export class GraphValidator {
    * All validation rules are mandatory and always enabled.
    */
   static validate(
-    graph: WorkflowGraphData,
-  ): Result<WorkflowGraphData, ConfigurationValidationError[]> {
+    graph: WorkflowGraphStructure,
+  ): Result<WorkflowGraphStructure, ConfigurationValidationError[]> {
     const errorList: ConfigurationValidationError[] = [];
 
     // Check if it is a trigger sub-workflow.
@@ -177,7 +177,7 @@ export class GraphValidator {
   /**
    * Complete graph analysis
    */
-  static analyze(graph: WorkflowGraphData): WorkflowGraphAnalysis {
+  static analyze(graph: WorkflowGraphStructure): WorkflowGraphAnalysis {
     return analyzeWorkflowGraph(graph);
   }
 }

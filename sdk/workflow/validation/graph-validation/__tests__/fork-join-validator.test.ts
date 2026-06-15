@@ -11,7 +11,7 @@
 
 import { describe, it, expect } from "vitest";
 import { validateForkJoinPairs } from "../fork-join-validator.js";
-import { WorkflowGraphData } from "../../../entities/workflow-graph-data.js";
+import { WorkflowGraphStructure } from "../../../entities/workflow-graph-data.js";
 import type { WorkflowNode, WorkflowEdge } from "@wf-agent/types";
 
 describe("validateForkJoinPairs", () => {
@@ -19,8 +19,8 @@ describe("validateForkJoinPairs", () => {
   function createGraph(
     nodes: Array<{ id: string; type: string; config?: any }>,
     edges: Array<{ sourceNodeId: string; targetNodeId: string }>,
-  ): WorkflowGraphData {
-    const graph = new WorkflowGraphData();
+  ): WorkflowGraphStructure {
+    const graph = new WorkflowGraphStructure();
 
     // Add nodes
     for (const nodeData of nodes) {

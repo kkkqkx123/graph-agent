@@ -13,7 +13,7 @@
 
 import type { ID, StaticNodeType, SyncNodeConfig } from "@wf-agent/types";
 import { ConfigurationValidationError } from "@wf-agent/types";
-import type { WorkflowGraphData } from "../../entities/workflow-graph-data.js";
+import type { WorkflowGraphStructure } from "../../entities/workflow-graph-data.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "SyncNodeValidator" });
@@ -23,7 +23,7 @@ const logger = createContextualLogger({ component: "SyncNodeValidator" });
  * @param graph Graph data containing SYNC nodes
  * @returns List of validation errors
  */
-export function validateSyncNodes(graph: WorkflowGraphData): ConfigurationValidationError[] {
+export function validateSyncNodes(graph: WorkflowGraphStructure): ConfigurationValidationError[] {
   const errors: ConfigurationValidationError[] = [];
 
   // Collect all SYNC nodes with full config
@@ -454,7 +454,7 @@ function validateExchangeIntegrity(
  */
 function validateTopologicalPosition(
   syncNodes: Array<{ nodeId: ID; config: SyncNodeConfig }>,
-  graph: WorkflowGraphData,
+  graph: WorkflowGraphStructure,
   errors: ConfigurationValidationError[],
 ): void {
   // Find SUBGRAPH nodes in the graph
@@ -500,7 +500,7 @@ function validateTopologicalPosition(
 function isNodeConnectedToAny(
   nodeId: ID,
   targetNodeIds: Set<ID>,
-  graph: WorkflowGraphData,
+  graph: WorkflowGraphStructure,
 ): boolean {
   if (targetNodeIds.has(nodeId)) return true;
 

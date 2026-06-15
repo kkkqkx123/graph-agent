@@ -13,14 +13,14 @@
 
 import type { ID, StaticNodeType } from "@wf-agent/types";
 import { ConfigurationValidationError } from "@wf-agent/types";
-import type { WorkflowGraphData } from "../../entities/workflow-graph-data.js";
+import type { WorkflowGraphStructure } from "../../entities/workflow-graph-data.js";
 
 /**
  * Validate LOOP_START/LOOP_END pairs
  * @param graph Graph data
  * @returns List of validation errors
  */
-export function validateLoopPairs(graph: WorkflowGraphData): ConfigurationValidationError[] {
+export function validateLoopPairs(graph: WorkflowGraphStructure): ConfigurationValidationError[] {
   const errors: ConfigurationValidationError[] = [];
 
   // Collect LOOP_START nodes: nodeId -> { loopId }

@@ -4,7 +4,7 @@
  *
  * Design Principles:
  * - Stateless Execution: Does not cache the execution flow state (such as currentNodeId); all methods pass the required data through parameters.
- * - Stateful Definition: Holds an immutable workflow definition (WorkflowGraphData), which is managed by the parent container (WorkflowExecutionContext) throughout its lifecycle.
+ * - Stateful Definition: Holds an immutable workflow definition (WorkflowGraphStructure), which is managed by the parent container (WorkflowExecutionContext) throughout its lifecycle.
  * - Pure Functions: All methods are pure functions and do not have any side effects.
  *
  * Creation Method: Instances of WorkflowNavigator are created and cached uniformly by WorkflowExecutionContext, initialized using the graph object within the WorkflowExecution.

@@ -1,227 +1,363 @@
 /**
- * Workflow Graph Data Class
- * Inherits from WorkflowGraphData, implements the WorkflowGraph interface
+ * Workflow Graph
+ *
+ * Design Notes:
+ * - Uses composition to combine graph structure with metadata
+ * - Clean separation between immutable structure and mutable metadata
+ * - Provides unified interface for workflow graph operations
+ *
+ * Core Responsibilities:
+ * - Combines WorkflowGraphStructure (immutable) with WorkflowGraphMetadata (mutable)
+ * - Provides convenient access to both structural and metadata information
+ * - Maintains clear lifecycle: construction -> preprocessing -> runtime
+ *
+ * Usage:
+ * - Main interface for workflow graph operations
+ * - Used by all workflow components (builders, validators, executors)
+ * - Provides both graph traversal and metadata access
  */
 
 import type {
   ID,
   Timestamp,
   Version,
+  WorkflowNode,
+  WorkflowEdge,
   WorkflowTrigger,
   VariableDefinition,
   StaticNodeType,
-  EdgeType,
   StaticNode,
-} from "@wf-agent/types";
-import type { WorkflowGraph as WorkflowGraphType } from "../types/graph/preprocessed-graph.js";
-import type {
   IdMapping,
-  SubgraphRelationship,
+  WorkflowGraphAnalysis,
   PreprocessValidationResult,
+  SubgraphRelationship,
   SubgraphMergeLog,
-} from "../types/preprocess.js";
-import type { WorkflowGraphAnalysis } from "../types/graph/analysis.js";
-import { WorkflowGraphData } from "./workflow-graph-data.js";
+} from "@wf-agent/types";
+import type { WorkflowGraphStructure as WorkflowGraphStructureType } from "@wf-agent/types";
+import { WorkflowGraphStructure } from "./workflow-graph-structure.js";
+import { WorkflowGraphMetadata } from "./workflow-graph-metadata.js";
 
 /**
- * Workflow Graph Data Class
- * inherits from WorkflowGraphData, implements the WorkflowGraph interface
+ * Workflow Graph
+ * Uses composition to combine structure with metadata
  */
-export class WorkflowGraphEntity extends WorkflowGraphData implements WorkflowGraphType {
-  // ========== ID Mapping Related ----------
-  /** ID Mapping Table (Temporary Data during the Construction Phase) */
-  public idMapping: IdMapping;
+export class WorkflowGraph implements WorkflowGraphStructureType {
+  /** Immutable graph structure */
+  public readonly structure: WorkflowGraphStructure;
 
-  /**
-   * Preprocessed node configurations (ID references have been updated)
-   * Maps node ID to its static node configuration with resolved references
-   */
-  public nodeConfigs: Map<ID, StaticNode>;
+  /** Mutable metadata for preprocessing and analysis */
+  public readonly metadata: WorkflowGraphMetadata;
 
-  /**
-   * Processed trigger configurations (ID references have been updated)
-   * Maps trigger ID to its workflow trigger configuration
-   */
-  public triggerConfigs: Map<ID, WorkflowTrigger>;
+  constructor(structure?: WorkflowGraphStructure, metadata?: WorkflowGraphMetadata) {
+    this.structure = structure ?? new WorkflowGraphStructure();
+    this.metadata = metadata ?? new WorkflowGraphMetadata();
+  }
 
-  /** Sub-workflow relationships */
-  public subgraphRelationships: SubgraphRelationship[];
+  // ========== Delegated Structure Methods ==========
 
-  /** Graph analysis results */
-  public graphAnalysis: WorkflowGraphAnalysis;
+  /** Node set */
+  get nodes(): Map<ID, WorkflowNode> {
+    return this.structure.nodes;
+  }
 
-  /** Preprocess the validation results. */
-  public validationResult: PreprocessValidationResult;
+  /** Edge Set */
+  get edges(): Map<ID, WorkflowEdge> {
+    return this.structure.edges;
+  }
 
-  /** List of node IDs after topological sorting */
-  public topologicalOrder: ID[];
+  /** Forward Adjacency List */
+  get adjacencyList(): Map<ID, Set<ID>> {
+    return this.structure.adjacencyList;
+  }
 
-  /** Sub-workflow merge logs */
-  public subgraphMergeLogs: SubgraphMergeLog[];
+  /** Reverse Adjacency List */
+  get reverseAdjacencyList(): Map<ID, Set<ID>> {
+    return this.structure.reverseAdjacencyList;
+  }
 
-  /** Preprocessing timestamp */
-  public processedAt: Timestamp;
+  /** Starting node ID */
+  get startNodeId(): ID | undefined {
+    return this.structure.startNodeId;
+  }
 
-  // Workflow Metadata
-  /** Workflow ID */
-  public workflowId: ID;
-
-  /** Workflow version */
-  public workflowVersion: Version;
-
-  /** Trigger (expanded, without references) */
-  public triggers?: WorkflowTrigger[];
-
-  /** Workflow variable definitions */
-  public variables?: VariableDefinition[];
-
-  /** Does it contain sub-workflows? */
-  public hasSubgraphs: boolean;
-
-  /** Set of sub-workflow IDs */
-  public subworkflowIds: Set<ID>;
-
-  constructor() {
-    super();
-
-    // Initialize fields related to the ID mapping.
-    this.idMapping = {
-      nodeIds: new Map(),
-      edgeIds: new Map(),
-      reverseNodeIds: new Map(),
-      reverseEdgeIds: new Map(),
-      subgraphNamespaces: new Map(),
-    };
-    this.nodeConfigs = new Map<ID, StaticNode>();
-    this.triggerConfigs = new Map<ID, WorkflowTrigger>();
-    this.subgraphRelationships = [];
-
-    // Initialize preprocessing metadata
-    this.graphAnalysis = {
-      cycleDetection: {
-        hasCycle: false,
-        cycleNodes: [],
-        cycleEdges: [],
-      },
-      reachability: {
-        reachableFromStart: new Set(),
-        reachableToEnd: new Set(),
-        unreachableNodes: new Set(),
-        deadEndNodes: new Set(),
-      },
-      topologicalSort: {
-        success: true,
-        sortedNodes: [],
-        cycleNodes: [],
-      },
-      forkJoinValidation: {
-        isValid: true,
-        unpairedForks: [],
-        unpairedJoins: [],
-        pairs: new Map(),
-      },
-      nodeStats: {
-        total: 0,
-        byType: new Map<string, number>(),
-      },
-      edgeStats: {
-        total: 0,
-        byType: new Map<EdgeType, number>(),
-      },
-    };
-    this.validationResult = {
-      isValid: true,
-      errors: [],
-      warnings: [],
-      validatedAt: 0,
-    };
-    this.topologicalOrder = [];
-    this.subgraphMergeLogs = [];
-    this.processedAt = 0;
-
-    // Initialize workflow metadata
-    this.workflowId = "";
-    this.workflowVersion = "1.0.0";
-    this.hasSubgraphs = false;
-    this.subworkflowIds = new Set();
+  /** End node ID set */
+  get endNodeIds(): Set<ID> {
+    return this.structure.endNodeIds;
   }
 
   /**
-   * Get node configuration by ID
-   * @param nodeId - Node ID
-   * @returns Static node configuration or undefined if not found
+   * Add a node (delegated to structure)
    */
-  public getNodeConfig(nodeId: ID): StaticNode | undefined {
-    return this.nodeConfigs.get(nodeId);
+  addNode(node: WorkflowNode): void {
+    this.structure.addNode(node);
   }
 
   /**
-   * Get node configuration by type with type guard
-   * @param nodeId - Node ID
-   * @param nodeType - Expected static node type
-   * @returns Typed static node configuration or undefined if not found or type mismatch
+   * Add edges (delegated to structure)
    */
-  public getNodeConfigByType<T extends StaticNodeType>(
+  addEdge(edge: WorkflowEdge): void {
+    this.structure.addEdge(edge);
+  }
+
+  /**
+   * Get the node (delegated to structure)
+   */
+  getNode(nodeId: ID): WorkflowNode | undefined {
+    return this.structure.getNode(nodeId);
+  }
+
+  /**
+   * Get the edges (delegated to structure)
+   */
+  getEdge(edgeId: ID): WorkflowEdge | undefined {
+    return this.structure.getEdge(edgeId);
+  }
+
+  /**
+   * Get the out-degree neighbors of a node (delegated to structure)
+   */
+  getOutgoingNeighbors(nodeId: ID): Set<ID> {
+    return this.structure.getOutgoingNeighbors(nodeId);
+  }
+
+  /**
+   * Get the in-degree neighbors of a node (delegated to structure)
+   */
+  getIncomingNeighbors(nodeId: ID): Set<ID> {
+    return this.structure.getIncomingNeighbors(nodeId);
+  }
+
+  /**
+   * Get the outgoing edges of a node (delegated to structure)
+   */
+  getOutgoingEdges(nodeId: ID): WorkflowEdge[] {
+    return this.structure.getOutgoingEdges(nodeId);
+  }
+
+  /**
+   * Get the incoming edges of a node (delegated to structure)
+   */
+  getIncomingEdges(nodeId: ID): WorkflowEdge[] {
+    return this.structure.getIncomingEdges(nodeId);
+  }
+
+  /**
+   * Get the edge between two nodes (delegated to structure)
+   */
+  getEdgeBetween(sourceNodeId: ID, targetNodeId: ID): WorkflowEdge | undefined {
+    return this.structure.getEdgeBetween(sourceNodeId, targetNodeId);
+  }
+
+  /**
+   * Check if the node exists (delegated to structure)
+   */
+  hasNode(nodeId: ID): boolean {
+    return this.structure.hasNode(nodeId);
+  }
+
+  /**
+   * Check if the edge exists (delegated to structure)
+   */
+  hasEdge(edgeId: ID): boolean {
+    return this.structure.hasEdge(edgeId);
+  }
+
+  /**
+   * Check if there is an edge between two nodes (delegated to structure)
+   */
+  hasEdgeBetween(sourceNodeId: ID, targetNodeId: ID): boolean {
+    return this.structure.hasEdgeBetween(sourceNodeId, targetNodeId);
+  }
+
+  /**
+   * Get all node IDs (delegated to structure)
+   */
+  getAllNodeIds(): ID[] {
+    return this.structure.getAllNodeIds();
+  }
+
+  /**
+   * Get all edge IDs (delegated to structure)
+   */
+  getAllEdgeIds(): ID[] {
+    return this.structure.getAllEdgeIds();
+  }
+
+  /**
+   * Get the number of nodes (delegated to structure)
+   */
+  getNodeCount(): number {
+    return this.structure.getNodeCount();
+  }
+
+  /**
+   * Get the number of edges (delegated to structure)
+   */
+  getEdgeCount(): number {
+    return this.structure.getEdgeCount();
+  }
+
+  /**
+   * Get source nodes (nodes with in-degree 0) (delegated to structure)
+   */
+  getSourceNodes(): WorkflowNode[] {
+    return this.structure.getSourceNodes();
+  }
+
+  /**
+   * Get sink nodes (nodes with out-degree 0) (delegated to structure)
+   */
+  getSinkNodes(): WorkflowNode[] {
+    return this.structure.getSinkNodes();
+  }
+
+  // ========== Metadata Access Methods ==========
+
+  /** Workflow ID (from metadata) */
+  get workflowId(): ID {
+    return this.metadata.workflowId;
+  }
+
+  /** Workflow version (from metadata) */
+  get workflowVersion(): Version {
+    return this.metadata.workflowVersion;
+  }
+
+  /** ID mapping (from metadata) */
+  get idMapping(): IdMapping {
+    return this.metadata.idMapping;
+  }
+
+  /** Node configurations (from metadata) */
+  get nodeConfigs(): Map<ID, StaticNode> {
+    return this.metadata.nodeConfigs;
+  }
+
+  /** Trigger configurations (from metadata) */
+  get triggerConfigs(): Map<ID, WorkflowTrigger> {
+    return this.metadata.triggerConfigs;
+  }
+
+  /** Graph analysis (from metadata) */
+  get graphAnalysis(): WorkflowGraphAnalysis {
+    return this.metadata.graphAnalysis;
+  }
+
+  /** Validation result (from metadata) */
+  get validationResult(): PreprocessValidationResult {
+    return this.metadata.validationResult;
+  }
+
+  /** Topological order (from metadata) */
+  get topologicalOrder(): ID[] {
+    return this.metadata.topologicalOrder;
+  }
+
+  /** Subgraph relationships (from metadata) */
+  get subgraphRelationships(): SubgraphRelationship[] {
+    return this.metadata.subgraphRelationships;
+  }
+
+  /** Subgraph merge logs (from metadata) */
+  get subgraphMergeLogs(): SubgraphMergeLog[] {
+    return this.metadata.subgraphMergeLogs;
+  }
+
+  /** Processed timestamp (from metadata) */
+  get processedAt(): Timestamp {
+    return this.metadata.processedAt;
+  }
+
+  /** Triggers (from metadata) */
+  get triggers(): WorkflowTrigger[] | undefined {
+    return this.metadata.triggers;
+  }
+
+  /** Variables (from metadata) */
+  get variables(): VariableDefinition[] | undefined {
+    return this.metadata.variables;
+  }
+
+  /** Has subgraphs flag (from metadata) */
+  get hasSubgraphs(): boolean {
+    return this.metadata.hasSubgraphs;
+  }
+
+  /** Subworkflow IDs (from metadata) */
+  get subworkflowIds(): Set<ID> {
+    return this.metadata.subworkflowIds;
+  }
+
+  /**
+   * Get node configuration by ID (from metadata)
+   */
+  getNodeConfig(nodeId: ID) {
+    return this.metadata.getNodeConfig(nodeId);
+  }
+
+  /**
+   * Get node configuration by type with type guard (from metadata)
+   */
+  getNodeConfigByType<T extends import("@wf-agent/types").StaticNodeType>(
     nodeId: ID,
     nodeType: T,
-  ): Extract<StaticNode, { type: T }> | undefined {
-    const config = this.nodeConfigs.get(nodeId);
-    if (config && config.type === nodeType) {
-      return config as Extract<StaticNode, { type: T }>;
-    }
-    return undefined;
+  ): import("@wf-agent/types").Extract<import("@wf-agent/types").StaticNode, { type: T }> | undefined {
+    return this.metadata.getNodeConfigByType(nodeId, nodeType);
   }
 
   /**
-   * Check if a node exists and is of specific type
-   * @param nodeId - Node ID
-   * @param nodeType - Static node type to check
-   * @returns True if node exists and matches the type
+   * Check if a node exists and is of specific type (from metadata)
    */
-  public isNodeOfType(nodeId: ID, nodeType: StaticNodeType): boolean {
-    const config = this.nodeConfigs.get(nodeId);
-    return config !== undefined && config.type === nodeType;
+  isNodeOfType(nodeId: ID, nodeType: import("@wf-agent/types").StaticNodeType): boolean {
+    return this.metadata.isNodeOfType(nodeId, nodeType);
   }
 
   /**
-   * Get all nodes of a specific type
-   * @param nodeType - Static node type to filter
-   * @returns Array of node IDs matching the type
+   * Get all nodes of a specific type (from metadata)
    */
-  public getNodeIdsByType(nodeType: StaticNodeType): ID[] {
-    const nodeIds: ID[] = [];
-    for (const [nodeId, config] of this.nodeConfigs.entries()) {
-      if (config.type === nodeType) {
-        nodeIds.push(nodeId);
-      }
-    }
-    return nodeIds;
+  getNodeIdsByType(nodeType: import("@wf-agent/types").StaticNodeType): ID[] {
+    return this.metadata.getNodeIdsByType(nodeType);
   }
 
   /**
-   * Get trigger configuration by ID
-   * @param triggerId - Trigger ID
-   * @returns Workflow trigger configuration or undefined if not found
+   * Get trigger configuration by ID (from metadata)
    */
-  public getTriggerConfig(triggerId: ID): WorkflowTrigger | undefined {
-    return this.triggerConfigs.get(triggerId);
+  getTriggerConfig(triggerId: ID) {
+    return this.metadata.getTriggerConfig(triggerId);
   }
 
   /**
-   * Add or update node configuration
-   * @param nodeId - Node ID
-   * @param config - Static node configuration
+   * Add or update node configuration (in metadata)
    */
-  public setNodeConfig(nodeId: ID, config: StaticNode): void {
-    this.nodeConfigs.set(nodeId, config);
+  setNodeConfig(nodeId: ID, config: import("@wf-agent/types").StaticNode): void {
+    this.metadata.setNodeConfig(nodeId, config);
   }
 
   /**
-   * Add or update trigger configuration
-   * @param triggerId - Trigger ID
-   * @param config - Workflow trigger configuration
+   * Add or update trigger configuration (in metadata)
    */
-  public setTriggerConfig(triggerId: ID, config: WorkflowTrigger): void {
-    this.triggerConfigs.set(triggerId, config);
+  setTriggerConfig(triggerId: ID, config: import("@wf-agent/types").WorkflowTrigger): void {
+    this.metadata.setTriggerConfig(triggerId, config);
+  }
+
+  /**
+   * Check if preprocessing is complete
+   */
+  isPreprocessed(): boolean {
+    return this.metadata.isPreprocessed();
+  }
+
+  /**
+   * Create a copy of the graph with new structure (for transformations)
+   */
+  withStructure(newStructure: WorkflowGraphStructure): WorkflowGraph {
+    return new WorkflowGraph(newStructure, this.metadata);
+  }
+
+  /**
+   * Create a copy of the graph with new metadata (for transformations)
+   */
+  withMetadata(newMetadata: WorkflowGraphMetadata): WorkflowGraph {
+    return new WorkflowGraph(this.structure, newMetadata);
   }
 }

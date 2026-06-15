@@ -13,9 +13,10 @@ import type {
   WorkflowEdge,
 } from "@wf-agent/types";
 import type { SubgraphMergeOptions, SubgraphMergeResult } from "../types/graph/merge.js";
-import type { WorkflowGraph } from "../types/graph/preprocessed-graph.js";
-import { WorkflowGraphData } from "../entities/workflow-graph-data.js";
-import { WorkflowGraphEntity } from "../entities/workflow-graph.js";
+
+import { WorkflowGraphStructure } from "../entities/workflow-graph-structure.js";
+import { WorkflowGraphMetadata } from "../entities/workflow-graph-metadata.js";
+import { WorkflowGraph } from "../entities/workflow-graph.js";
 import { GraphValidator } from "../validation/graph-validation/graph-validator.js";
 import {
   generateNamespacedNodeId,
@@ -35,8 +36,8 @@ export class WorkflowGraphBuilder {
   /**
    * Constructing a workflow graph from workflow template
    */
-  static build(workflow: WorkflowTemplate, existingGraph?: WorkflowGraphData): WorkflowGraphData {
-    const graph = existingGraph ?? new WorkflowGraphData();
+  static build(workflow: WorkflowTemplate, existingGraph?: WorkflowGraphStructure): WorkflowGraphStructure {
+    const graph = existingGraph ?? new WorkflowGraphStructure();
 
     // Build nodes
     for (const node of workflow.nodes) {
@@ -95,11 +96,17 @@ export class WorkflowGraphBuilder {
     isValid: boolean;
     errors: string[];
   } {
-    // Build a graph (use WorkflowGraphEntity instance to carry workflow metadata)
-    const graph = new WorkflowGraphEntity();
-    graph.workflowId = workflow.id;
-    graph.workflowVersion = workflow.version;
-    this.build(workflow, graph);
+    // Build a graph structure
+    const structure = new WorkflowGraphStructure();
+    this.build(workflow, structure);
+
+    // Create metadata and set workflow info
+    const metadata = new WorkflowGraphMetadata();
+    metadata.workflowId = workflow.id;
+    metadata.workflowVersion = workflow.version;
+
+    // Create workflow graph using composition
+    const graph = new WorkflowGraph(structure, metadata);
 
     // Handling the global uniqueness of Fork/Join Path IDs
     this.processForkJoinPathIds(graph);
@@ -121,7 +128,7 @@ export class WorkflowGraphBuilder {
    * Generate a globally unique ID for each pathId in the forkPaths, ensuring that Fork and Join nodes use the same Path ID
    * @param graph Graph data
    */
-  private static processForkJoinPathIds(graph: WorkflowGraphData): void {
+  private static processForkJoinPathIds(graph: WorkflowGraphStructure): void {
     const pathIdMapping = new Map<ID, ID>(); // Original Path ID -> Globally Unique Path ID
 
     // Collect all Fork nodes and generate a globally unique Path ID.
@@ -289,7 +296,7 @@ export class WorkflowGraphBuilder {
         }
 
         // Perform graph expansion
-        const mergeResult = this.mergeGraph(graph as WorkflowGraphEntity, subgraphGraph, node.id, {
+        const mergeResult = this.mergeGraph(graph as WorkflowGraph, subgraphGraph, node.id, {
           nodeIdPrefix: `${node.id}_`,
           edgeIdPrefix: `${node.id}_`,
           subworkflowId,
@@ -396,7 +403,7 @@ export class WorkflowGraphBuilder {
    * @returns: The merged result
    */
   private static mergeGraph(
-    mainGraph: WorkflowGraphData,
+    mainGraph: WorkflowGraphStructure,
     subgraph: WorkflowGraph,
     subgraphNodeId: ID,
     options: SubgraphMergeOptions & {

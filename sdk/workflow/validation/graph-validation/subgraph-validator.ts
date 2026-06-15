@@ -11,7 +11,7 @@
 
 import type { StaticNodeType } from "@wf-agent/types";
 import { ConfigurationValidationError } from "@wf-agent/types";
-import type { WorkflowGraphData } from "../../entities/workflow-graph-data.js";
+import type { WorkflowGraphStructure } from "../../entities/workflow-graph-data.js";
 
 /**
  * Validate subgraph existence
@@ -19,7 +19,7 @@ import type { WorkflowGraphData } from "../../entities/workflow-graph-data.js";
  * @returns List of validation errors
  */
 export function validateSubgraphExistence(
-  graph: WorkflowGraphData,
+  graph: WorkflowGraphStructure,
 ): ConfigurationValidationError[] {
   const errors: ConfigurationValidationError[] = [];
 
@@ -60,7 +60,7 @@ export function validateSubgraphExistence(
  * @returns List of validation errors
  */
 export function validateSubgraphCompatibility(
-  graph: WorkflowGraphData,
+  graph: WorkflowGraphStructure,
 ): ConfigurationValidationError[] {
   const errors: ConfigurationValidationError[] = [];
 

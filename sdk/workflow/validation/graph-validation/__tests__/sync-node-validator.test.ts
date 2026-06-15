@@ -12,7 +12,7 @@
 
 import { describe, it, expect } from "vitest";
 import { validateSyncNodes } from "../sync-node-validator.js";
-import { WorkflowGraphData } from "../../../entities/workflow-graph-data.js";
+import { WorkflowGraphStructure } from "../../../entities/workflow-graph-data.js";
 import type { WorkflowNode, WorkflowEdge } from "@wf-agent/types";
 
 describe("validateSyncNodes", () => {
@@ -20,8 +20,8 @@ describe("validateSyncNodes", () => {
   function createGraph(
     nodes: Array<{ id: string; type: string; config?: any }>,
     edges: Array<{ sourceNodeId: string; targetNodeId: string }>,
-  ): WorkflowGraphData {
-    const graph = new WorkflowGraphData();
+  ): WorkflowGraphStructure {
+    const graph = new WorkflowGraphStructure();
 
     // Add nodes
     for (const nodeData of nodes) {

@@ -14,7 +14,7 @@
 
 import type { ID, StaticNodeType } from "@wf-agent/types";
 import { ConfigurationValidationError } from "@wf-agent/types";
-import type { WorkflowGraphData } from "../../entities/workflow-graph-data.js";
+import type { WorkflowGraphStructure } from "../../entities/workflow-graph-data.js";
 import { getReachableNodes } from "../../builder/utils/workflow-traversal.js";
 
 /**
@@ -22,7 +22,7 @@ import { getReachableNodes } from "../../builder/utils/workflow-traversal.js";
  * @param graph Graph data
  * @returns List of validation errors
  */
-export function validateForkJoinPairs(graph: WorkflowGraphData): ConfigurationValidationError[] {
+export function validateForkJoinPairs(graph: WorkflowGraphStructure): ConfigurationValidationError[] {
   const errors: ConfigurationValidationError[] = [];
 
   // Use the first element of forkPathIds array as the pairing identifier

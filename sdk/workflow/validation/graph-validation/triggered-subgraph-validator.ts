@@ -9,7 +9,7 @@
 
 import type { ID, StaticNodeType } from "@wf-agent/types";
 import { ConfigurationValidationError } from "@wf-agent/types";
-import type { WorkflowGraphData } from "../../entities/workflow-graph-data.js";
+import type { WorkflowGraphStructure } from "../../entities/workflow-graph-data.js";
 import { getReachableNodes } from "../../builder/utils/workflow-traversal.js";
 
 /**
@@ -17,7 +17,7 @@ import { getReachableNodes } from "../../builder/utils/workflow-traversal.js";
  * @param graph Graph data
  * @returns Whether it is a triggered subgraph
  */
-export function isTriggeredSubgraph(graph: WorkflowGraphData): boolean {
+export function isTriggeredSubgraph(graph: WorkflowGraphStructure): boolean {
   for (const node of graph.nodes.values()) {
     if (node.type === ("START_FROM_TRIGGER" as StaticNodeType)) {
       return true;
@@ -33,7 +33,7 @@ export function isTriggeredSubgraph(graph: WorkflowGraphData): boolean {
  * @returns List of validation errors
  */
 export function validateTriggeredSubgraphConnectivity(
-  graph: WorkflowGraphData,
+  graph: WorkflowGraphStructure,
 ): ConfigurationValidationError[] {
   const errors: ConfigurationValidationError[] = [];
 

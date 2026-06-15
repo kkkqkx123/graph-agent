@@ -7,14 +7,14 @@
 
 import type { StaticNodeType } from "@wf-agent/types";
 import { ConfigurationValidationError } from "@wf-agent/types";
-import type { WorkflowGraphData } from "../../entities/workflow-graph-data.js";
+import type { WorkflowGraphStructure } from "../../entities/workflow-graph-data.js";
 
 /**
  * Validate isolated nodes in the graph
  * @param graph Graph data
  * @returns List of validation errors
  */
-export function validateIsolatedNodes(graph: WorkflowGraphData): ConfigurationValidationError[] {
+export function validateIsolatedNodes(graph: WorkflowGraphStructure): ConfigurationValidationError[] {
   const errors: ConfigurationValidationError[] = [];
 
   for (const node of graph.nodes.values()) {
