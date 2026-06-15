@@ -966,6 +966,15 @@ export class SDKInstance {
     // Call destroy hook if provided
     await this.config?.hooks?.onDestroy?.();
 
+    // Unregister signal handlers first to prevent MaxListenersExceededWarning in tests
+    if (this.shutdownManager) {
+      try {
+        this.shutdownManager.unregisterSignalHandlers();
+      } catch (error) {
+        logger.warn("Failed to unregister signal handlers", { error: getErrorMessage(error) });
+      }
+    }
+
     // Shutdown storage adapters first
     try {
       await this.shutdown();

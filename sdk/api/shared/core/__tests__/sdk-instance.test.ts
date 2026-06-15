@@ -3,6 +3,10 @@ import { SDKInstance } from "../sdk-instance.js";
 import type { SDKOptions } from "../../types/core-types.js";
 import type { CheckpointStorageAdapter } from "@wf-agent/storage";
 
+// Increase max listeners to prevent MaxListenersExceededWarning in tests
+// when multiple SDK instances register signal handlers
+process.setMaxListeners(100);
+
 const createMockCheckpointAdapter = (): CheckpointStorageAdapter => ({
   initialize: async () => {},
   close: async () => {},

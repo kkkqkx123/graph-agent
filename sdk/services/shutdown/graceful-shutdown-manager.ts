@@ -111,6 +111,19 @@ export class GracefulShutdownManager {
   }
 
   /**
+   * Unregister signal handlers
+   * Call this during application shutdown to clean up
+   */
+  unregisterSignalHandlers(): void {
+    if (!this.config.enabled) {
+      return;
+    }
+
+    this.signalHandler.unregister();
+    logger.info("Signal handlers unregistered successfully");
+  }
+
+  /**
    * Handle shutdown signal
    * Creates checkpoints for all active executions before exiting
    * @param signal The shutdown signal received
