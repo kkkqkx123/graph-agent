@@ -79,9 +79,10 @@ export const fragmentRegistry = new FragmentRegistry();
 
 /**
  * Initialize the registry (register all predefined segments)
+ * Uses skipIfExists to allow multiple initializations without errors
  */
 export function initializeFragmentRegistry(): void {
-  fragmentRegistry.registerAll(ALL_PREDEFINED_FRAGMENTS);
+  fragmentRegistry.registerAll(ALL_PREDEFINED_FRAGMENTS, { skipIfExists: true });
 
   // Verify all predefined fragments were registered successfully
   const missingIds = ALL_PREDEFINED_FRAGMENTS

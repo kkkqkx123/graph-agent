@@ -105,10 +105,11 @@ export class FragmentRegistry {
    * Batch register multiple fragments.
    *
    * @param fragments Array of fragment definitions
+   * @param options Registration options
    */
-  registerAll(fragments: SystemPromptFragment[]): void {
+  registerAll(fragments: SystemPromptFragment[], options?: { skipIfExists?: boolean }): void {
     for (const fragment of fragments) {
-      this.register(fragment.id, fragment);
+      this.register(fragment.id, fragment, options);
     }
   }
 
