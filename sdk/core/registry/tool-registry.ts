@@ -1,9 +1,16 @@
 /**
- * Tool Registrys
- * Provides a unified interface for tool execution and tool registration management
+ * Tool Registry
+ *
+ * Provides a unified interface for tool execution and tool registration management.
+ * Implements standardized registry interfaces for consistency.
  *
  * This module only exports class definitions; instances are managed by the DI container as singletons.
  *
+ * Interface Implementation:
+ * - Registry<Tool>: Read operations
+ * - MutableRegistry<Tool>: Write operations
+ * - BatchOperations<Tool>: Batch register/unregister
+ * - SearchableRegistry<Tool>: Search and filter operations
  */
 
 import type { Tool } from "@wf-agent/types";
@@ -11,7 +18,6 @@ import {
   ToolError,
   ToolNotFoundError,
   RuntimeValidationError,
-  ConfigurationValidationError,
 } from "@wf-agent/types";
 import type { IToolExecutor } from "../../services/executors/tools/core/interfaces/IToolExecutor.js";
 import type { ToolExecutionOptions, ToolExecutionResult } from "@wf-agent/types";
@@ -28,15 +34,37 @@ import { RuntimeValidator } from "../validation/tool-runtime-validator.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
 import { createBuiltinTools } from "../../resources/predefined/tools/builtin/index.js";
 import type { ToolStorageAdapter } from "@wf-agent/storage";
-import { persistTool, removeTool, initializeToolsFromStorage } from "./utils/tool-storage-utils.js";
+import { persistTool, removeTool, initializeToolsFromStorage } from "./utils/entity-storage-utils.js";
 import { createRegistry } from "./utils/registry-utils.js";
+import type {
+  Registry,
+  MutableRegistry,
+  BatchOperations,
+  SearchableRegistry,
+} from "./types.js";
+import {
+  RegistryNotFoundError,
+  RegistryAlreadyExistsError,
+} from "./types.js";
 
 const logger = createContextualLogger({ component: "ToolRegistry" });
 
 /**
  * Tool Registry Class
+ *
+ * Implements:
+ * - Registry<Tool>: Read operations (get, has, list, keys, size, clear)
+ * - MutableRegistry<Tool>: Write operations (set, delete)
+ * - BatchOperations<Tool>: Batch register/unregister
+ * - SearchableRegistry<Tool>: Search and filter
  */
-class ToolRegistry {
+class ToolRegistry
+  implements
+    Registry<Tool>,
+    MutableRegistry<Tool>,
+    BatchOperations<Tool>,
+    SearchableRegistry<Tool>
+{
   private items = createRegistry<Tool>();
   private executors: Map<string, IToolExecutor> = new Map();
   private staticValidator: StaticValidator;
@@ -56,42 +84,90 @@ class ToolRegistry {
   }
 
   /**
-   * Initialize the executor.
+   * Initialize the executors.
    */
   private initializeExecutors(): void {
-    // Use the implementations directly from the packages.
     this.executors.set("STATELESS", new StatelessExecutor());
     this.executors.set("STATEFUL", new StatefulExecutor());
     this.executors.set("REST", new RestExecutor(this.restExecutorConfig));
     this.executors.set("BUILTIN", this.builtinExecutor);
   }
 
+  // ============================================================
+  // Registry Interface Implementation (Read Operations)
+  // ============================================================
+
+  /** Get tool by ID, returns undefined if not found */
+  get(key: string): Tool | undefined {
+    return this.items.get(key);
+  }
+
+  /** Check if tool exists */
+  has(key: string): boolean {
+    return this.items.has(key);
+  }
+
+  /** List all tools */
+  list(): Tool[] {
+    return this.items.list();
+  }
+
+  /** Get all tool IDs */
+  keys(): string[] {
+    return this.items.keys();
+  }
+
+  /** Get the number of tools */
+  get size(): number {
+    return this.items.size;
+  }
+
+  /** Clear all tools */
+  clear(): void {
+    const count = this.items.size;
+    this.items.clear();
+    logger.info("All tools cleared", { count });
+  }
+
+  // ============================================================
+  // MutableRegistry Interface Implementation (Write Operations)
+  // ============================================================
+
+  /** Set a tool by ID */
+  set(key: string, value: Tool): void {
+    this.items.set(key, value);
+  }
+
+  /** Delete a tool by ID, returns true if deleted */
+  delete(key: string): boolean {
+    return this.items.delete(key);
+  }
+
+  // ============================================================
+  // Core CRUD Operations (Standardized Naming)
+  // ============================================================
+
   /**
    * Register tool (memory-only, no persistence).
    * Used for predefined content registration during bootstrap.
-   * @param tool Tool definition
-   * @param options Registration options
-   * @throws ConfigurationValidationError If the tool definition is invalid or already exists
+   *
+   * @param tool - Tool definition
+   * @param options - Registration options
+   * @throws ConfigurationValidationError If the tool definition is invalid
+   * @throws RegistryAlreadyExistsError If the tool ID already exists
    */
   register(tool: Tool, options?: { skipIfExists?: boolean }): void {
-    // Static Validation Tool Definition
     const result = this.staticValidator.validateTool(tool);
     if (result.isErr()) {
       throw result.error[0];
     }
 
-    // Check if the tool ID already exists.
     if (this.items.has(tool.id)) {
       if (options?.skipIfExists) {
         logger.info("Tool already exists, skipping", { toolId: tool.id });
         return;
       }
-      logger.warn("Tool already exists", { toolId: tool.id });
-      throw new ConfigurationValidationError(`Tool with id '${tool.id}' already exists`, {
-        configType: "tool",
-        field: "id",
-        value: tool.id,
-      });
+      throw new RegistryAlreadyExistsError(tool.id, "Tool");
     }
 
     this.items.set(tool.id, tool);
@@ -99,30 +175,25 @@ class ToolRegistry {
   }
 
   /**
-   * Register Tool with storage persistence (write-through).
-   * @param tool Tool definition
-   * @param options Registration options
-   * @throws ConfigurationValidationError If the tool definition is invalid or already exists
+   * Register tool with storage persistence (write-through).
+   *
+   * @param tool - Tool definition
+   * @param options - Registration options
+   * @throws ConfigurationValidationError If the tool definition is invalid
+   * @throws RegistryAlreadyExistsError If the tool ID already exists
    */
   async registerTool(tool: Tool, options?: { skipIfExists?: boolean }): Promise<void> {
-    // Static Validation Tool Definition
     const result = this.staticValidator.validateTool(tool);
     if (result.isErr()) {
       throw result.error[0];
     }
 
-    // Check if the tool ID already exists.
     if (this.items.has(tool.id)) {
       if (options?.skipIfExists) {
         logger.info("Tool already exists, skipping", { toolId: tool.id });
         return;
       }
-      logger.warn("Tool already exists", { toolId: tool.id });
-      throw new ConfigurationValidationError(`Tool with id '${tool.id}' already exists`, {
-        configType: "tool",
-        field: "id",
-        value: tool.id,
-      });
+      throw new RegistryAlreadyExistsError(tool.id, "Tool");
     }
 
     // Persist to storage first (write-through: DB is source of truth)
@@ -135,25 +206,77 @@ class ToolRegistry {
   }
 
   /**
-   * Batch Registration Tool
-   * @param tools: An array of tool definitions
-   * @param options: Registration options
+   * Update tool definition (memory-only).
+   *
+   * @param toolId - Tool ID
+   * @param updates - Update content
+   * @throws RegistryNotFoundError If the tool does not exist
    */
-  async registerTools(tools: Tool[], options?: { skipIfExists?: boolean }): Promise<void> {
-    for (const tool of tools) {
-      await this.registerTool(tool, options);
+  update(toolId: string, updates: Partial<Tool>): void {
+    const tool = this.items.get(toolId);
+    if (!tool) {
+      throw new RegistryNotFoundError(toolId, "Tool");
     }
+
+    const updatedTool = { ...tool, ...updates, id: toolId };
+    this.items.set(toolId, updatedTool);
+    logger.info("Tool updated", { toolId });
   }
 
   /**
-   * Tool Deactivation
-   * @param toolId Tool ID
-   * @throws ToolNotFoundError If the tool does not exist
+   * Update tool definition with storage persistence (write-through).
+   *
+   * @param toolId - Tool ID
+   * @param updates - Update content
+   * @throws RegistryNotFoundError If the tool does not exist
+   * @throws ConfigurationValidationError If the updated tool is invalid
+   */
+  async updateTool(toolId: string, updates: Partial<Tool>): Promise<void> {
+    const tool = this.items.get(toolId);
+    if (!tool) {
+      throw new RegistryNotFoundError(toolId, "Tool");
+    }
+
+    const updatedTool = { ...tool, ...updates, id: toolId };
+
+    // Re-validate the updated tool
+    const result = this.staticValidator.validateTool(updatedTool);
+    if (result.isErr()) {
+      throw result.error[0];
+    }
+
+    // Persist to storage first (write-through)
+    if (this.storageAdapter) {
+      await persistTool(updatedTool, this.storageAdapter);
+    }
+
+    this.items.set(toolId, updatedTool);
+    logger.info("Tool updated", { toolId });
+  }
+
+  /**
+   * Unregister tool (memory-only).
+   *
+   * @param toolId - Tool ID
+   * @throws RegistryNotFoundError If the tool does not exist
+   */
+  unregister(toolId: string): void {
+    if (!this.items.has(toolId)) {
+      throw new RegistryNotFoundError(toolId, "Tool");
+    }
+    this.items.delete(toolId);
+    logger.info("Tool unregistered", { toolId });
+  }
+
+  /**
+   * Unregister tool with storage persistence (write-through).
+   *
+   * @param toolId - Tool ID
+   * @throws RegistryNotFoundError If the tool does not exist
    */
   async unregisterTool(toolId: string): Promise<void> {
     if (!this.items.has(toolId)) {
-      logger.warn("Attempted to unregister non-existent tool", { toolId });
-      throw new ToolNotFoundError(`Tool with id '${toolId}' not found`, toolId);
+      throw new RegistryNotFoundError(toolId, "Tool");
     }
 
     // Remove from storage first (write-through: DB is source of truth)
@@ -165,10 +288,99 @@ class ToolRegistry {
     logger.info("Tool unregistered", { toolId });
   }
 
+  // ============================================================
+  // BatchOperations Interface Implementation
+  // ============================================================
+
   /**
-   * Get Tool Definition
-   * @param toolId Tool ID (human-readable identifier)
-   * @returns Tool Definition
+   * Batch register tools (memory-only).
+   *
+   * @param tools - Array of tool definitions
+   * @param options - Registration options
+   */
+  async registerBatch(tools: Tool[], options?: { skipIfExists?: boolean }): Promise<void> {
+    for (const tool of tools) {
+      this.register(tool, options);
+    }
+  }
+
+  /**
+   * Batch unregister tools (memory-only).
+   *
+   * @param keys - Array of tool IDs
+   */
+  async unregisterBatch(keys: string[]): Promise<void> {
+    for (const key of keys) {
+      this.unregister(key);
+    }
+  }
+
+  /**
+   * Batch register tools with storage persistence.
+   *
+   * @param tools - Array of tool definitions
+   * @param options - Registration options
+   */
+  async registerTools(tools: Tool[], options?: { skipIfExists?: boolean }): Promise<void> {
+    for (const tool of tools) {
+      await this.registerTool(tool, options);
+    }
+  }
+
+  // ============================================================
+  // SearchableRegistry Interface Implementation
+  // ============================================================
+
+  /**
+   * Search tools by keyword.
+   *
+   * @param query - Search keyword
+   * @returns Array of matching tools
+   */
+  search(query: string): Tool[] {
+    const lowerQuery = query.toLowerCase();
+    return this.list().filter((tool) => {
+      return (
+        tool.id.toLowerCase().includes(lowerQuery) ||
+        tool.description.toLowerCase().includes(lowerQuery) ||
+        tool.metadata?.tags?.some((tag) => tag.toLowerCase().includes(lowerQuery)) ||
+        tool.metadata?.category?.toLowerCase().includes(lowerQuery)
+      );
+    });
+  }
+
+  /**
+   * List tools by category.
+   *
+   * @param category - Tool category
+   * @returns Array of tool definitions
+   */
+  listByCategory(category: string): Tool[] {
+    return this.list().filter((tool) => tool.metadata?.category === category);
+  }
+
+  /**
+   * List tools by tags.
+   *
+   * @param tags - Array of tags
+   * @returns Array of tool definitions
+   */
+  listByTags(tags: string[]): Tool[] {
+    return this.list().filter((tool) => {
+      const toolTags = tool.metadata?.tags || [];
+      return tags.every((tag) => toolTags.includes(tag));
+    });
+  }
+
+  // ============================================================
+  // Additional Query Methods
+  // ============================================================
+
+  /**
+   * Get tool definition (throws if not found).
+   *
+   * @param toolId - Tool ID
+   * @returns Tool definition
    * @throws ToolNotFoundError If the tool does not exist
    */
   getTool(toolId: string): Tool {
@@ -180,82 +392,82 @@ class ToolRegistry {
   }
 
   /**
-   * Check if the tool exists
-   * @param toolId Tool ID
-   * @returns Whether it exists
-   */
-  has(toolId: string): boolean {
-    return this.items.has(toolId);
-  }
-
-  /**
-   * Check if the tool exists (alias for has)
-   * @param toolId Tool ID
+   * Check if tool exists (alias for has).
+   * Provided for backward compatibility.
+   *
+   * @param toolId - Tool ID
    * @returns Whether it exists
    */
   hasTool(toolId: string): boolean {
-    return this.items.has(toolId);
+    return this.has(toolId);
   }
 
   /**
-   * List all tools
-   * @returns An array of tool definitions
+   * List all tools (alias for list).
+   * Provided for backward compatibility.
+   *
+   * @returns Array of tool definitions
    */
   listTools(): Tool[] {
-    return this.items.list();
+    return this.list();
   }
 
   /**
-   * List tools by type
-   * @param type: Tool type
-   * @returns: Array of tool definitions
+   * List tools by type.
+   *
+   * @param type - Tool type
+   * @returns Array of tool definitions
+   */
+  listByType(type: string): Tool[] {
+    return this.list().filter((tool) => tool.type === type);
+  }
+
+  /**
+   * List tools by type (alias for listByType).
+   * Provided for backward compatibility.
+   *
+   * @param type - Tool type
+   * @returns Array of tool definitions
    */
   listToolsByType(type: string): Tool[] {
-    return this.listTools().filter(tool => tool.type === type);
+    return this.listByType(type);
   }
 
   /**
-   * List tools by category
-   * @param category Tool category
+   * List tools by category.
+   * Provided for backward compatibility.
+   *
+   * @param category - Tool category
    * @returns Array of tool definitions
    */
   listToolsByCategory(category: string): Tool[] {
-    return this.listTools().filter(tool => tool.metadata?.category === category);
+    return this.listByCategory(category);
   }
 
   /**
-   * Search Tool
-   * @param query Search keyword
+   * Search tools (alias for search).
+   * Provided for backward compatibility.
+   *
+   * @param query - Search keyword
    * @returns Array of matching tools
    */
   searchTools(query: string): Tool[] {
-    const lowerQuery = query.toLowerCase();
-    return this.listTools().filter(tool => {
-      return (
-        tool.id.toLowerCase().includes(lowerQuery) ||
-        tool.description.toLowerCase().includes(lowerQuery) ||
-        tool.metadata?.tags?.some(tag => tag.toLowerCase().includes(lowerQuery)) ||
-        tool.metadata?.category?.toLowerCase().includes(lowerQuery)
-      );
-    });
+    return this.search(query);
   }
 
-  /**
-   * Get the number of tools
-   * @returns The number of tools
-   */
-  size(): number {
-    return this.items.size;
-  }
+  // ============================================================
+  // Tool Execution
+  // ============================================================
 
   /**
-   * Execution Tool
-   * @param toolId: Tool ID
-   * @param parameters: Tool parameters
-   * @param options: Execution options
-   * @param executionId: Execution ID (optional, for stateful tools)
-   * @param context: Execution context (optional, for interactive tools)
-   * @returns: Result<ToolExecutionResult, ToolError>
+   * Execute tool.
+   *
+   * @param toolId - Tool ID
+   * @param parameters - Tool parameters
+   * @param options - Execution options
+   * @param executionId - Execution ID (optional, for stateful tools)
+   * @param context - Execution context (optional, for interactive tools)
+   * @returns Result<ToolExecutionResult, ToolError>
    */
   async execute(
     toolId: string,
@@ -270,10 +482,8 @@ class ToolRegistry {
       hasParameters: Object.keys(parameters).length > 0,
     });
 
-    // Obtain tool definitions
     const tool = this.getTool(toolId);
 
-    // Get the corresponding executor
     const executor = this.executors.get(tool.type);
     if (!executor) {
       return err(
@@ -303,7 +513,6 @@ class ToolRegistry {
       );
     }
 
-    // Use `tryCatchAsyncWithSignal` to ensure that the signal is passed correctly.
     const result = await tryCatchAsyncWithSignal(
       (signal: AbortSignal | undefined) =>
         executor.execute(tool, parameters, { ...options, signal }, executionId, context),
@@ -319,9 +528,10 @@ class ToolRegistry {
   }
 
   /**
-   * 批量执行工具
-   * @param executions 执行任务数组
-   * @param executionId 线程 ID（可选，用于有状态工具）
+   * Batch execute tools.
+   *
+   * @param executions - Execution task array
+   * @param executionId - Execution ID (optional, for stateful tools)
    * @returns Result<ToolExecutionResult[], ToolError>
    */
   async executeBatch(
@@ -332,20 +542,19 @@ class ToolRegistry {
     }>,
     executionId?: string,
   ): Promise<Result<ToolExecutionResult[], ToolError>> {
-    // Execute all tools in parallel.
     const results = await Promise.all(
-      executions.map(exec => this.execute(exec.toolId, exec.parameters, exec.options, executionId)),
+      executions.map((exec) => this.execute(exec.toolId, exec.parameters, exec.options, executionId)),
     );
 
-    // Combine the results; return success if everything is successful, otherwise return the first error.
     return all(results);
   }
 
   /**
-   * Verify tool parameters (runtime validation)
-   * @param toolId: Tool ID
-   * @param parameters: Tool parameters
-   * @returns: Validation result
+   * Verify tool parameters (runtime validation).
+   *
+   * @param toolId - Tool ID
+   * @param parameters - Tool parameters
+   * @returns Validation result
    */
   validateParameters(
     toolId: string,
@@ -354,7 +563,6 @@ class ToolRegistry {
     try {
       const tool = this.getTool(toolId);
 
-      // Use a runtime validator.
       try {
         this.runtimeValidator.validate(tool, parameters);
         return { valid: true, errors: [] };
@@ -372,18 +580,14 @@ class ToolRegistry {
     }
   }
 
-  /**
-   * Clear all tools
-   */
-  clear(): void {
-    const count = this.items.size;
-    this.items.clear();
-    logger.info("All tools cleared", { count });
-  }
+  // ============================================================
+  // Lifecycle Management
+  // ============================================================
 
   /**
    * Clean up all stateful tool instances for the specified execution.
-   * @param executionId: Execution ID
+   *
+   * @param executionId - Execution ID
    */
   cleanupWorkflowExecution(executionId: string): void {
     logger.debug("Cleaning up execution stateful tools", { executionId });
@@ -413,28 +617,74 @@ class ToolRegistry {
     logger.info("All tool executors cleaned up");
   }
 
+  // ============================================================
+  // Built-in Tools
+  // ============================================================
+
   /**
-   * Update tool definition
-   * @param toolId Tool ID
-   * @param updates Update content
-   * @throws ToolNotFoundError If the tool does not exist
+   * Get all available tools (including built-in tools).
+   *
+   * @param customTools - Custom tools to include
+   * @returns Array of all available tools
    */
-  async updateTool(toolId: string, updates: Partial<Tool>): Promise<void> {
-    const tool = this.getTool(toolId);
-    const updatedTool = { ...tool, ...updates };
-    // Delete the old tool first, then register the new one (re-verification will be required).
-    this.items.delete(toolId);
-    await this.registerTool(updatedTool);
+  getAvailableTools(customTools: Tool[] = []): Tool[] {
+    const builtinTools = createBuiltinTools();
+    return [...customTools, ...builtinTools];
   }
 
   /**
-   * Translate from auto to en:
+   * Get built-in tools only.
    *
-   * Translate error message to ToolError
+   * @returns Array of built-in tools
+   */
+  getBuiltinTools(): Tool[] {
+    return createBuiltinTools();
+  }
+
+  /**
+   * Update the builtin executor context.
    *
-   * @param error The original error message
-   * @param toolId The tool ID
-   * @param toolType The type of the tool
+   * @param context - Context to update
+   */
+  updateBuiltinContext(context: {
+    executionId?: string;
+    parentWorkflowExecutionEntity?: unknown;
+    executionRegistry?: unknown;
+    eventManager?: unknown;
+    executionBuilder?: unknown;
+    taskQueueManager?: unknown;
+  }): void {
+    this.builtinExecutor.updateDefaultContext(context);
+  }
+
+  // ============================================================
+  // Storage Operations
+  // ============================================================
+
+  /**
+   * Initialize tools from storage.
+   * Loads all persisted tool definitions into memory cache.
+   */
+  async initializeFromStorage(): Promise<void> {
+    if (!this.storageAdapter) {
+      return;
+    }
+
+    await initializeToolsFromStorage(this.storageAdapter, this.items);
+  }
+
+  // ============================================================
+  // Private Methods
+  // ============================================================
+
+  /**
+   * Convert error to ToolError.
+   *
+   * @param error - The original error
+   * @param toolId - The tool ID
+   * @param toolType - The type of the tool
+   * @param parameters - Tool parameters
+   * @returns ToolError
    */
   private convertToToolError(
     error: unknown,
@@ -442,7 +692,6 @@ class ToolRegistry {
     toolType: string,
     parameters: Record<string, unknown>,
   ): ToolError {
-    // If it's already a ToolError, return it directly.
     if (error instanceof ToolError) {
       return error;
     }
@@ -457,59 +706,10 @@ class ToolRegistry {
       error instanceof Error ? error : undefined,
     );
   }
-
-  /**
-   * Get all available tools (including built-in tools)
-   * @param customTools Custom tools to include
-   * @returns Array of all available tools
-   */
-  getAvailableTools(customTools: Tool[] = []): Tool[] {
-    const builtinTools = createBuiltinTools();
-    return [...customTools, ...builtinTools];
-  }
-
-  /**
-   * Get built-in tools only
-   * @returns Array of built-in tools
-   */
-  getBuiltinTools(): Tool[] {
-    return createBuiltinTools();
-  }
-
-  /**
-   * Update the builtin executor context
-   * This allows setting context information for builtin tool execution
-   * @param context Context to update
-   */
-  updateBuiltinContext(context: {
-    executionId?: string;
-    parentWorkflowExecutionEntity?: unknown;
-    executionRegistry?: unknown;
-    eventManager?: unknown;
-    executionBuilder?: unknown;
-    taskQueueManager?: unknown;
-  }): void {
-    this.builtinExecutor.updateDefaultContext(context);
-  }
-
-  // ============================================================
-  // Storage Initialization
-  // ============================================================
-
-  /**
-   * Initialize tools from storage
-   * Loads all persisted tool definitions into memory cache.
-   */
-  async initializeFromStorage(): Promise<void> {
-    if (!this.storageAdapter) {
-      return;
-    }
-
-    await initializeToolsFromStorage(this.storageAdapter, this.items);
-  }
 }
 
 /**
  * Export the ToolRegistry class
  */
 export { ToolRegistry };
+

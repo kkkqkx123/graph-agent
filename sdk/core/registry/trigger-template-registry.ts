@@ -26,7 +26,7 @@ import {
   persistTrigger,
   removeTrigger,
   initializeTriggersFromStorage,
-} from "./utils/trigger-storage-utils.js";
+} from "./utils/entity-storage-utils.js";
 import { createRegistry } from "./utils/registry-utils.js";
 
 /**

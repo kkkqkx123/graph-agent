@@ -15,8 +15,9 @@
  */
 
 import type { AgentProfileStorageAdapter } from "@wf-agent/storage";
-import { persistAgentProfile, removeAgentProfile } from "./utils/agent-profile-storage-utils.js";
+import { persistAgentProfile, removeAgentProfile } from "./utils/entity-storage-utils.js";
 import { createRegistry } from "./utils/registry-utils.js";
+import { validateRequiredString } from "./utils/validation-utils.js";
 
 /**
  * Agent profile metadata stored in the registry
@@ -138,11 +139,7 @@ export class AgentProfileRegistry {
    * @param profile Profile metadata to validate
    */
   private validateProfile(profile: AgentProfileMeta): void {
-    if (!profile.id) {
-      throw new Error("Agent profile ID is required");
-    }
-    if (!profile.name) {
-      throw new Error("Agent profile name is required");
-    }
+    validateRequiredString(profile as unknown as Record<string, unknown>, "id", "Agent profile ID is required and must be a string");
+    validateRequiredString(profile as unknown as Record<string, unknown>, "name", "Agent profile name is required and must be a string");
   }
 }

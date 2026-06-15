@@ -11,6 +11,7 @@ import type { SystemPromptFragment } from "@wf-agent/types";
 import { renderTemplate } from "../utils/template-renderer/index.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
 import { createRegistry } from "./utils/registry-utils.js";
+import { validateRequiredString } from "./utils/validation-utils.js";
 
 const logger = createContextualLogger({ component: "FragmentRegistry" });
 
@@ -44,13 +45,8 @@ export class FragmentRegistry {
    * @throws {Error} If validation fails
    */
   private validate(fragment: SystemPromptFragment): void {
-    if (!fragment.id || typeof fragment.id !== "string") {
-      throw new Error("Fragment ID is required and must be a non-empty string");
-    }
-
-    if (!fragment.content || typeof fragment.content !== "string") {
-      throw new Error(`Fragment '${fragment.id}' content is required and must be a non-empty string`);
-    }
+    validateRequiredString(fragment as unknown as Record<string, unknown>, "id", "Fragment ID is required and must be a non-empty string");
+    validateRequiredString(fragment as unknown as Record<string, unknown>, "content", `Fragment '${fragment.id}' content is required and must be a non-empty string`);
 
     if (fragment.variables && fragment.variables.length > 0) {
       for (const variable of fragment.variables) {

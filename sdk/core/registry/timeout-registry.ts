@@ -3,6 +3,8 @@
  *
  * Global registry for managing TimeoutManager instances across executions.
  * Provides centralized timeout registration, batch operations, and metrics aggregation.
+ *
+ * Simplified version: removed resource monitoring (was a no-op), kept core functionality.
  */
 
 import { TimeoutManager } from "../state-managers/timeout-manager.js";
@@ -57,9 +59,6 @@ export class TimeoutRegistry {
   /** Periodic metrics collection interval */
   private metricsCollectionInterval?: NodeJS.Timeout;
 
-  /** Resource monitoring interval */
-  private resourceMonitoringInterval?: NodeJS.Timeout;
-
   /**
    * Create a new TimeoutRegistry
    * @param config Optional configuration (will be merged with defaults)
@@ -92,9 +91,6 @@ export class TimeoutRegistry {
     if (this.metricsCollector) {
       this.startPeriodicMetricsCollection();
     }
-
-    // Start resource monitoring to detect and clean up stale managers
-    this.startResourceMonitoring();
   }
 
   /**
@@ -106,7 +102,6 @@ export class TimeoutRegistry {
     let manager = this.managers.get(executionId);
 
     if (!manager) {
-      // Pass event registry and execution ID to TimeoutManager for event emission
       manager = new TimeoutManager(this.config.defaultManagerConfig, {
         eventRegistry: this.eventRegistry,
         executionId,
@@ -125,12 +120,10 @@ export class TimeoutRegistry {
    * @returns TimeoutHandle
    */
   register(executionId: string, options: TimeoutRegistration): TimeoutHandle {
-    // Validate execution ID
     if (!executionId || executionId.trim().length === 0) {
       throw new Error("Execution ID cannot be empty");
     }
 
-    // Validate tag if provided
     if (options.tag && !isValidTimeoutTag(options.tag)) {
       logger.warn(
         `Execution '${executionId}': Timeout '${options.id}' uses non-standard tag '${options.tag}'. Consider using standard tags from timeout-tags.ts`,
@@ -140,7 +133,6 @@ export class TimeoutRegistry {
     const manager = this.getManager(executionId);
     const handle = manager.register(options);
 
-    // Update tag index if tag is provided
     if (options.tag) {
       if (!this.tagIndex.has(options.tag)) {
         this.tagIndex.set(options.tag, new Set());
@@ -148,7 +140,6 @@ export class TimeoutRegistry {
       this.tagIndex.get(options.tag)!.add(executionId);
     }
 
-    // Update global statistics
     this.globalStats.totalRegistered++;
 
     return handle;
@@ -171,11 +162,9 @@ export class TimeoutRegistry {
 
   /**
    * Cancel all timeouts with a specific tag across all executions
-   * Optimized to only clear timeouts in relevant executions
    * @param tag Tag to cancel
    */
   cancelByTag(tag: string): void {
-    // Validate tag
     if (!tag || tag.trim().length === 0) {
       logger.warn("cancelByTag called with empty tag");
       return;
@@ -183,12 +172,11 @@ export class TimeoutRegistry {
 
     const executionIds = this.tagIndex.get(tag);
     if (!executionIds || executionIds.size === 0) {
-      return; // No timeouts with this tag
+      return;
     }
 
     let cancelledCount = 0;
 
-    // Cancel timeouts in all executions that have this tag
     executionIds.forEach(executionId => {
       const manager = this.managers.get(executionId);
       if (manager) {
@@ -202,16 +190,12 @@ export class TimeoutRegistry {
       }
     });
 
-    // Update global statistics
     this.globalStats.cancelledCount += cancelledCount;
-
-    // Clean up the tag index
     this.tagIndex.delete(tag);
   }
 
   /**
    * Batch cancel timeouts by multiple tags
-   * More efficient than calling cancelByTag multiple times
    * @param tags Array of tags to cancel
    */
   cancelByTags(tags: string[]): void {
@@ -219,7 +203,6 @@ export class TimeoutRegistry {
       return;
     }
 
-    // Collect all unique execution IDs that have any of the specified tags
     const executionIdsToCancel = new Set<string>();
 
     tags.forEach(tag => {
@@ -229,7 +212,6 @@ export class TimeoutRegistry {
       }
     });
 
-    // Cancel all timeouts in the affected executions
     let totalCancelled = 0;
     executionIdsToCancel.forEach(executionId => {
       const manager = this.managers.get(executionId);
@@ -244,10 +226,8 @@ export class TimeoutRegistry {
       }
     });
 
-    // Update global statistics
     this.globalStats.cancelledCount += totalCancelled;
 
-    // Clean up the tag index for all cancelled tags
     tags.forEach(tag => {
       this.tagIndex.delete(tag);
     });
@@ -255,7 +235,6 @@ export class TimeoutRegistry {
 
   /**
    * Get aggregated statistics across all executions
-   * Enhanced with tag-based breakdown
    * @returns Global timeout statistics with detailed breakdown
    */
   getStats(): {
@@ -279,11 +258,9 @@ export class TimeoutRegistry {
       timedOutCount += stats.timedOutCount;
       cancelledCount += stats.cancelledCount;
 
-      // Aggregate tag statistics
       Object.entries(stats.byTag).forEach(([tag, count]) => {
         byTag[tag] = (byTag[tag] || 0) + count;
 
-        // Also aggregate by category
         const category = getTagCategory(tag);
         if (category) {
           byCategory[category] = (byCategory[category] || 0) + count;
@@ -304,25 +281,18 @@ export class TimeoutRegistry {
 
   /**
    * Clean up a TimeoutManager when execution ends
-   * Cancels all active timeouts and removes the manager
    * @param executionId Execution ID to clean up
    */
   cleanup(executionId: string): void {
     const manager = this.managers.get(executionId);
     if (manager) {
       try {
-        // Get stats before clearing to capture current state
         const statsBefore = manager.getStats();
-
-        // Clear all timeouts (this will update manager's internal cancelledCount)
         manager.clear();
 
-        // Update global statistics
-        // The active timeouts that were cleared should be counted as cancelled
         this.globalStats.cancelledCount += statsBefore.activeTimeouts;
         this.globalStats.timedOutCount += statsBefore.timedOutCount;
 
-        // Remove from tag index
         this.tagIndex.forEach((executionIds, tag) => {
           executionIds.delete(executionId);
           if (executionIds.size === 0) {
@@ -330,11 +300,9 @@ export class TimeoutRegistry {
           }
         });
 
-        // Remove manager from registry
         this.managers.delete(executionId);
       } catch (error) {
         logger.error(`Failed to cleanup execution ${executionId}`);
-        // Still remove the manager even if cleanup fails
         this.managers.delete(executionId);
       }
     }
@@ -443,18 +411,15 @@ export class TimeoutRegistry {
     }> = [];
 
     this.managers.forEach((manager, execId) => {
-      // Filter by executionId if specified
       if (filter?.executionId && execId !== filter.executionId) {
         return;
       }
 
-      // Use getStats to check if there are active timeouts
       const stats = manager.getStats();
       if (stats.activeTimeouts === 0) {
         return;
       }
 
-      // Get snapshot to access timeout details
       const snapshot = manager.createSnapshot();
 
       snapshot.timeouts.forEach(timeout => {
@@ -464,12 +429,10 @@ export class TimeoutRegistry {
 
         const timeoutTag = timeout.metadata?.["tag"] as string | undefined;
 
-        // Filter by tag if specified
         if (filter?.tag && timeoutTag !== filter.tag) {
           return;
         }
 
-        // Filter by category if specified
         if (filter?.category && timeoutTag) {
           const category = getTagCategory(timeoutTag);
           if (category !== filter.category) {
@@ -564,7 +527,7 @@ export class TimeoutRegistry {
         { name: "timeout_expired_total", value: stats.timedOutCount, labels: {} },
         { name: "timeout_cancelled_total", value: stats.cancelledCount, labels: {} },
       ],
-      histograms: [], // Would need histogram data from TimeoutManager
+      histograms: [],
     };
   }
 
@@ -577,62 +540,6 @@ export class TimeoutRegistry {
       this.metricsCollectionInterval = undefined;
     }
 
-    if (this.resourceMonitoringInterval) {
-      clearInterval(this.resourceMonitoringInterval);
-      this.resourceMonitoringInterval = undefined;
-    }
-
     this.cleanupAll();
-  }
-
-  // ==================== Resource Management ====================
-
-  /**
-   * Start resource monitoring to detect and clean up stale managers
-   */
-  private startResourceMonitoring(intervalMs: number = 5 * 60 * 1000): void {
-    // 5 minutes
-    if (this.resourceMonitoringInterval) {
-      clearInterval(this.resourceMonitoringInterval);
-    }
-
-    this.resourceMonitoringInterval = setInterval(() => {
-      this.performResourceCleanup();
-    }, intervalMs);
-  }
-
-  /**
-   * Perform resource cleanup for stale managers
-   */
-  private performResourceCleanup(): void {
-    const staleExecutionIds: string[] = [];
-
-    // Identify stale managers (those with no active timeouts and old timestamp)
-    this.managers.forEach((manager, executionId) => {
-      try {
-        const stats = manager.getStats();
-
-        // If there are no active timeouts and the manager has been idle for too long
-        if (stats.activeTimeouts === 0 && stats.totalRegistered > 0) {
-          // Check if this manager should be cleaned up
-          // For now, we'll just log potential stale managers
-          // In a real implementation, you might want to track last activity time
-          logger.debug("Potential stale timeout manager detected", {
-            executionId,
-            totalRegistered: stats.totalRegistered,
-            timedOutCount: stats.timedOutCount,
-            cancelledCount: stats.cancelledCount,
-          });
-        }
-      } catch (error) {
-        logger.error("Error checking manager for staleness", { executionId, error });
-      }
-    });
-
-    // Clean up identified stale managers
-    for (const executionId of staleExecutionIds) {
-      logger.info("Cleaning up stale timeout manager", { executionId });
-      this.cleanup(executionId);
-    }
   }
 }

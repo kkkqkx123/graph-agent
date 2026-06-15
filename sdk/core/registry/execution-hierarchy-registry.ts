@@ -9,22 +9,22 @@
  * - Recursive traversal of hierarchy trees
  * - Bulk operations (cleanup, query by root, etc.)
  * - Support for mixed hierarchy scenarios (Workflow → Agent → Agent, etc.)
+ *
+ * @note Validation/repair logic is delegated to HierarchyIntegrityService.
+ * @note Tree traversal operations are delegated to HierarchyTraversalService.
  */
 
 import type { ID, ExecutionType } from "@wf-agent/types";
 import type { WorkflowExecutionEntity } from "../../workflow/entities/workflow-execution-entity.js";
 import type { AgentLoopEntity } from "../../agent/entities/agent-loop-entity.js";
-import type { ChildExecutionReference, ExecutionHierarchyMetadata } from "@wf-agent/types";
+import type { ExecutionHierarchyMetadata } from "@wf-agent/types";
 import {
   HierarchyIntegrityService,
   type HierarchyValidationResult,
   type IHierarchyRegistry,
 } from "../execution/hierarchy-integrity-service.js";
-import { createContextualLogger } from "../../utils/contextual-logger.js";
-import { getErrorOrNew } from "@wf-agent/common-utils";
+import { HierarchyTraversalService } from "./utils/hierarchy-traversal-service.js";
 import { createRegistry } from "./utils/registry-utils.js";
-
-const logger = createContextualLogger({ component: "ExecutionHierarchyRegistry" });
 
 /**
  * Union type for any execution entity
@@ -42,13 +42,15 @@ export interface ExecutionsByRoot {
 /**
  * Execution Hierarchy Registry
  *
- * Manages all execution instances globally and provides hierarchy-aware operations.
+ * Focused on registration and discovery of execution instances.
+ * Tree traversal and hierarchy operations are delegated to HierarchyTraversalService.
+ * Validation/repair logic is delegated to HierarchyIntegrityService.
  *
  * Key Features:
  * - Register/unregister execution instances
- * - Query descendants recursively
- * - Clean up entire hierarchy trees
- * - Group executions by root
+ * - Query descendants recursively (via HierarchyTraversalService)
+ * - Clean up entire hierarchy trees (via HierarchyTraversalService)
+ * - Group executions by root (via HierarchyTraversalService)
  *
  * Usage:
  * ```typescript
@@ -65,11 +67,16 @@ export interface ExecutionsByRoot {
  */
 export class ExecutionHierarchyRegistry implements IHierarchyRegistry {
   private items = createRegistry<AnyExecutionEntity>();
+  private traversalService: HierarchyTraversalService;
+
+  constructor() {
+    this.traversalService = new HierarchyTraversalService(this);
+  }
+
+  // ==================== Core Registration/Discovery ====================
 
   /**
    * Registers an execution instance
-   *
-   * @param execution - The execution entity to register (Workflow or Agent)
    */
   register(execution: AnyExecutionEntity): void {
     this.items.set(execution.id, execution);
@@ -77,9 +84,6 @@ export class ExecutionHierarchyRegistry implements IHierarchyRegistry {
 
   /**
    * Unregisters an execution instance
-   *
-   * @param executionId - The ID of the execution to unregister
-   * @returns true if the execution was found and removed, false otherwise
    */
   unregister(executionId: ID): boolean {
     return this.items.delete(executionId);
@@ -87,9 +91,6 @@ export class ExecutionHierarchyRegistry implements IHierarchyRegistry {
 
   /**
    * Gets an execution instance by ID
-   *
-   * @param executionId - The ID of the execution to retrieve
-   * @returns The execution entity, or undefined if not found
    */
   get(executionId: ID): AnyExecutionEntity | undefined {
     return this.items.get(executionId);
@@ -97,9 +98,6 @@ export class ExecutionHierarchyRegistry implements IHierarchyRegistry {
 
   /**
    * Checks if an execution instance exists
-   *
-   * @param executionId - The ID to check
-   * @returns true if the execution exists, false otherwise
    */
   has(executionId: ID): boolean {
     return this.items.has(executionId);
@@ -107,8 +105,6 @@ export class ExecutionHierarchyRegistry implements IHierarchyRegistry {
 
   /**
    * Gets all registered execution instances
-   *
-   * @returns Array of all execution entities
    */
   getAll(): AnyExecutionEntity[] {
     return this.items.list();
@@ -116,8 +112,6 @@ export class ExecutionHierarchyRegistry implements IHierarchyRegistry {
 
   /**
    * Gets all registered execution IDs
-   *
-   * @returns Array of all execution IDs
    */
   getAllIds(): ID[] {
     return this.items.keys();
@@ -125,8 +119,6 @@ export class ExecutionHierarchyRegistry implements IHierarchyRegistry {
 
   /**
    * Gets the number of registered executions
-   *
-   * @returns The count of registered executions
    */
   size(): number {
     return this.items.size;
@@ -139,227 +131,68 @@ export class ExecutionHierarchyRegistry implements IHierarchyRegistry {
     this.items.clear();
   }
 
+  // ==================== Hierarchy Traversal (delegated) ====================
+
   /**
    * Gets all descendant executions of a given execution (recursive)
-   *
-   * Traverses the entire hierarchy tree starting from the given execution.
-   *
-   * @param executionId - The ID of the parent execution
-   * @param includeSelf - Whether to include the parent execution itself in the result
-   * @returns Array of all descendant execution entities
-   *
-   * @example
-   * ```typescript
-   * // Get all descendants including the root
-   * const allExecutions = registry.getAllDescendants('workflow-1', true);
-   *
-   * // Get only children and deeper descendants
-   * const descendants = registry.getAllDescendants('workflow-1', false);
-   * ```
    */
   getAllDescendants(executionId: ID, includeSelf: boolean = false): AnyExecutionEntity[] {
-    const result: AnyExecutionEntity[] = [];
-
-    if (includeSelf) {
-      const self = this.get(executionId);
-      if (self) {
-        result.push(self);
-      }
-    }
-
-    const entity = this.get(executionId);
-    if (!entity) {
-      return result;
-    }
-
-    // Get direct children
-    const children = this.getDirectChildren(executionId);
-
-    // Recursively get descendants of each child
-    for (const child of children) {
-      result.push(child);
-      result.push(...this.getAllDescendants(child.id, false));
-    }
-
-    return result;
+    return this.traversalService.getAllDescendants(executionId, includeSelf);
   }
 
   /**
    * Gets direct children of a given execution
-   *
-   * Only returns immediate children, not deeper descendants.
-   *
-   * @param executionId - The ID of the parent execution
-   * @returns Array of direct child execution entities
    */
   getDirectChildren(executionId: ID): AnyExecutionEntity[] {
-    const parent = this.get(executionId);
-    if (!parent) {
-      return [];
-    }
-
-    const children: AnyExecutionEntity[] = [];
-
-    // Get child references from the parent's hierarchy manager
-    if ("getChildren" in parent && typeof parent.getChildren === "function") {
-      const childRefs: ChildExecutionReference[] = parent.getChildren();
-
-      for (const ref of childRefs) {
-        const child = this.get(ref.childId);
-        if (child) {
-          children.push(child);
-        }
-      }
-    }
-
-    return children;
+    return this.traversalService.getDirectChildren(executionId);
   }
 
   /**
    * Cleans up an execution and all its descendants
-   *
-   * Performs the following for each execution in the hierarchy:
-   * 1. Stops the execution if it's running
-   * 2. Calls cleanup() method if available
-   * 3. Removes from registry
-   *
-   * @param executionId - The ID of the root execution to clean up
-   * @returns The number of executions cleaned up
-   *
-   * @example
-   * ```typescript
-   * // Clean up workflow and all its children (agents, sub-workflows, etc.)
-   * const cleanedCount = registry.cleanupHierarchy('workflow-1');
-   * console.log(`Cleaned ${cleanedCount} executions`);
-   * ```
    */
   cleanupHierarchy(executionId: ID): number {
-    const descendants = this.getAllDescendants(executionId, true);
-    let count = 0;
-
-    for (const descendant of descendants) {
-      // Stop execution if running
-      if ("stop" in descendant && typeof descendant.stop === "function") {
-        try {
-          descendant.stop();
-        } catch (error) {
-          // Log error but continue cleanup
-          logger.warn(`Failed to stop execution ${descendant.id}`, { error: getErrorOrNew(error) });
-        }
-      }
-
-      // Cleanup resources
-      if ("cleanup" in descendant && typeof descendant.cleanup === "function") {
-        try {
-          descendant.cleanup();
-        } catch (error) {
-          // Log error but continue cleanup
-          logger.warn(`Failed to cleanup execution ${descendant.id}`, {
-            error: getErrorOrNew(error),
-          });
-        }
-      }
-
-      // Remove from registry
-      this.unregister(descendant.id);
-      count++;
-    }
-
-    return count;
+    return this.traversalService.cleanupHierarchy(executionId);
   }
 
   /**
    * Gets all executions under a given root execution, grouped by type
-   *
-   * @param rootExecutionId - The ID of the root execution
-   * @returns Object containing arrays of workflows and agents
-   *
-   * @example
-   * ```typescript
-   * const { workflows, agents } = registry.getExecutionsByRoot('root-workflow');
-   * console.log(`Found ${workflows.length} workflows and ${agents.length} agents`);
-   * ```
    */
   getExecutionsByRoot(rootExecutionId: ID): ExecutionsByRoot {
-    const allDescendants = this.getAllDescendants(rootExecutionId, true);
-
-    return {
-      workflows: allDescendants.filter(
-        (e): e is WorkflowExecutionEntity =>
-          "getWorkflowId" in e && typeof e.getWorkflowId === "function" && !!e.getWorkflowId(),
-      ),
-      agents: allDescendants.filter(
-        (e): e is AgentLoopEntity =>
-          "getConversationManager" in e && typeof e.getConversationManager === "function",
-      ),
-    };
+    return this.traversalService.getExecutionsByRoot(rootExecutionId);
   }
 
   /**
    * Gets all root executions (executions without parents)
-   *
-   * @returns Array of root execution entities
    */
   getRootExecutions(): AnyExecutionEntity[] {
-    return this.getAll().filter(entity => {
-      if ("getParentContext" in entity && typeof entity.getParentContext === "function") {
-        const parent = entity.getParentContext();
-        return !parent;
-      }
-      return false;
-    });
+    return this.traversalService.getRootExecutions();
   }
 
   /**
    * Gets all executions that have a specific parent
-   *
-   * @param parentId - The ID of the parent execution
-   * @returns Array of child execution entities
    */
   getChildrenOf(parentId: ID): AnyExecutionEntity[] {
-    return this.getAll().filter(entity => {
-      if ("getParentContext" in entity && typeof entity.getParentContext === "function") {
-        const parent = entity.getParentContext();
-        return parent?.parentId === parentId;
-      }
-      return false;
-    });
+    return this.traversalService.getChildrenOf(parentId);
   }
 
   /**
    * Gets all executions of a specific type
-   *
-   * @param type - The execution type to filter by
-   * @returns Array of execution entities of the specified type
    */
   getByType(type: ExecutionType): AnyExecutionEntity[] {
-    return this.getAll().filter(entity => {
-      if (type === "WORKFLOW") {
-        // Check if getWorkflowId returns a truthy value (not undefined)
-        return (
-          "getWorkflowId" in entity &&
-          typeof entity.getWorkflowId === "function" &&
-          !!entity.getWorkflowId()
-        );
-      } else {
-        // Check if getConversationManager method exists
-        return (
-          "getConversationManager" in entity && typeof entity.getConversationManager === "function"
-        );
-      }
-    });
+    return this.traversalService.getByType(type);
   }
 
   /**
+   * Checks if an execution is part of a hierarchy tree rooted at the given ID
+   */
+  isInHierarchy(executionId: ID, rootExecutionId: ID): boolean {
+    return this.traversalService.isInHierarchy(executionId, rootExecutionId);
+  }
+
+  // ==================== Integrity Validation (delegated) ====================
+
+  /**
    * Validates hierarchy integrity against the registry
-   *
-   * Checks:
-   * 1. Parent reference exists in registry (if present)
-   * 2. All child references exist in registry
-   * 3. No orphaned references
-   *
-   * @param hierarchy - The hierarchy metadata to validate
-   * @returns Validation result with any issues found
    */
   validateHierarchyIntegrity(hierarchy: ExecutionHierarchyMetadata): HierarchyValidationResult {
     return HierarchyIntegrityService.validateIntegrity(hierarchy, this);
@@ -367,12 +200,6 @@ export class ExecutionHierarchyRegistry implements IHierarchyRegistry {
 
   /**
    * Cleans up orphaned references in hierarchy metadata
-   *
-   * Removes references to entities that no longer exist in the registry.
-   * This should be called after validation detects issues.
-   *
-   * @param hierarchy - The hierarchy metadata to clean up
-   * @returns Cleaned hierarchy metadata
    */
   cleanupOrphanedReferences(hierarchy: ExecutionHierarchyMetadata): ExecutionHierarchyMetadata {
     return HierarchyIntegrityService.cleanupOrphanedReferences(hierarchy, this);
@@ -380,52 +207,8 @@ export class ExecutionHierarchyRegistry implements IHierarchyRegistry {
 
   /**
    * Repairs hierarchy by recalculating root information
-   *
-   * If parent reference is valid but root info is incorrect,
-   * this function recalculates the correct root execution info.
-   *
-   * @param hierarchy - The hierarchy metadata to repair
-   * @returns Repaired hierarchy metadata
    */
   repairRootInfo(hierarchy: ExecutionHierarchyMetadata): ExecutionHierarchyMetadata {
     return HierarchyIntegrityService.repairRootInfo(hierarchy, this);
-  }
-
-  /**
-   * Checks if an execution is part of a hierarchy tree rooted at the given ID
-   *
-   * @param executionId - The ID of the execution to check
-   * @param rootExecutionId - The ID of the potential root
-   * @returns true if the execution is in the hierarchy tree
-   */
-  isInHierarchy(executionId: ID, rootExecutionId: ID): boolean {
-    if (executionId === rootExecutionId) {
-      return true;
-    }
-
-    const entity = this.get(executionId);
-    if (!entity) {
-      return false;
-    }
-
-    // Traverse up the parent chain
-    let current: AnyExecutionEntity | undefined = entity;
-    while (current) {
-      if ("getParentContext" in current && typeof current.getParentContext === "function") {
-        const parent = current.getParentContext();
-        if (!parent) {
-          // Reached root without finding target
-          return false;
-        }
-        if (parent.parentId === rootExecutionId) {
-          return true;
-        }
-        current = this.get(parent.parentId);
-      } else {
-        return false;
-      }
-    }
-
-    return false;
   }
 }
