@@ -2,7 +2,7 @@
  * Node handlers export
  */
 
-import type { RuntimeNode } from "@wf-agent/types";
+import type { RuntimeNode, WorkflowExecution } from "@wf-agent/types";
 import type { WorkflowExecutionEntity } from "../../../entities/workflow-execution-entity.js";
 import type { GlobalContext } from "../../../../core/global-context.js";
 import type { StartFromTriggerHandlerContext } from "./start-from-trigger-handler.js";
@@ -41,6 +41,12 @@ import {
 } from "./tool-visibility-handler.js";
 import { syncHandler } from "./sync-handler.js";
 
+// Local interface matching agent-loop-handler's AgentLoopExecutionEntity
+interface AgentLoopExecutionEntity {
+  getWorkflowExecutionData(): WorkflowExecution;
+  getInput?(): Record<string, unknown>;
+}
+
 // NodeHandlerFn signature: all handlers receive globalContext as first parameter
 export type NodeHandlerFn = (
   globalContext: GlobalContext,
@@ -55,7 +61,7 @@ export function getNodeHandler(nodeType: string): NodeHandlerFn {
     AGENT_LOOP: (globalContext, workflowExecutionEntity, node, context) =>
       agentLoopHandler(
         globalContext,
-        workflowExecutionEntity as any,
+        workflowExecutionEntity as unknown as AgentLoopExecutionEntity,
         node,
         context as AgentLoopHandlerContext,
       ),

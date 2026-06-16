@@ -279,7 +279,7 @@ export class TimeoutManager implements StateManager<TimeoutSnapshot> {
     try {
       this.cancelEntry(entry, "cancelled");
     } catch (error) {
-      logger.error(`Failed to cancel timeout ${handle.id}`);
+      logger.error(`Failed to cancel timeout ${handle.id}`, { error });
     }
   }
 
@@ -323,7 +323,7 @@ export class TimeoutManager implements StateManager<TimeoutSnapshot> {
         }
       }
     } catch (error) {
-      logger.error(`Failed to refresh timeout ${handle.id}`);
+      logger.error(`Failed to refresh timeout ${handle.id}`, { error });
     }
   }
 
@@ -601,7 +601,7 @@ export class TimeoutManager implements StateManager<TimeoutSnapshot> {
     try {
       await entry.onTimeout();
     } catch (error) {
-      logger.error(`Error in timeout callback for '${entry.id}'`);
+      logger.error(`Error in timeout callback for '${entry.id}'`, { error });
     }
   }
 
@@ -640,7 +640,7 @@ export class TimeoutManager implements StateManager<TimeoutSnapshot> {
       try {
         await entry.onWarning();
       } catch (error: unknown) {
-        logger.error(`Error in warning callback for '${entry.id}'`);
+        logger.error(`Error in warning callback for '${entry.id}'`, { error });
       }
     }
   }

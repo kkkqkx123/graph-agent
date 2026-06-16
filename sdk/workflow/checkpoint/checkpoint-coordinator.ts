@@ -479,7 +479,10 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
     // but delegates to the same logic when called via the base class.
 
     const deps = this.currentDeps!;
-    const checkpoint = this.restoreContext?.checkpoint!;
+    if (!this.restoreContext) {
+      throw new Error("Restore context not available");
+    }
+    const checkpoint = this.restoreContext.checkpoint;
 
     return this.buildEntityFromSnapshot(_parentId, snapshot, checkpoint, deps);
   }

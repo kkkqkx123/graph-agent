@@ -155,7 +155,7 @@ export class TimeoutRegistry {
       try {
         manager.clear();
       } catch (error) {
-        logger.error(`Failed to cancel timeouts for execution ${executionId}`);
+        logger.error(`Failed to cancel timeouts for execution ${executionId}`, { error });
       }
     }
   }
@@ -185,7 +185,7 @@ export class TimeoutRegistry {
           manager.clear();
           cancelledCount += statsBefore.activeTimeouts;
         } catch (error) {
-          logger.error(`Failed to cancel timeouts with tag '${tag}' for execution ${executionId}`);
+          logger.error(`Failed to cancel timeouts with tag '${tag}' for execution ${executionId}`, { error });
         }
       }
     });
@@ -221,7 +221,7 @@ export class TimeoutRegistry {
           manager.clear();
           totalCancelled += statsBefore.activeTimeouts;
         } catch (error) {
-          logger.error(`Failed to cancel timeouts for execution ${executionId}`);
+          logger.error(`Failed to cancel timeouts for execution ${executionId}`, { error });
         }
       }
     });
@@ -302,7 +302,7 @@ export class TimeoutRegistry {
 
         this.managers.delete(executionId);
       } catch (error) {
-        logger.error(`Failed to cleanup execution ${executionId}`);
+        logger.error(`Failed to cleanup execution ${executionId}`, { error });
         this.managers.delete(executionId);
       }
     }

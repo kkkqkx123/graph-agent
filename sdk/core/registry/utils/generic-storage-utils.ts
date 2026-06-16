@@ -37,7 +37,7 @@ export interface StorageEntityInfo<T> {
  */
 export async function persistItem<T>(
   item: T,
-  adapter: BaseStorageAdapter<any, void> | null | undefined,
+  adapter: BaseStorageAdapter<Record<string, unknown>, void> | null | undefined,
   info: StorageEntityInfo<T>,
 ): Promise<void> {
   if (!adapter) {
@@ -74,7 +74,7 @@ export async function persistItem<T>(
  */
 export async function removeItem(
   id: string,
-  adapter: BaseStorageAdapter<any, void> | null | undefined,
+  adapter: BaseStorageAdapter<Record<string, unknown>, void> | null | undefined,
   entityName: string,
 ): Promise<void> {
   if (!adapter) {
@@ -105,7 +105,7 @@ export async function removeItem(
  */
 export async function loadItem<T>(
   id: string,
-  adapter: BaseStorageAdapter<any, void> | null | undefined,
+  adapter: BaseStorageAdapter<Record<string, unknown>, void> | null | undefined,
   entityName: string,
 ): Promise<T | null> {
   if (!adapter) {
@@ -141,7 +141,7 @@ export async function loadItem<T>(
  * @param info Entity descriptor for ID extraction, metadata, and logging
  */
 export async function initializeFromStorage<T>(
-  adapter: BaseStorageAdapter<any, void> | null,
+  adapter: BaseStorageAdapter<Record<string, unknown>, void> | null,
   items: { set: (key: string, value: T) => void; has: (key: string) => boolean; size: number },
   info: StorageEntityInfo<T>,
 ): Promise<void> {

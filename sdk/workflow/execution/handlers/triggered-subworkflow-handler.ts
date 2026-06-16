@@ -203,7 +203,7 @@ export class TriggeredSubworkflowHandler implements TaskManager {
     // Create a sub-workflow WorkflowExecutionEntity using unified API if available
     let subgraphEntity: WorkflowExecutionEntity;
 
-    let buildResult: { workflowExecutionEntity: any; stateCoordinator: any };
+    let buildResult: WorkflowExecutionBuildResultSimple;
 
     if (this.executionBuilder.createChildExecution) {
       // Use new unified API

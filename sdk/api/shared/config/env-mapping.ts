@@ -129,6 +129,7 @@ export function applyEnvOverrides<T>(
         } catch (error) {
           throw new Error(
             `Failed to parse environment variable ${entry.env}: ${error instanceof Error ? error.message : String(error)}`,
+            { cause: error },
           );
         }
       } else if (entry.required && entry.default === undefined) {

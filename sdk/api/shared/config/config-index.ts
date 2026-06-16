@@ -18,6 +18,7 @@ import type {
   ResolvedNodeTemplateEntry,
   ResolvedScriptEntry,
 } from "@wf-agent/types";
+import { createContextualLogger } from "../../../utils/contextual-logger.js";
 
 /**
  * Supported index types for loadConfigIndex.
@@ -44,6 +45,8 @@ export type IndexResolver = (
  * Mapping of index types to their resolve functions.
  * Actual implementations are provided by apps/config-processor.
  */
+const logger = createContextualLogger({ component: "ConfigIndex" });
+
 const RESOLVE_FUNCTIONS: Partial<Record<IndexType, IndexResolver>> = {};
 
 /**
@@ -98,7 +101,7 @@ export async function loadMultipleConfigIndexes(
       const index = await loadConfigIndex(type, path);
       results.set(type, index);
     } catch (error) {
-      console.error(
+      logger.error(
         `Failed to load config index (${type}): ${error instanceof Error ? error.message : error}`,
       );
       throw error;

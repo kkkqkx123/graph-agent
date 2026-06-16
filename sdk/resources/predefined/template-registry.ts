@@ -10,6 +10,7 @@
 
 import { PromptTemplateRegistry as CorePromptTemplateRegistry } from "../../core/registry/prompt-template-registry.js";
 import type { PromptTemplate } from "@wf-agent/types";
+import type { FragmentRegistry } from "../../core/registry/fragment-registry.js";
 
 /**
  * Backward-compatible wrapper that provides the old single-arg register(template) API.
@@ -74,7 +75,7 @@ class TemplateRegistryWrapper {
     return this.core.isInitialized();
   }
 
-  setFragmentRegistry(registry: any): void {
+  setFragmentRegistry(registry: FragmentRegistry): void {
     this.core.setFragmentRegistry(registry);
   }
 }
@@ -159,7 +160,7 @@ export class PromptTemplateRegistry {
     return this.wrapper.isInitialized();
   }
 
-  setFragmentRegistry(registry: any): void {
+  setFragmentRegistry(registry: FragmentRegistry): void {
     this.wrapper.setFragmentRegistry(registry);
   }
 }
