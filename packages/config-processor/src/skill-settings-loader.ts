@@ -23,8 +23,8 @@
 
 import * as fs from "fs/promises";
 import * as path from "path";
+import { fileExists, matchGlobPattern } from "@wf-agent/common-utils";
 import type { SkillConfig, SkillCollectionFile } from "@wf-agent/types";
-import { matchGlobPattern } from "./config-index-loader.js";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -101,18 +101,6 @@ export function getProjectSkillPaths(projectRoot: string): string[] {
 // ---------------------------------------------------------------------------
 // File I/O
 // ---------------------------------------------------------------------------
-
-/**
- * Check if a file exists.
- */
-export async function fileExists(filePath: string): Promise<boolean> {
-  try {
-    await fs.access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 /**
  * Load skill config from a JSON file.

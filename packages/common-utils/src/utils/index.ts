@@ -26,6 +26,12 @@ export {
 
 // Tool-related helper functions - Moved to @wf-agent/sdk
 
+// File system utilities
+export { fileExists, tryLoadJsonFile } from "./file-utils.js";
+
+// Glob pattern matching
+export { matchGlobPattern } from "./glob-utils.js";
+
 // Simple ID generation function (only used inside common-utils)
 export function generateId(): string {
   return crypto.randomUUID();

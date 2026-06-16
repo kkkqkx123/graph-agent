@@ -41,6 +41,50 @@ export {
 // Parameter Substitution Utility
 export { substituteParameters } from "./config-utils.js";
 
+// Configuration Accessor
+export {
+  createConfigAccessor,
+  createLazyConfigAccessor,
+  createSingletonAccessor,
+  createKeyAccessor,
+  type ConfigAccessor,
+  type ConfigKeyAccessor,
+} from "./accessor.js";
+
+// Environment Variable Mapping
+export {
+  applyEnvOverrides,
+  createEnvMapping,
+  EnvParsers,
+  EnvPrefixes,
+  toEnvName,
+  type EnvMapping,
+  type EnvMappingEntry,
+  type EnvParser,
+} from "./env-mapping.js";
+
+// Configuration Validator
+export {
+  validateConfig,
+  validateConfigOrThrow,
+  validateConfigs,
+  FieldValidator,
+  createCompositeValidator,
+  type ValidationResult,
+} from "./validator.js";
+
+// Configuration Index Loading
+export {
+  loadConfigIndex,
+  loadMultipleConfigIndexes,
+  registerResolver,
+  hasResolver,
+  listIndexTypes,
+  type IndexType,
+  type IndexResolver,
+  type IndexEntryType,
+} from "./config-index.js";
+
 // JSON Parsing Functions - from parsers/
 export { parseJson, stringifyJson, validateJsonSyntax } from "./parsers/index.js";
 

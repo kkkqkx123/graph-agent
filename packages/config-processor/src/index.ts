@@ -46,12 +46,14 @@ export {
   loadPromptTemplateConfig,
 } from "./loader-orchestrator.js";
 
+// Generic file system utilities
+export { fileExists } from "@wf-agent/common-utils";
+
 // MCP settings file I/O
 export {
   DEFAULT_MCP_SETTINGS_FILE,
   PROJECT_MCP_FILE,
   PROJECT_WF_MCP_FILE,
-  fileExists,
   getGlobalMcpSettingsPath,
   getProjectMcpPath,
   getProjectWfMcpPath,
@@ -67,7 +69,6 @@ export {
   DEFAULT_SKILL_SETTINGS_FILE,
   PROJECT_SKILL_FILE,
   PROJECT_WF_SKILL_FILE,
-  fileExists as skillFileExists,
   createDefaultSkillConfig,
   getGlobalSkillSettingsPath,
   getProjectSkillPath,
@@ -85,6 +86,7 @@ export {
   loadIndexFile,
   tryLoadIndexFile,
   indexFileExists,
+  expandIndexPaths,
   resolveLLMProfileIndex,
   resolveWorkflowIndex,
   resolveNodeTemplateIndex,

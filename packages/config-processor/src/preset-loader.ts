@@ -21,7 +21,7 @@ import * as fs from "fs/promises";
 import * as path from "path";
 import type { ConfigIndexFile } from "@wf-agent/types";
 import { INDEX_FILE_NAMES } from "@wf-agent/types";
-import { matchGlobPattern } from "./config-index-loader.js";
+import { expandIndexPaths } from "./config-index-loader.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -78,7 +78,7 @@ export async function resolvePresetIndex(
     );
   }
 
-  const filePaths = await expandPresetPaths(index, baseDir);
+  const filePaths = await expandIndexPaths(index, baseDir);
 
   const presets = new Map<string, PresetEntry>();
   const failures: Array<{ path: string; error: string }> = [];
@@ -102,23 +102,6 @@ export async function resolvePresetIndex(
   }
 
   return { presets, failures };
-}
-
-/**
- * Expand glob patterns from a ConfigIndexFile into absolute file paths.
- */
-async function expandPresetPaths(
-  index: ConfigIndexFile,
-  baseDir: string,
-): Promise<string[]> {
-  const allPaths: string[] = [];
-
-  for (const pattern of index.paths) {
-    const matches = await matchGlobPattern(pattern, baseDir);
-    allPaths.push(...matches);
-  }
-
-  return [...new Set(allPaths)];
 }
 
 // ---------------------------------------------------------------------------
@@ -173,17 +156,3 @@ export async function loadSingleFilePreset<T>(
   }
 }
 
-/**
- * Load and parse a JSON file, returning null if missing.
- */
-export async function tryLoadJsonFile<T>(filePath: string): Promise<T | null> {
-  try {
-    const content = await fs.readFile(filePath, "utf-8");
-    return JSON.parse(content) as T;
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return null;
-    }
-    throw error;
-  }
-}

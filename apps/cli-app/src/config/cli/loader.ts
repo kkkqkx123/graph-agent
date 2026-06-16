@@ -2,11 +2,18 @@
  * CLI Configuration Loader (Refactored)
  * Simplified configuration loading without cosmiconfig.
  * Uses SDK's parsing capabilities for TOML and JSON.
+ * Uses centralized environment variable mapping from SDK.
  */
 
 import { loadConfigFile } from "@wf-agent/config-processor";
-import { parseJson, parseToml } from "@wf-agent/sdk/api";
+import {
+  parseJson,
+  parseToml,
+  applyEnvOverrides,
+  EnvMappingEntry,
+} from "@wf-agent/sdk/api";
 import type { CLIConfig } from "./types.js";
+import type { LogLevel, OutputFormat } from "@wf-agent/types";
 import { CLIConfigSchema } from "./schema.js";
 import { DEFAULT_CONFIG } from "./defaults.js";
 import { ExecutionModeEnvVars } from "../../types/execution-mode.js";
@@ -22,7 +29,6 @@ function parseConfigContent(content: string, format: "json" | "toml"): unknown {
     case "json":
       return parseJson(content);
     case "toml":
-      // Use SDK's parseToml for CLI config
       return parseToml(content);
     default:
       throw new Error(`Unsupported config format: ${format}`);
@@ -30,28 +36,32 @@ function parseConfigContent(content: string, format: "json" | "toml"): unknown {
 }
 
 /**
+ * CLI environment variable mapping definition.
+ * Uses SDK's centralized EnvMappingEntry type for declarative mapping.
+ */
+const CLI_ENV_MAPPING: Record<string, EnvMappingEntry> = {
+  verbose: { env: "CLI_VERBOSE", parser: (v: string) => v === "true" || v === "1" },
+  debug: { env: "CLI_DEBUG", parser: (v: string) => v === "true" || v === "1" },
+  logLevel: { env: "CLI_LOG_LEVEL", parser: (v: string) => v as LogLevel },
+  outputFormat: { env: "CLI_OUTPUT_FORMAT", parser: (v: string) => v as OutputFormat },
+  defaultTimeout: { env: "CLI_DEFAULT_TIMEOUT", parser: (v: string) => parseInt(v, 10) },
+  maxConcurrentExecutions: { env: "CLI_MAX_CONCURRENT", parser: (v: string) => parseInt(v, 10) },
+};
+
+/**
  * Load CLI configuration from explicit path or default location
  * @param configPath Explicit config file path (optional)
  * @returns Validated configuration object
  */
 export async function loadConfig(configPath?: string): Promise<CLIConfig> {
-  // If no path specified, use default location
   const targetPath = configPath || "./.modular-agent.toml";
 
   try {
-    // Use SDK's loadConfigContent
     const { content, format } = await loadConfigFile(targetPath);
-
-    // Parse the content using SDK parsers
     const rawConfig = parseConfigContent(content, format);
-
-    // Validate with Zod
     const validatedConfig = CLIConfigSchema.parse(rawConfig);
-
-    // Merge with defaults
     return { ...DEFAULT_CONFIG, ...validatedConfig };
   } catch (error) {
-    // If explicit path was specified and failed, throw error
     if (configPath) {
       throw new Error(
         `Failed to load config from ${configPath}: ${
@@ -61,7 +71,6 @@ export async function loadConfig(configPath?: string): Promise<CLIConfig> {
       );
     }
 
-    // If default path failed, use defaults with warning
     output.warnLog("Config file not found or invalid, using default configuration:", {
       error: String(error),
     });
@@ -70,38 +79,35 @@ export async function loadConfig(configPath?: string): Promise<CLIConfig> {
 }
 
 /**
- * Load configuration with environment variable overrides
+ * Load configuration with environment variable overrides.
+ * Uses SDK's centralized env mapping system.
  */
 export async function loadConfigWithEnvOverride(configPath?: string): Promise<CLIConfig> {
   const config = await loadConfig(configPath);
 
-  // Apply environment variable overrides
-  if (process.env["CLI_VERBOSE"] === "true") {
-    config.verbose = true;
+  const result = applyEnvOverrides(config as unknown as Record<string, unknown>, CLI_ENV_MAPPING) as unknown as CLIConfig;
+
+  if (process.env["LOG_DIR"] && result.output) {
+    result.output = { ...result.output, dir: process.env["LOG_DIR"] };
   }
-  if (process.env["CLI_DEBUG"] === "true") {
-    config.debug = true;
-  }
-  if (process.env["CLI_LOG_LEVEL"]) {
-    config.logLevel = process.env["CLI_LOG_LEVEL"] as CLIConfig["logLevel"];
-  }
-  if (process.env["LOG_DIR"] && config.output) {
-    config.output = { ...config.output, dir: process.env["LOG_DIR"] };
-  }
-  // Apply STORAGE_DIR override for test isolation
-  if (process.env["STORAGE_DIR"] && config.storage?.json) {
-    config.storage.json = { ...config.storage.json, baseDir: process.env["STORAGE_DIR"] };
+  if (process.env["STORAGE_DIR"] && result.storage?.json) {
+    result.storage.json = { ...result.storage.json, baseDir: process.env["STORAGE_DIR"] };
   }
 
-  // Bridge config.outputFormat to mode detection system
-  // Env var takes priority over config; config value is used as fallback
   const envFormat = process.env[ExecutionModeEnvVars.OUTPUT_FORMAT];
   if (envFormat === "json" || envFormat === "silent") {
-    config.outputFormat = envFormat as CLIConfig["outputFormat"];
-  } else if (config.outputFormat === "json" && !envFormat) {
-    // Set the env var so the mode detector picks it up
+    result.outputFormat = envFormat as OutputFormat;
+  } else if (result.outputFormat === "json" && !envFormat) {
     process.env[ExecutionModeEnvVars.OUTPUT_FORMAT] = "json";
   }
 
-  return config;
+  return result;
+}
+
+/**
+ * Get the CLI environment mapping definition.
+ * Useful for documentation and validation.
+ */
+export function getCLIEnvMapping() {
+  return CLI_ENV_MAPPING;
 }

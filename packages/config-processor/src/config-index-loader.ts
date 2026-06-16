@@ -12,6 +12,7 @@
 
 import * as fs from "fs/promises";
 import * as path from "path";
+import { matchGlobPattern } from "@wf-agent/common-utils";
 import type {
   ConfigIndexFile,
   ResolvedIndex,
@@ -30,145 +31,6 @@ import {
   loadAgentLoopConfig,
 } from "./loader-orchestrator.js";
 
-// ---------------------------------------------------------------------------
-// Glob Pattern Matching
-// ---------------------------------------------------------------------------
-
-/**
- * Simple glob pattern matcher.
- * Supports:
- * - `*` - matches any filename (non-recursive)
- * - `**` - matches any directory recursively
- *
- * @param pattern - Glob pattern (e.g., "./**" + "/*.toml", "./subdir/*.json")
- * @param baseDir - Base directory to resolve pattern from
- * @returns Array of matched file paths
- */
-export async function matchGlobPattern(pattern: string, baseDir: string): Promise<string[]> {
-  const absoluteBase = path.resolve(baseDir);
-
-  // Normalize pattern
-  let normalizedPattern = pattern.replace(/\\/g, "/");
-
-  // Check if pattern starts with ./
-  if (normalizedPattern.startsWith("./")) {
-    normalizedPattern = normalizedPattern.slice(2);
-  }
-
-  const parts = normalizedPattern.split("/");
-  const results: string[] = [];
-
-  async function scan(currentDir: string, partIndex: number): Promise<void> {
-    if (partIndex >= parts.length) return;
-
-    const part = parts[partIndex];
-    if (part === undefined) return;
-    const isLast = partIndex === parts.length - 1;
-
-    // Handle ** (recursive)
-    if (part === "**") {
-      // Recursively scan all directories
-      try {
-        const entries = await fs.readdir(currentDir, { withFileTypes: true });
-        for (const entry of entries) {
-          const fullPath = path.join(currentDir, entry.name);
-          if (entry.isDirectory()) {
-            // Continue with ** in subdirectory
-            await scan(fullPath, partIndex);
-            // Also try to match remaining pattern in subdirectory
-            await scan(fullPath, partIndex + 1);
-          } else if (entry.isFile() && isLast) {
-            // If this is the last part, we shouldn't match files with **
-            // But if there's more pattern, continue
-          }
-        }
-      } catch {
-        // Ignore permission errors
-      }
-      return;
-    }
-
-    // Handle * (single level wildcard)
-    if (part === "*") {
-      try {
-        const entries = await fs.readdir(currentDir, { withFileTypes: true });
-        for (const entry of entries) {
-          const fullPath = path.join(currentDir, entry.name);
-          if (isLast && entry.isFile()) {
-            results.push(fullPath);
-          } else if (!isLast && entry.isDirectory()) {
-            await scan(fullPath, partIndex + 1);
-          }
-        }
-      } catch {
-        // Ignore permission errors
-      }
-      return;
-    }
-
-    // Handle *.ext (filename pattern)
-    if (part.startsWith("*.")) {
-      const ext = part.slice(1); // e.g., ".toml"
-      try {
-        const entries = await fs.readdir(currentDir, { withFileTypes: true });
-        for (const entry of entries) {
-          const fullPath = path.join(currentDir, entry.name);
-          if (isLast && entry.isFile() && entry.name.endsWith(ext)) {
-            results.push(fullPath);
-          } else if (!isLast && entry.isDirectory()) {
-            await scan(fullPath, partIndex + 1);
-          }
-        }
-      } catch {
-        // Ignore permission errors
-      }
-      return;
-    }
-
-    // Handle prefix*.ext (prefix pattern)
-    const prefixMatch = part.match(/^(.+)\*\.(.+)$/);
-    if (prefixMatch) {
-      const prefix = prefixMatch[1]!;
-      const ext = prefixMatch[2]!;
-      try {
-        const entries = await fs.readdir(currentDir, { withFileTypes: true });
-        for (const entry of entries) {
-          const fullPath = path.join(currentDir, entry.name);
-          if (
-            isLast &&
-            entry.isFile() &&
-            entry.name.startsWith(prefix) &&
-            entry.name.endsWith(`.${ext}`)
-          ) {
-            results.push(fullPath);
-          } else if (!isLast && entry.isDirectory()) {
-            await scan(fullPath, partIndex + 1);
-          }
-        }
-      } catch {
-        // Ignore permission errors
-      }
-      return;
-    }
-
-    // Handle literal path segment
-    const literalPath = path.join(currentDir, part);
-    try {
-      const stats = await fs.stat(literalPath);
-      if (isLast && stats.isFile()) {
-        results.push(literalPath);
-      } else if (!isLast && stats.isDirectory()) {
-        await scan(literalPath, partIndex + 1);
-      }
-    } catch {
-      // Path doesn't exist, skip
-    }
-  }
-
-  await scan(absoluteBase, 0);
-  return results;
-}
-
 /**
  * Expand all glob patterns in the index file.
  *
@@ -176,7 +38,7 @@ export async function matchGlobPattern(pattern: string, baseDir: string): Promis
  * @param indexDir - Directory containing the index file
  * @returns Array of absolute file paths
  */
-async function expandIndexPaths(index: ConfigIndexFile, indexDir: string): Promise<string[]> {
+export async function expandIndexPaths(index: ConfigIndexFile, indexDir: string): Promise<string[]> {
   const allPaths: string[] = [];
 
   for (const pattern of index.paths) {
