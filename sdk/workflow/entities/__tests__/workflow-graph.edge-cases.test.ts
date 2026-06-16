@@ -8,9 +8,9 @@
 import { WorkflowGraph } from "../workflow-graph.js";
 import { WorkflowGraphStructure } from "../workflow-graph-structure.js";
 import { WorkflowGraphMetadata } from "../workflow-graph-metadata.js";
-import type { WorkflowNode, WorkflowEdge } from "@wf-agent/types";
+import type { WorkflowNode, WorkflowEdge, RuntimeNodeType } from "@wf-agent/types";
 
-function createTestNode(partial: Partial<WorkflowNode> & { id: string; type: string }): WorkflowNode {
+function createTestNode(partial: Partial<WorkflowNode> & { id: string; type: RuntimeNodeType }): WorkflowNode {
   return {
     workflowId: "test-workflow",
     outgoingEdgeIds: [],
@@ -74,8 +74,8 @@ describe("WorkflowGraph Composition Edge Cases", () => {
 
     test("should handle duplicate node additions", () => {
       const graph = new WorkflowGraph();
-      const node1 = createTestNode({ id: "node1", type: "START", config: { version: 1 } });
-      const node2 = createTestNode({ id: "node1", type: "START", config: { version: 2 } });
+      const node1 = createTestNode({ id: "node1", type: "START", config: {} });
+      const node2 = createTestNode({ id: "node1", type: "START", config: {} });
 
       graph.addNode(node1);
       graph.addNode(node2);
@@ -86,8 +86,8 @@ describe("WorkflowGraph Composition Edge Cases", () => {
 
     test("should handle duplicate edge additions", () => {
       const graph = new WorkflowGraph();
-      const node1: WorkflowNode = { id: "node1", type: "START", config: {} };
-      const node2: WorkflowNode = { id: "node2", type: "END", config: {} };
+      const node1 = createTestNode({ id: "node1", type: "START", config: {} });
+      const node2 = createTestNode({ id: "node2", type: "END", config: {} });
       const edge1: WorkflowEdge = { id: "edge1", sourceNodeId: "node1", targetNodeId: "node2", type: "DEFAULT" };
       const edge2: WorkflowEdge = { id: "edge1", sourceNodeId: "node1", targetNodeId: "node2", type: "CONDITIONAL" };
 
@@ -108,7 +108,7 @@ describe("WorkflowGraph Composition Edge Cases", () => {
 
       // Add nodes
       for (let i = 0; i < nodeCount; i++) {
-        const node: WorkflowNode = { id: `node${i}`, type: "LLM", config: {} };
+        const node = createTestNode({ id: `node${i}`, type: "LLM", config: { profileId: "test-profile" } });
         graph.addNode(node);
       }
 
@@ -121,13 +121,13 @@ describe("WorkflowGraph Composition Edge Cases", () => {
       const nodeCount = 100;
       const edgesPerNode = 10;
 
-      // Add nodes
-      for (let i = 0; i < nodeCount; i++) {
-        const node: WorkflowNode = { id: `node${i}`, type: "LLM", config: {} };
-        graph.addNode(node);
-      }
+    // Add nodes
+    for (let i = 0; i < nodeCount; i++) {
+      const node = createTestNode({ id: `node${i}`, type: "LLM", config: { profileId: "test-profile" } });
+      graph.addNode(node);
+    }
 
-      // Add edges
+    // Add edges
       let edgeCount = 0;
       for (let i = 0; i < nodeCount; i++) {
         for (let j = 0; j < edgesPerNode; j++) {
@@ -153,9 +153,9 @@ describe("WorkflowGraph Composition Edge Cases", () => {
   describe("Circular References", () => {
     test("should handle circular edge references", () => {
       const graph = new WorkflowGraph();
-      const node1: WorkflowNode = { id: "node1", type: "START", config: {} };
-      const node2: WorkflowNode = { id: "node2", type: "LLM", config: {} };
-      const node3: WorkflowNode = { id: "node3", type: "LLM", config: {} };
+      const node1 = createTestNode({ id: "node1", type: "START", config: {} });
+      const node2 = createTestNode({ id: "node2", type: "LLM", config: { profileId: "test-profile" } });
+      const node3 = createTestNode({ id: "node3", type: "LLM", config: { profileId: "test-profile" } });
 
       graph.addNode(node1);
       graph.addNode(node2);
@@ -192,8 +192,9 @@ describe("WorkflowGraph Composition Edge Cases", () => {
       const graph = new WorkflowGraph();
       const nodeConfig = {
         id: "node1",
-        type: "LLM",
-        config: { model: "gpt-4" },
+        name: "Node 1",
+        type: "LLM" as const,
+        config: { profileId: "test-profile" },
       };
 
       graph.setNodeConfig("node1", nodeConfig);
@@ -227,11 +228,11 @@ describe("WorkflowGraph Composition Edge Cases", () => {
   describe("Graph Transformation Edge Cases", () => {
     test("should handle withStructure when structure has different nodes", () => {
       const originalStructure = new WorkflowGraphStructure();
-      const originalNode: WorkflowNode = { id: "original", type: "START", config: {} };
+      const originalNode = createTestNode({ id: "original", type: "START", config: {} });
       originalStructure.addNode(originalNode);
 
       const newStructure = new WorkflowGraphStructure();
-      const newNode: WorkflowNode = { id: "new", type: "START", config: {} };
+      const newNode = createTestNode({ id: "new", type: "START", config: {} });
       newStructure.addNode(newNode);
 
       const metadata = new WorkflowGraphMetadata();
@@ -293,7 +294,7 @@ describe("WorkflowGraph Composition Edge Cases", () => {
       expect(originalGraph.metadata).toBe(metadata);
 
       // All transformations should have different structures but same metadata
-      transformations.forEach((graph, index) => {
+      transformations.forEach((graph, _index) => {
         expect(graph.structure).not.toBe(structure);
         expect(graph.metadata).toBe(metadata);
       });
@@ -306,7 +307,7 @@ describe("WorkflowGraph Composition Edge Cases", () => {
 
       // Simulate rapid modifications
       for (let i = 0; i < 100; i++) {
-        const node: WorkflowNode = { id: `node${i}`, type: "LLM", config: { index: i } };
+        const node = createTestNode({ id: `node${i}`, type: "LLM", config: { profileId: "test-profile" } });
         graph.addNode(node);
 
         if (i > 0) {

@@ -13,6 +13,7 @@ import type { LLMResult, AgentHookTriggeredEvent } from "@wf-agent/types";
 import type { EventRegistry } from "../../../../core/registry/event-registry.js";
 import type { MessageStream } from "../../../../core/llm/message-stream.js";
 import type { LLMExecutionCoordinator as CoreLLMExecutionCoordinator } from "../../../../core/coordinators/llm-execution-coordinator.js";
+import type { AgentStateCoordinator } from "../../../state-managers/agent-state-coordinator.js";
 import {
   AgentIterationCoordinator,
   type AgentLoopStreamEvent,
@@ -46,11 +47,12 @@ vi.mock("../../../../core/utils/event/builders/agent-events.js", () => ({
 
 describe("AgentIterationCoordinator", () => {
   let coordinator: AgentIterationCoordinator;
-  let mockCoreCoordinator: CoreLLMExecutionCoordinator;
-  let mockToolExecutionCoordinator: ToolExecutionCoordinator;
-  let mockEmitAgentEvent: (event: AgentHookTriggeredEvent) => Promise<void>;
-  let mockEventManager: EventRegistry;
-  let mockEntity: any;
+let mockCoreCoordinator: CoreLLMExecutionCoordinator;
+   let mockToolExecutionCoordinator: ToolExecutionCoordinator;
+   let mockEmitAgentEvent: (event: AgentHookTriggeredEvent) => Promise<void>;
+   let mockEventManager: EventRegistry;
+   let mockStateCoordinator: AgentStateCoordinator;
+   let mockEntity: any;
   let mockConversationManager: any;
 
   beforeEach(() => {
@@ -71,6 +73,12 @@ describe("AgentIterationCoordinator", () => {
     mockEventManager = {
       emit: vi.fn().mockResolvedValue(undefined),
     } as unknown as EventRegistry;
+
+    mockStateCoordinator = {
+      getMessages: vi.fn().mockReturnValue([]),
+      addMessage: vi.fn(),
+      snapshot: vi.fn(),
+    } as unknown as AgentStateCoordinator;
 
     mockEntity = {
       id: "agent-loop-1",
@@ -103,6 +111,7 @@ describe("AgentIterationCoordinator", () => {
       toolExecutionCoordinator: mockToolExecutionCoordinator,
       emitAgentEvent: mockEmitAgentEvent,
       eventManager: mockEventManager,
+      stateCoordinator: mockStateCoordinator,
     });
   });
 
@@ -351,6 +360,7 @@ describe("AgentIterationCoordinator", () => {
         coreCoordinator: mockCoreCoordinator,
         toolExecutionCoordinator: mockToolExecutionCoordinator,
         emitAgentEvent: mockEmitAgentEvent,
+        stateCoordinator: mockStateCoordinator,
       });
 
       const event = {

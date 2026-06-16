@@ -219,7 +219,15 @@ describe("AgentLoopLifecycle", () => {
     });
 
     it("should clone conversation manager snapshot", () => {
-      const snapshot = { messages: [{ role: "user", content: "hello" }] };
+      const snapshot = {
+        messages: [{ role: "user" as const, content: "hello" }],
+        markMap: {
+          originalIndices: [],
+          batchBoundaries: [],
+          boundaryToBatch: [],
+          currentBatch: 0,
+        },
+      };
       mockStateCoordinator.createSnapshot = vi.fn(() => snapshot);
 
       cloneAgentLoop(mockEntity, mockStateCoordinator);

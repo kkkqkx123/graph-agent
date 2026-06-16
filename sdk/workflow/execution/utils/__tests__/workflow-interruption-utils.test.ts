@@ -8,15 +8,15 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const mockCheckExecutionInterruption = vi.hoisted(() => vi.fn());
 const mockGetExecutionInterruptionDescription = vi.hoisted(() =>
   vi.fn((result: Record<string, unknown>) => {
-    switch (result.type) {
+    switch (result["type"]) {
       case "continue":
         return "Workflow execution continuing";
       case "paused":
-        return `Workflow execution paused at node: ${result.nodeId}`;
+        return `Workflow execution paused at node: ${result["nodeId"]}`;
       case "stopped":
-        return `Workflow execution stopped at node: ${result.nodeId}`;
+        return `Workflow execution stopped at node: ${result["nodeId"]}`;
       case "aborted":
-        return result.reason ? String(result.reason) : "Workflow execution operation aborted";
+        return result["reason"] ? String(result["reason"]) : "Workflow execution operation aborted";
       default:
         return "Unknown workflow interruption state";
     }

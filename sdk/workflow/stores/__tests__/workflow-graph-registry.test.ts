@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 import { WorkflowGraphRegistry } from "../workflow-graph-registry.js";
-import type { WorkflowGraph } from "../../types/graph/preprocessed-graph.js";
+import type { WorkflowGraph } from "../../entities/workflow-graph.js";
 
 function createMockGraph(
   workflowId: string,
@@ -12,26 +12,39 @@ function createMockGraph(
 ): WorkflowGraph {
   return {
     workflowId,
+    structure: {} as any,
+    metadata: {} as any,
+    nodes: new Map(),
+    edges: new Map(),
+    adjacencyList: new Map(),
+    reverseAdjacencyList: new Map(),
+    startNodeId: undefined,
+    endNodeIds: new Set(),
+    triggers: [],
+    variables: [],
+    hasNode: () => false,
+    hasEdge: () => false,
+    getNode: () => undefined,
+    getEdge: () => undefined,
+    getOutgoingNeighbors: () => [],
+    getIncomingNeighbors: () => [],
+    hasEdgeBetween: () => false,
+    addNode: () => {},
+    addEdge: () => {},
+    getAllNodeIds: () => [],
+    getAllEdgeIds: () => [],
+    getNodeCount: () => 0,
+    getEdgeCount: () => 0,
+    getSourceNodes: () => [],
+    getSinkNodes: () => [],
+    isNodeOfType: () => false,
+    isPreprocessed: () => false,
+    withStructure: () => ({} as any),
+    withMetadata: () => ({} as any),
     workflowVersion: "1.0",
     idMapping: new Map(),
     nodeConfigs: new Map(),
     triggerConfigs: new Map(),
-    subgraphRelationships: [],
-    graphAnalysis: {
-      entryNodeId: "node-1",
-      exitNodeIds: ["node-2"],
-      hasCycles: false,
-      forkJoinPairs: [],
-      loopPairs: [],
-    },
-    validationResult: { valid: true, errors: [] },
-    topologicalOrder: ["node-1", "node-2"],
-    subgraphMergeLogs: [],
-    processedAt: Date.now(),
-    hasSubgraphs: false,
-    subworkflowIds: new Set(),
-    nodes: [],
-    edges: [],
     ...overrides,
   } as unknown as WorkflowGraph;
 }

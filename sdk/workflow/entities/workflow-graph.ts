@@ -25,15 +25,16 @@ import type {
   WorkflowEdge,
   WorkflowTrigger,
   VariableDefinition,
-  StaticNodeType,
   StaticNode,
-  IdMapping,
-  WorkflowGraphAnalysis,
-  PreprocessValidationResult,
-  SubgraphRelationship,
-  SubgraphMergeLog,
 } from "@wf-agent/types";
 import type { WorkflowGraphStructure as WorkflowGraphStructureType } from "@wf-agent/types";
+import type { WorkflowGraphAnalysis } from "../types/graph/analysis.js";
+import type {
+  IdMapping,
+  SubgraphRelationship,
+  SubgraphMergeLog,
+  PreprocessValidationResult,
+} from "../types/preprocess.js";
 import { WorkflowGraphStructure } from "./workflow-graph-structure.js";
 import { WorkflowGraphMetadata } from "./workflow-graph-metadata.js";
 
@@ -301,7 +302,7 @@ export class WorkflowGraph implements WorkflowGraphStructureType {
   getNodeConfigByType<T extends import("@wf-agent/types").StaticNodeType>(
     nodeId: ID,
     nodeType: T,
-  ): import("@wf-agent/types").Extract<import("@wf-agent/types").StaticNode, { type: T }> | undefined {
+  ): Extract<import("@wf-agent/types").StaticNode, { type: T }> | undefined {
     return this.metadata.getNodeConfigByType(nodeId, nodeType);
   }
 

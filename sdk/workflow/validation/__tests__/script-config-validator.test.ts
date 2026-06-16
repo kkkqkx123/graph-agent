@@ -132,9 +132,13 @@ describe("CodeConfigValidator", () => {
   describe("validateSandboxConfig", () => {
     it("should validate valid sandbox config", () => {
       const config: SandboxConfig = {
-        enabled: true,
-        memoryLimit: 512,
-        timeout: 30000,
+        profile: "default",
+        mode: "strict" as const,
+        resourceLimits: {
+          memory: 512,
+          cpu: 1,
+          disk: 1024,
+        },
       };
 
       const result = validator.validateSandboxConfig(config);

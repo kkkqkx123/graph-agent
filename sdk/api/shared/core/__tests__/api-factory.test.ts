@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { APIFactory, type AllAPIs } from "../api-factory.js";
+import { APIFactory } from "../api-factory.js";
 import { APIDependencyManager } from "../sdk-dependencies.js";
 import type { GlobalContext } from "../../../../core/global-context.js";
 import type { Container } from "@wf-agent/common-utils";

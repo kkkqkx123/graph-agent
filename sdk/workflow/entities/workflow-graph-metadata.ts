@@ -137,7 +137,7 @@ export class WorkflowGraphMetadata {
       },
       edgeStats: {
         total: 0,
-        byType: new Map<string, number>(),
+        byType: new Map(),
       },
     };
     this.validationResult = {

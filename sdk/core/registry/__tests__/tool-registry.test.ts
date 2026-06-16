@@ -61,7 +61,7 @@ describe("ToolRegistry", () => {
       const t1 = createValidTool({ id: "tool_1" });
       const t2 = createValidTool({ id: "tool_2" });
       await registry.registerTools([t1, t2]);
-      expect(registry.size()).toBe(2);
+      expect(registry.size).toBe(2);
     });
 
     it("should throw on duplicate in batch", async () => {
@@ -178,15 +178,15 @@ describe("ToolRegistry", () => {
       await registry.registerTool(createValidTool({ id: "tool_1" }));
       await registry.registerTool(createValidTool({ id: "tool_2" }));
       registry.clear();
-      expect(registry.size()).toBe(0);
+      expect(registry.size).toBe(0);
     });
   });
 
   describe("size", () => {
     it("should return correct count", async () => {
-      expect(registry.size()).toBe(0);
+      expect(registry.size).toBe(0);
       await registry.registerTool(createValidTool());
-      expect(registry.size()).toBe(1);
+      expect(registry.size).toBe(1);
     });
   });
 

@@ -76,7 +76,7 @@ describe("NodeTemplateRegistry", () => {
       const t1 = createValidStartTemplate({ name: "t1" });
       const t2 = createValidStartTemplate({ name: "t2" });
       registry.registerBatch([t1, t2]);
-      expect(registry.size()).toBe(2);
+      expect(registry.size).toBe(2);
     });
 
     it("should throw on first invalid template", () => {
@@ -155,7 +155,7 @@ describe("NodeTemplateRegistry", () => {
       registry.register(createValidStartTemplate({ name: "t1" }));
       registry.register(createValidStartTemplate({ name: "t2" }));
       registry.unregisterBatch(["t1", "t2"]);
-      expect(registry.size()).toBe(0);
+      expect(registry.size).toBe(0);
     });
 
     it("should throw on first non-existent template", () => {
@@ -239,18 +239,18 @@ describe("NodeTemplateRegistry", () => {
       registry.register(createValidStartTemplate({ name: "t1" }));
       registry.register(createValidStartTemplate({ name: "t2" }));
       registry.clear();
-      expect(registry.size()).toBe(0);
+      expect(registry.size).toBe(0);
     });
   });
 
   describe("size", () => {
     it("should return 0 for empty registry", () => {
-      expect(registry.size()).toBe(0);
+      expect(registry.size).toBe(0);
     });
 
     it("should return correct count", () => {
       registry.register(createValidStartTemplate({ name: "t1" }));
-      expect(registry.size()).toBe(1);
+      expect(registry.size).toBe(1);
     });
   });
 

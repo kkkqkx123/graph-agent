@@ -202,7 +202,8 @@ describe("AgentHookHandler", () => {
     ];
     vi.mocked(filterAndSortHooks).mockReturnValue(matchingHooks);
 
-    await executeAgentHook(mockEntity, "BEFORE_ITERATION", mockEmitEvent);
+    const mockStateCoordinator = { createSnapshot: vi.fn() } as any;
+    await executeAgentHook(mockEntity, "BEFORE_ITERATION", mockEmitEvent, mockStateCoordinator);
 
     // The executeHooks should have been called with an array of handlers
     // where at least one is the event emitter handler

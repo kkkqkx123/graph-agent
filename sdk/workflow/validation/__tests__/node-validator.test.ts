@@ -5,42 +5,37 @@
 
 import { describe, it, expect } from "vitest";
 import { NodeValidator } from "../node-validator.js";
-import type { StaticNode } from "@wf-agent/types";
 
 describe("NodeValidator", () => {
   const validator = new NodeValidator();
 
   describe("validateNode", () => {
     it("should validate a valid START node", () => {
-      const node: StaticNode = {
+      const node = {
         id: "start-1",
         name: "Start Node",
         type: "START",
         config: {},
-        outgoingEdgeIds: ["edge-1"],
-        incomingEdgeIds: [],
-      };
+      } as any;
 
       const result = validator.validateNode(node);
       expect(result.isOk()).toBe(true);
     });
 
     it("should validate a valid END node", () => {
-      const node: StaticNode = {
+      const node = {
         id: "end-1",
         name: "End Node",
         type: "END",
         config: {},
-        outgoingEdgeIds: [],
-        incomingEdgeIds: ["edge-1"],
-      };
+      } as any;
 
       const result = validator.validateNode(node);
       expect(result.isOk()).toBe(true);
     });
 
     it("should validate a valid SCRIPT node", () => {
-      const node: StaticNode = {
+      const node = {
         id: "script-1",
         name: "Script Node",
         type: "SCRIPT",
@@ -48,9 +43,7 @@ describe("NodeValidator", () => {
           scriptName: "test-script",
           risk: "low",
         },
-        outgoingEdgeIds: ["edge-2"],
-        incomingEdgeIds: ["edge-1"],
-      };
+      } as any;
 
       const result = validator.validateNode(node);
       expect(result.isOk()).toBe(true);
@@ -59,40 +52,34 @@ describe("NodeValidator", () => {
 
   describe("validateNodes", () => {
     it("should validate multiple nodes", () => {
-      const nodes: StaticNode[] = [
+      const nodes = [
         {
           id: "start-1",
           name: "Start Node",
           type: "START",
           config: {},
-          outgoingEdgeIds: ["edge-1"],
-          incomingEdgeIds: [],
         },
         {
           id: "end-1",
           name: "End Node",
           type: "END",
           config: {},
-          outgoingEdgeIds: [],
-          incomingEdgeIds: ["edge-1"],
         },
-      ];
+      ] as any[];
 
       const results = validator.validateNodes(nodes);
       expect(results).toHaveLength(2);
-      expect(results[0].isOk()).toBe(true);
-      expect(results[1].isOk()).toBe(true);
+      expect(results[0]!.isOk()).toBe(true);
+      expect(results[1]!.isOk()).toBe(true);
     });
 
     it("should return errors for invalid nodes", () => {
-      const nodes: StaticNode[] = [
+      const nodes = [
         {
           id: "start-1",
           name: "Start Node",
           type: "START",
           config: {},
-          outgoingEdgeIds: [],
-          incomingEdgeIds: [],
         },
         {
           id: "fork-1",
@@ -101,15 +88,13 @@ describe("NodeValidator", () => {
           config: {
             forkPaths: [],
           },
-          outgoingEdgeIds: [],
-          incomingEdgeIds: [],
-        } as any,
-      ];
+        },
+      ] as any[];
 
       const results = validator.validateNodes(nodes);
       expect(results).toHaveLength(2);
-      expect(results[0].isOk()).toBe(true);
-      expect(results[1].isErr()).toBe(true);
+      expect(results[0]!.isOk()).toBe(true);
+      expect(results[1]!.isErr()).toBe(true);
     });
   });
 
@@ -148,7 +133,7 @@ describe("NodeValidator", () => {
       const result = validator.validateRawNode(rawNode);
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error[0].message).toContain("id is required");
+        expect(result.error[0]!.message).toContain("id is required");
       }
     });
 
@@ -174,7 +159,7 @@ describe("NodeValidator", () => {
       const result = validator.validateRawNode(rawNode);
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error[0].message).toContain("name is required");
+        expect(result.error[0]!.message).toContain("name is required");
       }
     });
 
@@ -189,7 +174,7 @@ describe("NodeValidator", () => {
       const result = validator.validateRawNode(rawNode);
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error[0].message).toContain("Invalid node type");
+        expect(result.error[0]!.message).toContain("Invalid node type");
       }
     });
 
@@ -203,7 +188,7 @@ describe("NodeValidator", () => {
       const result = validator.validateRawNode(rawNode);
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error[0].message).toContain("config is required");
+        expect(result.error[0]!.message).toContain("config is required");
       }
     });
 
@@ -219,7 +204,7 @@ describe("NodeValidator", () => {
       const result = validator.validateRawNode(rawNode);
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error[0].message).toContain("outgoingEdgeIds must be an array");
+        expect(result.error[0]!.message).toContain("outgoingEdgeIds must be an array");
       }
     });
 
@@ -235,7 +220,7 @@ describe("NodeValidator", () => {
       const result = validator.validateRawNode(rawNode);
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error[0].message).toContain("incomingEdgeIds must be an array");
+        expect(result.error[0]!.message).toContain("incomingEdgeIds must be an array");
       }
     });
   });

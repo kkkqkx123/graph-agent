@@ -112,6 +112,7 @@ describe("validateWorkflowConfig", () => {
   describe("invalid workflows", () => {
     it("should fail validation when id is missing", () => {
       const workflow = {
+        id: "",
         name: "Test Workflow",
         type: "STANDALONE",
         version: "1.0.0",
@@ -135,7 +136,7 @@ describe("validateWorkflowConfig", () => {
         edges: [],
         createdAt: Date.now(),
         updatedAt: Date.now(),
-      } as WorkflowTemplate;
+      } as unknown as WorkflowTemplate;
 
       const result = validateWorkflowConfig(workflow);
       expect(result.isErr()).toBe(true);
@@ -246,10 +247,10 @@ describe("getWorkflowValidationWarnings", () => {
       nodes.push({
         id: `node-${i}`,
         name: `Node ${i}`,
-        type: "SCRIPT",
+        type: "SCRIPT" as const,
         config: {
           scriptName: `script-${i}`,
-          risk: "low",
+          risk: "low" as const,
         },
       });
     }

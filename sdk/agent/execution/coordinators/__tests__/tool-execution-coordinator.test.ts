@@ -13,6 +13,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import type { ToolCallExecutor } from "../../../../core/executors/tool-call-executor.js";
 import type { EventRegistry } from "../../../../core/registry/event-registry.js";
 import type { ToolApprovalHandler, ToolBatchResult } from "@wf-agent/types";
+import type { AgentStateCoordinator } from "../../../state-managers/agent-state-coordinator.js";
 import { ToolExecutionCoordinator } from "../tool-execution-coordinator.js";
 
 // Mock executeAgentHook
@@ -34,6 +35,7 @@ describe("ToolExecutionCoordinator", () => {
   let coordinator: ToolExecutionCoordinator;
   let mockToolCallExecutor: ToolCallExecutor;
   let mockEventManager: EventRegistry;
+  let mockStateCoordinator: AgentStateCoordinator;
   let mockEntity: any;
   let mockConversationManager: any;
 
@@ -47,6 +49,11 @@ describe("ToolExecutionCoordinator", () => {
     mockEventManager = {
       emit: vi.fn().mockResolvedValue(undefined),
     } as unknown as EventRegistry;
+
+    mockStateCoordinator = {
+      getMessages: vi.fn().mockReturnValue([]),
+      addMessage: vi.fn(),
+    } as unknown as AgentStateCoordinator;
 
     mockEntity = {
       id: "agent-loop-1",
@@ -72,6 +79,7 @@ describe("ToolExecutionCoordinator", () => {
       coordinator = new ToolExecutionCoordinator({
         toolCallExecutor: mockToolCallExecutor,
         eventManager: mockEventManager,
+        stateCoordinator: mockStateCoordinator,
       });
 
       mockToolCallExecutor.executeToolCalls = vi.fn().mockResolvedValue([
@@ -147,6 +155,7 @@ describe("ToolExecutionCoordinator", () => {
         toolCallExecutor: mockToolCallExecutor,
         eventManager: mockEventManager,
         toolApprovalHandler: mockApprovalHandler,
+        stateCoordinator: mockStateCoordinator,
       });
     });
 
@@ -268,6 +277,7 @@ describe("ToolExecutionCoordinator", () => {
       coordinator = new ToolExecutionCoordinator({
         toolCallExecutor: mockToolCallExecutor,
         eventManager: mockEventManager,
+        stateCoordinator: mockStateCoordinator,
       });
 
       mockToolCallExecutor.executeToolCalls = vi.fn().mockResolvedValue([

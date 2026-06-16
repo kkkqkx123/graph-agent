@@ -14,6 +14,7 @@ import type {
 } from "@wf-agent/types";
 import type { SubgraphMergeOptions, SubgraphMergeResult } from "../types/graph/merge.js";
 
+
 import { WorkflowGraphStructure } from "../entities/workflow-graph-structure.js";
 import { WorkflowGraphMetadata } from "../entities/workflow-graph-metadata.js";
 import { WorkflowGraph } from "../entities/workflow-graph.js";
@@ -296,7 +297,7 @@ export class WorkflowGraphBuilder {
         }
 
         // Perform graph expansion
-        const mergeResult = this.mergeGraph(graph as WorkflowGraph, subgraphGraph, node.id, {
+        const mergeResult = this.mergeGraph(graph as unknown as WorkflowGraphStructure, subgraphGraph, node.id, {
           nodeIdPrefix: `${node.id}_`,
           edgeIdPrefix: `${node.id}_`,
           subworkflowId,

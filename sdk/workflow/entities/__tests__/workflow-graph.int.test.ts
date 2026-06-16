@@ -8,7 +8,19 @@
 import { WorkflowGraph } from "../workflow-graph.js";
 import { WorkflowGraphStructure } from "../workflow-graph-structure.js";
 import { WorkflowGraphMetadata } from "../workflow-graph-metadata.js";
-import type { WorkflowNode, WorkflowEdge } from "@wf-agent/types";
+import type { WorkflowNode, WorkflowEdge, RuntimeNodeType } from "@wf-agent/types";
+
+function createTestNode(partial: Partial<WorkflowNode> & { id: string; type: RuntimeNodeType }): WorkflowNode {
+  return {
+    workflowId: "test-workflow",
+    outgoingEdgeIds: [],
+    incomingEdgeIds: [],
+    hooks: [],
+    checkpointBeforeExecute: false,
+    checkpointAfterExecute: false,
+    ...partial,
+  } as WorkflowNode;
+}
 
 describe("WorkflowGraph Composition Pattern", () => {
   let structure: WorkflowGraphStructure;
@@ -44,11 +56,7 @@ describe("WorkflowGraph Composition Pattern", () => {
 
   describe("Delegated Structure Methods", () => {
     test("should delegate addNode to structure", () => {
-      const node: WorkflowNode = {
-        id: "node1",
-        type: "START",
-        config: {},
-      };
+      const node = createTestNode({ id: "node1", type: "START", config: {} });
 
       graph.addNode(node);
 
@@ -58,8 +66,8 @@ describe("WorkflowGraph Composition Pattern", () => {
     });
 
     test("should delegate addEdge to structure", () => {
-      const node1: WorkflowNode = { id: "node1", type: "START", config: {} };
-      const node2: WorkflowNode = { id: "node2", type: "END", config: {} };
+      const node1 = createTestNode({ id: "node1", type: "START", config: {} });
+      const node2 = createTestNode({ id: "node2", type: "END", config: {} });
       const edge: WorkflowEdge = {
         id: "edge1",
         sourceNodeId: "node1",
@@ -77,8 +85,8 @@ describe("WorkflowGraph Composition Pattern", () => {
     });
 
     test("should delegate graph traversal methods", () => {
-      const node1: WorkflowNode = { id: "node1", type: "START", config: {} };
-      const node2: WorkflowNode = { id: "node2", type: "END", config: {} };
+      const node1 = createTestNode({ id: "node1", type: "START", config: {} });
+      const node2 = createTestNode({ id: "node2", type: "END", config: {} });
       const edge: WorkflowEdge = {
         id: "edge1",
         sourceNodeId: "node1",
@@ -100,8 +108,9 @@ describe("WorkflowGraph Composition Pattern", () => {
     test("should provide access to node configs from metadata", () => {
       const nodeConfig = {
         id: "node1",
-        type: "LLM",
-        config: { model: "gpt-4" },
+        name: "LLM Node",
+        type: "LLM" as const,
+        config: { profileId: "test-profile" },
       };
 
       graph.setNodeConfig("node1", nodeConfig);
@@ -113,9 +122,10 @@ describe("WorkflowGraph Composition Pattern", () => {
     test("should provide access to trigger configs from metadata", () => {
       const triggerConfig = {
         id: "trigger1",
-        type: "webhook",
-        config: { path: "/webhook" },
-      };
+        name: "Webhook Trigger",
+        condition: { eventType: "WORKFLOW_START" as const },
+        action: { type: "execute_triggered_subworkflow" as const, subworkflowId: "sub-1" },
+      } as any;
 
       graph.setTriggerConfig("trigger1", triggerConfig);
 
@@ -126,8 +136,9 @@ describe("WorkflowGraph Composition Pattern", () => {
     test("should check node types correctly", () => {
       const nodeConfig = {
         id: "node1",
-        type: "FORK",
-        config: { forkPaths: [] },
+        name: "Fork Node",
+        type: "FORK" as const,
+        config: { forkPaths: [], forkStrategy: "parallel" as const },
       };
 
       graph.setNodeConfig("node1", nodeConfig);
@@ -150,7 +161,7 @@ describe("WorkflowGraph Composition Pattern", () => {
 
     test("should allow creation with new structure", () => {
       const newStructure = new WorkflowGraphStructure();
-      const newNode: WorkflowNode = { id: "newNode", type: "START", config: {} };
+      const newNode = createTestNode({ id: "newNode", type: "START", config: {} });
       newStructure.addNode(newNode);
 
       const newGraph = graph.withStructure(newStructure);
@@ -160,34 +171,12 @@ describe("WorkflowGraph Composition Pattern", () => {
       expect(newGraph.hasNode("newNode")).toBe(true);
     });
 
-    test("should allow creation with new metadata", () => {
-      const newMetadata = new WorkflowGraphMetadata();
-      newMetadata.workflowId = "new-workflow";
-
-      const newGraph = graph.withMetadata(newMetadata);
-
-      expect(newGraph.structure).toBe(structure);
-      expect(newGraph.metadata).toBe(newMetadata);
-      expect(newGraph.workflowId).toBe("new-workflow");
-    });
-  });
-
-  describe("Immutability Guarantees", () => {
-    test("structure should remain immutable through graph operations", () => {
-      const node: WorkflowNode = { id: "node1", type: "START", config: {} };
-      const originalNodesSize = structure.nodes.size;
-
-      graph.addNode(node);
-
-      expect(structure.nodes.size).toBe(originalNodesSize + 1);
-      expect(graph.getNode("node1")).toBe(node);
-    });
-
     test("metadata should track changes correctly", () => {
       const nodeConfig = {
         id: "node1",
-        type: "LLM",
-        config: { model: "gpt-4" },
+        name: "LLM Node",
+        type: "LLM" as const,
+        config: { profileId: "test-profile" },
       };
 
       graph.setNodeConfig("node1", nodeConfig);
@@ -199,8 +188,8 @@ describe("WorkflowGraph Composition Pattern", () => {
 
   describe("Graph Statistics", () => {
     test("should provide correct node and edge counts", () => {
-      const node1: WorkflowNode = { id: "node1", type: "START", config: {} };
-      const node2: WorkflowNode = { id: "node2", type: "END", config: {} };
+      const node1 = createTestNode({ id: "node1", type: "START", config: {} });
+      const node2 = createTestNode({ id: "node2", type: "END", config: {} });
       const edge: WorkflowEdge = {
         id: "edge1",
         sourceNodeId: "node1",
@@ -219,9 +208,94 @@ describe("WorkflowGraph Composition Pattern", () => {
     });
 
     test("should identify source and sink nodes correctly", () => {
-      const sourceNode: WorkflowNode = { id: "source", type: "START", config: {} };
-      const middleNode: WorkflowNode = { id: "middle", type: "LLM", config: {} };
-      const sinkNode: WorkflowNode = { id: "sink", type: "END", config: {} };
+      const sourceNode = createTestNode({ id: "source", type: "START" as const, config: {} });
+      const middleNode = createTestNode({ id: "middle", type: "LLM" as const, config: { profileId: "test" } });
+      const sinkNode = createTestNode({ id: "sink", type: "END" as const, config: {} });
+
+      graph.addNode(sourceNode);
+      graph.addNode(middleNode);
+      graph.addNode(sinkNode);
+
+      graph.addEdge({
+        id: "edge1",
+        sourceNodeId: "source",
+        targetNodeId: "middle",
+        type: "DEFAULT",
+      });
+      graph.addEdge({
+        id: "edge2",
+        sourceNodeId: "middle",
+        targetNodeId: "sink",
+        type: "DEFAULT",
+      });
+
+      expect(graph.getSourceNodes()).toContainEqual(sourceNode);
+      expect(graph.getSinkNodes()).toContainEqual(sinkNode);
+    });
+
+    test("should allow creation with new metadata", () => {
+      const newMetadata = new WorkflowGraphMetadata();
+      newMetadata.workflowId = "new-workflow";
+
+      const newGraph = graph.withMetadata(newMetadata);
+
+      expect(newGraph.structure).toBe(structure);
+      expect(newGraph.metadata).toBe(newMetadata);
+      expect(newGraph.workflowId).toBe("new-workflow");
+    });
+  });
+
+  describe("Immutability Guarantees", () => {
+    test("structure should remain immutable through graph operations", () => {
+      const node = createTestNode({ id: "node1", type: "START", config: {} });
+      const originalNodesSize = structure.nodes.size;
+
+      graph.addNode(node);
+
+      expect(structure.nodes.size).toBe(originalNodesSize + 1);
+      expect(graph.getNode("node1")).toBe(node);
+    });
+
+    test("metadata should track changes correctly", () => {
+      const nodeConfig = {
+        id: "node1",
+        name: "LLM Node",
+        type: "LLM" as const,
+        config: { profileId: "test-profile" },
+      };
+
+      graph.setNodeConfig("node1", nodeConfig);
+
+      expect(metadata.nodeConfigs.size).toBe(1);
+      expect(graph.getNodeConfig("node1")).toBe(nodeConfig);
+    });
+  });
+
+  describe("Graph Statistics", () => {
+    test("should provide correct node and edge counts", () => {
+      const node1 = createTestNode({ id: "node1", type: "START", config: {} });
+      const node2 = createTestNode({ id: "node2", type: "END", config: {} });
+      const edge: WorkflowEdge = {
+        id: "edge1",
+        sourceNodeId: "node1",
+        targetNodeId: "node2",
+        type: "DEFAULT",
+      };
+
+      graph.addNode(node1);
+      graph.addNode(node2);
+      graph.addEdge(edge);
+
+      expect(graph.getNodeCount()).toBe(2);
+      expect(graph.getEdgeCount()).toBe(1);
+      expect(graph.getAllNodeIds()).toHaveLength(2);
+      expect(graph.getAllEdgeIds()).toHaveLength(1);
+    });
+
+    test("should identify source and sink nodes correctly", () => {
+      const sourceNode = createTestNode({ id: "source", type: "START", config: {} });
+      const middleNode = createTestNode({ id: "middle", type: "LLM", config: { profileId: "test" } });
+      const sinkNode = createTestNode({ id: "sink", type: "END", config: {} });
 
       graph.addNode(sourceNode);
       graph.addNode(middleNode);

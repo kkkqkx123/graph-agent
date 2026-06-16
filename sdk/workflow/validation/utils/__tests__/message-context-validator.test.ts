@@ -19,6 +19,7 @@ describe("validateAndMapMessageContexts", () => {
         type: "SUBGRAPH",
         config: {
           subgraphId: "child-workflow",
+          async: false,
           messagePassing: {
             inputs: [
               {
@@ -34,9 +35,7 @@ describe("validateAndMapMessageContexts", () => {
             ],
           },
         } as SubgraphNodeConfig,
-        outgoingEdgeIds: [],
-        incomingEdgeIds: [],
-      };
+      } as any;
 
       const startNode: StaticNode = {
         id: "start-1",
@@ -47,13 +46,10 @@ describe("validateAndMapMessageContexts", () => {
             {
               externalName: "parent-query",
               internalName: "query",
-              type: "string",
             },
           ],
         } as WorkflowStartConfig,
-        outgoingEdgeIds: [],
-        incomingEdgeIds: [],
-      };
+      } as any;
 
       const result = validateAndMapMessageContexts(subgraphNode, startNode);
       expect(result.isOk()).toBe(true);
@@ -70,6 +66,7 @@ describe("validateAndMapMessageContexts", () => {
         type: "SUBGRAPH",
         config: {
           subgraphId: "child-workflow",
+          async: false,
           messagePassing: {
             inputs: [
               {
@@ -79,9 +76,7 @@ describe("validateAndMapMessageContexts", () => {
             ],
           },
         } as SubgraphNodeConfig,
-        outgoingEdgeIds: [],
-        incomingEdgeIds: [],
-      };
+      } as any;
 
       const startNode: StaticNode = {
         id: "start-1",
@@ -92,13 +87,10 @@ describe("validateAndMapMessageContexts", () => {
             {
               externalName: "parent-query",
               internalName: "query",
-              type: "string",
             },
           ],
         } as WorkflowStartConfig,
-        outgoingEdgeIds: [],
-        incomingEdgeIds: [],
-      };
+      } as any;
 
       const result = validateAndMapMessageContexts(subgraphNode, startNode);
       expect(result.isOk()).toBe(true);
@@ -111,6 +103,7 @@ describe("validateAndMapMessageContexts", () => {
         type: "SUBGRAPH",
         config: {
           subgraphId: "child-workflow",
+          async: false,
           messagePassing: {
             outputs: [
               {
@@ -120,18 +113,14 @@ describe("validateAndMapMessageContexts", () => {
             ],
           },
         } as SubgraphNodeConfig,
-        outgoingEdgeIds: [],
-        incomingEdgeIds: [],
-      };
+      } as any;
 
       const startNode: StaticNode = {
         id: "start-1",
         name: "Start Node",
         type: "START",
         config: {} as WorkflowStartConfig,
-        outgoingEdgeIds: [],
-        incomingEdgeIds: [],
-      };
+      } as any;
 
       const result = validateAndMapMessageContexts(subgraphNode, startNode);
       expect(result.isOk()).toBe(true);
@@ -146,24 +135,21 @@ describe("validateAndMapMessageContexts", () => {
         type: "SUBGRAPH",
         config: {
           subgraphId: "child-workflow",
+          async: false,
         } as SubgraphNodeConfig,
-        outgoingEdgeIds: [],
-        incomingEdgeIds: [],
-      };
+      } as any;
 
       const startNode: StaticNode = {
         id: "start-1",
         name: "Start Node",
         type: "START",
         config: {} as WorkflowStartConfig,
-        outgoingEdgeIds: [],
-        incomingEdgeIds: [],
-      };
+      } as any;
 
       const result = validateAndMapMessageContexts(subgraphNode, startNode);
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error[0].message).toContain("must configure messagePassing");
+        expect(result.error[0]!.message).toContain("must configure messagePassing");
       }
     });
 
@@ -174,6 +160,7 @@ describe("validateAndMapMessageContexts", () => {
         type: "SUBGRAPH",
         config: {
           subgraphId: "child-workflow",
+          async: false,
           messagePassing: {
             inputs: [
               {
@@ -183,9 +170,7 @@ describe("validateAndMapMessageContexts", () => {
             ],
           },
         } as SubgraphNodeConfig,
-        outgoingEdgeIds: [],
-        incomingEdgeIds: [],
-      };
+      } as any;
 
       const startNode: StaticNode = {
         id: "start-1",
@@ -196,18 +181,15 @@ describe("validateAndMapMessageContexts", () => {
             {
               externalName: "parent-query",
               internalName: "query",
-              type: "string",
             },
           ],
         } as WorkflowStartConfig,
-        outgoingEdgeIds: [],
-        incomingEdgeIds: [],
-      };
+      } as any;
 
       const result = validateAndMapMessageContexts(subgraphNode, startNode);
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error[0].message).toContain("does not accept input");
+        expect(result.error[0]!.message).toContain("does not accept input");
       }
     });
   });
@@ -221,6 +203,7 @@ describe("hasMessageContextConfig", () => {
       type: "SUBGRAPH",
       config: {
         subgraphId: "child-workflow",
+        async: false,
         messagePassing: {
           inputs: [
             {
@@ -230,9 +213,7 @@ describe("hasMessageContextConfig", () => {
           ],
         },
       } as SubgraphNodeConfig,
-      outgoingEdgeIds: [],
-      incomingEdgeIds: [],
-    };
+    } as any;
 
     expect(hasMessageContextConfig(node)).toBe(true);
   });
@@ -244,6 +225,7 @@ describe("hasMessageContextConfig", () => {
       type: "SUBGRAPH",
       config: {
         subgraphId: "child-workflow",
+        async: false,
         messagePassing: {
           outputs: [
             {
@@ -253,9 +235,7 @@ describe("hasMessageContextConfig", () => {
           ],
         },
       } as SubgraphNodeConfig,
-      outgoingEdgeIds: [],
-      incomingEdgeIds: [],
-    };
+    } as any;
 
     expect(hasMessageContextConfig(node)).toBe(true);
   });
@@ -267,10 +247,9 @@ describe("hasMessageContextConfig", () => {
       type: "SUBGRAPH",
       config: {
         subgraphId: "child-workflow",
+        async: false,
       } as SubgraphNodeConfig,
-      outgoingEdgeIds: [],
-      incomingEdgeIds: [],
-    };
+    } as any;
 
     expect(hasMessageContextConfig(node)).toBe(false);
   });
@@ -282,14 +261,13 @@ describe("hasMessageContextConfig", () => {
       type: "SUBGRAPH",
       config: {
         subgraphId: "child-workflow",
+        async: false,
         messagePassing: {
           inputs: [],
           outputs: [],
         },
       } as SubgraphNodeConfig,
-      outgoingEdgeIds: [],
-      incomingEdgeIds: [],
-    };
+    } as any;
 
     expect(hasMessageContextConfig(node)).toBe(false);
   });

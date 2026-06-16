@@ -14,7 +14,6 @@ describe("validateNodeTemplateConfig", () => {
   describe("valid node templates", () => {
     it("should validate a valid START node template", () => {
       const template: NodeTemplate = {
-        id: "start-template",
         name: "Start Template",
         type: "START",
         description: "A start node template",
@@ -29,7 +28,6 @@ describe("validateNodeTemplateConfig", () => {
 
     it("should validate a valid END node template", () => {
       const template: NodeTemplate = {
-        id: "end-template",
         name: "End Template",
         type: "END",
         description: "An end node template",
@@ -44,7 +42,6 @@ describe("validateNodeTemplateConfig", () => {
 
     it("should validate a valid SCRIPT node template", () => {
       const template: NodeTemplate = {
-        id: "script-template",
         name: "Script Template",
         type: "SCRIPT",
         description: "A script node template",
@@ -64,7 +61,6 @@ describe("validateNodeTemplateConfig", () => {
   describe("invalid node templates", () => {
     it("should fail validation when type is missing", () => {
       const template = {
-        id: "invalid-template",
         name: "Invalid Template",
         config: {},
         createdAt: Date.now(),
@@ -77,7 +73,6 @@ describe("validateNodeTemplateConfig", () => {
 
     it("should fail validation when name is empty", () => {
       const template: NodeTemplate = {
-        id: "invalid-template",
         name: "",
         type: "START",
         config: {},
@@ -91,13 +86,12 @@ describe("validateNodeTemplateConfig", () => {
 
     it("should fail validation when type is invalid", () => {
       const template = {
-        id: "invalid-template",
         name: "Invalid Template",
         type: "INVALID_TYPE",
         config: {},
         createdAt: Date.now(),
         updatedAt: Date.now(),
-      } as NodeTemplate;
+      } as unknown as NodeTemplate;
 
       const result = validateNodeTemplateConfig(template);
       expect(result.isErr()).toBe(true);
@@ -108,7 +102,6 @@ describe("validateNodeTemplateConfig", () => {
 describe("getNodeTemplateValidationWarnings", () => {
   it("should return empty array for template without timeout", () => {
     const template: NodeTemplate = {
-      id: "template-1",
       name: "Template 1",
       type: "START",
       config: {},
@@ -122,12 +115,13 @@ describe("getNodeTemplateValidationWarnings", () => {
 
   it("should return warning for long timeout", () => {
     const template: NodeTemplate = {
-      id: "template-1",
       name: "Template 1",
       type: "SCRIPT",
       config: {
+        scriptName: "test-script",
+        risk: "low",
         timeout: 120000,
-      },
+      } as any,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
@@ -139,12 +133,13 @@ describe("getNodeTemplateValidationWarnings", () => {
 
   it("should not return warning for acceptable timeout", () => {
     const template: NodeTemplate = {
-      id: "template-1",
       name: "Template 1",
       type: "SCRIPT",
       config: {
+        scriptName: "test-script",
+        risk: "low",
         timeout: 30000,
-      },
+      } as any,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };

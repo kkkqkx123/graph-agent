@@ -10,7 +10,7 @@
  */
 
 import { ConfigurationValidationError } from "@wf-agent/types";
-import type { WorkflowGraphStructure } from "../../entities/workflow-graph-data.js";
+import type { WorkflowGraphStructure } from "../../entities/workflow-graph-structure.js";
 
 /**
  * Validate EMBED_GRAPH node existence and configuration

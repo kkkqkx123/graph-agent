@@ -8,7 +8,7 @@
 import { WorkflowGraphBuilder } from "../workflow-graph-builder.js";
 import { WorkflowGraphStructure } from "../../entities/workflow-graph-structure.js";
 import { WorkflowGraphMetadata } from "../../entities/workflow-graph-metadata.js";
-import type { WorkflowTemplate } from "@wf-agent/types";
+import type { WorkflowTemplate, WorkflowTemplateType } from "@wf-agent/types";
 
 describe("WorkflowGraphBuilder with Composition Pattern", () => {
   const createSimpleWorkflow = (): WorkflowTemplate => ({
@@ -16,7 +16,7 @@ describe("WorkflowGraphBuilder with Composition Pattern", () => {
     name: "Test Workflow",
     version: "1.0.0",
     description: "A test workflow",
-    type: "workflow",
+    type: "STANDALONE",
     nodes: [
       {
         id: "start",
@@ -28,7 +28,7 @@ describe("WorkflowGraphBuilder with Composition Pattern", () => {
         id: "llm1",
         name: "LLM Node",
         type: "LLM",
-        config: { model: "gpt-4" },
+        config: { profileId: "test-profile" },
       },
       {
         id: "end",
@@ -86,15 +86,15 @@ describe("WorkflowGraphBuilder with Composition Pattern", () => {
           {
             id: "start",
             name: "Start",
-            type: "START",
+            type: "START" as const,
             config: { variableInputs: ["input1"] },
           },
           {
             id: "llm1",
             name: "LLM Node",
-            type: "LLM",
+            type: "LLM" as const,
             config: {
-              model: "gpt-4",
+              profileId: "test-profile",
               checkpointBeforeExecute: true,
               checkpointAfterExecute: true,
             },
@@ -102,11 +102,11 @@ describe("WorkflowGraphBuilder with Composition Pattern", () => {
           {
             id: "end",
             name: "End",
-            type: "END",
+            type: "END" as const,
             config: { variableOutputs: ["output1"] },
           },
         ],
-      };
+      } as any;
 
       const graph = WorkflowGraphBuilder.build(workflow);
 
@@ -119,7 +119,7 @@ describe("WorkflowGraphBuilder with Composition Pattern", () => {
 
       const llmNode = graph.getNode("llm1");
       expect(llmNode?.config).toEqual({
-        model: "gpt-4",
+        profileId: "test-profile",
         checkpointBeforeExecute: true,
         checkpointAfterExecute: true,
       });
@@ -133,7 +133,7 @@ describe("WorkflowGraphBuilder with Composition Pattern", () => {
             id: "edge1",
             sourceNodeId: "start",
             targetNodeId: "llm1",
-            type: "CONDITIONAL",
+            type: "CONDITIONAL" as const,
             label: "condition1",
             description: "Conditional edge",
             weight: 2,
@@ -142,13 +142,13 @@ describe("WorkflowGraphBuilder with Composition Pattern", () => {
             id: "edge2",
             sourceNodeId: "llm1",
             targetNodeId: "end",
-            type: "DEFAULT",
+            type: "DEFAULT" as const,
             label: "default",
             description: "Default edge",
             weight: 1,
           },
         ],
-      };
+      } as any;
 
       const graph = WorkflowGraphBuilder.build(workflow);
 
@@ -196,7 +196,7 @@ describe("WorkflowGraphBuilder with Composition Pattern", () => {
         name: "Invalid Workflow",
         version: "1.0.0",
         description: "Invalid workflow without end node",
-        type: "workflow",
+        type: "workflow" as WorkflowTemplateType,
         nodes: [
           {
             id: "start",
@@ -208,7 +208,7 @@ describe("WorkflowGraphBuilder with Composition Pattern", () => {
             id: "llm1",
             name: "LLM Node",
             type: "LLM",
-            config: { model: "gpt-4" },
+            config: { profileId: "test-profile" },
           },
           // Missing END node
         ],
@@ -238,7 +238,7 @@ describe("WorkflowGraphBuilder with Composition Pattern", () => {
         name: "Complex Workflow",
         version: "1.0.0",
         description: "Complex workflow with fork and join",
-        type: "workflow",
+        type: "STANDALONE",
         nodes: [
           { id: "start", name: "Start", type: "START", config: {} },
           {
@@ -247,25 +247,26 @@ describe("WorkflowGraphBuilder with Composition Pattern", () => {
             type: "FORK",
             config: {
               forkPaths: [
-                { pathId: "path1", condition: "condition1" },
-                { pathId: "path2", condition: "condition2" },
+                { pathId: "path1", childNodeId: "llm1" },
+                { pathId: "path2", childNodeId: "llm2" },
               ],
+              forkStrategy: "parallel",
             },
           },
-          { id: "llm1", name: "LLM 1", type: "LLM", config: { model: "gpt-4" } },
-          { id: "llm2", name: "LLM 2", type: "LLM", config: { model: "claude-3" } },
+          { id: "llm1", name: "LLM 1", type: "LLM", config: { profileId: "p1" } },
+          { id: "llm2", name: "LLM 2", type: "LLM", config: { profileId: "p2" } },
           {
             id: "join1",
             name: "Join",
             type: "JOIN",
-            config: { forkPathIds: ["path1", "path2"], mainPathId: "path1" },
+            config: { forkPathIds: ["path1", "path2"], joinStrategy: "ALL_COMPLETED", mainPathId: "path1" },
           },
           { id: "end", name: "End", type: "END", config: {} },
         ],
         edges: [
           { id: "e1", sourceNodeId: "start", targetNodeId: "fork1", type: "DEFAULT" },
-          { id: "e2", sourceNodeId: "fork1", targetNodeId: "llm1", type: "PATH", label: "path1" },
-          { id: "e3", sourceNodeId: "fork1", targetNodeId: "llm2", type: "PATH", label: "path2" },
+          { id: "e2", sourceNodeId: "fork1", targetNodeId: "llm1", type: "DEFAULT", label: "path1" },
+          { id: "e3", sourceNodeId: "fork1", targetNodeId: "llm2", type: "DEFAULT", label: "path2" },
           { id: "e4", sourceNodeId: "llm1", targetNodeId: "join1", type: "DEFAULT" },
           { id: "e5", sourceNodeId: "llm2", targetNodeId: "join1", type: "DEFAULT" },
           { id: "e6", sourceNodeId: "join1", targetNodeId: "end", type: "DEFAULT" },
@@ -311,12 +312,13 @@ describe("WorkflowGraphBuilder with Composition Pattern", () => {
       // Metadata should be mutable
       result.graph.metadata.setNodeConfig("start", {
         id: "start",
+        name: "Start",
         type: "START",
-        config: { newConfig: "value" },
+        config: { variableInputs: [{ externalName: "val", internalName: "v1" }] },
       });
 
       expect(result.graph.metadata.nodeConfigs.size).toBe(1);
-      expect(result.graph.getNodeConfig("start")?.config).toEqual({ newConfig: "value" });
+      expect(result.graph.getNodeConfig("start")?.config).toEqual({ variableInputs: [{ externalName: "val", internalName: "v1" }] });
     });
 
     test("should support graph transformations while preserving metadata", () => {
@@ -333,15 +335,15 @@ describe("WorkflowGraphBuilder with Composition Pattern", () => {
 
       // Create new structure
       const newStructure = new WorkflowGraphStructure();
-      const newNode = { id: "newStart", type: "START", config: {} };
+      const newNode = { id: "newStart", workflowId: "test-wf", type: "START" as const, outgoingEdgeIds: [] as string[], incomingEdgeIds: [] as string[], config: {} };
       newStructure.addNode(newNode);
 
       // Transform graph
       const transformedGraph = result.graph.withStructure(newStructure);
 
       // Metadata should be preserved
-      expect(newGraph.metadata.validationResult.isValid).toBe(true);
-      expect(newGraph.metadata.workflowId).toBe("test-workflow");
+      expect(transformedGraph.metadata.validationResult.isValid).toBe(true);
+      expect(transformedGraph.metadata.workflowId).toBe("test-workflow");
 
       // Structure should be new
       expect(transformedGraph.structure).toBe(newStructure);

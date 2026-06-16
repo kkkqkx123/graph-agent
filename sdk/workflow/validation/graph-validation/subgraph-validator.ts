@@ -11,7 +11,7 @@
 
 import type { StaticNodeType } from "@wf-agent/types";
 import { ConfigurationValidationError } from "@wf-agent/types";
-import type { WorkflowGraphStructure } from "../../entities/workflow-graph-data.js";
+import type { WorkflowGraphStructure } from "../../entities/workflow-graph-structure.js";
 
 /**
  * Validate subgraph existence

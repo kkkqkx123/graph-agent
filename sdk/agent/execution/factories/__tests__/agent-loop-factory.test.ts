@@ -17,16 +17,17 @@ import type { AgentLoopRuntimeConfig } from "@wf-agent/types";
 // use vi.hoisted() to be available at that point.
 // =============================================================================
 
-const {
-  mockRandomUUID,
-  mockEntityInitializeMessages,
-  mockEntitySetMessages,
-  mockEntitySetParentContext,
-  MockAgentLoopEntity,
-  MockAgentLoopCheckpointCoordinator,
-  mockRestoreFromCheckpoint,
-  mockRegisterChildAgentLoop,
-} = vi.hoisted(() => {
+  const {
+    mockRandomUUID,
+    // @ts-ignore - Used in module mock
+    mockEntityInitializeMessages,
+    mockEntitySetMessages,
+    mockEntitySetParentContext,
+    MockAgentLoopEntity,
+    MockAgentLoopCheckpointCoordinator,
+    mockRestoreFromCheckpoint,
+    mockRegisterChildAgentLoop,
+  } = vi.hoisted(() => {
   const _mockRandomUUID = vi.fn();
 
   const _mockEntityInitializeMessages = vi.fn();
