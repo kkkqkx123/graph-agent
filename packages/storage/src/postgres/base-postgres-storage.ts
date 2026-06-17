@@ -48,9 +48,13 @@ export interface BasePostgresStorageConfig {
   
   /** Enable data integrity verification on load (default: false for performance) */
   verifyIntegrity?: boolean;
-  
+
   /** Verify integrity every Nth load operation (default: 100, only used when verifyIntegrity is true) */
   integrityCheckFrequency?: number;
+
+  /** Auto-maintenance interval in milliseconds (default: not set, disabled).
+   * When set, runs VACUUM ANALYZE periodically to prevent performance degradation. */
+  maintenanceIntervalMs?: number;
 }
 
 /**
@@ -65,6 +69,7 @@ export abstract class BasePostgresStorage<TMetadata, TListOptions = Record<strin
   protected usingPool: boolean = false;
   private connectionPool: PostgresConnectionPool | null = null;
   protected loadCounter: number = 0; // Counter for integrity check frequency
+  private maintenanceTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(protected readonly config: BasePostgresStorageConfig) {
     super();
@@ -131,6 +136,11 @@ export abstract class BasePostgresStorage<TMetadata, TListOptions = Record<strin
 
       // Create or migrate schema
       await this.initializeSchema();
+
+      // Start auto-maintenance timer if interval is configured
+      if (this.config.maintenanceIntervalMs && this.config.maintenanceIntervalMs > 0) {
+        this.startMaintenanceTimer(this.config.maintenanceIntervalMs);
+      }
 
       logger.info('PostgreSQL storage initialized', {
         connectionString: this.config.connectionString,
@@ -320,10 +330,43 @@ export abstract class BasePostgresStorage<TMetadata, TListOptions = Record<strin
   }
 
   /**
+   * Start periodic maintenance timer
+   * Runs VACUUM ANALYZE periodically to prevent performance degradation
+   */
+  private startMaintenanceTimer(intervalMs: number): void {
+    if (this.maintenanceTimer) {
+      clearInterval(this.maintenanceTimer);
+    }
+
+    this.maintenanceTimer = setInterval(async () => {
+      try {
+        logger.info('Running periodic maintenance', { table: this.getTableName() });
+        await this.optimize();
+      } catch (error) {
+        logger.warn('Periodic maintenance task failed', {
+          table: this.getTableName(),
+          error: (error as Error).message,
+        });
+      }
+    }, intervalMs);
+
+    logger.debug('Periodic maintenance timer started', {
+      table: this.getTableName(),
+      intervalMs,
+    });
+  }
+
+  /**
    * Close the storage connection
    * If using connection pool, releases the pool instead of closing it
    */
   async close(): Promise<void> {
+    // Clear maintenance timer
+    if (this.maintenanceTimer) {
+      clearInterval(this.maintenanceTimer);
+      this.maintenanceTimer = null;
+    }
+
     if (this.pool) {
       try {
         if (this.usingPool && this.connectionPool) {
@@ -405,7 +448,7 @@ export abstract class BasePostgresStorage<TMetadata, TListOptions = Record<strin
         blobTable: blobTableName 
       });
     } catch (error) {
-      return this.handlePostgresError(error, 'clear', {});
+      this.handlePostgresError(error, 'clear', {});
     } finally {
       this.releaseClient(client);
     }
@@ -425,7 +468,7 @@ export abstract class BasePostgresStorage<TMetadata, TListOptions = Record<strin
       
       logger.info('Database optimization completed', { table: this.getTableName() });
     } catch (error) {
-      return this.handlePostgresError(error, 'optimize', {});
+      this.handlePostgresError(error, 'optimize', {});
     } finally {
       this.releaseClient(client);
     }
@@ -470,7 +513,7 @@ export abstract class BasePostgresStorage<TMetadata, TListOptions = Record<strin
         throw error;
       }
     } catch (error) {
-      return this.handlePostgresError(error, 'saveBatch', { count: items.length });
+      this.handlePostgresError(error, 'saveBatch', { count: items.length });
     } finally {
       this.releaseClient(client);
     }
@@ -530,7 +573,7 @@ export abstract class BasePostgresStorage<TMetadata, TListOptions = Record<strin
 
       return results;
     } catch (error) {
-      return this.handlePostgresError(error, 'loadBatch', { count: ids.length });
+      this.handlePostgresError(error, 'loadBatch', { count: ids.length });
     } finally {
       this.releaseClient(client);
     }
@@ -573,7 +616,7 @@ export abstract class BasePostgresStorage<TMetadata, TListOptions = Record<strin
         throw error;
       }
     } catch (error) {
-      return this.handlePostgresError(error, 'deleteBatch', { count: ids.length });
+      this.handlePostgresError(error, 'deleteBatch', { count: ids.length });
     } finally {
       this.releaseClient(client);
     }

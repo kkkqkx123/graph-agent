@@ -4,9 +4,8 @@
  */
 
 import type { Checkpoint, CheckpointStorageMetadata } from "@wf-agent/types";
-import type { CheckpointStorageAdapter as StorageAdapter } from "@wf-agent/storage";
+import type { CheckpointStorageAdapter } from "@wf-agent/storage";
 import type { EventRegistry } from "../../core/registry/event-registry.js";
-import type { CheckpointStorageAdapter } from "../../core/checkpoint/types.js";
 import { BaseCheckpointStateManager } from "../../core/checkpoint/base-checkpoint-state-manager.js";
 import {
   buildCheckpointCreatedEvent,
@@ -23,68 +22,11 @@ const logger = createContextualLogger({ operation: "checkpoint-state-manager" })
  * Entity-based design for efficient checkpoint management.
  */
 export class CheckpointState extends BaseCheckpointStateManager<Checkpoint> {
-  /**
-   * Constructor
-   * @param storageAdapter Storage adapter interface (implemented by the application layer)
-   * @param eventManager Event manager (optional)
-   */
-  constructor(storageAdapter: StorageAdapter, eventManager?: EventRegistry) {
-    // Adapt storage adapter to the expected interface
-    const adaptedAdapter = {
-      save: async (id: string, data: Uint8Array, metadata: unknown) => {
-        await storageAdapter.save(id, data, metadata as CheckpointStorageMetadata);
-      },
-      load: async (id: string) => {
-        return await storageAdapter.load(id);
-      },
-      delete: async (id: string) => {
-        await storageAdapter.delete(id);
-      },
-      list: async (options?: { parentId?: string; limit?: number }) => {
-        return await storageAdapter.list(options);
-      },
-      listWithMetadata: async (options?: Record<string, unknown>) => {
-        return await storageAdapter.listWithMetadata(options);
-      },
-      listByEntityWithMetadata: async (
-        entityId: string,
-        entityType: string,
-        options?: Record<string, unknown>,
-      ) => {
-        // Type assertion needed until @wf-agent/storage types are updated
-        return await (
-          storageAdapter as unknown as CheckpointStorageAdapter
-        ).listByEntityWithMetadata(entityId, entityType, options);
-      },
-      getLatestByEntity: async (
-        entityId: string,
-        entityType: string,
-        count?: number,
-        includeData?: boolean,
-      ) => {
-        return await (storageAdapter as unknown as CheckpointStorageAdapter).getLatestByEntity(
-          entityId,
-          entityType,
-          count,
-          includeData,
-        );
-      },
-      deleteByEntity: async (
-        entityId: string,
-        entityType: string,
-        options?: Record<string, unknown>,
-      ) => {
-        return await (storageAdapter as unknown as CheckpointStorageAdapter).deleteByEntity(
-          entityId,
-          entityType,
-          options,
-        );
-      },
-      initialize: storageAdapter.initialize?.bind(storageAdapter),
-      close: storageAdapter.close?.bind(storageAdapter),
-    };
-
-    super(adaptedAdapter, eventManager);
+  constructor(
+    storageAdapter: CheckpointStorageAdapter,
+    eventManager?: EventRegistry,
+  ) {
+    super(storageAdapter, eventManager);
   }
 
   /**
@@ -102,9 +44,7 @@ export class CheckpointState extends BaseCheckpointStateManager<Checkpoint> {
     logger.info("Cleaning up workflow execution checkpoints", { workflowExecutionId });
 
     // Use optimized entity-level batch deletion
-    const deletedCount = await (
-      this.storageAdapter as unknown as CheckpointStorageAdapter
-    ).deleteByEntity(workflowExecutionId, "workflow");
+    const deletedCount = await this.storageAdapter.deleteByEntity(workflowExecutionId, "workflow");
 
     logger.info("Workflow execution checkpoints cleaned up", {
       workflowExecutionId,

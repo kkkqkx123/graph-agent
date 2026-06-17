@@ -355,29 +355,12 @@ describe("BaseCheckpointStateManager", () => {
       await stateManager.initialize();
       expect(storageAdapter.initialize).toHaveBeenCalled();
     });
-
-    it("should handle missing initialize method gracefully", async () => {
-      const adapterNoInit = createMockStorageAdapter();
-      delete (adapterNoInit as any).initialize;
-      const manager = new TestCheckpointStateManager(adapterNoInit);
-
-      // Should not throw
-      await expect(manager.initialize()).resolves.toBeUndefined();
-    });
   });
 
   describe("cleanup", () => {
     it("should call storage adapter close", async () => {
       await stateManager.cleanup();
       expect(storageAdapter.close).toHaveBeenCalled();
-    });
-
-    it("should handle missing close method gracefully", async () => {
-      const adapterNoClose = createMockStorageAdapter();
-      delete (adapterNoClose as any).close;
-      const manager = new TestCheckpointStateManager(adapterNoClose);
-
-      await expect(manager.cleanup()).resolves.toBeUndefined();
     });
   });
 });

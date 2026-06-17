@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { CheckpointStore } from "../checkpoint-store.js";
+import { CheckpointCache } from "../checkpoint-cache.js";
 
-describe("CheckpointStore", () => {
-  let store: CheckpointStore<string>;
+describe("CheckpointCache", () => {
+  let store: CheckpointCache<string>;
 
   beforeEach(() => {
     vi.useFakeTimers();
-    store = new CheckpointStore<string>({ ttl: 10000 });
+    store = new CheckpointCache<string>({ ttl: 10000 });
   });
 
   afterEach(() => {
@@ -36,7 +36,7 @@ describe("CheckpointStore", () => {
     });
 
     it("should store metadata", () => {
-      const metaStore = new CheckpointStore<{ data: string }>();
+      const metaStore = new CheckpointCache<{ data: string }>();
       metaStore.set("key1", { data: "value1" }, { source: "test" });
       // Cannot directly verify metadata, but value should be retrievable
       const value = metaStore.get("key1");
@@ -189,7 +189,7 @@ describe("CheckpointStore", () => {
 
   describe("maxSize eviction", () => {
     it("should evict oldest entry when maxSize is reached", () => {
-      const limitedStore = new CheckpointStore<string>({ maxSize: 2, ttl: 60000 });
+      const limitedStore = new CheckpointCache<string>({ maxSize: 2, ttl: 60000 });
       limitedStore.set("a", "1");
       limitedStore.set("b", "2");
       limitedStore.set("c", "3");
@@ -201,7 +201,7 @@ describe("CheckpointStore", () => {
     });
 
     it("should evict oldest when maxSize is 1", () => {
-      const limitedStore = new CheckpointStore<string>({ maxSize: 1, ttl: 60000 });
+      const limitedStore = new CheckpointCache<string>({ maxSize: 1, ttl: 60000 });
       limitedStore.set("a", "1");
       limitedStore.set("b", "2");
 
@@ -213,7 +213,7 @@ describe("CheckpointStore", () => {
 
   describe("constructor defaults", () => {
     it("should use default TTL of 5 minutes", () => {
-      const defaultStore = new CheckpointStore<string>();
+      const defaultStore = new CheckpointCache<string>();
       defaultStore.set("key1", "value1");
 
       vi.advanceTimersByTime(299999);

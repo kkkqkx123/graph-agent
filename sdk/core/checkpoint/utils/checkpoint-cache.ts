@@ -1,6 +1,9 @@
 /**
- * CheckpointStore - Checkpoint Storage
- * Provides generic caching capabilities with TTL support for checkpoint data
+ * CheckpointCache - In-Memory Cache for Checkpoint Data
+ * Provides generic caching capabilities with TTL support
+ *
+ * Note: This is a cache, NOT a persistent storage.
+ * For persistence, use CheckpointStorageAdapter implementations.
  *
  * Responsibilities:
  * - Generic key-value caching for checkpoint data
@@ -52,19 +55,20 @@ export interface CacheConfig {
 }
 
 /**
- * CheckpointStore - Checkpoint Storage Class
+ * CheckpointCache - In-Memory Cache for Checkpoint Data
  *
  * Provides a simple, generic caching mechanism with TTL support.
- * Can be used for any type of cached content.
+ * This is NOT a persistent store - data is lost on process restart.
+ * For persistence, use CheckpointStorageAdapter.
  *
  * @example
  * ```typescript
- * const store = new CheckpointStore<string>({ ttl: 60000 });
+ * const store = new CheckpointCache<string>({ ttl: 60000 });
  * store.set('key', 'value');
  * const value = store.get('key');
  * ```
  */
-export class CheckpointStore<T = unknown> {
+export class CheckpointCache<T = unknown> {
   private cache: Map<string, CacheEntry<T>> = new Map();
   private readonly ttl: number;
   private readonly maxSize?: number;

@@ -236,8 +236,8 @@ expectType<CheckpointStorageMetadata>(minimalCheckpointMetadata);
 // =============================================================================
 
 const checkpointListOptions: CheckpointStorageListOptions = {
-  executionId: "exec-123",
-  workflowId: "workflow-456",
+  entityType: "workflow",
+  entityId: "entity-123",
   tags: ["full"],
   timestampFrom: Date.now() - 86400000,
   timestampTo: Date.now(),
@@ -249,8 +249,8 @@ const checkpointListOptions: CheckpointStorageListOptions = {
 };
 
 expectType<CheckpointStorageListOptions>(checkpointListOptions);
-expectType<string | undefined>(checkpointListOptions.executionId);
-expectType<string | undefined>(checkpointListOptions.workflowId);
+expectType<"workflow" | "agent" | "task" | undefined>(checkpointListOptions.entityType);
+expectType<string | undefined>(checkpointListOptions.entityId);
 expectType<string[] | undefined>(checkpointListOptions.tags);
 expectType<number | undefined>(checkpointListOptions.timestampFrom);
 expectType<number | undefined>(checkpointListOptions.timestampTo);

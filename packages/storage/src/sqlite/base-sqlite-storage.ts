@@ -383,7 +383,7 @@ export abstract class BaseSqliteStorage<TMetadata, TListOptions = Record<string,
       stmt.run(id);
       logger.debug("Data deleted from SQLite", { id, table: this.getTableName() });
     } catch (error) {
-      return this.handleSqliteError(error, "delete", { id });
+      this.handleSqliteError(error, "delete", { id });
     }
   }
 
@@ -396,7 +396,7 @@ export abstract class BaseSqliteStorage<TMetadata, TListOptions = Record<string,
       const row = stmt.get(id);
       return row !== undefined;
     } catch (error) {
-      return this.handleSqliteError(error, "exists", { id });
+      this.handleSqliteError(error, "exists", { id });
     }
   }
 
@@ -420,7 +420,7 @@ export abstract class BaseSqliteStorage<TMetadata, TListOptions = Record<string,
       clearTransaction();
       logger.info("SQLite tables cleared", { table: this.getTableName(), blobTable: blobTableName });
     } catch (error) {
-      return this.handleSqliteError(error, "clear", {});
+      this.handleSqliteError(error, "clear", {});
     }
   }
 
@@ -463,7 +463,7 @@ export abstract class BaseSqliteStorage<TMetadata, TListOptions = Record<string,
         totalTimeMs: elapsed,
       });
     } catch (error) {
-      return this.handleSqliteError(error, "deleteBatch", { count: ids.length });
+      this.handleSqliteError(error, "deleteBatch", { count: ids.length });
     }
   }
 
@@ -491,7 +491,7 @@ export abstract class BaseSqliteStorage<TMetadata, TListOptions = Record<string,
       
       logger.info("Database optimization completed", { table: this.getTableName() });
     } catch (error) {
-      return this.handleSqliteError(error, "optimize", {});
+      this.handleSqliteError(error, "optimize", {});
     }
   }
 
@@ -511,7 +511,7 @@ export abstract class BaseSqliteStorage<TMetadata, TListOptions = Record<string,
       
       logger.info("WAL checkpoint forced successfully", { table: this.getTableName() });
     } catch (error) {
-      return this.handleSqliteError(error, "forceWalCheckpoint", {});
+      this.handleSqliteError(error, "forceWalCheckpoint", {});
     }
   }
 

@@ -155,7 +155,10 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
           executionId: entity.id,
         });
       } catch (error) {
-        logger.error("File checkpoint creation failed (non-fatal)", { error });
+        logger.warn("File checkpoint creation failed (non-fatal, execution checkpoint saved)", {
+          executionId: entity.id,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     }
 
@@ -663,7 +666,10 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
           });
         }
       } catch (error) {
-        logger.error("File checkpoint restore failed (non-fatal)", { error });
+        logger.warn("File checkpoint restore failed (non-fatal, execution state restored)", {
+          executionId: ctx.checkpoint.executionId,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     }
   }

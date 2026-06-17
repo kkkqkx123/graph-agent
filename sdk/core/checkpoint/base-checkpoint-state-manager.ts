@@ -273,9 +273,7 @@ export abstract class BaseCheckpointStateManager<
    */
   async initialize(): Promise<void> {
     logger.info("Initializing checkpoint state manager");
-    if (this.storageAdapter.initialize) {
-      await this.storageAdapter.initialize();
-    }
+    await this.storageAdapter.initialize();
   }
 
   /**
@@ -283,9 +281,7 @@ export abstract class BaseCheckpointStateManager<
    */
   async cleanup(): Promise<void> {
     logger.info("Cleaning up checkpoint state manager");
-    if (this.storageAdapter.close) {
-      await this.storageAdapter.close();
-    }
+    await this.storageAdapter.close();
   }
 
   // ============================================================================

@@ -135,25 +135,10 @@ describe("AgentLoopCheckpointStateManager", () => {
   });
 
   describe("cleanup", () => {
-    it("should close storage adapter if close method exists", async () => {
+    it("should close storage adapter", async () => {
       await stateManager.cleanup();
 
       expect(mockStorageAdapter.close).toHaveBeenCalled();
-    });
-
-    it("should handle storage adapter without close method", async () => {
-      const adapterWithoutClose = {
-        initialize: vi.fn(),
-        save: vi.fn(),
-        load: vi.fn(),
-        delete: vi.fn(),
-        list: vi.fn(),
-      } as unknown as CheckpointStorageAdapter;
-
-      const manager = new AgentLoopCheckpointStateManager("test-agent-2", adapterWithoutClose);
-
-      // Should not throw
-      await expect(manager.cleanup()).resolves.not.toThrow();
     });
   });
 });
