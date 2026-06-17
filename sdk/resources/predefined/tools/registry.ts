@@ -4,7 +4,7 @@
  * Responsible for creating and registering predefined tools with the tool service.
  */
 
-import type { ToolDefinitionLike } from "@sdk/services/executors/tools/utils.js";
+import type { ToolDefinitionLike } from "@sdk/services/tools/utils.js";
 import type { Tool } from "@wf-agent/types";
 import { renderToolDescription } from "../prompt-templates/tool-description-renderer.js";
 import type { PredefinedToolsOptions } from "./types.js";

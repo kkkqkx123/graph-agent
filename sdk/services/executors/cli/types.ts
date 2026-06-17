@@ -1,5 +1,5 @@
 /**
- * Type definitions for external executor service
+ * Type definitions for CLI executor service
  */
 
 /**

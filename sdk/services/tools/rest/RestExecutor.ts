@@ -5,7 +5,7 @@
 
 import type { Tool, HTTPMethod, HttpRequestOptions } from "@wf-agent/types";
 import type { RestToolConfig } from "@wf-agent/types";
-import { RequestInterceptor, ResponseInterceptor } from "../../../http/index.js";
+import { RequestInterceptor, ResponseInterceptor } from "../../transport/http/index.js";
 import {
   NetworkError,
   ToolError,
@@ -15,7 +15,7 @@ import {
   CircuitBreakerOpenError,
 } from "@wf-agent/types";
 import { BaseExecutor } from "../core/base/BaseExecutor.js";
-import { HttpClient, InterceptorManager } from "../../../http/index.js";
+import { HttpClient, InterceptorManager } from "../../transport/http/index.js";
 import type { RestExecutorConfig } from "./types.js";
 
 /**

@@ -7,7 +7,7 @@
 import * as path from "path";
 import * as readline from "readline";
 import * as childProcess from "child_process";
-import { BaseExecutor } from "../../BaseExecutor.js";
+import { BaseCliExecutor } from "../../BaseCliExecutor.js";
 import type { ExecutionOptions } from "../../types.js";
 import type {
   RipgrepSearchOptions,
@@ -35,7 +35,7 @@ export function truncateLine(line: string, maxLength: number = MAX_LINE_LENGTH):
 /**
  * Ripgrep Executor class
  */
-export class RipgrepExecutor extends BaseExecutor {
+export class RipgrepExecutor extends BaseCliExecutor {
   constructor(customPath?: string) {
     super({
       name: "ripgrep",

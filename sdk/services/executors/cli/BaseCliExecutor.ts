@@ -1,5 +1,5 @@
 /**
- * Base Executor Class
+ * Base CLI Executor Class
  *
  * Provides common functionality for external binary executors.
  */
@@ -51,9 +51,9 @@ async function findInPath(binaryName: string): Promise<string | undefined> {
 }
 
 /**
- * Base Executor class
+ * Base CLI Executor class
  */
-export abstract class BaseExecutor {
+export abstract class BaseCliExecutor {
   protected config: ExecutorConfig;
   protected binaryPath: string | undefined;
   protected initialized = false;

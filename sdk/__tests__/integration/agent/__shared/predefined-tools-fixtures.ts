@@ -11,7 +11,7 @@
  */
 
 import { createPredefinedTools } from "@/resources/predefined/tools/registry.js";
-import { toSdkTool } from "@sdk/services/executors/tools/utils.js";
+import { toSdkTool } from "@sdk/services/tools/utils.js";
 import type { Tool } from "@wf-agent/types";
 import type { PredefinedToolsOptions } from "@/resources/predefined/tools/types.js";
 import {

@@ -18,11 +18,11 @@ const logger = createContextualLogger();
  * Entity descriptor for generic storage operations.
  * Encapsulates all entity-specific knowledge needed for persistence.
  */
-export interface StorageEntityInfo<T> {
+export interface StorageEntityInfo<T, TMetadata> {
   /** Extract the unique identifier from an entity */
   getId: (entity: T) => string;
   /** Build metadata object for storage indexing */
-  buildMetadata: (entity: T) => Record<string, unknown>;
+  buildMetadata: (entity: T) => TMetadata;
   /** Entity name for logging (singular, e.g. "tool", "script") */
   entityName: string;
 }
@@ -35,10 +35,10 @@ export interface StorageEntityInfo<T> {
  * @param adapter Storage adapter (or null/undefined to skip)
  * @param info Entity descriptor for ID extraction, metadata, and logging
  */
-export async function persistItem<T>(
+export async function persistItem<T, TMetadata>(
   item: T,
-  adapter: BaseStorageAdapter<Record<string, unknown>, void> | null | undefined,
-  info: StorageEntityInfo<T>,
+  adapter: BaseStorageAdapter<TMetadata, void> | null | undefined,
+  info: StorageEntityInfo<T, TMetadata>,
 ): Promise<void> {
   if (!adapter) {
     logger.debug(`No storage adapter configured, skipping ${info.entityName} persistence`);
@@ -72,9 +72,9 @@ export async function persistItem<T>(
  * @param adapter Storage adapter (or null/undefined to skip)
  * @param entityName Entity name for logging
  */
-export async function removeItem(
+export async function removeItem<TMetadata>(
   id: string,
-  adapter: BaseStorageAdapter<Record<string, unknown>, void> | null | undefined,
+  adapter: BaseStorageAdapter<TMetadata, void> | null | undefined,
   entityName: string,
 ): Promise<void> {
   if (!adapter) {
@@ -103,9 +103,9 @@ export async function removeItem(
  * @param entityName Entity name for logging
  * @returns The deserialized item, or null if not found or on error
  */
-export async function loadItem<T>(
+export async function loadItem<T, TMetadata>(
   id: string,
-  adapter: BaseStorageAdapter<Record<string, unknown>, void> | null | undefined,
+  adapter: BaseStorageAdapter<TMetadata, void> | null | undefined,
   entityName: string,
 ): Promise<T | null> {
   if (!adapter) {
@@ -140,10 +140,10 @@ export async function loadItem<T>(
  * @param items Mutable collection to populate (must support set/has/size)
  * @param info Entity descriptor for ID extraction, metadata, and logging
  */
-export async function initializeFromStorage<T>(
-  adapter: BaseStorageAdapter<Record<string, unknown>, void> | null,
+export async function initializeFromStorage<T, TMetadata>(
+  adapter: BaseStorageAdapter<TMetadata, void> | null,
   items: { set: (key: string, value: T) => void; has: (key: string) => boolean; size: number },
-  info: StorageEntityInfo<T>,
+  info: StorageEntityInfo<T, TMetadata>,
 ): Promise<void> {
   if (!adapter) {
     logger.debug(
@@ -162,7 +162,7 @@ export async function initializeFromStorage<T>(
 
     for (const id of ids) {
       try {
-        const item = await loadItem<T>(id, adapter, info.entityName);
+        const item = await loadItem<T, TMetadata>(id, adapter, info.entityName);
         if (item) {
           items.set(id, item);
         }

@@ -10,7 +10,7 @@ import {
   ServiceUnavailableError,
   executeWithRetry,
   type RetryConfig,
-} from "../../../../http/index.js";
+} from "../../../transport/http/index.js";
 
 /**
  * Retry strategy configuration

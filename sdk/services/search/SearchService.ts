@@ -7,7 +7,7 @@
 
 import * as path from "path";
 import * as fs from "fs";
-import { RipgrepExecutor } from "../executors/implementations/ripgrep/index.js";
+import { RipgrepExecutor } from "../executors/cli/implementations/ripgrep/index.js";
 import { sortByFuzzyMatch } from "./fuzzy/index.js";
 import type { FileSearchOptions, ListAllFilesOptions, FileSearchResult } from "./types.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";

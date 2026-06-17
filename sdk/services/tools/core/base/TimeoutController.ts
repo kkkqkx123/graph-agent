@@ -9,7 +9,7 @@
  */
 
 import { TimeoutError } from "@wf-agent/types";
-import { combineTimeoutWithSignal } from "../../../../../core/utils/timeout/index.js";
+import { combineTimeoutWithSignal } from "../../../../core/utils/timeout/index.js";
 
 /**
  * Timeout Controller

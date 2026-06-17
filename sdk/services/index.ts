@@ -93,17 +93,38 @@ export {
 } from "./command-safety/index.js";
 
 // ============================================================================
-// Executors Service
+// Transport Layer Service
 // ============================================================================
 export {
-  BaseExecutor,
+  // Types
+  type TransportProtocol,
+  type TransportConnectionConfig,
+  type TransportCallResult,
+  type TransportError,
+  type ITransportClient,
+  type CallOptions,
+  // gRPC
+  GrpcClient,
+  GrpcClientManager,
+  GrpcHealthCheck,
+  type GrpcClientOptions,
+  type GrpcClientState,
+  type GrpcHealthCheckConfig,
+} from "./transport/index.js";
+
+// ============================================================================
+// Executors Service (CLI/Local Binary Executors)
+// ============================================================================
+export {
+  BaseCliExecutor,
   type ExecutorConfig,
   type ExecutorInfo,
   type ExecutorStatus,
   type ExecutionOptions,
   type ExecutionResult,
-} from "./executors/index.js";
+} from "./executors/cli/index.js";
 
+// CLI Executor (Local Binary Execution)
 // Ripgrep Executor
 export {
   RipgrepExecutor,
@@ -114,18 +135,58 @@ export {
   type SearchResult,
   type SearchLineResult,
   type FileResult,
-} from "./executors/implementations/ripgrep/index.js";
+} from "./executors/cli/implementations/ripgrep/index.js";
 
-// Tool Executors
+// Remote Service Executor (Network Services)
+export {
+  // Base class
+  BaseRemoteExecutor,
+  // Types
+  type RemoteConnectionConfig,
+  type RemoteExecutorStatus,
+  type RemoteExecutionResult,
+  type RemoteExecutorConfig,
+  // Stratum gRPC Executor
+  StratumExecutor,
+  StratumProcessManager,
+  type StratumDeployMode,
+  type StratumExecutorConfig,
+  type StratumInitRequest,
+  type StratumInitResponse,
+  type StratumEditRequest,
+  type StratumEditResponse,
+  type StratumStatusResponse,
+  type StratumPartitionInfo,
+  type StratumCommitRequest,
+  type StratumCommitResponse,
+  type StratumLogRequest,
+  type StratumLogResponse,
+  type StratumCheckpointInfo,
+  type StratumBranchListResponse,
+  type StratumBranchInfo,
+  type StratumAgentEditRequest,
+  type StratumAgentEditResponse,
+  type StratumAgentSubmitRequest,
+  type StratumAgentSubmitResponse,
+  type StratumApproveRequest,
+  type StratumApproveResponse,
+  type StratumBackupRequest,
+  type StratumBackupResponse,
+} from "./executors/remote/index.js";
+
+// ============================================================================
+// Tool Executors (Moved to services/tools/)
+// ============================================================================
 export {
   // Core interfaces and base classes
   IToolExecutor,
-  ToolBaseExecutor,
+  BaseExecutor as ToolBaseExecutor,
   ParameterValidator,
   RetryStrategy,
   TimeoutController,
+  type ToolType,
   type ExecutorMetadata,
-} from "./executors/index.js";
+} from "./tools/index.js";
 
 // REST Executor
 export {
@@ -136,10 +197,10 @@ export {
   type ResponseInterceptor,
   type ErrorInterceptor,
   type RestExecutorConfig,
-} from "./executors/index.js";
+} from "./tools/index.js";
 
 // Stateful Executor
-export { StatefulExecutor, type StatefulExecutorConfig } from "./executors/index.js";
+export { StatefulExecutor, type StatefulExecutorConfig } from "./tools/index.js";
 
 // Stateless Executor
 export {
@@ -147,13 +208,13 @@ export {
   FunctionRegistry,
   type FunctionRegistryItem,
   type FunctionRegistryConfig,
-} from "./executors/index.js";
+} from "./tools/index.js";
 
 // Builtin Executor
-export { BuiltinExecutor, type BuiltinExecutorConfig } from "./executors/index.js";
+export { BuiltinExecutor, type BuiltinExecutorConfig } from "./tools/index.js";
 
 // Utility functions
-export { toSdkTool, toSdkTools, type ToolDefinitionLike } from "./executors/index.js";
+export { toSdkTool, toSdkTools, type ToolDefinitionLike } from "./tools/index.js";
 
 // ============================================================================
 // Search Service
@@ -237,7 +298,7 @@ export {
 } from "./shutdown/index.js";
 
 // ============================================================================
-// HTTP Service
+// HTTP Service (Transport Layer)
 // ============================================================================
 export {
   // HTTP Client
@@ -282,7 +343,7 @@ export {
   type HttpRequestOptions,
   type HttpResponse as HttpServiceResponse,
   type HttpClientConfig,
-} from "./http/index.js";
+} from "./transport/http/index.js";
 
 // ============================================================================
 // Sandbox Service

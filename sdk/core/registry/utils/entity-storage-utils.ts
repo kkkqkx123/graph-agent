@@ -8,6 +8,7 @@
  */
 
 import type { AgentProfileMeta } from "../agent-profile-registry.js";
+import type { AgentProfileStorageMetadata, HookTemplateStorageMetadata, NodeTemplateStorageMetadata, ScriptStorageMetadata, ToolStorageMetadata, TriggerStorageMetadata } from "@wf-agent/types";
 import type { HookTemplate } from "@wf-agent/types";
 import type { NodeTemplate } from "@wf-agent/types";
 import type { Script } from "@wf-agent/types";
@@ -29,7 +30,7 @@ import {
 
 // ==================== Agent Profile ====================
 
-const agentProfileInfo: StorageEntityInfo<AgentProfileMeta> = {
+const agentProfileInfo: StorageEntityInfo<AgentProfileMeta, AgentProfileStorageMetadata> = {
   getId: (profile) => profile.id,
   buildMetadata: (profile) => ({
     profileId: profile.id,
@@ -60,7 +61,7 @@ export async function loadAgentProfile(
   profileId: string,
   adapter?: AgentProfileStorageAdapter | null,
 ): Promise<AgentProfileMeta | null> {
-  return loadItem<AgentProfileMeta>(profileId, adapter, "agent profile");
+  return loadItem<AgentProfileMeta, AgentProfileStorageMetadata>(profileId, adapter, "agent profile");
 }
 
 /** Initialize agent profiles collection from storage */
@@ -77,7 +78,7 @@ export async function initializeAgentProfilesFromStorage(
 
 // ==================== Hook Template ====================
 
-const hookTemplateInfo: StorageEntityInfo<HookTemplate> = {
+const hookTemplateInfo: StorageEntityInfo<HookTemplate, HookTemplateStorageMetadata> = {
   getId: (template) => template.name,
   buildMetadata: (template) => ({
     name: template.name,
@@ -112,7 +113,7 @@ export async function loadHookTemplate(
   name: string,
   adapter?: HookTemplateStorageAdapter | null,
 ): Promise<HookTemplate | null> {
-  return loadItem<HookTemplate>(name, adapter, "hook template");
+  return loadItem<HookTemplate, HookTemplateStorageMetadata>(name, adapter, "hook template");
 }
 
 /** Initialize hook templates collection from storage */
@@ -129,7 +130,7 @@ export async function initializeHookTemplatesFromStorage(
 
 // ==================== Node Template ====================
 
-const nodeTemplateInfo: StorageEntityInfo<NodeTemplate> = {
+const nodeTemplateInfo: StorageEntityInfo<NodeTemplate, NodeTemplateStorageMetadata> = {
   getId: (template) => template.name,
   buildMetadata: (template) => ({
     name: template.name,
@@ -164,7 +165,7 @@ export async function loadNodeTemplate(
   name: string,
   adapter?: NodeTemplateStorageAdapter | null,
 ): Promise<NodeTemplate | null> {
-  return loadItem<NodeTemplate>(name, adapter, "node template");
+  return loadItem<NodeTemplate, NodeTemplateStorageMetadata>(name, adapter, "node template");
 }
 
 /** Initialize node templates collection from storage */
@@ -181,7 +182,7 @@ export async function initializeNodeTemplatesFromStorage(
 
 // ==================== Script ====================
 
-const scriptInfo: StorageEntityInfo<Script> = {
+const scriptInfo: StorageEntityInfo<Script, ScriptStorageMetadata> = {
   getId: (script) => script.name,
   buildMetadata: (script) => ({
     name: script.name,
@@ -216,7 +217,7 @@ export async function loadScript(
   scriptName: string,
   adapter?: ScriptStorageAdapter | null,
 ): Promise<Script | null> {
-  return loadItem<Script>(scriptName, adapter, "script");
+  return loadItem<Script, ScriptStorageMetadata>(scriptName, adapter, "script");
 }
 
 /** Initialize scripts collection from storage */
@@ -229,7 +230,7 @@ export async function initializeScriptsFromStorage(
 
 // ==================== Tool ====================
 
-const toolInfo: StorageEntityInfo<Tool> = {
+const toolInfo: StorageEntityInfo<Tool, ToolStorageMetadata> = {
   getId: (tool) => tool.id,
   buildMetadata: (tool) => ({
     toolId: tool.id,
@@ -259,7 +260,7 @@ export async function loadTool(
   toolId: string,
   adapter?: ToolStorageAdapter | null,
 ): Promise<Tool | null> {
-  return loadItem<Tool>(toolId, adapter, "tool");
+  return loadItem<Tool, ToolStorageMetadata>(toolId, adapter, "tool");
 }
 
 /** Initialize tools collection from storage */
@@ -272,7 +273,7 @@ export async function initializeToolsFromStorage(
 
 // ==================== Trigger Template ====================
 
-const triggerInfo: StorageEntityInfo<TriggerTemplate> = {
+const triggerInfo: StorageEntityInfo<TriggerTemplate, TriggerStorageMetadata> = {
   getId: (template) => template.name,
   buildMetadata: (template) => ({
     name: template.name,
@@ -307,7 +308,7 @@ export async function loadTrigger(
   name: string,
   adapter?: TriggerStorageAdapter | null,
 ): Promise<TriggerTemplate | null> {
-  return loadItem<TriggerTemplate>(name, adapter, "trigger template");
+  return loadItem<TriggerTemplate, TriggerStorageMetadata>(name, adapter, "trigger template");
 }
 
 /** Initialize trigger templates collection from storage */
