@@ -4,7 +4,7 @@
  */
 
 import type { IMcpTransport, TransportEventHandlers, SseTransportConfig } from "./types.js";
-import { readSSEStream } from "../../http/index.js";
+import { readSSEStream } from "../../transport/http/index.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "MCPSSETransport" });
@@ -197,7 +197,7 @@ export class SseTransport implements IMcpTransport {
         }
 
         // Read the stream using shared utility
-        await readSSEStream(response.body, data => {
+        await readSSEStream(response.body, (data: unknown) => {
           if (this._state === "connected") {
             this.handleIncomingMessage(data);
           }
