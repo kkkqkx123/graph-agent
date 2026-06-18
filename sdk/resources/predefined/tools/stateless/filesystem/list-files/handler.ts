@@ -8,31 +8,12 @@
  * hidden directories. LLM can override at call time via includeIgnored=true.
  */
 
-import path from "path";
 import type { ToolOutput } from "@wf-agent/types";
 import type { ListFilesConfig } from "../../../types.js";
 import { IgnoreController } from "@wf-agent/sdk/services";
 import { resolveFilePath } from "@wf-agent/sdk/utils";
 import { HostFSAdapter } from "../../../utils/host-fs-adapter.js";
-
-/**
- * Check if a path is a special directory (root or home)
- */
-function isSpecialDirectory(dirPath: string): boolean {
-  const absolutePath = path.resolve(dirPath);
-
-  const root = process.platform === "win32" ? path.parse(absolutePath).root : "/";
-  if (absolutePath === root) {
-    return true;
-  }
-
-  const homeDir = process.env["HOME"] || process.env["USERPROFILE"];
-  if (homeDir && absolutePath === homeDir) {
-    return true;
-  }
-
-  return false;
-}
+import { FilesystemToolUtils } from "../utils/filesystem-tool-utils.js";
 
 interface FileEntry {
   name: string;
@@ -179,7 +160,8 @@ export function createListFilesHandler(config: ListFilesConfig = {}) {
       };
       const dirPath = resolveFilePath(targetPath, config.workspaceDir);
 
-      if (isSpecialDirectory(dirPath)) {
+      // Validate directory using FilesystemToolUtils
+      if (FilesystemToolUtils.isSpecialDirectory(dirPath)) {
         return {
           success: false,
           content: "",
@@ -188,19 +170,12 @@ export function createListFilesHandler(config: ListFilesConfig = {}) {
       }
 
       const vfs = new HostFSAdapter();
-      const dirStat = await vfs.stat(dirPath);
-      if (!dirStat) {
+      const validation = await FilesystemToolUtils.validateDirectory(dirPath, vfs);
+      if (!validation.valid) {
         return {
           success: false,
           content: "",
-          error: `Directory not found: ${targetPath}`,
-        };
-      }
-      if (dirStat.type !== "directory") {
-        return {
-          success: false,
-          content: "",
-          error: `Not a directory: ${targetPath}`,
+          error: validation.error,
         };
       }
 

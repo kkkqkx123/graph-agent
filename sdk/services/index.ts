@@ -216,18 +216,6 @@ export { BuiltinExecutor, type BuiltinExecutorConfig } from "./tools/index.js";
 // Utility functions
 export { toSdkTool, toSdkTools, type ToolDefinitionLike } from "./tools/index.js";
 
-// ============================================================================
-// Search Service
-// ============================================================================
-export {
-  SearchService,
-  fuzzyMatch,
-  sortByFuzzyMatch,
-  type FileSearchOptions,
-  type ListAllFilesOptions,
-  type FileSearchResult,
-  type FuzzyMatchResult,
-} from "./search/index.js";
 
 // ============================================================================
 // MCP Service

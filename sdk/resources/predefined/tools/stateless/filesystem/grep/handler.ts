@@ -4,8 +4,9 @@
 
 import type { ToolOutput } from "@wf-agent/types";
 import type { ReadFileConfig } from "../../../types.js";
-import { SearchService, IgnoreController } from "@wf-agent/sdk/services";
+import { GrepSearchEngine } from "./utils/search-engine.js";
 import { resolveFilePath } from "@wf-agent/sdk/utils";
+import { FilesystemToolUtils } from "../utils/filesystem-tool-utils.js";
 import { HostFSAdapter } from "../../../utils/host-fs-adapter.js";
 
 /**
@@ -23,21 +24,16 @@ export function createGrepHandler(config: ReadFileConfig = {}) {
       const workspaceDir = config.workspaceDir ?? process.cwd();
       const dirPath = resolveFilePath(path, workspaceDir);
 
-      // Check directory existence and type via VFS
+      // Initialize VFS
       const vfs = config.vfs ?? new HostFSAdapter();
-      const dirStat = await vfs.stat(dirPath);
-      if (!dirStat) {
+
+      // Validate directory using FilesystemToolUtils
+      const validation = await FilesystemToolUtils.validateDirectory(dirPath, vfs);
+      if (!validation.valid) {
         return {
           success: false,
           content: "",
-          error: `Directory not found: ${path}`,
-        };
-      }
-      if (dirStat.type !== "directory") {
-        return {
-          success: false,
-          content: "",
-          error: `Not a directory: ${path}`,
+          error: validation.error,
         };
       }
 
@@ -52,11 +48,9 @@ export function createGrepHandler(config: ReadFileConfig = {}) {
         };
       }
 
-      // Initialize search service
-      const searchService = new SearchService();
-
+      // Initialize grep search engine
       try {
-        await searchService.initialize();
+        await GrepSearchEngine.initialize();
       } catch {
         // If ripgrep is not available, fall back to a helpful error message
         return {
@@ -66,13 +60,8 @@ export function createGrepHandler(config: ReadFileConfig = {}) {
         };
       }
 
-      // Initialize ignore controller if enabled
-      const ignoreController = config.enableIgnore
-        ? new IgnoreController({ cwd: workspaceDir })
-        : undefined;
-
-      // Perform search using search service
-      const result = await searchService.searchContent({
+      // Perform search using grep search engine
+      const result = await GrepSearchEngine.searchContent({
         cwd: workspaceDir,
         directoryPath: dirPath,
         pattern: regex,
@@ -80,13 +69,6 @@ export function createGrepHandler(config: ReadFileConfig = {}) {
         contextLines: 1,
         maxResults: 300,
       });
-
-      // If ignore controller is enabled, we need to filter results
-      // Note: ripgrep already respects .gitignore, but we may have additional ignore patterns
-      if (ignoreController && result !== "No results found") {
-        // For now, we return the result as-is since ripgrep handles most ignore patterns
-        // Additional filtering can be added here if needed
-      }
 
       if (result === "No results found") {
         return {
