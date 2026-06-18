@@ -30,6 +30,7 @@ import type { ID, Version, Timestamp } from "../common.js";
 import type { Message } from "../message/index.js";
 import type { AgentHookStatic, AgentTriggerStatic, AgentCheckpointConfig, AgentLoopMetadata } from "./static-config.js";
 import type { AgentToolConfig } from "./tool-config.js";
+import type { DynamicContextConfig } from "../dynamic-context.js";
 
 /**
  * Agent Loop Definition
@@ -90,6 +91,23 @@ export interface AgentLoopDefinition {
 
   /** Trigger configuration list (for future extension) */
   triggers?: AgentTriggerStatic[];
+
+  // ========== Dynamic Context Configuration ==========
+
+  /**
+   * Dynamic context configuration
+   *
+   * Specifies what dynamic content to include during agent execution:
+   * - Current time and timezone
+   * - TODO lists and pinned files
+   * - Environment information
+   * - Workspace files
+   * - Skills and workflows
+   *
+   * These are injected before each LLM call for KV cache optimization.
+   * If not specified, defaults will be applied.
+   */
+  dynamicContext?: DynamicContextConfig;
 
   // ========== Checkpoint Configuration ==========
 

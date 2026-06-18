@@ -23,47 +23,81 @@
  */
 
 import type { ID } from "../common.js";
-import type { Message, LLMMessage } from "../message/index.js";
+import type { Message } from "../message/index.js";
 import type { AgentHook } from "./hooks.js";
 import type { AgentLoopStatus, AgentLoopResult } from "./types.js";
 import type { AgentToolConfig } from "../agent/tool-config.js";
+import type { DynamicContextConfig } from "../dynamic-context.js";
 
 // =============================================================================
-// Message Transformation Pipeline
+// Dynamic Prompt Injection (Two-Layer Design)
 // =============================================================================
 
 /**
- * Transform context function
+ * Dynamic prompt context input
  *
- * Called before each LLM call to transform the message context.
- * Use cases:
- * - Message compression/summarization
- * - History pruning (remove old messages)
- * - Context injection (add system context)
- * - Message filtering
+ * Runtime information for generating dynamic prompts.
+ * Provides context needed to generate fresh system and user-level prompts.
+ */
+export interface DynamicPromptContext {
+  /** Current timestamp (ms) for time-based context */
+  timestamp?: number;
+  /** Number of messages in conversation */
+  messageCount?: number;
+  /** Current iteration number (for agent loops) */
+  currentIteration?: number;
+  /** Execution ID */
+  executionId?: string;
+  /** Additional runtime data */
+  metadata?: Record<string, unknown>;
+  /** Abort signal for cancellation */
+  signal?: AbortSignal;
+}
+
+/**
+ * Dynamic prompt injection result
  *
- * @param messages Current message context
- * @param signal Abort signal for cancellation
- * @returns Transformed message context
+ * Contains two types of dynamic prompts:
+ *
+ * 1. **staticSystem**: Injected into system message (stable, enables KV caching)
+ *    - Current time, timezone
+ *    - Available tools documentation
+ *    - Base system constraints
+ *    - Rarely changes during execution → good for caching
+ *
+ * 2. **dynamicUserContext**: Appended to last user message (variable, no caching)
+ *    - TODO lists, task status
+ *    - Pinned files content
+ *    - Real-time state changes
+ *    - Frequently changes → kept out of system message to preserve cache
+ *
+ * This separation ensures KV cache hits on stable content while allowing
+ * frequent updates to user-level context without cache invalidation.
+ */
+export interface DynamicPromptInjection {
+  /** Static system prompt (merged into system message, stable) */
+  staticSystem?: string;
+  /** Dynamic user context (appended to last user message, variable) */
+  dynamicUserContext?: string;
+}
+
+/**
+ * Transform context function (dynamic prompt generator)
+ *
+ * Called before each LLM call to generate dynamic prompts.
+ *
+ * Returns two parts:
+ * 1. staticSystem: Stable info (time, tools) → system message → cached ✓
+ * 2. dynamicUserContext: Variable info (TODOs, state) → last user message → not cached
+ *
+ * This design maximizes KV cache hits while allowing frequent updates.
+ *
+ * @param context Runtime context for generating prompts
+ * @returns Dynamic prompt injection with system and user-level parts
  */
 export type TransformContextFn = (
-  messages: LLMMessage[],
-  signal?: AbortSignal,
-) => Promise<LLMMessage[]>;
-
-/**
- * Convert to LLM format function
- *
- * Called to convert AgentMessage[] to LLM Message[].
- * Use cases:
- * - Filter out UI-only messages
- * - Convert custom message types to LLM format
- * - Add provider-specific formatting
- *
- * @param messages Messages to convert
- * @returns Messages in LLM format
- */
-export type ConvertToLlmFn = (messages: LLMMessage[]) => LLMMessage[];
+  context: DynamicPromptContext,
+) => Promise<DynamicPromptInjection>;
 
 // =============================================================================
 // Runtime Configuration
@@ -128,23 +162,38 @@ export interface AgentLoopRuntimeConfig {
   /** Hook configuration list (with parsed Condition objects) */
   hooks?: AgentHook[];
 
-  // ========== Message Transformation Pipeline ==========
+  // ========== Dynamic System Prompt Generation ==========
 
   /**
-   * Transform context before LLM call
+   * Generate dynamic system prompt before LLM call
    *
-   * Optional function to transform the message context before each LLM call.
-   * Use for message compression, history pruning, or context injection.
+   * Optional function to generate dynamic system prompts before each LLM call.
+   * The returned prompt is merged with the base system prompt.
+   * Does NOT modify the message history.
+   *
+   * Use for injecting:
+   * - Current time and timezone
+   * - Available tools documentation
+   * - Environment-specific context
+   * - Runtime state information
    */
   transformContext?: TransformContextFn;
 
   /**
-   * Convert messages to LLM format
+   * Dynamic context configuration
    *
-   * Optional function to convert messages to LLM-compatible format.
-   * Use for filtering UI-only messages or converting custom types.
+   * Specifies what dynamic content to include during agent execution.
+   * These options control which dynamic contexts are injected:
+   * - Current time and timezone
+   * - TODO lists and pinned files
+   * - Environment information
+   * - Workspace files
+   * - Skills and workflows
+   *
+   * If not specified, reasonable defaults will be used.
+   * CLI options can override these settings.
    */
-  convertToLlm?: ConvertToLlmFn;
+  dynamicContextConfig?: DynamicContextConfig;
 }
 
 // =============================================================================

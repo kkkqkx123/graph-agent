@@ -109,6 +109,11 @@ export function createAgentCommands(): Command {
           // Apply skills integration: inject metadata into system prompt
           adapter.applySkillsToConfig(config);
 
+          // Apply dynamic context injection
+          // All dynamic context is disabled by default; only agent config or explicit CLI
+          // options can enable specific features
+          await adapter.applyDynamicContextToConfig(config);
+
           if (config.stream || options.stream) {
             // Stream execution
             const result = await adapter.executeAgentLoopStream(

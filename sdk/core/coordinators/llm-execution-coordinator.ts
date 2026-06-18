@@ -17,7 +17,14 @@
  * - Reusable across modules (Graph, Agent, etc.)
  */
 
-import type { LLMMessage, ToolSchema, LLMUsage, TransformContextFn } from "@wf-agent/types";
+import type {
+  LLMMessage,
+  ToolSchema,
+  LLMUsage,
+  TransformContextFn,
+  DynamicPromptContext,
+  DynamicPromptInjection,
+} from "@wf-agent/types";
 import type { LLMExecutionConfig } from "@wf-agent/types";
 import { MessageRole } from "@wf-agent/types";
 import { ConversationSession } from "../messaging/conversation-session.js";
@@ -216,9 +223,31 @@ export class LLMExecutionCoordinator {
     // Retrieve messages from conversation state
     let messages = conversationState.getMessages();
 
-    // Apply transformContext (e.g., dynamic context injection, message compression)
+    // Process dynamic prompt injection if provided
+    let systemPromptSuffix = "";
+    let userContextSuffix = "";
+
     if (transformContext) {
-      messages = await transformContext(messages, abortSignal);
+      const dynamicContext: DynamicPromptContext = {
+        timestamp: Date.now(),
+        messageCount: messages.length,
+        executionId: params.contextId,
+        signal: abortSignal,
+      };
+
+      const injection: DynamicPromptInjection = await transformContext(dynamicContext);
+
+      if (injection.staticSystem) {
+        systemPromptSuffix = injection.staticSystem;
+      }
+      if (injection.dynamicUserContext) {
+        userContextSuffix = injection.dynamicUserContext;
+      }
+    }
+
+    // Apply dynamic prompts to messages
+    if (systemPromptSuffix || userContextSuffix) {
+      messages = this.injectDynamicPrompts(messages, systemPromptSuffix, userContextSuffix);
     }
 
     // Execute streaming LLM call
@@ -248,13 +277,17 @@ export class LLMExecutionCoordinator {
    * - Does NOT track token usage
    * - Does NOT trigger events
    *
+   * Dynamic prompt injection (if provided):
+   * - staticSystem: Merged into system message (stable, cached)
+   * - dynamicUserContext: Appended to last user message (variable, not cached)
+   *
    * This is designed for callers that have their own conversation management
    * and execution flow (e.g., AgentExecutionCoordinator).
    *
    * @param messages Pre-built message array (already includes all user/assistant messages)
    * @param config LLM configuration (profileId, parameters, tools)
    * @param options Execution options (abortSignal, executionId, nodeId)
-   * @param transformContext Optional transform function for context injection
+   * @param transformContext Optional transform function for dynamic prompt injection
    * @returns Raw LLM execution result
    */
   async executeLLMCallWithMessages(
@@ -268,14 +301,44 @@ export class LLMExecutionCoordinator {
       abortSignal?: AbortSignal;
       executionId: string;
       nodeId?: string;
+      messageCount?: number;
+      currentIteration?: number;
     },
     transformContext?: TransformContextFn,
   ): Promise<LLMExecutionResult> {
-    const { abortSignal, executionId, nodeId } = options;
+    const { abortSignal, executionId, nodeId, messageCount, currentIteration } = options;
 
-    let llmMessages = messages;
+    // Process dynamic prompt injection if provided
+    let llmMessages = [...messages];
+    let systemPromptSuffix = "";
+    let userContextSuffix = "";
+
     if (transformContext) {
-      llmMessages = await transformContext(llmMessages, abortSignal);
+      const dynamicContext: DynamicPromptContext = {
+        timestamp: Date.now(),
+        messageCount: messageCount || messages.length,
+        currentIteration,
+        executionId,
+        signal: abortSignal,
+      };
+
+      const injection: DynamicPromptInjection = await transformContext(dynamicContext);
+
+      if (injection.staticSystem) {
+        systemPromptSuffix = injection.staticSystem;
+      }
+      if (injection.dynamicUserContext) {
+        userContextSuffix = injection.dynamicUserContext;
+      }
+    }
+
+    // Apply dynamic prompts to messages
+    if (systemPromptSuffix || userContextSuffix) {
+      llmMessages = this.injectDynamicPrompts(
+        llmMessages,
+        systemPromptSuffix,
+        userContextSuffix,
+      );
     }
 
     return await this.llmExecutor.executeLLMCall(
@@ -288,6 +351,90 @@ export class LLMExecutionCoordinator {
       },
       { abortSignal, executionId, nodeId },
     );
+  }
+
+  /**
+   * Inject dynamic prompts into message array
+   *
+   * Two-layer injection strategy:
+   * 1. staticSystem: Prepended to system message (stable content, cached)
+   * 2. dynamicUserContext: Appended to last user message (variable content, not cached)
+   *
+   * @param messages Original message array
+   * @param staticSystem System-level dynamic content
+   * @param userContextSuffix User-level dynamic context
+   * @returns Messages with injected dynamic prompts
+   */
+  private injectDynamicPrompts(
+    messages: LLMMessage[],
+    staticSystem: string,
+    userContextSuffix: string,
+  ): LLMMessage[] {
+    const result: LLMMessage[] = [...messages];
+
+    // 1. Handle system message injection
+    if (staticSystem) {
+      // Find existing system message
+      const systemMsgIndex = result.findIndex((msg: LLMMessage) => {
+        const role = msg && typeof msg === "object" && "role" in msg ? msg.role : undefined;
+        return role === "system";
+      });
+
+      if (systemMsgIndex >= 0) {
+        // Append to existing system message
+        const msg = result[systemMsgIndex];
+        if (msg && typeof msg === "object" && "content" in msg) {
+          const currentContent = msg.content;
+          result[systemMsgIndex] = {
+            ...msg,
+            content: typeof currentContent === "string"
+              ? `${currentContent}\n\n${staticSystem}`
+              : currentContent,
+          };
+        }
+      } else {
+        // Insert new system message at the beginning
+        result.unshift({
+          role: "system",
+          content: staticSystem,
+        } as LLMMessage);
+      }
+    }
+
+    // 2. Handle user context injection (append to last user message)
+    if (userContextSuffix) {
+      // Find the last user message (use reverse loop for compatibility)
+      let lastUserMsgIndex = -1;
+      for (let i = result.length - 1; i >= 0; i--) {
+        const msg = result[i];
+        const role = msg && typeof msg === "object" && "role" in msg ? msg.role : undefined;
+        if (role === "user") {
+          lastUserMsgIndex = i;
+          break;
+        }
+      }
+
+      if (lastUserMsgIndex >= 0) {
+        const lastUserMsg = result[lastUserMsgIndex];
+        if (lastUserMsg && typeof lastUserMsg === "object" && "content" in lastUserMsg) {
+          const currentContent = lastUserMsg.content;
+          result[lastUserMsgIndex] = {
+            ...lastUserMsg,
+            content: typeof currentContent === "string"
+              ? `${currentContent}\n\n${userContextSuffix}`
+              : currentContent,
+          };
+        }
+      } else {
+        // No user message found, append as a new user message
+        result.push({
+          role: "user",
+          content: userContextSuffix,
+        } as LLMMessage);
+      }
+    }
+
+    return result;
   }
 
   /**
@@ -356,8 +503,32 @@ export class LLMExecutionCoordinator {
 
       // Step 2: Retrieve messages and apply transformContext
       let llmMessages = conversationState.getMessages();
+
+      // Process dynamic prompt injection if provided
+      let systemPromptSuffix = "";
+      let userContextSuffix = "";
+
       if (transformContext) {
-        llmMessages = await transformContext(llmMessages, signal);
+        const dynamicContext: DynamicPromptContext = {
+          timestamp: Date.now(),
+          messageCount: llmMessages.length,
+          executionId: contextId,
+          signal,
+        };
+
+        const injection: DynamicPromptInjection = await transformContext(dynamicContext);
+
+        if (injection.staticSystem) {
+          systemPromptSuffix = injection.staticSystem;
+        }
+        if (injection.dynamicUserContext) {
+          userContextSuffix = injection.dynamicUserContext;
+        }
+      }
+
+      // Apply dynamic prompts to messages
+      if (systemPromptSuffix || userContextSuffix) {
+        llmMessages = this.injectDynamicPrompts(llmMessages, systemPromptSuffix, userContextSuffix);
       }
 
       // Execute LLM call with signal

@@ -73,9 +73,10 @@ export type {
 
 // Execution Context (RuntimeConfig, Options, Context)
 export type {
+  DynamicPromptContext,
+  DynamicPromptInjection,
   AgentLoopRuntimeConfig,
   TransformContextFn,
-  ConvertToLlmFn,
   AgentLoopExecutionOptions,
   AgentLoopExecutionContext,
   AgentLoopRunOptions,

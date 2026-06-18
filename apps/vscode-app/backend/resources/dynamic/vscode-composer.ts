@@ -1,10 +1,11 @@
 /**
  * VSCode Extended Composer
- * 
+ *
  * Extends the SDK's base combiner with VSCode-specific functionality
  */
 
-import { generateDynamicContextContent } from "@wf-agent/sdk/resources";
+// TODO: This module needs to be refactored to use the new buildDynamicPromptInjection API
+// For now, import helper functions from user-context
 import type {
   VSCodeDynamicContextConfig,
   VSCodeDynamicRuntimeContext,
@@ -13,6 +14,24 @@ import type {
 import { getActiveEditorPath, generateActiveEditorContent } from "./active-editor.js";
 import { getOpenTabs, generateOpenTabsContent } from "./open-tabs.js";
 import { getWorkspaceDiagnostics, generateDiagnosticsContent } from "./diagnostics.js";
+
+// Placeholder for compatibility - compose VSCode-specific context
+function generateDynamicContextContent(
+  _config: VSCodeDynamicContextConfig,
+  runtime?: VSCodeDynamicRuntimeContext,
+): string {
+  const sections: string[] = [];
+
+  if (!runtime) {
+    return "";
+  }
+
+  // This is a simplified stub that needs to be properly implemented
+  // using the new two-layer dynamic prompt injection system
+  sections.push("VSCode dynamic context - to be migrated to new API");
+
+  return sections.join("\n\n");
+}
 
 /**
  * Default Diagnostic Configuration

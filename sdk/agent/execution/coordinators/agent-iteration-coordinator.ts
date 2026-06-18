@@ -146,7 +146,13 @@ export class AgentIterationCoordinator {
     const llmResult = await this.coreCoordinator.executeLLMCallWithMessages(
       conversationManager.getMessages(),
       { profileId, parameters: {}, tools: toolSchemas },
-      { abortSignal, executionId: entity.id, nodeId: entity.nodeId },
+      {
+        abortSignal,
+        executionId: entity.id,
+        nodeId: entity.nodeId,
+        messageCount: conversationManager.getMessageCount(),
+        currentIteration: entity.state.currentIteration,
+      },
       entity.config.transformContext,
     );
 

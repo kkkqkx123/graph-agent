@@ -38,6 +38,7 @@ import type {
   AgentStreamEvent,
   MessageStreamEvent,
   AgentToolConfig,
+  DynamicContextConfig,
 } from "@wf-agent/types";
 import type {
   SkillHandlerConfig,
@@ -87,6 +88,51 @@ export class AgentLoopAdapter extends BaseAdapter {
     // Get globalContext from SDK instance
     const globalContext = this.sdk.getGlobalContext();
     this.coordinator = new AgentLoopCoordinator(this.registry, executor, globalContext);
+  }
+
+  /**
+   * Apply dynamic context injection to agent loop runtime config.
+   *
+   * Configures the transformContext function to inject dynamic prompts:
+   * - staticSystem: Time, environment (stable, cached)
+   * - dynamicUserContext: TODOs, state (variable, not cached)
+   *
+   * This two-layer design maximizes KV cache hits while allowing frequent updates.
+   *
+   * Merges configuration from two sources (in priority order):
+   * 1. config.dynamicContextConfig - from agent's static definition
+   * 2. options - from CLI/runtime overrides
+   *
+   * @param config The runtime config to apply dynamic context to
+   * @param options CLI/runtime override options (overrides agent config)
+   */
+  async applyDynamicContextToConfig(
+    config: AgentLoopRuntimeConfig,
+    options?: Partial<DynamicContextConfig>,
+  ): Promise<void> {
+    try {
+      const { buildDynamicPromptInjection } = await import("@wf-agent/sdk/resources");
+
+      // Merge configuration: agent config + CLI overrides
+      const mergedConfig: DynamicContextConfig = {
+        // Start with agent's static configuration
+        ...config.dynamicContextConfig,
+        // Override with CLI options
+        ...options,
+      };
+
+      // Create the transformContext function
+      config.transformContext = async (context) => {
+        return buildDynamicPromptInjection(context, mergedConfig);
+      };
+
+      this.output.infoLog("Dynamic context injection enabled");
+    } catch (error) {
+      this.output.infoLog(
+        "Dynamic context not configured: " +
+          (error instanceof Error ? error.message : String(error)),
+      );
+    }
   }
 
   /**

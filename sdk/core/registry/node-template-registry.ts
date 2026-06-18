@@ -280,7 +280,7 @@ class NodeTemplateRegistry
    * @throws RegistryValidationError If any template is invalid
    * @throws RegistryAlreadyExistsError If any name already exists
    */
-  registerBatch(templates: NodeTemplate[]): void {
+  async registerBatch(templates: NodeTemplate[]): Promise<void> {
     for (const template of templates) {
       this.register(template);
     }
@@ -293,7 +293,7 @@ class NodeTemplateRegistry
    * @param names - Array of node template names
    * @throws RegistryNotFoundError If any template does not exist
    */
-  unregisterBatch(names: string[]): void {
+  async unregisterBatch(names: string[]): Promise<void> {
     for (const name of names) {
       this.unregister(name);
     }

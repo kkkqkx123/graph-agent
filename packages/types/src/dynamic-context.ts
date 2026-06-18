@@ -12,21 +12,28 @@ import type { SkillConfigItem } from "./user-config.js";
 /**
  * Dynamic Context Configuration
  *
- * Configure what dynamic content should be included in the cue word
+ * Configure what dynamic content should be included in the cue word.
+ *
+ * **Note**: All dynamic context injection is **disabled by default**.
+ * Explicitly enable only the features your agent needs to avoid unnecessary
+ * prompt overhead and preserve KV cache efficiency.
  */
 export interface DynamicContextConfig {
   /**
    * Whether to include the current time
+   * @default false
    */
   includeCurrentTime?: boolean;
 
   /**
    * Whether to include a TODO list
+   * @default false
    */
   includeTodoList?: boolean;
 
   /**
    * Whether to include the workspace file tree
+   * @default false
    */
   includeWorkspaceFiles?: boolean;
 
@@ -42,21 +49,25 @@ export interface DynamicContextConfig {
 
   /**
    * Whether or not it contains fixed files
+   * @default false
    */
   includePinnedFiles?: boolean;
 
   /**
    * Includes Skills
+   * @default false
    */
   includeSkills?: boolean;
 
   /**
    * Includes Workflows
+   * @default false
    */
   includeWorkflows?: boolean;
 
   /**
    * Does it contain environmental information
+   * @default false
    */
   includeEnvironmentInfo?: boolean;
 
