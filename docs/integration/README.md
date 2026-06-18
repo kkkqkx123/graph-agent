@@ -1,16 +1,16 @@
 # docs/integration 导读
 
-> 本目录包含从文件检查点系统到Stratum的完整迁移设计
+> 本目录包含从文件检查点系统到Layertwine的完整迁移设计
 
 ---
 
 ## 文档清单
 
-### 📋 [01-stratum-enhancement-specification.md](01-stratum-enhancement-specification.md)
+### 📋 [01-layertwine-enhancement-specification.md](01-layertwine-enhancement-specification.md)
 
-**内容：** Stratum需要实现的功能规范
+**内容：** Layertwine需要实现的功能规范
 
-**阅读对象：** Rust开发者、Stratum维护者
+**阅读对象：** Rust开发者、Layertwine维护者
 
 **核心内容：**
 - 快照系统扩展（支持JSON元数据、文件、结构化数据）
@@ -41,7 +41,7 @@ transaction() → CheckpointTransaction
 **阅读对象：** 架构师、全栈开发者、决策者
 
 **核心内容：**
-- 四层系统架构（Application → Checkpoint → Transport → Stratum）
+- 四层系统架构（Application → Checkpoint → Transport → Layertwine）
 - 数据模型设计（快照、Checkpoint、Branch、DAG）
 - 核心集成点（Agent/Graph executor）
 - 关键设计决策（ID系统、快照分类、恢复策略）
@@ -78,16 +78,16 @@ getStateAtTime(entityId, timestamp)
 
 **核心内容：**
 - 迁移范围和时间表（总共7-9周）
-- Stratum侧改动清单（具体文件和函数）
+- Layertwine侧改动清单（具体文件和函数）
 - TypeScript侧改动清单（新增/修改的模块）
 - 数据迁移策略（处理现有checkpoint）
 - 测试计划（单元、集成、性能）
-- 部署流程（Stratum → TypeScript → 验证）
+- 部署流程（Layertwine → TypeScript → 验证）
 - 验收标准（功能、性能、生产就绪）
 - 风险和回滚计划
 
 **关键里程碑：**
-- Week 1-4: Stratum增强
+- Week 1-4: Layertwine增强
 - Week 5-6: TypeScript集成
 - Week 7: 验证和优化
 - Week 8-9: 部署上线
@@ -103,14 +103,14 @@ getStateAtTime(entityId, timestamp)
 2. 再读 `03-migration-guide.md` → 第一、二、五节
 3. 评估时间和资源
 
-### 👨‍💻 **Rust开发者（Stratum）**
+### 👨‍💻 **Rust开发者（Layertwine）**
 1. 先读 `02-final-architecture-design.md` → 第一、二节（理解整体背景）
-2. 重点读 `01-stratum-enhancement-specification.md` → 所有内容
+2. 重点读 `01-layertwine-enhancement-specification.md` → 所有内容
 3. 参考 `03-migration-guide.md` → 第二节（了解集成期望）
 
 ### 👨‍💻 **TypeScript开发者（SDK）**
 1. 先读 `02-final-architecture-design.md` → 第一、二、三、四节
-2. 读 `01-stratum-enhancement-specification.md` → 第二、三节（了解API）
+2. 读 `01-layertwine-enhancement-specification.md` → 第二、三节（了解API）
 3. 重点读 `03-migration-guide.md` → 第三、四、五节
 
 ### 🧪 **QA/测试工程师**
@@ -164,9 +164,9 @@ AgentExecutor.executeIteration()
   ↓
   序列化为JSON
   ↓
-  StratumExecutor.createCheckpoint()
+  LayertwineExecutor.createCheckpoint()
   ↓
-  Stratum处理：
+  Layertwine处理：
     - 计算Snapshot ID
     - 计算Checkpoint ID
     - 事务提交到SQLite
@@ -181,9 +181,9 @@ Recovery request
   ↓
   CheckpointManager.restoreAgentState(checkpointId)
   ↓
-  StratumExecutor.restoreFull()
+  LayertwineExecutor.restoreFull()
   ↓
-  Stratum查询：
+  Layertwine查询：
     - 加载Checkpoint
     - 加载所有快照
     - 按source分类
@@ -199,10 +199,10 @@ Recovery request
 
 ## API快速参考
 
-### Stratum gRPC API（新增）
+### Layertwine gRPC API（新增）
 
 ```protobuf
-service Stratum {
+service Layertwine {
   rpc RestoreFull(RestoreFullRequest) returns (RestoreFullResponse);
   rpc RestoreSelective(RestoreSelectiveRequest) returns (RestoreSelectiveResponse);
   rpc RestoreByTime(RestoreByTimeRequest) returns (RestoreByTimeResponse);
@@ -213,7 +213,7 @@ service Stratum {
 }
 ```
 
-### Stratum HTTP API（新增）
+### Layertwine HTTP API（新增）
 
 ```
 GET  /api/v1/checkpoint/{id}                    → Checkpoint详情
@@ -253,13 +253,13 @@ diffCheckpoints(fromId: string, toId: string): Promise<CheckpointDiff>
 - 现有checkpoint系统是实验性的，设计不规范
 - 单一的回退方式，难以支持部分恢复
 - 无分支支持，难以进行多方向探索
-- Stratum提供了完整的版本控制系统
+- Layertwine提供了完整的版本控制系统
 
 ### Q: 迁移会影响现有功能吗？
 **A:** 
 - 不会。新系统与现有的Agent/Graph执行流程兼容
 - 仅改变checkpoint的存储和恢复方式
-- 如需保留旧数据，可选择迁移到Stratum
+- 如需保留旧数据，可选择迁移到Layertwine
 
 ### Q: 性能会下降吗？
 **A:** 
@@ -276,7 +276,7 @@ diffCheckpoints(fromId: string, toId: string): Promise<CheckpointDiff>
 
 ### Q: 如果迁移出错怎么办？
 **A:** 
-- 保留Stratum备份（数据不会丢失）
+- 保留Layertwine备份（数据不会丢失）
 - 保留旧checkpoint类（标记deprecated）
 - 如需回滚，切换回旧实现
 - 修复问题后重新迁移
@@ -286,7 +286,7 @@ diffCheckpoints(fromId: string, toId: string): Promise<CheckpointDiff>
 ## 相关文档链接
 
 - **架构文档根目录：** [docs/analysis/](../analysis/)
-- **Checkpoint当前状态分析：** [checkpoint-stratum-integration-analysis.md](../analysis/checkpoint-stratum-integration-analysis.md)
+- **Checkpoint当前状态分析：** [checkpoint-layertwine-integration-analysis.md](../analysis/checkpoint-layertwine-integration-analysis.md)
 - **项目开发指南：** [AGENTS.md](../../AGENTS.md)
 - **代码规范：** [CLAUDE.md](../../CLAUDE.md)
 
@@ -299,7 +299,7 @@ diffCheckpoints(fromId: string, toId: string): Promise<CheckpointDiff>
    - 确认关键决策点
    - 调整时间表和资源
 
-2. **启动Phase 1** (Stratum增强)
+2. **启动Phase 1** (Layertwine增强)
    - 分配Rust开发者
    - 创建功能分支
    - 开始实现

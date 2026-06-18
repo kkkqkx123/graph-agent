@@ -1,6 +1,6 @@
-# Stratum 集成实现方案（精简版）
+# Layertwine 集成实现方案（精简版）
 
-> **项目**: wf-agent + stratum  
+> **项目**: wf-agent + layertwine  
 > **日期**: 2026-06-17  
 > **状态**: Phase 1 完成，Phase 2-4 进行中
 
@@ -35,7 +35,7 @@ sdk/services/
 │   └── remote/                   # 远程服务执行器（网络服务）
 │       ├── BaseRemoteExecutor.ts
 │       ├── types.ts
-│       └── implementations/stratum/
+│       └── implementations/layertwine/
 │
 ├── transport/                    # 传输层（协议实现）
 │   ├── http/                     # HTTP传输（迁移自services/http/）
@@ -65,9 +65,9 @@ sdk/services/
 **executors/remote/**
 - `BaseRemoteExecutor.ts` — 远程执行器基类（纯接口，无模板方法）
 - `types.ts` — 远程执行器类型
-- `implementations/stratum/StratumExecutor.ts` — Stratum gRPC实现
-- `implementations/stratum/stratum-process.ts` — 子进程管理
-- `implementations/stratum/types.ts` — Stratum请求/响应类型
+- `implementations/layertwine/LayertwineExecutor.ts` — Layertwine gRPC实现
+- `implementations/layertwine/layertwine-process.ts` — 子进程管理
+- `implementations/layertwine/types.ts` — Layertwine请求/响应类型
 
 ### 关键设计
 
@@ -83,10 +83,10 @@ export abstract class BaseRemoteExecutor {
 }
 ```
 
-**StratumExecutor** — 双部署模式支持：
+**LayertwineExecutor** — 双部署模式支持：
 
 ```typescript
-export interface StratumExecutorConfig {
+export interface LayertwineExecutorConfig {
   deployMode: "embedded" | "remote";
   address?: string;           // remote模式
   binaryPath?: string;        // embedded模式
@@ -175,5 +175,5 @@ export * from "../transport/http/index.js";
 | CLI vs 远程执行器 | 独立基类，不强行统一接口 | 生命周期和错误模型完全不同 |
 | BaseRemoteExecutor设计 | 纯接口定义，无模板方法 | 子类直接实现，避免模板方法的抽象泄漏 |
 | gRPC客户端 | 动态加载proto | 运行时灵活，无需预编译 |
-| Stratum部署 | 双模式（embedded/remote） | 开发便捷性 + 生产稳定性 |
+| Layertwine部署 | 双模式（embedded/remote） | 开发便捷性 + 生产稳定性 |
 | 传输层独立 | 不与执行器耦合 | 支持任何消费者（工具执行器、MCP等）复用 |

@@ -1,6 +1,6 @@
 # 迁移实施指南
 
-> 目标：从文件检查点系统完全迁移到Stratum  
+> 目标：从文件检查点系统完全迁移到Layertwine  
 > 范围：代码修改、数据迁移、测试验证  
 > 方式：一次性迁移（无中间兼容层）
 
@@ -12,7 +12,7 @@
 
 | 模块 | 改动 | 优先级 |
 |-----|------|--------|
-| **Stratum (Rust)** | 功能增强（快照、恢复、事务） | P0 |
+| **Layertwine (Rust)** | 功能增强（快照、恢复、事务） | P0 |
 | **CheckpointManager (新建)** | 协调checkpoint的创建和恢复 | P0 |
 | **AgentExecutor** | 集成CheckpointManager | P1 |
 | **GraphExecutor** | 集成CheckpointManager | P1 |
@@ -21,7 +21,7 @@
 ### 1.2 时间表
 
 ```
-Phase 1: Stratum增强（4周）
+Phase 1: Layertwine增强（4周）
   ├─ Week 1: 快照系统扩展
   ├─ Week 2: 恢复API实现
   ├─ Week 3: 事务和索引
@@ -39,11 +39,11 @@ Phase 3: 旧系统移除和优化（1周）
 
 ---
 
-## 二、Stratum侧改动清单
+## 二、Layertwine侧改动清单
 
 ### 2.1 核心数据模型扩展
 
-**文件：** `crates/stratum/src/core/types.rs`
+**文件：** `crates/layertwine/src/core/types.rs`
 
 ```rust
 // 1. 扩展SnapshotContent枚举
@@ -69,7 +69,7 @@ pub struct Checkpoint {
 
 ### 2.2 恢复模块实现
 
-**新文件：** `crates/stratum/src/checkpoint/restore.rs`
+**新文件：** `crates/layertwine/src/checkpoint/restore.rs`
 
 - 实现 `restore_full()` - 完整恢复
 - 实现 `restore_selective()` - 选择性恢复
@@ -78,7 +78,7 @@ pub struct Checkpoint {
 
 ### 2.3 事务模块实现
 
-**新文件：** `crates/stratum/src/checkpoint/transaction.rs`
+**新文件：** `crates/layertwine/src/checkpoint/transaction.rs`
 
 - 实现 `CheckpointTransaction` 建造者
 - 支持多快照原子提交
@@ -86,7 +86,7 @@ pub struct Checkpoint {
 
 ### 2.4 时间索引实现
 
-**新文件：** `crates/stratum/src/checkpoint/time_index.rs`
+**新文件：** `crates/layertwine/src/checkpoint/time_index.rs`
 
 - BTreeMap-based索引
 - `query_range()` 时间范围查询
@@ -94,7 +94,7 @@ pub struct Checkpoint {
 
 ### 2.5 API接口扩展
 
-**修改：** `crates/stratum/src/api/http/mod.rs` 和 `crates/stratum/src/api/rpc/mod.rs`
+**修改：** `crates/layertwine/src/api/http/mod.rs` 和 `crates/layertwine/src/api/rpc/mod.rs`
 
 新增HTTP端点：
 ```
@@ -111,7 +111,7 @@ GET  /api/v1/checkpoint/diff
 
 ### 2.6 存储层更新
 
-**修改：** `crates/stratum/src/storage/sqlite/mod.rs`
+**修改：** `crates/layertwine/src/storage/sqlite/mod.rs`
 
 ```sql
 -- Schema扩展
@@ -127,7 +127,7 @@ CREATE TABLE time_index (
 
 ### 2.7 测试补充
 
-**新文件或修改：** `crates/stratum/tests/`
+**新文件或修改：** `crates/layertwine/tests/`
 
 - `restore_operations.rs` - 恢复API测试
 - `transaction_semantics.rs` - 事务测试
@@ -145,7 +145,7 @@ CREATE TABLE time_index (
 ```typescript
 export class CheckpointManager {
   constructor(
-    private stratumExecutor: StratumExecutor,
+    private layertwineExecutor: LayertwineExecutor,
     private logger: Logger
   ) {}
   
@@ -263,7 +263,7 @@ async function migrateExistingCheckpoints() {
       timestamp: oldCp.timestamp,
     };
     
-    // 3. 导入到Stratum
+    // 3. 导入到Layertwine
     await checkpointManager.createAgentCheckpoint(
       agentSnapshot,
       `Migrated from legacy system at ${new Date(oldCp.timestamp).toISOString()}`
@@ -312,7 +312,7 @@ async function verifyMigration() {
 - 选择性恢复
 - 时间查询
 
-**Stratum新API测试：**
+**Layertwine新API测试：**
 - restore_full()
 - restore_selective()
 - restore_by_time()
@@ -335,7 +335,7 @@ async function verifyMigration() {
 
 ### 5.3 测试覆盖率
 
-- Stratum新增代码：> 85%
+- Layertwine新增代码：> 85%
 - CheckpointManager：> 90%
 - Agent/Graph集成：> 80%
 
@@ -343,11 +343,11 @@ async function verifyMigration() {
 
 ## 六、部署流程
 
-### 6.1 Stratum部署
+### 6.1 Layertwine部署
 
 ```bash
 # 1. 编译和测试
-cd crates/stratum
+cd crates/layertwine
 cargo build --release
 cargo test --all
 
@@ -355,7 +355,7 @@ cargo test --all
 # 运行SQL schema更新脚本
 
 # 3. 启动服务
-./target/release/stratum --config stratum.toml
+./target/release/layertwine --config layertwine.toml
 
 # 4. 健康检查
 curl http://localhost:5000/health
@@ -382,7 +382,7 @@ pnpm test
 如果迁移出现问题：
 
 ```typescript
-// 1. Stratum层：保留旧snapshot表，可通过SQL查询恢复
+// 1. Layertwine层：保留旧snapshot表，可通过SQL查询恢复
 // 2. TypeScript层：保留旧checkpoint类（标记为deprecated）
 // 3. 恢复步骤：
 //    - 停止新的checkpoint创建
@@ -396,7 +396,7 @@ pnpm test
 
 ### 7.1 功能验收
 
-- ✅ Stratum恢复API全部可用
+- ✅ Layertwine恢复API全部可用
 - ✅ Agent checkpoint创建和恢复工作
 - ✅ Graph checkpoint创建和恢复工作
 - ✅ 选择性恢复可用
@@ -425,7 +425,7 @@ pnpm test
 
 ### 8.1 新增文档
 
-- [ ] `docs/integration/01-stratum-enhancement-specification.md` - Stratum规范
+- [ ] `docs/integration/01-layertwine-enhancement-specification.md` - Layertwine规范
 - [ ] `docs/integration/02-final-architecture-design.md` - 架构设计
 - [ ] `docs/integration/03-migration-guide.md` - 本文档
 - [ ] `docs/checkpoint-operations.md` - 用户指南
@@ -440,7 +440,7 @@ pnpm test
 ### 8.3 代码文档
 
 - [ ] CheckpointManager javadoc/comments
-- [ ] Stratum restore模块文档
+- [ ] Layertwine restore模块文档
 - [ ] 数据模型文档
 
 ---
@@ -449,7 +449,7 @@ pnpm test
 
 | 风险 | 概率 | 影响 | 缓解 |
 |-----|------|------|------|
-| Stratum API不稳定 | 中 | 高 | 充分的集成测试 |
+| Layertwine API不稳定 | 中 | 高 | 充分的集成测试 |
 | 性能下降 | 低 | 中 | 性能基准测试、缓存 |
 | 数据丢失 | 极低 | 极高 | 事务、备份、WAL |
 | 并发冲突 | 低 | 中 | DAG检验、merge |
@@ -474,7 +474,7 @@ pnpm test
 | 阶段 | 工作 | 时间 |
 |------|------|------|
 | **设计评审** | 确认架构和规范 | 1天 |
-| **Stratum增强** | 实现核心功能 | 4周 |
+| **Layertwine增强** | 实现核心功能 | 4周 |
 | **TypeScript集成** | Agent/Graph适配 | 2周 |
 | **测试和优化** | 性能调优、测试 | 1周 |
 | **部署上线** | 分阶段部署 | 1周 |
@@ -482,4 +482,4 @@ pnpm test
 
 **总耗时：9周（含缓冲）或 7周（高效并行）**
 
-**成果：完整的Stratum-Centric checkpoint系统，支持Agent/Graph状态版本管理**
+**成果：完整的Layertwine-Centric checkpoint系统，支持Agent/Graph状态版本管理**

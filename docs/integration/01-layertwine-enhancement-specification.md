@@ -1,7 +1,7 @@
-# Stratum 功能增强规范
+# Layertwine 功能增强规范
 
 > 目标：完整支持Agent/Graph执行状态的版本管理  
-> 范围：Rust端 `crates/stratum` 功能增强  
+> 范围：Rust端 `crates/layertwine` 功能增强  
 > 版本：v1.0  
 > 生效：作为final architecture的基础
 
@@ -12,11 +12,11 @@
 ### 1.1 快照能力扩展
 
 #### 当前状态
-- Stratum仅支持**文件内容快照**（文件系统级）
+- Layertwine仅支持**文件内容快照**（文件系统级）
 - `baseline_snapshots: Vec<SnapshotId>` 存储文件快照
 
 #### 需求
-Stratum需支持**元数据快照**（执行状态级），用于存储：
+Layertwine需支持**元数据快照**（执行状态级），用于存储：
 - Agent执行状态（messages, iterations, variables）
 - Graph执行状态（workflow state, node results）
 - 任意JSON对象（作为通用快照机制）
@@ -24,7 +24,7 @@ Stratum需支持**元数据快照**（执行状态级），用于存储：
 #### 设计方案
 
 ```rust
-// crates/stratum/src/core/types.rs - 扩展
+// crates/layertwine/src/core/types.rs - 扩展
 
 /// 快照类型（支持多种内容）
 pub enum SnapshotContent {
@@ -98,7 +98,7 @@ pub struct Checkpoint {
 #### API规范
 
 ```rust
-// crates/stratum/src/checkpoint/restore.rs - 新增模块
+// crates/layertwine/src/checkpoint/restore.rs - 新增模块
 
 pub struct RestoreRequest {
   /// 目标checkpoint ID
@@ -193,7 +193,7 @@ impl CheckpointRepo {
     }
     
     let target_cp = closest.ok_or_else(||
-      StratumError::NotFound("No checkpoint near target time".to_string())
+      LayertwineError::NotFound("No checkpoint near target time".to_string())
     )?;
     
     // 如果指定了source filter则进行选择性恢复
@@ -282,7 +282,7 @@ pub struct CheckpointDiff {
 #### 设计方案
 
 ```rust
-// crates/stratum/src/checkpoint/transaction.rs - 新增模块
+// crates/layertwine/src/checkpoint/transaction.rs - 新增模块
 
 pub struct CheckpointTransaction {
   /// 待提交的快照
@@ -369,7 +369,7 @@ impl CheckpointRepo {
 #### 设计方案
 
 ```rust
-// crates/stratum/src/checkpoint/time_index.rs - 新增模块
+// crates/layertwine/src/checkpoint/time_index.rs - 新增模块
 
 pub struct TimeIndex {
   /// 时间戳到checkpoint ID的映射（有序）
@@ -427,7 +427,7 @@ impl CheckpointRepo {
 
 ### 2.1 HTTP API 扩展
 
-当前Stratum已有HTTP API，需扩展以下端点：
+当前Layertwine已有HTTP API，需扩展以下端点：
 
 ```http
 # 查询操作（GET）
@@ -473,9 +473,9 @@ POST /api/v1/checkpoint/transaction
 ### 2.2 gRPC API 扩展
 
 ```proto
-// crates/stratum/src/api/proto/stratum.proto
+// crates/layertwine/src/api/proto/layertwine.proto
 
-service Stratum {
+service Layertwine {
   // 现有RPC
   rpc Init(InitRequest) returns (InitResponse);
   rpc Edit(EditRequest) returns (EditResponse);
@@ -685,7 +685,7 @@ fn compute_snapshot_id(source: &str, content: &SnapshotContent) -> SnapshotId {
 
 定义清晰的错误类型：
 ```rust
-pub enum StratumError {
+pub enum LayertwineError {
   CheckpointNotFound(String),
   SnapshotNotFound(String),
   CorruptedData(String),
@@ -708,4 +708,4 @@ pub enum StratumError {
 | **API扩展** | HTTP + gRPC接口 |
 | **数据存储** | SQLite schema扩展，保持向后兼容 |
 
-这些改动使Stratum能够**完整地管理Agent/Graph执行状态的版本历史**，而不仅仅是文件版本。
+这些改动使Layertwine能够**完整地管理Agent/Graph执行状态的版本历史**，而不仅仅是文件版本。

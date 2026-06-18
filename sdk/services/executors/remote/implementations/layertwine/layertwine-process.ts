@@ -1,14 +1,14 @@
 /**
- * Stratum Process Manager
+ * Layertwine Process Manager
  *
- * Manages the lifecycle of a Stratum gRPC service process
+ * Manages the lifecycle of a Layertwine gRPC service process
  * Used in embedded deployment mode
  */
 
 import * as childProcess from "child_process";
 import { EventEmitter } from "events";
 
-interface StratumProcessConfig {
+interface LayertwineProcessConfig {
   binaryPath: string;
   dbPath: string;
   grpcAddr: string;
@@ -16,15 +16,15 @@ interface StratumProcessConfig {
   restartDelay?: number;
 }
 
-export class StratumProcessManager extends EventEmitter {
-  private config: StratumProcessConfig;
+export class LayertwineProcessManager extends EventEmitter {
+  private config: LayertwineProcessConfig;
   private process: childProcess.ChildProcess | null = null;
   private running = false;
   private restartCount = 0;
   private readonly maxRestarts: number;
   private readonly restartDelay: number;
 
-  constructor(config: StratumProcessConfig) {
+  constructor(config: LayertwineProcessConfig) {
     super();
     this.config = config;
     this.maxRestarts = config.maxRestarts ?? 3;
@@ -32,7 +32,7 @@ export class StratumProcessManager extends EventEmitter {
   }
 
   /**
-   * Start the Stratum process
+   * Start the Layertwine process
    */
   async start(): Promise<void> {
     if (this.running) {
@@ -44,7 +44,7 @@ export class StratumProcessManager extends EventEmitter {
   }
 
   /**
-   * Stop the Stratum process
+   * Stop the Layertwine process
    */
   async stop(): Promise<void> {
     if (!this.running) {
@@ -85,7 +85,7 @@ export class StratumProcessManager extends EventEmitter {
   }
 
   /**
-   * Spawn the Stratum process
+   * Spawn the Layertwine process
    */
   private async spawn(): Promise<void> {
     try {

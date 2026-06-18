@@ -1,4 +1,4 @@
-# 最终架构设计：Stratum-Centric Checkpoint 系统
+# 最终架构设计：Layertwine-Centric Checkpoint 系统
 
 > 目标：统一的执行状态版本管理系统  
 > 范围：Agent/Graph的完整生命周期  
@@ -33,7 +33,7 @@
 ┌──────────────────────────────────────────────────────┐
 │         Transport Layer                              │
 │  ┌────────────────────────────────────────────────┐  │
-│  │ GrpcClient / StratumExecutor (TypeScript)      │  │
+│  │ GrpcClient / LayertwineExecutor (TypeScript)      │  │
 │  │  - RPC marshaling/unmarshaling                 │  │
 │  │  - Connection management                       │  │
 │  │  - Error handling                              │  │
@@ -41,7 +41,7 @@
 └──────────────────────────────────────────────────────┘
                     ↓ (gRPC protocol)
 ┌──────────────────────────────────────────────────────┐
-│         Stratum Service (Rust)                       │
+│         Layertwine Service (Rust)                       │
 │  ┌────────────────────────────────────────────────┐  │
 │  │ API Layer (gRPC + HTTP)                        │  │
 │  │  - Request routing                             │  │
@@ -105,7 +105,7 @@
 
 /**
  * Agent执行状态快照
- * 对应Stratum中 source="agent://" 的快照
+ * 对应Layertwine中 source="agent://" 的快照
  */
 interface AgentStateSnapshot {
   agentLoopId: string;
@@ -118,7 +118,7 @@ interface AgentStateSnapshot {
 
 /**
  * Graph执行状态快照
- * 对应Stratum中 source="graph://" 的快照
+ * 对应Layertwine中 source="graph://" 的快照
  */
 interface GraphStateSnapshot {
   executionId: string;
@@ -133,7 +133,7 @@ interface GraphStateSnapshot {
 
 /**
  * 文件状态快照
- * 对应Stratum中 source="file://" 的快照
+ * 对应Layertwine中 source="file://" 的快照
  */
 interface FileSnapshot {
   path: string;
@@ -142,10 +142,10 @@ interface FileSnapshot {
 }
 
 /**
- * Checkpoint完整状态（从Stratum恢复）
+ * Checkpoint完整状态（从Layertwine恢复）
  */
 interface CheckpointState {
-  checkpointId: string;  // Stratum Content Hash ID
+  checkpointId: string;  // Layertwine Content Hash ID
   agentState?: AgentStateSnapshot;
   graphState?: GraphStateSnapshot;
   fileSnapshots?: FileSnapshot[];
@@ -247,7 +247,7 @@ Agent执行 → 状态变化 → CheckpointManager.createCheckpoint()
       "timestamp": 1718700000
     }
   ↓
-  调用 StratumExecutor.createCheckpoint():
+  调用 LayertwineExecutor.createCheckpoint():
     POST /api/v1/checkpoint/transaction
     {
       "snapshots": [{
@@ -258,7 +258,7 @@ Agent执行 → 状态变化 → CheckpointManager.createCheckpoint()
       "author": "agent-loop-1"
     }
   ↓
-  Stratum处理：
+  Layertwine处理：
     1. 计算快照ID = hash("agent://loop-1/iteration-5" + content)
     2. 存储快照到SQLite
     3. 创建Checkpoint（references快照）
@@ -273,10 +273,10 @@ Agent执行 → 状态变化 → CheckpointManager.createCheckpoint()
 ```
 Recovery request: restore(checkpointId)
   ↓
-  StratumExecutor.restoreFull(checkpointId)
+  LayertwineExecutor.restoreFull(checkpointId)
     GET /api/v1/checkpoint/{checkpointId}/restore
   ↓
-  Stratum恢复过程：
+  Layertwine恢复过程：
     1. 查询Checkpoint及其所有快照
     2. 按source分类加载：
        - "agent://*" → AgentStateSnapshot JSON
@@ -304,10 +304,10 @@ Recovery request: restore(checkpointId)
 ```
 Recovery request: selectiveRestore(checkpointId, ["messages"])
   ↓
-  StratumExecutor.restoreSelective(checkpointId, ["agent://"])
+  LayertwineExecutor.restoreSelective(checkpointId, ["agent://"])
     GET /api/v1/checkpoint/{checkpointId}/restore?sources=agent://
   ↓
-  Stratum过滤过程：
+  Layertwine过滤过程：
     1. 获取Checkpoint
     2. 过滤快照：仅保留source="agent://*"的
     3. 加载这些快照的内容
@@ -350,7 +350,7 @@ export class AgentExecutor {
       timestamp: Date.now(),
     };
     
-    // 3. 提交到Stratum
+    // 3. 提交到Layertwine
     const checkpointId = await this.checkpointManager.createAgentCheckpoint(
       snapshot,
       `Iteration ${iteration} completed`
@@ -363,7 +363,7 @@ export class AgentExecutor {
     agentLoopId: string,
     checkpointId: string
   ): Promise<void> {
-    // 1. 从Stratum恢复
+    // 1. 从Layertwine恢复
     const state = await this.checkpointManager.restoreAgentState(checkpointId);
     
     // 2. 重建Agent状态
@@ -402,7 +402,7 @@ export class GraphExecutor {
       timestamp: Date.now(),
     };
     
-    // 3. 提交到Stratum
+    // 3. 提交到Layertwine
     const checkpointId = await this.checkpointManager.createGraphCheckpoint(
       snapshot,
       `Node ${nodeId} executed`
@@ -420,7 +420,7 @@ export class GraphExecutor {
 
 export class CheckpointManager {
   constructor(
-    private stratumExecutor: StratumExecutor,
+    private layertwineExecutor: LayertwineExecutor,
     private logger: Logger
   ) {}
   
@@ -445,8 +445,8 @@ export class CheckpointManager {
       author: snapshot.agentLoopId,
     };
     
-    // 3. 提交到Stratum
-    const response = await this.stratumExecutor.createCheckpoint(request);
+    // 3. 提交到Layertwine
+    const response = await this.layertwineExecutor.createCheckpoint(request);
     return response.checkpointId;
   }
   
@@ -469,7 +469,7 @@ export class CheckpointManager {
       author: snapshot.executionId,
     };
     
-    const response = await this.stratumExecutor.createCheckpoint(request);
+    const response = await this.layertwineExecutor.createCheckpoint(request);
     return response.checkpointId;
   }
   
@@ -477,8 +477,8 @@ export class CheckpointManager {
    * 恢复Agent状态
    */
   async restoreAgentState(checkpointId: string): Promise<AgentStateSnapshot> {
-    // 1. 调用Stratum恢复
-    const response = await this.stratumExecutor.restoreFull(checkpointId);
+    // 1. 调用Layertwine恢复
+    const response = await this.layertwineExecutor.restoreFull(checkpointId);
     
     // 2. 解析快照内容
     const agentSnapshot = response.snapshots.find(s => 
@@ -505,7 +505,7 @@ export class CheckpointManager {
    * 恢复Graph状态
    */
   async restoreGraphState(checkpointId: string): Promise<GraphStateSnapshot> {
-    const response = await this.stratumExecutor.restoreFull(checkpointId);
+    const response = await this.layertwineExecutor.restoreFull(checkpointId);
     
     const graphSnapshot = response.snapshots.find(s =>
       s.source.startsWith('graph://')
@@ -522,8 +522,8 @@ export class CheckpointManager {
    * 列出Entity的所有Checkpoints
    */
   async listCheckpoints(entityId: string): Promise<CheckpointInfo[]> {
-    // 查询Stratum中的checkpoint历史
-    const response = await this.stratumExecutor.log({ count: 1000 });
+    // 查询Layertwine中的checkpoint历史
+    const response = await this.layertwineExecutor.log({ count: 1000 });
     
     // 过滤属于该entity的checkpoints
     return response.checkpoints.filter(cp =>
@@ -540,8 +540,8 @@ export class CheckpointManager {
     entityId: string,
     timestamp: number
   ): Promise<AgentStateSnapshot | GraphStateSnapshot> {
-    // 调用Stratum的时间查询
-    const response = await this.stratumExecutor.restoreByTime(
+    // 调用Layertwine的时间查询
+    const response = await this.layertwineExecutor.restoreByTime(
       timestamp,
       `agent://${entityId}`  // or graph://${entityId}
     );
@@ -557,7 +557,7 @@ export class CheckpointManager {
     fromId: string,
     toId: string
   ): Promise<CheckpointDiff> {
-    return await this.stratumExecutor.diff(fromId, toId);
+    return await this.layertwineExecutor.diff(fromId, toId);
   }
 }
 ```
@@ -611,7 +611,7 @@ export class CheckpointManager {
   - 兼容旧代码（可选字段）
 
 【选择性恢复】
-  - 在Stratum层过滤快照
+  - 在Layertwine层过滤快照
   - 按source pattern筛选
   - 减少网络传输
 
@@ -632,7 +632,7 @@ export class CheckpointManager {
 【冲突检测】
   - 基于parent检验
   - 如果parent不是当前head，需要merge
-  - Stratum负责冲突检测
+  - Layertwine负责冲突检测
 
 【事务隔离】
   - 单个Checkpoint提交是原子的
@@ -739,9 +739,9 @@ export class CheckpointManager {
 
 | 异常 | 原因 | 处理方式 |
 |-----|------|---------|
-| **ServiceUnavailable** | Stratum服务不可用 | 重试、降级到本地缓存 |
+| **ServiceUnavailable** | Layertwine服务不可用 | 重试、降级到本地缓存 |
 | **NetworkTimeout** | 网络超时 | 重试、提示用户 |
-| **InvalidResponse** | Stratum返回数据格式错误 | 报错，记录日志 |
+| **InvalidResponse** | Layertwine返回数据格式错误 | 报错，记录日志 |
 
 ---
 
@@ -753,7 +753,7 @@ export class CheckpointManager {
 |-----|------|--------|------|
 | **createCheckpoint** | 100KB | <100ms | gRPC + SQLite write |
 | **restoreFull** | 100KB | <100ms | SQLite read + gRPC |
-| **restoreSelective** | 100KB (10%) | <50ms | Stratum过滤 |
+| **restoreSelective** | 100KB (10%) | <50ms | Layertwine过滤 |
 | **listCheckpoints** | 1000个 | <50ms | 时间索引查询 |
 | **diffCheckpoints** | 2个cp | <10ms | DAG遍历 |
 
@@ -799,12 +799,12 @@ export class CheckpointManager {
 - checkpoint_storage_bytes
 - checkpoint_query_latency_ms
 - transaction_conflicts_total
-- stratum_rpc_errors_total
+- layertwine_rpc_errors_total
 
 【告警阈值】
 - Checkpoint creation failure rate > 1%
 - Restoration time > 5s
-- Stratum service unavailable > 30s
+- Layertwine service unavailable > 30s
 - Storage usage > 80% of quota
 ```
 
@@ -857,7 +857,7 @@ version 2:  (未来) 可能增加新字段
 
 ```
 HTTP API:  /api/v1/checkpoint/{id}
-gRPC API:  service Stratum { ... }
+gRPC API:  service Layertwine { ... }
 
 【更新策略】
 - Breaking changes: 新版本号（v2）
@@ -871,8 +871,8 @@ gRPC API:  service Stratum { ... }
 
 | 维度 | 设计 |
 |-----|------|
-| **核心职责** | Stratum管理所有执行状态版本 |
-| **数据流** | Application → CheckpointManager → Stratum |
+| **核心职责** | Layertwine管理所有执行状态版本 |
+| **数据流** | Application → CheckpointManager → Layertwine |
 | **Snapshot类型** | agent://, graph://, file://, system:// |
 | **恢复能力** | 完整、选择性、按时间、按字段 |
 | **并发模型** | 无锁，基于parent检验 |
@@ -886,10 +886,10 @@ gRPC API:  service Stratum { ... }
 
 | 方面 | 现有系统 | 新架构 |
 |-----|--------|--------|
-| **存储位置** | 多个地方（本地DB、缓存等） | 统一Stratum |
+| **存储位置** | 多个地方（本地DB、缓存等） | 统一Layertwine |
 | **ID方式** | UUID（随机） | Content hash（确定性） |
 | **恢复粒度** | 全量 | 全量、选择性、按字段 |
-| **分支支持** | 无 | 有（Stratum原生） |
+| **分支支持** | 无 | 有（Layertwine原生） |
 | **快照类型** | 仅执行状态 | 执行状态+文件+元数据 |
 | **事务** | 无 | 有（多快照原子） |
 | **查询** | 基于metadata | 基于source、时间、内容 |

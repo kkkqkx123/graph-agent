@@ -3,7 +3,7 @@
  *
  * Infrastructure layer for executing tasks:
  * - CLI Executors: Local binary process execution (ripgrep, git, etc.)
- * - Remote Executors: Network service execution (stratum gRPC, etc.)
+ * - Remote Executors: Network service execution (layertwine gRPC, etc.)
  *
  * Note: Tool Executors (business logic layer) have been moved to services/tools/
  */

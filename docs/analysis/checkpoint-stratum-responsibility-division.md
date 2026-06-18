@@ -1,6 +1,6 @@
-# Checkpoint与Stratum职责划分设计方案
+# Checkpoint与Layertwine职责划分设计方案
 
-> 关键问题：是否应该完全用Stratum替代现有Checkpoint系统？  
+> 关键问题：是否应该完全用Layertwine替代现有Checkpoint系统？  
 > 分析日期：2026-06-18  
 > 决策等级：架构设计
 
@@ -19,7 +19,7 @@
 5. ID系统混乱 → UUID随机生成，无内容寻址
 ```
 
-✅ **Stratum的优势**
+✅ **Layertwine的优势**
 ```
 1. 完整的版本控制系统 → 分支、合并、DAG
 2. 内容寻址 → 确定性ID，去重效果好
@@ -30,11 +30,11 @@
 
 ### 1.2 关键发现：Restore能力差异
 
-| 功能 | TypeScript Checkpoint | Stratum | 现状 |
+| 功能 | TypeScript Checkpoint | Layertwine | 现状 |
 |-----|---------------------|--------|------|
-| **完整恢复** | ✅ FULL+DELTA链重建 | ⚠️ 仅返回SnapshotIds | Stratum不完整 |
+| **完整恢复** | ✅ FULL+DELTA链重建 | ⚠️ 仅返回SnapshotIds | Layertwine不完整 |
 | **部分恢复** | ❌ 无选择机制 | ⚠️ 无实现 | 都不支持 |
-| **分支还原** | ❌ 无分支概念 | ✅ switch_branch | Stratum强于TS |
+| **分支还原** | ❌ 无分支概念 | ✅ switch_branch | Layertwine强于TS |
 | **恢复决策** | ❌ 只能全量 | ⚠️ 返回数据让调用者决定 | TS更自动 |
 
 ### 1.3 设计缺陷对比
@@ -47,7 +47,7 @@ TypeScript Checkpoint：
   问题4：只有线性历史 → 无法合并
   问题5：恢复逻辑复杂 → delta chain遍历 + 批量加载
 
-Stratum Checkpoint：
+Layertwine Checkpoint：
   问题1：restore API不完整 → 只有mock实现
   问题2：文件快照粒度 → 不能捕捉Agent执行状态
   问题3：无事务原语 → 多操作序列不保证一致性
@@ -58,11 +58,11 @@ Stratum Checkpoint：
 
 ## 二、三种方案对比
 
-### 方案A：完全迁移到Stratum
+### 方案A：完全迁移到Layertwine
 
 ```
 弃用TypeScript Checkpoint系统
-所有checkpoint操作都通过StratumExecutor
+所有checkpoint操作都通过LayertwineExecutor
   ↓
 优点：
   ✅ 统一的版本控制语义
@@ -72,21 +72,21 @@ Stratum Checkpoint：
   ✅ 单一source of truth
 
 缺点：
-  ❌ Stratum restore API需要完整实现
+  ❌ Layertwine restore API需要完整实现
   ❌ 需要扩展支持Agent执行状态（非文件）
   ❌ 需要实现选择性恢复机制
   ❌ 需要实现事务语义
-  ❌ 迁移成本高（需要改StratumExecutor gRPC接口）
+  ❌ 迁移成本高（需要改LayertwineExecutor gRPC接口）
 ```
 
 ### 方案B：保留两个系统，明确分工
 
 ```
 TypeScript Checkpoint：记录Agent执行状态
-Stratum Checkpoint：记录文件版本状态
+Layertwine Checkpoint：记录文件版本状态
           ↓
 建立映射关系：
-  AgentLoopCheckpoint ←→ StratumCheckpoint
+  AgentLoopCheckpoint ←→ LayertwineCheckpoint
           ↓
 优点：
   ✅ 各自专注于自己的领域
@@ -105,28 +105,28 @@ Stratum Checkpoint：记录文件版本状态
 
 ```
 创建上层统一接口：CheckpointUnifiedStore
-  ├─ 存储引擎可选：TypeScript或Stratum
+  ├─ 存储引擎可选：TypeScript或Layertwine
   ├─ 高级功能：分支、选择性恢复、事务
   ├─ 自动转换：快照格式适配
   └─ 灵活切换：支持引擎切换
 
-短期（v1）：使用Stratum作为持久化后端
-  TypeScript Coordinator → CheckpointUnifiedStore → Stratum
+短期（v1）：使用Layertwine作为持久化后端
+  TypeScript Coordinator → CheckpointUnifiedStore → Layertwine
                               ↓
                          自动格式转换
                          自动ID映射
                          统一事务管理
 
-长期（v2）：完整实现Stratum支持
+长期（v2）：完整实现Layertwine支持
   ✅ Agent执行状态建模为特殊的"快照"
   ✅ 实现选择性恢复
   ✅ 实现事务语义
-  ✅ 用Stratum分支支持Agent多方向探索
+  ✅ 用Layertwine分支支持Agent多方向探索
 ```
 
 ---
 
-## 三、**推荐方案详解：统一抽象 + Stratum持久化**
+## 三、**推荐方案详解：统一抽象 + Layertwine持久化**
 
 ### 3.1 架构图
 
@@ -146,7 +146,7 @@ Stratum Checkpoint：记录文件版本状态
 │  │ - mergeFromBranch()                              │   │
 │  ├──────────────────────────────────────────────────┤   │
 │  │ 核心职责：                                       │   │
-│  │ - 快照格式化（Agent状态 → Stratum格式）         │   │
+│  │ - 快照格式化（Agent状态 → Layertwine格式）         │   │
 │  │ - ID映射维护（UUID ↔ ContentHash）             │   │
 │  │ - 事务管理（原子操作多个checkpoint）            │   │
 │  │ - 选择性恢复（支持部分字段恢复）                │   │
@@ -154,7 +154,7 @@ Stratum Checkpoint：记录文件版本状态
 └─────────────────────────────────────────────────────────┘
                     ↓
 ┌──────────────────────────┬──────────────────────────┐
-│  本地存储（可选，过渡）   │  Stratum持久化           │
+│  本地存储（可选，过渡）   │  Layertwine持久化           │
 │  - SQLite (deprecated)    │  - SQLite（标准）        │
 │  - LevelDB (deprecated)   │  - 分支管理              │
 │  - 用于兼容性恢复         │  - DAG维护              │
@@ -167,7 +167,7 @@ Stratum Checkpoint：记录文件版本状态
 // 统一checkpoint接口
 export interface UnifiedCheckpoint {
   // 标识
-  id: string;                        // Stratum Content Hash ID
+  id: string;                        // Layertwine Content Hash ID
   tsCheckpointId?: string;           // TypeScript端UUID（用于映射）
   
   // 来源
@@ -179,9 +179,9 @@ export interface UnifiedCheckpoint {
   snapshot?: UnifiedSnapshot;        // 快照（格式化为通用结构）
   delta?: UnifiedDelta;              // 增量
   
-  // Stratum相关
-  stratumBranch?: string;            // 所在分支
-  stratumParents?: string[];         // 父checkpoint IDs
+  // Layertwine相关
+  layertwineBranch?: string;            // 所在分支
+  layertwineParents?: string[];         // 父checkpoint IDs
   
   // 元数据
   metadata: {
@@ -210,9 +210,9 @@ export interface UnifiedSnapshot {
     status: string;
   };
   
-  // 文件快照（从Stratum）
+  // 文件快照（从Layertwine）
   fileSnapshots?: {
-    stratumCheckpointId: string;
+    layertwineCheckpointId: string;
     snapshotIds: string[];
   };
 }
@@ -257,8 +257,8 @@ export interface CheckpointUnifiedStore {
   getCheckpointChain(checkpointId: string): Promise<UnifiedCheckpoint[]>;
   
   // ID映射
-  mapTsToStratum(tsCheckpointId: string): Promise<string>;
-  mapStratumToTs(stratumCheckpointId: string): Promise<string>;
+  mapTsToLayertwine(tsCheckpointId: string): Promise<string>;
+  mapLayertwineToTs(layertwineCheckpointId: string): Promise<string>;
 }
 ```
 
@@ -269,16 +269,16 @@ export interface CheckpointUnifiedStore {
 ```typescript
 // 创建新模块：sdk/services/checkpoint-unified-store/
 
-export class StratumBackedCheckpointStore implements CheckpointUnifiedStore {
-  private stratumExecutor: StratumExecutor;
-  private idMappingTable: Map<string, string>;  // tsId → stratumId
+export class LayertwineBackedCheckpointStore implements CheckpointUnifiedStore {
+  private layertwineExecutor: LayertwineExecutor;
+  private idMappingTable: Map<string, string>;  // tsId → layertwineId
   
   async createCheckpoint(checkpoint: UnifiedCheckpoint): Promise<string> {
     // Step 1：格式化快照
-    const stratumSnapshot = this.formatToStratum(checkpoint.snapshot);
+    const layertwineSnapshot = this.formatToLayertwine(checkpoint.snapshot);
     
-    // Step 2：调用Stratum Commit
-    const stratumCp = await this.stratumExecutor.commit({
+    // Step 2：调用Layertwine Commit
+    const layertwineCp = await this.layertwineExecutor.commit({
       message: checkpoint.metadata.message,
       author: checkpoint.metadata.author,
     });
@@ -287,25 +287,25 @@ export class StratumBackedCheckpointStore implements CheckpointUnifiedStore {
     if (checkpoint.tsCheckpointId) {
       this.idMappingTable.set(
         checkpoint.tsCheckpointId,
-        stratumCp.checkpointId
+        layertwineCp.checkpointId
       );
     }
     
-    return stratumCp.checkpointId;
+    return layertwineCp.checkpointId;
   }
   
   async restoreFromCheckpoint(
     checkpointId: string,
     options?: RestoreOptions
   ): Promise<UnifiedSnapshot> {
-    // Step 1：获取Stratum Checkpoint
-    const log = await this.stratumExecutor.log({ count: 100 });
-    const stratumCp = log.checkpoints.find(cp => cp.id === checkpointId);
+    // Step 1：获取Layertwine Checkpoint
+    const log = await this.layertwineExecutor.log({ count: 100 });
+    const layertwineCp = log.checkpoints.find(cp => cp.id === checkpointId);
     
     // Step 2：恢复文件快照
     const fileSnapshot = {
-      stratumCheckpointId: checkpointId,
-      snapshotIds: stratumCp.snapshots,
+      layertwineCheckpointId: checkpointId,
+      snapshotIds: layertwineCp.snapshots,
     };
     
     // Step 3：从本地DB恢复Agent/Graph状态
@@ -334,8 +334,8 @@ export class StratumBackedCheckpointStore implements CheckpointUnifiedStore {
     // ...
   }
   
-  private formatToStratum(snapshot: UnifiedSnapshot): UnifiedSnapshot {
-    // 将Agent/Graph状态序列化为可被Stratum处理的格式
+  private formatToLayertwine(snapshot: UnifiedSnapshot): UnifiedSnapshot {
+    // 将Agent/Graph状态序列化为可被Layertwine处理的格式
     // 实现细节：JSON序列化后作为文件内容
     return snapshot;
   }
@@ -376,10 +376,10 @@ export class AgentLoopCheckpointCoordinator {
 }
 ```
 
-#### **Phase 3：增强Stratum能力（3-4周）**
+#### **Phase 3：增强Layertwine能力（3-4周）**
 
 ```rust
-// crates/stratum/src/checkpoint/restore.rs (新增完整实现)
+// crates/layertwine/src/checkpoint/restore.rs (新增完整实现)
 
 impl CheckpointRepo {
   /// 完整恢复：返回checkpoint及其所有依赖信息
@@ -425,7 +425,7 @@ impl CheckpointRepo {
 #### **Phase 4：启用分支支持（可选，2-3周）**
 
 ```typescript
-// 使用Stratum分支支持Agent多方向探索
+// 使用Layertwine分支支持Agent多方向探索
 
 export class AgentExplorationManager {
   async exploreAlternative(
@@ -450,8 +450,8 @@ export class AgentExplorationManager {
     const cpA = await this.getLatestCheckpoint(branchA);
     const cpB = await this.getLatestCheckpoint(branchB);
     
-    // 使用Stratum的diff能力
-    return this.stratumExecutor.diff(cpA, cpB);
+    // 使用Layertwine的diff能力
+    return this.layertwineExecutor.diff(cpA, cpB);
   }
   
   async mergeExploration(
@@ -536,7 +536,7 @@ export class SelectiveRestoreEngine {
   }
 }
 
-// Stratum端支持选择性恢复
+// Layertwine端支持选择性恢复
 // 利用LayeredPartition的能力来选择性加载文件
 export class SelectiveRestorer {
   pub fn restore_files(
@@ -576,12 +576,12 @@ export class AgentLoopCheckpointCoordinator {
     dependencies: CheckpointDependencies,
     options?: CheckpointOptions,
   ): Promise<string> {
-    // 旧接口逻辑保留，但数据最终存入Stratum
+    // 旧接口逻辑保留，但数据最终存入Layertwine
     
     const checkpoint = this.buildCheckpoint(...);  // 现有逻辑
     
     // 新：通过统一store持久化
-    const stratumId = await this.unifiedStore.createCheckpoint({
+    const layertwineId = await this.unifiedStore.createCheckpoint({
       ...checkpoint,
       source: 'agent',
     });
@@ -589,8 +589,8 @@ export class AgentLoopCheckpointCoordinator {
     // 旧：仍存入本地DB（用于过渡兼容）
     await dependencies.saveCheckpoint(checkpoint);
     
-    // 返回Stratum ID
-    return stratumId;
+    // 返回Layertwine ID
+    return layertwineId;
   }
 }
 
@@ -618,9 +618,9 @@ export class NewAgentImpl {
 
 | Phase | 内容 | 时间 | 工作量 |
 |-------|------|------|--------|
-| **1** | 统一层接口 + Stratum适配 | 1-2周 | 中等 |
+| **1** | 统一层接口 + Layertwine适配 | 1-2周 | 中等 |
 | **2** | 迁移现有调用 + 兼容性测试 | 2-3周 | 高 |
-| **3** | Stratum enhance（restore等） | 3-4周 | 中等 |
+| **3** | Layertwine enhance（restore等） | 3-4周 | 中等 |
 | **4** | 弃用旧存储、优化性能 | 1-2周 | 低 |
 | **5** | 选择性恢复、分支支持 | 2-3周 | 中等 |
 
@@ -637,7 +637,7 @@ export class NewAgentImpl {
 | 新接口设计 | 2天 | 稳定化接口 |
 | 代码实现 | 20天 | 统一层 + 迁移 |
 | 测试覆盖 | 10天 | 兼容性 + 回归 |
-| Stratum增强 | 15天 | restore等API完整 |
+| Layertwine增强 | 15天 | restore等API完整 |
 | 文档和培训 | 3天 | 迁移指南 |
 | **总计** | **~50天** | ~2-3个月 |
 
@@ -662,7 +662,7 @@ export class NewAgentImpl {
 
 | 风险 | 概率 | 影响 | 缓解 |
 |-----|------|------|------|
-| Stratum API不稳定 | 中 | 高 | 版本锁定、集成测试 |
+| Layertwine API不稳定 | 中 | 高 | 版本锁定、集成测试 |
 | 迁移期数据不一致 | 中 | 高 | 双写验证、审计日志 |
 | 性能下降（gRPC开销） | 低 | 中 | 本地缓存、批量操作 |
 | 现有code破坏 | 中 | 中 | 兼容层、gradual migration |
@@ -671,24 +671,24 @@ export class NewAgentImpl {
 ### 7.2 缓解策略
 
 ```typescript
-// 双写验证：同时写入Stratum和本地DB
+// 双写验证：同时写入Layertwine和本地DB
 async createCheckpoint(checkpoint: UnifiedCheckpoint): Promise<string> {
-  // 写入Stratum
-  const stratumId = await this.stratumStore.create(checkpoint);
+  // 写入Layertwine
+  const layertwineId = await this.layertwineStore.create(checkpoint);
   
   // 写入本地（过渡期）
   await this.localDbStore.create(checkpoint);
   
   // 验证：读取并比对
-  const stratumCp = await this.stratumStore.get(stratumId);
+  const layertwineCp = await this.layertwineStore.get(layertwineId);
   const localCp = await this.localDbStore.get(checkpoint.id);
   
-  if (!this.compareCheckpoints(stratumCp, localCp)) {
-    logger.error('Checkpoint mismatch', { stratumId, localId: checkpoint.id });
+  if (!this.compareCheckpoints(layertwineCp, localCp)) {
+    logger.error('Checkpoint mismatch', { layertwineId, localId: checkpoint.id });
     // 审计记录，不影响业务
   }
   
-  return stratumId;
+  return layertwineId;
 }
 
 // 本地缓存：减少gRPC调用
@@ -701,8 +701,8 @@ export class CachedCheckpointStore implements CheckpointUnifiedStore {
       return this.cache.get(id)!;
     }
     
-    // 从Stratum加载
-    const cp = await this.stratumStore.get(id);
+    // 从Layertwine加载
+    const cp = await this.layertwineStore.get(id);
     if (cp) {
       this.cache.set(id, cp);
     }
@@ -728,20 +728,20 @@ export class CheckpointFactory {
 
 ## 八、决策建议
 
-### 🟢 **推荐：采用方案C（统一抽象 + Stratum持久化）**
+### 🟢 **推荐：采用方案C（统一抽象 + Layertwine持久化）**
 
 #### 理由
 
 1. **风险最小** → 保留旧系统，新系统与之共存
-2. **收益最大** → 获得Stratum的所有能力（分支、去重、版本控制）
+2. **收益最大** → 获得Layertwine的所有能力（分支、去重、版本控制）
 3. **迁移平滑** → 逐步替换，不急剧改变
 4. **长期收益** → 架构规范，未来扩展容易
-5. **技术栈统一** → 所有状态最终都在Stratum管理
+5. **技术栈统一** → 所有状态最终都在Layertwine管理
 
 #### 不推荐方案A的理由
 
-- ❌ Stratum restore API不完整，需要大量Rust开发
-- ❌ 难以捕捉Agent执行状态（Stratum只关心文件）
+- ❌ Layertwine restore API不完整，需要大量Rust开发
+- ❌ 难以捕捉Agent执行状态（Layertwine只关心文件）
 - ❌ 迁移成本过高，风险大
 - ❌ 无法兼容现有代码（breaking change）
 
@@ -759,7 +759,7 @@ export class CheckpointFactory {
 ```
 目标：
   1. 定义CheckpointUnifiedStore接口
-  2. 实现StratumBackedCheckpointStore
+  2. 实现LayertwineBackedCheckpointStore
   3. 完成基本CRUD操作
   4. ID映射表维护
 
@@ -779,7 +779,7 @@ export class CheckpointFactory {
 工期：2-3周
 ```
 
-### Phase 3（P2）：Stratum能力完善
+### Phase 3（P2）：Layertwine能力完善
 ```
 目标：
   1. 完整实现restore API
@@ -787,7 +787,7 @@ export class CheckpointFactory {
   3. 实现选择性恢复
   4. 性能优化
 
-产出：Stratum端完整的checkpoint管理
+产出：Layertwine端完整的checkpoint管理
 工期：3-4周
 ```
 
@@ -815,8 +815,8 @@ export class CheckpointFactory {
    - **决策**：Phase 3完成后
    - **理由**：给充分的兼容期，至少2-3个月
 
-3. **是否在Stratum层实现选择性恢复**？
-   - **决策**：部分在Stratum（文件级），部分在TS层（字段级）
+3. **是否在Layertwine层实现选择性恢复**？
+   - **决策**：部分在Layertwine（文件级），部分在TS层（字段级）
    - **理由**：权衡复杂度与功能
 
 4. **分支功能如何集成**？
@@ -831,13 +831,13 @@ export class CheckpointFactory {
 ```
 sdk/services/checkpoint-unified-store/
 ├── CheckpointUnifiedStore.ts          # 核心接口
-├── StratumBackedStore.ts              # Stratum实现
+├── LayertwineBackedStore.ts              # Layertwine实现
 ├── SelectiveRestoreEngine.ts           # 选择性恢复
 ├── IdMappingManager.ts                # ID映射管理
 ├── CheckpointFormatter.ts             # 格式转换
 └── __tests__/
     ├── CheckpointUnifiedStore.test.ts
-    ├── StratumBackedStore.int.test.ts
+    ├── LayertwineBackedStore.int.test.ts
     └── SelectiveRestore.test.ts
 ```
 
@@ -852,13 +852,13 @@ sdk/core/checkpoint/
 ├── base-checkpoint-coordinator.ts     # 保留，但配合unifiedStore
 └── ...其他文件无需改
 
-crates/stratum/src/
+crates/layertwine/src/
 ├── checkpoint/mod.rs                  # 无改动
 ├── api/mod.rs                         # 补充restore API
 └── storage/mod.rs                     # 事务支持
 ```
 
-### Stratum需要完善的功能
+### Layertwine需要完善的功能
 ```
 1. restore_full() - 完整恢复API
 2. restore_selective() - 选择性恢复
@@ -873,9 +873,9 @@ crates/stratum/src/
 
 | 问题 | 答案 |
 |-----|------|
-| **是否完全用Stratum替换TS Checkpoint？** | **否**。采用统一抽象层，TS Checkpoint继续存在但由unifiedStore管理 |
+| **是否完全用Layertwine替换TS Checkpoint？** | **否**。采用统一抽象层，TS Checkpoint继续存在但由unifiedStore管理 |
 | **现有Checkpoint是否该弃用？** | **是**。但分阶段（3-4个月后才完全弃用） |
-| **选择性恢复如何实现？** | **双层支持**：Stratum层支持文件级选择，TS层支持字段级选择 |
-| **职责如何划分？** | **Stratum**：版本控制、分支、DAG<br/>**UnifiedStore**：格式转换、ID映射、高级API<br/>**TS Coordinator**：业务逻辑、状态提取 |
+| **选择性恢复如何实现？** | **双层支持**：Layertwine层支持文件级选择，TS层支持字段级选择 |
+| **职责如何划分？** | **Layertwine**：版本控制、分支、DAG<br/>**UnifiedStore**：格式转换、ID映射、高级API<br/>**TS Coordinator**：业务逻辑、状态提取 |
 | **何时启动？** | **立即启动Phase 1**（1-2周验证可行性） |
 | **预期收益** | **3-6个月内**：代码减少30%、可维护性+40%、新功能速度+50% |

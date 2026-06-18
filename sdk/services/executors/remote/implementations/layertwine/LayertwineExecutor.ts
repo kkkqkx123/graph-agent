@@ -1,39 +1,39 @@
 /**
- * Stratum gRPC Executor
+ * Layertwine gRPC Executor
  *
- * Encapsulates all communication details with the Stratum gRPC service
+ * Encapsulates all communication details with the Layertwine gRPC service
  * Supports embedded (SDK auto-starts binary) and remote (pre-deployed) modes
  */
 
 import { BaseRemoteExecutor } from "../../BaseRemoteExecutor.js";
 import type { RemoteConnectionConfig, RemoteExecutorStatus } from "../../types.js";
 import { GrpcClient } from "../../../../transport/grpc/GrpcClient.js";
-import { StratumProcessManager } from "./stratum-process.js";
+import { LayertwineProcessManager } from "./layertwine-process.js";
 import type {
-  StratumInitRequest,
-  StratumInitResponse,
-  StratumEditRequest,
-  StratumEditResponse,
-  StratumStatusResponse,
-  StratumCommitRequest,
-  StratumCommitResponse,
-  StratumLogRequest,
-  StratumLogResponse,
-  StratumBranchListResponse,
-  StratumAgentEditRequest,
-  StratumAgentEditResponse,
-  StratumAgentSubmitRequest,
-  StratumAgentSubmitResponse,
-  StratumApproveRequest,
-  StratumApproveResponse,
-  StratumBackupRequest,
-  StratumBackupResponse,
+  LayertwineInitRequest,
+  LayertwineInitResponse,
+  LayertwineEditRequest,
+  LayertwineEditResponse,
+  LayertwineStatusResponse,
+  LayertwineCommitRequest,
+  LayertwineCommitResponse,
+  LayertwineLogRequest,
+  LayertwineLogResponse,
+  LayertwineBranchListResponse,
+  LayertwineAgentEditRequest,
+  LayertwineAgentEditResponse,
+  LayertwineAgentSubmitRequest,
+  LayertwineAgentSubmitResponse,
+  LayertwineApproveRequest,
+  LayertwineApproveResponse,
+  LayertwineBackupRequest,
+  LayertwineBackupResponse,
 } from "./types.js";
 
-export type StratumDeployMode = "embedded" | "remote";
+export type LayertwineDeployMode = "embedded" | "remote";
 
-export interface StratumExecutorConfig {
-  deployMode: StratumDeployMode;
+export interface LayertwineExecutorConfig {
+  deployMode: LayertwineDeployMode;
   // Remote mode
   address?: string;
   // Embedded mode
@@ -43,22 +43,22 @@ export interface StratumExecutorConfig {
 }
 
 /**
- * Stratum gRPC Executor
+ * Layertwine gRPC Executor
  */
-export class StratumExecutor extends BaseRemoteExecutor {
+export class LayertwineExecutor extends BaseRemoteExecutor {
   private grpcClient: GrpcClient | null = null;
-  private config: StratumExecutorConfig;
-  private mode: StratumDeployMode;
-  private processManager: StratumProcessManager | null = null;
+  private config: LayertwineExecutorConfig;
+  private mode: LayertwineDeployMode;
+  private processManager: LayertwineProcessManager | null = null;
 
-  constructor(config: StratumExecutorConfig) {
+  constructor(config: LayertwineExecutorConfig) {
     super();
     this.config = config;
     this.mode = config.deployMode;
   }
 
   /**
-   * Connect to Stratum service
+   * Connect to Layertwine service
    */
   async connect(connectionConfig: RemoteConnectionConfig): Promise<void> {
     if (this.connected) {
@@ -66,13 +66,13 @@ export class StratumExecutor extends BaseRemoteExecutor {
     }
 
     try {
-      // For embedded mode: start the Stratum process
+      // For embedded mode: start the Layertwine process
       if (this.mode === "embedded") {
         if (!this.config.binaryPath || !this.config.dbPath) {
           throw new Error("binaryPath and dbPath are required for embedded mode");
         }
 
-        this.processManager = new StratumProcessManager({
+        this.processManager = new LayertwineProcessManager({
           binaryPath: this.config.binaryPath,
           dbPath: this.config.dbPath,
           grpcAddr: connectionConfig.address,
@@ -97,7 +97,7 @@ export class StratumExecutor extends BaseRemoteExecutor {
 
       this.grpcClient = new GrpcClient({
         address: connectionConfig.address,
-        serviceName: "stratum.Stratum",
+        serviceName: "layertwine.Layertwine",
         protoPath: this.config.protoPath,
         useTls: connectionConfig.useTls,
         defaultTimeout: connectionConfig.timeout,
@@ -114,7 +114,7 @@ export class StratumExecutor extends BaseRemoteExecutor {
   }
 
   /**
-   * Disconnect from Stratum service
+   * Disconnect from Layertwine service
    */
   async disconnect(): Promise<void> {
     if (!this.connected) {
@@ -136,7 +136,7 @@ export class StratumExecutor extends BaseRemoteExecutor {
    */
   async call<TReq, TResp>(method: string, request: TReq): Promise<TResp> {
     if (!this.grpcClient?.isConnected()) {
-      throw new Error("Stratum executor not connected");
+      throw new Error("Layertwine executor not connected");
     }
     return this.grpcClient.call<TReq, TResp>(method, request);
   }
@@ -165,80 +165,80 @@ export class StratumExecutor extends BaseRemoteExecutor {
    * Get executor type
    */
   getExecutorType(): string {
-    return "stratum-grpc";
+    return "layertwine-grpc";
   }
 
   // ══════════════════════════════════════════════════════════════
-  // Stratum Convenience Methods
+  // Layertwine Convenience Methods
   // ══════════════════════════════════════════════════════════════
 
   /**
    * Initialize repository
    */
-  async init(request: StratumInitRequest): Promise<StratumInitResponse> {
-    return this.call<StratumInitRequest, StratumInitResponse>("Init", request);
+  async init(request: LayertwineInitRequest): Promise<LayertwineInitResponse> {
+    return this.call<LayertwineInitRequest, LayertwineInitResponse>("Init", request);
   }
 
   /**
    * Edit a file
    */
-  async edit(request: StratumEditRequest): Promise<StratumEditResponse> {
-    return this.call<StratumEditRequest, StratumEditResponse>("Edit", request);
+  async edit(request: LayertwineEditRequest): Promise<LayertwineEditResponse> {
+    return this.call<LayertwineEditRequest, LayertwineEditResponse>("Edit", request);
   }
 
   /**
    * Get repository status
    */
-  async status(): Promise<StratumStatusResponse> {
-    return this.call<Record<string, never>, StratumStatusResponse>("Status", {});
+  async status(): Promise<LayertwineStatusResponse> {
+    return this.call<Record<string, never>, LayertwineStatusResponse>("Status", {});
   }
 
   /**
    * Create a checkpoint
    */
-  async commit(request: StratumCommitRequest): Promise<StratumCommitResponse> {
-    return this.call<StratumCommitRequest, StratumCommitResponse>("Commit", request);
+  async commit(request: LayertwineCommitRequest): Promise<LayertwineCommitResponse> {
+    return this.call<LayertwineCommitRequest, LayertwineCommitResponse>("Commit", request);
   }
 
   /**
    * Query history
    */
-  async log(request: StratumLogRequest): Promise<StratumLogResponse> {
-    return this.call<StratumLogRequest, StratumLogResponse>("Log", request);
+  async log(request: LayertwineLogRequest): Promise<LayertwineLogResponse> {
+    return this.call<LayertwineLogRequest, LayertwineLogResponse>("Log", request);
   }
 
   /**
    * List branches
    */
-  async branchList(): Promise<StratumBranchListResponse> {
-    return this.call<Record<string, never>, StratumBranchListResponse>("BranchList", {});
+  async branchList(): Promise<LayertwineBranchListResponse> {
+    return this.call<Record<string, never>, LayertwineBranchListResponse>("BranchList", {});
   }
 
   /**
    * Agent edit
    */
-  async agentEdit(request: StratumAgentEditRequest): Promise<StratumAgentEditResponse> {
-    return this.call<StratumAgentEditRequest, StratumAgentEditResponse>("AgentEdit", request);
+  async agentEdit(request: LayertwineAgentEditRequest): Promise<LayertwineAgentEditResponse> {
+    return this.call<LayertwineAgentEditRequest, LayertwineAgentEditResponse>("AgentEdit", request);
   }
 
   /**
    * Agent submit
    */
-  async agentSubmit(request: StratumAgentSubmitRequest): Promise<StratumAgentSubmitResponse> {
-    return this.call<StratumAgentSubmitRequest, StratumAgentSubmitResponse>("AgentSubmit", request);
+  async agentSubmit(request: LayertwineAgentSubmitRequest): Promise<LayertwineAgentSubmitResponse> {
+    return this.call<LayertwineAgentSubmitRequest, LayertwineAgentSubmitResponse>("AgentSubmit", request);
   }
 
   /**
    * Approve changes
    */
-  async approve(request: StratumApproveRequest): Promise<StratumApproveResponse> {
-    return this.call<StratumApproveRequest, StratumApproveResponse>("Approve", request);
+  async approve(request: LayertwineApproveRequest): Promise<LayertwineApproveResponse> {
+    return this.call<LayertwineApproveRequest, LayertwineApproveResponse>("Approve", request);
   }
 
   /**
    * Backup repository
    */
-  async backup(request: StratumBackupRequest): Promise<StratumBackupResponse> {
-    return this.call<StratumBackupRequest, StratumBackupResponse>("Backup", request);
+  async backup(request: LayertwineBackupRequest): Promise<LayertwineBackupResponse> {
+    return this.call<LayertwineBackupRequest, LayertwineBackupResponse>("Backup", request);
   }
 }
