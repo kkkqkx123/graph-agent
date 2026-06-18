@@ -74,8 +74,8 @@ describe("WorkflowGraph Composition Edge Cases", () => {
 
     test("should handle duplicate node additions", () => {
       const graph = new WorkflowGraph();
-      const node1 = createTestNode({ id: "node1", type: "START", config: {} });
-      const node2 = createTestNode({ id: "node1", type: "START", config: {} });
+      const node1 = createTestNode({ id: "node1", type: "START", config: { version: 1 } });
+      const node2 = createTestNode({ id: "node1", type: "START", config: { version: 2 } });
 
       graph.addNode(node1);
       graph.addNode(node2);

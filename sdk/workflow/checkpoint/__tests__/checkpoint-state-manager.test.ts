@@ -287,7 +287,6 @@ describe("CheckpointState", () => {
       expect(mockStorageAdapter.deleteByEntity).toHaveBeenCalledWith(
         "exec-1",
         "workflow",
-        undefined,
       );
     });
 

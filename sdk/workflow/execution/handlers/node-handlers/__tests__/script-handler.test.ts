@@ -36,7 +36,7 @@ describe("scriptHandler", () => {
 
     const result = await scriptHandler(mockGlobalContext, mockEntity, node);
 
-    expect(mockScriptService.execute).toHaveBeenCalledWith("my-script");
+    expect(mockScriptService.execute).toHaveBeenCalledWith("my-script", {}, mockScriptService);
     expect(mockEntity.addNodeResult).toHaveBeenCalledWith(
       expect.objectContaining({ nodeId: "script-node-1", status: "COMPLETED" }),
     );

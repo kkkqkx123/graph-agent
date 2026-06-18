@@ -34,7 +34,8 @@ describe("execute-script-handler", () => {
 
     expect(mockScriptRegistry.execute).toHaveBeenCalledWith("my-script", {
       key: "value",
-    });
+      timeout: undefined,
+    }, mockScriptRegistry);
     expect(result.success).toBe(true);
     expect(result.result).toEqual({
       message: "Script my-script executed successfully",
@@ -53,7 +54,7 @@ describe("execute-script-handler", () => {
 
     expect(mockScriptRegistry.execute).toHaveBeenCalledWith("timeout-script", {
       timeout: 5000,
-    });
+    }, mockScriptRegistry);
     expect(result.success).toBe(true);
   });
 
