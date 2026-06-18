@@ -7,15 +7,18 @@
 export { logger, createModuleLogger } from "./logger.js";
 
 // Core interfaces and base classes
-export { IToolExecutor } from "./core/interfaces/IToolExecutor.js";
-export { BaseExecutor } from "./core/base/BaseExecutor.js";
-export { ParameterValidator } from "./core/base/ParameterValidator.js";
-export { RetryStrategy } from "./core/base/RetryStrategy.js";
-export { TimeoutController } from "./core/base/TimeoutController.js";
+export { IToolExecutor } from "./core/interfaces.js";
+export {
+  BaseExecutor,
+  ParameterValidator,
+  RetryStrategy,
+  TimeoutController,
+  type RetryStrategyConfig,
+} from "./core/base.js";
 export { ToolType, ExecutorConfig, ExecutorMetadata } from "./core/types.js";
 
 // REST Executor
-export { RestExecutor } from "./rest/RestExecutor.js";
+export { RestExecutor } from "./executors/rest.js";
 export type {
   HttpRequestConfig,
   HttpResponse,
@@ -23,20 +26,19 @@ export type {
   ResponseInterceptor,
   ErrorInterceptor,
   RestExecutorConfig,
-} from "./rest/types.js";
+} from "./executors/rest.js";
 
 // Stateful Executor
-export { StatefulExecutor } from "./stateful/StatefulExecutor.js";
-export type { StatefulExecutorConfig } from "./stateful/types.js";
+export { StatefulExecutor } from "./executors/stateful.js";
+export type { StatefulExecutorConfig } from "./executors/stateful.js";
 
 // Stateless executor
-export { StatelessExecutor } from "./stateless/StatelessExecutor.js";
-export { FunctionRegistry } from "./stateless/registry/FunctionRegistry.js";
-export type { FunctionRegistryItem, FunctionRegistryConfig } from "./stateless/types.js";
+export { StatelessExecutor } from "./executors/stateless.js";
+export type { FunctionRegistryItem, FunctionRegistryConfig } from "./executors/stateless.js";
 
 // Builtin executor
-export { BuiltinExecutor } from "./builtin/BuiltinExecutor.js";
-export type { BuiltinExecutorConfig } from "./builtin/types.js";
+export { BuiltinExecutor } from "./executors/builtin.js";
+export type { BuiltinExecutorConfig } from "./executors/builtin.js";
 
 // Auxiliary functions
 export { toSdkTool, toSdkTools } from "./utils.js";

@@ -205,7 +205,6 @@ export { StatefulExecutor, type StatefulExecutorConfig } from "./tools/index.js"
 // Stateless Executor
 export {
   StatelessExecutor,
-  FunctionRegistry,
   type FunctionRegistryItem,
   type FunctionRegistryConfig,
 } from "./tools/index.js";

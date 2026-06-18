@@ -14,9 +14,58 @@ import {
   TimeoutError,
   CircuitBreakerOpenError,
 } from "@wf-agent/types";
-import { BaseExecutor } from "../core/base/BaseExecutor.js";
+import { BaseExecutor } from "../core/base.js";
 import { HttpClient, InterceptorManager } from "../../transport/http/index.js";
-import type { RestExecutorConfig } from "./types.js";
+import type { HttpResponse } from "@wf-agent/types";
+
+/**
+ * HTTP Request Configuration
+ */
+export interface HttpRequestConfig {
+  /** Request URL */
+  url: string;
+  /** HTTP Methods */
+  method: HTTPMethod;
+  /** Request headers */
+  headers?: Record<string, string>;
+  /** Request Body */
+  body?: unknown;
+  /** Query parameters */
+  query?: Record<string, unknown>;
+  /** Timeout period (in milliseconds) */
+  timeout?: number;
+  /** Basic URL */
+  baseUrl?: string;
+}
+
+/**
+ * REST Executor Configuration
+ */
+export interface RestExecutorConfig {
+  /** Basic URL */
+  baseUrl?: string;
+  /** Default request headers */
+  headers?: Record<string, string>;
+  /** Default timeout period (in milliseconds) */
+  timeout?: number;
+  /** Request interceptor */
+  requestInterceptors?: RequestInterceptor[];
+  /** Response interceptor */
+  responseInterceptors?: ResponseInterceptor[];
+  /** Error interceptor */
+  errorInterceptors?: { intercept: (error: Error) => Error | Promise<Error> }[];
+  /** Whether to enable the circuit breaker. */
+  enableCircuitBreaker?: boolean;
+  /** Circuit Breaker Configuration */
+  circuitBreaker?: {
+    /** Failure threshold */
+    failureThreshold: number;
+    /** Reset timeout (in milliseconds) */
+    resetTimeout: number;
+    /** Number of semi-open state requests */
+    halfOpenRequests: number;
+  };
+}
 
 /**
  * REST Tool Executor
@@ -298,3 +347,8 @@ export class RestExecutor extends BaseExecutor {
     return "REST";
   }
 }
+
+// Re-export commonly used types for convenience
+export type { HttpResponse };
+export type { RequestInterceptor, ResponseInterceptor };
+export type { ErrorInterceptor } from "../../transport/http/index.js";

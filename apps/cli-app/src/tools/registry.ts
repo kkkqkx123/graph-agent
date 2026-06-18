@@ -1,11 +1,11 @@
 /**
  * Tool Registry Center
- * Reuses FunctionRegistry and StatefulExecutor from the tool-executors package
+ * Reuses StatelessExecutor and StatefulExecutor from the tool-executors package
  */
 
 import type { Tool } from "@wf-agent/types";
 import {
-  FunctionRegistry,
+  StatelessExecutor,
   StatefulExecutor,
   toSdkTool,
   type ToolDefinitionLike,
@@ -24,10 +24,10 @@ export class ToolRegistry {
   private config: ToolRegistryConfig;
   private tools: Map<string, ToolDefinitionLike> = new Map();
 
-  /** Reuse FunctionRegistry to manage stateless utility functions. */
-  private functionRegistry: FunctionRegistry;
+  /** Manage stateless tools execution */
+  private statelessExecutor: StatelessExecutor;
 
-  /** Reusing StatefulExecutor to manage stateful tool instances */
+  /** Manage stateful tool instances */
   private statefulExecutor: StatefulExecutor;
 
   constructor(config: ToolRegistryConfig = {}) {
@@ -36,8 +36,8 @@ export class ToolRegistry {
       memoryFile: config.memoryFile || "./workspace/.agent_memory.json",
     };
 
-    // Initialize the tool-executors component
-    this.functionRegistry = new FunctionRegistry({
+    // Initialize the tool-executors components
+    this.statelessExecutor = new StatelessExecutor({
       enableVersionControl: true,
       enableCallStatistics: true,
       maxFunctions: 100,
@@ -90,13 +90,6 @@ export class ToolRegistry {
       output.warnLog(`Tool '${tool.id}' already registered, overwriting...`);
     }
     this.tools.set(tool.id, tool);
-
-    // Register with the corresponding executor as well.
-    if (tool.type === "STATELESS" && tool.execute) {
-      // Reusing the FunctionRegistry to register stateless tools
-      this.functionRegistry.register(tool.id, tool.execute, tool.version, tool.description);
-    }
-    // Stateful tools are managed by the StatefulExecutor while in execution.
   }
 
   /**
@@ -132,8 +125,6 @@ export class ToolRegistry {
    * Unregister tool
    */
   unregister(toolId: string): boolean {
-    // Unregister from FunctionRegistry
-    this.functionRegistry.unregister(toolId);
     return this.tools.delete(toolId);
   }
 
@@ -141,7 +132,11 @@ export class ToolRegistry {
    * Clear all tools
    */
   clear(): void {
-    this.functionRegistry.clear();
+    this.statelessExecutor = new StatelessExecutor({
+      enableVersionControl: true,
+      enableCallStatistics: true,
+      maxFunctions: 100,
+    });
     this.tools.clear();
   }
 
@@ -153,10 +148,10 @@ export class ToolRegistry {
   }
 
   /**
-   * Get FunctionRegistry (for external use)
+   * Get StatelessExecutor (for external use)
    */
-  getFunctionRegistry(): FunctionRegistry {
-    return this.functionRegistry;
+  getStatelessExecutor(): StatelessExecutor {
+    return this.statelessExecutor;
   }
 
   /**
@@ -164,20 +159,6 @@ export class ToolRegistry {
    */
   getStatefulExecutor(): StatefulExecutor {
     return this.statefulExecutor;
-  }
-
-  /**
-   * Get function statistics (reusing FunctionRegistry capability)
-   */
-  getFunctionStats(toolId: string) {
-    return this.functionRegistry.getFunctionStats(toolId);
-  }
-
-  /**
-   * Get all function names (reusing FunctionRegistry capability)
-   */
-  getFunctionNames(): string[] {
-    return this.functionRegistry.getFunctionNames();
   }
 
   /**
@@ -192,7 +173,6 @@ export class ToolRegistry {
    */
   async cleanup(): Promise<void> {
     await this.statefulExecutor.cleanup();
-    this.functionRegistry.clear();
     this.tools.clear();
   }
 }

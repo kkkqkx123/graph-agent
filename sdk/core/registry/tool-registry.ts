@@ -19,13 +19,13 @@ import {
   ToolNotFoundError,
   RuntimeValidationError,
 } from "@wf-agent/types";
-import type { IToolExecutor } from "../../services/tools/core/interfaces/IToolExecutor.js";
+import type { IToolExecutor } from "../../services/tools/core/interfaces.js";
 import type { ToolExecutionOptions, ToolExecutionResult } from "@wf-agent/types";
-import type { RestExecutorConfig } from "../../services/tools/rest/types.js";
-import { StatelessExecutor } from "../../services/tools/stateless/StatelessExecutor.js";
-import { StatefulExecutor } from "../../services/tools/stateful/StatefulExecutor.js";
-import { RestExecutor } from "../../services/tools/rest/RestExecutor.js";
-import { BuiltinExecutor } from "../../services/tools/builtin/BuiltinExecutor.js";
+import type { RestExecutorConfig } from "../../services/tools/executors/rest.js";
+import { StatelessExecutor } from "../../services/tools/executors/stateless.js";
+import { StatefulExecutor } from "../../services/tools/executors/stateful.js";
+import { RestExecutor } from "../../services/tools/executors/rest.js";
+import { BuiltinExecutor } from "../../services/tools/executors/builtin.js";
 import { tryCatchAsyncWithSignal, all } from "@wf-agent/common-utils";
 import type { Result } from "@wf-agent/types";
 import { ok, err } from "@wf-agent/common-utils";

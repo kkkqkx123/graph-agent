@@ -19,7 +19,6 @@ export { ToolRegistry, createToolRegistry } from "./registry.js";
 
 // Reusing components for exporting from SDK
 export {
-  FunctionRegistry,
   StatelessExecutor,
   StatefulExecutor,
   TimeoutController,
