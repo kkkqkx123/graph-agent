@@ -28,6 +28,16 @@ import type {
   LayertwineApproveResponse,
   LayertwineBackupRequest,
   LayertwineBackupResponse,
+  LayertwineRestoreRequest,
+  LayertwineRestoreResponse,
+  LayertwineSelectiveRestoreRequest,
+  LayertwineSelectiveRestoreResponse,
+  LayertwineRestoreByTimeRequest,
+  LayertwineRestoreByTimeResponse,
+  LayertwineDiffRequest,
+  LayertwineDiffResponse,
+  LayertwineGetSnapshotRequest,
+  LayertwineGetSnapshotResponse,
 } from "./types.js";
 
 export type LayertwineDeployMode = "embedded" | "remote";
@@ -240,5 +250,50 @@ export class LayertwineExecutor extends BaseRemoteExecutor {
    */
   async backup(request: LayertwineBackupRequest): Promise<LayertwineBackupResponse> {
     return this.call<LayertwineBackupRequest, LayertwineBackupResponse>("Backup", request);
+  }
+
+  /**
+   * Restore full checkpoint
+   */
+  async restoreCheckpoint(request: LayertwineRestoreRequest): Promise<LayertwineRestoreResponse> {
+    return this.call<LayertwineRestoreRequest, LayertwineRestoreResponse>("RestoreCheckpoint", request);
+  }
+
+  /**
+   * Restore checkpoint selectively by source pattern
+   */
+  async restoreSelectiveCheckpoint(
+    request: LayertwineSelectiveRestoreRequest
+  ): Promise<LayertwineSelectiveRestoreResponse> {
+    return this.call<LayertwineSelectiveRestoreRequest, LayertwineSelectiveRestoreResponse>(
+      "RestoreSelectiveCheckpoint",
+      request
+    );
+  }
+
+  /**
+   * Restore checkpoint at a specific timestamp
+   */
+  async restoreCheckpointByTime(
+    request: LayertwineRestoreByTimeRequest
+  ): Promise<LayertwineRestoreByTimeResponse> {
+    return this.call<LayertwineRestoreByTimeRequest, LayertwineRestoreByTimeResponse>(
+      "RestoreCheckpointByTime",
+      request
+    );
+  }
+
+  /**
+   * Diff two checkpoints
+   */
+  async diffCheckpoints(request: LayertwineDiffRequest): Promise<LayertwineDiffResponse> {
+    return this.call<LayertwineDiffRequest, LayertwineDiffResponse>("DiffCheckpoints", request);
+  }
+
+  /**
+   * Get snapshot content
+   */
+  async getSnapshot(request: LayertwineGetSnapshotRequest): Promise<LayertwineGetSnapshotResponse> {
+    return this.call<LayertwineGetSnapshotRequest, LayertwineGetSnapshotResponse>("GetSnapshot", request);
   }
 }

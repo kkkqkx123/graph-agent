@@ -120,3 +120,81 @@ export interface LayertwineBackupResponse {
   backupPath: string;
   size: number;
 }
+
+// ── Checkpoint Restore ──
+export interface LayertwineRestoreRequest {
+  checkpointId: string;
+}
+
+export interface LayertwineSnapshotInfo {
+  id: string;
+  source: string;
+  contentType: string;
+  size: number;
+  createdAt: number;
+}
+
+export interface LayertwineRestoreResponse {
+  checkpointId: string;
+  snapshots: LayertwineSnapshotInfo[];
+  ancestry: string[];
+  metadata: {
+    author: string;
+    message: string;
+    createdAt: number;
+  };
+}
+
+// ── Selective Restore ──
+export interface LayertwineSelectiveRestoreRequest {
+  checkpointId: string;
+  sources?: string[];
+}
+
+export interface LayertwineSelectiveRestoreResponse {
+  checkpointId: string;
+  snapshots: LayertwineSnapshotInfo[];
+  metadata: {
+    author: string;
+    message: string;
+    createdAt: number;
+  };
+}
+
+// ── Time-based Restore ──
+export interface LayertwineRestoreByTimeRequest {
+  timestamp: number;
+  source?: string;
+}
+
+export interface LayertwineRestoreByTimeResponse {
+  checkpointId: string;
+  snapshots: LayertwineSnapshotInfo[];
+  timestamp: number;
+}
+
+// ── Checkpoint Diff ──
+export interface LayertwineDiffRequest {
+  fromCheckpointId: string;
+  toCheckpointId: string;
+}
+
+export interface LayertwineDiffResponse {
+  added: string[];
+  removed: string[];
+  modified: string[];
+}
+
+// ── Snapshot Content Retrieve ──
+export interface LayertwineGetSnapshotRequest {
+  checkpointId: string;
+  snapshotId: string;
+}
+
+export interface LayertwineGetSnapshotResponse {
+  snapshotId: string;
+  source: string;
+  contentType: string;
+  content: string | Buffer;
+  size: number;
+}

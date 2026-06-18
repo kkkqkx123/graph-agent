@@ -26,3 +26,4 @@ export * as agent from "./agent/index.js";
 export * as workflow from "./workflow/index.js";
 export * as utils from "./utils/index.js";
 export * as resources from "./resources/index.js";
+export * as checkpoint from "./checkpoint/index.js";
