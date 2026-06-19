@@ -3,7 +3,7 @@
  * Handles connection state tracking and transitions
  */
 
-import type { McpServerState, McpServerStatus, McpServerSource, McpErrorEntry } from "./types.js";
+import type { McpServerState, McpServerStatus, McpServerSource, McpErrorEntry } from "../types.js";
 
 /**
  * Create initial server state

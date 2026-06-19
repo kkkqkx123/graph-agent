@@ -13,4 +13,6 @@ export type ToolType =
   /** REST API Tool */
   | "REST"
   /** Built-in tools (SDK internal tools like execute_workflow) */
-  | "BUILTIN";
+  | "BUILTIN"
+  /** MCP (Model Context Protocol) tools hosted on MCP servers */
+  | "MCP";

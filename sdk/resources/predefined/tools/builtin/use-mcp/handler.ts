@@ -74,6 +74,32 @@ function processResourceResult(result: {
 }
 
 /**
+ * Generate enhanced description with available MCP servers
+ *
+ * If MCP manager is available, includes list of configured servers and hot tools.
+ * Falls back to base description if MCP manager is not available.
+ *
+ * Note: This function is defined for future use in dynamic description generation.
+ * It will be integrated with TransformContextFn in Phase 2.
+ */
+export async function generateEnhancedDescriptionForFutureUse(
+  mcpManager?: McpConnectionManager,
+): Promise<string> {
+  if (!mcpManager) {
+    return "use_mcp tool - Call MCP server tools and access resources";
+  }
+
+  try {
+    const { McpToolMetadataExporter } = await import("@sdk/services/mcp/features/metadata/tool-metadata-exporter.js");
+    const exporter = new McpToolMetadataExporter(mcpManager);
+    exporter.exportContext({ hotToolsLimit: 5 });
+    return exporter.generateToolsSummary();
+  } catch {
+    return "use_mcp tool - Call MCP server tools and access resources";
+  }
+}
+
+/**
  * Create the `use_mcp` tool execution function
  *
  * @param mcpManager - MCP connection manager instance

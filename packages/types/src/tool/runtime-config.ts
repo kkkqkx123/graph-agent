@@ -105,10 +105,27 @@ export interface BuiltinToolExecutionContext {
 }
 
 /**
+ * MCP Tool Configuration
+ */
+export interface McpToolConfig {
+  /** MCP Server name */
+  serverName: string;
+  /** Tool name on the MCP server */
+  toolName: string;
+  /** Optional: timeout in milliseconds (overrides server timeout) */
+  timeout?: number;
+  /** Optional: whether to create checkpoints on success */
+  createCheckpointOnSuccess?: boolean;
+  /** Optional: checkpoint description template */
+  checkpointDescriptionTemplate?: string;
+}
+
+/**
  * Tool Runtime Configuration Type (Union of all tool types)
  */
 export type ToolConfig =
   | StatelessToolConfig
   | StatefulToolConfig
   | RestToolConfig
-  | BuiltinToolConfig;
+  | BuiltinToolConfig
+  | McpToolConfig;

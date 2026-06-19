@@ -26,6 +26,7 @@ import { StatelessExecutor } from "../../services/tools/executors/stateless.js";
 import { StatefulExecutor } from "../../services/tools/executors/stateful.js";
 import { RestExecutor } from "../../services/tools/executors/rest.js";
 import { BuiltinExecutor } from "../../services/tools/executors/builtin.js";
+import { McpExecutor } from "../../services/tools/executors/mcp.js";
 import { tryCatchAsyncWithSignal, all } from "@wf-agent/common-utils";
 import type { Result } from "@wf-agent/types";
 import { ok, err } from "@wf-agent/common-utils";
@@ -91,6 +92,7 @@ class ToolRegistry
     this.executors.set("STATEFUL", new StatefulExecutor());
     this.executors.set("REST", new RestExecutor(this.restExecutorConfig));
     this.executors.set("BUILTIN", this.builtinExecutor);
+    this.executors.set("MCP", new McpExecutor());
   }
 
   // ============================================================

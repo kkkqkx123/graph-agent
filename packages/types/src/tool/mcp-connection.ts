@@ -34,6 +34,11 @@ export type McpServerSource = "global" | "project";
 export type McpServerLifecycle = "lazy" | "eager" | "keep-alive";
 
 /**
+ * Health Check Strategy for Keep-Alive Servers
+ */
+export type McpHealthCheckStrategy = "list-tools" | "light" | "custom";
+
+/**
  * Base MCP Server Configuration
  */
 export interface McpServerConfigBase {
@@ -49,6 +54,8 @@ export interface McpServerConfigBase {
   idleTimeout?: number;
   /** Keep-alive health check interval in seconds (default: 30). Only for keep-alive mode. */
   healthCheckInterval?: number;
+  /** Health check strategy (default: list-tools) */
+  healthCheckStrategy?: McpHealthCheckStrategy;
   /** Tools that are always allowed without approval */
   alwaysAllow?: string[];
   /** Tools that are disabled */
@@ -256,6 +263,8 @@ export interface McpManagerOptions {
   defaultIdleTimeout?: number;
   /** Default health check interval in seconds (only for keep-alive) */
   defaultHealthCheckInterval?: number;
+  /** Whether to auto-shutdown servers when metadata cache expires (default: true) */
+  autoShutdownExpiredServers?: boolean;
 }
 
 /**
@@ -266,6 +275,7 @@ export type McpEventType =
   | "server:connected"
   | "server:disconnected"
   | "server:error"
+  | "server:metadata-refreshed"
   | "servers:changed";
 
 /**

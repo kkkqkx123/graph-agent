@@ -9,8 +9,8 @@ import type {
   McpResourceTemplate,
   McpToolCallResult,
   McpResourceReadResult,
-} from "./types.js";
-import type { IMcpTransport } from "./transport/index.js";
+} from "../types.js";
+import type { IMcpTransport } from "../transport/index.js";
 
 /**
  * MCP Client
@@ -35,8 +35,8 @@ export class McpClient {
    */
   private setupTransportHandlers(): void {
     this.transport.setHandlers({
-      onData: data => this.handleResponse(data),
-      onError: error => this.handleError(error),
+      onData: (data: unknown) => this.handleResponse(data),
+      onError: (error: Error) => this.handleError(error),
       onClose: () => this.handleClose(),
     });
   }

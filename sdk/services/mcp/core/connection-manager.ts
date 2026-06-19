@@ -15,12 +15,11 @@ import type {
   McpEventHandler,
   McpServerSource,
   McpServerLifecycle,
-} from "./types.js";
-import { createTransport } from "./transport/index.js";
+} from "../types.js";
+import { createTransport } from "../transport/index.js";
 import { McpClient } from "./mcp-client.js";
-import { createContextualLogger } from "../../utils/contextual-logger.js";
-
-const logger = createContextualLogger({ component: "MCPConnectionManager" });
+import { McpToolMetadataCache } from "../features/metadata/metadata-cache.js";
+import { createContextualLogger } from "../../../utils/contextual-logger.js";
 import {
   createInitialServerState,
   updateServerStatus,
@@ -29,6 +28,8 @@ import {
   updateLastActivity,
   isIdleBeyond,
 } from "./connection-state.js";
+
+const logger = createContextualLogger({ component: "MCPConnectionManager" });
 
 /**
  * Connection entry (server state + client + lifecycle metadata)
@@ -48,15 +49,42 @@ interface ConnectionEntry {
  */
 export class McpConnectionManager {
   private connections = new Map<string, ConnectionEntry>();
-  private options: Required<McpManagerOptions>;
+  private options: {
+    mcpEnabled: boolean;
+    maxErrorHistory: number;
+    connectionTimeout: number;
+    configDebounceDelay: number;
+    defaultLifecycle: McpServerLifecycle;
+    defaultIdleTimeout: number;
+    defaultHealthCheckInterval: number;
+  };
   private eventHandlers: McpEventHandler[] = [];
   private clientInfo: { name: string; version: string };
   private idleTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private healthCheckIntervals = new Map<string, ReturnType<typeof setInterval>>();
   private shuttingDown = false;
+  private metadataCache: McpToolMetadataCache;
+  private connectingPromises = new Map<string, Promise<void>>();
 
-  constructor(clientInfo: { name: string; version: string }, options?: McpManagerOptions) {
+  constructor(
+    clientInfo: { name: string; version: string },
+    options?: McpManagerOptions,
+    metadataCache?: McpToolMetadataCache,
+  ) {
     this.clientInfo = clientInfo;
+    this.metadataCache = metadataCache ?? new McpToolMetadataCache({
+      defaultTtl: 5 * 60 * 1000,
+      enableAutoCleanup: true,
+      cleanupInterval: 60 * 1000,
+      // If autoShutdownExpiredServers is enabled, disconnect servers when their metadata expires
+      onExpire: (options?.autoShutdownExpiredServers !== false)
+        ? (serverName) => {
+            this.disconnectServer(serverName).catch(err => {
+              logger.debug(`Auto-shutdown error for expired server "${serverName}":`, { err });
+            });
+          }
+        : undefined,
+    });
     this.options = {
       mcpEnabled: options?.mcpEnabled ?? true,
       maxErrorHistory: options?.maxErrorHistory ?? 100,
@@ -238,6 +266,9 @@ export class McpConnectionManager {
       entry.state.resources = await this.fetchResources(client);
       entry.state.resourceTemplates = await this.fetchResourceTemplates(client);
 
+      // Cache metadata for dynamic context injection
+      this.metadataCache.set(name, entry.state);
+
       this.emitEvent({ type: "server:connected", serverName: name });
       logger.info(`Server "${name}" connected (lifecycle: ${entry.lifecycle})`);
     } catch (error) {
@@ -262,6 +293,8 @@ export class McpConnectionManager {
   /**
    * Auto-connect a lazy server if it's not connected, then execute a callback.
    * Returns the result of the callback.
+   *
+   * Thread-safe: Uses promise-based lock to prevent concurrent connections to lazy servers.
    */
   private async withServer<T>(name: string, fn: (client: McpClient) => Promise<T>): Promise<T> {
     const entry = this.connections.get(name);
@@ -276,8 +309,16 @@ export class McpConnectionManager {
     const needsConnect = entry.lifecycle === "lazy" && entry.state.status !== "connected";
 
     if (needsConnect) {
-      logger.debug(`Auto-connecting lazy server "${name}"`);
-      await this.doConnect(name, entry.config);
+      // Use promise-based lock to prevent concurrent connection attempts
+      let connectPromise = this.connectingPromises.get(name);
+      if (!connectPromise) {
+        logger.debug(`Auto-connecting lazy server "${name}"`);
+        connectPromise = this.doConnect(name, entry.config)
+          .finally(() => this.connectingPromises.delete(name));
+        this.connectingPromises.set(name, connectPromise);
+      }
+      // Wait for connection to complete (new or existing)
+      await connectPromise;
     }
 
     const reloaded = this.connections.get(name);
@@ -364,6 +405,10 @@ export class McpConnectionManager {
   /**
    * Perform a health check on a keep-alive server.
    * Reconnects if disconnected.
+   *
+   * Strategy options:
+   * - "list-tools": Call listTools() (comprehensive check, higher overhead)
+   * - "light": Call listResources() as lightweight check (lower overhead)
    */
   private async runHealthCheck(name: string): Promise<void> {
     const entry = this.connections.get(name);
@@ -371,7 +416,16 @@ export class McpConnectionManager {
 
     if (entry.state.status === "connected") {
       try {
-        await entry.client!.listTools();
+        const strategy = entry.config.healthCheckStrategy ?? "list-tools";
+
+        if (strategy === "list-tools") {
+          // Comprehensive check: fetch tool list
+          await entry.client!.listTools();
+        } else if (strategy === "light") {
+          // Lightweight check: list resources instead of tools (lower overhead)
+          await entry.client!.listResources();
+        }
+
         entry.state = {
           ...entry.state,
           lastHealthCheck: Date.now(),
@@ -473,6 +527,8 @@ export class McpConnectionManager {
   async disconnectServer(name: string): Promise<void> {
     await this.cleanupServerTimers(name);
     this.connections.delete(name);
+    // Invalidate cached metadata when disconnecting
+    this.metadataCache.invalidate(name);
     this.emitEvent({ type: "server:disconnected", serverName: name });
   }
 
@@ -489,6 +545,10 @@ export class McpConnectionManager {
         }),
       ),
     );
+    // Clear all cache on shutdown
+    this.metadataCache.clear();
+    // Clear all connecting promises
+    this.connectingPromises.clear();
     this.shuttingDown = false;
   }
 
@@ -511,6 +571,53 @@ export class McpConnectionManager {
    */
   getConnectedServers(): McpServerState[] {
     return this.getAllServerStates().filter(s => s.status === "connected");
+  }
+
+  /**
+   * Get metadata cache instance
+   * Useful for accessing cached tool/resource metadata for dynamic context injection
+   */
+  getMetadataCache(): McpToolMetadataCache {
+    return this.metadataCache;
+  }
+
+  /**
+   * Refresh server metadata and update cache
+   * Useful for servers with dynamic tool/resource lists
+   *
+   * @param name - Server name
+   * @throws Error if server not registered or not connected
+   */
+  async refreshServerMetadata(name: string): Promise<void> {
+    const entry = this.connections.get(name);
+    if (!entry) {
+      throw new Error(`No server registered: ${name}`);
+    }
+
+    if (entry.state.status !== "connected" || !entry.client) {
+      throw new Error(`Server "${name}" is not connected`);
+    }
+
+    try {
+      logger.debug(`Refreshing metadata for server "${name}"`);
+
+      entry.state.tools = await this.fetchTools(entry.client, name, entry.config);
+      entry.state.resources = await this.fetchResources(entry.client);
+      entry.state.resourceTemplates = await this.fetchResourceTemplates(entry.client);
+
+      // Immediately update cache
+      this.metadataCache.set(name, entry.state);
+
+      this.emitEvent({
+        type: "server:metadata-refreshed",
+        serverName: name,
+      });
+
+      logger.info(`Metadata refreshed for server "${name}"`);
+    } catch (error) {
+      logger.error(`Failed to refresh metadata for "${name}":`, { error });
+      throw error;
+    }
   }
 
   /**
