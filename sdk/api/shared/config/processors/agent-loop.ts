@@ -80,9 +80,9 @@ function transformHook(hookFile: AgentHookConfigFile): AgentHook {
  * @returns: A Condition object
  */
 function parseCondition(conditionStr: string): Condition {
-  // Returns expression conditions directly
-  // The Condition interface only requires the expression field, and metadata is optional
+  // Returns expression conditions with explicit type
   return {
+    type: "expression",
     expression: conditionStr,
-  };
+  } as any;
 }

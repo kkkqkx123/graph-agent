@@ -209,7 +209,7 @@ export class NodeBuilder extends BaseBuilder<StaticNode> {
     return this.type("ROUTE").mergeConfig({
       routes: routes.map(route => ({
         ...route,
-        condition: { expression: route.condition },
+        condition: { type: "expression", expression: route.condition },
       })),
       defaultTargetNodeId,
     });

@@ -1,35 +1,28 @@
 /**
  * Evaluation Module
- * Provides expression evaluation, condition evaluation, and dependency tracking.
+ * Provides unified condition evaluation with support for multiple condition types
  */
 
-// Expression evaluator
-export { ExpressionEvaluator, expressionEvaluator } from "./expression-evaluator.js";
-
-// Expression compiler
-export { ExpressionCompiler, expressionCompiler } from "./expression-compiler.js";
-export type { CompiledExpression } from "./expression-compiler.js";
-
-// Condition evaluator
 export { ConditionEvaluator, conditionEvaluator } from "./condition-evaluator.js";
+export { CacheManager, cacheManager } from "./cache-manager.js";
+export type { CompiledUnit, ICompiler } from "./types/index.js";
+export type { IExecutor } from "./types/index.js";
+export { BaseExecutor } from "./base-executor.js";
 
-// Security validator
+// Shared utilities
 export {
   validateExpression,
   validatePath,
   validateArrayIndex,
   validateValueType,
   SECURITY_CONFIG,
-} from "./security-validator.js";
+  resolvePath,
+  pathExists,
+  setPath,
+  setArrayItemByKey,
+} from "./shared/index.js";
 
-// Path resolver
-export { resolvePath, pathExists, setPath, setArrayItemByKey } from "./path-resolver.js";
-
-// Dependency tracking
-export { DependencyManager, createDependencyManager } from "./dependency-tracker.js";
-export type { TrackedExpression } from "./dependency-tracker.js";
-
-// DSL high-level API
+// DSL
 export {
   dslParse,
   dslParseWithErrors,
@@ -39,7 +32,6 @@ export {
   tokenizeExpression,
 } from "./dsl/index.js";
 
-// DSL types
 export type {
   Expression,
   LiteralExpr,
@@ -54,3 +46,49 @@ export type {
   NodeMetadata,
   BinaryOperator,
 } from "./dsl/types.js";
+
+// Compilers (lazy imports to avoid circular deps)
+import { expressionCompiler } from "./compilers/expression-compiler.js";
+import { cacheManager } from "./cache-manager.js";
+import { conditionEvaluator } from "./condition-evaluator.js";
+
+// Legacy backward compatibility
+export class DependencyManager {
+  register(key: string, expression: string, context: any) {
+    const compiled = expressionCompiler.compile(expression);
+    cacheManager.setCachedResult(key, undefined, compiled.dependencies ?? [], context);
+    return { expression, compiled, dependencies: compiled.dependencies ?? [], lastResult: undefined };
+  }
+
+  getTrackedExpression(key: string) {
+    const result = cacheManager.getCachedResult(key);
+    if (result !== null) {
+      return { lastResult: result };
+    }
+    return null;
+  }
+
+  evaluateIfChanged(key: string, context: any) {
+    return conditionEvaluator.evaluate({ type: "expression", expression: key } as any, context, key);
+  }
+
+  clear() {
+    cacheManager.clear();
+  }
+}
+
+export function createDependencyManager() {
+  return new DependencyManager();
+}
+
+// ExpressionEvaluator compatibility
+export const expressionEvaluator = {
+  evaluate: (expr: string, context: any) => {
+    return conditionEvaluator.evaluate({ type: "expression", expression: expr } as any, context);
+  },
+  evaluateAST: (_ast: unknown, context: any) => {
+    // For backward compatibility, evaluate as expression
+    // Note: AST parameter ignored, evaluates expression directly
+    return conditionEvaluator.evaluate({ type: "expression", expression: "" } as any, context);
+  },
+};

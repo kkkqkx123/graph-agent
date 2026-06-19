@@ -1,49 +1,38 @@
 /**
  * ExpressionCompiler - Expression Compiler
- * Compiles expressions into optimized executable form with caching.
+ * Compiles expression strings into optimized executable form
+ * Implements ICompiler interface
  */
 
-import type { EvaluationContext } from "@wf-agent/types";
-import { dslParse } from "./dsl/index.js";
-import { expressionEvaluator } from "./expression-evaluator.js";
-import type { Expression, MemberAccessExpr, IdentifierExpr } from "./dsl/types.js";
+import { dslParse } from "../dsl/index.js";
+import type { Expression, MemberAccessExpr, IdentifierExpr } from "../dsl/types.js";
+import type { ICompiler, CompiledUnit } from "../types/index.js";
 
-export interface CompiledExpression {
-  ast: Expression;
-  evaluate: (context: EvaluationContext) => unknown;
-  dependencies: string[];
-  complexity: number;
-}
+export class ExpressionCompiler implements ICompiler {
+  private cache = new Map<string, CompiledUnit>();
 
-export class ExpressionCompiler {
-  private cache = new Map<string, CompiledExpression>();
-
-  compile(expression: string): CompiledExpression {
+  compile(expression: string): CompiledUnit {
     if (this.cache.has(expression)) {
       return this.cache.get(expression)!;
     }
 
     const ast = dslParse(expression);
-    if (ast === null) {
-      throw new Error(`Failed to parse expression: ${expression}`);
-    }
 
     const dependencies = this.extractDependencies(ast);
     const complexity = this.calculateComplexity(ast);
 
-    const evaluate = (context: EvaluationContext) => {
-      return expressionEvaluator.evaluateAST(ast, context);
-    };
-
-    const compiled: CompiledExpression = {
+    const unit: CompiledUnit = {
       ast,
-      evaluate,
       dependencies,
       complexity,
+      metadata: {
+        type: "expression",
+        expression,
+      },
     };
 
-    this.cache.set(expression, compiled);
-    return compiled;
+    this.cache.set(expression, unit);
+    return unit;
   }
 
   clearCache(): void {
@@ -92,11 +81,11 @@ export class ExpressionCompiler {
 
       case "call":
         this.collectDependencies(node.callee, deps);
-        node.arguments.forEach(arg => this.collectDependencies(arg, deps));
+        node.arguments.forEach((arg: Expression) => this.collectDependencies(arg, deps));
         break;
 
       case "arrayLiteral":
-        node.elements.forEach(el => this.collectDependencies(el, deps));
+        node.elements.forEach((el: Expression) => this.collectDependencies(el, deps));
         break;
 
       case "literal":
@@ -131,7 +120,6 @@ export class ExpressionCompiler {
       parts.unshift((current as IdentifierExpr).name);
     }
 
-    // Custom join: bracket notation attaches to preceding part without a dot
     let result = parts[0]!;
     for (let i = 1; i < parts.length; i++) {
       const part = parts[i]!;
@@ -147,8 +135,6 @@ export class ExpressionCompiler {
   private calculateComplexity(node: Expression): number {
     switch (node.type) {
       case "literal":
-        return 1;
-
       case "identifier":
         return 1;
 
@@ -176,14 +162,14 @@ export class ExpressionCompiler {
 
       case "call": {
         const argComplexity = node.arguments.reduce(
-          (sum, arg) => sum + this.calculateComplexity(arg),
+          (sum: number, arg: Expression) => sum + this.calculateComplexity(arg),
           0,
         );
         return 4 + this.calculateComplexity(node.callee) + argComplexity;
       }
 
       case "arrayLiteral":
-        return 1 + node.elements.reduce((sum, el) => sum + this.calculateComplexity(el), 0);
+        return 1 + node.elements.reduce((sum: number, el: Expression) => sum + this.calculateComplexity(el), 0);
 
       default:
         return 1;

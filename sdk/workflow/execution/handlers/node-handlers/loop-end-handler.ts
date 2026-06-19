@@ -78,13 +78,15 @@ function evaluateBreakCondition(
       output: workflowExecution.output || {},
     };
 
-    // Use DependencyManager for per-execution caching of break condition.
-    // Break conditions may be re-evaluated each iteration, and the AST
-    // parsing is cached via ExpressionCompiler inside DependencyManager.
-    if (executionEntity) {
+    // Handle discriminated union Condition type
+    const conditionAny = breakCondition as any;
+    const conditionType = conditionAny.type ?? "expression";
+
+    // For expression conditions, use the cached evaluator for backward compatibility
+    if (conditionType === "expression" && executionEntity) {
       const depManager = executionEntity.getDepManager();
       const key = `loopBreak:${loopId || ""}`;
-      const expression = breakCondition.expression;
+      const expression = conditionAny.expression;
       const cached = depManager.getTrackedExpression(key);
       if (cached) {
         return Boolean(depManager.evaluateIfChanged(key, context));
@@ -93,7 +95,7 @@ function evaluateBreakCondition(
       return Boolean(depManager.getTrackedExpression(key)?.lastResult);
     }
 
-    // Fallback: evaluate directly without caching
+    // For other condition types or no executionEntity, use unified evaluator
     return conditionEvaluator.evaluate(breakCondition, context);
   } catch (error) {
     throw new ExecutionError(

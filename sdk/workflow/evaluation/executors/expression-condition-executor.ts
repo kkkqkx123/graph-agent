@@ -1,20 +1,19 @@
 /**
- * ExpressionEvaluator - Expression Evaluator
- * Evaluates expressions using the new unified AST types from the DSL module.
+ * ExpressionConditionExecutor
+ * Executes compiled expression AST
+ * Implements IExecutor interface
  */
 
 import type { EvaluationContext } from "@wf-agent/types";
 import { ExpressionSecurityError, RuntimeValidationError } from "@wf-agent/types";
 import {
   validatePath,
-  validateExpression,
   validateArrayIndex,
   validateValueType,
   SECURITY_CONFIG,
-} from "./security-validator.js";
-import { resolvePath } from "./path-resolver.js";
+} from "../shared/security-validator.js";
+import { resolvePath } from "../shared/path-resolver.js";
 import { getGlobalLogger } from "@wf-agent/common-utils";
-import { expressionCompiler } from "./expression-compiler.js";
 import type {
   Expression,
   LiteralExpr,
@@ -26,34 +25,26 @@ import type {
   TernaryExpr,
   CallExpr,
   ArrayLiteralExpr,
-} from "./dsl/types.js";
+} from "../dsl/types.js";
+import { BaseExecutor } from "../base-executor.js";
+import type { CompiledUnit, IExecutor } from "../types/index.js";
 
-export class ExpressionEvaluator {
-  private logger = getGlobalLogger().child("ExpressionEvaluator", { pkg: "sdk/workflow" });
+export class ExpressionConditionExecutor extends BaseExecutor implements IExecutor {
+  override readonly logger = getGlobalLogger().child("ExpressionConditionExecutor", { pkg: "sdk/workflow" });
   private registeredFunctions = new Map<string, (...args: unknown[]) => unknown>();
-
-  // Cache for array method computation results (per-call, bounded)
   private arrayMethodCache = new Map<string, { value: unknown; timestamp: number }>();
   private readonly ARRAY_METHOD_CACHE_TTL = 50;
 
-  evaluate(expression: string, context: EvaluationContext): unknown {
-    validateExpression(expression);
+  execute(compiled: CompiledUnit, context: EvaluationContext): unknown {
+    this.validateContext(context);
 
-    let ast: Expression;
-    try {
-      const compiled = expressionCompiler.compile(expression);
-      ast = compiled.ast;
-    } catch {
-      throw new RuntimeValidationError(`Failed to evaluate expression: ${expression}`, {
-        operation: "evaluate",
-        field: "expression",
-        value: expression,
-      });
+    if (!compiled.ast) {
+      throw new Error("Compiled unit missing AST");
     }
 
-    this.validateMemberAccessDepth(ast);
+    this.validateMemberAccessDepth(compiled.ast as Expression);
 
-    const result = this.evaluateAST(ast, context);
+    const result = this.evaluateAST(compiled.ast as Expression, context);
     validateValueType(result);
     return result;
   }
@@ -94,7 +85,7 @@ export class ExpressionEvaluator {
     }
   }
 
-  evaluateAST(node: Expression, context: EvaluationContext): unknown {
+  private evaluateAST(node: Expression, context: EvaluationContext): unknown {
     switch (node.type) {
       case "literal":
         return this.evaluateLiteral(node as LiteralExpr);
@@ -620,7 +611,7 @@ export class ExpressionEvaluator {
     return node.elements.map(el => this.evaluateAST(el, context));
   }
 
-  private getVariableValue(variablePath: string, context: EvaluationContext): unknown {
+  protected override getVariableValue(variablePath: string, context: EvaluationContext): unknown {
     validatePath(variablePath);
 
     if (variablePath === "input") return context.input;
@@ -641,7 +632,7 @@ export class ExpressionEvaluator {
       }
       return resolvePath(variablePath, context.variables);
     }
-    return context.variables[variablePath];
+    return (context.variables as Record<string, unknown>)[variablePath];
   }
 
   private evaluateMemberAccess(node: MemberAccessExpr, context: EvaluationContext): unknown {
@@ -678,7 +669,6 @@ export class ExpressionEvaluator {
       );
     }
 
-    // Validate array index access (e.g. arr[0], items[5])
     const numericIndex = Number(node.property);
     if (Array.isArray(obj) && Number.isInteger(numericIndex) && numericIndex >= 0) {
       validateArrayIndex(obj, numericIndex);
@@ -715,4 +705,4 @@ export class ExpressionEvaluator {
   }
 }
 
-export const expressionEvaluator = new ExpressionEvaluator();
+export const expressionConditionExecutor = new ExpressionConditionExecutor();

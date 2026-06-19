@@ -40,19 +40,24 @@ export function validateTriggerCondition(
     return result;
   }
 
-  if (condition.condition?.expression) {
-    try {
-      validateExpression(condition.condition.expression);
-    } catch (error) {
-      if (error instanceof ExpressionSecurityError) {
-        return err([
-          new ConfigurationValidationError(error.message, {
-            configType: "trigger",
-            configPath: `${path}.condition.expression`,
-          }),
-        ]);
+  // Handle discriminated union Condition type
+  const conditionAny = condition.condition as any;
+  if (conditionAny && (conditionAny.type === "expression" || !conditionAny.type)) {
+    const expression = conditionAny.expression;
+    if (expression) {
+      try {
+        validateExpression(expression);
+      } catch (error) {
+        if (error instanceof ExpressionSecurityError) {
+          return err([
+            new ConfigurationValidationError(error.message, {
+              configType: "trigger",
+              configPath: `${path}.condition.expression`,
+            }),
+          ]);
+        }
+        throw error;
       }
-      throw error;
     }
   }
 

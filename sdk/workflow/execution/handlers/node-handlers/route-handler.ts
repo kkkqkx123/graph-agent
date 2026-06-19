@@ -7,6 +7,7 @@ import type { RuntimeNode, RouteNodeConfig } from "@wf-agent/types";
 import type { WorkflowExecutionEntity } from "../../../entities/workflow-execution-entity.js";
 import type { Condition, EvaluationContext } from "@wf-agent/types";
 import { ExecutionError } from "@wf-agent/types";
+import { conditionEvaluator } from "../../../evaluation/index.js";
 
 /**
  * Evaluating routing conditions
@@ -23,23 +24,35 @@ function evaluateRouteCondition(
       output: workflowExecutionEntity.getOutput(),
     };
 
-    // Use DependencyManager for per-execution caching of compiled conditions.
-    // The key `route:${nodeId}:${targetNodeId}` persists across handler calls
-    // within the same execution, avoiding repeated AST parsing.
-    const depManager = workflowExecutionEntity.getDepManager();
-    const expression = condition.expression;
-    const cached = depManager.getTrackedExpression(expression);
-    if (cached) {
-      return Boolean(depManager.evaluateIfChanged(expression, context));
+    // Handle discriminated union Condition type
+    const conditionAny = condition as any;
+    const conditionType = conditionAny.type ?? "expression";
+
+    // For expression conditions, use the cached evaluator for backward compatibility
+    if (conditionType === "expression") {
+      const depManager = workflowExecutionEntity.getDepManager();
+      const expression = conditionAny.expression;
+      const cached = depManager.getTrackedExpression(expression);
+      if (cached) {
+        return Boolean(depManager.evaluateIfChanged(expression, context));
+      }
+      depManager.register(expression, expression, context);
+      return Boolean(depManager.getTrackedExpression(expression)?.lastResult);
+    } else {
+      // For other condition types, use the unified conditionEvaluator
+      return conditionEvaluator.evaluate(condition, context);
     }
-    depManager.register(expression, expression, context);
-    return Boolean(depManager.getTrackedExpression(expression)?.lastResult);
   } catch (error) {
+    const conditionAny = condition as any;
+    const errorMsg =
+      conditionAny.type === "expression" || conditionAny.type === undefined
+        ? `Failed to evaluate route condition: ${conditionAny.expression}`
+        : `Failed to evaluate route condition of type ${conditionAny.type}`;
     throw new ExecutionError(
-      `Failed to evaluate route condition: ${condition.expression}`,
+      errorMsg,
       workflowExecutionEntity.getCurrentNodeId(),
       workflowExecutionEntity.getWorkflowId(),
-      { expression: condition.expression, originalError: error },
+      { condition, originalError: error },
     );
   }
 }

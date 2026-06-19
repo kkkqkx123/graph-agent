@@ -8,7 +8,7 @@
 
 import type { BaseTriggerCondition, BaseEventData, TriggerMatcher } from "./types.js";
 import type { EvaluationContext } from "@wf-agent/types";
-import { DependencyManager } from "../../workflow/evaluation/index.js";
+import { DependencyManager, conditionEvaluator } from "../../workflow/evaluation/index.js";
 import { canTrigger } from "./limiter.js";
 import type { BaseTriggerDefinition } from "./types.js";
 import { getGlobalLogger } from "@wf-agent/common-utils";
@@ -80,29 +80,44 @@ export const defaultTriggerMatcher: TriggerMatcher = (
   if (condition.condition) {
     const ctx = buildEvalContext(event);
     try {
-      const exprKey = condition.condition.expression;
+      // Handle discriminated union Condition type
+      const conditionAny = condition.condition as any;
+      const conditionType = conditionAny.type ?? "expression";
+
       let passed: boolean;
 
-      const tracked = depManager.getTrackedExpression(exprKey);
-      if (tracked) {
-        const result = depManager.evaluateIfChanged(exprKey, ctx);
-        passed = Boolean(result);
-      } else {
-        depManager.register(exprKey, condition.condition.expression, ctx);
+      if (conditionType === "expression") {
+        // Use DependencyManager for expression conditions (backward compatibility)
+        const exprKey = conditionAny.expression;
         const tracked = depManager.getTrackedExpression(exprKey);
-        passed = Boolean(tracked?.lastResult);
+        if (tracked) {
+          const result = depManager.evaluateIfChanged(exprKey, ctx);
+          passed = Boolean(result);
+        } else {
+          depManager.register(exprKey, conditionAny.expression, ctx);
+          const tracked = depManager.getTrackedExpression(exprKey);
+          passed = Boolean(tracked?.lastResult);
+        }
+      } else {
+        // Use unified conditionEvaluator for other condition types
+        passed = conditionEvaluator.evaluate(condition.condition, ctx);
       }
 
       if (!passed) {
-        logger.debug("Match failed: condition expression evaluated to false", {
-          expression: condition.condition.expression,
+        logger.debug("Match failed: condition evaluated to false", {
+          type: conditionType,
           eventType: event.type,
         });
         return false;
       }
     } catch (err) {
-      logger.warn("Match failed: condition expression evaluation threw", {
-        expression: condition.condition.expression,
+      const conditionAny = condition.condition as any;
+      const conditionInfo =
+        conditionAny.type === "expression" || !conditionAny.type
+          ? { expression: conditionAny.expression }
+          : { type: conditionAny.type };
+      logger.warn("Match failed: condition evaluation threw", {
+        ...conditionInfo,
         error: err instanceof Error ? err.message : String(err),
       });
       return false;

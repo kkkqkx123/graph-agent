@@ -1,118 +1,170 @@
 /**
- * ConditionEvaluator - Condition Evaluator
- * Provides a unified condition evaluator with support for expression strings
+ * Condition Evaluator - Unified Condition Dispatch and Evaluation
+ * Routes conditions to appropriate evaluators and manages caching
  */
 
 import type { Condition, EvaluationContext } from "@wf-agent/types";
 import { ExpressionSecurityError } from "@wf-agent/types";
 import { getGlobalLogger } from "@wf-agent/common-utils";
-import { expressionEvaluator } from "./expression-evaluator.js";
-import { expressionCompiler } from "./expression-compiler.js";
-import type { CompiledExpression } from "./expression-compiler.js";
-import { resolvePath } from "./path-resolver.js";
+import { cacheManager } from "./cache-manager.js";
+import { expressionCompiler } from "./compilers/expression-compiler.js";
+import { expressionConditionExecutor } from "./executors/expression-condition-executor.js";
+import { predicateCompiler } from "./compilers/predicate-compiler.js";
+import { predicateExecutor } from "./executors/predicate-executor.js";
+import { schemaCompiler } from "./compilers/schema-compiler.js";
+import { schemaExecutor } from "./executors/schema-executor.js";
+import { scriptCompiler } from "./compilers/script-compiler.js";
+import { scriptExecutor } from "./executors/script-executor.js";
 
 /**
- * Conditional Evaluator Implementation
+ * Unified Condition Evaluator
+ * Handles all condition types through a dispatcher pattern
  */
 export class ConditionEvaluator {
   private logger = getGlobalLogger().child("ConditionEvaluator", { pkg: "sdk/workflow" });
 
   /**
-   * Evaluating conditions
-   * @param condition Condition
+   * Evaluate a condition against a context
+   * Routes to appropriate compiler/executor based on condition type
+   * Integrates with unified cache manager
+   *
+   * @param condition Condition to evaluate
    * @param context Evaluation context
-   * @returns Whether the condition is satisfied
+   * @param cacheKey Optional cache key for result caching
+   * @returns Evaluation result as boolean
    */
-  evaluate(condition: Condition, context: EvaluationContext): boolean {
-    // The expression field must be provided
-    if (!condition.expression) {
-      throw new ExpressionSecurityError("Condition must have an expression field", {
-        operation: "condition_evaluation",
-        context: { condition },
-      });
+  evaluate(condition: Condition | any, context: EvaluationContext, cacheKey?: string): boolean {
+    const conditionType = (condition as any).type ?? "expression";
+
+    // Check result cache if key provided
+    if (cacheKey) {
+      if (!cacheManager.hasDependenciesChanged(cacheKey, context)) {
+        const cached = cacheManager.getCachedResult(cacheKey);
+        if (cached !== null) {
+          return Boolean(cached);
+        }
+      }
     }
 
     try {
-      // Pre-check: verify dependency paths exist in the appropriate sub-context.
-      // Only applies when compilation succeeds; parse errors fall through to evaluate().
-      let compiled: CompiledExpression | null = null;
-      try {
-        compiled = expressionCompiler.compile(condition.expression);
-      } catch {
-        // Compilation failed (e.g. invalid expression). Skip pre-check and
-        // let expressionEvaluator.evaluate() handle the error properly.
+      let result: boolean;
+
+      switch (conditionType) {
+        case "expression": {
+          const expr = condition as any;
+          const compileCacheKey = `expr:${expr.expression}`;
+          let compiled = cacheManager.getCompiled(compileCacheKey);
+          if (!compiled) {
+            compiled = expressionCompiler.compile(expr.expression);
+            cacheManager.setCompiled(compileCacheKey, compiled);
+          }
+
+          const execResult = expressionConditionExecutor.execute(compiled, context);
+          result = Boolean(execResult);
+          break;
+        }
+
+        case "predicate": {
+          const pred = condition as any;
+          const compileCacheKey = `pred:${pred.predicateType}:${pred.variable}`;
+          let compiled = cacheManager.getCompiled(compileCacheKey);
+          if (!compiled) {
+            compiled = predicateCompiler.compile({
+              type: pred.predicateType,
+              variable: pred.variable,
+            });
+            cacheManager.setCompiled(compileCacheKey, compiled);
+          }
+
+          const execResult = predicateExecutor.execute(compiled, context);
+          result = Boolean(execResult);
+          break;
+        }
+
+        case "schema": {
+          const sch = condition as any;
+          const compileCacheKey = `schema:${sch.variable}:${JSON.stringify(sch.schema)}`;
+          let compiled = cacheManager.getCompiled(compileCacheKey);
+          if (!compiled) {
+            compiled = schemaCompiler.compile(sch.schema);
+            cacheManager.setCompiled(compileCacheKey, compiled);
+          }
+
+          const execResult = schemaExecutor.execute(compiled, context, sch.variable);
+          result = Boolean(execResult);
+          break;
+        }
+
+        case "script": {
+          const scr = condition as any;
+          const compileCacheKey = `script:${scr.script}`;
+          let compiled = cacheManager.getCompiled(compileCacheKey);
+          if (!compiled) {
+            compiled = scriptCompiler.compile(scr.script);
+            cacheManager.setCompiled(compileCacheKey, compiled);
+          }
+
+          const execResult = scriptExecutor.execute(compiled, context);
+          result = Boolean(execResult);
+          break;
+        }
+
+        default:
+          throw new Error(`Unknown condition type: ${conditionType}`);
       }
 
-      // Dependency path validation (separate from compilation catch so security errors propagate)
-      if (compiled) {
-        const missingDeps: string[] = [];
-        for (const dep of compiled.dependencies) {
-          let exists = true;
-          if (dep === "input" || dep === "output" || dep === "variables") {
-            // Top-level context fields always exist
-            exists = true;
-          } else if (dep.startsWith("input.")) {
-            try {
-              exists = resolvePath(dep.substring(6), context.input) !== undefined;
-            } catch (e) {
-              if (e instanceof ExpressionSecurityError) throw e;
-              exists = false;
-            }
-          } else if (dep.startsWith("output.")) {
-            try {
-              exists = resolvePath(dep.substring(7), context.output) !== undefined;
-            } catch (e) {
-              if (e instanceof ExpressionSecurityError) throw e;
-              exists = false;
-            }
-          } else if (dep.startsWith("variables.")) {
-            try {
-              exists = resolvePath(dep.substring(10), context.variables) !== undefined;
-            } catch (e) {
-              if (e instanceof ExpressionSecurityError) throw e;
-              exists = false;
-            }
-          } else {
-            // Default: resolve against context.variables (matches expression-evaluator behavior)
-            try {
-              exists = resolvePath(dep, context.variables) !== undefined;
-            } catch (e) {
-              if (e instanceof ExpressionSecurityError) throw e;
-              exists = false;
-            }
-          }
-          if (!exists) {
-            missingDeps.push(dep);
-          }
-        }
-        if (missingDeps.length > 0) {
-          this.logger.warn(`Condition dependencies missing in context: ${missingDeps.join(", ")}`, {
-            expression: condition.expression,
-            missingDependencies: missingDeps,
-          });
-          // Missing dependencies evaluate as false, return early
-          return false;
-        }
+      // Cache result if key provided
+      if (cacheKey) {
+        const deps = this.extractDependencies(condition as any);
+        cacheManager.setCachedResult(cacheKey, result, deps, context);
       }
 
-      const result = expressionEvaluator.evaluate(condition.expression, context);
-      return Boolean(result);
+      return result;
     } catch (error) {
-      // Distinguishing between security errors and runtime evaluation failures
+      this.logger.warn(`Condition evaluation failed: ${conditionType}`, {
+        type: conditionType,
+        error: error instanceof Error ? error.message : String(error),
+      });
+
       if (error instanceof ExpressionSecurityError) {
-        // Security/expression errors: rethrow
         throw error;
-      } else {
-        // Failed runtime evaluation: log and return false
-        this.logger.warn(`Condition evaluation failed: ${condition.expression}`, {
-          expression: condition.expression,
-          error: error instanceof Error ? error.message : String(error),
-        });
-        return false;
       }
+
+      return false;
+    }
+  }
+
+  /**
+   * Extract dependencies from a condition for caching
+   */
+  private extractDependencies(condition: any): string[] {
+    const type = condition.type ?? "expression";
+
+    switch (type) {
+      case "expression": {
+        try {
+          const compiled = expressionCompiler.compile(condition.expression);
+          return compiled.dependencies ?? [];
+        } catch {
+          return [];
+        }
+      }
+
+      case "predicate": {
+        return [condition.variable].filter(Boolean);
+      }
+
+      case "schema": {
+        return [condition.variable].filter(Boolean);
+      }
+
+      case "script":
+        return [];
+
+      default:
+        return [];
     }
   }
 }
 
-// Exporting Single Instance Examples
 export const conditionEvaluator = new ConditionEvaluator();

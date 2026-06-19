@@ -15,6 +15,7 @@
  */
 
 import { validatePath } from "./security-validator.js";
+
 /**
  * Parse the path and get the value
  * @param path Path string, supports nested access and array indexing, e.g. "user.name", "items[0].name"
