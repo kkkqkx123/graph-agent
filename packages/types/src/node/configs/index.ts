@@ -29,6 +29,9 @@ export * from './interaction-configs.js';
 // Exporting Context Node Configurations
 export * from './context-configs.js';
 
+// Exporting Variable Operation Configurations
+export * from './variable-operation-configs.js';
+
 // Export subgraph node configuration
 export * from './subgraph-configs.js';
 
@@ -52,6 +55,8 @@ export * from './sync-configs.js';
 export {
   ContextProcessorNodeConfigSchema,
   isContextProcessorNodeConfig,
+  VariableOperationOutputSchema,
+  MessageOperationOutputSchema,
 } from './context-configs-schema.js';
 
 export {
@@ -121,3 +126,13 @@ export {
   SyncNodeConfigSchema,
   isSyncNodeConfig,
 } from './sync-configs-schema.js';
+
+// Export Variable Operation Schemas
+export {
+  FilterExpressionSchema,
+  VariableAggregateOperationSchema,
+  VariableTransformOperationSchema,
+  VariableBatchUpdateOperationSchema,
+  VariableOperationConfigSchema,
+  isVariableOperationConfig,
+} from './variable-operation-schema.js';

@@ -1,18 +1,25 @@
 /**
- * Context Processor Node Handler (Batch-Aware)
- * Responsible for executing CONTEXT_PROCESSOR nodes and handling message operations such as truncation, insertion, replacement, clearing, and filtering.
+ * Context Processor / Data Processor Node Handler (Batch-Aware)
+ * Responsible for executing CONTEXT_PROCESSOR nodes and handling:
+ * 1. Message operations - LLM conversation history management
+ * 2. Variable operations - Workflow runtime variable aggregation and transformation
  *
  * Design Principles:
- * - Use unified message operation utility functions
- * - Support batch management and visibility scope control
- * - Return execution results
- * - Automatically refresh tool visibility declarations after message operations
+ * - Support unified message operation utility functions
+ * - Support batch management and visibility scope control for messages
+ * - Support variable aggregation, transformation, and batch updates
+ * - Return execution results with operation-specific details
  *
- * Core Concepts:
+ * Core Concepts (Message Operations):
  * - Visible Messages: Messages after the current batch boundary, which will be sent to the LLM
  * - Invisible Messages: Messages before the current batch boundary, stored but not sent to the LLM
- * - Message Operations: truncate (truncation), insert (insertion), replace (replacement), clear (clearing), filter (filtering)
+ * - Message Operations: truncate, insert, replace, clear, filter
  * - Batch Management: Control message visibility via startNewBatch() and rollbackToBatch()
+ *
+ * Core Concepts (Variable Operations):
+ * - Aggregate: Combine multiple variables into one (array/object/merge modes)
+ * - Transform: Transform a variable's value using expressions
+ * - Batch Update: Update multiple variables atomically
  */
 
 import type {
@@ -24,10 +31,19 @@ import type {
   LLMMessage,
   MessageOperationConfig,
   MessageOperationResult,
+  VariableOperationConfig,
+  VariableOperationOutput,
 } from "@wf-agent/types";
 import type { WorkflowExecution } from "@wf-agent/types";
+import type { WorkflowExecutionEntity } from "../../../entities/workflow-execution-entity.js";
 import { RuntimeValidationError } from "@wf-agent/types";
+import {
+  executeAggregate,
+  executeTransform,
+  executeBatchUpdate,
+} from "./variable-operation-handlers.js";
 import { createContextualLogger } from "../../../../utils/contextual-logger.js";
+import { now } from "@wf-agent/common-utils";
 
 const logger = createContextualLogger();
 
@@ -110,22 +126,144 @@ function getOrCreateNamedContext(
 }
 
 /**
- * Context processor node handler
- * @param workflowExecution Workflow execution instance
+ * Context processor / Data processor node handler
+ * @param executionEntity Workflow execution entity instance (provides access to variables)
  * @param node Node definition
  * @param context Processor context
  * @returns Execution result
  */
 export async function contextProcessorHandler(
-  workflowExecution: WorkflowExecution,
+  executionEntity: WorkflowExecutionEntity,
   node: RuntimeNode,
   context: ContextProcessorHandlerContext,
 ): Promise<ContextProcessorNodeOutput> {
   const config = node.config as ContextProcessorNodeConfig;
 
-  // 1. Verify the configuration.
+  // Validate configuration: at least one operation must be specified
+  if (!config.variableOperation && !config.operationConfig) {
+    throw new RuntimeValidationError(
+      "Either operationConfig (message) or variableOperation must be specified",
+      {
+        operation: "validate",
+        field: "config",
+      }
+    );
+  }
+
+  // Route to appropriate handler based on operation type
+  if (config.variableOperation) {
+    // Variable operation
+    return await handleVariableOperation(executionEntity, node, config.variableOperation);
+  } else if (config.operationConfig) {
+    // Message operation (legacy path)
+    const workflowExecution = executionEntity.getWorkflowExecutionData();
+    return await handleMessageOperation(workflowExecution, node, context, config);
+  } else {
+    throw new RuntimeValidationError(
+      "Either operationConfig (message) or variableOperation must be specified",
+      {
+        operation: "handle",
+        field: "config",
+      }
+    );
+  }
+}
+
+/**
+ * Handle variable operations
+ */
+async function handleVariableOperation(
+  executionEntity: WorkflowExecutionEntity,
+  node: RuntimeNode,
+  operation: VariableOperationConfig,
+): Promise<VariableOperationOutput> {
+  const startTime = now();
+  const variableManager = executionEntity.variableStateManager;
+  const workflowExecution = executionEntity.getWorkflowExecutionData();
+
+  // Get all variables for context
+  const allVariables = variableManager.getAllVariables();
+
+  try {
+    let result: { value?: unknown; modified: Array<{ name: string; newValue: unknown }> };
+
+    if (operation.operation === "aggregate") {
+      result = executeAggregate(operation, variableManager, allVariables);
+    } else if (operation.operation === "transform") {
+      result = executeTransform(operation, variableManager, allVariables);
+    } else if (operation.operation === "batch-update") {
+      result = executeBatchUpdate(
+        operation,
+        variableManager,
+        allVariables,
+        workflowExecution
+      );
+    } else {
+      throw new RuntimeValidationError(`Unknown variable operation: ${(operation as any).operation}`, {
+        operation: "handle",
+        field: "variableOperation.operation",
+      });
+    }
+
+    const executionTime = now() - startTime;
+
+    // Record execution history
+    executionEntity.addNodeResult({
+      step: executionEntity.getNodeResults().length + 1,
+      nodeId: node.id,
+      nodeType: node.type,
+      status: "COMPLETED",
+      timestamp: now(),
+    });
+
+    return {
+      operation: operation.operation,
+      modifiedVariables: result.modified,
+      executionTime,
+      stats: {
+        sourceVariableCount:
+          operation.operation === "aggregate"
+            ? operation.sourceVariables.length
+            : undefined,
+        aggregatedItemCount:
+          operation.operation === "aggregate" &&
+          Array.isArray(result.value)
+            ? (result.value as unknown[]).length
+            : undefined,
+      },
+    };
+  } catch (error) {
+    logger.error("Variable operation failed", {
+      nodeId: node.id,
+      operation: operation.operation,
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    // Record failure
+    executionEntity.addNodeResult({
+      step: executionEntity.getNodeResults().length + 1,
+      nodeId: node.id,
+      nodeType: node.type,
+      status: "FAILED",
+      timestamp: now(),
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    throw error;
+  }
+}
+
+/**
+ * Handle message operations (legacy)
+ */
+async function handleMessageOperation(
+  workflowExecution: WorkflowExecution,
+  node: RuntimeNode,
+  context: ContextProcessorHandlerContext,
+  config: ContextProcessorNodeConfig,
+): Promise<ContextProcessorNodeOutput> {
   if (!config.operationConfig) {
-    throw new RuntimeValidationError("operationConfig is required", {
+    throw new RuntimeValidationError("operationConfig is required for message operations", {
       operation: "handle",
       field: "operationConfig",
     });
@@ -151,8 +289,6 @@ export async function contextProcessorHandler(
   const sourceContext = getOrCreateNamedContext(registry, sourceContextId);
 
   // Ensure target context exists before processing
-  // The registry.update() method requires the context to exist (throws error if not found)
-  // This call auto-creates the context if needed
   const targetContextExisted = registry.has(targetContextId);
   getOrCreateNamedContext(registry, targetContextId);
 
@@ -182,7 +318,6 @@ export async function contextProcessorHandler(
             `Targeting parent workflow execution: ${parentContext.parentId} for context processing`,
             {
               nodeId: node.id,
-              executionId: workflowExecution.id,
               parentExecutionId: parentContext.parentId,
             },
           );
@@ -193,7 +328,6 @@ export async function contextProcessorHandler(
 
   // 4. Sync source context messages to conversation manager
   if (sourceContextId !== targetContextId) {
-    // Load source messages into the conversation manager
     targetConversationManager.clearMessages(false);
     targetConversationManager.addMessages(...sourceContext.messages);
     logger.debug("Synced messages from source context to target", {
@@ -202,7 +336,6 @@ export async function contextProcessorHandler(
       messageCount: sourceContext.messages.length,
     });
   } else {
-    // Source and target are the same, messages should already be in conversation manager
     const currentMessages = targetConversationManager.getMessages();
     logger.debug("Source and target context are the same, using existing messages", {
       contextId: sourceContextId,
@@ -210,20 +343,16 @@ export async function contextProcessorHandler(
     });
   }
 
-  // 5. Execute message operations, which are internally handled by ConversationSession/MessageHistory for tasks such as refreshing and triggering events.
+  // 5. Execute message operations
   const operationResult = await targetConversationManager.executeMessageOperation(
     config.operationConfig,
     async () => {
-      // Operation callback: Refresh the tool visibility declaration
-      // Tool visibility is now managed by ToolPermissionManager and automatically reflected in LLM calls
+      // Tool visibility is now managed by ToolPermissionManager
     },
   );
 
   // 6. Save processed messages back to target context
   const processedMessages = targetConversationManager.getMessages();
-
-  // Update the target context with processed messages
-  // At this point, targetContext is guaranteed to exist due to getOrCreateNamedContext call above
   registry.update(targetContextId, processedMessages);
 
   logger.debug("Saved processed messages to target context", {
@@ -232,7 +361,7 @@ export async function contextProcessorHandler(
     nodeId: node.id,
   });
 
-  // 7. Get the number of processed messages
+  // 7. Return message operation result
   const messageCount = processedMessages.length;
 
   return {
@@ -245,5 +374,5 @@ export async function contextProcessorHandler(
       visibleMessageCount: operationResult.stats.visibleMessageCount,
       invisibleMessageCount: operationResult.stats.invisibleMessageCount,
     },
-  };
+  } as ContextProcessorNodeOutput;
 }

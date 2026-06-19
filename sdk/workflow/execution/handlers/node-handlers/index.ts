@@ -78,7 +78,7 @@ export function getNodeHandler(nodeType: string): NodeHandlerFn {
     // Handlers that don't use globalContext (ignore it)
     CONTEXT_PROCESSOR: (_gc, workflowExecutionEntity, node, context) =>
       contextProcessorHandler(
-        workflowExecutionEntity.getWorkflowExecutionData(),
+        workflowExecutionEntity,
         node,
         context as ContextProcessorHandlerContext,
       ),

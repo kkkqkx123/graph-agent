@@ -1,8 +1,54 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { contextProcessorHandler } from "../context-processor-handler.js";
-import type { WorkflowExecution, ContextProcessorNodeConfig } from "@wf-agent/types";
-import type { RuntimeNode } from "@wf-agent/types";
+import type { ContextProcessorNodeConfig, RuntimeNode } from "@wf-agent/types";
+import type { WorkflowExecutionEntity } from "../../../../entities/workflow-execution-entity.js";
 import type { ContextProcessorHandlerContext } from "../context-processor-handler.js";
+
+// Mock VariableManager
+class MockVariableManager {
+  private variables: Record<string, unknown> = {};
+
+  setVariable(name: string, value: unknown) {
+    this.variables[name] = value;
+  }
+
+  getVariable(name: string): unknown {
+    return this.variables[name];
+  }
+
+  getAllVariables(): Record<string, unknown> {
+    return { ...this.variables };
+  }
+}
+
+// Helper to create mock execution entity
+function createMockExecutionEntity(
+  variables: Record<string, unknown> = {}
+): WorkflowExecutionEntity {
+  const variableManager = new MockVariableManager();
+  Object.entries(variables).forEach(([name, value]) => {
+    variableManager.setVariable(name, value);
+  });
+
+  return {
+    variableStateManager: variableManager as any,
+    getWorkflowExecutionData: () => ({
+      id: "exec-1",
+      workflowId: "wf-1",
+      variables: Object.entries(variables).map(([name, value]) => ({
+        name,
+        value,
+        type: typeof value,
+      })),
+      nodeResults: [],
+      errors: [],
+      input: {},
+      output: {},
+    } as any),
+    addNodeResult: vi.fn(),
+    getNodeResults: () => [],
+  } as unknown as WorkflowExecutionEntity;
+}
 
 const mockConversationManager = {
   executeMessageOperation: vi.fn(),
@@ -24,12 +70,6 @@ const defaultContext: ContextProcessorHandlerContext = {
   conversationManager: mockConversationManager as any,
 };
 
-const mockExecution = {
-  id: "exec-1",
-  workflowId: "wf-1",
-  messageContextRegistry: mockRegistry,
-} as unknown as WorkflowExecution;
-
 beforeEach(() => {
   vi.clearAllMocks();
   (mockRegistry.get as any).mockReturnValue({
@@ -49,33 +89,60 @@ beforeEach(() => {
   );
 });
 
-describe("contextProcessorHandler", () => {
+describe("contextProcessorHandler - Message Operations", () => {
   it("should execute message operation and return result", async () => {
+    const executionEntity = createMockExecutionEntity();
+    (executionEntity.getWorkflowExecutionData as any).mockReturnValue({
+      id: "exec-1",
+      workflowId: "wf-1",
+      messageContextRegistry: mockRegistry,
+      variables: [],
+      nodeResults: [],
+      errors: [],
+      input: {},
+      output: {},
+    });
+
     const config: ContextProcessorNodeConfig = {
       operationConfig: {
         operation: "TRUNCATE",
         strategy: { type: "KEEP_LAST", count: 10 },
       } as any,
     };
-    const node = { id: "cp-node-1", type: "CONTEXT_PROCESSOR", config } as RuntimeNode;
+    const node: RuntimeNode = { id: "cp-node-1", type: "CONTEXT_PROCESSOR", config } as any;
 
-    const result = await contextProcessorHandler(mockExecution, node, defaultContext);
+    const result = await contextProcessorHandler(executionEntity, node, defaultContext);
 
     expect(result.operation).toBe("TRUNCATE");
     expect(result.messageCount).toBeGreaterThan(0);
     expect(result.stats).toBeDefined();
   });
 
-  it("should throw RuntimeValidationError when operationConfig missing", async () => {
-    const config = {} as ContextProcessorNodeConfig;
-    const node = { id: "cp-node-2", type: "CONTEXT_PROCESSOR", config } as RuntimeNode;
+  it("should throw error when neither operationConfig nor variableOperation specified", async () => {
+    const executionEntity = createMockExecutionEntity();
+    const config: ContextProcessorNodeConfig = {
+      version: 4,
+    };
+    const node: RuntimeNode = { id: "cp-node-2", type: "CONTEXT_PROCESSOR", config } as any;
 
-    await expect(contextProcessorHandler(mockExecution, node, defaultContext)).rejects.toThrow(
-      "operationConfig is required",
+    await expect(contextProcessorHandler(executionEntity, node, defaultContext)).rejects.toThrow(
+      "Either operationConfig (message) or variableOperation must be specified"
     );
   });
 
-  it("should handle custom source and target contexts", async () => {
+  it("should handle custom source and target contexts for message operations", async () => {
+    const executionEntity = createMockExecutionEntity();
+    (executionEntity.getWorkflowExecutionData as any).mockReturnValue({
+      id: "exec-1",
+      workflowId: "wf-1",
+      messageContextRegistry: mockRegistry,
+      variables: [],
+      nodeResults: [],
+      errors: [],
+      input: {},
+      output: {},
+    });
+
     (mockRegistry.has as any).mockReturnValue(false);
     (mockRegistry.get as any).mockImplementation((id: string) => {
       if (id === "source")
@@ -94,15 +161,27 @@ describe("contextProcessorHandler", () => {
       targetContext: "target",
       operationConfig: { operation: "APPEND", messages: [] } as any,
     };
-    const node = { id: "cp-node-3", type: "CONTEXT_PROCESSOR", config } as RuntimeNode;
+    const node: RuntimeNode = { id: "cp-node-3", type: "CONTEXT_PROCESSOR", config } as any;
 
-    const result = await contextProcessorHandler(mockExecution, node, defaultContext);
+    const result = await contextProcessorHandler(executionEntity, node, defaultContext);
 
     expect(result.operation).toBe("APPEND");
     expect(mockRegistry.register).toHaveBeenCalledWith(expect.objectContaining({ id: "target" }));
   });
 
   it("should target parent execution when configured", async () => {
+    const executionEntity = createMockExecutionEntity();
+    (executionEntity.getWorkflowExecutionData as any).mockReturnValue({
+      id: "exec-1",
+      workflowId: "wf-1",
+      messageContextRegistry: mockRegistry,
+      variables: [],
+      nodeResults: [],
+      errors: [],
+      input: {},
+      output: {},
+    });
+
     const mockParentConversationManager = {
       executeMessageOperation: vi
         .fn()
@@ -111,7 +190,7 @@ describe("contextProcessorHandler", () => {
             return {
               stats: { originalMessageCount: 0, visibleMessageCount: 0, invisibleMessageCount: 0 },
             };
-          },
+          }
         ),
       getMessages: vi.fn().mockReturnValue([]),
       clearMessages: vi.fn(),
@@ -135,9 +214,9 @@ describe("contextProcessorHandler", () => {
       operationConfig: { operation: "CLEAR" },
       operationOptions: { target: "parent" },
     };
-    const node = { id: "cp-node-4", type: "CONTEXT_PROCESSOR", config } as RuntimeNode;
+    const node: RuntimeNode = { id: "cp-node-4", type: "CONTEXT_PROCESSOR", config } as any;
 
-    const result = await contextProcessorHandler(mockExecution, node, contextWithParent);
+    const result = await contextProcessorHandler(executionEntity, node, contextWithParent);
 
     expect(result.operation).toBe("CLEAR");
   });
