@@ -290,40 +290,6 @@ export class AgentLoopCheckpointCoordinator extends BaseCheckpointCoordinator<
   }
 
   /**
-   * Determine the checkpoint type
-   *
-   * Agent-specific strategy: Creates FULL checkpoint when (checkpointCount + 1) is divisible by baselineInterval.
-   * This means: with baselineInterval=5, checkpoints at count 4, 9, 14... will be FULL.
-   *
-   * @param checkpointCount The current number of checkpoints
-   * @param config Incremental storage configuration
-   * @returns The type of checkpoint
-   */
-  protected override determineCheckpointType(
-    checkpointCount: number,
-    config: DeltaStorageConfig,
-  ): TCheckpointType {
-    // Always create full checkpoints if incremental storage is not enabled
-    if (!config.enabled) {
-      return "FULL";
-    }
-
-    // The first checkpoint must be a complete checkpoint
-    if (checkpointCount === 0) {
-      return "FULL";
-    }
-
-    // Creates a full checkpoint every baselineInterval checkpoints
-    // Agent uses (checkpointCount + 1) to align with iteration-based semantics
-    if ((checkpointCount + 1) % config.baselineInterval === 0) {
-      return "FULL";
-    }
-
-    // Create incremental checkpoints in other cases
-    return "DELTA";
-  }
-
-  /**
    * Find base checkpoint for delta calculation
    */
   private async findBaseCheckpoint(

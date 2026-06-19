@@ -124,3 +124,80 @@ export class AgentLoopCheckpointConfigResolver extends CheckpointConfigResolver 
     return `Iteration ${context.currentIteration} checkpoint`;
   }
 }
+
+// Create a default parser instance
+const defaultResolver = new AgentLoopCheckpointConfigResolver();
+
+/**
+ * Build Agent Loop checkpoint configuration layers
+ *
+ * Configuration priority (from highest to lowest):
+ * 1. runtime - Passed in during runtime
+ * 2. agent - Agent Loop-specific configuration
+ * 3. global - Global configuration
+ * 4. default - Default values
+ *
+ * @param globalConfig Global checkpoint configuration
+ * @returns List of configuration layers (sorted by priority, highest first)
+ */
+export function buildAgentCheckpointLayers(
+  globalConfig: AgentLoopCheckpointConfig | undefined,
+): AgentLoopCheckpointConfigLayer[] {
+  const layers: AgentLoopCheckpointConfigLayer[] = [];
+
+  // 1. Global Configuration (Low Priority)
+  if (globalConfig) {
+    // Map AgentCheckpointPolicy triggers to config conditions
+    const globalEnabled = globalConfig.enabled ?? true;
+
+    if (globalEnabled !== undefined) {
+      layers.push({
+        source: "global",
+        config: {
+          enabled: globalEnabled,
+          interval: globalConfig.interval,
+          onErrorOnly: globalConfig.onErrorOnly,
+          deltaStorage: globalConfig.deltaStorage,
+        },
+      });
+    }
+  }
+
+  return layers;
+}
+
+/**
+ * Parse checkpoint configuration
+ *
+ * Convenient function that uses the default parser.
+ *
+ * @param layers List of configuration layers
+ * @param context Context for checkpoint configuration
+ * @returns Parsing result
+ */
+export function resolveAgentCheckpointConfig(
+  layers: AgentLoopCheckpointConfigLayer[],
+  context: AgentLoopCheckpointConfigContext,
+): CheckpointConfigResult {
+  return defaultResolver.resolveAgentConfig(layers, context);
+}
+
+/**
+ * Check whether it is necessary to create a checkpoint
+ */
+export function shouldCreateAgentCheckpoint(
+  layers: AgentLoopCheckpointConfigLayer[],
+  context: AgentLoopCheckpointConfigContext,
+): boolean {
+  return resolveAgentCheckpointConfig(layers, context).shouldCreate;
+}
+
+/**
+ * Get the checkpoint description
+ */
+export function getAgentCheckpointDescription(
+  layers: AgentLoopCheckpointConfigLayer[],
+  context: AgentLoopCheckpointConfigContext,
+): string | undefined {
+  return resolveAgentCheckpointConfig(layers, context).description;
+}

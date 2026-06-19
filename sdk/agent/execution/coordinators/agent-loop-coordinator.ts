@@ -6,8 +6,12 @@
  */
 
 import type { ID } from "@wf-agent/types";
-import type { AgentLoopRuntimeConfig, AgentLoopResult } from "@wf-agent/types";
+import type { AgentLoopRuntimeConfig, AgentLoopResult, AgentLoopCheckpointTriggerType } from "@wf-agent/types";
 import { getAvailableTools } from "@wf-agent/types";
+import type {
+  AgentLoopCheckpointConfig,
+  AgentLoopCheckpointConfigContext,
+} from "@wf-agent/types";
 import type { EventRegistry } from "../../../core/registry/event-registry.js";
 import { AgentLoopEntity } from "../../entities/agent-loop-entity.js";
 import { AgentLoopStatus } from "@wf-agent/types";
@@ -27,6 +31,7 @@ import { AgentLoopCheckpointCoordinator } from "../../../agent/checkpoint/checkp
 import type { CheckpointDependencies } from "../../../core/checkpoint/types.js";
 import type { AgentCheckpointPolicy, AgentCheckpointTrigger } from "../../../agent/checkpoint/agent-checkpoint-policy.js";
 import { DEFAULT_AGENT_CHECKPOINT_POLICY } from "../../../agent/checkpoint/agent-checkpoint-policy.js";
+import { buildAgentCheckpointLayers, resolveAgentCheckpointConfig } from "../../checkpoint/utils/config-resolver.js";
 
 const logger = createContextualLogger({ component: "AgentLoopCoordinator" });
 
@@ -60,6 +65,7 @@ export class AgentLoopCoordinator {
   private checkpointCoordinator?: AgentLoopCheckpointCoordinator;
   private checkpointDependencies?: CheckpointDependencies<any>;
   private checkpointPolicy: AgentCheckpointPolicy = DEFAULT_AGENT_CHECKPOINT_POLICY;
+  private globalCheckpointConfig?: AgentLoopCheckpointConfig;
 
   constructor(
     private readonly registry: AgentLoopRegistry,
@@ -83,12 +89,15 @@ export class AgentLoopCoordinator {
    *
    * @param dependencies CheckpointDependencies implementation (e.g., LayertwineCheckpointAdapter)
    * @param policy Checkpoint policy configuration (defaults to DEFAULT_AGENT_CHECKPOINT_POLICY)
+   * @param globalConfig Global checkpoint configuration for multi-layer resolution
    */
   setCheckpointDependencies(
     dependencies: CheckpointDependencies<any>,
     policy?: AgentCheckpointPolicy,
+    globalConfig?: AgentLoopCheckpointConfig,
   ): void {
     this.checkpointDependencies = dependencies;
+    this.globalCheckpointConfig = globalConfig;
     if (policy) {
       this.checkpointPolicy = policy;
     }
@@ -96,13 +105,18 @@ export class AgentLoopCoordinator {
 
     logger.debug("Checkpoint dependencies configured for AgentLoopCoordinator", {
       policyEnabled: this.checkpointPolicy.enabled,
+      globalConfigEnabled: this.globalCheckpointConfig?.enabled,
     });
   }
 
   /**
    * Create checkpoint if configured and event matches policy
    *
+   * Uses Config Resolver to support multi-layer configuration (runtime, agent, global, default).
+   * Respects interval and onErrorOnly conditions.
+   *
    * @param entity The agent loop entity
+   * @param _stateCoordinator The agent state coordinator
    * @param event The trigger event
    * @returns Checkpoint ID if created, null otherwise
    */
@@ -115,11 +129,26 @@ export class AgentLoopCoordinator {
       return null;
     }
 
-    const triggers = Array.isArray(this.checkpointPolicy.trigger)
-      ? this.checkpointPolicy.trigger
-      : [this.checkpointPolicy.trigger];
+    // Build configuration context from entity state
+    const context: AgentLoopCheckpointConfigContext = {
+      triggerType: this.mapTriggerToContextType(event as AgentCheckpointTrigger),
+      currentIteration: entity.state.currentIteration,
+      hasError: entity.state.error != null,
+    };
 
-    if (!triggers.includes(event as AgentCheckpointTrigger)) {
+    // Build configuration layers from global config
+    const layers = buildAgentCheckpointLayers(this.globalCheckpointConfig);
+
+    // Resolve checkpoint configuration using Config Resolver
+    const configResult = resolveAgentCheckpointConfig(layers, context);
+
+    if (!configResult.shouldCreate) {
+      logger.debug("Checkpoint creation skipped", {
+        agentLoopId: entity.id,
+        trigger: event,
+        reason: `trigger '${context.triggerType}' not matched by configuration`,
+        effectiveSource: configResult.effectiveSource,
+      });
       return null;
     }
 
@@ -128,7 +157,7 @@ export class AgentLoopCoordinator {
         entity,
         this.checkpointDependencies,
         {
-          description: `Agent loop checkpoint on ${event}`,
+          description: configResult.description,
         },
       );
 
@@ -136,6 +165,8 @@ export class AgentLoopCoordinator {
         agentLoopId: entity.id,
         checkpointId,
         event,
+        iteration: context.currentIteration,
+        effectiveSource: configResult.effectiveSource,
       });
 
       return checkpointId;
@@ -147,6 +178,33 @@ export class AgentLoopCoordinator {
       });
       // Don't throw - checkpoint failure should not interrupt execution
       return null;
+    }
+  }
+
+  /**
+   * Map AgentCheckpointTrigger to context trigger type
+   * @private
+   */
+  private mapTriggerToContextType(trigger: string): AgentLoopCheckpointTriggerType {
+    switch (trigger) {
+      case "on_iteration":
+        return "ITERATION_END";
+      case "on_complete":
+        return "COMPLETE";
+      case "on_error":
+        return "ERROR";
+      case "on_pause":
+        return "PAUSE";
+      case "on_tool_call":
+        return "TOOL_CALL";
+      case "on_tool_result":
+        return "TOOL_RESULT";
+      case "manual":
+        return "MANUAL";
+      case "never":
+        return "NEVER";
+      default:
+        return "ITERATION_END"; // Fallback to default
     }
   }
 

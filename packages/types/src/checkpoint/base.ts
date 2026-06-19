@@ -116,7 +116,15 @@ export type WorkflowCheckpointTriggerType =
 /**
  * Agent Loop Checkpoint Trigger Timing
  */
-export type AgentLoopCheckpointTriggerType = "ITERATION_END" | "ERROR";
+export type AgentLoopCheckpointTriggerType =
+  | "ITERATION_END"
+  | "ERROR"
+  | "COMPLETE"
+  | "PAUSE"
+  | "TOOL_CALL"
+  | "TOOL_RESULT"
+  | "MANUAL"
+  | "NEVER";
 
 /**
  * Checkpoint configuration results (general)

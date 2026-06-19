@@ -812,22 +812,44 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
   }
 
   /**
-   * Determine checkpoint type (preserves original workflow behavior)
-   * Uses baselineInterval without maxDeltaChainLength
+   * Determine checkpoint type (unified across Agent and Workflow)
+   *
+   * Uses the standard algorithm from BaseCheckpointCoordinator:
+   * - effective_interval = min(baselineInterval, maxDeltaChainLength)
+   * - FULL checkpoint at positions: 0, effective_interval, 2*effective_interval, ...
+   *
+   * This ensures:
+   * 1. Delta chains never exceed maxDeltaChainLength
+   * 2. FULL checkpoints appear at regular baselineInterval when it's the limiting factor
+   * 3. Consistent behavior between Agent Loop and Workflow
+   *
+   * @param checkpointCount The current number of checkpoints
+   * @param config Delta storage configuration
+   * @returns Checkpoint type (FULL or DELTA)
    */
   protected override determineCheckpointType(
     checkpointCount: number,
     config: DeltaStorageConfig,
   ): "FULL" | "DELTA" {
+    // Disabled delta storage → always FULL
     if (!config.enabled) {
       return "FULL";
     }
+
+    // First checkpoint is always FULL
     if (checkpointCount === 0) {
       return "FULL";
     }
-    if (checkpointCount % config.baselineInterval === 0) {
+
+    // Determine effective interval (minimum of baselineInterval and maxDeltaChainLength)
+    // This ensures delta chains never exceed the configured maximum length
+    const effectiveInterval = Math.min(config.baselineInterval, config.maxDeltaChainLength);
+
+    // Create FULL checkpoint at effective intervals
+    if (checkpointCount % effectiveInterval === 0) {
       return "FULL";
     }
+
     return "DELTA";
   }
 
