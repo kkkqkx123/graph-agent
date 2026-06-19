@@ -24,7 +24,7 @@ const logger = createContextualLogger({ component: "LayertwineCheckpointAdapter"
  * Bridges the gap between the generic CheckpointDependencies interface
  * and the Layertwine backend service.
  */
-export class LayertwineCheckpointAdapter implements CheckpointDependencies<any> {
+export class LayertwineCheckpointAdapter implements CheckpointDependencies<unknown> {
   constructor(private executor: LayertwineExecutor) {
     if (!executor) {
       throw new Error("LayertwineExecutor is required");
@@ -37,10 +37,14 @@ export class LayertwineCheckpointAdapter implements CheckpointDependencies<any> 
    * @param checkpoint The checkpoint to save
    * @returns The checkpoint ID assigned by Layertwine
    */
-  async saveCheckpoint(checkpoint: any): Promise<string> {
+  async saveCheckpoint(checkpoint: Record<string, unknown>): Promise<string> {
     try {
-      const message = checkpoint.metadata?.description || "Checkpoint";
-      const author = checkpoint.metadata?.creator || "system";
+      const message = checkpoint.metadata && typeof checkpoint.metadata === "object" && "description" in checkpoint.metadata
+        ? (checkpoint.metadata as Record<string, unknown>).description
+        : "Checkpoint";
+      const author = checkpoint.metadata && typeof checkpoint.metadata === "object" && "creator" in checkpoint.metadata
+        ? (checkpoint.metadata as Record<string, unknown>).creator
+        : "system";
 
       const response = await this.executor.commit({
         message,
@@ -68,7 +72,7 @@ export class LayertwineCheckpointAdapter implements CheckpointDependencies<any> 
    * @param id The checkpoint ID
    * @returns The checkpoint object, or null if not found
    */
-  async getCheckpoint(id: string): Promise<any | null> {
+  async getCheckpoint(id: string): Promise<Record<string, unknown> | null> {
     try {
       const response = await this.executor.restoreCheckpoint({
         checkpointId: id,

@@ -45,6 +45,7 @@ export type {
   ArrayLiteralExpr,
   NodeMetadata,
   BinaryOperator,
+  EvaluationContext,
 } from "./dsl/types.js";
 
 // Compilers (lazy imports to avoid circular deps)
@@ -54,7 +55,7 @@ import { conditionEvaluator } from "./condition-evaluator.js";
 
 // Legacy backward compatibility
 export class DependencyManager {
-  register(key: string, expression: string, context: any) {
+  register(key: string, expression: string, context: Record<string, unknown>) {
     const compiled = expressionCompiler.compile(expression);
     cacheManager.setCachedResult(key, undefined, compiled.dependencies ?? [], context);
     return { expression, compiled, dependencies: compiled.dependencies ?? [], lastResult: undefined };
@@ -68,8 +69,8 @@ export class DependencyManager {
     return null;
   }
 
-  evaluateIfChanged(key: string, context: any) {
-    return conditionEvaluator.evaluate({ type: "expression", expression: key } as any, context, key);
+  evaluateIfChanged(key: string, context: Record<string, unknown>) {
+    return conditionEvaluator.evaluate({ type: "expression", expression: key } as Record<string, unknown>, context as EvaluationContext, key);
   }
 
   clear() {
@@ -83,12 +84,12 @@ export function createDependencyManager() {
 
 // ExpressionEvaluator compatibility
 export const expressionEvaluator = {
-  evaluate: (expr: string, context: any) => {
-    return conditionEvaluator.evaluate({ type: "expression", expression: expr } as any, context);
+  evaluate: (expr: string, context: Record<string, unknown>) => {
+    return conditionEvaluator.evaluate({ type: "expression", expression: expr } as Record<string, unknown>, context as EvaluationContext);
   },
-  evaluateAST: (_ast: unknown, context: any) => {
+  evaluateAST: (_ast: unknown, context: Record<string, unknown>) => {
     // For backward compatibility, evaluate as expression
     // Note: AST parameter ignored, evaluates expression directly
-    return conditionEvaluator.evaluate({ type: "expression", expression: "" } as any, context);
+    return conditionEvaluator.evaluate({ type: "expression", expression: "" } as Record<string, unknown>, context as EvaluationContext);
   },
 };

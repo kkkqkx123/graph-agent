@@ -20,10 +20,10 @@ import {
 } from "@wf-agent/types";
 
 interface Logger {
-  debug(msg: string, context?: any): void;
-  info(msg: string, context?: any): void;
-  warn(msg: string, context?: any): void;
-  error(msg: string, context?: any): void;
+  debug(msg: string, context?: Record<string, unknown>): void;
+  info(msg: string, context?: Record<string, unknown>): void;
+  warn(msg: string, context?: Record<string, unknown>): void;
+  error(msg: string, context?: Record<string, unknown>): void;
 }
 
 /**
@@ -46,21 +46,21 @@ export class CheckpointVersionManager {
    */
   private initializeDefaultMigrations(): void {
     // v1.0 -> v1.1: Add new fields with defaults
-    this.registerMigration("1.0->1.1", async (data: any) => {
+    this.registerMigration("1.0->1.1", async (data: unknown) => {
       this.logger.debug("Migrating checkpoint from 1.0 to 1.1");
       return {
-        ...data,
+        ...(typeof data === "object" && data !== null && !Array.isArray(data) ? data : {}),
         // Add any new fields with sensible defaults
         _migrationApplied: true,
       };
     });
 
     // v1.1 -> v2.0: Major version change requires structural migration
-    this.registerMigration("1.1->2.0", async (data: any) => {
+    this.registerMigration("1.1->2.0", async (data: unknown) => {
       this.logger.debug("Migrating checkpoint from 1.1 to 2.0");
       // This is a major version change - significant restructuring
       return {
-        ...data,
+        ...(typeof data === "object" && data !== null && !Array.isArray(data) ? data : {}),
         _migrationApplied: true,
         _majorVersionUpgrade: true,
       };
@@ -102,18 +102,20 @@ export class CheckpointVersionManager {
   /**
    * Validate checkpoint has required version metadata
    */
-  validateVersionMetadata(checkpoint: any): boolean {
-    if (!checkpoint || typeof checkpoint !== "object") {
+  validateVersionMetadata(checkpoint: unknown): boolean {
+    const cp = checkpoint as Record<string, unknown>;
+    if (!cp || typeof cp !== "object") {
       this.logger.warn("Invalid checkpoint: not an object");
       return false;
     }
 
-    if (!checkpoint.metadata || !checkpoint.metadata.formatVersion) {
+    const metadata = cp.metadata as Record<string, unknown>;
+    if (!metadata || !metadata.formatVersion) {
       this.logger.warn("Invalid checkpoint: missing format version metadata");
       return false;
     }
 
-    const version = checkpoint.metadata.formatVersion;
+    const version = metadata.formatVersion as Record<string, unknown>;
     if (typeof version.major !== "number" || typeof version.minor !== "number") {
       this.logger.warn("Invalid format version structure", { version });
       return false;
@@ -125,19 +127,21 @@ export class CheckpointVersionManager {
   /**
    * Add version metadata to checkpoint
    */
-  addVersionMetadata(checkpoint: any, schemaVersion?: string): CheckpointVersionMetadata {
+  addVersionMetadata(checkpoint: unknown, schemaVersion?: string): CheckpointVersionMetadata {
+    const cp = checkpoint as Record<string, unknown>;
     const metadata: CheckpointVersionMetadata = {
       formatVersion: this.currentVersion,
       schemaVersion,
       createdAt: Date.now(),
     };
 
-    if (!checkpoint.metadata) {
-      checkpoint.metadata = {};
+    if (!cp.metadata) {
+      cp.metadata = {};
     }
-    checkpoint.metadata.formatVersion = this.currentVersion;
+    const cpMetadata = cp.metadata as Record<string, unknown>;
+    cpMetadata.formatVersion = this.currentVersion;
     if (schemaVersion) {
-      checkpoint.metadata.schemaVersion = schemaVersion;
+      cpMetadata.schemaVersion = schemaVersion;
     }
 
     return metadata;
@@ -146,8 +150,10 @@ export class CheckpointVersionManager {
   /**
    * Migrate checkpoint to current version
    */
-  async migrateCheckpoint(checkpoint: any): Promise<VersionMigrationResult> {
-    const sourceVersion = checkpoint.metadata?.formatVersion || CURRENT_CHECKPOINT_FORMAT_VERSION;
+  async migrateCheckpoint(checkpoint: unknown): Promise<VersionMigrationResult<unknown>> {
+    const checkpointRecord = checkpoint as Record<string, unknown>;
+    const metadataRecord = checkpointRecord?.metadata as Record<string, unknown>;
+    const sourceVersion = (metadataRecord?.formatVersion as CheckpointFormatVersion) || CURRENT_CHECKPOINT_FORMAT_VERSION;
 
     if (versionFormatter.compare(sourceVersion, this.currentVersion) === 0) {
       // Already at current version

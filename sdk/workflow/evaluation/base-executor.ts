@@ -6,9 +6,10 @@
 
 import type { EvaluationContext } from "@wf-agent/types";
 import type { CompiledUnit, IExecutor } from "./types/index.js";
+import { getGlobalLogger } from "@wf-agent/common-utils";
 
 export abstract class BaseExecutor implements IExecutor {
-  protected logger = require("@wf-agent/common-utils").getGlobalLogger().child(
+  protected logger = getGlobalLogger().child(
     this.constructor.name,
     { pkg: "sdk/workflow" },
   );

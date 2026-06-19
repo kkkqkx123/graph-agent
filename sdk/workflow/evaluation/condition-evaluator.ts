@@ -33,8 +33,8 @@ export class ConditionEvaluator {
    * @param cacheKey Optional cache key for result caching
    * @returns Evaluation result as boolean
    */
-  evaluate(condition: Condition | any, context: EvaluationContext, cacheKey?: string): boolean {
-    const conditionType = (condition as any).type ?? "expression";
+  evaluate(condition: Condition | Record<string, unknown>, context: EvaluationContext, cacheKey?: string): boolean {
+    const conditionType = (condition as Record<string, unknown>).type ?? "expression";
 
     // Check result cache if key provided
     if (cacheKey) {
@@ -51,11 +51,11 @@ export class ConditionEvaluator {
 
       switch (conditionType) {
         case "expression": {
-          const expr = condition as any;
+          const expr = condition as Record<string, unknown>;
           const compileCacheKey = `expr:${expr.expression}`;
           let compiled = cacheManager.getCompiled(compileCacheKey);
           if (!compiled) {
-            compiled = expressionCompiler.compile(expr.expression);
+            compiled = expressionCompiler.compile(expr.expression as string);
             cacheManager.setCompiled(compileCacheKey, compiled);
           }
 
@@ -65,13 +65,13 @@ export class ConditionEvaluator {
         }
 
         case "predicate": {
-          const pred = condition as any;
+          const pred = condition as Record<string, unknown>;
           const compileCacheKey = `pred:${pred.predicateType}:${pred.variable}`;
           let compiled = cacheManager.getCompiled(compileCacheKey);
           if (!compiled) {
             compiled = predicateCompiler.compile({
-              type: pred.predicateType,
-              variable: pred.variable,
+              type: pred.predicateType as string,
+              variable: pred.variable as string,
             });
             cacheManager.setCompiled(compileCacheKey, compiled);
           }
@@ -82,7 +82,7 @@ export class ConditionEvaluator {
         }
 
         case "schema": {
-          const sch = condition as any;
+          const sch = condition as Record<string, unknown>;
           const compileCacheKey = `schema:${sch.variable}:${JSON.stringify(sch.schema)}`;
           let compiled = cacheManager.getCompiled(compileCacheKey);
           if (!compiled) {
@@ -90,17 +90,17 @@ export class ConditionEvaluator {
             cacheManager.setCompiled(compileCacheKey, compiled);
           }
 
-          const execResult = schemaExecutor.execute(compiled, context, sch.variable);
+          const execResult = schemaExecutor.execute(compiled, context, sch.variable as string);
           result = Boolean(execResult);
           break;
         }
 
         case "script": {
-          const scr = condition as any;
+          const scr = condition as Record<string, unknown>;
           const compileCacheKey = `script:${scr.script}`;
           let compiled = cacheManager.getCompiled(compileCacheKey);
           if (!compiled) {
-            compiled = scriptCompiler.compile(scr.script);
+            compiled = scriptCompiler.compile(scr.script as string);
             cacheManager.setCompiled(compileCacheKey, compiled);
           }
 
@@ -115,7 +115,7 @@ export class ConditionEvaluator {
 
       // Cache result if key provided
       if (cacheKey) {
-        const deps = this.extractDependencies(condition as any);
+        const deps = this.extractDependencies(condition as Record<string, unknown>);
         cacheManager.setCachedResult(cacheKey, result, deps, context);
       }
 
@@ -137,13 +137,13 @@ export class ConditionEvaluator {
   /**
    * Extract dependencies from a condition for caching
    */
-  private extractDependencies(condition: any): string[] {
+  private extractDependencies(condition: Record<string, unknown>): string[] {
     const type = condition.type ?? "expression";
 
     switch (type) {
       case "expression": {
         try {
-          const compiled = expressionCompiler.compile(condition.expression);
+          const compiled = expressionCompiler.compile(condition.expression as string);
           return compiled.dependencies ?? [];
         } catch {
           return [];
@@ -151,11 +151,11 @@ export class ConditionEvaluator {
       }
 
       case "predicate": {
-        return [condition.variable].filter(Boolean);
+        return [condition.variable as string].filter(Boolean);
       }
 
       case "schema": {
-        return [condition.variable].filter(Boolean);
+        return [condition.variable as string].filter(Boolean);
       }
 
       case "script":

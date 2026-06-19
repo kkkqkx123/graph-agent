@@ -13,7 +13,7 @@ export class SchemaCompiler implements ICompiler {
       throw new Error("Schema compiler expects object input");
     }
 
-    const schema = input as any;
+    const schema = input as Record<string, unknown>;
     const cacheKey = JSON.stringify(schema);
 
     if (this.cache.has(cacheKey)) {
@@ -41,27 +41,27 @@ export class SchemaCompiler implements ICompiler {
     return this.cache.size;
   }
 
-  private calculateSchemaComplexity(schema: any, depth: number = 0): number {
+  private calculateSchemaComplexity(schema: Record<string, unknown>, depth: number = 0): number {
     if (depth > 10) return 100;
 
     let complexity = 1;
 
     const properties = schema["properties"];
     if (properties && typeof properties === "object") {
-      const props = Object.keys(properties);
+      const props = Object.keys(properties as Record<string, unknown>);
       complexity += props.length * 2;
 
       for (const prop of props) {
-        const propSchema = properties[prop];
+        const propSchema = (properties as Record<string, unknown>)[prop];
         if (propSchema && typeof propSchema === "object") {
-          complexity += this.calculateSchemaComplexity(propSchema, depth + 1);
+          complexity += this.calculateSchemaComplexity(propSchema as Record<string, unknown>, depth + 1);
         }
       }
     }
 
     const items = schema["items"];
     if (items && typeof items === "object") {
-      complexity += 2 + this.calculateSchemaComplexity(items, depth + 1);
+      complexity += 2 + this.calculateSchemaComplexity(items as Record<string, unknown>, depth + 1);
     }
 
     const oneOf = schema["oneOf"];

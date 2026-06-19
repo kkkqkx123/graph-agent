@@ -84,5 +84,5 @@ function parseCondition(conditionStr: string): Condition {
   return {
     type: "expression",
     expression: conditionStr,
-  } as any;
+  } as Condition;
 }

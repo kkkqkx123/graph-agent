@@ -41,9 +41,9 @@ export function validateTriggerCondition(
   }
 
   // Handle discriminated union Condition type
-  const conditionAny = condition.condition as any;
-  if (conditionAny && (conditionAny.type === "expression" || !conditionAny.type)) {
-    const expression = conditionAny.expression;
+  const conditionRecord = condition.condition as Record<string, unknown>;
+  if (conditionRecord && (conditionRecord.type === "expression" || !conditionRecord.type)) {
+    const expression = conditionRecord.expression;
     if (expression) {
       try {
         validateExpression(expression);

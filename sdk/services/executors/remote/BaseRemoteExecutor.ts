@@ -47,7 +47,7 @@ export abstract class BaseRemoteExecutor {
   protected wrapResult<T>(
     success: boolean,
     data: T | undefined,
-    error: any,
+    error: Record<string, unknown> | undefined,
     callDuration: number,
     retryCount: number = 0,
   ): RemoteExecutionResult<T> {
@@ -56,9 +56,9 @@ export abstract class BaseRemoteExecutor {
       data,
       error: error
         ? {
-            code: error.code || "UNKNOWN_ERROR",
-            message: error.message || "Unknown error",
-            details: error.details,
+            code: (error.code as string) || "UNKNOWN_ERROR",
+            message: (error.message as string) || "Unknown error",
+            details: error.details as string,
           }
         : undefined,
       metrics: {

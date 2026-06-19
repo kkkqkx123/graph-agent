@@ -14,13 +14,11 @@ export class PredicateCompiler implements ICompiler {
   private cache = new Map<string, CompiledUnit>();
 
   compile(input: string | Record<string, unknown>): CompiledUnit {
-    let config: PredicateInput;
-
     if (typeof input === "string") {
       throw new Error("Predicate compiler expects object input");
     }
 
-    config = input as unknown as PredicateInput;
+    const config = input as unknown as PredicateInput;
 
     const cacheKey = `${config.type}:${config.variable}`;
     if (this.cache.has(cacheKey)) {

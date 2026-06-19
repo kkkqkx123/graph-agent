@@ -65,7 +65,7 @@ export class McpToolsRegistrar {
     const exporter = new McpToolMetadataExporter(mcpManager);
 
     // Get tools to register
-    let toolsToRegister: McpToolInfo[] = [];
+    let toolsToRegister: McpToolInfo[];
 
     if (mergedOptions.onlyHotTools) {
       toolsToRegister = exporter.getHotTools(mergedOptions.maxTools);
@@ -173,7 +173,7 @@ export class McpToolsRegistrar {
    */
   private createSdkTool(toolId: string, mcpTool: McpToolInfo): Tool {
     // Convert input schema to SDK parameter schema
-    const properties = (mcpTool.inputSchema?.["properties"] as Record<string, any>) || {};
+    const properties = (mcpTool.inputSchema?.["properties"] as Record<string, unknown>) || {};
     const required = ((mcpTool.inputSchema?.["required"] as string[]) || []) as string[];
 
     const parameters = {
@@ -189,10 +189,10 @@ export class McpToolsRegistrar {
 
     return {
       id: toolId,
-      type: "MCP" as any,
+      type: "MCP" as unknown as Tool['type'],
       description: `${mcpTool.description || "MCP tool"} (from server: ${mcpTool.serverName})`,
-      parameters: parameters as any,
-      config: config as any,
+      parameters: parameters as Tool['parameters'],
+      config: config as Tool['config'],
       metadata: {
         customFields: {
           source: "mcp_dynamic_registration",

@@ -67,7 +67,7 @@ export interface AgentLoopExecuteOptions extends AgentLoopEntityOptions {
 export class AgentLoopCoordinator {
   private readonly stateTransitor: AgentLoopStateTransitor;
   private checkpointCoordinator?: AgentLoopCheckpointCoordinator;
-  private checkpointDependencies?: CheckpointDependencies<any>;
+  private checkpointDependencies?: CheckpointDependencies<unknown>;
   private checkpointPolicy: AgentCheckpointPolicy = DEFAULT_AGENT_CHECKPOINT_POLICY;
   private globalCheckpointConfig?: AgentLoopCheckpointConfig;
   private checkpointErrorHandler?: CheckpointErrorHandler;
@@ -100,7 +100,7 @@ export class AgentLoopCoordinator {
    * @param errorStrategy Error handling strategy (defaults to "warn")
    */
   setCheckpointDependencies(
-    dependencies: CheckpointDependencies<any>,
+    dependencies: CheckpointDependencies<unknown>,
     policy?: AgentCheckpointPolicy,
     globalConfig?: AgentLoopCheckpointConfig,
     errorStrategy?: CheckpointErrorStrategy,
@@ -191,8 +191,8 @@ export class AgentLoopCoordinator {
       return null;
     }
 
-    let checkpointId: string | null = null;
-    let error: Error | null = null;
+    let checkpointId: string;
+    let error: Error;
 
     try {
       checkpointId = await this.checkpointCoordinator.createCheckpoint(
@@ -327,7 +327,7 @@ export class AgentLoopCoordinator {
    * Subscribe to checkpoint metrics events
    * @param listener Callback function for metrics events
    */
-  onCheckpointMetrics(listener: (event: any) => void): void {
+  onCheckpointMetrics(listener: (event: Record<string, unknown>) => void): void {
     if (this.checkpointMetricsCollector) {
       this.checkpointMetricsCollector.on(listener);
     }

@@ -88,7 +88,7 @@ export class GrpcHealthCheck {
           this.healthStates.set(serviceName, false);
           this.config.onUnhealthy();
         }
-      } catch (error) {
+      } catch {
         // Check failed, mark as unhealthy
         const wasHealthy = this.healthStates.get(serviceName);
         if (wasHealthy) {

@@ -199,7 +199,7 @@ async function handleVariableOperation(
         workflowExecution
       );
     } else {
-      throw new RuntimeValidationError(`Unknown variable operation: ${(operation as any).operation}`, {
+      throw new RuntimeValidationError(`Unknown variable operation: ${(operation as Record<string, unknown>).operation}`, {
         operation: "handle",
         field: "variableOperation.operation",
       });

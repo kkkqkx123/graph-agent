@@ -13,7 +13,7 @@ import { GrpcHealthCheck } from "./GrpcHealthCheck.js";
 
 export class GrpcClient extends EventEmitter {
   private options: GrpcClientOptions;
-  private client: any = null;
+  private client: Record<string, unknown> | null = null;
   private channel: grpc.Channel | null = null;
   private state: GrpcClientState = "disconnected";
   private healthCheck: GrpcHealthCheck | null = null;
@@ -55,10 +55,10 @@ export class GrpcClient extends EventEmitter {
       const packageObject = grpc.loadPackageDefinition(packageDefinition);
 
       // Navigate to the service (handle package.Service format)
-      let serviceClass: any = packageObject;
+      let serviceClass: Record<string, unknown> = packageObject;
       const serviceParts = this.options.serviceName.split(".");
       for (const part of serviceParts) {
-        serviceClass = serviceClass[part];
+        serviceClass = serviceClass[part] as Record<string, unknown>;
         if (!serviceClass) {
           throw new Error(`Service ${this.options.serviceName} not found in proto file`);
         }
@@ -193,8 +193,8 @@ export class GrpcClient extends EventEmitter {
   private convertGrpcError(error: grpc.ServiceError): Error {
     const message = `gRPC error [${error.code}]: ${error.message}`;
     const err = new Error(message);
-    (err as any).code = error.code;
-    (err as any).details = error.details;
+    (err as Record<string, unknown>).code = error.code;
+    (err as Record<string, unknown>).details = error.details;
     return err;
   }
 

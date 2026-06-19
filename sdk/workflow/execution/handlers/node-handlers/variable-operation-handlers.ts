@@ -11,6 +11,7 @@ import type {
   VariableAggregateOperation,
   VariableTransformOperation,
   VariableBatchUpdateOperation,
+  EvaluationContext,
 } from "@wf-agent/types";
 import { RuntimeValidationError } from "@wf-agent/types";
 import { expressionEvaluator, setArrayItemByKey } from "../../../evaluation/index.js";
@@ -102,7 +103,7 @@ function applyFilter(items: unknown[], filterExpression: string): unknown[] {
   return items.filter((item) => {
     const context = { variables: { item } };
     try {
-      const result = expressionEvaluator.evaluate(filterExpression, context as any);
+      const result = expressionEvaluator.evaluate(filterExpression, context as EvaluationContext);
       return Boolean(result);
     } catch (error) {
       throw new RuntimeValidationError(
@@ -172,7 +173,7 @@ export function executeAggregate(
   } else if (operation.aggregateMode === "merge") {
     // Merge mode: merge objects
     const strategy = operation.mergeStrategy || "shallow";
-    let merged: any = {};
+    let merged: Record<string, unknown> = {};
 
     for (const varName of operation.sourceVariables) {
       const value = sourceValues[varName];
@@ -215,7 +216,7 @@ export function executeAggregate(
 /**
  * Simple deep merge utility
  */
-function deepMerge(target: any, source: any): any {
+function deepMerge(target: Record<string, unknown> | unknown[], source: Record<string, unknown> | unknown[]): Record<string, unknown> | unknown[] {
   if (!source || typeof source !== "object" || Array.isArray(source)) {
     return source;
   }
@@ -224,17 +225,19 @@ function deepMerge(target: any, source: any): any {
 
   for (const key in source) {
     if (Object.prototype.hasOwnProperty.call(source, key)) {
+      const sourceValue = (source as Record<string, unknown>)[key];
+      const resultValue = (result as Record<string, unknown>)[key];
       if (
-        typeof source[key] === "object" &&
-        source[key] !== null &&
-        !Array.isArray(source[key]) &&
-        result[key] &&
-        typeof result[key] === "object" &&
-        !Array.isArray(result[key])
+        typeof sourceValue === "object" &&
+        sourceValue !== null &&
+        !Array.isArray(sourceValue) &&
+        resultValue &&
+        typeof resultValue === "object" &&
+        !Array.isArray(resultValue)
       ) {
-        result[key] = deepMerge(result[key], source[key]);
+        (result as Record<string, unknown>)[key] = deepMerge(resultValue, sourceValue);
       } else {
-        result[key] = source[key];
+        (result as Record<string, unknown>)[key] = sourceValue;
       }
     }
   }
@@ -267,7 +270,7 @@ export function executeTransform(
     const context = { variables: allVariables };
     const transformed = expressionEvaluator.evaluate(
       operation.transformExpression,
-      context as any
+      context as EvaluationContext
     );
 
     // Type conversion if specified
@@ -306,7 +309,7 @@ export function executeBatchUpdate(
   operation: VariableBatchUpdateOperation,
   variableManager: VariableManager,
   allVariables: Record<string, unknown>,
-  workflowExecution?: any,
+  workflowExecution?: Record<string, unknown>,
 ): { modified: Array<{ name: string; newValue: unknown }> } {
   const modified: Array<{ name: string; newValue: unknown }> = [];
 
@@ -320,7 +323,7 @@ export function executeBatchUpdate(
     // Evaluate expression
     try {
       const context = { variables: allVariables };
-      const value = expressionEvaluator.evaluate(update.expression, context as any);
+      const value = expressionEvaluator.evaluate(update.expression, context as EvaluationContext);
 
       // Type conversion if specified
       const typedValue = convertType(value, update.type);
@@ -330,8 +333,9 @@ export function executeBatchUpdate(
 
       // Also update the workflow execution's variables array if available
       if (workflowExecution?.variables) {
+        const wfVars = workflowExecution.variables as Array<{ name: string; value: unknown; type?: string; readonly: boolean }>;
         const updated = setArrayItemByKey(
-          workflowExecution.variables,
+          wfVars,
           "name",
           update.name,
           "value",

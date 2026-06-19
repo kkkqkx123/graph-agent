@@ -17,8 +17,8 @@ import type {
 } from "@wf-agent/types";
 
 interface Logger {
-  debug(msg: string, context?: any): void;
-  info(msg: string, context?: any): void;
+  debug(msg: string, context?: Record<string, unknown>): void;
+  info(msg: string, context?: Record<string, unknown>): void;
 }
 
 /**

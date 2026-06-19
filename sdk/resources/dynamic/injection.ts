@@ -52,7 +52,7 @@ export async function buildDynamicPromptInjection(
 
   // 2. Build variable user context
   const dynamicUserContext = context.metadata
-    ? await buildUserContextContent(context.metadata as any)
+    ? await buildUserContextContent(context.metadata as Record<string, unknown>)
     : undefined;
 
   return {

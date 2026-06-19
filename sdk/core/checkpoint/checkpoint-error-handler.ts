@@ -18,10 +18,10 @@ import type {
 import { CheckpointError } from "@wf-agent/types";
 
 interface Logger {
-  debug(msg: string, context?: any): void;
-  info(msg: string, context?: any): void;
-  warn(msg: string, context?: any): void;
-  error(msg: string, context?: any): void;
+  debug(msg: string, context?: Record<string, unknown>): void;
+  info(msg: string, context?: Record<string, unknown>): void;
+  warn(msg: string, context?: Record<string, unknown>): void;
+  error(msg: string, context?: Record<string, unknown>): void;
 }
 
 /**

@@ -157,7 +157,7 @@ export class AgentLoopCheckpointCoordinator extends BaseCheckpointCoordinator<
       }
 
       // Validate version metadata
-      const formatVersion = (checkpoint.metadata?.customFields?.["formatVersion"] as any) || CURRENT_CHECKPOINT_FORMAT_VERSION;
+      const formatVersion = (checkpoint.metadata?.customFields?.["formatVersion"] as CheckpointFormatVersion) || CURRENT_CHECKPOINT_FORMAT_VERSION;
       if (!formatVersion) {
         logger.warn("Checkpoint missing version metadata, treating as v1.0", { checkpointId });
       }
@@ -216,7 +216,7 @@ export class AgentLoopCheckpointCoordinator extends BaseCheckpointCoordinator<
    */
   protected extractState(entity: AgentLoopEntity): AgentLoopStateSnapshot {
     const contentConfig = this.currentContentConfig;
-    const snapshot: any = {};
+    const snapshot: Record<string, unknown> = {};
 
     // Include execution state by default
     if (contentConfig?.includeState !== false) {
@@ -455,7 +455,7 @@ export class AgentLoopCheckpointCoordinator extends BaseCheckpointCoordinator<
    * Check if checkpoint needs version migration
    */
   needsVersionMigration(checkpoint: AgentLoopCheckpoint): boolean {
-    const formatVersion = (checkpoint.metadata?.customFields?.["formatVersion"] as any) || CURRENT_CHECKPOINT_FORMAT_VERSION;
+    const formatVersion = (checkpoint.metadata?.customFields?.["formatVersion"] as CheckpointFormatVersion) || CURRENT_CHECKPOINT_FORMAT_VERSION;
     const compatibility = this.versionManager.checkCompatibility(formatVersion);
     return compatibility.requiresMigration;
   }

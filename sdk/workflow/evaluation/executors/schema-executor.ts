@@ -17,13 +17,13 @@ export class SchemaExecutor extends BaseExecutor implements IExecutor {
       throw new Error("Schema executor requires variable parameter");
     }
 
-    const schema = compiled.ast as any;
+    const schema = compiled.ast as Record<string, unknown>;
     const value = this.getVariableValue(variable, context);
 
     return this.validateAgainstSchema(value, schema);
   }
 
-  private validateAgainstSchema(value: unknown, schema: any): boolean {
+  private validateAgainstSchema(value: unknown, schema: Record<string, unknown>): boolean {
     const type = schema["type"];
 
     // Type validation
@@ -113,9 +113,9 @@ export class SchemaExecutor extends BaseExecutor implements IExecutor {
 
       // Validate properties
       if (properties && typeof properties === "object") {
-        for (const [prop, propSchema] of Object.entries(properties)) {
+        for (const [prop, propSchema] of Object.entries(properties as Record<string, unknown>)) {
           if (prop in obj) {
-            if (!this.validateAgainstSchema(obj[prop], propSchema)) return false;
+            if (!this.validateAgainstSchema(obj[prop], propSchema as Record<string, unknown>)) return false;
           }
         }
       }

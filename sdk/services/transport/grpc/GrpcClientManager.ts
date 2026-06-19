@@ -52,9 +52,9 @@ export class GrpcClientManager {
    * Get a client for a specific service
    */
   getServiceClient(serviceName: string): GrpcClient | undefined {
-    for (const [key, client] of this.clients.entries()) {
+    for (const [key] of this.clients.entries()) {
       if (key.includes(serviceName)) {
-        return client;
+        return this.clients.get(key);
       }
     }
     return undefined;
@@ -128,7 +128,7 @@ export class GrpcClientManager {
     for (const callback of this.healthChangeCallbacks) {
       try {
         callback(serviceName, healthy);
-      } catch (error) {
+      } catch {
         // Ignore callback errors
       }
     }

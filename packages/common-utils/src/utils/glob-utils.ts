@@ -29,9 +29,11 @@ export async function matchGlobPattern(pattern: string, baseDir: string): Promis
             await scan(fullPath, partIndex);
             await scan(fullPath, partIndex + 1);
           } else if (entry.isFile() && isLast) {
+            results.push(fullPath);
           }
         }
       } catch {
+        // Ignore errors reading directory
       }
       return;
     }
@@ -48,6 +50,7 @@ export async function matchGlobPattern(pattern: string, baseDir: string): Promis
           }
         }
       } catch {
+        // Ignore errors reading directory
       }
       return;
     }
@@ -65,6 +68,7 @@ export async function matchGlobPattern(pattern: string, baseDir: string): Promis
           }
         }
       } catch {
+        // Ignore errors reading directory
       }
       return;
     }
@@ -89,6 +93,7 @@ export async function matchGlobPattern(pattern: string, baseDir: string): Promis
           }
         }
       } catch {
+        // Ignore errors reading directory
       }
       return;
     }
@@ -102,6 +107,7 @@ export async function matchGlobPattern(pattern: string, baseDir: string): Promis
         await scan(literalPath, partIndex + 1);
       }
     } catch {
+      // Ignore errors checking file stat
     }
   }
 

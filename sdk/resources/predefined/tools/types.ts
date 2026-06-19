@@ -67,7 +67,7 @@ export interface PredefinedToolsOptions {
   /** Builtin tools options */
   builtin?: BuiltinToolsOptions;
   /** MCP Manager getter for dynamic use_mcp description generation */
-  getMcpManager?: () => Promise<any>;
+  getMcpManager?: () => Promise<Record<string, unknown>>;
 }
 
 /**

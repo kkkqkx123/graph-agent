@@ -43,18 +43,21 @@ export interface VersionCompatibility {
 /**
  * Version migration result
  */
-export interface VersionMigrationResult {
+export interface VersionMigrationResult<T = unknown> {
   success: boolean;
   fromVersion: CheckpointFormatVersion;
   toVersion: CheckpointFormatVersion;
-  migratedData: any;
+  migratedData: T;
   errors?: string[];
 }
 
 /**
  * Migration handler for a specific version transition
  */
-export type VersionMigrationHandler = (data: any, fromVersion: CheckpointFormatVersion) => Promise<any>;
+export type VersionMigrationHandler = (
+  data: unknown,
+  fromVersion: CheckpointFormatVersion,
+) => Promise<unknown>;
 
 /**
  * Version migration registry

@@ -287,7 +287,7 @@ export class WorkflowBuilder extends BaseBuilder<WorkflowTemplate> {
         ...route,
         condition:
           typeof route.condition === "string"
-            ? ({ type: "expression", expression: route.condition } as any)
+            ? ({ type: "expression", expression: route.condition } as Condition)
             : route.condition,
       })),
       defaultTargetNodeId,
@@ -305,7 +305,7 @@ export class WorkflowBuilder extends BaseBuilder<WorkflowTemplate> {
   addEdge(from: string, to: string, condition?: string | Condition): this {
     const edgeCondition: Condition | undefined = condition
       ? typeof condition === "string"
-        ? ({ type: "expression", expression: condition } as any)
+        ? ({ type: "expression", expression: condition } as Condition)
         : condition
       : undefined;
 

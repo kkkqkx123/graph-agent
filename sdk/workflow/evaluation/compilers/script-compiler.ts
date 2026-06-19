@@ -34,7 +34,7 @@ export class ScriptCompiler implements ICompiler {
 
     this.validateScript(script);
 
-    let scriptFunction: Function;
+    let scriptFunction: (variables: Record<string, unknown>, input: unknown, output: unknown) => unknown;
     try {
       scriptFunction = new Function(
         "variables",
