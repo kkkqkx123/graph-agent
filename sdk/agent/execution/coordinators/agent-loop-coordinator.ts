@@ -23,6 +23,10 @@ import * as Identifiers from "../../../core/di/service-identifiers.js";
 import type { InterruptionStateFactory } from "../../../core/di/factory-types.js";
 import type { InterruptionState } from "../../../core/utils/interruption/interruption-state.js";
 import type { AgentStateCoordinator } from "../../state-managers/agent-state-coordinator.js";
+import { AgentLoopCheckpointCoordinator } from "../../../agent/checkpoint/checkpoint-coordinator.js";
+import type { CheckpointDependencies } from "../../../core/checkpoint/types.js";
+import type { AgentCheckpointPolicy, AgentCheckpointTrigger } from "../../../agent/checkpoint/agent-checkpoint-policy.js";
+import { DEFAULT_AGENT_CHECKPOINT_POLICY } from "../../../agent/checkpoint/agent-checkpoint-policy.js";
 
 const logger = createContextualLogger({ component: "AgentLoopCoordinator" });
 
@@ -53,6 +57,9 @@ export interface AgentLoopExecuteOptions extends AgentLoopEntityOptions {
  */
 export class AgentLoopCoordinator {
   private readonly stateTransitor: AgentLoopStateTransitor;
+  private checkpointCoordinator?: AgentLoopCheckpointCoordinator;
+  private checkpointDependencies?: CheckpointDependencies<any>;
+  private checkpointPolicy: AgentCheckpointPolicy = DEFAULT_AGENT_CHECKPOINT_POLICY;
 
   constructor(
     private readonly registry: AgentLoopRegistry,
@@ -62,6 +69,85 @@ export class AgentLoopCoordinator {
     private readonly metricsCollector?: AgentLoopMetricsCollector,
   ) {
     this.stateTransitor = new AgentLoopStateTransitor(eventManager!);
+  }
+
+  /**
+   * Set checkpoint storage dependencies and policy
+   *
+   * Enable automatic checkpoint creation for Agent Loop execution.
+   * The coordinator will create checkpoints at configured events (error, pause, complete, etc.).
+   *
+   * Example:
+   *   const adapter = new LayertwineCheckpointAdapter(executor);
+   *   coordinator.setCheckpointDependencies(adapter, MINIMAL_AGENT_CHECKPOINT_POLICY);
+   *
+   * @param dependencies CheckpointDependencies implementation (e.g., LayertwineCheckpointAdapter)
+   * @param policy Checkpoint policy configuration (defaults to DEFAULT_AGENT_CHECKPOINT_POLICY)
+   */
+  setCheckpointDependencies(
+    dependencies: CheckpointDependencies<any>,
+    policy?: AgentCheckpointPolicy,
+  ): void {
+    this.checkpointDependencies = dependencies;
+    if (policy) {
+      this.checkpointPolicy = policy;
+    }
+    this.checkpointCoordinator = new AgentLoopCheckpointCoordinator();
+
+    logger.debug("Checkpoint dependencies configured for AgentLoopCoordinator", {
+      policyEnabled: this.checkpointPolicy.enabled,
+    });
+  }
+
+  /**
+   * Create checkpoint if configured and event matches policy
+   *
+   * @param entity The agent loop entity
+   * @param event The trigger event
+   * @returns Checkpoint ID if created, null otherwise
+   */
+  private async createCheckpointIfEnabled(
+    entity: AgentLoopEntity,
+    _stateCoordinator: AgentStateCoordinator,
+    event: AgentCheckpointTrigger | string,
+  ): Promise<string | null> {
+    if (!this.checkpointCoordinator || !this.checkpointDependencies || !this.checkpointPolicy.enabled) {
+      return null;
+    }
+
+    const triggers = Array.isArray(this.checkpointPolicy.trigger)
+      ? this.checkpointPolicy.trigger
+      : [this.checkpointPolicy.trigger];
+
+    if (!triggers.includes(event as AgentCheckpointTrigger)) {
+      return null;
+    }
+
+    try {
+      const checkpointId = await this.checkpointCoordinator.createCheckpoint(
+        entity,
+        this.checkpointDependencies,
+        {
+          description: `Agent loop checkpoint on ${event}`,
+        },
+      );
+
+      logger.debug("Agent loop checkpoint created", {
+        agentLoopId: entity.id,
+        checkpointId,
+        event,
+      });
+
+      return checkpointId;
+    } catch (error) {
+      logger.warn("Failed to create agent loop checkpoint", {
+        agentLoopId: entity.id,
+        event,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      // Don't throw - checkpoint failure should not interrupt execution
+      return null;
+    }
   }
 
   /**
@@ -195,10 +281,14 @@ export class AgentLoopCoordinator {
       // Only attempt transition if still RUNNING to avoid state machine violation.
       if (result.success) {
         if (entity.getStatus() === AgentLoopStatus.RUNNING) {
+          // Create checkpoint before completion
+          await this.createCheckpointIfEnabled(entity, stateCoordinator, "on_complete");
           await this.stateTransitor.completeAgentLoop(entity, result);
         }
       } else {
         if (entity.getStatus() === AgentLoopStatus.RUNNING) {
+          // Create checkpoint before failure
+          await this.createCheckpointIfEnabled(entity, stateCoordinator, "on_error");
           await this.stateTransitor.failAgentLoop(entity, result.error);
         }
       }
@@ -226,6 +316,8 @@ export class AgentLoopCoordinator {
 
       // Attempt to fail the agent loop, but gracefully handle if already completed
       try {
+        // Create checkpoint before failure
+        await this.createCheckpointIfEnabled(entity, stateCoordinator, "on_error");
         await this.stateTransitor.failAgentLoop(entity, error);
       } catch (stateError) {
         logger.warn("Failed to transition agent loop to FAILED state", {
@@ -296,12 +388,16 @@ export class AgentLoopCoordinator {
       }
 
       // 5. Completion Status using state transitor
+      // Create checkpoint before completion
+      await this.createCheckpointIfEnabled(entity, stateCoordinator, "on_complete");
       await this.stateTransitor.completeAgentLoop(entity, {
         success: true,
         iterations: entity.state.currentIteration,
         toolCallCount: entity.state.toolCallCount,
       });
     } catch (error) {
+      // Create checkpoint before failure
+      await this.createCheckpointIfEnabled(entity, stateCoordinator, "on_error");
       await this.stateTransitor.failAgentLoop(entity, error);
       throw error;
     } finally {
@@ -405,6 +501,12 @@ export class AgentLoopCoordinator {
       this.metricsCollector.recordPause(id);
     }
 
+    // Create checkpoint before pausing
+    const stateCoordinator = this.registry.getStateCoordinator(id);
+    if (stateCoordinator) {
+      await this.createCheckpointIfEnabled(entity, stateCoordinator, "on_pause");
+    }
+
     // Set the pause flag
     entity.interrupt("PAUSE");
     logger.info("Agent Loop pause requested", { agentLoopId: id });
@@ -458,16 +560,22 @@ export class AgentLoopCoordinator {
 
       if (result.success) {
         if (entity.getStatus() === AgentLoopStatus.RUNNING) {
+          // Create checkpoint before completion
+          await this.createCheckpointIfEnabled(entity, stateCoordinator, "on_complete");
           await this.stateTransitor.completeAgentLoop(entity, result);
         }
       } else {
         if (entity.getStatus() === AgentLoopStatus.RUNNING) {
+          // Create checkpoint before failure
+          await this.createCheckpointIfEnabled(entity, stateCoordinator, "on_error");
           await this.stateTransitor.failAgentLoop(entity, result.error);
         }
       }
 
       return result;
     } catch (error) {
+      // Create checkpoint before failure
+      await this.createCheckpointIfEnabled(entity, stateCoordinator, "on_error");
       await this.stateTransitor.failAgentLoop(entity, error);
       return {
         success: false,
@@ -548,17 +656,22 @@ export class AgentLoopCoordinator {
 
       if (result.success) {
         if (entity.getStatus() === AgentLoopStatus.RUNNING) {
+          // Create checkpoint before completion
+          await this.createCheckpointIfEnabled(entity, stateCoordinator, "on_complete");
           await this.stateTransitor.completeAgentLoop(entity, result);
         }
       } else {
         if (entity.getStatus() === AgentLoopStatus.RUNNING) {
+          // Create checkpoint before failure
+          await this.createCheckpointIfEnabled(entity, stateCoordinator, "on_error");
           await this.stateTransitor.failAgentLoop(entity, result.error);
         }
       }
 
       return result;
     } catch (error) {
-      await this.stateTransitor.failAgentLoop(entity, error);
+      // Create checkpoint before failure
+      await this.createCheckpointIfEnabled(entity, stateCoordinator, "on_error");
       return {
         success: false,
         iterations: entity.state.currentIteration,

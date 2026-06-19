@@ -10,10 +10,10 @@ import type {
   StaticNode,
   CheckpointConfigContext,
   CheckpointConfigResult,
-  GraphCheckpointConfigLayer,
+  WorkflowCheckpointConfigLayer,
   CheckpointConfigContent,
   CheckpointConfigSource,
-  GraphCheckpointTriggerType,
+  WorkflowCheckpointTriggerType,
 } from "@wf-agent/types";
 import { CheckpointConfigResolver } from "../../../api/shared/config/processors/checkpoint-config.js";
 
@@ -38,7 +38,7 @@ export class WorkflowCheckpointConfigResolver extends CheckpointConfigResolver {
    * @returns Parsing result
    */
   resolveWorkflowConfig(
-    layers: GraphCheckpointConfigLayer[],
+    layers: WorkflowCheckpointConfigLayer[],
     context: CheckpointConfigContext,
   ): CheckpointConfigResult {
     // Special Handling: Triggered sub-workflows do not create checkpoints by default.
@@ -73,7 +73,7 @@ export class WorkflowCheckpointConfigResolver extends CheckpointConfigResolver {
    * Iterates from lowest priority to highest priority so that higher-priority
    * layers' values correctly override lower-priority ones.
    */
-  private mergeConfigs(layers: GraphCheckpointConfigLayer[]): CheckpointConfigContent {
+  private mergeConfigs(layers: WorkflowCheckpointConfigLayer[]): CheckpointConfigContent {
     const result: CheckpointConfigContent = {};
 
     // Iterate in reverse: lowest priority first, so higher-priority values win.
@@ -128,7 +128,7 @@ export class WorkflowCheckpointConfigResolver extends CheckpointConfigResolver {
   /**
    * Find the source of the configuration that is actually taking effect.
    */
-  private findEffectiveSource(layers: GraphCheckpointConfigLayer[]): CheckpointConfigSource {
+  private findEffectiveSource(layers: WorkflowCheckpointConfigLayer[]): CheckpointConfigSource {
     // Return the first configuration source that explicitly specifies 'enabled'.
     for (const layer of layers) {
       if (layer.config.enabled !== undefined) {
@@ -149,7 +149,7 @@ export class WorkflowCheckpointConfigResolver extends CheckpointConfigResolver {
       return config.description;
     }
 
-    const triggerDesc: Record<GraphCheckpointTriggerType, string> = {
+    const triggerDesc: Record<WorkflowCheckpointTriggerType, string> = {
       NODE_BEFORE_EXECUTE: "Before node",
       NODE_AFTER_EXECUTE: "After node",
       TOOL_BEFORE: "Before tool",
@@ -177,8 +177,8 @@ export function buildNodeCheckpointLayers(
   globalConfig: CheckpointConfig | undefined,
   node: StaticNode | undefined,
   context: CheckpointConfigContext,
-): GraphCheckpointConfigLayer[] {
-  const layers: GraphCheckpointConfigLayer[] = [];
+): WorkflowCheckpointConfigLayer[] {
+  const layers: WorkflowCheckpointConfigLayer[] = [];
 
   // 1. Node configuration (high priority)
   if (node) {
@@ -229,7 +229,7 @@ export function buildNodeCheckpointLayers(
  * @returns Parsing result
  */
 export function resolveCheckpointConfig(
-  layers: GraphCheckpointConfigLayer[],
+  layers: WorkflowCheckpointConfigLayer[],
   context: CheckpointConfigContext,
 ): CheckpointConfigResult {
   return defaultResolver.resolveWorkflowConfig(layers, context);
@@ -239,7 +239,7 @@ export function resolveCheckpointConfig(
  * Check whether it is necessary to create a checkpoint.
  */
 export function shouldCreateCheckpoint(
-  layers: GraphCheckpointConfigLayer[],
+  layers: WorkflowCheckpointConfigLayer[],
   context: CheckpointConfigContext,
 ): boolean {
   return resolveCheckpointConfig(layers, context).shouldCreate;
@@ -249,7 +249,7 @@ export function shouldCreateCheckpoint(
  * Get the checkpoint description.
  */
 export function getCheckpointDescription(
-  layers: GraphCheckpointConfigLayer[],
+  layers: WorkflowCheckpointConfigLayer[],
   context: CheckpointConfigContext,
 ): string | undefined {
   return resolveCheckpointConfig(layers, context).description;

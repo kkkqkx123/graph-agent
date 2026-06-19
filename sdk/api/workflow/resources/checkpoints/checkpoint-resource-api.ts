@@ -12,7 +12,6 @@ import { getErrorMessage, isSuccess, getData } from "../../../shared/types/execu
 import type { EventRegistry } from "../../../../core/registry/event-registry.js";
 import type { Timestamp } from "@wf-agent/types";
 import { WorkflowExecutionStatus } from "@wf-agent/types";
-import { GraphCheckpointTriggerType } from "@wf-agent/types";
 import { buildCheckpointRestoredEvent } from "../../../../core/utils/event/builders/index.js";
 
 /**
@@ -26,7 +25,7 @@ export interface CheckpointFilter {
   /** Workflow ID */
   workflowId?: string;
   /** Trigger Type */
-  triggerType?: GraphCheckpointTriggerType;
+  triggerType?: string;
   /** Creator */
   creator?: string;
   /** Tag array */

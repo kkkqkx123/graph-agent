@@ -12,8 +12,8 @@ import {
 } from "../config-resolver.js";
 import type {
   CheckpointConfigContext,
-  GraphCheckpointConfigLayer,
-  GraphCheckpointTriggerType,
+  WorkflowCheckpointConfigLayer,
+  WorkflowCheckpointTriggerType,
 } from "@wf-agent/types";
 
 // Mock contextual logger
@@ -54,7 +54,7 @@ describe("WorkflowCheckpointConfigResolver", () => {
         explicitEnableCheckpoint: true,
       };
 
-      const layers: GraphCheckpointConfigLayer[] = [
+      const layers: WorkflowCheckpointConfigLayer[] = [
         {
           source: "node",
           config: { enabled: true },
@@ -72,7 +72,7 @@ describe("WorkflowCheckpointConfigResolver", () => {
         triggerType: "NODE_AFTER_EXECUTE",
       };
 
-      const layers: GraphCheckpointConfigLayer[] = [
+      const layers: WorkflowCheckpointConfigLayer[] = [
         {
           source: "runtime",
           config: { enabled: false },
@@ -90,7 +90,7 @@ describe("WorkflowCheckpointConfigResolver", () => {
         triggerType: "NODE_BEFORE_EXECUTE",
       };
 
-      const layers: GraphCheckpointConfigLayer[] = [
+      const layers: WorkflowCheckpointConfigLayer[] = [
         {
           source: "workflow",
           config: {
@@ -110,7 +110,7 @@ describe("WorkflowCheckpointConfigResolver", () => {
         triggerType: "NODE_AFTER_EXECUTE",
       };
 
-      const layers: GraphCheckpointConfigLayer[] = [
+      const layers: WorkflowCheckpointConfigLayer[] = [
         {
           source: "workflow",
           config: {
@@ -130,7 +130,7 @@ describe("WorkflowCheckpointConfigResolver", () => {
         triggerType: "TOOL_BEFORE",
       };
 
-      const layers: GraphCheckpointConfigLayer[] = [
+      const layers: WorkflowCheckpointConfigLayer[] = [
         {
           source: "workflow",
           config: {
@@ -150,7 +150,7 @@ describe("WorkflowCheckpointConfigResolver", () => {
         triggerType: "TOOL_AFTER",
       };
 
-      const layers: GraphCheckpointConfigLayer[] = [
+      const layers: WorkflowCheckpointConfigLayer[] = [
         {
           source: "workflow",
           config: {
@@ -181,7 +181,7 @@ describe("WorkflowCheckpointConfigResolver", () => {
         triggerType: "NODE_AFTER_EXECUTE",
       };
 
-      const layers: GraphCheckpointConfigLayer[] = [
+      const layers: WorkflowCheckpointConfigLayer[] = [
         {
           source: "node",
           config: { description: "Node config without enabled" },
@@ -203,7 +203,7 @@ describe("WorkflowCheckpointConfigResolver", () => {
         triggerType: "NODE_AFTER_EXECUTE",
       };
 
-      const layers: GraphCheckpointConfigLayer[] = [
+      const layers: WorkflowCheckpointConfigLayer[] = [
         {
           source: "workflow",
           config: { description: "Just a description" },
@@ -223,7 +223,7 @@ describe("WorkflowCheckpointConfigResolver", () => {
         triggerType: "NODE_AFTER_EXECUTE",
       };
 
-      const layers: GraphCheckpointConfigLayer[] = [
+      const layers: WorkflowCheckpointConfigLayer[] = [
         {
           source: "node",
           config: {
@@ -268,7 +268,7 @@ describe("WorkflowCheckpointConfigResolver", () => {
         triggerType: "NODE_AFTER_EXECUTE",
       };
 
-      const layers: GraphCheckpointConfigLayer[] = [
+      const layers: WorkflowCheckpointConfigLayer[] = [
         {
           source: "node",
           config: { enabled: true, description: "Custom description" },

@@ -18,3 +18,6 @@ export type {
   CheckpointDependencies,
   DeltaRestoreResult,
 } from "./types.js";
+
+// Storage Adapters
+export { LayertwineCheckpointAdapter } from "./adapters/index.js";
