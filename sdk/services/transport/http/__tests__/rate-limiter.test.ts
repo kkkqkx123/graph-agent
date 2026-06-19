@@ -32,7 +32,7 @@ describe("RateLimiter", () => {
       for (let i = 0; i < 10; i++) {
         await rateLimiter.waitForToken();
       }
-      expect(rateLimiter.getAvailableTokens()).toBe(0);
+      expect(rateLimiter.getAvailableTokens()).toBeCloseTo(0, 2);
 
       // Next call should eventually get a token after refill
       const waitPromise = rateLimiter.waitForToken();

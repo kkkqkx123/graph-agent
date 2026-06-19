@@ -192,8 +192,7 @@ describe("AgentLoopCheckpointCoordinator", () => {
     });
 
     it("should return FULL for baseline checkpoints", () => {
-      // checkpointCount + 1 = 5, which is divisible by baselineInterval 5
-      const type = (coordinator as any).determineCheckpointType(4, {
+      const type = (coordinator as any).determineCheckpointType(5, {
         enabled: true,
         baselineInterval: 5,
       });

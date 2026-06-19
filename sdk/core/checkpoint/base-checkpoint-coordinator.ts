@@ -200,9 +200,11 @@ export abstract class BaseCheckpointCoordinator<
     // - maxDeltaChainLength is a hard limit on delta chain length
     // The effective interval is the smaller of the two, ensuring
     // the delta chain never exceeds maxDeltaChainLength.
-    const effectiveInterval = Math.min(config.baselineInterval, config.maxDeltaChainLength);
+    const baselineInterval = config.baselineInterval ?? 10;
+    const maxDeltaChainLength = config.maxDeltaChainLength ?? 20;
+    const effectiveInterval = Math.min(baselineInterval, maxDeltaChainLength);
 
-    // Create baseline at the effective interval
+    // Create baseline when checkpointCount is divisible by effectiveInterval
     if (checkpointCount % effectiveInterval === 0) {
       return "FULL";
     }

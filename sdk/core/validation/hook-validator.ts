@@ -24,7 +24,7 @@ const hookSchema = z.object({
   weight: z.number().optional(),
   condition: z
     .object({
-      type: z.literal("expression"),
+      type: z.literal("expression").optional(),
       expression: z.string().min(1, "Condition expression is required"),
       metadata: z.any().optional(),
     })

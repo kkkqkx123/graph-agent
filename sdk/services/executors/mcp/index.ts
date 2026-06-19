@@ -49,8 +49,8 @@ export { McpToolsRegistrar, createMcpToolsRegistrar } from "./features/registrat
 export type { McpToolRegistrationOptions } from "./features/registration/dynamic-registrar.js";
 
 // Features - Approval
-export { EnhancedMcpApprovalSystem } from "./features/approval/enhanced-approval.js";
-export type { ParameterApprovalRule, RateLimitingRule, AccessControlRule, ToolCallApprovalContext, ResourceAccessApprovalContext } from "./features/approval/enhanced-approval.js";
+export { EnhancedMcpApprovalSystem } from "./features/approval/index.js";
+export type { ParameterApprovalRule, RateLimitingRule, AccessControlRule, ToolCallApprovalContext, ResourceAccessApprovalContext } from "./features/approval/index.js";
 
 // Features - Analytics
 export { McpToolsUsageAnalytics } from "./features/analytics/usage-analytics.js";

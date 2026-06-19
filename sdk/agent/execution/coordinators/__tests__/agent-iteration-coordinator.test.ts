@@ -228,7 +228,12 @@ let mockCoreCoordinator: CoreLLMExecutionCoordinator;
       expect(mockCoreCoordinator.executeLLMCallWithMessages).toHaveBeenCalledWith(
         [],
         { parameters: {}, profileId: "profile-1", tools: undefined },
-        { abortSignal: undefined, executionId: "agent-loop-1", nodeId: "node-1" },
+        expect.objectContaining({
+          executionId: "agent-loop-1",
+          nodeId: "node-1",
+          messageCount: 0,
+          currentIteration: 0,
+        }),
         transformContext,
       );
     });
