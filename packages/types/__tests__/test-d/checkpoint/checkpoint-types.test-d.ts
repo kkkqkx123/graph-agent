@@ -19,7 +19,7 @@ import type {
   CheckpointOptions,
   DeltaStorageConfig,
   CheckpointConfigSource,
-  GraphCheckpointTriggerType,
+  WorkflowCheckpointTriggerType,
   AgentLoopCheckpointTriggerType,
   CheckpointConfigResult,
   CheckpointListOptions,
@@ -156,22 +156,22 @@ expectAssignable<CheckpointConfigSource>(globalSource);
 expectAssignable<CheckpointConfigSource>(defaultSource);
 
 // =============================================================================
-// Test 7: GraphCheckpointTriggerType Literal Types
+// Test 7: WorkflowCheckpointTriggerType Literal Types
 // =============================================================================
 
-const nodeBeforeTrigger: GraphCheckpointTriggerType = "NODE_BEFORE_EXECUTE";
-const nodeAfterTrigger: GraphCheckpointTriggerType = "NODE_AFTER_EXECUTE";
-const toolBeforeTrigger: GraphCheckpointTriggerType = "TOOL_BEFORE";
-const toolAfterTrigger: GraphCheckpointTriggerType = "TOOL_AFTER";
-const hookTrigger: GraphCheckpointTriggerType = "HOOK";
-const triggerTrigger: GraphCheckpointTriggerType = "TRIGGER";
+const nodeBeforeTrigger: WorkflowCheckpointTriggerType = "NODE_BEFORE_EXECUTE";
+const nodeAfterTrigger: WorkflowCheckpointTriggerType = "NODE_AFTER_EXECUTE";
+const toolBeforeTrigger: WorkflowCheckpointTriggerType = "TOOL_BEFORE";
+const toolAfterTrigger: WorkflowCheckpointTriggerType = "TOOL_AFTER";
+const hookTrigger: WorkflowCheckpointTriggerType = "HOOK";
+const triggerTrigger: WorkflowCheckpointTriggerType = "TRIGGER";
 
-expectAssignable<GraphCheckpointTriggerType>(nodeBeforeTrigger);
-expectAssignable<GraphCheckpointTriggerType>(nodeAfterTrigger);
-expectAssignable<GraphCheckpointTriggerType>(toolBeforeTrigger);
-expectAssignable<GraphCheckpointTriggerType>(toolAfterTrigger);
-expectAssignable<GraphCheckpointTriggerType>(hookTrigger);
-expectAssignable<GraphCheckpointTriggerType>(triggerTrigger);
+expectAssignable<WorkflowCheckpointTriggerType>(nodeBeforeTrigger);
+expectAssignable<WorkflowCheckpointTriggerType>(nodeAfterTrigger);
+expectAssignable<WorkflowCheckpointTriggerType>(toolBeforeTrigger);
+expectAssignable<WorkflowCheckpointTriggerType>(toolAfterTrigger);
+expectAssignable<WorkflowCheckpointTriggerType>(hookTrigger);
+expectAssignable<WorkflowCheckpointTriggerType>(triggerTrigger);
 
 // =============================================================================
 // Test 8: AgentLoopCheckpointTriggerType Literal Types
@@ -198,7 +198,7 @@ expectType<CheckpointConfigResult>(shouldCreateConfig);
 expectType<boolean>(shouldCreateConfig.shouldCreate);
 expectType<string | undefined>(shouldCreateConfig.description);
 expectType<CheckpointConfigSource>(shouldCreateConfig.effectiveSource);
-expectType<GraphCheckpointTriggerType | AgentLoopCheckpointTriggerType | undefined>(
+expectType<WorkflowCheckpointTriggerType | AgentLoopCheckpointTriggerType | undefined>(
   shouldCreateConfig.triggerType
 );
 

@@ -1,5 +1,5 @@
 /**
- * Graph Checkpoint Configuration Type Definition
+ * Workflow Checkpoint Configuration Type Definition
  */
 
 import type { ID } from "../../common.js";
@@ -7,7 +7,7 @@ import type {
   CheckpointMetadata,
   DeltaStorageConfig,
   CheckpointConfigSource,
-  GraphCheckpointTriggerType,
+  WorkflowCheckpointTriggerType,
 } from "../base.js";
 import { DEFAULT_DELTA_STORAGE_CONFIG } from "../base.js";
 
@@ -20,7 +20,7 @@ export { DEFAULT_DELTA_STORAGE_CONFIG };
  */
 export interface CheckpointConfigContext {
   /** Triggering timing */
-  triggerType: GraphCheckpointTriggerType;
+  triggerType: WorkflowCheckpointTriggerType;
   /** Node ID (optional) */
   nodeId?: string;
   /** Tool ID (optional) */
@@ -32,9 +32,9 @@ export interface CheckpointConfigContext {
 }
 
 /**
- * Graph Checkpoint Configuration Level
+ * Workflow Checkpoint Configuration Level
  */
-export interface GraphCheckpointConfigLayer {
+export interface WorkflowCheckpointConfigLayer {
   /** Configure the source */
   source: CheckpointConfigSource;
   /** Configuration content */

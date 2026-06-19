@@ -103,9 +103,9 @@ export type CheckpointConfigSource =
   | "default"; // Default value
 
 /**
- * Graph checkpoint trigger timing
+ * Workflow checkpoint trigger timing
  */
-export type GraphCheckpointTriggerType =
+export type WorkflowCheckpointTriggerType =
   | "NODE_BEFORE_EXECUTE"
   | "NODE_AFTER_EXECUTE"
   | "TOOL_BEFORE"
@@ -129,7 +129,7 @@ export interface CheckpointConfigResult {
   /** The actual source of the effective configuration */
   effectiveSource: CheckpointConfigSource;
   /** Triggering timing */
-  triggerType?: GraphCheckpointTriggerType | AgentLoopCheckpointTriggerType;
+  triggerType?: WorkflowCheckpointTriggerType | AgentLoopCheckpointTriggerType;
 }
 
 /**

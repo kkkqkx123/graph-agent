@@ -7,7 +7,7 @@ import { BaseAdapter } from "./base-adapter.js";
 import { CLINotFoundError } from "../types/cli-types.js";
 import { getData, isFailure, getError } from "@wf-agent/sdk/api";
 import { CheckpointResourceAPI } from "@wf-agent/sdk/api";
-import type { Checkpoint, GraphCheckpointTriggerType } from "@wf-agent/types";
+import type { Checkpoint, WorkflowCheckpointTriggerType } from "@wf-agent/types";
 
 /**
  * Type alias for checkpoint with createdAt field (matches formatter expectations)
@@ -110,7 +110,7 @@ export class WorkflowExecutionCheckpointAdapter extends BaseAdapter {
         ids: filter['ids'] as string[] | undefined,
         executionId: filter['executionId'] as string | undefined,
         workflowId: filter['workflowId'] as string | undefined,
-        triggerType: filter['triggerType'] as GraphCheckpointTriggerType | undefined,
+        triggerType: filter['triggerType'] as WorkflowCheckpointTriggerType | undefined,
         creator: filter['creator'] as string | undefined,
         tags: filter['tags'] as string[] | undefined,
       } : undefined;

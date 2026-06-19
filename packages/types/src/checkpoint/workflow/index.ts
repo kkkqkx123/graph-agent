@@ -1,5 +1,5 @@
 /**
- * Graph Unified export of checkpoint types
+ * Workflow Unified export of checkpoint types
  */
 
 // Core checkpoint types
@@ -11,7 +11,7 @@ export type { WorkflowExecutionStateSnapshot, OperationState } from "./snapshot.
 // Configuration type
 export type {
   CheckpointConfigContext,
-  GraphCheckpointConfigLayer,
+  WorkflowCheckpointConfigLayer,
   CheckpointConfigContent,
 } from "./config.js";
 

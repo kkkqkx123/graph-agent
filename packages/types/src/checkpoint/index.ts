@@ -16,7 +16,7 @@ export {
   CheckpointConfigResult,
   CheckpointListOptions,
   CheckpointConfigSource,
-  GraphCheckpointTriggerType,
+  WorkflowCheckpointTriggerType,
   AgentLoopCheckpointTriggerType,
   BaseCheckpointCore,
   BaseCheckpoint,
@@ -28,8 +28,8 @@ export {
 // Exporting Agent Loop Checkpoint Types
 export * from "./agent/index.js";
 
-// Export Graph Checkpoint Types
-export * from "./graph/index.js";
+// Export Workflow Checkpoint Types
+export * from "./workflow/index.js";
 
 // Export Checkpoint Variable State
 export { CheckpointVariableState } from "./variable-state.js";

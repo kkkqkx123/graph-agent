@@ -1,5 +1,5 @@
 /**
- * Graph Checkpoint Type Definition
+ * Workflow Checkpoint Type Definition
  */
 
 import type { ID, Timestamp } from "../../common.js";
@@ -39,7 +39,7 @@ export interface CheckpointDelta {
 }
 
 /**
- * Graph Checkpoint
+ * Workflow Checkpoint
  * Uses AnyCheckpoint union type for strong typing
  */
 export type Checkpoint = AnyCheckpoint<CheckpointDelta, WorkflowExecutionStateSnapshot> & {
