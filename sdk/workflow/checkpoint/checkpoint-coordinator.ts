@@ -31,6 +31,8 @@ import type {
   FullCheckpoint,
   DeltaCheckpoint,
   CheckpointDelta,
+  CheckpointErrorStrategy,
+  CheckpointErrorContext,
 } from "@wf-agent/types";
 import type { WorkflowExecutionRegistry } from "../stores/workflow-execution-registry.js";
 import type { WorkflowRegistry } from "../stores/workflow-registry.js";
@@ -49,6 +51,7 @@ import type { CheckpointDependencies as BaseCheckpointDependencies } from "../..
 import type { ExecutionHierarchyRegistry } from "../../core/registry/execution-hierarchy-registry.js";
 import type { FileCheckpointManager } from "@wf-agent/common-utils";
 import { HierarchyIntegrityService } from "../../core/execution/hierarchy-integrity-service.js";
+import { CheckpointErrorHandler } from "../../core/checkpoint/checkpoint-error-handler.js";
 
 const logger = createContextualLogger({ component: "CheckpointCoordinator" });
 
@@ -116,6 +119,8 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
   private currentDeps?: WorkflowCheckpointDependencies;
   private currentConversationManager?: ConversationSession;
   private restoreContext?: RestoreContext;
+  private checkpointErrorHandler?: CheckpointErrorHandler;
+  private checkpointErrorStrategy: CheckpointErrorStrategy = "warn";
 
   // ============================================================================
   // Public Instance Methods - Workflow-specific entry points
@@ -155,10 +160,32 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
           executionId: entity.id,
         });
       } catch (error) {
-        logger.warn("File checkpoint creation failed (non-fatal, execution checkpoint saved)", {
-          executionId: entity.id,
-          error: error instanceof Error ? error.message : String(error),
-        });
+        const err = error as Error;
+        // Apply error handling strategy for file checkpoint creation
+        if (this.checkpointErrorHandler) {
+          const errorContext: CheckpointErrorContext = {
+            checkpointId,
+            entityId: entity.id,
+            triggerEvent: "create_workflow",
+            operation: "create",
+            timestamp: Date.now(),
+          };
+
+          const result = await this.checkpointErrorHandler.handleError(
+            err,
+            errorContext,
+          );
+
+          if (result.shouldRethrow) {
+            throw err;
+          }
+        } else {
+          // Fallback to warn if error handler not configured
+          logger.warn("File checkpoint creation failed (non-fatal, execution checkpoint saved)", {
+            executionId: entity.id,
+            error: err.message,
+          });
+        }
       }
     }
 
@@ -666,10 +693,32 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
           });
         }
       } catch (error) {
-        logger.warn("File checkpoint restore failed (non-fatal, execution state restored)", {
-          executionId: ctx.checkpoint.executionId,
-          error: error instanceof Error ? error.message : String(error),
-        });
+        const err = error as Error;
+        // Apply error handling strategy for file checkpoint restore
+        if (this.checkpointErrorHandler) {
+          const errorContext: CheckpointErrorContext = {
+            checkpointId: ctx.checkpoint.id,
+            entityId: ctx.checkpoint.executionId,
+            triggerEvent: "restore_workflow",
+            operation: "restore",
+            timestamp: Date.now(),
+          };
+
+          const result = await this.checkpointErrorHandler.handleError(
+            err,
+            errorContext,
+          );
+
+          if (result.shouldRethrow) {
+            throw err;
+          }
+        } else {
+          // Fallback to warn if error handler not configured
+          logger.warn("File checkpoint restore failed (non-fatal, execution state restored)", {
+            executionId: ctx.checkpoint.executionId,
+            error: err.message,
+          });
+        }
       }
     }
   }
@@ -766,6 +815,68 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
       }),
     );
     return await Promise.all(promises);
+  }
+
+  // ============================================================================
+  // Private Helpers
+  // ============================================================================
+
+  /**
+   * Set checkpoint error handling configuration
+   *
+   * Enable custom error handling strategy for checkpoint operations.
+   * Supports multiple strategies: silent, warn, strict, callback.
+   *
+   * @param errorStrategy Error handling strategy
+   * @param onError Optional callback for "callback" strategy
+   */
+  setCheckpointErrorHandling(
+    errorStrategy: CheckpointErrorStrategy,
+    onError?: (error: Error, context: CheckpointErrorContext) => void | Promise<void>,
+  ): void {
+    this.checkpointErrorStrategy = errorStrategy;
+    this.checkpointErrorHandler = new CheckpointErrorHandler(
+      { strategy: errorStrategy, onError },
+      logger,
+    );
+
+    logger.debug("Workflow checkpoint error handling configured", {
+      strategy: errorStrategy,
+      hasCallback: !!onError,
+    });
+  }
+
+  /**
+   * Set checkpoint error handling strategy at runtime
+   * @param strategy Error handling strategy
+   */
+  setCheckpointErrorStrategy(strategy: CheckpointErrorStrategy): void {
+    this.checkpointErrorStrategy = strategy;
+
+    if (!this.checkpointErrorHandler) {
+      this.checkpointErrorHandler = new CheckpointErrorHandler(
+        { strategy },
+        logger,
+      );
+    } else {
+      this.checkpointErrorHandler.setStrategy(strategy);
+    }
+
+    logger.debug("Workflow checkpoint error strategy updated", { strategy });
+  }
+
+  /**
+   * Get current checkpoint error handling strategy
+   */
+  getCheckpointErrorStrategy(): CheckpointErrorStrategy {
+    return this.checkpointErrorStrategy;
+  }
+
+  /**
+   * Get checkpoint error handler (for advanced usage)
+   */
+  getCheckpointErrorHandler(): CheckpointErrorHandler | undefined {
+    return this.checkpointErrorHandler;
   }
 
   // ============================================================================
