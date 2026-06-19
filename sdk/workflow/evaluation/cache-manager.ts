@@ -2,48 +2,90 @@
  * Cache Manager
  * Unified caching system for all condition types
  * Manages compilation cache, execution results, and dependency tracking
+ *
+ * Features:
+ * - LRU (Least Recently Used) eviction policy for both caches
+ * - Automatic dependency change detection via deep equality checks
+ * - Circular reference protection in equality comparisons
+ * - Comprehensive cache hit rate statistics
+ * - Error handling for invalid context paths
+ *
+ * Thread Safety:
+ * This class is designed for single-threaded (Node.js main thread) usage.
+ * It is NOT thread-safe for use with Worker threads.
+ * If using Worker threads, consider using worker-specific cache instances or external synchronization.
  */
 
 import type { EvaluationContext } from "@wf-agent/types";
 import type { CompiledUnit } from "./types/index.js";
+import { resolveContextPath } from "./shared/path-resolver.js";
 import { getGlobalLogger } from "@wf-agent/common-utils";
+import { LRUCache } from "lru-cache";
 
 interface CachedResult {
   result: unknown;
   dependencies: string[];
   timestamp: number;
   previousValues: Map<string, unknown>;
+  useShallowComparison: boolean;
+}
+
+interface CacheManagerOptions {
+  /**
+   * Use shallow comparison for dependency change detection.
+   * Faster but may miss deep property changes.
+   * Useful for large objects where deep comparison is expensive.
+   */
+  useShallowComparison?: boolean;
 }
 
 export class CacheManager {
   private logger = getGlobalLogger().child("CacheManager", { pkg: "sdk/workflow" });
 
-  // Compilation cache: conditionType:payload -> CompiledUnit
-  private compilationCache = new Map<string, CompiledUnit>();
+  // Compilation cache: uses LRU eviction policy
+  private compilationCache: LRUCache<string, CompiledUnit>;
 
-  // Execution cache: conditionKey -> CachedResult
-  private executionCache = new Map<string, CachedResult>();
+  // Execution cache: uses LRU eviction policy
+  private executionCache: LRUCache<string, CachedResult>;
 
   private readonly MAX_COMPILATION_CACHE = 1000;
   private readonly MAX_EXECUTION_CACHE = 5000;
+
+  // Cache statistics
+  private compilationHits = 0;
+  private compilationMisses = 0;
+  private executionHits = 0;
+  private executionMisses = 0;
+
+  private useShallowComparison: boolean;
+
+  constructor(options?: CacheManagerOptions) {
+    this.compilationCache = new LRUCache<string, CompiledUnit>({
+      max: this.MAX_COMPILATION_CACHE,
+    });
+    this.executionCache = new LRUCache<string, CachedResult>({
+      max: this.MAX_EXECUTION_CACHE,
+    });
+    this.useShallowComparison = options?.useShallowComparison ?? false;
+  }
 
   /**
    * Get compiled unit from cache
    */
   getCompiled(cacheKey: string): CompiledUnit | null {
-    return this.compilationCache.get(cacheKey) ?? null;
+    const cached = this.compilationCache.get(cacheKey) ?? null;
+    if (cached) {
+      this.compilationHits++;
+    } else {
+      this.compilationMisses++;
+    }
+    return cached;
   }
 
   /**
    * Store compiled unit in cache
    */
   setCompiled(cacheKey: string, unit: CompiledUnit): void {
-    if (this.compilationCache.size >= this.MAX_COMPILATION_CACHE) {
-      const firstKey = this.compilationCache.keys().next().value as string | undefined;
-      if (firstKey) {
-        this.compilationCache.delete(firstKey);
-      }
-    }
     this.compilationCache.set(cacheKey, unit);
   }
 
@@ -52,7 +94,12 @@ export class CacheManager {
    */
   getCachedResult(cacheKey: string): unknown | null {
     const cached = this.executionCache.get(cacheKey);
-    return cached ? cached.result : null;
+    if (cached) {
+      this.executionHits++;
+      return cached.result;
+    }
+    this.executionMisses++;
+    return null;
   }
 
   /**
@@ -62,11 +109,13 @@ export class CacheManager {
     const cached = this.executionCache.get(cacheKey);
     if (!cached) return true; // No cache, treat as changed
 
+    const compareFunc = cached.useShallowComparison ? this.valuesShallowEqual : this.valuesEqual;
+
     for (const dep of cached.dependencies) {
       const currentValue = this.getContextValue(dep, context);
       const previousValue = cached.previousValues.get(dep);
 
-      if (!this.valuesEqual(previousValue, currentValue)) {
+      if (!compareFunc.call(this, previousValue, currentValue)) {
         return true;
       }
     }
@@ -83,13 +132,6 @@ export class CacheManager {
     dependencies: string[],
     context: EvaluationContext,
   ): void {
-    if (this.executionCache.size >= this.MAX_EXECUTION_CACHE) {
-      const firstKey = this.executionCache.keys().next().value as string | undefined;
-      if (firstKey) {
-        this.executionCache.delete(firstKey);
-      }
-    }
-
     const previousValues = new Map<string, unknown>();
     for (const dep of dependencies) {
       previousValues.set(dep, this.getContextValue(dep, context));
@@ -100,6 +142,7 @@ export class CacheManager {
       dependencies,
       timestamp: Date.now(),
       previousValues,
+      useShallowComparison: this.useShallowComparison,
     });
   }
 
@@ -109,6 +152,10 @@ export class CacheManager {
   clear(): void {
     this.compilationCache.clear();
     this.executionCache.clear();
+    this.compilationHits = 0;
+    this.compilationMisses = 0;
+    this.executionHits = 0;
+    this.executionMisses = 0;
     this.logger.debug("Cache cleared");
   }
 
@@ -122,10 +169,28 @@ export class CacheManager {
   /**
    * Get cache statistics
    */
-  getStats(): { compilation: number; execution: number } {
+  getStats(): {
+    compilation: number;
+    execution: number;
+    compilationHits: number;
+    compilationMisses: number;
+    compilationHitRate: number;
+    executionHits: number;
+    executionMisses: number;
+    executionHitRate: number;
+  } {
+    const compilationTotal = this.compilationHits + this.compilationMisses;
+    const executionTotal = this.executionHits + this.executionMisses;
+
     return {
       compilation: this.compilationCache.size,
       execution: this.executionCache.size,
+      compilationHits: this.compilationHits,
+      compilationMisses: this.compilationMisses,
+      compilationHitRate: compilationTotal > 0 ? this.compilationHits / compilationTotal : 0,
+      executionHits: this.executionHits,
+      executionMisses: this.executionMisses,
+      executionHitRate: executionTotal > 0 ? this.executionHits / executionTotal : 0,
     };
   }
 
@@ -133,42 +198,35 @@ export class CacheManager {
    * Extract value from context by dependency path
    */
   private getContextValue(dep: string, context: EvaluationContext): unknown {
-    if (dep === "input" || dep === "output" || dep === "variables") {
-      return context[dep as keyof EvaluationContext];
+    try {
+      return resolveContextPath(dep, context);
+    } catch (error) {
+      this.logger.warn(`Failed to resolve context path: ${dep}`, { error });
+      return undefined;
     }
-
-    const parts = dep.split(".");
-    const root = parts[0] || "variables";
-
-    let current: unknown;
-    if (root === "input") {
-      current = (context.input as Record<string, unknown>)?.[parts[1] || ""];
-    } else if (root === "output") {
-      current = (context.output as Record<string, unknown>)?.[parts[1] || ""];
-    } else if (root === "variables") {
-      current = (context.variables as Record<string, unknown>)?.[parts[1] || ""];
-    } else {
-      current = (context.variables as Record<string, unknown>)?.[root];
-    }
-
-    for (let i = 2; i < parts.length; i++) {
-      const part = parts[i];
-      if (!part || current == null || typeof current !== "object") {
-        return undefined;
-      }
-      current = (current as Record<string, unknown>)[part];
-    }
-
-    return current;
   }
 
   /**
-   * Deep equality check
+   * Shallow equality check (reference comparison for objects)
+   * Faster than deep equality, suitable for large objects where identity matters
    */
-  private valuesEqual(a: unknown, b: unknown): boolean {
+  private valuesShallowEqual(a: unknown, b: unknown): boolean {
+    return a === b;
+  }
+
+  /**
+   * Deep equality check with circular reference protection
+   */
+  private valuesEqual(a: unknown, b: unknown, visited = new WeakSet()): boolean {
     if (a === b) return true;
     if (a == null || b == null) return a === b;
     if (typeof a !== typeof b) return false;
+
+    // Circular reference protection for objects
+    if (typeof a === "object") {
+      if (visited.has(a as object)) return true; // Already checking this object
+      visited.add(a as object);
+    }
 
     if (typeof a === "object" && !Array.isArray(a)) {
       const aObj = a as Record<string, unknown>;
@@ -177,12 +235,12 @@ export class CacheManager {
       const keysB = Object.keys(bObj);
 
       if (keysA.length !== keysB.length) return false;
-      return keysA.every(key => this.valuesEqual(aObj[key], bObj[key]));
+      return keysA.every(key => this.valuesEqual(aObj[key], bObj[key], visited));
     }
 
     if (Array.isArray(a) && Array.isArray(b)) {
       if (a.length !== b.length) return false;
-      return a.every((item, idx) => this.valuesEqual(item, b[idx]));
+      return a.every((item, idx) => this.valuesEqual(item, b[idx], visited));
     }
 
     return false;
@@ -190,3 +248,4 @@ export class CacheManager {
 }
 
 export const cacheManager = new CacheManager();
+export type { CacheManagerOptions };

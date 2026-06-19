@@ -27,8 +27,20 @@ export const SECURITY_CONFIG = {
   /**
    * Valid path character pattern
    * Supports regular variable paths: user.name, items[0], data.items[0].name
+   *
+   * Breakdown:
+   * ^[a-zA-Z_]           - Must start with letter or underscore
+   * [a-zA-Z0-9_]*        - Followed by alphanumeric or underscore
+   * (\[\d+\])?           - Optional array index like [0]
+   * (?:                  - Non-capturing group for subsequent parts
+   *   \.                 - Literal dot separator
+   *   [a-zA-Z_]         - Property name starts with letter or underscore
+   *   [a-zA-Z0-9_]*     - Followed by alphanumeric or underscore
+   *   (\[\d+\])?        - Optional array index
+   * )*                   - Zero or more subsequent parts
+   * $                    - End of string
    */
-  VALID_PATH_PATTERN: /^[a-zA-Z_][a-zA-Z0-9_]*(\[\d+\])?(\.[a-zA-Z_][a-zA-Z0-9_]*(\[\d+\])?)*$/,
+  VALID_PATH_PATTERN: /^[a-zA-Z_][a-zA-Z0-9_]*(\[\d+\])?(?:\.[a-zA-Z_][a-zA-Z0-9_]*(\[\d+\])?)*$/,
 } as const;
 
 /**
@@ -60,12 +72,30 @@ export function validateExpression(expression: string): void {
 /**
  * Verify path security
  * @param path Path string
- * @throws ValidationError If the path is not secure
+ * @throws ExpressionSecurityError If the path is not secure
  */
 export function validatePath(path: string): void {
   // Check if it is a string.
   if (!path || typeof path !== "string") {
     throw new ExpressionSecurityError("Path must be a non-empty string", {
+      operation: "validatePath",
+      field: "path",
+      value: path,
+    });
+  }
+
+  // Reject paths with trailing or leading dots
+  if (path.startsWith(".") || path.endsWith(".")) {
+    throw new ExpressionSecurityError("Path cannot start or end with a dot", {
+      operation: "validatePath",
+      field: "path",
+      value: path,
+    });
+  }
+
+  // Reject consecutive dots (e.g., "user..name")
+  if (path.includes("..")) {
+    throw new ExpressionSecurityError("Path cannot contain consecutive dots", {
       operation: "validatePath",
       field: "path",
       value: path,

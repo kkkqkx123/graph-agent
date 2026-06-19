@@ -1,5 +1,0 @@
-需要修复的文件和问题：
-1. cache-manager.ts - 参数可能undefined的处理
-2. schema-executor.ts - 属性访问方式（使用[])
-3. predicate-compiler.ts - 类型转换
-4. script-compiler.ts - 可能undefined的参数

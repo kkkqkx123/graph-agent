@@ -19,9 +19,75 @@ import { scriptExecutor } from "./executors/script-executor.js";
 /**
  * Unified Condition Evaluator
  * Handles all condition types through a dispatcher pattern
+ * Issue 7: Implements safe condition type detection with validation
  */
 export class ConditionEvaluator {
   private logger = getGlobalLogger().child("ConditionEvaluator", { pkg: "sdk/workflow" });
+
+  /**
+   * Validate condition structure and required fields
+   * Issue 7: Ensures conditions have correct type and all required fields
+   *
+   * @param condition Condition to validate
+   * @throws TypeError if condition structure is invalid
+   */
+  private validateCondition(condition: unknown): void {
+    if (!condition || typeof condition !== "object") {
+      throw new TypeError("Condition must be an object");
+    }
+
+    const obj = condition as Record<string, unknown>;
+    const type = (obj.type as string) ?? "expression";
+
+    switch (type) {
+      case "expression": {
+        if (typeof obj.expression !== "string") {
+          throw new TypeError("expression condition requires 'expression' field of type string");
+        }
+        if (obj.expression.trim().length === 0) {
+          throw new TypeError("expression condition requires non-empty expression string");
+        }
+        break;
+      }
+
+      case "predicate": {
+        if (typeof obj.predicateType !== "string") {
+          throw new TypeError("predicate condition requires 'predicateType' field of type string");
+        }
+        if (typeof obj.variable !== "string") {
+          throw new TypeError("predicate condition requires 'variable' field of type string");
+        }
+        const validTypes = ["isEmpty", "isNotEmpty", "isNull", "isNotNull", "isTrue", "isFalse"];
+        if (!validTypes.includes(obj.predicateType)) {
+          throw new TypeError(`predicate condition has invalid predicateType: ${obj.predicateType}. Must be one of: ${validTypes.join(", ")}`);
+        }
+        break;
+      }
+
+      case "schema": {
+        if (typeof obj.variable !== "string") {
+          throw new TypeError("schema condition requires 'variable' field of type string");
+        }
+        if (!obj.schema || typeof obj.schema !== "object") {
+          throw new TypeError("schema condition requires 'schema' field of type object");
+        }
+        break;
+      }
+
+      case "script": {
+        if (typeof obj.script !== "string") {
+          throw new TypeError("script condition requires 'script' field of type string");
+        }
+        if (obj.script.trim().length === 0) {
+          throw new TypeError("script condition requires non-empty script string");
+        }
+        break;
+      }
+
+      default:
+        throw new TypeError(`Unknown condition type: ${type}. Must be one of: expression, predicate, schema, script`);
+    }
+  }
 
   /**
    * Evaluate a condition against a context
@@ -32,8 +98,13 @@ export class ConditionEvaluator {
    * @param context Evaluation context
    * @param cacheKey Optional cache key for result caching
    * @returns Evaluation result as boolean
+   * @throws TypeError if condition structure is invalid
+   * @throws ExpressionSecurityError if security validation fails
    */
   evaluate(condition: Condition | Record<string, unknown>, context: EvaluationContext, cacheKey?: string): boolean {
+    // Issue 7: Validate condition structure before processing
+    this.validateCondition(condition);
+
     const conditionType = (condition as Record<string, unknown>).type ?? "expression";
 
     // Check result cache if key provided
@@ -114,7 +185,8 @@ export class ConditionEvaluator {
       }
 
       // Cache result if key provided
-      if (cacheKey) {
+      // Note: script type is not cached because dependencies cannot be statically analyzed
+      if (cacheKey && conditionType !== "script") {
         const deps = this.extractDependencies(condition as Record<string, unknown>);
         cacheManager.setCachedResult(cacheKey, result, deps, context);
       }
@@ -126,7 +198,23 @@ export class ConditionEvaluator {
         error: error instanceof Error ? error.message : String(error),
       });
 
+      // Propagate validation and security errors; only silently fail on unexpected errors
       if (error instanceof ExpressionSecurityError) {
+        throw error;
+      }
+
+      // Re-throw validation errors from executors
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (errorMsg.includes("RuntimeValidationError") || errorMsg.includes("Unknown")) {
+        throw error;
+      }
+
+      // For compilation/parsing errors, re-throw to distinguish from false evaluation
+      if (
+        errorMsg.includes("Compile") ||
+        errorMsg.includes("Parse") ||
+        errorMsg.includes("Syntax")
+      ) {
         throw error;
       }
 

@@ -6,6 +6,7 @@
 
 import type { EvaluationContext } from "@wf-agent/types";
 import type { CompiledUnit, IExecutor } from "./types/index.js";
+import { resolveContextPath } from "./shared/path-resolver.js";
 import { getGlobalLogger } from "@wf-agent/common-utils";
 
 export abstract class BaseExecutor implements IExecutor {
@@ -39,23 +40,9 @@ export abstract class BaseExecutor implements IExecutor {
 
   /**
    * Get variable value from context
+   * Supports paths like "x", "input.x", "output.x", "variables.x", "items[0].name"
    */
   protected getVariableValue(path: string, context: EvaluationContext): unknown {
-    const parts = path.split(".");
-    const firstPart = parts[0];
-    if (!firstPart) return undefined;
-
-    let current: unknown = (context.variables as Record<string, unknown>)[firstPart];
-
-    for (let i = 1; i < parts.length; i++) {
-      if (current == null || typeof current !== "object") {
-        return undefined;
-      }
-      const part = parts[i];
-      if (!part) return undefined;
-      current = (current as Record<string, unknown>)[part];
-    }
-
-    return current;
+    return resolveContextPath(path, context);
   }
 }

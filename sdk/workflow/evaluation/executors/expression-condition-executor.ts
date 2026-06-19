@@ -258,18 +258,6 @@ export class ExpressionConditionExecutor extends BaseExecutor implements IExecut
           this.logger.warn(`Right operand of 'in' must be an array`, { rightValue });
           return false;
         }
-        if (typeof leftValue === "object" && leftValue !== null && !Array.isArray(leftValue)) {
-          const commonProps = ["role", "name", "type", "id", "status", "nodeType"];
-          for (const prop of commonProps) {
-            if (
-              prop in (leftValue as Record<string, unknown>) &&
-              rightValue.includes((leftValue as Record<string, unknown>)[prop])
-            ) {
-              return true;
-            }
-          }
-          return false;
-        }
         return rightValue.includes(leftValue);
       default:
         throw new RuntimeValidationError(`Unknown comparison operator: ${operator}`, {
@@ -609,30 +597,6 @@ export class ExpressionConditionExecutor extends BaseExecutor implements IExecut
 
   private evaluateArrayLiteral(node: ArrayLiteralExpr, context: EvaluationContext): unknown[] {
     return node.elements.map(el => this.evaluateAST(el, context));
-  }
-
-  protected override getVariableValue(variablePath: string, context: EvaluationContext): unknown {
-    validatePath(variablePath);
-
-    if (variablePath === "input") return context.input;
-    if (variablePath === "output") return context.output;
-    if (variablePath === "variables") return context.variables;
-
-    const isNestedPath = variablePath.includes(".") || variablePath.includes("[");
-
-    if (isNestedPath) {
-      if (variablePath.startsWith("input.")) {
-        return resolvePath(variablePath.substring(6), context.input);
-      }
-      if (variablePath.startsWith("output.")) {
-        return resolvePath(variablePath.substring(7), context.output);
-      }
-      if (variablePath.startsWith("variables.")) {
-        return resolvePath(variablePath.substring(10), context.variables);
-      }
-      return resolvePath(variablePath, context.variables);
-    }
-    return (context.variables as Record<string, unknown>)[variablePath];
   }
 
   private evaluateMemberAccess(node: MemberAccessExpr, context: EvaluationContext): unknown {

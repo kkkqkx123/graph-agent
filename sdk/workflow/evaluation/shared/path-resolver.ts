@@ -6,14 +6,17 @@
  * - Nested object access: e.g. "user.name", "output.data.items"
  * - Array index access: "items[0]", "items[0].name".
  * - Combined access: e.g. "output.data.items[0].name"
+ * - Context-aware access: "input.x", "output.x", "variables.x"
  *
  * Usage example:
  * - resolvePath("user.name", obj) - get nested attribute values
  * - resolvePath("items[0].name", obj) - get the array element property
  * - setPath("user.name", obj, "John") - sets the value of the nested attribute
  * - pathExists("user.name", obj) - check if the path exists
+ * - resolveContextPath("input.x", context) - resolve from evaluation context
  */
 
+import type { EvaluationContext } from "@wf-agent/types";
 import { validatePath } from "./security-validator.js";
 
 /**
@@ -192,4 +195,93 @@ export function setArrayItemByKey(
 
   item[valueField] = newValue;
   return true;
+}
+
+/**
+ * Unified path resolver for evaluation context
+ * Resolves paths that can reference input, output, or variables scopes
+ *
+ * Examples:
+ * - "input" → entire input object
+ * - "input.data.items" → nested path in input
+ * - "output.result" → nested path in output
+ * - "variables.x" → variable named x
+ * - "x" → defaults to variables scope
+ * - "items[0].name" → array access
+ *
+ * @param path Path string with optional scope prefix
+ * @param context Evaluation context
+ * @returns The resolved value, or undefined if not found
+ * @throws ExpressionSecurityError if path fails security validation
+ */
+export function resolveContextPath(path: string, context: EvaluationContext): unknown {
+  if (!path || !context) {
+    return undefined;
+  }
+
+  // Validate entire path upfront for security
+  validatePath(path);
+
+  // Handle root-level scope requests (safe due to hard-coded values)
+  if (path === "input") return context.input;
+  if (path === "output") return context.output;
+  if (path === "variables") return context.variables;
+
+  // Determine scope from prefix
+  let scope: "input" | "output" | "variables" = "variables";
+  let remaining = path;
+
+  if (path.startsWith("input.")) {
+    scope = "input";
+    remaining = path.substring(6);
+  } else if (path.startsWith("output.")) {
+    scope = "output";
+    remaining = path.substring(7);
+  } else if (path.startsWith("variables.")) {
+    scope = "variables";
+    remaining = path.substring(10);
+  }
+
+  const root = context[scope];
+
+  // If root scope is null/undefined, return undefined
+  if (root === null || root === undefined) {
+    return undefined;
+  }
+
+  if (!remaining) return root;
+
+  // Resolve nested path without re-validating (already validated above)
+  // Use resolvePath but skip the validatePath call by directly implementing the logic
+  return resolvePathWithoutValidation(remaining, root);
+}
+
+/**
+ * Internal helper to resolve path without re-validation
+ * Used by resolveContextPath after initial validation
+ * @internal
+ */
+function resolvePathWithoutValidation(path: string, root: unknown): unknown {
+  const parts = path.split(".");
+  let value: unknown = root;
+
+  for (const part of parts) {
+    if (value === null || value === undefined) {
+      return undefined;
+    }
+
+    const arrayMatch = part.match(/(\w+)\[(\d+)\]/);
+    if (arrayMatch && arrayMatch[1] && arrayMatch[2]) {
+      const arrayName = arrayMatch[1];
+      const index = parseInt(arrayMatch[2], 10);
+      value = (value as Record<string, unknown>)[arrayName];
+      if (Array.isArray(value)) {
+        value = value[index];
+      }
+    } else {
+      value = (value as Record<string, unknown>)[part];
+    }
+  }
+
+  return value;
 }
