@@ -17,7 +17,7 @@
 import type { LLMMessage } from "@wf-agent/types";
 import type { McpConnectionManager } from "../../core/connection-manager.js";
 import { McpToolMetadataExporter } from "./tool-metadata-exporter.js";
-import { createContextualLogger } from "../../../../utils/contextual-logger.js";
+import { createContextualLogger } from "../../../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "McpToolsDynamicContextProvider" });
 

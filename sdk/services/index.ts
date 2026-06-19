@@ -220,44 +220,40 @@ export { toSdkTool, toSdkTools, type ToolDefinitionLike } from "./tools/index.js
 // MCP Service
 // ============================================================================
 export {
-  // Types
-  type McpServerStatus,
-  type McpTransportType,
-  type McpServerSource,
+  // Executor classes
+  McpServerExecutor,
+  McpExecutorFactory,
+  // Types - Server Configuration
   type McpServerConfigBase,
   type McpStdioConfig,
   type McpSseConfig,
   type McpStreamableHttpConfig,
   type McpServerConfig,
+  // Types - Server State
+  type McpServerState,
+  type McpServerStatus,
+  // Types - Tools & Resources
   type McpTool,
   type McpResource,
   type McpResourceTemplate,
-  type McpErrorEntry,
-  type McpServerState,
   type McpToolCallResult,
   type McpResourceReadResult,
+  // Types - Settings & Configuration
+  type McpManagerOptions,
+  type McpEventHandler,
+  type McpEventType,
+  type McpServerSource,
+  type McpServerLifecycle,
   type McpSettings,
   type McpConnectionState,
-  type McpManagerOptions,
-  type McpEventType,
-  type McpEventHandler,
-  // Config
-  loadServerConfigs,
-  createDefaultMcpSettings,
-  mergeServerConfigs,
-  // Transport
-  type IMcpTransport,
-  type TransportConfig,
-  type TransportEventHandlers,
-  type TransportOptions,
-  StdioTransport,
-  SseTransport,
-  StreamableHttpTransport,
-  createTransport,
-  isTransportTypeSupported,
-  // Client
+  type McpErrorEntry,
+  // Connection Management
+  McpConnectionManager,
+  McpServerRegistry,
+  getMcpManager,
+  releaseMcpManager,
   McpClient,
-  // Connection State
+  // State utilities
   createInitialServerState,
   updateServerStatus,
   addErrorToHistory,
@@ -266,13 +262,26 @@ export {
   isConnected,
   isDisabled,
   getServerDisplayName,
-  // Connection Manager
-  McpConnectionManager,
-  // Server Registry
-  McpServerRegistry,
-  getMcpManager,
-  releaseMcpManager,
-} from "./mcp/index.js";
+  // Features
+  McpToolsDynamicContextProvider,
+  createMcpToolsContextProvider,
+  McpToolMetadataExporter,
+  McpToolsRegistrar,
+  createMcpToolsRegistrar,
+  EnhancedMcpApprovalSystem,
+  McpToolsUsageAnalytics,
+  // Transport
+  createTransport,
+  type IMcpTransport,
+  type TransportConfig,
+  type TransportEventHandlers,
+  type TransportOptions,
+  type McpTransportType,
+  // Config processing
+  loadServerConfigs,
+  createDefaultMcpSettings,
+  mergeServerConfigs,
+} from "./executors/mcp/index.js";
 
 // ============================================================================
 // Shutdown Service

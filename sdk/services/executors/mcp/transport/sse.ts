@@ -4,8 +4,8 @@
  */
 
 import type { IMcpTransport, TransportEventHandlers, SseTransportConfig } from "./types.js";
-import { readSSEStream } from "../../transport/http/index.js";
-import { createContextualLogger } from "../../../utils/contextual-logger.js";
+import { readSSEStream } from "../../../transport/http/index.js";
+import { createContextualLogger } from "../../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "MCPSSETransport" });
 

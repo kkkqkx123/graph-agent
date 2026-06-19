@@ -113,7 +113,7 @@ export {
   loadServerConfigs,
   createDefaultMcpSettings,
   mergeServerConfigs,
-} from "../../../../services/mcp/mcp-connection-processor.js";
+} from "../../../../services/executors/mcp/mcp-connection-processor.js";
 
 // Sandbox configuration processing function
 export {

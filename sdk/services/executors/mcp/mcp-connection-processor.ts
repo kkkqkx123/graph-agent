@@ -11,7 +11,7 @@
  */
 
 import type { McpServerConfig, McpSettings, McpServerLifecycle } from "@wf-agent/types";
-import { validateServerConfig } from "../../core/validation/mcp-validator.js";
+import { validateServerConfig } from "../../../core/validation/mcp-validator.js";
 
 // ---------------------------------------------------------------------------
 // Processing / merging

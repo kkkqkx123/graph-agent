@@ -6,7 +6,7 @@
  */
 
 import type { ToolOutput } from "@wf-agent/types";
-import type { McpConnectionManager } from "@sdk/services/mcp/index.js";
+import type { McpConnectionManager } from "@sdk/services/executors/mcp/index.js";
 
 /**
  * Process MCP tool result content
@@ -90,7 +90,7 @@ export async function generateEnhancedDescriptionForFutureUse(
   }
 
   try {
-    const { McpToolMetadataExporter } = await import("@sdk/services/mcp/features/metadata/tool-metadata-exporter.js");
+    const { McpToolMetadataExporter } = await import("@sdk/services/executors/mcp/features/metadata/tool-metadata-exporter.js");
     const exporter = new McpToolMetadataExporter(mcpManager);
     exporter.exportContext({ hotToolsLimit: 5 });
     return exporter.generateToolsSummary();

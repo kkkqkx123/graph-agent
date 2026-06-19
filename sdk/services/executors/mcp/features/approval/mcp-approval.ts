@@ -6,7 +6,7 @@
  * and user/role-based access control.
  */
 
-import { createContextualLogger } from "../../../../utils/contextual-logger.js";
+import { createContextualLogger } from "../../../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "McpApprovalEnhanced" });
 

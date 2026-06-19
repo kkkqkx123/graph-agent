@@ -40,7 +40,7 @@ import type { LLMProfile } from "@wf-agent/types";
 import type { LogStream, LogLevel } from "@wf-agent/common-utils";
 import { WorkflowBuilder } from "../../workflow/builders/workflow-builder.js";
 import { NodeBuilder } from "../../workflow/builders/node-builder.js";
-import { McpServerRegistry } from "../../../services/mcp/core/server-registry.js";
+import { McpServerRegistry } from "../../../services/executors/mcp/index.js";
 import { NodeTemplateBuilder } from "../../workflow/builders/node-template-builder.js";
 import { TriggerTemplateBuilder } from "../../workflow/builders/trigger-template-builder.js";
 import type { BaseCommand } from "../types/command.js";

@@ -8,7 +8,7 @@
 import type { Tool } from "@wf-agent/types";
 import { ToolError } from "@wf-agent/types";
 import { BaseExecutor } from "../core/base.js";
-import { McpServerRegistry } from "../../../services/mcp/core/server-registry.js";
+import { McpServerRegistry } from "../../../services/executors/mcp/index.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "McpExecutor" });

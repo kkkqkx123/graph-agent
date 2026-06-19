@@ -9,7 +9,7 @@
 import type { McpTool } from "../../types.js";
 import type { McpConnectionManager } from "../../core/connection-manager.js";
 import type { McpServerState } from "../../types.js";
-import { createContextualLogger } from "../../../../utils/contextual-logger.js";
+import { createContextualLogger } from "../../../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "McpToolMetadataExporter" });
 

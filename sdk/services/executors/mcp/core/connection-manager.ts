@@ -19,7 +19,7 @@ import type {
 import { createTransport } from "../transport/index.js";
 import { McpClient } from "./mcp-client.js";
 import { McpToolMetadataCache } from "../features/metadata/metadata-cache.js";
-import { createContextualLogger } from "../../../utils/contextual-logger.js";
+import { createContextualLogger } from "../../../../utils/contextual-logger.js";
 import {
   createInitialServerState,
   updateServerStatus,

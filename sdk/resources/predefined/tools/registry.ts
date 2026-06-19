@@ -71,7 +71,7 @@ import {
   createLazyUseMcpHandler,
   USE_MCP_TOOL_DESCRIPTION,
 } from "./builtin/use-mcp/index.js";
-import { getMcpManager } from "../../../services/mcp/core/server-registry.js";
+import { getMcpManager } from "@sdk/services/executors/mcp/index.js";
 
 // Importing a stateful tool
 import {

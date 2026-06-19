@@ -3,7 +3,7 @@
  * Fine-grained access control and approval system
  */
 
-export { EnhancedMcpApprovalSystem } from "./enhanced-approval.js";
+export { EnhancedMcpApprovalSystem } from "./mcp-approval.js";
 export type {
   ParameterApprovalRule,
   RateLimitingRule,
@@ -11,4 +11,4 @@ export type {
   ToolCallApprovalContext,
   ResourceAccessApprovalContext,
   ApprovalResult,
-} from "./enhanced-approval.js";
+} from "./mcp-approval.js";

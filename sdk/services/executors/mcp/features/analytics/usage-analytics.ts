@@ -5,7 +5,7 @@
  * Provides insights about tool hotness, performance, error rates, and user behavior.
  */
 
-import { createContextualLogger } from "../../../../utils/contextual-logger.js";
+import { createContextualLogger } from "../../../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "McpToolsAnalytics" });
 

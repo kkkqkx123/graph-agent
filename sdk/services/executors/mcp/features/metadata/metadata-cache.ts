@@ -7,7 +7,7 @@
  */
 
 import type { McpServerState } from "../../types.js";
-import { createContextualLogger } from "../../../../utils/contextual-logger.js";
+import { createContextualLogger } from "../../../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "McpToolMetadataCache" });
 

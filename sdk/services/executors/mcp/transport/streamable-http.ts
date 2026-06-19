@@ -8,9 +8,9 @@ import type {
   TransportEventHandlers,
   StreamableHttpTransportConfig,
 } from "./types.js";
-import { HttpClient, streamSSE } from "../../transport/http/index.js";
-import { executeWithRetry, type RetryConfig } from "../../transport/http/retry-handler.js";
-import { createContextualLogger } from "../../../utils/contextual-logger.js";
+import { HttpClient, streamSSE } from "../../../transport/http/index.js";
+import { executeWithRetry, type RetryConfig } from "../../../transport/http/retry-handler.js";
+import { createContextualLogger } from "../../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "StreamableHttpTransport" });
 

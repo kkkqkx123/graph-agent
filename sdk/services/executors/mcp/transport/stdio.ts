@@ -5,7 +5,7 @@
 
 import { spawn, ChildProcess } from "child_process";
 import type { IMcpTransport, TransportEventHandlers, StdioTransportConfig } from "./types.js";
-import { createContextualLogger } from "../../../utils/contextual-logger.js";
+import { createContextualLogger } from "../../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "MCPStdioTransport" });
 
