@@ -10,6 +10,23 @@ import type {
 } from "../base.js";
 
 /**
+ * Agent Loop Checkpoint Content Configuration
+ * Controls what data is included in the checkpoint
+ */
+export interface AgentCheckpointContentConfig {
+  /** Whether to include execution state (default: true) */
+  includeState?: boolean;
+  /** Whether to include message history (default: false) */
+  includeMessages?: boolean;
+  /** Limit message history to N most recent messages */
+  messageLimit?: number;
+  /** Whether to include tool calls (default: true) */
+  includeToolCalls?: boolean;
+  /** Limit tool calls to N most recent calls */
+  toolCallLimit?: number;
+}
+
+/**
  * Agent Loop Checkpoint Configuration Context
  */
 export interface AgentLoopCheckpointConfigContext {
@@ -21,6 +38,8 @@ export interface AgentLoopCheckpointConfigContext {
   hasError?: boolean;
   /** Iteration record */
   iterationRecord?: IterationRecord;
+  /** Content configuration to apply */
+  contentConfig?: AgentCheckpointContentConfig;
 }
 
 /**
@@ -35,6 +54,8 @@ export interface AgentLoopCheckpointConfig {
   onErrorOnly?: boolean;
   /** Incremental Storage Configuration */
   deltaStorage?: Partial<DeltaStorageConfig>;
+  /** Content configuration for what to include in checkpoint */
+  content?: AgentCheckpointContentConfig;
 }
 
 /**

@@ -13,4 +13,5 @@ export type {
   AgentLoopCheckpointConfigContext,
   AgentLoopCheckpointConfig,
   AgentLoopCheckpointConfigLayer,
+  AgentCheckpointContentConfig,
 } from "./config.js";

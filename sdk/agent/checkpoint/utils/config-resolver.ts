@@ -11,6 +11,7 @@ import type {
   AgentLoopCheckpointConfigContext,
   AgentLoopCheckpointConfigLayer,
   CheckpointConfigSource,
+  AgentCheckpointContentConfig,
 } from "@wf-agent/types";
 
 /**
@@ -74,6 +75,9 @@ export class AgentLoopCheckpointConfigResolver extends CheckpointConfigResolver 
       }
       if (layer.config.deltaStorage !== undefined && result.deltaStorage === undefined) {
         result.deltaStorage = layer.config.deltaStorage;
+      }
+      if (layer.config.content !== undefined && result.content === undefined) {
+        result.content = layer.config.content;
       }
     }
 
@@ -158,6 +162,7 @@ export function buildAgentCheckpointLayers(
           interval: globalConfig.interval,
           onErrorOnly: globalConfig.onErrorOnly,
           deltaStorage: globalConfig.deltaStorage,
+          content: globalConfig.content,
         },
       });
     }
@@ -200,4 +205,18 @@ export function getAgentCheckpointDescription(
   context: AgentLoopCheckpointConfigContext,
 ): string | undefined {
   return resolveAgentCheckpointConfig(layers, context).description;
+}
+
+/**
+ * Extract content config from resolved checkpoint config
+ */
+export function getAgentCheckpointContentConfig(
+  layers: AgentLoopCheckpointConfigLayer[],
+): AgentCheckpointContentConfig | undefined {
+  for (const layer of layers) {
+    if (layer.config.content !== undefined) {
+      return layer.config.content;
+    }
+  }
+  return undefined;
 }

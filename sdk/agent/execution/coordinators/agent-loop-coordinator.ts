@@ -11,6 +11,7 @@ import { getAvailableTools } from "@wf-agent/types";
 import type {
   AgentLoopCheckpointConfig,
   AgentLoopCheckpointConfigContext,
+  CheckpointErrorStrategy,
 } from "@wf-agent/types";
 import type { EventRegistry } from "../../../core/registry/event-registry.js";
 import { AgentLoopEntity } from "../../entities/agent-loop-entity.js";
@@ -31,7 +32,10 @@ import { AgentLoopCheckpointCoordinator } from "../../../agent/checkpoint/checkp
 import type { CheckpointDependencies } from "../../../core/checkpoint/types.js";
 import type { AgentCheckpointPolicy, AgentCheckpointTrigger } from "../../../agent/checkpoint/agent-checkpoint-policy.js";
 import { DEFAULT_AGENT_CHECKPOINT_POLICY } from "../../../agent/checkpoint/agent-checkpoint-policy.js";
-import { buildAgentCheckpointLayers, resolveAgentCheckpointConfig } from "../../checkpoint/utils/config-resolver.js";
+import { buildAgentCheckpointLayers, resolveAgentCheckpointConfig, getAgentCheckpointContentConfig } from "../../checkpoint/utils/config-resolver.js";
+import { CheckpointErrorHandler } from "../../../core/checkpoint/checkpoint-error-handler.js";
+import { CheckpointMetricsCollector } from "../../../core/checkpoint/checkpoint-metrics-collector.js";
+import type { CheckpointErrorContext, CheckpointCreationMetrics } from "@wf-agent/types";
 
 const logger = createContextualLogger({ component: "AgentLoopCoordinator" });
 
@@ -66,6 +70,9 @@ export class AgentLoopCoordinator {
   private checkpointDependencies?: CheckpointDependencies<any>;
   private checkpointPolicy: AgentCheckpointPolicy = DEFAULT_AGENT_CHECKPOINT_POLICY;
   private globalCheckpointConfig?: AgentLoopCheckpointConfig;
+  private checkpointErrorHandler?: CheckpointErrorHandler;
+  private checkpointErrorStrategy: CheckpointErrorStrategy = "warn";
+  private checkpointMetricsCollector?: CheckpointMetricsCollector;
 
   constructor(
     private readonly registry: AgentLoopRegistry,
@@ -90,22 +97,46 @@ export class AgentLoopCoordinator {
    * @param dependencies CheckpointDependencies implementation (e.g., LayertwineCheckpointAdapter)
    * @param policy Checkpoint policy configuration (defaults to DEFAULT_AGENT_CHECKPOINT_POLICY)
    * @param globalConfig Global checkpoint configuration for multi-layer resolution
+   * @param errorStrategy Error handling strategy (defaults to "warn")
    */
   setCheckpointDependencies(
     dependencies: CheckpointDependencies<any>,
     policy?: AgentCheckpointPolicy,
     globalConfig?: AgentLoopCheckpointConfig,
+    errorStrategy?: CheckpointErrorStrategy,
   ): void {
     this.checkpointDependencies = dependencies;
     this.globalCheckpointConfig = globalConfig;
     if (policy) {
       this.checkpointPolicy = policy;
     }
+    if (errorStrategy) {
+      this.checkpointErrorStrategy = errorStrategy;
+      this.checkpointErrorHandler = new CheckpointErrorHandler(
+        { strategy: errorStrategy },
+        logger,
+      );
+    } else {
+      // Initialize with default warn strategy
+      this.checkpointErrorHandler = new CheckpointErrorHandler(
+        { strategy: "warn" },
+        logger,
+      );
+    }
+
     this.checkpointCoordinator = new AgentLoopCheckpointCoordinator();
+
+    // Initialize checkpoint metrics collector
+    this.checkpointMetricsCollector = new CheckpointMetricsCollector(
+      { enabled: true, autoAggregate: true, maxMetrics: 1000 },
+      logger,
+    );
 
     logger.debug("Checkpoint dependencies configured for AgentLoopCoordinator", {
       policyEnabled: this.checkpointPolicy.enabled,
       globalConfigEnabled: this.globalCheckpointConfig?.enabled,
+      errorStrategy: this.checkpointErrorStrategy,
+      metricsEnabled: true,
     });
   }
 
@@ -114,6 +145,8 @@ export class AgentLoopCoordinator {
    *
    * Uses Config Resolver to support multi-layer configuration (runtime, agent, global, default).
    * Respects interval and onErrorOnly conditions.
+   * Applies content filtering based on checkpoint content configuration.
+   * Records metrics for checkpoint operations.
    *
    * @param entity The agent loop entity
    * @param _stateCoordinator The agent state coordinator
@@ -129,15 +162,21 @@ export class AgentLoopCoordinator {
       return null;
     }
 
+    const startTime = Date.now();
+
+    // Build configuration layers from global config
+    const layers = buildAgentCheckpointLayers(this.globalCheckpointConfig);
+
+    // Extract content config before resolving
+    const contentConfig = getAgentCheckpointContentConfig(layers);
+
     // Build configuration context from entity state
     const context: AgentLoopCheckpointConfigContext = {
       triggerType: this.mapTriggerToContextType(event as AgentCheckpointTrigger),
       currentIteration: entity.state.currentIteration,
       hasError: entity.state.error != null,
+      contentConfig,
     };
-
-    // Build configuration layers from global config
-    const layers = buildAgentCheckpointLayers(this.globalCheckpointConfig);
 
     // Resolve checkpoint configuration using Config Resolver
     const configResult = resolveAgentCheckpointConfig(layers, context);
@@ -152,14 +191,20 @@ export class AgentLoopCoordinator {
       return null;
     }
 
+    let checkpointId: string | null = null;
+    let error: Error | null = null;
+
     try {
-      const checkpointId = await this.checkpointCoordinator.createCheckpoint(
+      checkpointId = await this.checkpointCoordinator.createCheckpoint(
         entity,
         this.checkpointDependencies,
         {
           description: configResult.description,
+          contentConfig,
         },
       );
+
+      const duration = Date.now() - startTime;
 
       logger.debug("Agent loop checkpoint created", {
         agentLoopId: entity.id,
@@ -167,17 +212,124 @@ export class AgentLoopCoordinator {
         event,
         iteration: context.currentIteration,
         effectiveSource: configResult.effectiveSource,
+        contentFiltering: {
+          includeMessages: contentConfig?.includeMessages,
+          includeToolCalls: contentConfig?.includeToolCalls,
+        },
+        duration,
       });
 
+      // Record creation metrics
+      if (this.checkpointMetricsCollector) {
+        const metrics: CheckpointCreationMetrics = {
+          checkpointId,
+          entityId: entity.id,
+          type: "FULL",
+          duration,
+          size: 0, // Size can be calculated from actual checkpoint
+          timestamp: startTime,
+          success: true,
+        };
+        this.checkpointMetricsCollector.recordCreation(metrics);
+      }
+
       return checkpointId;
-    } catch (error) {
-      logger.warn("Failed to create agent loop checkpoint", {
-        agentLoopId: entity.id,
-        event,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      // Don't throw - checkpoint failure should not interrupt execution
+    } catch (err) {
+      error = err as Error;
+      const duration = Date.now() - startTime;
+
+      // Record failed creation metrics
+      if (this.checkpointMetricsCollector) {
+        const metrics: CheckpointCreationMetrics = {
+          checkpointId: `failed-${entity.id}-${startTime}`,
+          entityId: entity.id,
+          type: "FULL",
+          duration,
+          size: 0,
+          timestamp: startTime,
+          success: false,
+          error: error.message,
+        };
+        this.checkpointMetricsCollector.recordCreation(metrics);
+      }
+
+      // Use error handler to manage checkpoint creation failure
+      if (this.checkpointErrorHandler) {
+        const errorContext: CheckpointErrorContext = {
+          entityId: entity.id,
+          triggerEvent: String(event),
+          operation: "create",
+          timestamp: Date.now(),
+        };
+
+        const result = await this.checkpointErrorHandler.handleError(
+          error,
+          errorContext,
+        );
+
+        if (result.shouldRethrow) {
+          throw error;
+        }
+
+        if (!result.handled) {
+          logger.error("Checkpoint error handling failed", {
+            agentLoopId: entity.id,
+            error: error.message,
+          });
+        }
+      } else {
+        // Fallback if error handler not initialized
+        logger.warn("Failed to create agent loop checkpoint", {
+          agentLoopId: entity.id,
+          event,
+          error: error.message,
+        });
+      }
+
       return null;
+    }
+  }
+
+  /**
+   * Set checkpoint error handling strategy at runtime
+   * @param strategy Error handling strategy
+   */
+  setCheckpointErrorStrategy(strategy: CheckpointErrorStrategy): void {
+    this.checkpointErrorStrategy = strategy;
+
+    if (!this.checkpointErrorHandler) {
+      this.checkpointErrorHandler = new CheckpointErrorHandler(
+        { strategy },
+        logger,
+      );
+    } else {
+      this.checkpointErrorHandler.setStrategy(strategy);
+    }
+
+    logger.debug("Checkpoint error strategy updated", { strategy });
+  }
+
+  /**
+   * Get current checkpoint error handling strategy
+   */
+  getCheckpointErrorStrategy(): CheckpointErrorStrategy {
+    return this.checkpointErrorStrategy;
+  }
+
+  /**
+   * Get checkpoint metrics collector
+   */
+  getCheckpointMetricsCollector(): CheckpointMetricsCollector | undefined {
+    return this.checkpointMetricsCollector;
+  }
+
+  /**
+   * Subscribe to checkpoint metrics events
+   * @param listener Callback function for metrics events
+   */
+  onCheckpointMetrics(listener: (event: any) => void): void {
+    if (this.checkpointMetricsCollector) {
+      this.checkpointMetricsCollector.on(listener);
     }
   }
 

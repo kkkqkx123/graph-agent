@@ -25,6 +25,42 @@ export {
   AnyCheckpoint,
 } from "./base.js";
 
+// Export error handling types
+export {
+  CheckpointError,
+  type CheckpointErrorStrategy,
+  type CheckpointErrorContext,
+  type CheckpointErrorCallback,
+  type CheckpointErrorHandlerConfig,
+  type CheckpointErrorHandlingResult,
+} from "./error-handling.js";
+
+// Export metrics types
+export type {
+  CheckpointCreationMetrics,
+  CheckpointCleanupMetrics,
+  CheckpointMetricsAggregate,
+  CheckpointMetricsConfig,
+  CheckpointMetricsEvent,
+  ICheckpointMetricsStorage,
+} from "./metrics.js";
+
+// Export version management types
+export type {
+  CheckpointFormatVersion,
+  VersionCompatibility,
+  VersionMigrationResult,
+  VersionMigrationHandler,
+  VersionMigrationRegistry,
+  CheckpointVersionMetadata,
+} from "./version.js";
+export {
+  CHECKPOINT_FORMAT_VERSIONS,
+  CURRENT_CHECKPOINT_FORMAT_VERSION,
+  COMPATIBILITY_RULES,
+  versionFormatter,
+} from "./version.js";
+
 // Exporting Agent Loop Checkpoint Types
 export * from "./agent/index.js";
 
