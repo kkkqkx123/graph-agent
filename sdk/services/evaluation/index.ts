@@ -1,28 +1,26 @@
 /**
  * Evaluation Module
- * Provides unified condition evaluation with support for multiple condition types
+ *
+ * Architecture:
+ * - dsl/: Expression parsing and validation (Chevrotain-based parser)
+ * - compilers/: Expression compilation to executable code
+ * - executors/: Condition evaluation execution
+ * - shared/: Common utilities (path resolution, validation)
+ *
+ * Responsibility: Evaluate conditions expressed in DSL or JavaScript
+ * Does NOT include tool execution or result processing
  */
 
+// ============================================================================
+// Core Evaluation API
+// ============================================================================
 export { ConditionEvaluator, conditionEvaluator } from "./condition-evaluator.js";
 export { CacheManager, cacheManager } from "./cache-manager.js";
-export type { CompiledUnit, ICompiler } from "./types/index.js";
-export type { IExecutor } from "./types/index.js";
 export { BaseExecutor } from "./base-executor.js";
 
-// Shared utilities
-export {
-  validateExpression,
-  validatePath,
-  validateArrayIndex,
-  validateValueType,
-  SECURITY_CONFIG,
-  resolvePath,
-  pathExists,
-  setPath,
-  setArrayItemByKey,
-} from "./shared/index.js";
-
-// DSL
+// ============================================================================
+// DSL Layer (Parsing & Validation)
+// ============================================================================
 export {
   dslParse,
   dslParseWithErrors,
@@ -47,15 +45,40 @@ export type {
   BinaryOperator,
 } from "./dsl/types.js";
 
+// ============================================================================
+// Executor Layer (Condition Evaluation)
+// ============================================================================
+export type { IExecutor, CompiledUnit, ICompiler } from "./types/index.js";
+
+// ============================================================================
+// Utilities (Path Resolution & Validation)
+// ============================================================================
+export {
+  validateExpression,
+  validatePath,
+  validateArrayIndex,
+  validateValueType,
+  SECURITY_CONFIG,
+  resolvePath,
+  pathExists,
+  setPath,
+  setArrayItemByKey,
+} from "./shared/index.js";
+
 export type { EvaluationContext } from "@wf-agent/types";
 
-// Compilers (lazy imports to avoid circular deps)
+// ============================================================================
+// Legacy Compatibility (Deprecated)
+// ============================================================================
+// Import for backward compatibility only
 import { expressionCompiler } from "./compilers/expression-compiler.js";
 import { cacheManager } from "./cache-manager.js";
 import { conditionEvaluator } from "./condition-evaluator.js";
 import type { EvaluationContext } from "@wf-agent/types";
 
-// Legacy backward compatibility
+/**
+ * @deprecated Use ConditionEvaluator directly
+ */
 export class DependencyManager {
   register(key: string, expression: string, context: Record<string, unknown>) {
     const compiled = expressionCompiler.compile(expression);
@@ -80,11 +103,16 @@ export class DependencyManager {
   }
 }
 
+/**
+ * @deprecated Use ConditionEvaluator directly
+ */
 export function createDependencyManager() {
   return new DependencyManager();
 }
 
-// ExpressionEvaluator compatibility
+/**
+ * @deprecated Use ConditionEvaluator directly
+ */
 export const expressionEvaluator = {
   evaluate: (expr: string, context: Record<string, unknown>) => {
     return conditionEvaluator.evaluate({ type: "expression", expression: expr } as Record<string, unknown>, context as EvaluationContext);
