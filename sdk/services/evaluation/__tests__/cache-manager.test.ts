@@ -24,8 +24,10 @@ describe("CacheManager", () => {
     output: { status: "success", data: {} }
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     cache = new CacheManager();
+    // Initialize hash algorithm for xxHash64
+    await cache.initialize();
   });
 
   describe("Compilation Cache", () => {
@@ -164,7 +166,39 @@ describe("CacheManager", () => {
     });
   });
 
-  describe("Empty Dependency Handling", () => {
+  describe("Cache Key Generation (xxHash64)", () => {
+    it("should generate consistent cache keys for expressions", () => {
+      const key1 = cache.generateCompilationCacheKey("expression", "x > 5");
+      const key2 = cache.generateCompilationCacheKey("expression", "x > 5");
+      expect(key1).toBe(key2);
+    });
+
+    it("should generate different cache keys for different expressions", () => {
+      const key1 = cache.generateCompilationCacheKey("expression", "x > 5");
+      const key2 = cache.generateCompilationCacheKey("expression", "x > 10");
+      expect(key1).not.toBe(key2);
+    });
+
+    it("should generate cache keys for predicates", () => {
+      const predicate = { predicateType: "comparison", variable: "status" };
+      const key = cache.generateCompilationCacheKey("predicate", predicate);
+      expect(key).toContain("pred:");
+      expect(key).toContain("comparison");
+    });
+
+    it("should generate cache keys for schemas", () => {
+      const schema = { variable: "user", schema: { type: "object", properties: {} } };
+      const key = cache.generateCompilationCacheKey("schema", schema);
+      expect(key).toContain("schema:");
+      expect(key).toContain("user");
+    });
+
+    it("should generate cache keys for scripts", () => {
+      const key = cache.generateCompilationCacheKey("script", "return x + y;");
+      expect(key).toContain("script:");
+    });
+  });
+
     it("should cache results with no dependencies", () => {
       const context = mockContext({});
       cache.setCachedResult("key", 42, [], context);

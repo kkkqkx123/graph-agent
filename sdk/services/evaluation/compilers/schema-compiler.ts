@@ -1,24 +1,18 @@
 /**
  * Schema Compiler
  * Compiles JSON Schema for validation
+ * Note: Caching is handled by CacheManager, not by this class
  */
 
 import type { ICompiler, CompiledUnit } from "../types/index.js";
 
 export class SchemaCompiler implements ICompiler {
-  private cache = new Map<string, CompiledUnit>();
-
   compile(input: string | Record<string, unknown>): CompiledUnit {
     if (typeof input === "string") {
       throw new Error("Schema compiler expects object input");
     }
 
     const schema = input as Record<string, unknown>;
-    const cacheKey = JSON.stringify(schema);
-
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey)!;
-    }
 
     const unit: CompiledUnit = {
       ast: schema,
@@ -29,16 +23,16 @@ export class SchemaCompiler implements ICompiler {
       },
     };
 
-    this.cache.set(cacheKey, unit);
     return unit;
   }
 
   clearCache(): void {
-    this.cache.clear();
+    // Caching is handled by CacheManager, nothing to clear here
   }
 
   getCacheSize(): number {
-    return this.cache.size;
+    // Caching is handled by CacheManager
+    return 0;
   }
 
   private calculateSchemaComplexity(schema: Record<string, unknown>, depth: number = 0): number {

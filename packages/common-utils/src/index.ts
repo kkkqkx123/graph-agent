@@ -28,6 +28,9 @@ export * from "./codec/index.js";
 // File Monitoring Module (file watching, checkpoint management)
 export * from "./file-monitoring/index.js";
 
+// Cache Module (generic caching solution)
+export * from "./cache/index.js";
+
 // Log system (selective export to avoid naming conflicts)
 export {
   createLogger,

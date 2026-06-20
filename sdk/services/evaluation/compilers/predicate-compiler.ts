@@ -1,6 +1,7 @@
 /**
  * Predicate Compiler
  * Compiles predicate conditions (isEmpty, isNull, etc.)
+ * Note: Caching is handled by CacheManager, not by this class
  */
 
 import type { ICompiler, CompiledUnit } from "../types/index.js";
@@ -11,19 +12,12 @@ interface PredicateInput {
 }
 
 export class PredicateCompiler implements ICompiler {
-  private cache = new Map<string, CompiledUnit>();
-
   compile(input: string | Record<string, unknown>): CompiledUnit {
     if (typeof input === "string") {
       throw new Error("Predicate compiler expects object input");
     }
 
     const config = input as unknown as PredicateInput;
-
-    const cacheKey = `${config.type}:${config.variable}`;
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey)!;
-    }
 
     const unit: CompiledUnit = {
       ast: {
@@ -39,16 +33,16 @@ export class PredicateCompiler implements ICompiler {
       },
     };
 
-    this.cache.set(cacheKey, unit);
     return unit;
   }
 
   clearCache(): void {
-    this.cache.clear();
+    // Caching is handled by CacheManager, nothing to clear here
   }
 
   getCacheSize(): number {
-    return this.cache.size;
+    // Caching is handled by CacheManager
+    return 0;
   }
 }
 

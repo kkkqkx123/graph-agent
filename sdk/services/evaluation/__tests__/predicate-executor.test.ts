@@ -54,23 +54,31 @@ describe("PredicateCompiler", () => {
     expect(() => predicateCompiler.compile("invalid")).toThrow();
   });
 
-  it("should cache compiled predicates", () => {
+  it("should produce consistent output for same input", () => {
+    // Caching is now handled by CacheManager, not by compiler
+    // Compiler just produces consistent CompiledUnit structure
     const input = { type: "isEmpty", variable: "x" };
     const compiled1 = predicateCompiler.compile(input);
     const compiled2 = predicateCompiler.compile(input);
 
-    expect(compiled1).toBe(compiled2); // Same reference
+    // Both should have the same structure and content
+    expect(compiled1.ast).toStrictEqual(compiled2.ast);
+    expect(compiled1.dependencies).toStrictEqual(compiled2.dependencies);
+    expect(compiled1.complexity).toBe(compiled2.complexity);
   });
 
-  it("should track cache size", () => {
+  it("should track cache size (delegated to CacheManager)", () => {
+    // Compiler no longer has its own cache
+    // getCacheSize() always returns 0
     predicateCompiler.clearCache();
     expect(predicateCompiler.getCacheSize()).toBe(0);
 
     predicateCompiler.compile({ type: "isEmpty", variable: "x" });
-    expect(predicateCompiler.getCacheSize()).toBe(1);
+    // Still 0 because caching is handled by CacheManager
+    expect(predicateCompiler.getCacheSize()).toBe(0);
 
     predicateCompiler.compile({ type: "isEmpty", variable: "y" });
-    expect(predicateCompiler.getCacheSize()).toBe(2);
+    expect(predicateCompiler.getCacheSize()).toBe(0);
   });
 });
 

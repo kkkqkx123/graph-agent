@@ -2,6 +2,7 @@
  * ExpressionCompiler - Expression Compiler
  * Compiles expression strings into optimized executable form
  * Implements ICompiler interface
+ * Note: Caching is handled by CacheManager, not by this class
  */
 
 import { dslParse } from "../dsl/index.js";
@@ -9,13 +10,7 @@ import type { Expression, MemberAccessExpr, IdentifierExpr } from "../dsl/types.
 import type { ICompiler, CompiledUnit } from "../types/index.js";
 
 export class ExpressionCompiler implements ICompiler {
-  private cache = new Map<string, CompiledUnit>();
-
   compile(expression: string): CompiledUnit {
-    if (this.cache.has(expression)) {
-      return this.cache.get(expression)!;
-    }
-
     const ast = dslParse(expression);
 
     const dependencies = this.extractDependencies(ast);
@@ -31,16 +26,16 @@ export class ExpressionCompiler implements ICompiler {
       },
     };
 
-    this.cache.set(expression, unit);
     return unit;
   }
 
   clearCache(): void {
-    this.cache.clear();
+    // Caching is handled by CacheManager, nothing to clear here
   }
 
   getCacheSize(): number {
-    return this.cache.size;
+    // Caching is handled by CacheManager
+    return 0;
   }
 
   private extractDependencies(node: Expression): string[] {
@@ -178,3 +173,4 @@ export class ExpressionCompiler implements ICompiler {
 }
 
 export const expressionCompiler = new ExpressionCompiler();
+

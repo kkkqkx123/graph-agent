@@ -17,6 +17,15 @@ import { scriptCompiler } from "./compilers/script-compiler.js";
 import { scriptExecutor } from "./executors/script-executor.js";
 
 /**
+ * Custom error types for proper error handling
+ */
+class EvaluationError extends Error {
+  constructor(message: string, public readonly code: string) {
+    super(message);
+  }
+}
+
+/**
  * Unified Condition Evaluator
  * Handles all condition types through a dispatcher pattern
  * Issue 7: Implements safe condition type detection with validation
@@ -123,7 +132,7 @@ export class ConditionEvaluator {
       switch (conditionType) {
         case "expression": {
           const expr = condition as Record<string, unknown>;
-          const compileCacheKey = `expr:${expr['expression']}`;
+          const compileCacheKey = cacheManager.generateCompilationCacheKey("expression", expr['expression'] as string);
           let compiled = cacheManager.getCompiled(compileCacheKey);
           if (!compiled) {
             compiled = expressionCompiler.compile(expr['expression'] as string);
@@ -137,7 +146,10 @@ export class ConditionEvaluator {
 
         case "predicate": {
           const pred = condition as Record<string, unknown>;
-          const compileCacheKey = `pred:${pred['predicateType']}:${pred['variable']}`;
+          const compileCacheKey = cacheManager.generateCompilationCacheKey("predicate", {
+            predicateType: pred['predicateType'],
+            variable: pred['variable'],
+          });
           let compiled = cacheManager.getCompiled(compileCacheKey);
           if (!compiled) {
             compiled = predicateCompiler.compile({
@@ -154,7 +166,10 @@ export class ConditionEvaluator {
 
         case "schema": {
           const sch = condition as Record<string, unknown>;
-          const compileCacheKey = `schema:${sch['variable']}:${JSON.stringify(sch['schema'])}`;
+          const compileCacheKey = cacheManager.generateCompilationCacheKey("schema", {
+            variable: sch['variable'],
+            schema: sch['schema'],
+          });
           let compiled = cacheManager.getCompiled(compileCacheKey);
           if (!compiled) {
             compiled = schemaCompiler.compile(sch['schema'] as string | Record<string, unknown>);
@@ -168,7 +183,7 @@ export class ConditionEvaluator {
 
         case "script": {
           const scr = condition as Record<string, unknown>;
-          const compileCacheKey = `script:${scr['script']}`;
+          const compileCacheKey = cacheManager.generateCompilationCacheKey("script", scr['script'] as string);
           let compiled = cacheManager.getCompiled(compileCacheKey);
           if (!compiled) {
             compiled = scriptCompiler.compile(scr['script'] as string);
@@ -193,33 +208,49 @@ export class ConditionEvaluator {
 
       return result;
     } catch (error) {
-      this.logger.warn(`Condition evaluation failed: ${conditionType}`, {
-        type: conditionType,
-        error: error instanceof Error ? error.message : String(error),
-      });
-
-      // Propagate validation and security errors; only silently fail on unexpected errors
-      if (error instanceof ExpressionSecurityError) {
-        throw error;
-      }
-
-      // Re-throw validation errors from executors
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      if (errorMsg.includes("RuntimeValidationError") || errorMsg.includes("Unknown")) {
-        throw error;
-      }
-
-      // For compilation/parsing errors, re-throw to distinguish from false evaluation
-      if (
-        errorMsg.includes("Compile") ||
-        errorMsg.includes("Parse") ||
-        errorMsg.includes("Syntax")
-      ) {
-        throw error;
-      }
-
+      // Use proper error type checking instead of string matching
+      this.handleEvaluationError(error, conditionType);
       return false;
     }
+  }
+
+  /**
+   * Handle evaluation errors with proper type checking
+   */
+  private handleEvaluationError(error: unknown, conditionType: string): void {
+    // Always propagate security errors
+    if (error instanceof ExpressionSecurityError) {
+      this.logger.warn(`Security validation failed for ${conditionType} condition`, {
+        type: conditionType,
+        error: error.message,
+      });
+      throw error;
+    }
+
+    // Always propagate validation errors
+    if (error instanceof TypeError) {
+      this.logger.warn(`Validation error for ${conditionType} condition`, {
+        type: conditionType,
+        error: error.message,
+      });
+      throw error;
+    }
+
+    // Propagate evaluation errors (compilation, runtime)
+    if (error instanceof EvaluationError) {
+      this.logger.warn(`Evaluation failed for ${conditionType} condition`, {
+        type: conditionType,
+        code: error.code,
+        error: error.message,
+      });
+      throw error;
+    }
+
+    // Log other errors but don't re-throw
+    this.logger.warn(`Unexpected error evaluating ${conditionType} condition`, {
+      type: conditionType,
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 
   /**

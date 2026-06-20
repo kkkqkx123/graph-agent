@@ -2,13 +2,13 @@
  * Script Compiler
  * Compiles JavaScript script strings into executable functions
  * with restricted access to prevent malicious execution
+ * Note: Caching is handled by CacheManager, not by this class
  */
 
 import type { ICompiler, CompiledUnit } from "../types/index.js";
 import { ExpressionSecurityError } from "@wf-agent/types";
 
 export class ScriptCompiler implements ICompiler {
-  private cache = new Map<string, CompiledUnit>();
   private readonly DANGEROUS_PATTERNS = [
     /require\s*\(/i,
     /import\s+/i,
@@ -27,10 +27,6 @@ export class ScriptCompiler implements ICompiler {
     }
 
     const script = input as string;
-
-    if (this.cache.has(script)) {
-      return this.cache.get(script)!;
-    }
 
     this.validateScript(script);
 
@@ -59,16 +55,16 @@ export class ScriptCompiler implements ICompiler {
       },
     };
 
-    this.cache.set(script, unit);
     return unit;
   }
 
   clearCache(): void {
-    this.cache.clear();
+    // Caching is handled by CacheManager, nothing to clear here
   }
 
   getCacheSize(): number {
-    return this.cache.size;
+    // Caching is handled by CacheManager
+    return 0;
   }
 
   private validateScript(script: string): void {
