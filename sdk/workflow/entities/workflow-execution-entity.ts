@@ -40,6 +40,7 @@ import type { EventRegistry } from "../../core/registry/event-registry.js";
 import type { IExecutionEntity } from "../../core/types/execution-entity.js";
 import { DependencyManager } from "../../services/evaluation/index.js";
 import { SyncBarrier } from "../execution/barriers/sync-barrier.js";
+import { TimeoutManager } from "../../core/state-managers/timeout-manager.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ operation: "WorkflowExecutionEntity" });
@@ -84,6 +85,9 @@ export class WorkflowExecutionEntity implements IExecutionEntity {
 
   /** Tool Failure Protection State Manager (NEW) */
   readonly toolFailureProtection: ToolFailureProtectionState;
+
+  /** Timeout Manager for managing execution timeouts */
+  readonly timeoutManager: TimeoutManager;
 
   /** Stop Controller */
   abortController?: AbortController;
@@ -137,6 +141,9 @@ export class WorkflowExecutionEntity implements IExecutionEntity {
 
     // Initialize tool failure protection state
     this.toolFailureProtection = new ToolFailureProtectionState(toolFailureProtectionConfig);
+
+    // Initialize timeout manager for this execution
+    this.timeoutManager = new TimeoutManager();
 
     // Initialize hierarchy manager with existing hierarchy metadata or as root node
     this.hierarchyManager = new ExecutionHierarchyManager(

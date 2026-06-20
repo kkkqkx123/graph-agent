@@ -52,7 +52,6 @@ import type { AgentLoopExecutor as AgentLoopExecutorType } from "../../agent/exe
 import type { AgentLoopCoordinator as AgentLoopCoordinatorType } from "../../agent/execution/coordinators/agent-loop-coordinator.js";
 import type { SkillRegistry as SkillRegistryType } from "../registry/skill-registry.js";
 import type { AgentProfileRegistry as AgentProfileRegistryType } from "../registry/agent-profile-registry.js";
-import type { TimeoutRegistry as TimeoutRegistryType } from "../registry/timeout-registry.js";
 import type { PromptTemplateRegistry as PromptTemplateRegistryType } from "../registry/prompt-template-registry.js";
 import type { FragmentRegistry as FragmentRegistryType } from "../registry/fragment-registry.js";
 import type {
@@ -425,12 +424,6 @@ export const SkillRegistry: ServiceIdentifier<SkillRegistryType> = Symbol("Skill
  */
 export const AgentProfileRegistry: ServiceIdentifier<AgentProfileRegistryType> =
   Symbol("AgentProfileRegistry");
-
-/**
- * TimeoutRegistry - Timeout Registry
- * Manages TimeoutManager instances across all executions with centralized timeout operations.
- */
-export const TimeoutRegistry: ServiceIdentifier<TimeoutRegistryType> = Symbol("TimeoutRegistry");
 
 // ============================================================
 // Storage Adapter Services

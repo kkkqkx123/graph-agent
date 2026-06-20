@@ -68,7 +68,6 @@ import { HookTemplateRegistry } from "../registry/hook-template-registry.js";
 import { TriggerTemplateRegistry } from "../registry/trigger-template-registry.js";
 import { PromptTemplateRegistry } from "../registry/prompt-template-registry.js";
 import { FragmentRegistry } from "../registry/fragment-registry.js";
-import { TimeoutRegistry } from "../registry/timeout-registry.js";
 
 import { TaskRegistry } from "../../workflow/stores/task/task-registry.js";
 import { TaskQueue } from "../../workflow/stores/task/task-queue.js";
@@ -354,12 +353,6 @@ export function configureContainerBindings(
       ) as TriggerStorageAdapter | null;
       return new TriggerTemplateRegistry(storageAdapter);
     })
-    .inSingletonScope();
-
-  // TimeoutRegistry - Timeout registry with optional configuration
-  container
-    .bind(Identifiers.TimeoutRegistry)
-    .toDynamicValue(() => new TimeoutRegistry())
     .inSingletonScope();
 
   // TaskRegistry - Task registry (per-SDK-instance singleton)

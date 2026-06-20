@@ -80,4 +80,7 @@ export {
   validateHookTemplate,
   validateNodeTemplate,
   validateTriggerTemplate,
+  TRIGGER_TEMPLATE_EVENT_TYPES,
+  TRIGGER_TEMPLATE_ACTION_TYPES,
+  validateTriggerTemplateRegistry,
 } from "./validation/index.js";

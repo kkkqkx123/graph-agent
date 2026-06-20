@@ -49,6 +49,7 @@ import { ToolFailureProtectionState } from "../../core/state-managers/tool-failu
 import type { ToolFailureProtectionConfig } from "../../core/state-managers/tool-failure-protection-types.js";
 import type { InterruptionState } from "../../core/utils/interruption/interruption-state.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
+import { TimeoutManager } from "../../core/state-managers/timeout-manager.js";
 
 const logger = createContextualLogger({ component: "AgentLoopEntity" });
 
@@ -101,6 +102,9 @@ export class AgentLoopEntity implements IExecutionEntity {
 
   /** Tool Failure Protection State Manager */
   readonly toolFailureProtection: ToolFailureProtectionState;
+
+  /** Timeout Manager for managing execution timeouts */
+  readonly timeoutManager: TimeoutManager;
 
   /** Abort Controller */
   abortController?: AbortController;
@@ -158,6 +162,9 @@ export class AgentLoopEntity implements IExecutionEntity {
 
     // Initialize tool failure protection state
     this.toolFailureProtection = new ToolFailureProtectionState(toolFailureProtectionConfig);
+
+    // Initialize timeout manager for this execution
+    this.timeoutManager = new TimeoutManager();
   }
 
   // Status Access

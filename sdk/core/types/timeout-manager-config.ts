@@ -1,7 +1,7 @@
 /**
  * Timeout Manager Configuration Types
  *
- * Configuration interfaces for TimeoutManager and TimeoutRegistry.
+ * Configuration interfaces for TimeoutManager.
  * These define the internal timeout management system behavior.
  */
 

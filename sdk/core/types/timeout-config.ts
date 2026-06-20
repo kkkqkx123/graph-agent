@@ -1,7 +1,7 @@
 /**
  * Timeout Configuration Types
  *
- * Configuration interfaces for TimeoutManager and TimeoutRegistry.
+ * Configuration interfaces for TimeoutManager.
  */
 
 export {

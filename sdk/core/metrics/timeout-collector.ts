@@ -2,30 +2,19 @@
  * Timeout Metrics Collector
  *
  * Collects and reports timeout-related metrics for observability.
- * Integrates with TimeoutRegistry to provide real-time timeout monitoring.
+ * Metrics are now collected directly from ExecutionEntity.timeoutManager instances.
  */
 
 import { BaseMetricCollector } from "./base-collector.js";
 import type { MetricCollectorConfig, MetricFilter, MetricQueryResult } from "./types.js";
-import type { TimeoutRegistry } from "../registry/timeout-registry.js";
 import { PrometheusFormatter } from "./utils/prometheus-formatter.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "TimeoutMetricsCollector" });
 
 export class TimeoutMetricsCollector extends BaseMetricCollector {
-  private timeoutRegistry?: TimeoutRegistry;
-
   constructor(config?: MetricCollectorConfig) {
     super(config);
-  }
-
-  /**
-   * Bind to TimeoutRegistry for data collection
-   */
-  bindToRegistry(registry: TimeoutRegistry): void {
-    this.timeoutRegistry = registry;
-    logger.info("Bound to TimeoutRegistry");
   }
 
   /**
@@ -89,39 +78,11 @@ export class TimeoutMetricsCollector extends BaseMetricCollector {
   }
 
   /**
-   * Collect current state from TimeoutRegistry
+   * Collect current state from timeout managers
+   * @deprecated TimeoutManager is now on ExecutionEntity
    */
   collectFromRegistry(): void {
-    if (!this.timeoutRegistry) {
-      logger.warn("TimeoutRegistry not bound, skipping collection");
-      return;
-    }
-
-    const stats = this.timeoutRegistry.getStats();
-
-    // Record global statistics
-    this.setGauge("timeout.active.count", stats.totalTimeouts);
-    this.setGauge("timeout.executions.active", stats.activeExecutions);
-
-    // Record by-tag statistics
-    Object.entries(stats.byTag).forEach(([tag, count]) => {
-      this.setGauge("timeout.active.by_tag", count, { tag });
-    });
-
-    // Record by-category statistics
-    Object.entries(stats.byCategory).forEach(([category, count]) => {
-      this.setGauge("timeout.active.by_category", count, { category });
-    });
-
-    // Record cumulative statistics
-    this.incrementCounter("timeout.registered.total", {}, stats.totalRegistered);
-    this.incrementCounter("timeout.expired.total", {}, stats.timedOutCount);
-    this.incrementCounter("timeout.cancelled.total", {}, stats.cancelledCount);
-
-    logger.debug("Collected timeout metrics from registry", {
-      activeTimeouts: stats.totalTimeouts,
-      activeExecutions: stats.activeExecutions,
-    });
+    logger.debug("collectFromRegistry is deprecated. Metrics are now collected directly from ExecutionEntity.timeoutManager");
   }
 
   /**
@@ -133,6 +94,7 @@ export class TimeoutMetricsCollector extends BaseMetricCollector {
 
   /**
    * Generate timeout-specific summary
+   * @deprecated TimeoutManager is now on ExecutionEntity
    */
   generateSummary(): {
     totalActive: number;
@@ -143,30 +105,14 @@ export class TimeoutMetricsCollector extends BaseMetricCollector {
     averageDuration: number;
     timeoutRate: number;
   } {
-    if (!this.timeoutRegistry) {
-      return {
-        totalActive: 0,
-        totalExpired: 0,
-        totalCancelled: 0,
-        byTag: {},
-        byCategory: {},
-        averageDuration: 0,
-        timeoutRate: 0,
-      };
-    }
-
-    const stats = this.timeoutRegistry.getStats();
-    const totalCompleted = stats.timedOutCount + stats.cancelledCount;
-    const timeoutRate = totalCompleted > 0 ? stats.timedOutCount / totalCompleted : 0;
-
     return {
-      totalActive: stats.totalTimeouts,
-      totalExpired: stats.timedOutCount,
-      totalCancelled: stats.cancelledCount,
-      byTag: stats.byTag,
-      byCategory: stats.byCategory,
-      averageDuration: 0, // Would need to calculate from histogram
-      timeoutRate,
+      totalActive: 0,
+      totalExpired: 0,
+      totalCancelled: 0,
+      byTag: {},
+      byCategory: {},
+      averageDuration: 0,
+      timeoutRate: 0,
     };
   }
 

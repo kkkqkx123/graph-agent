@@ -35,19 +35,6 @@ vi.mock("../../../core/utils/event/emit-event.js", () => ({
   emit: vi.fn(),
 }));
 
-// Mock the TimeoutRegistry to avoid resource monitoring issues
-vi.mock("../../../core/registry/timeout-registry.js", () => ({
-  TimeoutRegistry: vi.fn().mockImplementation(() => ({
-    getManager: vi.fn().mockReturnValue({
-      register: vi.fn().mockReturnValue({
-        cancel: vi.fn(),
-      }),
-    }),
-    cleanup: vi.fn(),
-    cleanupAll: vi.fn(),
-  })),
-}));
-
 describe("PauseTimeoutManager", () => {
   let mockRegistry: WorkflowExecutionRegistry;
   let mockEventManager: EventRegistry;
@@ -57,9 +44,27 @@ describe("PauseTimeoutManager", () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
 
+    // Create a mock timeoutManager with register method
+    const mockTimeoutManager = {
+      register: vi.fn().mockReturnValue({
+        cancel: vi.fn(),
+      }),
+      clear: vi.fn(),
+      getStats: vi.fn().mockReturnValue({
+        activeTimeouts: 0,
+        totalRegistered: 0,
+        timedOutCount: 0,
+        cancelledCount: 0,
+        averageDuration: 0,
+        byTag: {},
+        byModule: {},
+      }),
+    };
+
     mockRegistry = {
       get: vi.fn().mockReturnValue({
         getInterruptionState: vi.fn().mockReturnValue(null),
+        timeoutManager: mockTimeoutManager,
       }),
     } as unknown as WorkflowExecutionRegistry;
 

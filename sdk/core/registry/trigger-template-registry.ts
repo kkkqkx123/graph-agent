@@ -27,7 +27,7 @@ import {
   removeTrigger,
   initializeTriggersFromStorage,
 } from "./utils/storage/index.js";
-import { createRegistry } from "./utils/index.js";
+import { createRegistry, validateTriggerTemplateRegistry } from "./utils/index.js";
 
 /**
  * Trigger Template Registry Class
@@ -44,13 +44,10 @@ class TriggerTemplateRegistry {
    * @throws ValidationError: If the trigger configuration is invalid or the name already exists
    */
   register(template: TriggerTemplate, options?: RegisterOptions): void {
-    // Verify trigger configuration
-    this.validateTemplate(template);
+    validateTriggerTemplateRegistry(template);
 
-    // Check if the name already exists.
     if (this.items.has(template.name)) {
       if (options?.skipIfExists) {
-        // Idempotent operation: Skip existing items
         return;
       }
       throw new ConfigurationValidationError(
@@ -62,7 +59,6 @@ class TriggerTemplateRegistry {
       );
     }
 
-    // Register Trigger Template
     this.items.set(template.name, template);
   }
 
@@ -77,10 +73,8 @@ class TriggerTemplateRegistry {
    * @throws ValidationError If the trigger configuration is invalid or the name already exists
    */
   async registerAsync(template: TriggerTemplate, options?: RegisterOptions): Promise<void> {
-    // Verify trigger configuration
-    this.validateTemplate(template);
+    validateTriggerTemplateRegistry(template);
 
-    // Check if the name already exists
     if (this.items.has(template.name)) {
       if (options?.skipIfExists) {
         return;
@@ -94,12 +88,10 @@ class TriggerTemplateRegistry {
       );
     }
 
-    // Persist to storage first (write-through: DB is source of truth)
     if (this.storageAdapter) {
       await persistTrigger(template, this.storageAdapter);
     }
 
-    // Save to memory cache after successful persistence.
     this.items.set(template.name, template);
   }
 
@@ -137,7 +129,6 @@ class TriggerTemplateRegistry {
     const template = this.items.get(name);
     if (!template) {
       if (options?.createIfNotExists) {
-        // Allow for automatic creation.
         const newTemplate = { ...updates, name } as TriggerTemplate;
         this.register(newTemplate);
         return;
@@ -148,23 +139,19 @@ class TriggerTemplateRegistry {
       );
     }
 
-    // Create the updated template.
     const updatedTemplate: TriggerTemplate = {
       ...template,
       ...updates,
-      name: template.name, // The name cannot be changed.
+      name: template.name,
       updatedAt: now(),
     };
 
-    // Verify the updated template.
-    this.validateTemplate(updatedTemplate);
+    validateTriggerTemplateRegistry(updatedTemplate);
 
-    // Persist to storage first (write-through: DB is source of truth)
     if (this.storageAdapter) {
       await persistTrigger(updatedTemplate, this.storageAdapter);
     }
 
-    // Update the template in memory after successful persistence.
     this.items.set(name, updatedTemplate);
   }
 
@@ -311,140 +298,6 @@ class TriggerTemplateRegistry {
         (template.metadata?.["category"] as string)?.toLowerCase().includes(lowerKeyword)
       );
     });
-  }
-
-  /**
-   * Verify trigger template
-   * @param template: Trigger template
-   * @throws ValidationError: If the trigger configuration is invalid
-   */
-  private validateTemplate(template: TriggerTemplate): void {
-    // Verify required fields
-    if (!template.name || typeof template.name !== "string") {
-      throw new ConfigurationValidationError(
-        "Trigger template name is required and must be a string",
-        {
-          configType: "trigger",
-          configPath: "template.name",
-        },
-      );
-    }
-
-    if (!template.condition) {
-      throw new ConfigurationValidationError("Trigger template condition is required", {
-        configType: "trigger",
-        configPath: "template.condition",
-      });
-    }
-
-    if (!template.action) {
-      throw new ConfigurationValidationError("Trigger template action is required", {
-        configType: "trigger",
-        configPath: "template.action",
-      });
-    }
-
-    // Verify the trigger conditions.
-    if (!template.condition.eventType) {
-      throw new ConfigurationValidationError("Trigger template condition eventType is required", {
-        configType: "trigger",
-        configPath: "template.condition.eventType",
-      });
-    }
-
-    // Verify whether the event type is valid.
-    const validEventTypes = [
-      "WORKFLOW_EXECUTION_STARTED",
-      "WORKFLOW_EXECUTION_COMPLETED",
-      "WORKFLOW_EXECUTION_FAILED",
-      "WORKFLOW_EXECUTION_PAUSED",
-      "WORKFLOW_EXECUTION_RESUMED",
-      "WORKFLOW_EXECUTION_CANCELLED",
-      "WORKFLOW_EXECUTION_STATE_CHANGED",
-      "WORKFLOW_EXECUTION_FORK_STARTED",
-      "WORKFLOW_EXECUTION_FORK_COMPLETED",
-      "WORKFLOW_EXECUTION_JOIN_STARTED",
-      "WORKFLOW_EXECUTION_JOIN_CONDITION_MET",
-      "WORKFLOW_EXECUTION_COPY_STARTED",
-      "WORKFLOW_EXECUTION_COPY_COMPLETED",
-      "NODE_STARTED",
-      "NODE_COMPLETED",
-      "NODE_FAILED",
-      "NODE_CUSTOM_EVENT",
-      "TOKEN_LIMIT_EXCEEDED",
-      "TOKEN_USAGE_WARNING",
-      "CONTEXT_COMPRESSION_REQUESTED",
-      "CONTEXT_COMPRESSION_COMPLETED",
-      "MESSAGE_ADDED",
-      "TOOL_CALL_STARTED",
-      "TOOL_CALL_COMPLETED",
-      "TOOL_CALL_FAILED",
-      "TOOL_ADDED",
-      "CONVERSATION_STATE_CHANGED",
-      "ERROR",
-      "CHECKPOINT_CREATED",
-      "CHECKPOINT_RESTORED",
-      "CHECKPOINT_DELETED",
-      "CHECKPOINT_FAILED",
-      "SUBGRAPH_STARTED",
-      "SUBGRAPH_COMPLETED",
-      "TRIGGERED_SUBGRAPH_STARTED",
-      "TRIGGERED_SUBGRAPH_COMPLETED",
-      "TRIGGERED_SUBGRAPH_FAILED",
-      "VARIABLE_CHANGED",
-      "USER_INTERACTION_REQUESTED",
-      "USER_INTERACTION_RESPONDED",
-      "USER_INTERACTION_PROCESSED",
-      "USER_INTERACTION_FAILED",
-      "TOOL_APPROVAL_REQUESTED",
-      "TOOL_APPROVAL_RESPONDED",
-      "TOOL_APPROVAL_FAILED",
-      "FOLLOWUP_QUESTION_REQUESTED",
-      "FOLLOWUP_QUESTION_RESPONDED",
-      "FOLLOWUP_QUESTION_FAILED",
-      "LLM_STREAM_ABORTED",
-      "LLM_STREAM_ERROR",
-      "DYNAMIC_WORKFLOW_EXECUTION_SUBMITTED",
-      "DYNAMIC_WORKFLOW_EXECUTION_COMPLETED",
-      "DYNAMIC_WORKFLOW_EXECUTION_FAILED",
-      "DYNAMIC_WORKFLOW_EXECUTION_CANCELLED",
-    ];
-    if (!validEventTypes.includes(template.condition.eventType)) {
-      throw new ConfigurationValidationError(
-        `Invalid event type: ${template.condition.eventType}`,
-        {
-          configType: "trigger",
-          configPath: "template.condition.eventType",
-        },
-      );
-    }
-
-    // Verify the trigger action.
-    if (!template.action.type) {
-      throw new ConfigurationValidationError("Trigger template action type is required", {
-        configType: "trigger",
-        configPath: "template.action.type",
-      });
-    }
-
-    // Verify whether the action type is valid.
-    const validActionTypes = [
-      "stop_workflow_execution",
-      "pause_workflow_execution",
-      "resume_workflow_execution",
-      "skip_node",
-      "set_variable",
-      "send_notification",
-      "execute_triggered_subworkflow",
-      "execute_script",
-      "apply_message_operation",
-    ];
-    if (!validActionTypes.includes(template.action.type)) {
-      throw new ConfigurationValidationError(`Invalid action type: ${template.action.type}`, {
-        configType: "trigger",
-        configPath: "template.action.type",
-      });
-    }
   }
 
   /**

@@ -13,9 +13,6 @@ export {
   type ExecutionsByRoot,
 } from "./execution-hierarchy-registry.js";
 
-// Timeout Management
-export { TimeoutRegistry } from "./timeout-registry.js";
-
 // Prompt Template & Fragment Registries
 export { PromptTemplateRegistry } from "./prompt-template-registry.js";
 export { FragmentRegistry } from "./fragment-registry.js";

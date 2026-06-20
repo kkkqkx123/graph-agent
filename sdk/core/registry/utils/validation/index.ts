@@ -37,3 +37,9 @@ export {
   validateNodeTemplate,
   validateTriggerTemplate,
 } from "./template-validation.js";
+
+export {
+  TRIGGER_TEMPLATE_EVENT_TYPES,
+  TRIGGER_TEMPLATE_ACTION_TYPES,
+  validateTriggerTemplate as validateTriggerTemplateRegistry,
+} from "./trigger-template-validation.js";
