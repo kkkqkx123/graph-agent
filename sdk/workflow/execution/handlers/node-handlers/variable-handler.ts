@@ -7,7 +7,7 @@ import type { RuntimeNode, VariableNodeConfig, EvaluationContext } from "@wf-age
 import type { WorkflowExecutionEntity } from "../../../entities/workflow-execution-entity.js";
 import { RuntimeValidationError } from "@wf-agent/types";
 import { now } from "@wf-agent/common-utils";
-import { expressionEvaluator, setArrayItemByKey } from "../../../evaluation/index.js";
+import { expressionEvaluator, setArrayItemByKey } from "../../../../services/evaluation/index.js";
 
 /**
  * Evaluate the expression using ExpressionEvaluator (AST-based, safe)

@@ -8,7 +8,7 @@ import type { WorkflowExecution } from "@wf-agent/types";
 import type { WorkflowExecutionEntity } from "../../../entities/workflow-execution-entity.js";
 import type { Condition, EvaluationContext } from "@wf-agent/types";
 import { ExecutionError, NotFoundError } from "@wf-agent/types";
-import { conditionEvaluator } from "../../../evaluation/index.js";
+import { conditionEvaluator } from "../../../../services/evaluation/index.js";
 import { now, getErrorMessage, getErrorOrUndefined } from "@wf-agent/common-utils";
 
 /**

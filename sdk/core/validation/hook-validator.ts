@@ -8,7 +8,7 @@ import type { NodeHook } from "@wf-agent/types";
 import { HookType } from "@wf-agent/types";
 import { ConfigurationValidationError, ExpressionSecurityError } from "@wf-agent/types";
 import { ok, err } from "@wf-agent/common-utils";
-import { validateExpression } from "../../workflow/evaluation/index.js";
+import { validateExpression } from "../../services/evaluation/index.js";
 import type { Result } from "@wf-agent/types";
 import { validateConfig } from "./utils.js";
 import { allWithErrors } from "@wf-agent/common-utils";

@@ -2,6 +2,7 @@
  * Core Services - Unified Export
  *
  * This module provides unified access to all core services:
+ * - Evaluation Service: Condition evaluation with DSL support (expression, predicate, schema, script)
  * - Skill Loader Service: File I/O abstraction for skill loading
  * - Auto Approval Service: Automatic approval checking for tool execution
  * - Ignore Service: File/directory ignore pattern matching
@@ -9,6 +10,51 @@
  * - Terminal Service: Shell session management and command execution
  * - Shutdown Service: Graceful shutdown management for SDK lifecycle
  */
+
+// ============================================================================
+// Evaluation Service (Condition Evaluation with DSL Support)
+// ============================================================================
+export {
+  ConditionEvaluator,
+  conditionEvaluator,
+  CacheManager,
+  cacheManager,
+  BaseExecutor,
+  DependencyManager,
+  createDependencyManager,
+  expressionEvaluator,
+  validateExpression,
+  validatePath,
+  validateArrayIndex,
+  validateValueType,
+  SECURITY_CONFIG,
+  resolvePath,
+  pathExists,
+  setPath,
+  setArrayItemByKey,
+  dslParse,
+  dslParseWithErrors,
+  dslValidate,
+  parseToCst,
+  cstToAst,
+  tokenizeExpression,
+  type CompiledUnit,
+  type ICompiler,
+  type IExecutor,
+  type Expression,
+  type LiteralExpr,
+  type IdentifierExpr,
+  type MemberAccessExpr,
+  type UnaryMinusExpr,
+  type BinaryExpr,
+  type NotExpr,
+  type TernaryExpr,
+  type CallExpr,
+  type ArrayLiteralExpr,
+  type NodeMetadata,
+  type BinaryOperator,
+  type EvaluationContext,
+} from "./evaluation/index.js";
 
 // ============================================================================
 // Skill Loader Service

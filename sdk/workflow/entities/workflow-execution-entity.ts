@@ -38,7 +38,7 @@ import type { InterruptionState } from "../../core/utils/interruption/interrupti
 import { createWorkflowInterruptionAbortReason } from "../execution/utils/workflow-interruption-utils.js";
 import type { EventRegistry } from "../../core/registry/event-registry.js";
 import type { IExecutionEntity } from "../../core/types/execution-entity.js";
-import { DependencyManager } from "../evaluation/index.js";
+import { DependencyManager } from "../../services/evaluation/index.js";
 import { SyncBarrier } from "../execution/barriers/sync-barrier.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
 

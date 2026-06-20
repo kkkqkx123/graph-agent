@@ -7,7 +7,7 @@ import type { RuntimeNode, RouteNodeConfig } from "@wf-agent/types";
 import type { WorkflowExecutionEntity } from "../../../entities/workflow-execution-entity.js";
 import type { Condition, EvaluationContext } from "@wf-agent/types";
 import { ExecutionError } from "@wf-agent/types";
-import { conditionEvaluator } from "../../../evaluation/index.js";
+import { conditionEvaluator } from "../../../../services/evaluation/index.js";
 
 /**
  * Evaluating routing conditions

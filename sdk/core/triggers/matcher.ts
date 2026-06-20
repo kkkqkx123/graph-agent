@@ -8,7 +8,7 @@
 
 import type { BaseTriggerCondition, BaseEventData, TriggerMatcher } from "./types.js";
 import type { EvaluationContext } from "@wf-agent/types";
-import { DependencyManager, conditionEvaluator } from "../../workflow/evaluation/index.js";
+import { DependencyManager, conditionEvaluator } from "../../services/evaluation/index.js";
 import { canTrigger } from "./limiter.js";
 import type { BaseTriggerDefinition } from "./types.js";
 import { getGlobalLogger } from "@wf-agent/common-utils";

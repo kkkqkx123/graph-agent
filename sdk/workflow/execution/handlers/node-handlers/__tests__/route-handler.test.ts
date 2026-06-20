@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { routeHandler } from "../route-handler.js";
-import { DependencyManager } from "../../../../evaluation/index.js";
+import { DependencyManager } from "../../../../services/evaluation/index.js";
 import type { WorkflowExecutionEntity } from "../../../../entities/workflow-execution-entity.js";
 import type { RuntimeNode, RouteNodeConfig } from "@wf-agent/types";
 

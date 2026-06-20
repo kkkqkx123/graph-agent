@@ -9,7 +9,7 @@ import {
   validateTriggers,
 } from "../trigger-validator.js";
 import { ConfigurationValidationError, ExpressionSecurityError } from "@wf-agent/types";
-import { validateExpression } from "../../../workflow/evaluation/index.js";
+import { validateExpression } from "../../../services/evaluation/index.js";
 
 vi.mock("../../../workflow/evaluation/index.js", () => ({
   validateExpression: vi.fn(),
