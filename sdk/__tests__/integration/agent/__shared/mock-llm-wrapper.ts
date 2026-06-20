@@ -18,9 +18,9 @@
 import type { LLMRequest, LLMResult, LLMToolCall, Result } from "@wf-agent/types";
 import { ok, err } from "@wf-agent/common-utils";
 import { LLMError } from "@wf-agent/types";
-import { LLMWrapper } from "@/core/llm/wrapper.js";
-import { MessageStream } from "@/core/llm/message-stream.js";
-import type { EventRegistry } from "@/core/registry/event-registry.js";
+import { LLMWrapper } from "@/services/llm/wrapper.js";
+import { MessageStream } from "@/services/llm/message-stream.js";
+import type { EventRegistry } from "@/shared/registry/event-registry.js";
 
 // =============================================================================
 // Types

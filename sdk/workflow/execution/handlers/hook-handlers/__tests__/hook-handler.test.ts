@@ -21,9 +21,9 @@ import type { WorkflowExecutionEntity } from "../../../../entities/workflow-exec
 const mockFilterAndSortHooks = vi.hoisted(() => vi.fn());
 const mockExecuteHooks = vi.hoisted(() => vi.fn());
 
-// Source imports from: ../../../../core/hooks/index.js (from hook-handlers/)
-// Test needs: ../../../../../core/hooks/index.js (from __tests__/)
-vi.mock("../../../../../core/hooks/index.js", () => ({
+// Source imports from: ../../../../shared/hooks/index.js (from hook-handlers/)
+// Test needs: ../../../../../shared/hooks/index.js (from __tests__/)
+vi.mock("../../../../../shared/hooks/index.js", () => ({
   filterAndSortHooks: mockFilterAndSortHooks,
   executeHooks: mockExecuteHooks,
 }));
@@ -46,9 +46,9 @@ vi.mock("@wf-agent/common-utils", async importOriginal => {
 
 const mockExecuteWithInterruptionHandling = vi.hoisted(() => vi.fn());
 
-// Source imports from: ../../../../core/utils/interruption/index.js (from hook-handlers/)
-// Test needs: ../../../../../core/utils/interruption/index.js (from __tests__/)
-vi.mock("../../../../../core/utils/interruption/index.js", () => ({
+// Source imports from: ../../../../shared/utils/interruption/index.js (from hook-handlers/)
+// Test needs: ../../../../../shared/utils/interruption/index.js (from __tests__/)
+vi.mock("../../../../../shared/utils/interruption/index.js", () => ({
   executeWithInterruptionHandling: mockExecuteWithInterruptionHandling,
 }));
 

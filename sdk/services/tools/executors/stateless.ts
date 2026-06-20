@@ -6,7 +6,7 @@
 import type { Tool, ID, ToolOutput } from "@wf-agent/types";
 import type { StatelessToolConfig } from "@wf-agent/types";
 import { ToolError } from "@wf-agent/types";
-import { BaseExecutor } from "../core/base.js";
+import { BaseExecutor } from "../shared/base.js";
 
 /**
  * Function registry entries

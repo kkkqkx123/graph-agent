@@ -46,7 +46,7 @@ import {
 } from "./utils/index.js";
 import type { Result } from "@wf-agent/types";
 import { ok, err, all } from "@wf-agent/common-utils";
-import { ScriptExecutor as ScriptExecutor_ } from "../executors/script-executor.js";
+import { ScriptExecutor as ScriptExecutor_ } from "../../services/executors/script-executor.js";
 import { ScriptEngine } from "../../services/script/engine/script-engine.js";
 import { ScriptFlowEngine } from "../../services/script/engine/script-flow-engine.js";
 

@@ -40,16 +40,16 @@ import type {
 } from "@wf-agent/types";
 import { AgentLoopStatus } from "@wf-agent/types";
 import { getAvailableTools } from "@wf-agent/types";
-import type { IExecutionEntity } from "../../core/types/execution-entity.js";
+import type { IExecutionEntity } from "../../shared/types/execution-entity.js";
 import { AgentLoopState } from "../state-managers/agent-loop-state.js";
-import { ExecutionHierarchyManager } from "../../core/execution/execution-hierarchy-manager.js";
-import type { ExecutionHierarchyRegistry } from "../../core/registry/execution-hierarchy-registry.js";
+import { ExecutionHierarchyManager } from "../../shared/execution/execution-hierarchy-manager.js";
+import type { ExecutionHierarchyRegistry } from "../../shared/registry/execution-hierarchy-registry.js";
 import { createAgentInterruptionAbortReason } from "../execution/utils/index.js";
-import { ToolFailureProtectionState } from "../../core/state-managers/tool-failure-protection-state.js";
-import type { ToolFailureProtectionConfig } from "../../core/state-managers/tool-failure-protection-types.js";
-import type { InterruptionState } from "../../core/utils/interruption/interruption-state.js";
+import { ToolFailureProtectionState } from "../../shared/state-managers/tool-failure-protection-state.js";
+import type { ToolFailureProtectionConfig } from "../../shared/state-managers/tool-failure-protection-types.js";
+import type { InterruptionState } from "../../shared/utils/interruption/interruption-state.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
-import { TimeoutManager } from "../../core/state-managers/timeout-manager.js";
+import { TimeoutManager } from "../../shared/state-managers/timeout-manager.js";
 
 const logger = createContextualLogger({ component: "AgentLoopEntity" });
 

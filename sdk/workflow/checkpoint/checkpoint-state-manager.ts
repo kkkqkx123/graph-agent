@@ -5,13 +5,13 @@
 
 import type { Checkpoint, CheckpointStorageMetadata } from "@wf-agent/types";
 import type { CheckpointStorageAdapter } from "@wf-agent/storage";
-import type { EventRegistry } from "../../core/registry/event-registry.js";
-import { BaseCheckpointStateManager } from "../../core/checkpoint/base-checkpoint-state-manager.js";
+import type { EventRegistry } from "../../shared/registry/event-registry.js";
+import { BaseCheckpointStateManager } from "../../shared/checkpoint/base-checkpoint-state-manager.js";
 import {
   buildCheckpointCreatedEvent,
   buildCheckpointDeletedEvent,
   buildCheckpointFailedEvent,
-} from "../../core/utils/event/builders/index.js";
+} from "../../shared/utils/event/builders/index.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ operation: "checkpoint-state-manager" });

@@ -10,7 +10,7 @@ import type { AgentLoopEntity } from "../../../../entities/agent-loop-entity.js"
 import type { AgentHookTriggeredEvent } from "@wf-agent/types";
 
 // Mock external dependencies
-vi.mock("../../../../../core/hooks/index.js", () => ({
+vi.mock("../../../../../shared/hooks/index.js", () => ({
   filterAndSortHooks: vi.fn(),
   executeHooks: vi.fn().mockResolvedValue(undefined),
 }));
@@ -53,8 +53,8 @@ vi.mock("../event-emitter.js", () => ({
 }));
 
 import { executeAgentHook } from "../hook-handler.js";
-import { filterAndSortHooks, executeHooks } from "../../../../../core/hooks/index.js";
-import { ConversationSession } from "../../../../../core/messaging/conversation-session.js";
+import { filterAndSortHooks, executeHooks } from "../../../../../shared/hooks/index.js";
+import { ConversationSession } from "../../../../../shared/messaging/conversation-session.js";
 import { AgentStateCoordinator } from "../../../../state-managers/agent-state-coordinator.js";
 
 describe("AgentHookHandler", () => {

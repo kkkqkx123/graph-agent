@@ -6,7 +6,7 @@
  */
 
 import type { WorkflowExecutionEntity } from "../../entities/workflow-execution-entity.js";
-import type { ExecutionHierarchyRegistry } from "../../../core/registry/execution-hierarchy-registry.js";
+import type { ExecutionHierarchyRegistry } from "../../../shared/registry/execution-hierarchy-registry.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "subworkflow-cleanup" });

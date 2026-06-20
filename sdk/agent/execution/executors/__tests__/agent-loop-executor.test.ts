@@ -11,11 +11,11 @@
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import type { AgentLoopResult } from "@wf-agent/types";
-import type { LLMExecutor } from "../../../../core/executors/llm-executor.js";
-import type { ToolRegistry } from "../../../../core/registry/tool-registry.js";
-import type { EventRegistry } from "../../../../core/registry/event-registry.js";
-import type { MetricsRegistry } from "../../../../core/metrics/metrics-registry.js";
-import type { GlobalContext } from "../../../../core/global-context.js";
+import type { LLMExecutor } from "../../../../services/executors/llm-executor.js";
+import type { ToolRegistry } from "../../../../shared/registry/tool-registry.js";
+import type { EventRegistry } from "../../../../shared/registry/event-registry.js";
+import type { MetricsRegistry } from "../../../../metrics/metrics-registry.js";
+import type { GlobalContext } from "../../../../shared/global-context.js";
 
 // =============================================================================
 // Hoisted mocks
@@ -63,7 +63,7 @@ vi.mock("../../coordinators/agent-iteration-coordinator.js", () => ({
   AgentIterationCoordinator: vi.fn(),
 }));
 
-vi.mock("../../../../core/coordinators/llm-execution-coordinator.js", () => ({
+vi.mock("../../../../shared/coordinators/llm-execution-coordinator.js", () => ({
   LLMExecutionCoordinator: vi.fn(),
 }));
 
@@ -71,15 +71,15 @@ vi.mock("../../coordinators/tool-execution-coordinator.js", () => ({
   ToolExecutionCoordinator: vi.fn(),
 }));
 
-vi.mock("../../../../core/executors/tool-call-executor.js", () => ({
+vi.mock("../../../../services/executors/tool-call-executor.js", () => ({
   ToolCallExecutor: vi.fn(),
 }));
 
-vi.mock("../../../../core/utils/tools/tool-schema-helper.js", () => ({
+vi.mock("../../../../shared/utils/tools/tool-schema-helper.js", () => ({
   prepareToolSchemas: mockPrepareToolSchemas,
 }));
 
-vi.mock("../../../../core/utils/event/emit-event.js", () => ({
+vi.mock("../../../../shared/utils/event/emit-event.js", () => ({
   emit: mockEmit,
 }));
 

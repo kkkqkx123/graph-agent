@@ -27,24 +27,24 @@ import type { ToolApprovalHandler } from "@wf-agent/types";
 import { getAvailableTools } from "@wf-agent/types";
 import type { AgentLoopEntity } from "../../entities/agent-loop-entity.js";
 import type { AgentStateCoordinator } from "../../state-managers/agent-state-coordinator.js";
-import type { ToolRegistry } from "../../../core/registry/tool-registry.js";
-import type { EventRegistry } from "../../../core/registry/event-registry.js";
-import type { MetricsRegistry } from "../../../core/metrics/metrics-registry.js";
-import type { GlobalContext } from "../../../core/global-context.js";
-import { LLMExecutor } from "../../../core/executors/llm-executor.js";
-import type { LLMWrapper } from "../../../core/llm/index.js";
-import { ToolCallExecutor } from "../../../core/executors/tool-call-executor.js";
+import type { ToolRegistry } from "../../../shared/registry/tool-registry.js";
+import type { EventRegistry } from "../../../shared/registry/event-registry.js";
+import type { MetricsRegistry } from "../../../metrics/metrics-registry.js";
+import type { GlobalContext } from "../../../shared/global-context.js";
+import { LLMExecutor } from "../../../services/executors/llm-executor.js";
+import type { LLMWrapper } from "../../../services/llm/index.js";
+import { ToolCallExecutor } from "../../../services/executors/tool-call-executor.js";
 import type { CheckpointDependencies as WorkflowCheckpointDependencies } from "../../../workflow/checkpoint/checkpoint-coordinator.js";
-import * as Identifiers from "../../../core/di/service-identifiers.js";
-import { emit } from "../../../core/utils/event/emit-event.js";
+import * as Identifiers from "../../../di/service-identifiers.js";
+import { emit } from "../../../shared/utils/event/emit-event.js";
 import {
   AgentExecutionCoordinator,
   type AgentLoopStreamEvent,
 } from "../coordinators/agent-execution-coordinator.js";
 import { AgentIterationCoordinator } from "../coordinators/agent-iteration-coordinator.js";
-import { LLMExecutionCoordinator as CoreLLMExecutionCoordinator } from "../../../core/coordinators/llm-execution-coordinator.js";
+import { LLMExecutionCoordinator as CoreLLMExecutionCoordinator } from "../../../shared/coordinators/llm-execution-coordinator.js";
 import { ToolExecutionCoordinator } from "../coordinators/tool-execution-coordinator.js";
-import { prepareToolSchemas } from "../../../core/utils/tools/tool-schema-helper.js";
+import { prepareToolSchemas } from "../../../shared/utils/tools/tool-schema-helper.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "AgentLoopExecutor" });

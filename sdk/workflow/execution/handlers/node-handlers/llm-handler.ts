@@ -20,9 +20,9 @@ import type { WorkflowExecution, LLMMessage } from "@wf-agent/types";
 import { RuntimeValidationError } from "@wf-agent/types";
 import { now, diffTimestamp, getErrorOrNew } from "@wf-agent/common-utils";
 import { LLMExecutionCoordinator } from "../../coordinators/llm-execution-coordinator.js";
-import { LLMWrapper } from "../../../../core/llm/wrapper.js";
-import type { EventRegistry } from "../../../../core/registry/event-registry.js";
-import type { ConversationSession } from "../../../../core/messaging/conversation-session.js";
+import { LLMWrapper } from "../../../../services/llm/wrapper.js";
+import type { EventRegistry } from "../../../../shared/registry/event-registry.js";
+import type { ConversationSession } from "../../../../shared/messaging/conversation-session.js";
 
 /**
  * LLM node execution results

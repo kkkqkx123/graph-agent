@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { forkHandler } from "../fork-handler.js";
 import type { WorkflowExecutionEntity } from "../../../../entities/workflow-execution-entity.js";
 import type { RuntimeNode } from "@wf-agent/types";
-import type { GlobalContext } from "../../../../../core/global-context.js";
+import type { GlobalContext } from "../../../../../shared/global-context.js";
 
 const mockGlobalContext = {
   container: {

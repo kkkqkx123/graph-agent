@@ -5,7 +5,7 @@
 
 import type { EventType, EventListener, BaseEvent } from "@wf-agent/types";
 import { RuntimeValidationError } from "@wf-agent/types";
-import type { EventRegistry } from "../../../core/registry/event-registry.js";
+import type { EventRegistry } from "../../../shared/registry/event-registry.js";
 
 /**
  * Subscription Metadata

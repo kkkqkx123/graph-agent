@@ -14,7 +14,7 @@ import type { AgentLoopEntity } from "../../../agent/entities/agent-loop-entity.
 import { AgentLoopStatus, type ID } from "@wf-agent/types";
 import type { ToolCallRecord } from "@wf-agent/types";
 import { getErrorMessage, isSuccess, getData } from "../../shared/types/execution-result.js";
-import type { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../shared/shared/sdk-dependencies.js";
 
 /**
  * Agent Loop Filter

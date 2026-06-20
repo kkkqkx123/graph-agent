@@ -7,13 +7,13 @@ import { ExecutionError } from "@wf-agent/types";
 import type { RuntimeNode } from "@wf-agent/types";
 import type { WorkflowExecutionEntity } from "../../../entities/workflow-execution-entity.js";
 import type { UserInteractionHandler } from "@wf-agent/types";
-import type { ConversationSession } from "../../../../core/messaging/conversation-session.js";
-import type { EventRegistry } from "../../../../core/registry/event-registry.js";
-import type { ToolRegistry } from "../../../../core/registry/tool-registry.js";
+import type { ConversationSession } from "../../../../shared/messaging/conversation-session.js";
+import type { EventRegistry } from "../../../../shared/registry/event-registry.js";
+import type { ToolRegistry } from "../../../../shared/registry/tool-registry.js";
 import type { WorkflowExecutionRegistry } from "../../../stores/workflow-execution-registry.js";
 import type { WorkflowExecutionBuilder } from "../workflow-execution-builder.js";
 import type { WorkflowExecutor } from "../../executors/workflow-executor.js";
-import type { LLMWrapper } from "../../../../core/llm/wrapper.js";
+import type { LLMWrapper } from "../../../../services/llm/wrapper.js";
 import { LLMExecutionCoordinator } from "../../coordinators/llm-execution-coordinator.js";
 
 // Create mock implementations

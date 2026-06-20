@@ -16,9 +16,9 @@ import type { AgentLoopRuntimeConfig, AgentLoopResult } from "@wf-agent/types";
 import { AgentLoopStatus } from "@wf-agent/types";
 import type { AgentLoopRegistry } from "../../../stores/agent-loop-registry.js";
 import type { AgentLoopExecutor } from "../../executors/agent-loop-executor.js";
-import type { GlobalContext } from "../../../../core/global-context.js";
-import type { EventRegistry } from "../../../../core/registry/event-registry.js";
-import type { AgentLoopMetricsCollector } from "../../../../core/metrics/agent-loop-collector.js";
+import type { GlobalContext } from "../../../../shared/global-context.js";
+import type { EventRegistry } from "../../../../shared/registry/event-registry.js";
+import type { AgentLoopMetricsCollector } from "../../../../metrics/agent-loop-collector.js";
 import { AgentLoopCoordinator } from "../agent-loop-coordinator.js";
 import type { AgentLoopStreamEvent } from "../agent-execution-coordinator.js";
 

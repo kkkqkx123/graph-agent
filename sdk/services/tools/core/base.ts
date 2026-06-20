@@ -14,7 +14,7 @@ import {
   type RetryConfig,
 } from "../../transport/http/index.js";
 import { now, diffTimestamp } from "@wf-agent/common-utils";
-import { combineTimeoutWithSignal } from "../../../core/utils/timeout/index.js";
+import { combineTimeoutWithSignal } from "../../../shared/utils/timeout/index.js";
 import type { IToolExecutor } from "./interfaces.js";
 
 // ============================================================================

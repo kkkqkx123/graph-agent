@@ -21,8 +21,8 @@ import { MemoryAgentLoopStorage } from "@wf-agent/storage";
 import { AgentLoopRegistry } from "@/agent/stores/agent-loop-registry.js";
 import { AgentLoopCoordinator } from "@/agent/execution/coordinators/agent-loop-coordinator.js";
 import { MockLLMWrapper } from "./__shared/mock-llm-wrapper.js";
-import { LLMExecutor } from "@/core/executors/llm-executor.js";
-import { ToolRegistry } from "@/core/registry/tool-registry.js";
+import { LLMExecutor } from "@/services/executors/llm-executor.js";
+import { ToolRegistry } from "@/shared/registry/tool-registry.js";
 import { AgentLoopExecutor } from "@/agent/execution/executors/agent-loop-executor.js";
 import {
   createBasicAgentConfig,

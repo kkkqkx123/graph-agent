@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { scriptHandler } from "../script-handler.js";
-import type { GlobalContext } from "../../../../../core/global-context.js";
+import type { GlobalContext } from "../../../../../shared/global-context.js";
 import type { WorkflowExecutionEntity } from "../../../../entities/workflow-execution-entity.js";
 import type { RuntimeNode, ScriptNodeConfig } from "@wf-agent/types";
 

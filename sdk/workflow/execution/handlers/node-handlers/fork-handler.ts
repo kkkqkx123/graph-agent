@@ -13,21 +13,21 @@
 
 import type { RuntimeNode, ForkNodeConfig } from "@wf-agent/types";
 import type { WorkflowExecutionEntity } from "../../../entities/workflow-execution-entity.js";
-import type { GlobalContext } from "../../../../core/global-context.js";
+import type { GlobalContext } from "../../../../shared/global-context.js";
 import type { ForkBranchResult } from "../../types/subworkflow-result.types.js";
 import { createForkBranchResult } from "../../types/subworkflow-result.types.js";
 import type { ForkHandlerContext } from "../../types/fork.types.js";
 import { createContextualLogger } from "../../../../utils/contextual-logger.js";
 import { now, diffTimestamp, getErrorOrNew } from "@wf-agent/common-utils";
-import type { EventRegistry } from "../../../../core/registry/event-registry.js";
-import { emit } from "../../../../core/utils/event/emit-event.js";
+import type { EventRegistry } from "../../../../shared/registry/event-registry.js";
+import { emit } from "../../../../shared/utils/event/emit-event.js";
 import {
   buildForkStartedEvent,
   buildForkBranchStartedEvent,
   buildForkBranchCompletedEvent,
   buildForkCompletedEvent,
-} from "../../../../core/utils/event/builders/index.js";
-import * as Identifiers from "../../../../core/di/service-identifiers.js";
+} from "../../../../shared/utils/event/builders/index.js";
+import * as Identifiers from "../../../../di/service-identifiers.js";
 import { cleanupChildExecution } from "../../utils/child-execution-cleanup.js";
 
 const logger = createContextualLogger({ component: "fork-node-handler" });

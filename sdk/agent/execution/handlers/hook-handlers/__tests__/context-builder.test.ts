@@ -9,7 +9,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import type { LLMMessage, AgentLoopRuntimeConfig, AgentToolConfig } from "@wf-agent/types";
 import { buildAgentHookEvaluationContext, convertToEvaluationContext } from "../context-builder.js";
 import { AgentLoopEntity } from "../../../../entities/agent-loop-entity.js";
-import { ConversationSession } from "../../../../../core/messaging/conversation-session.js";
+import { ConversationSession } from "../../../../../shared/messaging/conversation-session.js";
 import { AgentStateCoordinator } from "../../../../state-managers/agent-state-coordinator.js";
 
 describe("Agent Hook Context Builder", () => {

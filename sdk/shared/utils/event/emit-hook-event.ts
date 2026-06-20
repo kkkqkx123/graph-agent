@@ -6,7 +6,7 @@
  *
  * Usage:
  * ```typescript
- * import { emitHookEventSafe } from "../../core/utils/event/emit-hook-event.js";
+ * import { emitHookEventSafe } from '...*';
  *
  * await emitHookEventSafe(
  *   event,

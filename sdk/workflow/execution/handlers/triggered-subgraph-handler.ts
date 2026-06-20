@@ -17,7 +17,7 @@
 
 import type { ID, WorkflowExecutionResult } from "@wf-agent/types";
 import type { WorkflowExecutionEntity } from "../../entities/workflow-execution-entity.js";
-import type { EventRegistry } from "../../../core/registry/event-registry.js";
+import type { EventRegistry } from "../../../shared/registry/event-registry.js";
 import { now, diffTimestamp, getErrorMessage, getErrorOrNew } from "@wf-agent/common-utils";
 import { createSubgraphMetadata } from "./subgraph-handler.js";
 import type {
@@ -28,7 +28,7 @@ import {
   buildTriggeredSubgraphStartedEvent,
   buildTriggeredSubgraphCompletedEvent,
   buildTriggeredSubgraphFailedEvent,
-} from "../../../core/utils/event/builders/subgraph-events.js";
+} from "../../../shared/utils/event/builders/subgraph-events.js";
 
 /**
  * Sub-workflow Executor Interface

@@ -23,7 +23,7 @@ import {
   type AggregatedEventStat,
   type EventMetricsSummary,
   type EventMetricLabels,
-} from "../metrics/event-collector.js";
+} from "../../metrics/event-collector.js";
 
 const logger = createContextualLogger({ operation: "EventRegistry" });
 

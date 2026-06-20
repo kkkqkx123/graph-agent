@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { cleanupFailedSubworkflow } from "../subworkflow-cleanup.js";
 import type { WorkflowExecutionEntity } from "../../../entities/workflow-execution-entity.js";
-import type { ExecutionHierarchyRegistry } from "../../../../core/registry/execution-hierarchy-registry.js";
+import type { ExecutionHierarchyRegistry } from "../../../../shared/registry/execution-hierarchy-registry.js";
 
 // Mock the contextual logger
 vi.mock("../../../utils/contextual-logger.js", () => ({

@@ -11,7 +11,7 @@ import {
 import { CheckpointCoordinator } from "../../../../workflow/checkpoint/checkpoint-coordinator.js";
 import type { WorkflowExecution } from "@wf-agent/types";
 
-import type { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../../shared/shared/sdk-dependencies.js";
 import type { WorkflowExecutionRegistry } from "../../../../workflow/stores/workflow-execution-registry.js";
 
 /**

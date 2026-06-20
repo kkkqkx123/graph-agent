@@ -12,9 +12,9 @@ import type {
   AgentCheckpointListOptions,
 } from "@wf-agent/types";
 import type { AgentLoopCheckpoint } from "@wf-agent/types";
-import type { EventRegistry } from "../../core/registry/event-registry.js";
+import type { EventRegistry } from "../../shared/registry/event-registry.js";
 import type { CheckpointStorageAdapter as StorageAdapter } from "@wf-agent/storage";
-import { BaseCheckpointStateManager } from "../../core/checkpoint/base-checkpoint-state-manager.js";
+import { BaseCheckpointStateManager } from "../../shared/checkpoint/base-checkpoint-state-manager.js";
 import { generateId } from "../../utils/id-utils.js";
 
 /**

@@ -24,10 +24,10 @@ import type {
   StaticNode,
 } from "@wf-agent/types";
 import type { WorkflowExecutionEntity } from "../../../entities/workflow-execution-entity.js";
-import type { GlobalContext } from "../../../../core/global-context.js";
+import type { GlobalContext } from "../../../../shared/global-context.js";
 import { createContextualLogger } from "../../../../utils/contextual-logger.js";
 import { enterSubgraph, exitSubgraph } from "../subgraph-handler.js";
-import * as Identifiers from "../../../../core/di/service-identifiers.js";
+import * as Identifiers from "../../../../di/service-identifiers.js";
 import type { WorkflowExecutor } from "../../executors/workflow-executor.js";
 import type { WorkflowExecutionBuilder } from "../../factories/workflow-execution-builder.js";
 import { getErrorOrNew } from "@wf-agent/common-utils";

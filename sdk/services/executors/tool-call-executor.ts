@@ -17,7 +17,7 @@
  * - Streaming progress support (inspired by pi-agent-core)
  *
  * Location:
- * Located in sdk/core/execution/executors, serving as a general-purpose executor
+ * Located in s../shared/execution/executors, serving as a general-purpose executor
  * - Can be reused by modules such as Graph and Agent
  * - Graph-specific features are available through optional dependency injection
  */

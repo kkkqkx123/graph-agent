@@ -4,7 +4,7 @@
  */
 
 // Event Trigger Utility Function (re-exported from core/utils/event)
-export { emit } from "../../../core/utils/event/emit-event.js";
+export { emit } from "../../../shared/utils/event/emit-event.js";
 
 // Event Waiting Tool Function
 export {
@@ -54,7 +54,7 @@ export {
   CountBasedCleanupStrategy,
   SizeBasedCleanupStrategy,
   createCleanupStrategy,
-} from "../../../core/checkpoint/utils/cleanup-policy.js";
+} from "../../../shared/checkpoint/utils/cleanup-policy.js";
 
 // Workflow-Specific Interruption Utilities
 export {

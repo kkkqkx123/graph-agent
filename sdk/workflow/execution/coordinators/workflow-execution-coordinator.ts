@@ -5,11 +5,11 @@
 
 import type { WorkflowExecutionEntity } from "../../entities/workflow-execution-entity.js";
 import type { WorkflowExecutionResult, Condition, EvaluationContext } from "@wf-agent/types";
-import type { InterruptionState } from "../../../core/utils/interruption/interruption-state.js";
+import type { InterruptionState } from "../../../shared/utils/interruption/interruption-state.js";
 import type { NodeExecutionCoordinator } from "./node-execution-coordinator.js";
 import type { WorkflowNavigator } from "../../builder/workflow-navigator.js";
 import { conditionEvaluator } from "../../../services/evaluation/index.js";
-import { executeWithInterruptionHandling } from "../../../core/utils/interruption/index.js";
+import { executeWithInterruptionHandling } from "../../../shared/utils/interruption/index.js";
 import {
   toWorkflowInterruptionResult,
   type WorkflowInterruptionCheckResult,

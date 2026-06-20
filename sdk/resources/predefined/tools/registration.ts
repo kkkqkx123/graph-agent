@@ -4,7 +4,7 @@
  * Responsible for the registration and deregistration of predefined tools.
  */
 
-import type { ToolRegistry } from "@sdk/core/registry/tool-registry.js";
+import type { ToolRegistry } from "@sdk/shared/registry/tool-registry.js";
 import { createContextualLogger } from "@sdk/utils/contextual-logger.js";
 import { createPredefinedTools } from "./registry.js";
 import { toSdkTool } from "@sdk/services/tools/utils.js";

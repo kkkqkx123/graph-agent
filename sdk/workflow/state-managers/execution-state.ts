@@ -7,7 +7,7 @@
 import type { ID } from "@wf-agent/types";
 import { now } from "@wf-agent/common-utils";
 import { RuntimeValidationError } from "@wf-agent/types";
-import type { StateManager } from "../../core/types/state-manager.js";
+import type { StateManager } from "../../shared/types/state-manager.js";
 
 /**
  * Subgraph execution context

@@ -5,8 +5,8 @@
  * These extend the core interruption types with workflow-specific context.
  */
 
-import { InterruptedException } from "../../../core/types/interruption-types.js";
-import type { InterruptionType } from "../../../core/types/interruption-types.js";
+import { InterruptedException } from "../../../shared/types/interruption-types.js";
+import type { InterruptionType } from "../../../shared/types/interruption-types.js";
 
 /**
  * Workflow Execution Interrupt Exception

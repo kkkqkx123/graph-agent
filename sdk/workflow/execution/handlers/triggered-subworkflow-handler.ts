@@ -17,7 +17,7 @@
 
 import type { WorkflowExecutionEntity } from "../../entities/index.js";
 import type { WorkflowStateCoordinator } from "../../state-managers/workflow-state-coordinator.js";
-import type { ConversationSession } from "../../../core/messaging/conversation-session.js";
+import type { ConversationSession } from "../../../shared/messaging/conversation-session.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "TriggeredSubworkflowHandler" });
@@ -31,7 +31,7 @@ import { TaskRegistry, type TaskManager } from "../../stores/task/task-registry.
 import type { WorkflowExecutionPool } from "../workflow-execution-pool.js";
 import { TaskQueue } from "../../stores/task/task-queue.js";
 import { AsyncCompletionManager } from "../../state-managers/async-completion-manager.js";
-import type { EventRegistry } from "../../../core/registry/event-registry.js";
+import type { EventRegistry } from "../../../shared/registry/event-registry.js";
 import type { IAgentExecutionRegistry } from "../../../agent/stores/agent-execution-registry.js";
 import {
   type TriggeredSubworkflowTask,
@@ -39,14 +39,14 @@ import {
   type TaskSubmissionResult,
   type ResolvedDataSource,
 } from "../types/triggered-subworkflow.types.js";
-import { emit } from "../../../core/utils/event/emit-event.js";
+import { emit } from "../../../shared/utils/event/emit-event.js";
 import {
   buildTriggeredSubgraphStartedEvent,
   buildTriggeredSubgraphCompletedEvent,
   buildTriggeredSubgraphFailedEvent,
-} from "../../../core/utils/event/builders/index.js";
+} from "../../../shared/utils/event/builders/index.js";
 import { RuntimeValidationError, SDKError } from "@wf-agent/types";
-import { logError, emitErrorEvent } from "../../../core/utils/error-utils.js";
+import { logError, emitErrorEvent } from "../../../shared/utils/error-utils.js";
 import { cleanupChildExecution } from "../utils/child-execution-cleanup.js";
 
 /**

@@ -36,7 +36,7 @@ vi.mock("@wf-agent/common-utils", async importOriginal => {
   };
 });
 
-vi.mock("../../../core/messaging/conversation-session.js", () => ({
+vi.mock("../../../shared/messaging/conversation-session.js", () => ({
   ConversationSession: class MockConversationSession {
     getAllMessages = vi.fn().mockReturnValue([]);
     getMarkMap = vi.fn().mockReturnValue({

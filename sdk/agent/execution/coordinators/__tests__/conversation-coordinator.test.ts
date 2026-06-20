@@ -10,7 +10,7 @@
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import type { AgentLoopRegistry } from "../../../stores/agent-loop-registry.js";
-import type { ConversationSession } from "../../../../core/messaging/conversation-session.js";
+import type { ConversationSession } from "../../../../shared/messaging/conversation-session.js";
 import { ConversationCoordinator } from "../conversation-coordinator.js";
 
 describe("ConversationCoordinator", () => {

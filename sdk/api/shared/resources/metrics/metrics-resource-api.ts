@@ -11,10 +11,10 @@
  * - Exports metrics in multiple formats (JSON, Prometheus)
  */
 
-import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
-import type { MetricsRegistry } from "../../../../core/metrics/metrics-registry.js";
-import type { MetricReport } from "../../../../core/metrics/types.js";
-import { PrometheusFormatter } from "../../../../core/metrics/utils/prometheus-formatter.js";
+import type { APIDependencyManager } from "../../shared/sdk-dependencies.js";
+import type { MetricsRegistry } from "../../../../metrics/metrics-registry.js";
+import type { MetricReport } from "../../../../metrics/types.js";
+import { PrometheusFormatter } from "../../../../metrics/utils/prometheus-formatter.js";
 import { createContextualLogger } from "../../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "MetricsResourceAPI" });

@@ -58,13 +58,13 @@ export {
 } from "./shared/types/execution-options.js";
 
 // Two-Layer Architecture SDK Exports
-export { createSDK } from "./shared/core/sdk.js";
+export { createSDK } from "./shared/shared/sdk.js";
 
 // SDK Instance Type
-export type { SDKInstance } from "./shared/core/sdk-instance.js";
+export type { SDKInstance } from "./shared/shared/sdk-instance.js";
 
 // Global Context exports (for advanced use cases)
-export type { GlobalContext } from "../core/global-context.js";
+export type { GlobalContext } from "../shared/global-context.js";
 
 // SDK Types
 export type {
@@ -74,7 +74,7 @@ export type {
 } from "./shared/types/core-types.js";
 
 // API Factory
-export { APIFactory, type AllAPIs } from "./shared/core/api-factory.js";
+export { APIFactory, type AllAPIs } from "./shared/shared/api-factory.js";
 
 // ============================================================================
 // Shared - Resource Management API (CRUD Operations) - Shared Resources
@@ -244,13 +244,13 @@ export { TriggerTemplateBuilder } from "./workflow/builders/trigger-template-bui
 // ============================================================================
 export { WorkflowValidator as WorkflowValidatorAPI } from "../workflow/validation/index.js";
 export { CodeConfigValidator as CodeConfigValidatorAPI } from "../workflow/validation/script-config-validator.js";
-export { StaticValidator as StaticValidatorAPI } from "../core/validation/index.js";
-export { StaticValidator } from "../core/validation/index.js";
-export { RuntimeValidator as RuntimeValidatorAPI } from "../core/validation/index.js";
+export { StaticValidator as StaticValidatorAPI } from "../shared/validation/index.js";
+export { StaticValidator } from "../shared/validation/index.js";
+export { RuntimeValidator as RuntimeValidatorAPI } from "../shared/validation/index.js";
 export {
   validateHook as validateHookAPI,
   validateHooks as validateHooksAPI,
-} from "../core/validation/index.js";
+} from "../shared/validation/index.js";
 export {
   validateTriggerCondition as validateTriggerConditionAPI,
   validateExecuteTriggeredSubworkflowActionConfig as validateExecuteTriggeredSubworkflowActionConfigAPI,
@@ -258,7 +258,7 @@ export {
   validateWorkflowTrigger as validateWorkflowTriggerAPI,
   validateTriggerReference as validateTriggerReferenceAPI,
   validateTriggers as validateTriggersAPI,
-} from "../core/validation/index.js";
+} from "../shared/validation/index.js";
 
 // ============================================================================
 // Shared - Commands (LLM, Tool, Script)
@@ -490,4 +490,4 @@ export type {
 // ============================================================================
 // Core - Coordinators
 // ============================================================================
-export { ToolApprovalCoordinator, LLMExecutionCoordinator } from "../core/coordinators/index.js";
+export { ToolApprovalCoordinator, LLMExecutionCoordinator } from "../shared/coordinators/index.js";

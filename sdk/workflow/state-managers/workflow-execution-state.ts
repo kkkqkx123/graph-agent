@@ -8,7 +8,7 @@
 import { now } from "@wf-agent/common-utils";
 import type { WorkflowExecutionStatus } from "@wf-agent/types";
 import { RuntimeValidationError } from "@wf-agent/types";
-import type { StateManager } from "../../core/types/state-manager.js";
+import type { StateManager } from "../../shared/types/state-manager.js";
 
 /**
  * Operation-level execution state

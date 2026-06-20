@@ -29,7 +29,7 @@ import {
   type AgentLoopStreamEvent,
 } from "../../../agent/execution/executors/agent-loop-executor.js";
 import { AgentLoopEntity } from "../../../agent/entities/agent-loop-entity.js";
-import { ConversationSession } from "../../../core/messaging/conversation-session.js";
+import { ConversationSession } from "../../../shared/messaging/conversation-session.js";
 import { AgentStateCoordinator } from "../../../agent/state-managers/agent-state-coordinator.js";
 
 /**

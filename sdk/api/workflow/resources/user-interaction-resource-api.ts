@@ -30,7 +30,7 @@ import type {
 } from "@wf-agent/types";
 import { ConfigurationError } from "@wf-agent/types";
 import type { ToolApprovalRequestedEvent, FollowupQuestionRequestedEvent } from "@wf-agent/types";
-import type { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../shared/shared/sdk-dependencies.js";
 
 /**
  * User Interaction Configuration

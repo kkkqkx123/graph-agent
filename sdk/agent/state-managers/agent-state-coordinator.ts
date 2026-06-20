@@ -19,7 +19,7 @@ import {
   BaseStateCoordinator,
   type StateCoordinatorSnapshot,
   type BaseStateCoordinatorConfig,
-} from "../../core/messaging/base-state-coordinator.js";
+} from "../../shared/messaging/base-state-coordinator.js";
 
 /**
  * Agent State Snapshot

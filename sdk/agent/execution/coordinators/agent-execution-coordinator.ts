@@ -14,12 +14,12 @@
 
 import type { AgentLoopResult, AgentStreamEvent, ToolSchema, LLMMessage } from "@wf-agent/types";
 import type { AgentLoopEntity } from "../../entities/agent-loop-entity.js";
-import type { ConversationSession } from "../../../core/messaging/conversation-session.js";
-import type { MetricsRegistry } from "../../../core/metrics/metrics-registry.js";
+import type { ConversationSession } from "../../../shared/messaging/conversation-session.js";
+import type { MetricsRegistry } from "../../../metrics/metrics-registry.js";
 import {
   executeWithInterruptionHandling,
   iterateWithInterruptionHandling,
-} from "../../../core/utils/interruption/index.js";
+} from "../../../shared/utils/interruption/index.js";
 import { handleAgentError } from "../handlers/agent-error-handler.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
 import {

@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
-import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../shared/sdk-dependencies.js";
 import {
   createOnEventSubscription,
   createOnceEventSubscription,
@@ -12,7 +12,7 @@ import {
   OnEventSubscription,
   OnceEventSubscription,
 } from "../subscription.js";
-import type { EventRegistry } from "../../../../core/registry/event-registry.js";
+import type { EventRegistry } from "../../../../shared/registry/event-registry.js";
 import type { BaseEvent } from "@wf-agent/types";
 
 describe("Subscription Factories", () => {

@@ -17,10 +17,10 @@ import {
   waitForNodeFailed,
   WAIT_FOREVER,
 } from "../event-waiter.js";
-import type { EventRegistry } from "../../../../../core/registry/event-registry.js";
+import type { EventRegistry } from "../../../../../shared/registry/event-registry.js";
 
 // Mock the timeout utilities
-vi.mock("../../../../core/utils/timeout/timeout-utils.js", () => ({
+vi.mock("../../../../shared/utils/timeout/timeout-utils.js", () => ({
   executeWithSharedTimeout: vi.fn(async (config, _timeout, _options) => {
     // Simulate shared timeout execution
     await config.wait();

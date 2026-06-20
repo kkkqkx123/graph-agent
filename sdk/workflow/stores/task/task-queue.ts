@@ -16,7 +16,7 @@
 import { WorkflowExecutor } from "../../execution/executors/workflow-executor.js";
 import { TaskRegistry } from "./task-registry.js";
 import { WorkflowExecutionPool } from "../../execution/workflow-execution-pool.js";
-import type { EventRegistry } from "../../../core/registry/event-registry.js";
+import type { EventRegistry } from "../../../shared/registry/event-registry.js";
 import type { WorkflowExecutionEntity } from "../../entities/index.js";
 import type { WorkflowExecutionResult } from "@wf-agent/types";
 import {
@@ -24,15 +24,15 @@ import {
   type ExecutedSubworkflowResult,
   type TaskSubmissionResult,
 } from "../../execution/types/triggered-subworkflow.types.js";
-import type { QueueStats } from "../../../core/types/index.js";
+import type { QueueStats } from "../../../shared/types/index.js";
 import { now, diffTimestamp, getErrorOrNew } from "@wf-agent/common-utils";
-import { emit } from "../../../core/utils/event/emit-event.js";
+import { emit } from "../../../shared/utils/event/emit-event.js";
 import {
   buildTriggeredSubgraphCompletedEvent,
   buildTriggeredSubgraphFailedEvent,
-} from "../../../core/utils/event/builders/index.js";
+} from "../../../shared/utils/event/builders/index.js";
 import { SDKError } from "@wf-agent/types";
-import { logError, emitErrorEvent } from "../../../core/utils/error-utils.js";
+import { logError, emitErrorEvent } from "../../../shared/utils/error-utils.js";
 
 /**
  * TaskQueue - Task Queue Manager

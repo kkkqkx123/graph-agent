@@ -4,10 +4,10 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ToolVisibilityMessageBuilder } from "../tool-visibility-message-builder.js";
-import type { ToolRegistry } from "../../../../core/registry/tool-registry.js";
+import type { ToolRegistry } from "../../../../shared/registry/tool-registry.js";
 
 // Mock the template renderer
-vi.mock("../../../core/utils/template-renderer/index.js", () => ({
+vi.mock("../../../shared/utils/template-renderer/index.js", () => ({
   renderTemplate: vi.fn((template: string, params: Record<string, string>) => {
     // Simple template rendering for testing
     return template

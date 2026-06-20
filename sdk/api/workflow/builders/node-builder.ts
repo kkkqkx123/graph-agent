@@ -7,7 +7,7 @@ import type { StaticNode, StaticNodeType } from "@wf-agent/types";
 import { NodeTemplateNotFoundError, ConfigurationValidationError } from "@wf-agent/types";
 import { generateId } from "../../../utils/id-utils.js";
 import { BaseBuilder } from "../../shared/base-builder.js";
-import type { GlobalContext } from "../../../core/global-context.js";
+import type { GlobalContext } from "../../../shared/global-context.js";
 
 /**
  * NodeBuilder - node builder

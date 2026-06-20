@@ -8,7 +8,7 @@ import { ScriptNodeConfigSchema } from "@wf-agent/types";
 import type { Result } from "@wf-agent/types";
 import { ConfigurationValidationError } from "@wf-agent/types";
 import { ok } from "@wf-agent/common-utils";
-import { validateNodeType, validateNodeConfig } from "../../../core/validation/utils.js";
+import { validateNodeType, validateNodeConfig } from "../../../shared/validation/utils.js";
 
 /**
  * Verify Code node configuration

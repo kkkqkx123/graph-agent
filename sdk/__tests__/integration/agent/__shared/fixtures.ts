@@ -15,16 +15,16 @@ import { AgentLoopRegistry } from "@/agent/stores/agent-loop-registry.js";
 import { AgentLoopCoordinator } from "@/agent/execution/coordinators/agent-loop-coordinator.js";
 import { MemoryAgentLoopStorage } from "@wf-agent/storage";
 import { MockLLMService } from "../../__shared/mock-llm-service.js";
-import * as Identifiers from "@/core/di/service-identifiers.js";
-import { InterruptionState } from "@/core/utils/interruption/interruption-state.js";
+import * as Identifiers from "@/di/service-identifiers.js";
+import { InterruptionState } from "@/shared/utils/interruption/interruption-state.js";
 import type { ExecutionDomainContext } from "@wf-agent/types";
 
 // Full-chain dependencies
 import { MockLLMWrapper } from "./mock-llm-wrapper.js";
-import { LLMExecutor } from "@/core/executors/llm-executor.js";
-import { ToolRegistry } from "@/core/registry/tool-registry.js";
+import { LLMExecutor } from "@/services/executors/llm-executor.js";
+import { ToolRegistry } from "@/shared/registry/tool-registry.js";
 import { AgentLoopExecutor } from "@/agent/execution/executors/agent-loop-executor.js";
-import type { EventRegistry } from "@/core/registry/event-registry.js";
+import type { EventRegistry } from "@/shared/registry/event-registry.js";
 
 // =============================================================================
 // Constants

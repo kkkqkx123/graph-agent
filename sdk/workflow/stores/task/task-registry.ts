@@ -30,10 +30,10 @@ import {
   isWorkflowExecutionInstance,
   hasLoadedInstance,
   isStoredTaskInfo,
-} from "../../../core/types/index.js";
+} from "../../../shared/types/index.js";
 import type { TaskStorageAdapter } from "@wf-agent/storage";
 import { ErrorCodec, StateCodec } from "@wf-agent/common-utils";
-import { type TaskSnapshot, TaskSerializationUtils } from "../../../core/types/index.js";
+import { type TaskSnapshot, TaskSerializationUtils } from "../../../shared/types/index.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "TaskRegistry" });

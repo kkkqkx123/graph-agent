@@ -200,7 +200,7 @@ describe("ProtectController", () => {
 
     it("should handle paths in subdirectories for protected files", () => {
       // Deeply nested package.json should still be matched
-      expect(controller.isWriteProtected("packages/core/package.json")).toBe(true);
+      expect(controller.isWriteProtected("packages/shared/package.json")).toBe(true);
     });
 
     it("should handle paths in subdirectories for .env files", () => {

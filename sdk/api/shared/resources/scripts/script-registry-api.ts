@@ -12,7 +12,7 @@ import {
 import type { Script } from "@wf-agent/types";
 import { NotFoundError } from "@wf-agent/types";
 import { CrudResourceAPI } from "../generic-resource-api.js";
-import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../shared/sdk-dependencies.js";
 import type { ScriptFilter } from "../../types/code-types.js";
 
 /**

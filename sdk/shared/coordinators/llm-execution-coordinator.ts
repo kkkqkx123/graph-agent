@@ -35,13 +35,13 @@ import {
 } from "../utils/interruption/index.js";
 import type { ExecutionInterruptionCheckResult } from "../utils/interruption/index.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
-import { LLMExecutor, type LLMExecutionResult } from "../executors/llm-executor.js";
-import { LLMWrapper } from "../llm/wrapper.js";
-import { ToolCallExecutor } from "../executors/tool-call-executor.js";
+import { LLMExecutor, type LLMExecutionResult } from "../../services/executors/llm-executor.js";
+import { LLMWrapper } from "../../services/llm/wrapper.js";
+import { ToolCallExecutor } from "../../services/executors/tool-call-executor.js";
 import { prepareToolSchemasFromTools } from "../utils/tools/tool-schema-helper.js";
 import type { EventRegistry } from "../registry/event-registry.js";
-import type { TokenMetricsCollector } from "../metrics/token-collector.js";
-import type { MessageStream } from "../llm/message-stream.js";
+import type { TokenMetricsCollector } from "../../metrics/token-collector.js";
+import type { MessageStream } from "../../services/llm/message-stream.js";
 import {
   buildMessageAddedEvent,
   buildTokenUsageWarningEvent,

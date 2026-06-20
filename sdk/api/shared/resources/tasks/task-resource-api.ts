@@ -10,8 +10,8 @@
  */
 
 import { CrudResourceAPI } from "../generic-resource-api.js";
-import type { TaskStatus, TaskInfo } from "../../../../core/types/index.js";
-import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
+import type { TaskStatus, TaskInfo } from "../../../../shared/types/index.js";
+import type { APIDependencyManager } from "../../shared/sdk-dependencies.js";
 import { createContextualLogger } from "../../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ operation: "TaskResourceAPI" });

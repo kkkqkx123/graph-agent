@@ -9,12 +9,12 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import type { EventRegistry } from "../../../../core/registry/event-registry.js";
+import type { EventRegistry } from "../../../../shared/registry/event-registry.js";
 import type { AgentLoopResult } from "@wf-agent/types";
 import { AgentLoopStateTransitor } from "../agent-loop-state-transitor.js";
 
 // Mock event builders
-vi.mock("../../../../core/utils/event/builders/agent-events.js", () => ({
+vi.mock("../../../../shared/utils/event/builders/agent-events.js", () => ({
   buildAgentStartedEvent: vi.fn(() => ({ type: "AGENT_STARTED", agentLoopId: "test-id" })),
   buildAgentCompletedEvent: vi.fn(() => ({ type: "AGENT_COMPLETED", agentLoopId: "test-id" })),
   buildAgentPausedEvent: vi.fn(() => ({ type: "AGENT_PAUSED", agentLoopId: "test-id" })),
@@ -24,7 +24,7 @@ vi.mock("../../../../core/utils/event/builders/agent-events.js", () => ({
 }));
 
 // Mock event emitter - delegate to eventManager so assertions on eventManager.emit work
-vi.mock("../../../../core/utils/event/emit-event.js", () => ({
+vi.mock("../../../../shared/utils/event/emit-event.js", () => ({
   emit: vi.fn(async (eventManager, event) => {
     if (eventManager) {
       await eventManager.emit(event);

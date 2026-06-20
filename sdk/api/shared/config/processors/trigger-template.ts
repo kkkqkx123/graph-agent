@@ -7,7 +7,7 @@
 import type { ParsedConfig } from "../types.js";
 import type { Result } from "@wf-agent/types";
 import { ValidationError } from "@wf-agent/types";
-import { validateWorkflowTrigger } from "../../../../core/validation/trigger-validator.js";
+import { validateWorkflowTrigger } from "../../../../shared/validation/trigger-validator.js";
 import { ok, err } from "@wf-agent/common-utils";
 import type { TriggerTemplate } from "@wf-agent/types";
 import { substituteParameters } from "../config-utils.js";

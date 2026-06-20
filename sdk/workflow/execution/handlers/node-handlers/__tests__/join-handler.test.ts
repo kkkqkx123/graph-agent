@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { joinHandler } from "../join-handler.js";
 import type { WorkflowExecutionEntity } from "../../../../entities/workflow-execution-entity.js";
 import type { RuntimeNode, JoinNodeConfig } from "@wf-agent/types";
-import type { GlobalContext } from "../../../../../core/global-context.js";
-import * as Identifiers from "../../../../../core/di/service-identifiers.js";
+import type { GlobalContext } from "../../../../../shared/global-context.js";
+import * as Identifiers from "../../../../../di/service-identifiers.js";
 
 const mockGlobalContext = {
   container: {

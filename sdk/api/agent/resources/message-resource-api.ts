@@ -10,7 +10,7 @@
 import { ReadonlyResourceAPI } from "../../shared/resources/generic-resource-api.js";
 import type { LLMMessage, ID } from "@wf-agent/types";
 import type { AgentLoopRegistry } from "../../../agent/stores/agent-loop-registry.js";
-import type { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../shared/shared/sdk-dependencies.js";
 
 /**
  * message filter

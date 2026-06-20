@@ -22,11 +22,11 @@ import type {
   CheckpointErrorContext,
 } from "@wf-agent/types";
 import { AgentCheckpointError, CURRENT_CHECKPOINT_FORMAT_VERSION } from "@wf-agent/types";
-import { BaseCheckpointCoordinator } from "../../core/checkpoint/base-checkpoint-coordinator.js";
-import type { CheckpointDependencies as BaseCheckpointDependencies } from "../../core/checkpoint/types.js";
-import { CheckpointVersionManager } from "../../core/checkpoint/checkpoint-version-manager.js";
-import { CheckpointErrorHandler } from "../../core/checkpoint/checkpoint-error-handler.js";
-import { buildCheckpointMetadata } from "../../core/checkpoint/utils/metadata-builder.js";
+import { BaseCheckpointCoordinator } from "../../shared/checkpoint/base-checkpoint-coordinator.js";
+import type { CheckpointDependencies as BaseCheckpointDependencies } from "../../shared/checkpoint/types.js";
+import { CheckpointVersionManager } from "../../shared/checkpoint/checkpoint-version-manager.js";
+import { CheckpointErrorHandler } from "../../shared/checkpoint/checkpoint-error-handler.js";
+import { buildCheckpointMetadata } from "../../shared/checkpoint/utils/metadata-builder.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
 import type { FileCheckpointManager } from "@wf-agent/common-utils";
 

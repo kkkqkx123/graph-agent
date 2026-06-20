@@ -5,11 +5,11 @@ import {
 } from "../workflow-execution-builder.js";
 import { ExecutionError, RuntimeValidationError } from "@wf-agent/types";
 import type { WorkflowGraph } from "../../../types/graph/preprocessed-graph.js";
-import type { GlobalContext } from "../../../../core/global-context.js";
+import type { GlobalContext } from "../../../../shared/global-context.js";
 import type { WorkflowRegistry } from "../../../stores/workflow-registry.js";
 import type { WorkflowGraphRegistry } from "../../../stores/workflow-graph-registry.js";
-import type { EventRegistry } from "../../../../core/registry/event-registry.js";
-import type { ExecutionHierarchyRegistry } from "../../../../core/registry/execution-hierarchy-registry.js";
+import type { EventRegistry } from "../../../../shared/registry/event-registry.js";
+import type { ExecutionHierarchyRegistry } from "../../../../shared/registry/execution-hierarchy-registry.js";
 
 // Mock types for testing
 interface MockGlobalContext extends GlobalContext {

@@ -5,7 +5,7 @@
  */
 
 import { now } from "@wf-agent/common-utils";
-import { ProfileManager } from "../../../../core/llm/profile-manager.js";
+import { ProfileManager } from "../../../../services/llm/profile-manager.js";
 import type { LLMProfile, LLMProvider } from "@wf-agent/types";
 import {
   ValidationError,

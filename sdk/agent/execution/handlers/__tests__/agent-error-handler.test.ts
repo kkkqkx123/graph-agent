@@ -7,8 +7,8 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { AgentLoopEntity } from "../../../entities/agent-loop-entity.js";
-import type { EventRegistry } from "../../../../core/registry/event-registry.js";
-import type { ExecutionInterruptionCheckResult } from "../../../../core/utils/interruption/index.js";
+import type { EventRegistry } from "../../../../shared/registry/event-registry.js";
+import type { ExecutionInterruptionCheckResult } from "../../../../shared/utils/interruption/index.js";
 import { SDKError as SDKErrorClass } from "@wf-agent/types";
 
 // Mock external dependencies
@@ -21,7 +21,7 @@ vi.mock("../../../../utils/contextual-logger.js", () => ({
   }),
 }));
 
-vi.mock("../../../../core/utils/error-utils.js", () => ({
+vi.mock("../../../../shared/utils/error-utils.js", () => ({
   handleError: vi.fn().mockResolvedValue(undefined),
   handleErrorWithContext: vi.fn().mockResolvedValue({}),
   logError: vi.fn(),
@@ -29,7 +29,7 @@ vi.mock("../../../../core/utils/error-utils.js", () => ({
 }));
 
 // Mock emit to forward calls to eventManager.emit for verification
-vi.mock("../../../../core/utils/event/emit-event.js", () => ({
+vi.mock("../../../../shared/utils/event/emit-event.js", () => ({
   emit: vi.fn(async (eventManager: any, event: any) => {
     if (eventManager) {
       await eventManager.emit(event);

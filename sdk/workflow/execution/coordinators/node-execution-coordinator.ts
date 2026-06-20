@@ -23,25 +23,25 @@ import type {
   CheckpointConfig,
   UserInteractionHandler,
 } from "@wf-agent/types";
-import type { EventRegistry } from "../../../core/registry/event-registry.js";
-import type { ConversationSession } from "../../../core/messaging/conversation-session.js";
-import type { GlobalContext } from "../../../core/global-context.js";
-import type { InterruptionState } from "../../../core/utils/interruption/interruption-state.js";
+import type { EventRegistry } from "../../../shared/registry/event-registry.js";
+import type { ConversationSession } from "../../../shared/messaging/conversation-session.js";
+import type { GlobalContext } from "../../../shared/global-context.js";
+import type { InterruptionState } from "../../../shared/utils/interruption/interruption-state.js";
 import type { WorkflowExecutionRegistry } from "../../stores/workflow-execution-registry.js";
-import type { ToolRegistry } from "../../../core/registry/tool-registry.js";
-import type { LLMWrapper } from "../../../core/llm/wrapper.js";
+import type { ToolRegistry } from "../../../shared/registry/tool-registry.js";
+import type { LLMWrapper } from "../../../services/llm/wrapper.js";
 import type { WorkflowExecutionBuilder } from "../factories/workflow-execution-builder.js";
 import type { WorkflowExecutor } from "../executors/workflow-executor.js";
-import type { ToolPermissionManager } from "../../../core/coordinators/tool-permission-manager.js";
-import type { RejectionMessageBuilder } from "../../../core/coordinators/rejection-message-builder.js";
+import type { ToolPermissionManager } from "../../../shared/coordinators/tool-permission-manager.js";
+import type { RejectionMessageBuilder } from "../../../shared/coordinators/rejection-message-builder.js";
 import { LLMExecutionCoordinator } from "./llm-execution-coordinator.js";
 import type { InputProvider } from "./script-interaction-coordinator.js";
 import { SDKError } from "@wf-agent/types";
 
 import { executeHook } from "../handlers/hook-handlers/hook-handler.js";
-import { handleErrorWithContext } from "../../../core/utils/error-utils.js";
+import { handleErrorWithContext } from "../../../shared/utils/error-utils.js";
 import { now, diffTimestamp, getErrorOrNew } from "@wf-agent/common-utils";
-import { emit } from "../../../core/utils/event/emit-event.js";
+import { emit } from "../../../shared/utils/event/emit-event.js";
 import { getNodeHandler } from "../handlers/node-handlers/index.js";
 import type { CheckpointDependencies } from "../../checkpoint/checkpoint-coordinator.js";
 import { CheckpointCoordinator } from "../../checkpoint/checkpoint-coordinator.js";
@@ -55,16 +55,16 @@ import {
   buildNodeStartedEvent,
   buildNodeCompletedEvent,
   buildNodeFailedEvent,
-} from "../../../core/utils/event/builders/index.js";
+} from "../../../shared/utils/event/builders/index.js";
 import type { InterruptionDetector } from "../interruption-detector.js";
-import { executeWithInterruptionHandling } from "../../../core/utils/interruption/index.js";
+import { executeWithInterruptionHandling } from "../../../shared/utils/interruption/index.js";
 import {
   getWorkflowInterruptionDescription,
   toWorkflowInterruptionResult,
 } from "../utils/workflow-interruption-utils.js";
 import { NodeHandlerContextFactory } from "../factories/node-handler-context-factory.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
-import type { MetricsRegistry } from "../../../core/metrics/metrics-registry.js";
+import type { MetricsRegistry } from "../../../metrics/metrics-registry.js";
 
 const logger = createContextualLogger({ operation: "node-execution-coordinator" });
 

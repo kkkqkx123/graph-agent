@@ -13,27 +13,27 @@ import type {
   AgentLoopCheckpointConfigContext,
   CheckpointErrorStrategy,
 } from "@wf-agent/types";
-import type { EventRegistry } from "../../../core/registry/event-registry.js";
+import type { EventRegistry } from "../../../shared/registry/event-registry.js";
 import { AgentLoopEntity } from "../../entities/agent-loop-entity.js";
 import { AgentLoopStatus } from "@wf-agent/types";
 import { AgentLoopFactory, type AgentLoopEntityOptions } from "../../execution/factories/index.js";
 import { AgentLoopRegistry } from "../../stores/agent-loop-registry.js";
 import { AgentLoopExecutor, type AgentLoopStreamEvent } from "../executors/agent-loop-executor.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
-import type { GlobalContext } from "../../../core/global-context.js";
+import type { GlobalContext } from "../../../shared/global-context.js";
 import { AgentLoopStateTransitor } from "./agent-loop-state-transitor.js";
-import type { AgentLoopMetricsCollector } from "../../../core/metrics/agent-loop-collector.js";
+import type { AgentLoopMetricsCollector } from "../../../metrics/agent-loop-collector.js";
 import { now } from "@wf-agent/common-utils";
-import * as Identifiers from "../../../core/di/service-identifiers.js";
-import type { InterruptionStateFactory } from "../../../core/di/factory-types.js";
-import type { InterruptionState } from "../../../core/utils/interruption/interruption-state.js";
+import * as Identifiers from "../../../di/service-identifiers.js";
+import type { InterruptionStateFactory } from "../../../di/factory-types.js";
+import type { InterruptionState } from "../../../shared/utils/interruption/interruption-state.js";
 import type { AgentStateCoordinator } from "../../state-managers/agent-state-coordinator.js";
 import { AgentLoopCheckpointCoordinator, type CheckpointDependencies } from "../../../agent/checkpoint/checkpoint-coordinator.js";
 import type { AgentCheckpointPolicy, AgentCheckpointTrigger } from "../../../agent/checkpoint/agent-checkpoint-policy.js";
 import { DEFAULT_AGENT_CHECKPOINT_POLICY } from "../../../agent/checkpoint/agent-checkpoint-policy.js";
 import { buildAgentCheckpointLayers, resolveAgentCheckpointConfig, getAgentCheckpointContentConfig } from "../../checkpoint/utils/config-resolver.js";
-import { CheckpointErrorHandler } from "../../../core/checkpoint/checkpoint-error-handler.js";
-import { CheckpointMetricsCollector } from "../../../core/checkpoint/checkpoint-metrics-collector.js";
+import { CheckpointErrorHandler } from "../../../shared/checkpoint/checkpoint-error-handler.js";
+import { CheckpointMetricsCollector } from "../../../shared/checkpoint/checkpoint-metrics-collector.js";
 import type { CheckpointMetricsEvent, CheckpointErrorContext, CheckpointCreationMetrics } from "@wf-agent/types";
 
 const logger = createContextualLogger({ component: "AgentLoopCoordinator" });

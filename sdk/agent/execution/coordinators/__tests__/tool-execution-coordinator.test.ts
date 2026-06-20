@@ -10,8 +10,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import type { ToolCallExecutor } from "../../../../core/executors/tool-call-executor.js";
-import type { EventRegistry } from "../../../../core/registry/event-registry.js";
+import type { ToolCallExecutor } from "../../../../services/executors/tool-call-executor.js";
+import type { EventRegistry } from "../../../../shared/registry/event-registry.js";
 import type { ToolApprovalHandler, ToolBatchResult } from "@wf-agent/types";
 import type { AgentStateCoordinator } from "../../../state-managers/agent-state-coordinator.js";
 import { ToolExecutionCoordinator } from "../tool-execution-coordinator.js";
@@ -23,7 +23,7 @@ vi.mock("../../handlers/hook-handlers/index.js", () => ({
 
 // Mock ToolApprovalCoordinator with class to support `new` keyword
 const mockProcessToolBatch = vi.hoisted(() => vi.fn());
-vi.mock("../../../../core/coordinators/tool-approval-coordinator.js", () => {
+vi.mock("../../../../shared/coordinators/tool-approval-coordinator.js", () => {
   return {
     ToolApprovalCoordinator: class {
       processToolBatch = mockProcessToolBatch;

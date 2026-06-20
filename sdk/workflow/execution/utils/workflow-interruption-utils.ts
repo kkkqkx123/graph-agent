@@ -6,17 +6,17 @@
  * type to eliminate type duplication between Agent and Workflow layers.
  *
  * Design Principle:
- * - All core logic delegates to sdk/core/utils/interruption/
+ * - All core logic delegates to sdk/shared/utils/interruption/
  * - Workflow adds only the nodeId context extraction
  * - Type aliases kept for backward compatibility
  */
 
-import type { InterruptionType } from "../../../core/types/interruption-types.js";
+import type { InterruptionType } from "../../../shared/types/interruption-types.js";
 import {
   checkExecutionInterruption as baseCheckInterruption,
   getExecutionInterruptionDescription as baseGetDescription,
   type ExecutionInterruptionCheckResult,
-} from "../../../core/utils/interruption/index.js";
+} from "../../../shared/utils/interruption/index.js";
 import { WorkflowExecutionInterruptedException } from "../types/workflow-interruption-types.js";
 
 /**

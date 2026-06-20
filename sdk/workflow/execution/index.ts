@@ -39,12 +39,12 @@ export {
   ConversationSession,
   type ConversationState,
   type ConversationSessionConfig,
-} from "../../core/messaging/conversation-session.js";
+} from "../../shared/messaging/conversation-session.js";
 export {
   TokenUsageTracker,
   type TokenUsageTrackerOptions,
   type FullTokenUsageStats,
-} from "../../core/utils/token/token-usage-tracker.js";
+} from "../../shared/utils/token/token-usage-tracker.js";
 export type { TokenUsageStats } from "@wf-agent/types";
 
 // Hook handling function

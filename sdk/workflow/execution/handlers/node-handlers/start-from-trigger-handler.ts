@@ -12,7 +12,7 @@ import type {
 } from "@wf-agent/types";
 import type { WorkflowExecutionEntity } from "../../../entities/workflow-execution-entity.js";
 import { now } from "@wf-agent/common-utils";
-import type { ConversationSession } from "../../../../core/messaging/conversation-session.js";
+import type { ConversationSession } from "../../../../shared/messaging/conversation-session.js";
 
 /**
  * StartFromTrigger handler context

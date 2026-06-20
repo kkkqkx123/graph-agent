@@ -9,7 +9,7 @@ import {
   validationFailure,
 } from "../types/command.js";
 import type { LLMRequest, LLMResult } from "@wf-agent/types";
-import { APIDependencyManager } from "../core/sdk-dependencies.js";
+import { APIDependencyManager } from "../shared/sdk-dependencies.js";
 
 /**
  * LLM generation command

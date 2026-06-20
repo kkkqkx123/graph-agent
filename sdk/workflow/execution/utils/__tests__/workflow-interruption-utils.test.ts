@@ -22,7 +22,7 @@ const mockGetExecutionInterruptionDescription = vi.hoisted(() =>
     }
   }),
 );
-vi.mock("../../../../core/utils/interruption/index.js", () => ({
+vi.mock("../../../../shared/utils/interruption/index.js", () => ({
   checkExecutionInterruption: mockCheckExecutionInterruption,
   getExecutionInterruptionDescription: mockGetExecutionInterruptionDescription,
 }));

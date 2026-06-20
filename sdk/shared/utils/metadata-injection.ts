@@ -14,7 +14,7 @@ import type { AgentToolConfig, SkillMetadata } from "@wf-agent/types";
 import type { AvailableTools } from "@wf-agent/types";
 import type { SkillRegistry } from "../registry/skill-registry.js";
 import type { GlobalContext } from "../global-context.js";
-import * as Identifiers from "../di/service-identifiers.js";
+import * as Identifiers from "../../di/service-identifiers.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "MetadataInjection" });

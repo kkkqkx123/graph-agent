@@ -7,12 +7,12 @@ import { CrudResourceAPI } from "../../shared/resources/generic-resource-api.js"
 import { CheckpointState } from "../../../workflow/checkpoint/checkpoint-state-manager.js";
 import type { Checkpoint, CheckpointMetadata } from "@wf-agent/types";
 import { CheckpointCoordinator } from "../../../workflow/checkpoint/checkpoint-coordinator.js";
-import type { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../shared/shared/sdk-dependencies.js";
 import { getErrorMessage, isSuccess, getData } from "../../shared/types/execution-result.js";
-import type { EventRegistry } from "../../../core/registry/event-registry.js";
+import type { EventRegistry } from "../../../shared/registry/event-registry.js";
 import type { Timestamp } from "@wf-agent/types";
 import { WorkflowExecutionStatus } from "@wf-agent/types";
-import { buildCheckpointRestoredEvent } from "../../../core/utils/event/builders/index.js";
+import { buildCheckpointRestoredEvent } from "../../../shared/utils/event/builders/index.js";
 
 /**
  * Checkpoint Filter

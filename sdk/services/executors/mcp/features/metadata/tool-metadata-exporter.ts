@@ -7,7 +7,7 @@
  */
 
 import type { McpTool } from "../../types.js";
-import type { McpConnectionManager } from "../../core/connection-manager.js";
+import type { McpConnectionManager } from "../../shared/connection-manager.js";
 import type { McpServerState } from "../../types.js";
 import { createContextualLogger } from "../../../../../utils/contextual-logger.js";
 

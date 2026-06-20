@@ -19,7 +19,7 @@ import type { TriggerStatus, TriggerRuntimeState } from "@wf-agent/types";
 import type { ID } from "@wf-agent/types";
 import { ExecutionError, NotFoundError, RuntimeValidationError } from "@wf-agent/types";
 import { now } from "@wf-agent/common-utils";
-import type { StateManager } from "../../core/types/state-manager.js";
+import type { StateManager } from "../../shared/types/state-manager.js";
 
 export type { TriggerRuntimeState };
 

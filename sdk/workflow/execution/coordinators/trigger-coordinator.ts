@@ -24,15 +24,15 @@ import type { CheckpointDependencies } from "../../checkpoint/checkpoint-coordin
 import { CheckpointCoordinator } from "../../checkpoint/checkpoint-coordinator.js";
 import { convertToTrigger } from "@wf-agent/types";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
-import { matchTriggers } from "../../../core/triggers/index.js";
-import type { BaseEventData, BaseTriggerDefinition } from "../../../core/triggers/index.js";
+import { matchTriggers } from "../../../shared/triggers/index.js";
+import type { BaseEventData, BaseTriggerDefinition } from "../../../shared/triggers/index.js";
 import {
   TriggerHandlerContextFactory,
   type TriggerHandlerContextFactoryConfig,
 } from "../factories/trigger-handler-context-factory.js";
 import type { IAgentExecutionRegistry } from "../../../agent/stores/agent-execution-registry.js";
 import type { AgentLoopEntity } from "../../../agent/entities/agent-loop-entity.js";
-import * as Identifiers from "../../../core/di/service-identifiers.js";
+import * as Identifiers from "../../../di/service-identifiers.js";
 
 const logger = createContextualLogger({ component: "TriggerCoordinator" });
 

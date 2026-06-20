@@ -25,13 +25,13 @@ import { WorkflowExecutionBuilder } from "../factories/workflow-execution-builde
 import { WorkflowExecutor } from "../executors/workflow-executor.js";
 import { WorkflowStateTransitor } from "./workflow-state-transitor.js";
 import type { WorkflowExecutionRegistry } from "../../stores/workflow-execution-registry.js";
-import type { GlobalContext } from "../../../core/global-context.js";
-import * as Identifiers from "../../../core/di/service-identifiers.js";
-import type { ExecutionHierarchyRegistry } from "../../../core/registry/execution-hierarchy-registry.js";
+import type { GlobalContext } from "../../../shared/global-context.js";
+import * as Identifiers from "../../../di/service-identifiers.js";
+import type { ExecutionHierarchyRegistry } from "../../../shared/registry/execution-hierarchy-registry.js";
 import { CheckpointCoordinator } from "../../checkpoint/checkpoint-coordinator.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
 import { PauseTimeoutManager } from "../utils/pause-timeout-manager.js";
-import type { MetricsRegistry } from "../../../core/metrics/metrics-registry.js";
+import type { MetricsRegistry } from "../../../metrics/metrics-registry.js";
 
 const logger = createContextualLogger({ component: "WorkflowLifecycleCoordinator" });
 

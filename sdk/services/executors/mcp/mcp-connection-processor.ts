@@ -3,7 +3,7 @@
  *
  * Pure business functions for MCP connection configuration.
  * - Zod schemas and type guards: @wf-agent/types (tool-schema.ts)
- * - Validation functions: sdk/core/validation/mcp-validator.ts
+ * - Validation functions: sdk/shared/validation/mcp-validator.ts
  * - This module: merge, default creation, and bulk loading only.
  *
  * Lives here in the services layer because these are MCP-domain-specific
@@ -11,7 +11,7 @@
  */
 
 import type { McpServerConfig, McpSettings, McpServerLifecycle } from "@wf-agent/types";
-import { validateServerConfig } from "../../../core/validation/mcp-validator.js";
+import { validateServerConfig } from "../../../shared/validation/mcp-validator.js";
 
 // ---------------------------------------------------------------------------
 // Processing / merging

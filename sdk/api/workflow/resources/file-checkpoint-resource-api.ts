@@ -7,7 +7,7 @@
  */
 
 import { CrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
-import type { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../shared/shared/sdk-dependencies.js";
 import type { FileCheckpointMetadata, FileCheckpointInfo } from "@wf-agent/types";
 import type {
   FileCheckpointManager,

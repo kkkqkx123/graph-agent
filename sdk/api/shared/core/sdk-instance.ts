@@ -14,19 +14,19 @@
  * - Independent lifecycle management
  */
 
-import { GlobalContext } from "../../../core/global-context.js";
+import { GlobalContext } from "../../../shared/global-context.js";
 import type { SDKOptions } from "../types/core-types.js";
 import { APIFactory } from "./api-factory.js";
 import { sdkLogger as logger, configureSDKLogger } from "../../../utils/logger.js";
 import { getErrorMessage } from "@wf-agent/common-utils";
-import { createIsolatedContainer, ContainerManager } from "../../../core/di/container-manager.js";
+import { createIsolatedContainer, ContainerManager } from "../../../di/container-manager.js";
 import type { FileCheckpointStorageAdapter } from "@wf-agent/common-utils";
 import {
   mergeFileCheckpointConfig,
   toFileCheckpointManagerConfig,
 } from "../config/processors/file-checkpoint.js";
 import { SqliteFileCheckpointStore } from "@wf-agent/storage";
-import * as ServiceIdentifiers from "../../../core/di/service-identifiers.js";
+import * as ServiceIdentifiers from "../../../di/service-identifiers.js";
 import { registerAllPredefinedContent } from "../../../resources/predefined/registration.js";
 import { registerPredefinedPromptTemplates } from "../../../resources/predefined/prompts/index.js";
 import { initializeTomlParser } from "../config/parsers/toml-parser.js";

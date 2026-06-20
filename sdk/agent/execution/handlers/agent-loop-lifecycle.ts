@@ -17,7 +17,7 @@ import { AgentLoopCheckpointCoordinator, type CheckpointDependencies } from "../
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
 import type { CheckpointMetadata } from "@wf-agent/types";
 import { AgentStateCoordinator } from "../../state-managers/agent-state-coordinator.js";
-import { ConversationSession } from "../../../core/messaging/conversation-session.js";
+import { ConversationSession } from "../../../shared/messaging/conversation-session.js";
 
 const logger = createContextualLogger({ component: "AgentLoopLifecycle" });
 

@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { PauseTimeoutManager } from "../pause-timeout-manager.js";
 import type { WorkflowExecutionRegistry } from "../../../stores/workflow-execution-registry.js";
-import type { EventRegistry } from "../../../../core/registry/event-registry.js";
+import type { EventRegistry } from "../../../../shared/registry/event-registry.js";
 
 // Mock the contextual logger
 vi.mock("../../../utils/contextual-logger.js", () => ({
@@ -18,7 +18,7 @@ vi.mock("../../../utils/contextual-logger.js", () => ({
 }));
 
 // Mock the event builders
-vi.mock("../../../core/utils/event/builders/workflow-execution-events.js", () => ({
+vi.mock("../../../shared/utils/event/builders/workflow-execution-events.js", () => ({
   buildWorkflowExecutionCancelledEvent: vi.fn((entity, reason, details) => ({
     id: "event-1",
     type: "WORKFLOW_EXECUTION_CANCELLED",
@@ -31,7 +31,7 @@ vi.mock("../../../core/utils/event/builders/workflow-execution-events.js", () =>
 }));
 
 // Mock the emit function
-vi.mock("../../../core/utils/event/emit-event.js", () => ({
+vi.mock("../../../shared/utils/event/emit-event.js", () => ({
   emit: vi.fn(),
 }));
 

@@ -3,12 +3,12 @@ import type { TriggerAction } from "@wf-agent/types";
 import type { WorkflowExecutionEntity } from "../../../../entities/workflow-execution-entity.js";
 import { executeTriggeredSubworkflowHandler } from "../execute-triggered-subworkflow-handler.js";
 import type { WorkflowExecutionRegistry } from "../../../../stores/workflow-execution-registry.js";
-import type { GlobalContext } from "../../../../../core/global-context.js";
+import type { GlobalContext } from "../../../../../shared/global-context.js";
 import type { WorkflowGraphRegistry } from "../../../../stores/workflow-graph-registry.js";
 import type { TriggeredSubworkflowHandler } from "../../triggered-subworkflow-handler.js";
 import type { AgentLoopEntity } from "../../../../../agent/entities/agent-loop-entity.js";
 import type { Container } from "@wf-agent/common-utils";
-import * as Identifiers from "../../../../../core/di/service-identifiers.js";
+import * as Identifiers from "../../../../../di/service-identifiers.js";
 
 const mockMainEntity = {
   id: "main-exec-1",

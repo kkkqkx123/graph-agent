@@ -117,7 +117,7 @@ export class APIFactory {
    * Create a new APIFactory instance
    * @param globalContext The GlobalContext to get dependencies from
    */
-  constructor(globalContext: import("../../../core/global-context.js").GlobalContext) {
+  constructor(globalContext: import("../../../shared/global-context.js").GlobalContext) {
     this.dependencies = new APIDependencyManager(globalContext);
   }
 

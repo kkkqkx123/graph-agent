@@ -27,7 +27,7 @@ import type {
   SubgraphNodeConfig,
 } from "@wf-agent/types";
 import { now } from "@wf-agent/common-utils";
-import { executeWithInterruptionHandling } from "../../../core/utils/interruption/index.js";
+import { executeWithInterruptionHandling } from "../../../shared/utils/interruption/index.js";
 import {
   getWorkflowInterruptionDescription,
   toWorkflowInterruptionResult,

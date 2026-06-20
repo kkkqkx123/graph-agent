@@ -41,7 +41,7 @@ import type { CheckpointCoordinator as CheckpointCoordinatorType } from "../../w
 import type { ConversationSession as ConversationSessionType } from "../messaging/conversation-session.js";
 import type { TriggerState as TriggerStateType } from "../../workflow/state-managers/trigger-state.js";
 import type { InterruptionState as InterruptionStateType } from "../utils/interruption/interruption-state.js";
-import type { SDKInstance as SDKInstanceType } from "../../api/shared/core/sdk-instance.js";
+import type { SDKInstance as SDKInstanceType } from "../**SHARED**/sdk-instance.js";
 import type { TriggeredSubworkflowHandler as TriggeredSubworkflowHandlerType } from "../../workflow/execution/handlers/triggered-subworkflow-handler.js";
 import type { WorkflowExecutionPool as WorkflowExecutionPoolType } from "../../workflow/execution/workflow-execution-pool.js";
 import type { LLMWrapper as LLMWrapperType } from "../llm/wrapper.js";

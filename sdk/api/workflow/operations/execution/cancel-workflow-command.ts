@@ -8,7 +8,7 @@ import {
   validationSuccess,
   validationFailure,
 } from "../../../shared/types/command.js";
-import { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
+import { APIDependencyManager } from "../../../shared/shared/sdk-dependencies.js";
 
 /**
  * Cancel workflow execution command

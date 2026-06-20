@@ -6,8 +6,8 @@
 
 import type { AgentLoopEntity } from "../../../entities/agent-loop-entity.js";
 import type { AgentHookTriggeredEvent, AgentHookType } from "@wf-agent/types";
-import { buildAgentHookTriggeredEvent } from "../../../../core/utils/event/builders/index.js";
-import { emitHookEventSafe } from "../../../../core/utils/event/emit-hook-event.js";
+import { buildAgentHookTriggeredEvent } from "../../../../shared/utils/event/builders/index.js";
+import { emitHookEventSafe } from "../../../../shared/utils/event/emit-hook-event.js";
 
 /**
  * Agent Hook Event Data

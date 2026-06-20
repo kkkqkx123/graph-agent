@@ -30,20 +30,20 @@ import { WorkflowStateCoordinator } from "../../state-managers/workflow-state-co
 import { generateId } from "@wf-agent/common-utils";
 import { ExecutionError, RuntimeValidationError } from "@wf-agent/types";
 import type { WorkflowGraphRegistry } from "../../stores/workflow-graph-registry.js";
-import * as Identifiers from "../../../core/di/service-identifiers.js";
+import * as Identifiers from "../../../di/service-identifiers.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
-import type { EventRegistry } from "../../../core/registry/event-registry.js";
+import type { EventRegistry } from "../../../shared/registry/event-registry.js";
 import type { WorkflowRegistry } from "../../stores/workflow-registry.js";
-import { ConversationSession } from "../../../core/messaging/conversation-session.js";
+import { ConversationSession } from "../../../shared/messaging/conversation-session.js";
 import {
   InMemoryMessageContextRegistry,
   initializeExecutionContext,
-} from "../../../core/messaging/index.js";
-import { logError, emitErrorEvent } from "../../../core/utils/error-utils.js";
-import type { ExecutionHierarchyRegistry } from "../../../core/registry/execution-hierarchy-registry.js";
-import type { GlobalContext } from "../../../core/global-context.js";
+} from "../../../shared/messaging/index.js";
+import { logError, emitErrorEvent } from "../../../shared/utils/error-utils.js";
+import type { ExecutionHierarchyRegistry } from "../../../shared/registry/execution-hierarchy-registry.js";
+import type { GlobalContext } from "../../../shared/global-context.js";
 import type { VariableManager } from "../../state-managers/variable-manager.js";
-import { ToolPermissionManager } from "../../../core/coordinators/tool-permission-manager.js";
+import { ToolPermissionManager } from "../../../shared/coordinators/tool-permission-manager.js";
 
 const logger = createContextualLogger({ operation: "workflow-execution-builder" });
 

@@ -10,7 +10,7 @@
  * - Wraps WorkflowGraphRegistry from the SDK core layer
  */
 
-import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../shared/sdk-dependencies.js";
 import type { WorkflowNode, WorkflowEdge } from "@wf-agent/types";
 import type { ID } from "@wf-agent/types";
 import type { WorkflowGraph } from "../../../../workflow/types/graph/preprocessed-graph.js";

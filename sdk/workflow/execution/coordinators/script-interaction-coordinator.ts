@@ -21,9 +21,9 @@ import type {
   LLMMessage,
   Script,
 } from "@wf-agent/types";
-import * as Identifiers from "../../../core/di/service-identifiers.js";
-import type { ScriptRegistry } from "../../../core/registry/script-registry.js";
-import type { GlobalContext } from "../../../core/global-context.js";
+import * as Identifiers from "../../../di/service-identifiers.js";
+import type { ScriptRegistry } from "../../../shared/registry/script-registry.js";
+import type { GlobalContext } from "../../../shared/global-context.js";
 import { ScriptTemplateEngine } from "../../../services/script/engine/script-template.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
 import { getTerminalService } from "../../../services/terminal/index.js";

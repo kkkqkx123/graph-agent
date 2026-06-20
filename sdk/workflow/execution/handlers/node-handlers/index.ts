@@ -4,7 +4,7 @@
 
 import type { RuntimeNode, WorkflowExecution } from "@wf-agent/types";
 import type { WorkflowExecutionEntity } from "../../../entities/workflow-execution-entity.js";
-import type { GlobalContext } from "../../../../core/global-context.js";
+import type { GlobalContext } from "../../../../shared/global-context.js";
 import type { StartFromTriggerHandlerContext } from "./start-from-trigger-handler.js";
 import { agentLoopHandler, type AgentLoopHandlerContext } from "./agent-loop-handler.js";
 import {

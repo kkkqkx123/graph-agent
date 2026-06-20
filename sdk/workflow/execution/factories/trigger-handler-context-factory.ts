@@ -14,13 +14,13 @@ import type { Trigger } from "@wf-agent/types";
 import type { WorkflowExecutionRegistry } from "../../stores/workflow-execution-registry.js";
 import type { WorkflowRegistry } from "../../stores/workflow-registry.js";
 import type { WorkflowGraphRegistry } from "../../stores/workflow-graph-registry.js";
-import type { EventRegistry } from "../../../core/registry/event-registry.js";
+import type { EventRegistry } from "../../../shared/registry/event-registry.js";
 import type { TriggerState } from "../../state-managers/trigger-state.js";
 import type { CheckpointState } from "../../checkpoint/checkpoint-state-manager.js";
 import type { WorkflowExecutionBuilder } from "./workflow-execution-builder.js";
 import type { TaskQueue } from "../../stores/task/task-queue.js";
 import type { WorkflowStateTransitor } from "../coordinators/workflow-state-transitor.js";
-import type { GlobalContext } from "../../../core/global-context.js";
+import type { GlobalContext } from "../../../shared/global-context.js";
 import type { WorkflowStateCoordinator } from "../../state-managers/workflow-state-coordinator.js";
 import { DependencyInjectionError } from "@wf-agent/types";
 

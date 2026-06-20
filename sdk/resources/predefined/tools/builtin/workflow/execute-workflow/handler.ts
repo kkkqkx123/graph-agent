@@ -9,7 +9,7 @@ import type {
   ExecutedSubworkflowResult,
   TaskSubmissionResult,
 } from "@sdk/workflow/execution/types/triggered-subworkflow.types.js";
-import * as Identifiers from "@sdk/core/di/service-identifiers.js";
+import * as Identifiers from "@sdk/di/service-identifiers.js";
 import { RuntimeValidationError } from "@wf-agent/types";
 import type { TriggeredSubworkflowHandler } from "@sdk/workflow/execution/handlers/triggered-subworkflow-handler.js";
 import {

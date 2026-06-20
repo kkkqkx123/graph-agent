@@ -75,7 +75,7 @@ import {
 } from "./search/search-api.js";
 
 // Dependency Management
-import type { APIDependencyManager } from "../core/sdk-dependencies.js";
+import type { APIDependencyManager } from "../shared/sdk-dependencies.js";
 
 // Reexport all resource management APIs
 export {

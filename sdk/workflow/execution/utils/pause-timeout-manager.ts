@@ -8,12 +8,12 @@
  */
 
 import type { WorkflowExecutionRegistry } from "../../stores/workflow-execution-registry.js";
-import type { EventRegistry } from "../../../core/registry/event-registry.js";
+import type { EventRegistry } from "../../../shared/registry/event-registry.js";
 import type { BaseEvent } from "@wf-agent/types";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
-import { buildWorkflowExecutionCancelledEvent } from "../../../core/utils/event/builders/workflow-execution-events.js";
-import { emit } from "../../../core/utils/event/emit-event.js";
-import type { TimeoutHandle } from "../../../core/types/timeout.js";
+import { buildWorkflowExecutionCancelledEvent } from "../../../shared/utils/event/builders/workflow-execution-events.js";
+import { emit } from "../../../shared/utils/event/emit-event.js";
+import type { TimeoutHandle } from "../../../shared/types/timeout.js";
 
 const logger = createContextualLogger({ component: "pause-timeout-manager" });
 

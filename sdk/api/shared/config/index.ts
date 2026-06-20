@@ -4,7 +4,7 @@
  *
  * Design principles:
  * - Stateless design, all functions are pure functions.
- * - Configuration validation uses the validator in sdk/core/validation.
+ * - Configuration validation uses the validator in sdk/shared/validation.
  * - This module is only responsible for parsing and converting configuration content.
  * - No direct operation of the registry, configuration registration is the responsibility of the application layer.
  * - Supports multiple configuration types: workflows, node templates, trigger templates, scripts, LLM Profiles.

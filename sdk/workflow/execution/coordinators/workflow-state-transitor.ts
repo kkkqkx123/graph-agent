@@ -18,10 +18,10 @@
 
 import { StateManagementError } from "@wf-agent/types";
 import type { WorkflowExecutionStatus, WorkflowExecutionResult } from "@wf-agent/types";
-import type { EventRegistry } from "../../../core/registry/event-registry.js";
+import type { EventRegistry } from "../../../shared/registry/event-registry.js";
 import type { WorkflowExecutionRegistry } from "../../stores/workflow-execution-registry.js";
 import type { WorkflowExecutionEntity } from "../../entities/workflow-execution-entity.js";
-import type { ConversationSession } from "../../../core/messaging/conversation-session.js";
+import type { ConversationSession } from "../../../shared/messaging/conversation-session.js";
 import { validateTransition } from "../utils/workflow-state-validator.js";
 import {
   buildWorkflowExecutionStartedEvent,
@@ -31,15 +31,15 @@ import {
   buildWorkflowExecutionCompletedEvent,
   buildWorkflowExecutionFailedEvent,
   buildWorkflowExecutionCancelledEvent,
-} from "../../../core/utils/event/builders/index.js";
-import { emit } from "../../../core/utils/event/emit-event.js";
+} from "../../../shared/utils/event/builders/index.js";
+import { emit } from "../../../shared/utils/event/emit-event.js";
 import { getErrorOrNew } from "@wf-agent/common-utils";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
-import type { GlobalContext } from "../../../core/global-context.js";
-import * as Identifiers from "../../../core/di/service-identifiers.js";
-import type { ExecutionHierarchyRegistry } from "../../../core/registry/execution-hierarchy-registry.js";
+import type { GlobalContext } from "../../../shared/global-context.js";
+import * as Identifiers from "../../../di/service-identifiers.js";
+import type { ExecutionHierarchyRegistry } from "../../../shared/registry/execution-hierarchy-registry.js";
 import { waitForMultipleWorkflowExecutionsCompleted } from "../utils/index.js";
-import { executeWithSharedTimeout, isTimeoutError } from "../../../core/utils/timeout/index.js";
+import { executeWithSharedTimeout, isTimeoutError } from "../../../shared/utils/timeout/index.js";
 import { mergeTimeoutWithDefaults } from "../../../api/shared/config/index.js";
 
 const logger = createContextualLogger({ component: "WorkflowStateTransitor" });

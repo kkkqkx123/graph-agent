@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ScriptInteractionCoordinator } from "../script-interaction-coordinator.js";
 import type { InputProvider } from "../script-interaction-coordinator.js";
-import type { GlobalContext } from "../../../../core/global-context.js";
+import type { GlobalContext } from "../../../../shared/global-context.js";
 
 // ============================================================================
 // Test-friendly subclass — overrides delay to 0ms for fast tests

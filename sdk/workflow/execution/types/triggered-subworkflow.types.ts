@@ -119,7 +119,7 @@ export interface TaskSubmissionResult {
  * Queue Task Interface for Triggered Subworkflow (for internal use)
  *
  * Note: This is specific to triggered subworkflow execution.
- * For generic execution queue tasks, see sdk/core/execution/execution-queue.ts
+ * For generic execution queue tasks, see sdk/shared/execution/execution-queue.ts
  */
 export interface TriggeredSubworkflowQueueTask {
   /** Task ID */

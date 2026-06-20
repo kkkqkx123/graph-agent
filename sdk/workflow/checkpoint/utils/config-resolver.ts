@@ -1,7 +1,7 @@
 /**
  * Workflow Checkpoint Configuration Parser
  *
- * Implements Workflow-specific configuration parsing logic based on the sdk/core/checkpoint generic framework.
+ * Implements Workflow-specific configuration parsing logic based on the sdk/shared/checkpoint generic framework.
  * Handles multi-level configuration priority rules.
  */
 

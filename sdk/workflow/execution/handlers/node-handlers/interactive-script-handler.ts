@@ -11,7 +11,7 @@
 import type { RuntimeNode, InteractiveScriptNodeConfig } from "@wf-agent/types";
 import type { WorkflowExecutionEntity } from "../../../entities/workflow-execution-entity.js";
 import { now, getErrorMessage } from "@wf-agent/common-utils";
-import type { GlobalContext } from "../../../../core/global-context.js";
+import type { GlobalContext } from "../../../../shared/global-context.js";
 import {
   ScriptInteractionCoordinator,
   type InputProvider,

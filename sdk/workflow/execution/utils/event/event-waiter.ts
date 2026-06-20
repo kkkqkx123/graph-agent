@@ -15,9 +15,9 @@
  * - Event-driven approach to avoid polling
  */
 
-import type { EventRegistry } from "../../../../core/registry/event-registry.js";
+import type { EventRegistry } from "../../../../shared/registry/event-registry.js";
 import { EventType } from "@wf-agent/types";
-import { executeWithSharedTimeout } from "../../../../core/utils/timeout/timeout-utils.js";
+import { executeWithSharedTimeout } from "../../../../shared/utils/timeout/timeout-utils.js";
 import { mergeTimeoutWithDefaults } from "../../../../api/shared/config/index.js";
 
 // Default timeout values for event waiting functions

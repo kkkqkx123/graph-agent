@@ -26,7 +26,7 @@ import { parseWorkflow, ConfigFormat, getConfigFormatFromPath } from "../../shar
 import * as fs from "fs/promises";
 import { NodeBuilder } from "./node-builder.js";
 import { BaseBuilder } from "../../shared/base-builder.js";
-import type { GlobalContext } from "../../../core/global-context.js";
+import type { GlobalContext } from "../../../shared/global-context.js";
 
 /**
  * WorkflowBuilder - Declarative Workflow Builder

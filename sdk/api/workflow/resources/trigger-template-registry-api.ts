@@ -7,7 +7,7 @@
 import type { TriggerTemplate, TriggerReference } from "@wf-agent/types";
 import { CrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
 import { isSuccess, getData } from "../../shared/types/execution-result.js";
-import type { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../shared/shared/sdk-dependencies.js";
 import type { Timestamp, UnregisterOptions } from "@wf-agent/types";
 import { ConfigurationValidationError } from "@wf-agent/types";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";

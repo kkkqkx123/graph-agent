@@ -10,22 +10,22 @@
  * - Dependencies are uniformly obtained through a Dependency Injection (DI) container.
  */
 
-import * as Identifiers from "../../../core/di/service-identifiers.js";
+import * as Identifiers from "../../../di/service-identifiers.js";
 import type { WorkflowRegistry } from "../../../workflow/stores/workflow-registry.js";
 import type { WorkflowExecutionRegistry } from "../../../workflow/stores/workflow-execution-registry.js";
-import type { EventRegistry } from "../../../core/registry/event-registry.js";
+import type { EventRegistry } from "../../../shared/registry/event-registry.js";
 import type { CheckpointState } from "../../../workflow/checkpoint/checkpoint-state-manager.js";
-import type { ToolRegistry } from "../../../core/registry/tool-registry.js";
-import type { LLMExecutor } from "../../../core/executors/llm-executor.js";
-import type { ScriptRegistry, ScriptExecutionService } from "../../../core/registry/script-registry.js";
-import type { NodeTemplateRegistry } from "../../../core/registry/node-template-registry.js";
-import type { TriggerTemplateRegistry } from "../../../core/registry/trigger-template-registry.js";
-import type { HookTemplateRegistry } from "../../../core/registry/hook-template-registry.js";
+import type { ToolRegistry } from "../../../shared/registry/tool-registry.js";
+import type { LLMExecutor } from "../../../services/executors/llm-executor.js";
+import type { ScriptRegistry, ScriptExecutionService } from "../../../shared/registry/script-registry.js";
+import type { NodeTemplateRegistry } from "../../../shared/registry/node-template-registry.js";
+import type { TriggerTemplateRegistry } from "../../../shared/registry/trigger-template-registry.js";
+import type { HookTemplateRegistry } from "../../../shared/registry/hook-template-registry.js";
 import type { WorkflowGraphRegistry } from "../../../workflow/stores/workflow-graph-registry.js";
-import type { SkillRegistry } from "../../../core/registry/skill-registry.js";
+import type { SkillRegistry } from "../../../shared/registry/skill-registry.js";
 import type { AgentLoopRegistry } from "../../../agent/stores/agent-loop-registry.js";
 import type { AgentLoopCoordinator } from "../../../agent/execution/coordinators/agent-loop-coordinator.js";
-import type { MetricsRegistry } from "../../../core/metrics/metrics-registry.js";
+import type { MetricsRegistry } from "../../../metrics/metrics-registry.js";
 import type { TaskRegistry } from "../../../workflow/stores/task/task-registry.js";
 import type {
   CheckpointStorageAdapter,
@@ -35,10 +35,10 @@ import type {
 } from "@wf-agent/storage";
 import type { FileCheckpointManager } from "@wf-agent/common-utils";
 import type { ServiceIdentifier } from "@wf-agent/common-utils";
-import type { GlobalContext } from "../../../core/global-context.js";
-import type { LLMWrapper } from "../../../core/llm/wrapper.js";
+import type { GlobalContext } from "../../../shared/global-context.js";
+import type { LLMWrapper } from "../../../services/llm/wrapper.js";
 import type { WorkflowLifecycleCoordinator } from "../../../workflow/execution/coordinators/workflow-lifecycle-coordinator.js";
-import type { IdBasedServiceFactory, NoArgServiceFactory } from "../../../core/di/factory-types.js";
+import type { IdBasedServiceFactory, NoArgServiceFactory } from "../../../di/factory-types.js";
 
 /**
  * API Dependency Management Class

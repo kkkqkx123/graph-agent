@@ -5,7 +5,7 @@
 
 import type { Tool, BuiltinToolConfig, BuiltinToolExecutionContext } from "@wf-agent/types";
 import { ToolError } from "@wf-agent/types";
-import { BaseExecutor } from "../core/base.js";
+import { BaseExecutor } from "../shared/base.js";
 
 /**
  * Builtin Executor Configuration

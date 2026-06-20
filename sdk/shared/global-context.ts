@@ -15,9 +15,9 @@
  */
 
 import { Container } from "@wf-agent/common-utils";
-import * as Identifiers from "./di/service-identifiers.js";
+import * as Identifiers from "../../di/service-identifiers.js";
 import type { ServiceIdentifier } from "@wf-agent/common-utils";
-import type { ExecutionEntityServiceFactory, IdBasedServiceFactory } from "./di/factory-types.js";
+import type { ExecutionEntityServiceFactory, IdBasedServiceFactory } from "../../di/factory-types.js";
 
 // Import types
 import type { WorkflowRegistry } from "../workflow/stores/workflow-registry.js";
@@ -36,7 +36,7 @@ import type { WorkflowExecutionCoordinator } from "../workflow/execution/coordin
 import type { WorkflowStateTransitor } from "../workflow/execution/coordinators/workflow-state-transitor.js";
 import { CheckpointCoordinator } from "../workflow/checkpoint/checkpoint-coordinator.js";
 import type { WorkflowExecutionEntity } from "../workflow/entities/workflow-execution-entity.js";
-import type { MetricsRegistry } from "./metrics/metrics-registry.js";
+import type { MetricsRegistry } from "../../metrics/metrics-registry.js";
 
 /**
  * Global Context Class

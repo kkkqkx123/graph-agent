@@ -28,7 +28,7 @@ import {
 import { executeWithRetry, type RetryConfig } from "./retry-handler.js";
 import { CircuitBreaker } from "../../../utils/circuit-breaker.js";
 import { RateLimiter } from "./rate-limiter.js";
-import { isAbortError } from "../../../core/utils/error-utils.js";
+import { isAbortError } from "../../../shared/utils/error-utils.js";
 
 /**
  * HTTP Client

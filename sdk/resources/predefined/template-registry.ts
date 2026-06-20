@@ -1,16 +1,16 @@
 /**
  * PromptTemplateRegistry - Prompt Template Registry
  *
- * Backward-compatible wrapper for sdk/core/registry/prompt-template-registry.ts.
+ * Backward-compatible wrapper for sdk/shared/registry/prompt-template-registry.ts.
  * Maintains the old singleton-based API for existing consumers.
  * New code should use GlobalContext.promptTemplateRegistry instead.
  *
- * @deprecated Import from sdk/core/registry/prompt-template-registry.ts instead
+ * @deprecated Import from sdk/shared/registry/prompt-template-registry.ts instead
  */
 
-import { PromptTemplateRegistry as CorePromptTemplateRegistry } from "../../core/registry/prompt-template-registry.js";
+import { PromptTemplateRegistry as CorePromptTemplateRegistry } from "../../shared/registry/prompt-template-registry.js";
 import type { PromptTemplate } from "@wf-agent/types";
-import type { FragmentRegistry } from "../../core/registry/fragment-registry.js";
+import type { FragmentRegistry } from "../../shared/registry/fragment-registry.js";
 
 /**
  * Backward-compatible wrapper that provides the old single-arg register(template) API.
@@ -86,7 +86,7 @@ class TemplateRegistryWrapper {
 export const templateRegistry = new TemplateRegistryWrapper(new CorePromptTemplateRegistry());
 
 /**
- * @deprecated Use PromptTemplateRegistry from sdk/core/registry/ instead
+ * @deprecated Use PromptTemplateRegistry from sdk/shared/registry/ instead
  */
 export class PromptTemplateRegistry {
   private static instance: PromptTemplateRegistry | null = null;

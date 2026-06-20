@@ -9,7 +9,7 @@
 import type { FragmentCompositionConfig } from "@wf-agent/types";
 import { fragmentRegistry } from "./registry.js";
 import { createContextualLogger } from "@sdk/utils/contextual-logger.js";
-import { renderTemplate } from "@sdk/core/utils/template-renderer/index.js";
+import { renderTemplate } from "@sdk/shared/utils/template-renderer/index.js";
 
 const logger = createContextualLogger({ component: "FragmentComposer" });
 

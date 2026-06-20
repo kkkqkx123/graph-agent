@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 import { TaskQueue } from "../task-queue.js";
 import { TaskRegistry } from "../task-registry.js";
 import type { WorkflowExecutionEntity } from "../../../entities/workflow-execution-entity.js";
-import type { EventRegistry } from "../../../../core/registry/event-registry.js";
+import type { EventRegistry } from "../../../../shared/registry/event-registry.js";
 import type { TaskManager } from "../task-registry.js";
 
 // Mock dependencies
@@ -34,16 +34,16 @@ vi.mock("../../../../utils/index.js", () => ({
   generateId: () => "generated-task-id",
 }));
 
-vi.mock("../../../../core/utils/event/emit-event.js", () => ({
+vi.mock("../../../../shared/utils/event/emit-event.js", () => ({
   emit: vi.fn(),
 }));
 
-vi.mock("../../../../core/utils/event/builders/index.js", () => ({
+vi.mock("../../../../shared/utils/event/builders/index.js", () => ({
   buildTriggeredSubgraphCompletedEvent: vi.fn(() => ({ type: "subgraph.completed" })),
   buildTriggeredSubgraphFailedEvent: vi.fn(() => ({ type: "subgraph.failed" })),
 }));
 
-vi.mock("../../../../core/utils/error-utils.js", () => ({
+vi.mock("../../../../shared/utils/error-utils.js", () => ({
   logError: vi.fn(),
   emitErrorEvent: vi.fn(),
 }));

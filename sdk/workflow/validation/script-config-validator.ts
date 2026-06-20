@@ -8,7 +8,7 @@ import type { Script, ScriptExecutionOptions, SandboxConfig } from "@wf-agent/ty
 import { ScriptSchema, SandboxConfigSchema, ScriptExecutionOptionsSchema } from "@wf-agent/types";
 import { ConfigurationValidationError } from "@wf-agent/types";
 import type { Result } from "@wf-agent/types";
-import { validateConfig } from "../../core/validation/utils.js";
+import { validateConfig } from "../../shared/validation/utils.js";
 
 /**
  * Code Configuration Validator Class

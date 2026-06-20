@@ -1,9 +1,9 @@
 import type { TriggerAction, TriggerExecutionResult } from "@wf-agent/types";
 import { RuntimeValidationError, ExecutionError } from "@wf-agent/types";
 import { now, diffTimestamp } from "@wf-agent/common-utils";
-import type { GlobalContext } from "../../../../core/global-context.js";
-import * as Identifiers from "../../../../core/di/service-identifiers.js";
-import type { ScriptRegistry, ScriptExecutionService } from "../../../../core/registry/script-registry.js";
+import type { GlobalContext } from "../../../../shared/global-context.js";
+import * as Identifiers from "../../../../di/service-identifiers.js";
+import type { ScriptRegistry, ScriptExecutionService } from "../../../../shared/registry/script-registry.js";
 import { createSuccessResult, createFailureResult } from "./trigger-handler-utils.js";
 
 export async function executeScriptHandler(

@@ -7,7 +7,7 @@ import { fork, join, copy, type ForkConfig, type JoinStrategy } from "../workflo
 import type { WorkflowExecutionEntity } from "../../../entities/workflow-execution-entity.js";
 import type { WorkflowExecutionBuilder } from "../../factories/workflow-execution-builder.js";
 import type { WorkflowExecutionRegistry } from "../../../stores/workflow-execution-registry.js";
-import type { EventRegistry } from "../../../../core/registry/event-registry.js";
+import type { EventRegistry } from "../../../../shared/registry/event-registry.js";
 import type { WorkflowStateCoordinator } from "../../../state-managers/workflow-state-coordinator.js";
 import { RuntimeValidationError, ExecutionError } from "@wf-agent/types";
 
@@ -22,7 +22,7 @@ vi.mock("../../../utils/contextual-logger.js", () => ({
 }));
 
 // Mock the event builders
-vi.mock("../../../core/utils/event/builders/index.js", () => ({
+vi.mock("../../../shared/utils/event/builders/index.js", () => ({
   buildWorkflowExecutionForkStartedEvent: vi.fn(data => ({
     type: "WORKFLOW_EXECUTION_FORK_STARTED",
     ...data,
@@ -50,12 +50,12 @@ vi.mock("../../../core/utils/event/builders/index.js", () => ({
 }));
 
 // Mock the emit function
-vi.mock("../../../core/utils/event/emit-event.js", () => ({
+vi.mock("../../../shared/utils/event/emit-event.js", () => ({
   emit: vi.fn(),
 }));
 
 // Mock the message array utils
-vi.mock("../../../core/utils/messages/message-array-utils.js", () => ({
+vi.mock("../../../shared/utils/messages/message-array-utils.js", () => ({
   MessageArrayUtils: {
     cloneMessages: vi.fn(messages => messages.map((m: unknown) => ({ ...(m as object) }))),
   },

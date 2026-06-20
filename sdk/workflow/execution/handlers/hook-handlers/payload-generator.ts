@@ -6,8 +6,8 @@
 
 import type { NodeHook } from "@wf-agent/types";
 import type { HookEvaluationContext } from "./context-builder.js";
-import { renderTemplate } from "../../../../core/utils/template-renderer/index.js";
-import { stringToTypedValue } from "../../../../core/utils/type-utils.js";
+import { renderTemplate } from "../../../../shared/utils/template-renderer/index.js";
+import { stringToTypedValue } from "../../../../shared/utils/type-utils.js";
 
 /**
  * Generate event payload

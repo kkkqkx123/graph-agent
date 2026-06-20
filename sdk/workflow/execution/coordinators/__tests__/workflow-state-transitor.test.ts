@@ -4,11 +4,11 @@
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { WorkflowStateTransitor } from "../workflow-state-transitor.js";
-import type { EventRegistry } from "../../../../core/registry/event-registry.js";
-import type { ConversationSession } from "../../../../core/messaging/conversation-session.js";
+import type { EventRegistry } from "../../../../shared/registry/event-registry.js";
+import type { ConversationSession } from "../../../../shared/messaging/conversation-session.js";
 import type { WorkflowExecutionRegistry } from "../../../stores/workflow-execution-registry.js";
 import type { WorkflowExecutionEntity } from "../../../entities/workflow-execution-entity.js";
-import type { GlobalContext } from "../../../../core/global-context.js";
+import type { GlobalContext } from "../../../../shared/global-context.js";
 import type { WorkflowExecutionResult } from "@wf-agent/types";
 
 // ============================================================================

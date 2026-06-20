@@ -6,13 +6,13 @@
 
 import type { WorkflowExecutionResult, WorkflowExecutionOptions, Event } from "@wf-agent/types";
 import { ok, err, getErrorOrNew, now } from "@wf-agent/common-utils";
-import { withAbortSignal } from "../../../core/utils/interruption/index.js";
+import { withAbortSignal } from "../../../shared/utils/interruption/index.js";
 import type { Result, EventType } from "@wf-agent/types";
 import { Observable, create, type Observer } from "../../shared/utils/observable.js";
 import { ExecuteWorkflowCommand } from "../operations/execution/execute-workflow-command.js";
 import { ExecutionError as SDKExecutionError } from "@wf-agent/types";
-import { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
-import { GlobalContext } from "../../../core/global-context.js";
+import { APIDependencyManager } from "../../shared/shared/sdk-dependencies.js";
+import { GlobalContext } from "../../../shared/global-context.js";
 
 /**
  * ExecutionBuilder - Fluid Execution Builder

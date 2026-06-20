@@ -16,11 +16,11 @@
 
 // Main SDK instance and factory (primary exports)
 export { SDKInstance } from "./api/index.js";
-export { createSDK } from "./api/shared/core/sdk.js";
+export { createSDK } from "./api/shared/shared/sdk.js";
 
 // Re-export module namespaces for organized access
 export * as api from "./api/index.js";
-export * as core from "./core/index.js";
+export * as core from "./shared/index.js";
 export * as services from "./services/index.js";
 export * as agent from "./agent/index.js";
 export * as workflow from "./workflow/index.js";

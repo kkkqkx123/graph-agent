@@ -1,7 +1,7 @@
 /**
  * Agent Hook Processor Module
  *
- * Implement Agent specific Hook execution logic based on sdk/core/hooks generic framework.
+ * Implement Agent specific Hook execution logic based on sdk/shared/hooks generic framework.
  * Refer to the Graph module's hook-handler.ts design.
  *
  * Supported Hook Types:
@@ -20,7 +20,7 @@ import {
   executeHooks,
   type BaseHookContext,
   type HookHandler,
-} from "../../../../core/hooks/index.js";
+} from "../../../../shared/hooks/index.js";
 import { createContextualLogger } from "../../../../utils/contextual-logger.js";
 import { buildAgentHookEvaluationContext, convertToEvaluationContext } from "./context-builder.js";
 import { emitAgentHookEvent } from "./event-emitter.js";

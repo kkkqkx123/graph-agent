@@ -9,8 +9,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import type { ConversationSession } from "../../../../core/messaging/conversation-session.js";
-import type { MetricsRegistry } from "../../../../core/metrics/metrics-registry.js";
+import type { ConversationSession } from "../../../../shared/messaging/conversation-session.js";
+import type { MetricsRegistry } from "../../../../metrics/metrics-registry.js";
 import type { AgentIterationCoordinator } from "../agent-iteration-coordinator.js";
 import { AgentExecutionCoordinator } from "../agent-execution-coordinator.js";
 
@@ -21,7 +21,7 @@ const __mocks__ = {
   handleAgentError: vi.fn().mockResolvedValue(new Error("Standardized error")),
 };
 
-vi.mock("../../../../core/utils/interruption/index.js", () => ({
+vi.mock("../../../../shared/utils/interruption/index.js", () => ({
   executeWithInterruptionHandling: (...args: any[]) =>
     __mocks__.executeWithInterruptionHandling(...args),
   iterateWithInterruptionHandling: (...args: any[]) =>

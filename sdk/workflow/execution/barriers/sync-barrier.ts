@@ -13,10 +13,10 @@
 
 import type { ID } from "@wf-agent/types";
 import type { WorkflowExecutionEntity } from "../../entities/workflow-execution-entity.js";
-import type { EventRegistry } from "../../../core/registry/event-registry.js";
-import type { ExecutionHierarchyRegistry } from "../../../core/registry/execution-hierarchy-registry.js";
+import type { EventRegistry } from "../../../shared/registry/event-registry.js";
+import type { ExecutionHierarchyRegistry } from "../../../shared/registry/execution-hierarchy-registry.js";
 import { waitForWorkflowExecutionCompleted, WAIT_FOREVER } from "../utils/event/event-waiter.js";
-import { isTimeoutError } from "../../../core/utils/timeout/timeout-utils.js";
+import { isTimeoutError } from "../../../shared/utils/timeout/timeout-utils.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ operation: "SyncBarrier" });

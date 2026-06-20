@@ -4,7 +4,7 @@
  *
  * Core Responsibilities:
  * 1. Executes LLM calls (both non-streaming and streaming)
- * 2. Delegates tasks to the LLMWrapper module within the sdk/core/llm package
+ * 2. Delegates tasks to the LLMWrapper module within the s../shared/llm package
  *
  * Design Principles:
  * - Stateless design: Does not retain any internal state
@@ -14,7 +14,7 @@
  * - Does not handle tool calls; tool calls are coordinated by the LLMCoordinator
  *
  * Location Description:
- * - Located in the sdk/core/execution/executors directory, serving as a generic executor
+ * - Located in the s../shared/execution/executors directory, serving as a generic executor
  * - Can be reused by modules such as Graph and Agent
  * - Does not depend on the implementation of any specific module
  */

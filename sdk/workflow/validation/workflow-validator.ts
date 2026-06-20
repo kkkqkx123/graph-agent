@@ -34,9 +34,9 @@ import { ConfigurationValidationError } from "@wf-agent/types";
 import type { Result } from "@wf-agent/types";
 import { ok, err } from "@wf-agent/common-utils";
 import { validateNodeByType } from "./node-validation/index.js";
-import { validateHooks } from "../../core/validation/hook-validator.js";
-import { validateTriggers } from "../../core/validation/trigger-validator.js";
-import { validateConfig } from "../../core/validation/utils.js";
+import { validateHooks } from "../../shared/validation/hook-validator.js";
+import { validateTriggers } from "../../shared/validation/trigger-validator.js";
+import { validateConfig } from "../../shared/validation/utils.js";
 import {
   WorkflowConfigSchema,
   WorkflowTemplateBasicSchema,

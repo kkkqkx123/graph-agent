@@ -16,22 +16,22 @@ import type {
 import { RuntimeValidationError } from "@wf-agent/types";
 import { now, diffTimestamp, getErrorOrNew } from "@wf-agent/common-utils";
 
-import type { ConversationSession } from "../../../../core/messaging/conversation-session.js";
-import type { EventRegistry } from "../../../../core/registry/event-registry.js";
+import type { ConversationSession } from "../../../../shared/messaging/conversation-session.js";
+import type { EventRegistry } from "../../../../shared/registry/event-registry.js";
 import { AgentLoopCoordinator, AgentLoopExecutor } from "../../../../agent/index.js";
 import type { AgentLoopRegistry } from "../../../../agent/index.js";
-import { emit } from "../../../../core/utils/event/emit-event.js";
+import { emit } from "../../../../shared/utils/event/emit-event.js";
 import {
   buildMessageAddedEvent,
   buildConversationStateChangedEvent,
-} from "../../../../core/utils/event/builders/index.js";
-import { LLMExecutor } from "../../../../core/executors/llm-executor.js";
-import { ToolRegistry } from "../../../../core/registry/tool-registry.js";
-import type { SkillRegistry } from "../../../../core/registry/skill-registry.js";
-import * as Identifiers from "../../../../core/di/service-identifiers.js";
-import type { GlobalContext } from "../../../../core/global-context.js";
+} from "../../../../shared/utils/event/builders/index.js";
+import { LLMExecutor } from "../../../../services/executors/llm-executor.js";
+import { ToolRegistry } from "../../../../shared/registry/tool-registry.js";
+import type { SkillRegistry } from "../../../../shared/registry/skill-registry.js";
+import * as Identifiers from "../../../../di/service-identifiers.js";
+import type { GlobalContext } from "../../../../shared/global-context.js";
 import { createContextualLogger } from "../../../../utils/contextual-logger.js";
-import { injectSkillMetadata } from "../../../../core/utils/metadata-injection.js";
+import { injectSkillMetadata } from "../../../../shared/utils/metadata-injection.js";
 
 const logger = createContextualLogger({ component: "AgentLoopHandler" });
 

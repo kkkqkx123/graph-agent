@@ -4,7 +4,7 @@
  * Responsible for the registration and deregistration of predefined triggers.
  */
 
-import type { TriggerTemplateRegistry } from "@sdk/core/registry/trigger-template-registry.js";
+import type { TriggerTemplateRegistry } from "@sdk/shared/registry/trigger-template-registry.js";
 import { createContextualLogger } from "@sdk/utils/contextual-logger.js";
 import { createPredefinedTriggers } from "./registry.js";
 import type { PredefinedTriggersOptions } from "./types.js";

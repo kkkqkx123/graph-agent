@@ -12,13 +12,13 @@
 import type { WorkflowExecutionRegistry } from "../../stores/workflow-execution-registry.js";
 import type { WorkflowRegistry } from "../../stores/workflow-registry.js";
 import type { WorkflowGraphRegistry } from "../../stores/workflow-graph-registry.js";
-import type { EventRegistry } from "../../../core/registry/event-registry.js";
-import type { ToolRegistry } from "../../../core/registry/tool-registry.js";
-import type { LLMExecutor } from "../../../core/executors/llm-executor.js";
-import type { ToolCallExecutor } from "../../../core/executors/tool-call-executor.js";
+import type { EventRegistry } from "../../../shared/registry/event-registry.js";
+import type { ToolRegistry } from "../../../shared/registry/tool-registry.js";
+import type { LLMExecutor } from "../../../services/executors/llm-executor.js";
+import type { ToolCallExecutor } from "../../../services/executors/tool-call-executor.js";
 import type { InterruptionDetector } from "../interruption-detector.js";
 import type { CheckpointState } from "../../checkpoint/checkpoint-state-manager.js";
-import type { ToolPermissionManager } from "../../../core/coordinators/tool-permission-manager.js";
+import type { ToolPermissionManager } from "../../../shared/coordinators/tool-permission-manager.js";
 import { ExecutionError } from "@wf-agent/types";
 
 /**

@@ -5,7 +5,7 @@
 
 import type { NodeTemplate, StaticNodeType, StaticNode } from "@wf-agent/types";
 import { TemplateBuilder } from "./template-builder.js";
-import type { GlobalContext } from "../../../core/global-context.js";
+import type { GlobalContext } from "../../../shared/global-context.js";
 
 /**
  * NodeTemplateBuilder - Node Template Builder

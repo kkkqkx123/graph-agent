@@ -9,7 +9,7 @@
  * - Provide diagnostics information for debugging
  */
 
-import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../shared/sdk-dependencies.js";
 import { createContextualLogger } from "../../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ operation: "StorageDiagnosticsAPI" });

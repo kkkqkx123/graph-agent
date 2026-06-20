@@ -13,7 +13,7 @@
  * - Generic: Works with any type extending BaseTriggerDefinition
  * - Separated from business logic: Does not know about workflow/agent-specific concerns
  *
- * @see sdk/core/hooks/executor.ts for the analogous Hook executor pattern
+ * @see s../shared/hooks/executor.ts for the analogous Hook executor pattern
  */
 
 import type {

@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { APIDependencyManager } from "../sdk-dependencies.js";
-import type { GlobalContext } from "../../../../core/global-context.js";
+import type { GlobalContext } from "../../../../shared/global-context.js";
 import type { Container } from "@wf-agent/common-utils";
-import * as Identifiers from "../../../../core/di/service-identifiers.js";
+import * as Identifiers from "../../../../di/service-identifiers.js";
 
 describe("sdk-dependencies.ts", () => {
   let mockGlobalContext: GlobalContext;

@@ -16,12 +16,12 @@
  * Inspired by WorkflowStateTransitor design pattern.
  */
 
-import type { EventRegistry } from "../../../core/registry/event-registry.js";
+import type { EventRegistry } from "../../../shared/registry/event-registry.js";
 import type { AgentLoopResult } from "@wf-agent/types";
 import type { AgentLoopEntity } from "../../entities/agent-loop-entity.js";
 import { AgentLoopStatus } from "@wf-agent/types";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
-import { emit } from "../../../core/utils/event/emit-event.js";
+import { emit } from "../../../shared/utils/event/emit-event.js";
 import {
   buildAgentStartedEvent,
   buildAgentCompletedEvent,
@@ -29,7 +29,7 @@ import {
   buildAgentCancelledEvent,
   buildAgentResumedEvent,
   buildAgentFailedEvent,
-} from "../../../core/utils/event/builders/agent-events.js";
+} from "../../../shared/utils/event/builders/agent-events.js";
 
 const logger = createContextualLogger({ component: "AgentLoopStateTransitor" });
 

@@ -19,7 +19,7 @@ import {
   ToolNotFoundError,
   RuntimeValidationError,
 } from "@wf-agent/types";
-import type { IToolExecutor } from "../../services/tools/core/interfaces.js";
+import type { IToolExecutor } from "../**SHARED**/interfaces.js";
 import type { ToolExecutionOptions, ToolExecutionResult } from "@wf-agent/types";
 import type { RestExecutorConfig } from "../../services/tools/executors/rest.js";
 import { StatelessExecutor } from "../../services/tools/executors/stateless.js";

@@ -1,7 +1,7 @@
 /**
  * Graph Hook Processor Module
  *
- * Implements Graph-specific Hook execution logic based on the sdk/core/hooks general framework.
+ * Implements Graph-specific Hook execution logic based on the sdk/shared/hooks general framework.
  * The timing of execution is managed by higher-level stateful modules (such as WorkflowExecutor).
  */
 
@@ -14,9 +14,9 @@ import {
   executeHooks,
   type BaseHookContext,
   type HookHandler,
-} from "../../../../core/hooks/index.js";
+} from "../../../../shared/hooks/index.js";
 import { getErrorOrNew } from "@wf-agent/common-utils";
-import { executeWithInterruptionHandling } from "../../../../core/utils/interruption/index.js";
+import { executeWithInterruptionHandling } from "../../../../shared/utils/interruption/index.js";
 import {
   getWorkflowInterruptionDescription,
   toWorkflowInterruptionResult,
@@ -26,7 +26,7 @@ import { createContextualLogger } from "../../../../utils/contextual-logger.js";
 import { buildHookEvaluationContext, convertToEvaluationContext } from "./context-builder.js";
 import { emitHookEvent } from "./event-emitter.js";
 import type { WorkflowExecutionEntity } from "../../../entities/index.js";
-import type { ConversationSession } from "../../../../core/messaging/conversation-session.js";
+import type { ConversationSession } from "../../../../shared/messaging/conversation-session.js";
 
 const logger = createContextualLogger();
 

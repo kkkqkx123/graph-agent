@@ -8,7 +8,7 @@ import { LoopEndNodeConfigSchema, ConfigurationValidationError } from "@wf-agent
 import type { Result } from "@wf-agent/types";
 import { ok, err } from "@wf-agent/common-utils";
 import { dslParseWithErrors } from "../../../services/evaluation/index.js";
-import { validateNodeType, validateNodeConfig } from "../../../core/validation/utils.js";
+import { validateNodeType, validateNodeConfig } from "../../../shared/validation/utils.js";
 
 /**
  * Verify LoopEnd node configuration

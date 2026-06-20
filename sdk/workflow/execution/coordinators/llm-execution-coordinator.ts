@@ -20,8 +20,8 @@ import type {
   WorkflowConfig,
   TransformContextFn,
 } from "@wf-agent/types";
-import { ConversationSession } from "../../../core/messaging/conversation-session.js";
-import type { ToolPermissionManager } from "../../../core/coordinators/tool-permission-manager.js";
+import { ConversationSession } from "../../../shared/messaging/conversation-session.js";
+import type { ToolPermissionManager } from "../../../shared/coordinators/tool-permission-manager.js";
 import { emit } from "../utils/index.js";
 import type { ToolApprovalResult } from "@wf-agent/types";
 import { generateId } from "../../../utils/index.js";
@@ -32,14 +32,14 @@ import { InterruptionDetectorImpl, type InterruptionDetector } from "../interrup
 import { getWorkflowInterruptionDescription } from "../utils/workflow-interruption-utils.js";
 import type { WorkflowInterruptionCheckResult } from "../utils/workflow-interruption-utils.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
-import { buildToolApprovalRequestedEvent } from "../../../core/utils/event/builders/index.js";
+import { buildToolApprovalRequestedEvent } from "../../../shared/utils/event/builders/index.js";
 import {
   LLMContextFactory,
   type LLMContextFactoryConfig,
 } from "../factories/llm-context-factory.js";
-import { ToolCallExecutor } from "../../../core/executors/tool-call-executor.js";
-import { ToolApprovalCoordinator } from "../../../core/coordinators/tool-approval-coordinator.js";
-import { LLMExecutionCoordinator as CoreLLMExecutionCoordinator } from "../../../core/coordinators/llm-execution-coordinator.js";
+import { ToolCallExecutor } from "../../../services/executors/tool-call-executor.js";
+import { ToolApprovalCoordinator } from "../../../shared/coordinators/tool-approval-coordinator.js";
+import { LLMExecutionCoordinator as CoreLLMExecutionCoordinator } from "../../../shared/coordinators/llm-execution-coordinator.js";
 
 const logger = createContextualLogger();
 

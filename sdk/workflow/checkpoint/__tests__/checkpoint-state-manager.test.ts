@@ -4,7 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CheckpointState } from "../checkpoint-state-manager.js";
-import type { EventRegistry } from "../../../core/registry/event-registry.js";
+import type { EventRegistry } from "../../../shared/registry/event-registry.js";
 import type { Checkpoint } from "@wf-agent/types";
 
 // Mock dependencies
@@ -17,7 +17,7 @@ vi.mock("../../../utils/contextual-logger.js", () => ({
   }),
 }));
 
-vi.mock("../../../core/utils/event/builders/index.js", () => ({
+vi.mock("../../../shared/utils/event/builders/index.js", () => ({
   buildCheckpointCreatedEvent: vi.fn(params => ({
     type: "CHECKPOINT_CREATED",
     ...params,

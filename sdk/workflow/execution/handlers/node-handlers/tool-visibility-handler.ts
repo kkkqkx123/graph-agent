@@ -4,8 +4,8 @@
  */
 
 import type { RuntimeNode, ToolVisibilityNodeConfig } from "@wf-agent/types";
-import type { ToolPermissionManager } from "../../../../core/coordinators/tool-permission-manager.js";
-import type { RejectionMessageBuilder } from "../../../../core/coordinators/rejection-message-builder.js";
+import type { ToolPermissionManager } from "../../../../shared/coordinators/tool-permission-manager.js";
+import type { RejectionMessageBuilder } from "../../../../shared/coordinators/rejection-message-builder.js";
 import { createContextualLogger } from "../../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger();

@@ -15,8 +15,8 @@
  */
 
 import type { WorkflowExecutionRegistry } from "../stores/workflow-execution-registry.js";
-import type { InterruptionType } from "../../core/types/interruption-types.js";
-import { isAborted } from "../../core/utils/interruption/index.js";
+import type { InterruptionType } from "../../shared/types/interruption-types.js";
+import { isAborted } from "../../shared/utils/interruption/index.js";
 import {
   checkWorkflowInterruption,
   getWorkflowInterruptionType,

@@ -8,8 +8,8 @@
  * - Incremental updates: Only notifies about added/removed tools.
  */
 
-import type { ToolRegistry } from "../../../core/registry/tool-registry.js";
-import { renderTemplate } from "../../../core/utils/template-renderer/index.js";
+import type { ToolRegistry } from "../../../shared/registry/tool-registry.js";
+import { renderTemplate } from "../../../shared/utils/template-renderer/index.js";
 import { TOOL_VISIBILITY_DECLARATION_TEMPLATE } from "../../../resources/predefined/prompt-templates/tool-visibility-template.js";
 
 /**

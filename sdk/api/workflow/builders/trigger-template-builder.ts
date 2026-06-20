@@ -6,7 +6,7 @@
 import type { TriggerTemplate, TriggerCondition, TriggerAction, Metadata } from "@wf-agent/types";
 import { EventType, TriggerActionType } from "@wf-agent/types";
 import { TemplateBuilder } from "./template-builder.js";
-import type { GlobalContext } from "../../../core/global-context.js";
+import type { GlobalContext } from "../../../shared/global-context.js";
 
 /**
  * TriggerTemplateBuilder - Trigger template builder

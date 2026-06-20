@@ -6,9 +6,9 @@
  */
 
 import { BaseCommand, CommandValidationResult } from "../../types/command.js";
-import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../shared/sdk-dependencies.js";
 import type { Event } from "@wf-agent/types";
-import { emit } from "../../../../core/utils/event/emit-event.js";
+import { emit } from "../../../../shared/utils/event/emit-event.js";
 
 /**
  * Dispatch event parameters

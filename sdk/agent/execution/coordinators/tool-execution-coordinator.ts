@@ -24,10 +24,10 @@ import type {
   AgentHookTriggeredEvent,
 } from "@wf-agent/types";
 import type { AgentLoopEntity } from "../../entities/agent-loop-entity.js";
-import type { ConversationSession } from "../../../core/messaging/conversation-session.js";
-import type { ToolCallExecutor } from "../../../core/executors/tool-call-executor.js";
-import type { EventRegistry } from "../../../core/registry/event-registry.js";
-import { ToolApprovalCoordinator } from "../../../core/coordinators/tool-approval-coordinator.js";
+import type { ConversationSession } from "../../../shared/messaging/conversation-session.js";
+import type { ToolCallExecutor } from "../../../services/executors/tool-call-executor.js";
+import type { EventRegistry } from "../../../shared/registry/event-registry.js";
+import { ToolApprovalCoordinator } from "../../../shared/coordinators/tool-approval-coordinator.js";
 import { executeAgentHook } from "../handlers/hook-handlers/index.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
 import type { AgentStateCoordinator } from "../../state-managers/agent-state-coordinator.js";

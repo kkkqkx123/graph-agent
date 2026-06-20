@@ -27,12 +27,12 @@ import { getAvailableTools, AgentLoopStatus } from "@wf-agent/types";
 import type { WorkflowExecutionRegistry } from "../../../workflow/stores/workflow-execution-registry.js";
 import { AgentLoopEntity } from "../../entities/agent-loop-entity.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
-import * as Identifiers from "../../../core/di/service-identifiers.js";
-import type { GlobalContext } from "../../../core/global-context.js";
+import * as Identifiers from "../../../di/service-identifiers.js";
+import type { GlobalContext } from "../../../shared/global-context.js";
 import { AgentLoopCheckpointCoordinator } from "../../checkpoint/index.js";
-import type { ExecutionHierarchyRegistry } from "../../../core/registry/execution-hierarchy-registry.js";
+import type { ExecutionHierarchyRegistry } from "../../../shared/registry/execution-hierarchy-registry.js";
 import type { CheckpointDependencies } from "../../checkpoint/checkpoint-coordinator.js";
-import { ConversationSession } from "../../../core/messaging/conversation-session.js";
+import { ConversationSession } from "../../../shared/messaging/conversation-session.js";
 import { AgentStateCoordinator } from "../../state-managers/agent-state-coordinator.js";
 
 const logger = createContextualLogger({ component: "AgentLoopFactory" });

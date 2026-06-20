@@ -13,7 +13,7 @@
 
 import { LLMMessage } from "@wf-agent/types";
 import { AgentLoopRegistry } from "../../stores/agent-loop-registry.js";
-import { ConversationSession } from "../../../core/messaging/conversation-session.js";
+import { ConversationSession } from "../../../shared/messaging/conversation-session.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "ConversationCoordinator" });

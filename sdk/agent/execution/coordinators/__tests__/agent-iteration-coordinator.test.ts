@@ -10,9 +10,9 @@
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import type { LLMResult, AgentHookTriggeredEvent } from "@wf-agent/types";
-import type { EventRegistry } from "../../../../core/registry/event-registry.js";
-import type { MessageStream } from "../../../../core/llm/message-stream.js";
-import type { LLMExecutionCoordinator as CoreLLMExecutionCoordinator } from "../../../../core/coordinators/llm-execution-coordinator.js";
+import type { EventRegistry } from "../../../../shared/registry/event-registry.js";
+import type { MessageStream } from "../../../../services/llm/message-stream.js";
+import type { LLMExecutionCoordinator as CoreLLMExecutionCoordinator } from "../../../../shared/coordinators/llm-execution-coordinator.js";
 import type { AgentStateCoordinator } from "../../../state-managers/agent-state-coordinator.js";
 import {
   AgentIterationCoordinator,
@@ -37,7 +37,7 @@ vi.mock("../../handlers/agent-error-handler.js", () => ({
 }));
 
 // Mock event builders
-vi.mock("../../../../core/utils/event/builders/agent-events.js", () => ({
+vi.mock("../../../../shared/utils/event/builders/agent-events.js", () => ({
   buildAgentStartedEvent: vi.fn(() => ({ type: "AGENT_STARTED" })),
   buildAgentCompletedEvent: vi.fn(() => ({ type: "AGENT_COMPLETED" })),
   buildAgentIterationCompletedEvent: vi.fn(() => ({ type: "AGENT_ITERATION_COMPLETED" })),

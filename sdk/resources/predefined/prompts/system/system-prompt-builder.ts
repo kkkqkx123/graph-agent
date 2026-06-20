@@ -22,11 +22,11 @@
  */
 
 import type { Tool } from "@wf-agent/types";
-import type { ToolDescriptionFormat } from "@sdk/core/utils/tools/tool-description-generator.js";
+import type { ToolDescriptionFormat } from "@sdk/shared/utils/tools/tool-description-generator.js";
 import {
   generateToolAvailabilitySection,
   toolDescriptionRegistry,
-} from "@sdk/core/utils/tools/index.js";
+} from "@sdk/shared/utils/tools/index.js";
 import {
   buildCompleteSystemPrompt,
   ASSISTANT_SYSTEM_PROMPT_FRAGMENTS,

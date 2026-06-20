@@ -26,10 +26,10 @@ import type {
   Event as RegistryEvent,
 } from "@wf-agent/types";
 import type { AgentLoopEntity } from "../../entities/agent-loop-entity.js";
-import type { ConversationSession } from "../../../core/messaging/conversation-session.js";
-import type { EventRegistry } from "../../../core/registry/event-registry.js";
-import type { MessageStream } from "../../../core/llm/message-stream.js";
-import type { LLMExecutionCoordinator as CoreLLMExecutionCoordinator } from "../../../core/coordinators/llm-execution-coordinator.js";
+import type { ConversationSession } from "../../../shared/messaging/conversation-session.js";
+import type { EventRegistry } from "../../../shared/registry/event-registry.js";
+import type { MessageStream } from "../../../services/llm/message-stream.js";
+import type { LLMExecutionCoordinator as CoreLLMExecutionCoordinator } from "../../../shared/coordinators/llm-execution-coordinator.js";
 import {
   checkAgentInterruption,
   getAgentInterruptionDescription,
@@ -45,7 +45,7 @@ import {
   buildAgentToolExecutionStartedEvent,
   buildAgentToolExecutionCompletedEvent,
   buildMessageAddedEvent,
-} from "../../../core/utils/event/builders/index.js";
+} from "../../../shared/utils/event/builders/index.js";
 import { ToolExecutionCoordinator } from "./tool-execution-coordinator.js";
 
 /**

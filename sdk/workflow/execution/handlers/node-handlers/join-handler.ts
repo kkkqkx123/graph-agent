@@ -20,20 +20,20 @@ import type {
   WorkflowExecution,
 } from "@wf-agent/types";
 import type { WorkflowExecutionEntity } from "../../../entities/workflow-execution-entity.js";
-import type { GlobalContext } from "../../../../core/global-context.js";
+import type { GlobalContext } from "../../../../shared/global-context.js";
 import type { WorkflowExecutionRegistry } from "../../../stores/workflow-execution-registry.js";
-import type { EventRegistry } from "../../../../core/registry/event-registry.js";
+import type { EventRegistry } from "../../../../shared/registry/event-registry.js";
 import { RuntimeValidationError } from "@wf-agent/types";
 import { now, getErrorOrNew } from "@wf-agent/common-utils";
-import * as Identifiers from "../../../../core/di/service-identifiers.js";
+import * as Identifiers from "../../../../di/service-identifiers.js";
 import { createContextualLogger } from "../../../../utils/contextual-logger.js";
-import { emit } from "../../../../core/utils/event/emit-event.js";
+import { emit } from "../../../../shared/utils/event/emit-event.js";
 import {
   buildWorkflowExecutionJoinStartedEvent,
   buildWorkflowExecutionJoinConditionMetEvent,
   buildWorkflowExecutionJoinCompletedEvent,
   buildWorkflowExecutionJoinFailedEvent,
-} from "../../../../core/utils/event/builders/index.js";
+} from "../../../../shared/utils/event/builders/index.js";
 
 const logger = createContextualLogger({ component: "join-handler" });
 
