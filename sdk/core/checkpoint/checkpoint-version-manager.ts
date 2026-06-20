@@ -109,14 +109,14 @@ export class CheckpointVersionManager {
       return false;
     }
 
-    const metadata = cp.metadata as Record<string, unknown>;
-    if (!metadata || !metadata.formatVersion) {
+    const metadata = cp['metadata'] as Record<string, unknown>;
+    if (!metadata || !metadata['formatVersion']) {
       this.logger.warn("Invalid checkpoint: missing format version metadata");
       return false;
     }
 
-    const version = metadata.formatVersion as Record<string, unknown>;
-    if (typeof version.major !== "number" || typeof version.minor !== "number") {
+    const version = metadata['formatVersion'] as Record<string, unknown>;
+    if (typeof version['major'] !== "number" || typeof version['minor'] !== "number") {
       this.logger.warn("Invalid format version structure", { version });
       return false;
     }
@@ -135,13 +135,13 @@ export class CheckpointVersionManager {
       createdAt: Date.now(),
     };
 
-    if (!cp.metadata) {
-      cp.metadata = {};
+    if (!cp['metadata']) {
+      cp['metadata'] = {};
     }
-    const cpMetadata = cp.metadata as Record<string, unknown>;
-    cpMetadata.formatVersion = this.currentVersion;
+    const cpMetadata = cp['metadata'] as Record<string, unknown>;
+    cpMetadata['formatVersion'] = this.currentVersion;
     if (schemaVersion) {
-      cpMetadata.schemaVersion = schemaVersion;
+      cpMetadata['schemaVersion'] = schemaVersion;
     }
 
     return metadata;
@@ -152,8 +152,8 @@ export class CheckpointVersionManager {
    */
   async migrateCheckpoint(checkpoint: unknown): Promise<VersionMigrationResult<unknown>> {
     const checkpointRecord = checkpoint as Record<string, unknown>;
-    const metadataRecord = checkpointRecord?.metadata as Record<string, unknown>;
-    const sourceVersion = (metadataRecord?.formatVersion as CheckpointFormatVersion) || CURRENT_CHECKPOINT_FORMAT_VERSION;
+    const metadataRecord = checkpointRecord?.['metadata'] as Record<string, unknown>;
+    const sourceVersion = (metadataRecord?.['formatVersion'] as CheckpointFormatVersion) || CURRENT_CHECKPOINT_FORMAT_VERSION;
 
     if (versionFormatter.compare(sourceVersion, this.currentVersion) === 0) {
       // Already at current version

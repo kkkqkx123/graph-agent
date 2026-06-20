@@ -9,6 +9,7 @@
 import type { FragmentCompositionConfig } from "@wf-agent/types";
 import { fragmentRegistry } from "./registry.js";
 import { createContextualLogger } from "@sdk/utils/contextual-logger.js";
+import { renderTemplate } from "@sdk/core/utils/template-renderer/index.js";
 
 const logger = createContextualLogger({ component: "FragmentComposer" });
 
@@ -46,10 +47,13 @@ export function composeSystemPrompt(
   for (const fragmentId of config.fragmentIds) {
     const fragment = fragmentRegistry.get(fragmentId);
     if (fragment) {
-      // Use render() for fragments with variables to support substitution
+      // Use renderTemplate() for fragments with variables to support substitution
       if (fragment.variables && fragment.variables.length > 0) {
         const variables = fragmentVariables?.get(fragmentId);
-        contents.push(fragmentRegistry.render(fragmentId, variables) ?? fragment.content);
+        const rendered = variables && Object.keys(variables).length > 0
+          ? renderTemplate(fragment.content, variables)
+          : fragment.content;
+        contents.push(rendered);
       } else {
         contents.push(fragment.content);
       }

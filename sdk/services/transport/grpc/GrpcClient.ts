@@ -74,7 +74,7 @@ export class GrpcClient extends EventEmitter {
 
       // Create channel and client
       this.channel = new grpc.Channel(this.options.address, credentials, {});
-      this.client = new serviceClass(this.options.address, credentials);
+      this.client = new (serviceClass as unknown as new(addr: string, creds: grpc.ChannelCredentials) => Record<string, unknown>)(this.options.address, credentials);
 
       // Setup health check if enabled
       if (this.options.enableHealthCheck) {
@@ -175,7 +175,8 @@ export class GrpcClient extends EventEmitter {
         reject(new Error(`RPC call timeout (${timeout}ms) for method ${method}`));
       }, timeout);
 
-      this.client[method](request, meta, (error: grpc.ServiceError | null, response: TResp) => {
+      const methodFn = (this.client as Record<string, unknown>)[method] as (req: TReq, meta: grpc.Metadata, cb: (err: grpc.ServiceError | null, resp: TResp) => void) => void;
+      methodFn(request, meta, (error: grpc.ServiceError | null, response: TResp) => {
         clearTimeout(timeoutHandle);
 
         if (error) {
@@ -193,8 +194,8 @@ export class GrpcClient extends EventEmitter {
   private convertGrpcError(error: grpc.ServiceError): Error {
     const message = `gRPC error [${error.code}]: ${error.message}`;
     const err = new Error(message);
-    (err as Record<string, unknown>).code = error.code;
-    (err as Record<string, unknown>).details = error.details;
+    ((err as unknown) as Record<string, unknown>)['code'] = error.code;
+    ((err as unknown) as Record<string, unknown>)['details'] = error.details;
     return err;
   }
 
@@ -208,14 +209,15 @@ export class GrpcClient extends EventEmitter {
 
     try {
       // Try calling a simple method (Status is common)
-      if (this.client?.Status) {
+      if (this.client?.['Status']) {
         await new Promise<void>((resolve, reject) => {
           const timeout = 5000;
           const timeoutHandle = setTimeout(() => {
             reject(new Error("Health check timeout"));
           }, timeout);
 
-          this.client.Status({}, (error: grpc.ServiceError | null) => {
+          const statusFn = (this.client as Record<string, unknown>)['Status'] as (req: Record<string, unknown>, cb: (err: grpc.ServiceError | null) => void) => void;
+          statusFn({}, (error: grpc.ServiceError | null) => {
             clearTimeout(timeoutHandle);
             if (error) {
               reject(error);

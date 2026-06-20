@@ -9,10 +9,10 @@
 
 import type { SystemPromptFragment } from "@wf-agent/types";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
-import { createRegistry } from "./utils/registry-utils.js";
+import { createRegistry } from "./utils/index.js";
 import { renderTemplate } from "../utils/template-renderer/index.js";
 import type { MutableRegistry } from "./types.js";
-import { validateFragment } from "./utils/validation-utils.js";
+import { validateFragment } from "./utils/index.js";
 
 const logger = createContextualLogger({ component: "FragmentRegistry" });
 

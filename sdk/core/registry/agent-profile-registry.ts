@@ -15,9 +15,9 @@
  */
 
 import type { AgentProfileStorageAdapter } from "@wf-agent/storage";
-import { persistAgentProfile, removeAgentProfile } from "./utils/entity-storage-utils.js";
-import { createRegistry } from "./utils/registry-utils.js";
-import { validateRequiredString } from "./utils/validation-utils.js";
+import { persistAgentProfile, removeAgentProfile } from "./utils/storage/index.js";
+import { createRegistry } from "./utils/index.js";
+import { validateRequiredString } from "./utils/index.js";
 
 /**
  * Agent profile metadata stored in the registry

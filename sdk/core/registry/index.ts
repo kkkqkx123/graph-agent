@@ -42,8 +42,8 @@ export {
 } from "./types.js";
 
 // Registry Utilities
-export { createRegistry } from "./utils/registry-utils.js";
-export { HierarchyTraversalService } from "./utils/hierarchy-traversal-service.js";
+export { createRegistry } from "./utils/index.js";
+export { HierarchyTraversalService } from "./utils/index.js";
 
 // Consolidated Entity Storage Utilities
 export {
@@ -71,7 +71,7 @@ export {
   removeTrigger,
   loadTrigger,
   initializeTriggersFromStorage,
-} from "./utils/entity-storage-utils.js";
+} from "./utils/index.js";
 
 // Validation Utilities
 export {
@@ -87,5 +87,5 @@ export {
   isRegistryValidationError,
   type RequiredFieldRule,
   type ValidationResult,
-} from "./utils/validation-utils.js";
+} from "./utils/index.js";
 

@@ -41,7 +41,7 @@ export class ScriptCompiler implements ICompiler {
         "input",
         "output",
         `return (${script})`,
-      );
+      ) as (variables: Record<string, unknown>, input: unknown, output: unknown) => unknown;
     } catch (error) {
       throw new ExpressionSecurityError(
         `Failed to compile script: ${error instanceof Error ? error.message : String(error)}`,

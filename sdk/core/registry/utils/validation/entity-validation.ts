@@ -1,11 +1,11 @@
 /**
- * Validation Utilities
+ * Entity Validation Utilities
  *
  * Provides common validation patterns for registry entities.
  * Reduces duplication across different registry implementations.
  */
 
-import { RegistryValidationError } from "../types.js";
+import { RegistryValidationError } from "../../types.js";
 
 /**
  * Validation rule for required fields.
@@ -222,59 +222,81 @@ export function isRegistryValidationError(error: unknown): error is RegistryVali
 }
 
 /**
- * Validate a prompt template.
- * Ensures template has valid ID and content.
+ * Validation rule configuration for entity fields.
+ * Declarative schema for flexible entity validation.
  */
-export function validatePromptTemplate(template: { id?: unknown; content?: unknown }): void {
-  if (!template.id || typeof template.id !== "string") {
-    throw new RegistryValidationError(
-      "Template ID is required and must be a non-empty string",
-      "id",
-    );
-  }
-
-  if (!template.content || typeof template.content !== "string") {
-    throw new RegistryValidationError(
-      `Template '${template.id}' content is required and must be a non-empty string`,
-      "content",
-    );
-  }
+export interface EntityValidationSchema<T = Record<string, unknown>> {
+  field: keyof T;
+  required?: boolean;
+  type?: "string" | "number" | "boolean" | "object" | "array";
+  custom?: (value: unknown, entity: T) => boolean | { valid: boolean; message?: string };
+  message?: string;
 }
 
 /**
- * Validate a system prompt fragment.
- * Ensures fragment has valid ID and content, and validates variable usage.
+ * Validates an entity against a schema using declarative rules.
+ * Returns ValidationResult for flexible error handling.
  */
-export function validateFragment(
-  fragment: { id?: unknown; content?: unknown; variables?: unknown },
-  logger?: { warn: (msg: string) => void },
-): void {
-  if (!fragment.id || typeof fragment.id !== "string") {
-    throw new RegistryValidationError(
-      "Fragment ID is required and must be a non-empty string",
-      "id",
-    );
-  }
+export function validateEntityBySchema<T = Record<string, unknown>>(
+  entity: T,
+  schema: EntityValidationSchema<T>[],
+): ValidationResult {
+  const errors: string[] = [];
 
-  if (!fragment.content || typeof fragment.content !== "string") {
-    throw new RegistryValidationError(
-      `Fragment '${fragment.id}' content is required and must be a non-empty string`,
-      "content",
-    );
-  }
+  for (const rule of schema) {
+    const value = (entity as Record<string, unknown>)[String(rule.field)];
+    const fieldName = String(rule.field);
 
-  const variables = fragment.variables as Array<{ name: string; required?: boolean }> | undefined;
-  if (variables && variables.length > 0) {
-    const content = fragment.content as string;
-    for (const variable of variables) {
-      const placeholder = `{{${variable.name}}}`;
-      const isUsed = content.includes(placeholder);
-      if (!isUsed && variable.required && logger) {
-        logger.warn(
-          `Fragment '${fragment.id}' declares required variable '${variable.name}' ` +
-            `but it is not used in the content`,
-        );
+    if (rule.required && (value === undefined || value === null)) {
+      errors.push(rule.message || `Field '${fieldName}' is required`);
+      continue;
+    }
+
+    if (value === undefined || value === null) {
+      continue;
+    }
+
+    if (rule.type && typeof value !== rule.type) {
+      errors.push(rule.message || `Field '${fieldName}' must be of type ${rule.type}`);
+      continue;
+    }
+
+    if (typeof value === "string" && value.trim() === "" && rule.required) {
+      errors.push(rule.message || `Field '${fieldName}' cannot be empty`);
+      continue;
+    }
+
+    if (rule.custom) {
+      const result = rule.custom(value, entity);
+      const isValid = typeof result === "boolean" ? result : result.valid;
+      if (!isValid) {
+        const customMessage =
+          typeof result === "object" ? result.message : rule.message;
+        errors.push(customMessage || `Field '${fieldName}' validation failed`);
       }
     }
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
+}
+
+/**
+ * Validates an entity and throws on first error.
+ * Convenient for registry validation where immediate failure is desired.
+ */
+export function validateEntityOrThrow<T = Record<string, unknown>>(
+  entity: T,
+  schema: EntityValidationSchema<T>[],
+  entityName: string = "entity",
+): void {
+  const result = validateEntityBySchema(entity, schema);
+  if (!result.valid) {
+    throw new RegistryValidationError(
+      `${entityName} validation failed: ${result.errors[0]}`,
+      String(schema[0]?.field),
+    );
   }
 }

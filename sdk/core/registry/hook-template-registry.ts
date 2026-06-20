@@ -18,9 +18,9 @@ import type { HookTemplate, HookTemplateSummary } from "@wf-agent/types";
 import { ValidationError } from "@wf-agent/types";
 import { getErrorMessage, now } from "@wf-agent/common-utils";
 import type { HookTemplateStorageAdapter } from "@wf-agent/storage";
-import { persistHookTemplate, removeHookTemplate } from "./utils/entity-storage-utils.js";
+import { persistHookTemplate, removeHookTemplate } from "./utils/storage/index.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
-import { createRegistry } from "./utils/registry-utils.js";
+import { createRegistry } from "./utils/index.js";
 import type {
   Registry,
   MutableRegistry,
@@ -33,7 +33,7 @@ import {
   RegistryAlreadyExistsError,
   RegistryValidationError,
 } from "./types.js";
-import { validateRequiredString } from "./utils/validation-utils.js";
+import { validateHookTemplate } from "./utils/index.js";
 
 /**
  * Hook Template Registry Class
@@ -413,7 +413,7 @@ class HookTemplateRegistry
     }
 
     const { initializeHookTemplatesFromStorage } = await import(
-      "./utils/entity-storage-utils.js"
+      "./utils/storage/index.js"
     );
     await initializeHookTemplatesFromStorage(this.storageAdapter, this.items);
   }
@@ -429,25 +429,7 @@ class HookTemplateRegistry
    * @throws RegistryValidationError If validation fails
    */
   private validateTemplate(template: HookTemplate): void {
-    // Validate required fields using standardized validators
-    validateRequiredString(template as unknown as Record<string, unknown>, "name", "Hook template name is required and must be a string");
-
-    // Validate hook configuration
-    if (!template.hook) {
-      throw new RegistryValidationError("Hook template 'hook' configuration is required", "hook");
-    }
-
-    validateRequiredString(
-      template.hook as unknown as Record<string, unknown>,
-      "hookType",
-      "Hook template hook.hookType is required",
-    );
-
-    validateRequiredString(
-      template.hook as unknown as Record<string, unknown>,
-      "eventName",
-      "Hook template hook.eventName is required",
-    );
+    validateHookTemplate(template);
   }
 }
 

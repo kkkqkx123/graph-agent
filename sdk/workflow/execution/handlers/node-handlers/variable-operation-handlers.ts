@@ -101,9 +101,9 @@ function applyFilter(items: unknown[], filterExpression: string): unknown[] {
 
   // Create evaluation context where 'item' is the current array element
   return items.filter((item) => {
-    const context = { variables: { item } };
+    const context: EvaluationContext = { variables: { item }, input: {} as Record<string, unknown>, output: {} as Record<string, unknown> };
     try {
-      const result = expressionEvaluator.evaluate(filterExpression, context as EvaluationContext);
+      const result = expressionEvaluator.evaluate(filterExpression, context);
       return Boolean(result);
     } catch (error) {
       throw new RuntimeValidationError(
@@ -173,17 +173,17 @@ export function executeAggregate(
   } else if (operation.aggregateMode === "merge") {
     // Merge mode: merge objects
     const strategy = operation.mergeStrategy || "shallow";
-    let merged: Record<string, unknown> = {};
+    let merged: Record<string, unknown> | unknown[] = {};
 
     for (const varName of operation.sourceVariables) {
       const value = sourceValues[varName];
 
       if (typeof value === "object" && value !== null && !Array.isArray(value)) {
         if (strategy === "shallow") {
-          merged = { ...merged, ...value };
+          merged = { ...merged as Record<string, unknown>, ...(value as Record<string, unknown>) };
         } else {
           // Deep merge (simple implementation)
-          merged = deepMerge(merged, value);
+          merged = deepMerge(merged as Record<string, unknown>, value as Record<string, unknown>);
         }
       } else {
         throw new RuntimeValidationError(
@@ -235,7 +235,7 @@ function deepMerge(target: Record<string, unknown> | unknown[], source: Record<s
         typeof resultValue === "object" &&
         !Array.isArray(resultValue)
       ) {
-        (result as Record<string, unknown>)[key] = deepMerge(resultValue, sourceValue);
+        (result as Record<string, unknown>)[key] = deepMerge(resultValue as Record<string, unknown>, sourceValue as Record<string, unknown>);
       } else {
         (result as Record<string, unknown>)[key] = sourceValue;
       }
@@ -332,8 +332,8 @@ export function executeBatchUpdate(
       variableManager.setVariable(update.name, typedValue);
 
       // Also update the workflow execution's variables array if available
-      if (workflowExecution?.variables) {
-        const wfVars = workflowExecution.variables as Array<{ name: string; value: unknown; type?: string; readonly: boolean }>;
+      if (workflowExecution?.['variables']) {
+        const wfVars = workflowExecution['variables'] as Array<{ name: string; value: unknown; type?: string; readonly: boolean }>;
         const updated = setArrayItemByKey(
           wfVars,
           "name",
@@ -342,7 +342,7 @@ export function executeBatchUpdate(
           typedValue
         );
         if (!updated) {
-          workflowExecution.variables.push({
+          (workflowExecution['variables'] as Array<any>).push({
             name: update.name,
             value: typedValue,
             type: update.type,

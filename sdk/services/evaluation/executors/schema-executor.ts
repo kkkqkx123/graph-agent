@@ -24,7 +24,7 @@ export class SchemaExecutor extends BaseExecutor implements IExecutor {
   }
 
   private validateAgainstSchema(value: unknown, schema: Record<string, unknown>): boolean {
-    const type = schema["type"];
+    const type = schema["type"] as string | undefined;
 
     // Type validation
     if (type) {
@@ -42,19 +42,19 @@ export class SchemaExecutor extends BaseExecutor implements IExecutor {
     if (type === "string") {
       if (typeof value !== "string") return false;
 
-      const minLength = schema["minLength"];
+      const minLength = schema["minLength"] as number | undefined;
       if (minLength !== undefined && value.length < minLength) return false;
 
-      const maxLength = schema["maxLength"];
+      const maxLength = schema["maxLength"] as number | undefined;
       if (maxLength !== undefined && value.length > maxLength) return false;
 
-      const pattern = schema["pattern"];
+      const pattern = schema["pattern"] as string | undefined;
       if (pattern) {
         const regex = new RegExp(pattern);
         if (!regex.test(value)) return false;
       }
 
-      const enumValues = schema["enum"];
+      const enumValues = schema["enum"] as unknown[] | undefined;
       if (enumValues && !enumValues.includes(value)) return false;
 
       return true;
@@ -64,13 +64,13 @@ export class SchemaExecutor extends BaseExecutor implements IExecutor {
     if (type === "number" || type === "integer") {
       const num = value as number;
 
-      const minimum = schema["minimum"];
+      const minimum = schema["minimum"] as number | undefined;
       if (minimum !== undefined && num < minimum) return false;
 
-      const maximum = schema["maximum"];
+      const maximum = schema["maximum"] as number | undefined;
       if (maximum !== undefined && num > maximum) return false;
 
-      const multipleOf = schema["multipleOf"];
+      const multipleOf = schema["multipleOf"] as number | undefined;
       if (multipleOf && num % multipleOf !== 0) return false;
 
       return true;
@@ -80,13 +80,13 @@ export class SchemaExecutor extends BaseExecutor implements IExecutor {
     if (type === "array") {
       if (!Array.isArray(value)) return false;
 
-      const minItems = schema["minItems"];
+      const minItems = schema["minItems"] as number | undefined;
       if (minItems !== undefined && value.length < minItems) return false;
 
-      const maxItems = schema["maxItems"];
+      const maxItems = schema["maxItems"] as number | undefined;
       if (maxItems !== undefined && value.length > maxItems) return false;
 
-      const items = schema["items"];
+      const items = schema["items"] as Record<string, unknown> | undefined;
       if (items) {
         for (const item of value) {
           if (!this.validateAgainstSchema(item, items)) return false;
@@ -101,8 +101,8 @@ export class SchemaExecutor extends BaseExecutor implements IExecutor {
       if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
 
       const obj = value as Record<string, unknown>;
-      const properties = schema["properties"];
-      const required = schema["required"];
+      const properties = schema["properties"] as Record<string, unknown> | undefined;
+      const required = schema["required"] as string[] | undefined;
 
       // Check required properties
       if (required && Array.isArray(required)) {
@@ -113,7 +113,7 @@ export class SchemaExecutor extends BaseExecutor implements IExecutor {
 
       // Validate properties
       if (properties && typeof properties === "object") {
-        for (const [prop, propSchema] of Object.entries(properties as Record<string, unknown>)) {
+        for (const [prop, propSchema] of Object.entries(properties)) {
           if (prop in obj) {
             if (!this.validateAgainstSchema(obj[prop], propSchema as Record<string, unknown>)) return false;
           }

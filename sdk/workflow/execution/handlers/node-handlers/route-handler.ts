@@ -25,13 +25,13 @@ function evaluateRouteCondition(
     };
 
     // Handle discriminated union Condition type
-    const conditionRecord = condition as Record<string, unknown>;
-    const conditionType = conditionRecord.type ?? "expression";
+    const conditionRecord = (condition as unknown) as Record<string, unknown>;
+    const conditionType = (conditionRecord['type'] as string) ?? "expression";
 
     // For expression conditions, use the cached evaluator for backward compatibility
     if (conditionType === "expression") {
       const depManager = workflowExecutionEntity.getDepManager();
-      const expression = conditionRecord.expression as string;
+      const expression = conditionRecord['expression'] as string;
       const cached = depManager.getTrackedExpression(expression);
       if (cached) {
         return Boolean(depManager.evaluateIfChanged(expression, context));
@@ -43,11 +43,11 @@ function evaluateRouteCondition(
       return conditionEvaluator.evaluate(condition, context);
     }
   } catch (error) {
-    const conditionRecord = condition as Record<string, unknown>;
+    const conditionRecord = (condition as unknown) as Record<string, unknown>;
     const errorMsg =
-      conditionRecord.type === "expression" || conditionRecord.type === undefined
-        ? `Failed to evaluate route condition: ${conditionRecord.expression}`
-        : `Failed to evaluate route condition of type ${conditionRecord.type}`;
+      ((conditionRecord['type'] as string) === "expression") || !conditionRecord['type']
+        ? `Failed to evaluate route condition: ${conditionRecord['expression']}`
+        : `Failed to evaluate route condition of type ${conditionRecord['type']}`;
     throw new ExecutionError(
       errorMsg,
       workflowExecutionEntity.getCurrentNodeId(),

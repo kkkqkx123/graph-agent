@@ -35,8 +35,8 @@ import { RuntimeValidator } from "../validation/tool-runtime-validator.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
 import { createBuiltinTools } from "../../resources/predefined/tools/builtin/index.js";
 import type { ToolStorageAdapter } from "@wf-agent/storage";
-import { persistTool, removeTool, initializeToolsFromStorage } from "./utils/entity-storage-utils.js";
-import { createRegistry } from "./utils/registry-utils.js";
+import { persistTool, removeTool, initializeToolsFromStorage } from "./utils/storage/index.js";
+import { createRegistry } from "./utils/index.js";
 import type {
   Registry,
   MutableRegistry,

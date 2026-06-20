@@ -81,20 +81,20 @@ export const defaultTriggerMatcher: TriggerMatcher = (
     const ctx = buildEvalContext(event);
     try {
       // Handle discriminated union Condition type
-      const conditionRecord = condition.condition as Record<string, unknown>;
-      const conditionType = conditionRecord.type ?? "expression";
+      const conditionRecord = (condition.condition as unknown) as Record<string, unknown>;
+      const conditionType = (conditionRecord['type'] as string) ?? "expression";
 
       let passed: boolean;
 
       if (conditionType === "expression") {
         // Use DependencyManager for expression conditions (backward compatibility)
-        const exprKey = conditionRecord.expression as string;
+        const exprKey = conditionRecord['expression'] as string;
         const tracked = depManager.getTrackedExpression(exprKey);
         if (tracked) {
           const result = depManager.evaluateIfChanged(exprKey, ctx);
           passed = Boolean(result);
         } else {
-          depManager.register(exprKey, conditionRecord.expression as string, ctx);
+          depManager.register(exprKey, conditionRecord['expression'] as string, ctx);
           const tracked = depManager.getTrackedExpression(exprKey);
           passed = Boolean(tracked?.lastResult);
         }
@@ -111,11 +111,11 @@ export const defaultTriggerMatcher: TriggerMatcher = (
         return false;
       }
     } catch (err) {
-      const conditionRecord = condition.condition as Record<string, unknown>;
+      const conditionRecord = (condition.condition as unknown) as Record<string, unknown>;
       const conditionInfo =
-        conditionRecord.type === "expression" || !conditionRecord.type
-          ? { expression: conditionRecord.expression }
-          : { type: conditionRecord.type };
+        (conditionRecord['type'] as string) === "expression" || !conditionRecord['type']
+          ? { expression: conditionRecord['expression'] }
+          : { type: conditionRecord['type'] };
       logger.warn("Match failed: condition evaluation threw", {
         ...conditionInfo,
         error: err instanceof Error ? err.message : String(err),

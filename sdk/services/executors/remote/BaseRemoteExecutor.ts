@@ -56,9 +56,9 @@ export abstract class BaseRemoteExecutor {
       data,
       error: error
         ? {
-            code: (error.code as string) || "UNKNOWN_ERROR",
-            message: (error.message as string) || "Unknown error",
-            details: error.details as string,
+            code: (error['code'] as string) || "UNKNOWN_ERROR",
+            message: (error['message'] as string) || "Unknown error",
+            details: error['details'] as string,
           }
         : undefined,
       metrics: {

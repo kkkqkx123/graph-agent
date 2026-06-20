@@ -13,7 +13,9 @@
  */
 
 import type { LayertwineExecutor } from "../../../services/executors/remote/implementations/layertwine/index.js";
-import type { CheckpointDependencies } from "../types.js";
+import type { CheckpointDependencies } from "../../../agent/checkpoint/checkpoint-coordinator.js";
+import type { AgentLoopCheckpoint, AgentLoopStateSnapshot } from "@wf-agent/types";
+import { AgentLoopStatus } from "@wf-agent/types";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "LayertwineCheckpointAdapter" });
@@ -24,7 +26,7 @@ const logger = createContextualLogger({ component: "LayertwineCheckpointAdapter"
  * Bridges the gap between the generic CheckpointDependencies interface
  * and the Layertwine backend service.
  */
-export class LayertwineCheckpointAdapter implements CheckpointDependencies<unknown> {
+export class LayertwineCheckpointAdapter implements CheckpointDependencies {
   constructor(private executor: LayertwineExecutor) {
     if (!executor) {
       throw new Error("LayertwineExecutor is required");
@@ -37,18 +39,14 @@ export class LayertwineCheckpointAdapter implements CheckpointDependencies<unkno
    * @param checkpoint The checkpoint to save
    * @returns The checkpoint ID assigned by Layertwine
    */
-  async saveCheckpoint(checkpoint: Record<string, unknown>): Promise<string> {
+  async saveCheckpoint(checkpoint: AgentLoopCheckpoint): Promise<string> {
     try {
-      const message = checkpoint.metadata && typeof checkpoint.metadata === "object" && "description" in checkpoint.metadata
-        ? (checkpoint.metadata as Record<string, unknown>).description
-        : "Checkpoint";
-      const author = checkpoint.metadata && typeof checkpoint.metadata === "object" && "creator" in checkpoint.metadata
-        ? (checkpoint.metadata as Record<string, unknown>).creator
-        : "system";
+      const message = checkpoint.metadata?.description ?? "Checkpoint";
+      const author = checkpoint.metadata?.customFields?.['creator'] ?? "system";
 
       const response = await this.executor.commit({
-        message,
-        author,
+        message: String(message),
+        author: String(author),
       });
 
       logger.debug("Checkpoint saved to Layertwine", {
@@ -72,7 +70,7 @@ export class LayertwineCheckpointAdapter implements CheckpointDependencies<unkno
    * @param id The checkpoint ID
    * @returns The checkpoint object, or null if not found
    */
-  async getCheckpoint(id: string): Promise<Record<string, unknown> | null> {
+  async getCheckpoint(id: string): Promise<AgentLoopCheckpoint | null> {
     try {
       const response = await this.executor.restoreCheckpoint({
         checkpointId: id,
@@ -84,11 +82,30 @@ export class LayertwineCheckpointAdapter implements CheckpointDependencies<unkno
 
       logger.debug("Checkpoint retrieved from Layertwine", { checkpointId: id });
 
+      // Create a proper AgentLoopStateSnapshot
+      const snapshot: AgentLoopStateSnapshot = {
+        status: AgentLoopStatus.CREATED,
+        currentIteration: 0,
+        toolCallCount: 0,
+        startTime: null,
+        endTime: null,
+        error: null,
+      };
+
       // Reconstruct checkpoint object from Layertwine response
       return {
         id: response.checkpointId,
-        metadata: response.metadata,
-        // Note: Actual state data needs to be fetched separately if needed
+        agentLoopId: response.checkpointId,
+        timestamp: Date.now(),
+        type: "FULL" as const,
+        snapshot,
+        metadata: {
+          description: response.metadata.message,
+          customFields: {
+            author: response.metadata.author,
+            createdAt: response.metadata.createdAt,
+          },
+        },
       };
     } catch (error) {
       logger.error("Failed to get checkpoint from Layertwine", {

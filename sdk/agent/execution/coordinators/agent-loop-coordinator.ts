@@ -28,14 +28,13 @@ import * as Identifiers from "../../../core/di/service-identifiers.js";
 import type { InterruptionStateFactory } from "../../../core/di/factory-types.js";
 import type { InterruptionState } from "../../../core/utils/interruption/interruption-state.js";
 import type { AgentStateCoordinator } from "../../state-managers/agent-state-coordinator.js";
-import { AgentLoopCheckpointCoordinator } from "../../../agent/checkpoint/checkpoint-coordinator.js";
-import type { CheckpointDependencies } from "../../../core/checkpoint/types.js";
+import { AgentLoopCheckpointCoordinator, type CheckpointDependencies } from "../../../agent/checkpoint/checkpoint-coordinator.js";
 import type { AgentCheckpointPolicy, AgentCheckpointTrigger } from "../../../agent/checkpoint/agent-checkpoint-policy.js";
 import { DEFAULT_AGENT_CHECKPOINT_POLICY } from "../../../agent/checkpoint/agent-checkpoint-policy.js";
 import { buildAgentCheckpointLayers, resolveAgentCheckpointConfig, getAgentCheckpointContentConfig } from "../../checkpoint/utils/config-resolver.js";
 import { CheckpointErrorHandler } from "../../../core/checkpoint/checkpoint-error-handler.js";
 import { CheckpointMetricsCollector } from "../../../core/checkpoint/checkpoint-metrics-collector.js";
-import type { CheckpointErrorContext, CheckpointCreationMetrics } from "@wf-agent/types";
+import type { CheckpointMetricsEvent, CheckpointErrorContext, CheckpointCreationMetrics } from "@wf-agent/types";
 
 const logger = createContextualLogger({ component: "AgentLoopCoordinator" });
 
@@ -67,7 +66,7 @@ export interface AgentLoopExecuteOptions extends AgentLoopEntityOptions {
 export class AgentLoopCoordinator {
   private readonly stateTransitor: AgentLoopStateTransitor;
   private checkpointCoordinator?: AgentLoopCheckpointCoordinator;
-  private checkpointDependencies?: CheckpointDependencies<unknown>;
+  private checkpointDependencies?: CheckpointDependencies;
   private checkpointPolicy: AgentCheckpointPolicy = DEFAULT_AGENT_CHECKPOINT_POLICY;
   private globalCheckpointConfig?: AgentLoopCheckpointConfig;
   private checkpointErrorHandler?: CheckpointErrorHandler;
@@ -100,7 +99,7 @@ export class AgentLoopCoordinator {
    * @param errorStrategy Error handling strategy (defaults to "warn")
    */
   setCheckpointDependencies(
-    dependencies: CheckpointDependencies<unknown>,
+    dependencies: CheckpointDependencies,
     policy?: AgentCheckpointPolicy,
     globalConfig?: AgentLoopCheckpointConfig,
     errorStrategy?: CheckpointErrorStrategy,
@@ -327,7 +326,7 @@ export class AgentLoopCoordinator {
    * Subscribe to checkpoint metrics events
    * @param listener Callback function for metrics events
    */
-  onCheckpointMetrics(listener: (event: Record<string, unknown>) => void): void {
+  onCheckpointMetrics(listener: (event: CheckpointMetricsEvent) => void): void {
     if (this.checkpointMetricsCollector) {
       this.checkpointMetricsCollector.on(listener);
     }

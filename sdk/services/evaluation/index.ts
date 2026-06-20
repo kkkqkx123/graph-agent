@@ -45,19 +45,21 @@ export type {
   ArrayLiteralExpr,
   NodeMetadata,
   BinaryOperator,
-  EvaluationContext,
 } from "./dsl/types.js";
+
+export type { EvaluationContext } from "@wf-agent/types";
 
 // Compilers (lazy imports to avoid circular deps)
 import { expressionCompiler } from "./compilers/expression-compiler.js";
 import { cacheManager } from "./cache-manager.js";
 import { conditionEvaluator } from "./condition-evaluator.js";
+import type { EvaluationContext } from "@wf-agent/types";
 
 // Legacy backward compatibility
 export class DependencyManager {
   register(key: string, expression: string, context: Record<string, unknown>) {
     const compiled = expressionCompiler.compile(expression);
-    cacheManager.setCachedResult(key, undefined, compiled.dependencies ?? [], context);
+    cacheManager.setCachedResult(key, undefined, compiled.dependencies ?? [], context as EvaluationContext);
     return { expression, compiled, dependencies: compiled.dependencies ?? [], lastResult: undefined };
   }
 

@@ -23,8 +23,8 @@ import {
   type HierarchyValidationResult,
   type IHierarchyRegistry,
 } from "../execution/hierarchy-integrity-service.js";
-import { HierarchyTraversalService } from "./utils/hierarchy-traversal-service.js";
-import { createRegistry } from "./utils/registry-utils.js";
+import { HierarchyTraversalService } from "./utils/index.js";
+import { createRegistry } from "./utils/index.js";
 
 /**
  * Union type for any execution entity

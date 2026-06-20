@@ -12,7 +12,8 @@ export class PredicateExecutor extends BaseExecutor implements IExecutor {
     this.validateContext(context);
 
     const ast = compiled.ast as Record<string, unknown>;
-    const { type, variable } = ast;
+    const type = ast['type'];
+    const variable = ast['variable'] as string;
 
     const value = this.getVariableValue(variable, context);
 

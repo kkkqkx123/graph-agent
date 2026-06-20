@@ -1,5 +1,5 @@
 /**
- * Registry Utilities
+ * Registry Internals
  *
  * Provides factory functions for creating type-safe in-memory registries.
  * Uses composition over inheritance for better flexibility and simplicity.

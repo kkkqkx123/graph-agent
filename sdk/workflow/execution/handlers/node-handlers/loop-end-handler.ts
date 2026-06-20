@@ -79,14 +79,14 @@ function evaluateBreakCondition(
     };
 
     // Handle discriminated union Condition type
-    const conditionRecord = breakCondition as Record<string, unknown>;
-    const conditionType = conditionRecord.type ?? "expression";
+    const conditionRecord = (breakCondition as unknown) as Record<string, unknown>;
+    const conditionType = (conditionRecord['type'] as string) ?? "expression";
 
     // For expression conditions, use the cached evaluator for backward compatibility
     if (conditionType === "expression" && executionEntity) {
       const depManager = executionEntity.getDepManager();
       const key = `loopBreak:${loopId || ""}`;
-      const expression = conditionRecord.expression as string;
+      const expression = conditionRecord['expression'] as string;
       const cached = depManager.getTrackedExpression(key);
       if (cached) {
         return Boolean(depManager.evaluateIfChanged(key, context));

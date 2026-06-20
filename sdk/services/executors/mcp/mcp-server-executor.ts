@@ -89,14 +89,14 @@ export class McpServerExecutor extends BaseRemoteExecutor {
       const toolCall = request as Record<string, unknown>;
       return this.manager.callTool(
         this.serverName,
-        toolCall.name as string,
-        toolCall.arguments
+        toolCall['name'] as string,
+        toolCall['arguments'] as Record<string, unknown> | undefined
       ) as Promise<TResp>;
     }
 
     if (method === "resources/read") {
       const resourceRead = request as Record<string, unknown>;
-      return this.manager.readResource(this.serverName, resourceRead.uri as string) as Promise<TResp>;
+      return this.manager.readResource(this.serverName, resourceRead['uri'] as string) as Promise<TResp>;
     }
 
     throw new Error(`Unsupported method: ${method}`);

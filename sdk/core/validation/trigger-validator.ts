@@ -41,12 +41,12 @@ export function validateTriggerCondition(
   }
 
   // Handle discriminated union Condition type
-  const conditionRecord = condition.condition as Record<string, unknown>;
-  if (conditionRecord && (conditionRecord.type === "expression" || !conditionRecord.type)) {
-    const expression = conditionRecord.expression;
+  const conditionRecord = (condition.condition as unknown) as Record<string, unknown>;
+  if (conditionRecord && (((conditionRecord['type'] as string) === "expression") || !conditionRecord['type'])) {
+    const expression = conditionRecord['expression'];
     if (expression) {
       try {
-        validateExpression(expression);
+        validateExpression(expression as string);
       } catch (error) {
         if (error instanceof ExpressionSecurityError) {
           return err([

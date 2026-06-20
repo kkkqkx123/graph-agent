@@ -37,48 +37,48 @@ export class ConditionEvaluator {
     }
 
     const obj = condition as Record<string, unknown>;
-    const type = (obj.type as string) ?? "expression";
+    const type = (obj['type'] as string) ?? "expression";
 
     switch (type) {
       case "expression": {
-        if (typeof obj.expression !== "string") {
+        if (typeof obj['expression'] !== "string") {
           throw new TypeError("expression condition requires 'expression' field of type string");
         }
-        if (obj.expression.trim().length === 0) {
+        if ((obj['expression'] as string).trim().length === 0) {
           throw new TypeError("expression condition requires non-empty expression string");
         }
         break;
       }
 
       case "predicate": {
-        if (typeof obj.predicateType !== "string") {
+        if (typeof obj['predicateType'] !== "string") {
           throw new TypeError("predicate condition requires 'predicateType' field of type string");
         }
-        if (typeof obj.variable !== "string") {
+        if (typeof obj['variable'] !== "string") {
           throw new TypeError("predicate condition requires 'variable' field of type string");
         }
         const validTypes = ["isEmpty", "isNotEmpty", "isNull", "isNotNull", "isTrue", "isFalse"];
-        if (!validTypes.includes(obj.predicateType)) {
-          throw new TypeError(`predicate condition has invalid predicateType: ${obj.predicateType}. Must be one of: ${validTypes.join(", ")}`);
+        if (!validTypes.includes(obj['predicateType'] as string)) {
+          throw new TypeError(`predicate condition has invalid predicateType: ${obj['predicateType']}. Must be one of: ${validTypes.join(", ")}`);
         }
         break;
       }
 
       case "schema": {
-        if (typeof obj.variable !== "string") {
+        if (typeof obj['variable'] !== "string") {
           throw new TypeError("schema condition requires 'variable' field of type string");
         }
-        if (!obj.schema || typeof obj.schema !== "object") {
+        if (!obj['schema'] || typeof obj['schema'] !== "object") {
           throw new TypeError("schema condition requires 'schema' field of type object");
         }
         break;
       }
 
       case "script": {
-        if (typeof obj.script !== "string") {
+        if (typeof obj['script'] !== "string") {
           throw new TypeError("script condition requires 'script' field of type string");
         }
-        if (obj.script.trim().length === 0) {
+        if ((obj['script'] as string).trim().length === 0) {
           throw new TypeError("script condition requires non-empty script string");
         }
         break;
@@ -105,7 +105,7 @@ export class ConditionEvaluator {
     // Issue 7: Validate condition structure before processing
     this.validateCondition(condition);
 
-    const conditionType = (condition as Record<string, unknown>).type ?? "expression";
+    const conditionType = ((condition as Record<string, unknown>)['type'] as string) ?? "expression";
 
     // Check result cache if key provided
     if (cacheKey) {
@@ -123,10 +123,10 @@ export class ConditionEvaluator {
       switch (conditionType) {
         case "expression": {
           const expr = condition as Record<string, unknown>;
-          const compileCacheKey = `expr:${expr.expression}`;
+          const compileCacheKey = `expr:${expr['expression']}`;
           let compiled = cacheManager.getCompiled(compileCacheKey);
           if (!compiled) {
-            compiled = expressionCompiler.compile(expr.expression as string);
+            compiled = expressionCompiler.compile(expr['expression'] as string);
             cacheManager.setCompiled(compileCacheKey, compiled);
           }
 
@@ -137,12 +137,12 @@ export class ConditionEvaluator {
 
         case "predicate": {
           const pred = condition as Record<string, unknown>;
-          const compileCacheKey = `pred:${pred.predicateType}:${pred.variable}`;
+          const compileCacheKey = `pred:${pred['predicateType']}:${pred['variable']}`;
           let compiled = cacheManager.getCompiled(compileCacheKey);
           if (!compiled) {
             compiled = predicateCompiler.compile({
-              type: pred.predicateType as string,
-              variable: pred.variable as string,
+              type: pred['predicateType'] as string,
+              variable: pred['variable'] as string,
             });
             cacheManager.setCompiled(compileCacheKey, compiled);
           }
@@ -154,24 +154,24 @@ export class ConditionEvaluator {
 
         case "schema": {
           const sch = condition as Record<string, unknown>;
-          const compileCacheKey = `schema:${sch.variable}:${JSON.stringify(sch.schema)}`;
+          const compileCacheKey = `schema:${sch['variable']}:${JSON.stringify(sch['schema'])}`;
           let compiled = cacheManager.getCompiled(compileCacheKey);
           if (!compiled) {
-            compiled = schemaCompiler.compile(sch.schema);
+            compiled = schemaCompiler.compile(sch['schema'] as string | Record<string, unknown>);
             cacheManager.setCompiled(compileCacheKey, compiled);
           }
 
-          const execResult = schemaExecutor.execute(compiled, context, sch.variable as string);
+          const execResult = schemaExecutor.execute(compiled, context, sch['variable'] as string);
           result = Boolean(execResult);
           break;
         }
 
         case "script": {
           const scr = condition as Record<string, unknown>;
-          const compileCacheKey = `script:${scr.script}`;
+          const compileCacheKey = `script:${scr['script']}`;
           let compiled = cacheManager.getCompiled(compileCacheKey);
           if (!compiled) {
-            compiled = scriptCompiler.compile(scr.script as string);
+            compiled = scriptCompiler.compile(scr['script'] as string);
             cacheManager.setCompiled(compileCacheKey, compiled);
           }
 
@@ -226,12 +226,12 @@ export class ConditionEvaluator {
    * Extract dependencies from a condition for caching
    */
   private extractDependencies(condition: Record<string, unknown>): string[] {
-    const type = condition.type ?? "expression";
+    const type = condition['type'] ?? "expression";
 
     switch (type) {
       case "expression": {
         try {
-          const compiled = expressionCompiler.compile(condition.expression as string);
+          const compiled = expressionCompiler.compile(condition['expression'] as string);
           return compiled.dependencies ?? [];
         } catch {
           return [];
@@ -239,11 +239,11 @@ export class ConditionEvaluator {
       }
 
       case "predicate": {
-        return [condition.variable as string].filter(Boolean);
+        return [condition['variable'] as string].filter(Boolean);
       }
 
       case "schema": {
-        return [condition.variable as string].filter(Boolean);
+        return [condition['variable'] as string].filter(Boolean);
       }
 
       case "script":

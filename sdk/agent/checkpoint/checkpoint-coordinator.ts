@@ -17,6 +17,7 @@ import type {
   FullCheckpoint,
   AgentLoopDelta,
   AgentCheckpointContentConfig,
+  CheckpointFormatVersion,
 } from "@wf-agent/types";
 import { AgentCheckpointError, CURRENT_CHECKPOINT_FORMAT_VERSION } from "@wf-agent/types";
 import { BaseCheckpointCoordinator } from "../../core/checkpoint/base-checkpoint-coordinator.js";
@@ -220,12 +221,12 @@ export class AgentLoopCheckpointCoordinator extends BaseCheckpointCoordinator<
 
     // Include execution state by default
     if (contentConfig?.includeState !== false) {
-      snapshot.status = entity.state.status;
-      snapshot.currentIteration = entity.state.currentIteration;
-      snapshot.toolCallCount = entity.state.toolCallCount;
-      snapshot.startTime = entity.state.startTime;
-      snapshot.endTime = entity.state.endTime;
-      snapshot.error = entity.state.error;
+      snapshot['status'] = entity.state.status;
+      snapshot['currentIteration'] = entity.state.currentIteration;
+      snapshot['toolCallCount'] = entity.state.toolCallCount;
+      snapshot['startTime'] = entity.state.startTime;
+      snapshot['endTime'] = entity.state.endTime;
+      snapshot['error'] = entity.state.error;
     }
 
     // Include tool calls by default, unless explicitly disabled
@@ -234,7 +235,7 @@ export class AgentLoopCheckpointCoordinator extends BaseCheckpointCoordinator<
       // For now, we include only the state fields
     }
 
-    return snapshot;
+    return snapshot as AgentLoopStateSnapshot;
   }
 
   /**

@@ -7,12 +7,10 @@
 import type { EvaluationContext } from "@wf-agent/types";
 import { ExpressionSecurityError, RuntimeValidationError } from "@wf-agent/types";
 import {
-  validatePath,
   validateArrayIndex,
   validateValueType,
   SECURITY_CONFIG,
 } from "../shared/security-validator.js";
-import { resolvePath } from "../shared/path-resolver.js";
 import { getGlobalLogger } from "@wf-agent/common-utils";
 import type {
   Expression,

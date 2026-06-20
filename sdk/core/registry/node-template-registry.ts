@@ -19,9 +19,9 @@ import { ValidationError } from "@wf-agent/types";
 import { validateNodeByType } from "../../workflow/validation/node-validation/index.js";
 import { getErrorMessage, now } from "@wf-agent/common-utils";
 import type { NodeTemplateStorageAdapter } from "@wf-agent/storage";
-import { persistNodeTemplate, removeNodeTemplate } from "./utils/entity-storage-utils.js";
+import { persistNodeTemplate, removeNodeTemplate } from "./utils/storage/index.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
-import { createRegistry } from "./utils/registry-utils.js";
+import { createRegistry } from "./utils/index.js";
 import type {
   Registry,
   MutableRegistry,
@@ -34,31 +34,9 @@ import {
   RegistryAlreadyExistsError,
   RegistryValidationError,
 } from "./types.js";
-import {
-  validateRequiredString,
-  validateEnum,
-} from "./utils/validation-utils.js";
+import { validateNodeTemplate } from "./utils/index.js";
 
 const logger = createContextualLogger({ component: "NodeTemplateRegistry" });
-
-/** Valid node template types */
-const VALID_NODE_TYPES = [
-  "START",
-  "END",
-  "VARIABLE",
-  "FORK",
-  "JOIN",
-  "SUBGRAPH",
-  "SCRIPT",
-  "LLM",
-  "USER_INTERACTION",
-  "ROUTE",
-  "CONTEXT_PROCESSOR",
-  "LOOP_START",
-  "LOOP_END",
-  "START_FROM_TRIGGER",
-  "CONTINUE_FROM_TRIGGER",
-] as const;
 
 /**
  * Node Template Registry Class
@@ -460,7 +438,7 @@ class NodeTemplateRegistry
     }
 
     const { initializeNodeTemplatesFromStorage } = await import(
-      "./utils/entity-storage-utils.js"
+      "./utils/storage/index.js"
     );
     await initializeNodeTemplatesFromStorage(this.storageAdapter, this.items);
   }
@@ -476,22 +454,33 @@ class NodeTemplateRegistry
    * @throws RegistryValidationError If validation fails
    */
   private validateTemplate(template: NodeTemplate): void {
-    // Validate required fields using standardized validators
-    validateRequiredString(template as unknown as Record<string, unknown>, "name", "Node template name is required and must be a string");
+    validateNodeTemplate(template);
 
-    validateEnum(
-      template as unknown as Record<string, unknown>,
-      "type",
-      VALID_NODE_TYPES,
-      `Invalid node type: ${template.type}`,
-    );
+    const validNodeTypes = [
+      "START",
+      "END",
+      "VARIABLE",
+      "FORK",
+      "JOIN",
+      "SUBGRAPH",
+      "SCRIPT",
+      "LLM",
+      "USER_INTERACTION",
+      "ROUTE",
+      "CONTEXT_PROCESSOR",
+      "LOOP_START",
+      "LOOP_END",
+      "START_FROM_TRIGGER",
+      "CONTINUE_FROM_TRIGGER",
+    ];
 
-    // Validate config is present
-    if (!template.config) {
-      throw new RegistryValidationError("Node template config is required", "config");
+    if (!validNodeTypes.includes(template.type)) {
+      throw new RegistryValidationError(
+        `Invalid node type: ${template.type}`,
+        "type",
+      );
     }
 
-    // Verify node configuration using existing validation
     const mockNode = {
       id: "validation",
       type: template.type,
