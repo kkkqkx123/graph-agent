@@ -17,12 +17,12 @@ import {
   validateRequiredFields,
   validateStringLength,
   validatePositiveNumber,
-} from "../../../shared/validation/validation-strategy.js";
+} from "../../shared/validation/validation-strategy.js";
 
 import { now, diffTimestamp } from "@wf-agent/common-utils";
-import { CrudResourceAPI } from "../../../shared/resources/generic-resource-api.js";
-import type { ExecutionResult } from "../../../shared/types/execution-result.js";
-import { success, failure } from "../../../shared/types/execution-result.js";
+import { CrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
+import type { ExecutionResult } from "../../shared/types/execution-result.js";
+import { success, failure } from "../../shared/types/execution-result.js";
 import type {
   UserInteractionHandler,
   UserInteractionRequest,
@@ -30,7 +30,7 @@ import type {
 } from "@wf-agent/types";
 import { ConfigurationError } from "@wf-agent/types";
 import type { ToolApprovalRequestedEvent, FollowupQuestionRequestedEvent } from "@wf-agent/types";
-import type { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
 
 /**
  * User Interaction Configuration

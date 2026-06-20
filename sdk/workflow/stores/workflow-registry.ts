@@ -17,7 +17,7 @@ import type {
   UpdateOptions,
 } from "@wf-agent/types";
 import type { WorkflowReferenceInfo } from "../types/reference.js";
-import type { WorkflowSummary } from "../../api/workflow/resources/workflows/workflow-registry-api.js";
+import type { WorkflowSummary } from "../../api/workflow/resources/workflow-registry-api.js";
 import type { WorkflowExecutionRegistry } from "./workflow-execution-registry.js";
 import {
   ExecutionError,

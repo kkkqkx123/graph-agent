@@ -8,15 +8,15 @@ import {
   validateStringLength,
   validateArray,
   validatePattern,
-} from "../../../shared/validation/validation-strategy.js";
+} from "../../shared/validation/validation-strategy.js";
 
 import { now } from "@wf-agent/common-utils";
-import { CrudResourceAPI } from "../../../shared/resources/generic-resource-api.js";
+import { CrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
 import type { WorkflowTemplate } from "@wf-agent/types";
 import { WorkflowNotFoundError } from "@wf-agent/types";
-import type { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
 import type { Timestamp } from "@wf-agent/types";
-import { WorkflowValidator } from "../../../../workflow/validation/workflow-validator.js";
+import { WorkflowValidator } from "../../../workflow/validation/workflow-validator.js";
 
 /**
  * Workflow filters

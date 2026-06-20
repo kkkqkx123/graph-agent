@@ -9,8 +9,8 @@ import type {
   WorkflowExecutionResult,
   WorkflowExecutionStatus,
 } from "@wf-agent/types";
-import { CrudResourceAPI } from "../../../shared/resources/generic-resource-api.js";
-import type { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
+import { CrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
+import type { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
 import type { Timestamp } from "@wf-agent/types";
 
 /**

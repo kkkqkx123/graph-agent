@@ -3,11 +3,11 @@
  *  Inherits from ReadonlyResourceAPI, providing read-only operations
  */
 
-import { ReadonlyResourceAPI } from "../../../shared/resources/generic-resource-api.js";
-import type { WorkflowExecutionRegistry } from "../../../../workflow/stores/workflow-execution-registry.js";
+import { ReadonlyResourceAPI } from "../../shared/resources/generic-resource-api.js";
+import type { WorkflowExecutionRegistry } from "../../../workflow/stores/workflow-execution-registry.js";
 import type { LLMMessage } from "@wf-agent/types";
 import { WorkflowExecutionNotFoundError } from "@wf-agent/types";
-import type { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
 
 /**
  * Message Filter

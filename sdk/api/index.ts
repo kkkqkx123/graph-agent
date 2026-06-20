@@ -148,41 +148,41 @@ export {
 // ============================================================================
 // Workflow - Resource Management API (CRUD Operations)
 // ============================================================================
-export { WorkflowRegistryAPI } from "./workflow/resources/workflows/workflow-registry-api.js";
+export { WorkflowRegistryAPI } from "./workflow/resources/workflow-registry-api.js";
 export {
   WorkflowExecutionRegistryAPI,
   type WorkflowExecutionFilter,
   type WorkflowExecutionSummary,
-} from "./workflow/resources/executions/workflow-execution-registry-api.js";
-export { NodeRegistryAPI } from "./workflow/resources/templates/node-template-registry-api.js";
-export { TriggerTemplateRegistryAPI } from "./workflow/resources/templates/trigger-template-registry-api.js";
+} from "./workflow/resources/workflow-execution-registry-api.js";
+export { NodeRegistryAPI } from "./workflow/resources/node-template-registry-api.js";
+export { TriggerTemplateRegistryAPI } from "./workflow/resources/trigger-template-registry-api.js";
 export {
   CheckpointResourceAPI,
   type CheckpointFilter,
   type CheckpointSummary,
   type CheckpointTransition,
   type CheckpointChainAnalysis,
-} from "./workflow/resources/checkpoints/checkpoint-resource-api.js";
+} from "./workflow/resources/checkpoint-resource-api.js";
 export {
   FileCheckpointResourceAPI,
   type FileCheckpointFilter,
-} from "./workflow/resources/file-checkpoints/file-checkpoint-resource-api.js";
+} from "./workflow/resources/file-checkpoint-resource-api.js";
 export {
   MessageResourceAPI,
   type MessageFilter as WorkflowMessageFilter,
   type MessageStats,
-} from "./workflow/resources/messages/message-resource-api.js";
+} from "./workflow/resources/message-resource-api.js";
 export {
   VariableResourceAPI,
   type VariableDefinition,
   type VariableFilter,
-} from "./workflow/resources/variables/variable-resource-api.js";
-export { TriggerResourceAPI } from "./workflow/resources/triggers/trigger-resource-api.js";
+} from "./workflow/resources/variable-resource-api.js";
+export { TriggerResourceAPI } from "./workflow/resources/trigger-resource-api.js";
 export {
   UserInteractionResourceAPI,
   type UserInteractionConfig,
   type UserInteractionFilter,
-} from "./workflow/resources/user-interaction/user-interaction-resource-api.js";
+} from "./workflow/resources/user-interaction-resource-api.js";
 
 // ============================================================================
 // Workflow - Command class (with side-effect operations)

@@ -7,8 +7,8 @@ import type { HookTemplate } from "@wf-agent/types";
 import { ValidationError, ConfigurationValidationError } from "@wf-agent/types";
 import type { Result } from "@wf-agent/types";
 import { ok, err } from "@wf-agent/common-utils";
-import { CrudResourceAPI } from "../../../shared/resources/generic-resource-api.js";
-import type { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
+import { CrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
+import type { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
 import type { Timestamp } from "@wf-agent/types";
 
 /**

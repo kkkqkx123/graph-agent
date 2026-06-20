@@ -6,8 +6,8 @@
  * This API is only available when file checkpointing is enabled in SDKOptions.
  */
 
-import { CrudResourceAPI } from "../../../shared/resources/generic-resource-api.js";
-import type { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
+import { CrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
+import type { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
 import type { FileCheckpointMetadata, FileCheckpointInfo } from "@wf-agent/types";
 import type {
   FileCheckpointManager,

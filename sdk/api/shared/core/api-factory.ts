@@ -11,25 +11,25 @@
  * - Multiple SDKInstances can coexist with fully isolated API factories
  */
 
-import { WorkflowRegistryAPI } from "../../workflow/resources/workflows/workflow-registry-api.js";
+import { WorkflowRegistryAPI } from "../../workflow/resources/workflow-registry-api.js";
 import { ToolRegistryAPI } from "../resources/tools/tool-registry-api.js";
-import { WorkflowExecutionRegistryAPI } from "../../workflow/resources/executions/workflow-execution-registry-api.js";
+import { WorkflowExecutionRegistryAPI } from "../../workflow/resources/workflow-execution-registry-api.js";
 import { ScriptRegistryAPI } from "../resources/scripts/script-registry-api.js";
 import { LLMProfileRegistryAPI } from "../resources/llm/llm-profile-registry-api.js";
-import { NodeRegistryAPI } from "../../workflow/resources/templates/node-template-registry-api.js";
-import { TriggerTemplateRegistryAPI } from "../../workflow/resources/templates/trigger-template-registry-api.js";
-import { UserInteractionResourceAPI } from "../../workflow/resources/user-interaction/user-interaction-resource-api.js";
+import { NodeRegistryAPI } from "../../workflow/resources/node-template-registry-api.js";
+import { TriggerTemplateRegistryAPI } from "../../workflow/resources/trigger-template-registry-api.js";
+import { UserInteractionResourceAPI } from "../../workflow/resources/user-interaction-resource-api.js";
 import { EventResourceAPI } from "../resources/events/event-resource-api.js";
-import { TriggerResourceAPI } from "../../workflow/resources/triggers/trigger-resource-api.js";
-import { VariableResourceAPI } from "../../workflow/resources/variables/variable-resource-api.js";
-import { MessageResourceAPI } from "../../workflow/resources/messages/message-resource-api.js";
+import { TriggerResourceAPI } from "../../workflow/resources/trigger-resource-api.js";
+import { VariableResourceAPI } from "../../workflow/resources/variable-resource-api.js";
+import { MessageResourceAPI } from "../../workflow/resources/message-resource-api.js";
 import { SkillRegistryAPI } from "../resources/skills/skill-registry-api.js";
 import { MetricsResourceAPI } from "../resources/metrics/metrics-resource-api.js";
 import { TaskResourceAPI } from "../resources/tasks/task-resource-api.js";
 import { WorkflowGraphQueryAPI } from "../resources/graphs/workflow-graph-query-api.js";
 import { StorageDiagnosticsAPI } from "../resources/diagnostics/storage-diagnostics-api.js";
 import { SearchAPI } from "../resources/search/search-api.js";
-import { FileCheckpointResourceAPI } from "../../workflow/resources/file-checkpoints/file-checkpoint-resource-api.js";
+import { FileCheckpointResourceAPI } from "../../workflow/resources/file-checkpoint-resource-api.js";
 import { AgentLoopRegistryAPI } from "../../agent/resources/agent-loop-registry-api.js";
 import { AgentLoopResourceAPI } from "../../agent/resources/agent-loop-resource-api.js";
 import { AgentLoopCheckpointResourceAPI } from "../../agent/resources/checkpoint-resource-api.js";
