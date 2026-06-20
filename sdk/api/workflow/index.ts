@@ -83,6 +83,11 @@ export { RestoreFromCheckpointCommand } from "./operations/checkpoints/restore-f
 export { EnableTriggerCommand } from "./operations/triggers/enable-trigger-command.js";
 export { DisableTriggerCommand } from "./operations/triggers/disable-trigger-command.js";
 
-// Operations - Subscriptions
-export { OnEventSubscription } from "./operations/events/on-event-subscription.js";
-export { OnceEventSubscription } from "./operations/events/once-event-subscription.js";
+// Operations - Subscriptions (from shared types)
+export {
+  OnEventSubscription,
+  OnceEventSubscription,
+  WaitForEventSubscription,
+  createExecutionScopedSubscription,
+  createExecutionScopedOnceSubscription,
+} from "../shared/types/subscription.js";

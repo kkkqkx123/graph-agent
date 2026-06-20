@@ -218,12 +218,11 @@ export type { DisableTriggerParams } from "./workflow/operations/triggers/disabl
 // Subscriptions
 export {
   OnEventSubscription,
+  OnceEventSubscription,
+  WaitForEventSubscription,
   createExecutionScopedSubscription,
-} from "./workflow/operations/events/on-event-subscription.js";
-export type { OnEventParams } from "./workflow/operations/events/on-event-subscription.js";
-
-export { OnceEventSubscription } from "./workflow/operations/events/once-event-subscription.js";
-export type { OnceEventParams } from "./workflow/operations/events/once-event-subscription.js";
+  createExecutionScopedOnceSubscription,
+} from "./shared/types/subscription.js";
 
 // ============================================================================
 // Shared - Command class (with side-effect operations)
@@ -314,17 +313,6 @@ export {
   RestoreCheckpointCommand,
   type RestoreCheckpointParams,
 } from "./agent/operations/checkpoints/restore-checkpoint-command.js";
-
-// Agent Event Subscriptions
-export {
-  OnEventSubscription as AgentOnEventSubscription,
-  type OnAgentEventParams,
-} from "./agent/operations/events/on-event-subscription.js";
-
-export {
-  OnceEventSubscription as AgentOnceEventSubscription,
-  type OnceAgentEventParams,
-} from "./agent/operations/events/once-event-subscription.js";
 
 // ============================================================================
 // Agent - Resources

@@ -746,12 +746,35 @@ export class EventResourceAPI extends ReadonlyResourceAPI<Event, string, EventFi
 
   /**
    * Get workflow event statistics
-   * Note: Workflow-level tracking requires additional metrics labels
-   * @returns Empty object (workflow tracking not yet implemented in metrics)
+   *
+   * Aggregates all events by workflow ID, providing a count of events per workflow.
+   * Useful for understanding the distribution of events across workflows.
+   *
+   * @returns Record mapping workflow IDs to their event counts
+   *
+   * @example
+   * ```typescript
+   * const stats = await eventAPI.getWorkflowEventStatistics();
+   * // Returns { "wf-123": 152, "wf-456": 89 }
+   * ```
    */
   async getWorkflowEventStatistics(): Promise<Record<string, number>> {
-    logger.warn("getWorkflowEventStatistics: workflow-level tracking not yet implemented");
-    return {};
+    try {
+      const metricsCollector = this.dependencies.getEventManager().getMetricsCollector();
+
+      // Query event statistics grouped by workflow_id
+      const stats = metricsCollector.getStatisticsByLabel("workflow_id");
+
+      logger.debug("Retrieved workflow event statistics", {
+        workflowCount: Object.keys(stats).length,
+        totalEvents: Object.values(stats).reduce((a, b) => a + b, 0),
+      });
+
+      return stats;
+    } catch (error) {
+      logger.error("Failed to get workflow event statistics", { error });
+      return {};
+    }
   }
 
   /**
@@ -834,15 +857,35 @@ export class EventResourceAPI extends ReadonlyResourceAPI<Event, string, EventFi
   }
 
   /**
-   * Get agent statistics by loop from metrics collector
-   * @returns Statistics grouped by agent loop ID (requires metrics with agent_loop_id label)
+   * Get agent loop execution statistics
+   *
+   * Aggregates all events by agent loop ID, providing a count of events per agent loop.
+   * Useful for monitoring the distribution of events across concurrent agent executions.
+   *
+   * @returns Record mapping agent loop IDs to their event counts
+   *
+   * @example
+   * ```typescript
+   * const stats = await eventAPI.getAgentLoopStatistics();
+   * // Returns { "agent-123": 45, "agent-456": 67 }
+   * ```
    */
   async getAgentLoopStatistics(): Promise<Record<string, number>> {
-    // Note: Agent loop statistics would require metrics with agent_loop_id label
-    // Current implementation returns empty as this label is not tracked
-    logger.warn(
-      "getAgentLoopStatistics: agent loop tracking requires metrics with agent_loop_id label",
-    );
-    return {};
+    try {
+      const metricsCollector = this.dependencies.getEventManager().getMetricsCollector();
+
+      // Query event statistics grouped by agent_loop_id
+      const stats = metricsCollector.getStatisticsByLabel("agent_loop_id");
+
+      logger.debug("Retrieved agent loop event statistics", {
+        agentLoopCount: Object.keys(stats).length,
+        totalEvents: Object.values(stats).reduce((a, b) => a + b, 0),
+      });
+
+      return stats;
+    } catch (error) {
+      logger.error("Failed to get agent loop event statistics", { error });
+      return {};
+    }
   }
 }

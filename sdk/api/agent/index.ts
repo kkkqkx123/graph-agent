@@ -42,18 +42,16 @@ export {
 } from "./operations/checkpoints/restore-checkpoint-command.js";
 
 // ============================================================================
-// Subscriptions - Event Subscriptions
+// Subscriptions - Event Subscriptions (from shared types)
 // ============================================================================
 
 export {
   OnEventSubscription,
-  type OnAgentEventParams,
-} from "./operations/events/on-event-subscription.js";
-
-export {
   OnceEventSubscription,
-  type OnceAgentEventParams,
-} from "./operations/events/once-event-subscription.js";
+  WaitForEventSubscription,
+  createExecutionScopedSubscription,
+  createExecutionScopedOnceSubscription,
+} from "../shared/types/subscription.js";
 
 // ============================================================================
 // Resources - Resources API

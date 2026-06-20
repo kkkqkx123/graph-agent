@@ -7,6 +7,12 @@ import { sdkLogger as logger } from "../../../utils/logger.js";
 
 /**
  * Subscriber Interface
+ *
+ * Part of the Observable pattern (RxJS-like).
+ * @note Different from Event Subscription - see ../types/subscription.ts for event subscriptions
+ *
+ * This represents the ability to unsubscribe from an Observable stream.
+ * Event Subscriptions (see subscription.ts) are for event listener pattern.
  */
 export interface Subscription {
   /** Unsubscribe */

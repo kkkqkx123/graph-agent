@@ -205,6 +205,8 @@ export interface BaseEvent {
   workflowId?: ID;
   /** Execution ID (optional, for events that do not depend on the graph layer, such as the core layer) */
   executionId?: ID;
+  /** Agent Loop ID (optional, for agent-related events) */
+  agentLoopId?: ID;
   /** event metadata */
   metadata?: Metadata;
 }

@@ -274,6 +274,69 @@ export class EventMetricsCollector extends BaseMetricCollector {
   }
 
   /**
+   * Get event statistics aggregated by a specific label
+   *
+   * Useful for grouping events by workflow_id, agent_loop_id, etc.
+   *
+   * @param labelKey Label key to group by (e.g., 'workflow_id', 'agent_loop_id')
+   * @param eventTypeFilter Optional event type filter (if not provided, all events are included)
+   * @returns Map of label values to event counts
+   *
+   * @example
+   * ```typescript
+   * // Get all workflows and their event counts
+   * const stats = collector.getStatisticsByLabel('workflow_id');
+   * // Returns { "wf-123": 152, "wf-456": 89 }
+   *
+   * // Get agent loops and their event counts
+   * const agentStats = collector.getStatisticsByLabel('agent_loop_id');
+   * // Returns { "agent-123": 45, "agent-456": 67 }
+   * ```
+   */
+  getStatisticsByLabel(
+    labelKey: string,
+    eventTypeFilter?: string[],
+  ): Record<string, number> {
+    const result = this.query({
+      metricType: "counter",
+    });
+
+    const stats: Record<string, number> = {};
+
+    // Iterate through all event metrics
+    for (const [metricName, aggregated] of result.metrics.entries()) {
+      // If eventTypeFilter is specified, check if metric matches
+      if (eventTypeFilter) {
+        const eventType = metricName
+          .slice(6, -6) // Remove 'event.' prefix and '.count' suffix
+          .replace(/\./g, "_")
+          .toUpperCase();
+        if (!eventTypeFilter.includes(eventType)) {
+          continue;
+        }
+      }
+
+      // Group by specified label
+      for (const [labelKeyStr, labelAgg] of aggregated.byLabel.entries()) {
+        try {
+          const labels = JSON.parse(labelKeyStr);
+          if (labels[labelKey]) {
+            const labelValue = labels[labelKey];
+            stats[labelValue] = (stats[labelValue] || 0) + labelAgg.value;
+          }
+        } catch (error) {
+          logger.warn("Failed to parse label key during aggregation", {
+            labelKeyStr,
+            error,
+          });
+        }
+      }
+    }
+
+    return stats;
+  }
+
+  /**
    * Cleanup metrics for a specific execution
    * Called when an execution completes to free memory
    *

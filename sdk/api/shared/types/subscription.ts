@@ -148,6 +148,94 @@ export class OnceEventSubscription<T extends BaseEvent = BaseEvent> extends Base
 }
 
 /**
+ * Factory function to create OnEventSubscription using APIDependencyManager
+ * Useful for API layer operations that use dependency injection
+ */
+export function createOnEventSubscription<T extends BaseEvent = BaseEvent>(
+  eventType: EventType,
+  listener: EventListener<T>,
+  dependencies: any, // APIDependencyManager type (avoid circular dependency)
+  options: {
+    priority?: number;
+    filter?: (event: T) => boolean;
+    timeout?: number;
+    executionId: string;
+  },
+): OnEventSubscription<T> {
+  const eventManager = dependencies.getEventManager();
+  return new OnEventSubscription(eventType, listener, eventManager, options);
+}
+
+/**
+ * Factory function to create OnceEventSubscription using APIDependencyManager
+ * Useful for API layer operations that use dependency injection
+ */
+export function createOnceEventSubscription<T extends BaseEvent = BaseEvent>(
+  eventType: EventType,
+  listener: EventListener<T>,
+  dependencies: any, // APIDependencyManager type (avoid circular dependency)
+  options: {
+    priority?: number;
+    filter?: (event: T) => boolean;
+    timeout?: number;
+    executionId: string;
+  },
+): OnceEventSubscription<T> {
+  const eventManager = dependencies.getEventManager();
+  return new OnceEventSubscription(eventType, listener, eventManager, options);
+}
+
+/**
+ * Helper to create execution-scoped subscription
+ * Automatically injects executionId into options
+ */
+export function createExecutionScopedSubscription<T extends BaseEvent = BaseEvent>(
+  executionId: string,
+  eventType: EventType,
+  listener: EventListener<T>,
+  dependencies: any, // APIDependencyManager type
+  additionalOptions?: Omit<
+    {
+      priority?: number;
+      filter?: (event: T) => boolean;
+      timeout?: number;
+      executionId: string;
+    },
+    "executionId"
+  >,
+): OnEventSubscription<T> {
+  return createOnEventSubscription(eventType, listener, dependencies, {
+    ...additionalOptions,
+    executionId,
+  });
+}
+
+/**
+ * Helper to create execution-scoped once subscription
+ * Automatically injects executionId into options
+ */
+export function createExecutionScopedOnceSubscription<T extends BaseEvent = BaseEvent>(
+  executionId: string,
+  eventType: EventType,
+  listener: EventListener<T>,
+  dependencies: any, // APIDependencyManager type
+  additionalOptions?: Omit<
+    {
+      priority?: number;
+      filter?: (event: T) => boolean;
+      timeout?: number;
+      executionId: string;
+    },
+    "executionId"
+  >,
+): OnceEventSubscription<T> {
+  return createOnceEventSubscription(eventType, listener, dependencies, {
+    ...additionalOptions,
+    executionId,
+  });
+}
+
+/**
  * WaitForEventSubscription - Wait for a specific event to be triggered.
  */
 export class WaitForEventSubscription extends BaseSubscription {

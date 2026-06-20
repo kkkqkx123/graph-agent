@@ -22,6 +22,7 @@ import {
   EventMetricsCollector,
   type AggregatedEventStat,
   type EventMetricsSummary,
+  type EventMetricLabels,
 } from "../metrics/event-collector.js";
 
 const logger = createContextualLogger({ operation: "EventRegistry" });
@@ -526,8 +527,20 @@ class EventRegistry {
     const emitter = this.getEmitter(event.executionId);
     await emitter.emit(event);
 
-    // Record event metrics for cross-execution aggregation
-    this.metricsCollector.recordEvent(event.type, event.executionId);
+    // Record event metrics with dimensional labels for aggregation
+    const labels: EventMetricLabels = {
+      workflow_id: event.workflowId,
+      agent_loop_id: (event as any).agentLoopId, // Support agent events with agentLoopId
+    };
+
+    // Remove undefined labels to avoid polluting metrics data
+    Object.keys(labels).forEach(key => {
+      if (labels[key] === undefined) {
+        delete labels[key];
+      }
+    });
+
+    this.metricsCollector.recordEvent(event.type, event.executionId, labels);
 
     // Notify global listeners after successful emission
     if (this.globalListeners.length > 0) {
