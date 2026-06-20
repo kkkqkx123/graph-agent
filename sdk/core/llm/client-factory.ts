@@ -2,15 +2,13 @@
  * LLM Client Factory
  *
  * Responsible for creating client instances for different providers.
- * Clients are created using the factory pattern, and client instances are cached to improve performance.
+ * Uses a unified LLMClientImpl with different formatters for each provider.
+ * Client instances are cached to improve performance.
  */
 
 import type { LLMClient, LLMProfile } from "@wf-agent/types";
-import { OpenAIChatClient } from "./clients/openai-chat.js";
-import { OpenAIResponseClient } from "./clients/openai-response.js";
-import { AnthropicClient } from "./clients/anthropic.js";
-import { GeminiNativeClient } from "./clients/gemini-native.js";
-import { GeminiOpenAIClient } from "./clients/gemini-openai.js";
+import { LLMClientImpl } from "./client.js";
+import { getFormatter } from "./formatters/index.js";
 import { ConfigurationError } from "@wf-agent/types";
 
 /**
@@ -60,36 +58,35 @@ export class ClientFactory {
 
   /**
    * Create the corresponding client based on the provider.
+   * Gets the formatter from the FormatterRegistry and creates a unified LLMClientImpl.
    */
   private createClientByProvider(profile: LLMProfile): LLMClient {
-    switch (profile.provider) {
-      case "OPENAI_CHAT":
-        return new OpenAIChatClient(profile);
+    // Validate provider is supported
+    const supportedProviders = [
+      "OPENAI_CHAT",
+      "OPENAI_RESPONSE",
+      "ANTHROPIC",
+      "GEMINI_NATIVE",
+      "GEMINI_OPENAI",
+    ];
 
-      case "OPENAI_RESPONSE":
-        return new OpenAIResponseClient(profile);
+    if (!supportedProviders.includes(profile.provider)) {
+      throw new ConfigurationError(`Unsupported LLM provider: ${profile.provider}`, "provider", {
+        provider: profile.provider,
+        model: profile.model,
+        supportedProviders,
+      });
+    }
 
-      case "ANTHROPIC":
-        return new AnthropicClient(profile);
-
-      case "GEMINI_NATIVE":
-        return new GeminiNativeClient(profile);
-
-      case "GEMINI_OPENAI":
-        return new GeminiOpenAIClient(profile);
-
-      default:
-        throw new ConfigurationError(`Unsupported LLM provider: ${profile.provider}`, "provider", {
-          provider: profile.provider,
-          model: profile.model,
-          supportedProviders: [
-            "OPENAI_CHAT",
-            "OPENAI_RESPONSE",
-            "ANTHROPIC",
-            "GEMINI_NATIVE",
-            "GEMINI_OPENAI",
-          ],
-        });
+    // Get formatter for this provider
+    try {
+      const formatter = getFormatter(profile.provider);
+      return new LLMClientImpl(profile, formatter);
+    } catch (error) {
+      throw new ConfigurationError(`Failed to create client for provider: ${profile.provider}`, "provider", {
+        provider: profile.provider,
+        originalError: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -145,3 +142,4 @@ export class ClientFactory {
     this.clientCache.clear();
   }
 }
+

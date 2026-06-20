@@ -11,7 +11,7 @@ export { ProfileManager } from "./profile-manager.js";
 
 // Infrastructure
 export { ClientFactory } from "./client-factory.js";
-export { BaseLLMClient } from "./base-client.js";
+export { LLMClientImpl } from "./client.js";
 export { MessageStream } from "./message-stream.js";
 
 // Formatter-related exports
@@ -50,14 +50,3 @@ export {
 
 // Tool functions
 export * from "./message-helper.js";
-
-// OpenAI Client
-export { OpenAIChatClient } from "./clients/openai-chat.js";
-export { OpenAIResponseClient } from "./clients/openai-response.js";
-
-// Anthropic Client
-export { AnthropicClient } from "./clients/anthropic.js";
-
-// Gemini Client
-export { GeminiNativeClient } from "./clients/gemini-native.js";
-export { GeminiOpenAIClient } from "./clients/gemini-openai.js";

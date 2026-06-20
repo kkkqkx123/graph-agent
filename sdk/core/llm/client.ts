@@ -1,9 +1,8 @@
 /**
- * LLM Client Base Class
+ * LLM Client Implementation
  *
- * Defines the general interface and implementation for the client, providing common request handling logic.
- * Integrates with HttpClient to offer unified HTTP request processing.
- * Uses the Formatter strategy pattern to handle format conversions from different providers.
+ * Unified client implementation for all LLM providers.
+ * Uses the Formatter strategy pattern to handle format conversion for different providers.
  */
 
 import type {
@@ -16,14 +15,15 @@ import type {
 } from "@wf-agent/types";
 import { HttpClient, HttpSseTransport as SseTransport } from "../../services/index.js";
 import { BaseFormatter, type FormatterConfig } from "./formatters/index.js";
+import { AnthropicFormatter } from "./formatters/anthropic.js";
 
 /**
- * LLM Client Base Class
+ * LLM Client Implementation
  *
- * All HTTP-based provider clients inherit from BaseLLMClient
- * Use the Formatter strategy pattern to handle format conversion
+ * All HTTP-based provider clients use this unified implementation.
+ * Uses the Formatter strategy pattern to handle format conversion.
  */
-export class BaseLLMClient implements LLMClient {
+export class LLMClientImpl implements LLMClient {
   protected readonly profile: LLMProfile;
   protected readonly httpClient: HttpClient;
   protected readonly formatter: BaseFormatter;
@@ -152,11 +152,34 @@ export class BaseLLMClient implements LLMClient {
 
   /**
    * Count the number of tokens
-   * The default implementation throws an error; subclasses need to override this method.
+   *
+   * Only Anthropic supports token counting.
+   * Delegates to the formatter if it implements buildCountTokensRequest.
+   *
    * @param request LLM request
-   * @returns: Token count result
+   * @returns Token count result
    */
-  async countTokens(_request: LLMRequest): Promise<TokenCountResult> {
-    throw new Error("countTokens is not supported by this client");
+  async countTokens(request: LLMRequest): Promise<TokenCountResult> {
+    if (!(this.formatter instanceof AnthropicFormatter)) {
+      throw new Error("countTokens is not supported by this client");
+    }
+
+    const formatter = this.formatter as AnthropicFormatter;
+    const config = this.getFormatterConfig(false);
+    const { httpRequest } = formatter.buildCountTokensRequest(request, config);
+
+    const response = await this.httpClient.post<Record<string, unknown>>(
+      httpRequest.url,
+      httpRequest.body,
+      {
+        headers: httpRequest.headers,
+        query: httpRequest.query,
+      },
+    );
+
+    return {
+      inputTokens: ((response.data as Record<string, unknown>)["input_tokens"] as number) || 0,
+      raw: response.data,
+    };
   }
 }
