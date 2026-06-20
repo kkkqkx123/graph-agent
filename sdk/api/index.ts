@@ -356,6 +356,42 @@ export {
   type AgentLoopMessageStats,
 } from "./agent/resources/message-resource-api.js";
 
+export {
+  AgentLoopExecutionHistoryAPI,
+  type AgentErrorRecord,
+  type AgentErrorFilter,
+  type AgentErrorStats,
+  type AgentInterruptionRecord,
+  type AgentInterruptionFilter,
+  type AgentInterruptionStats,
+  type InterruptionResolutionStatus,
+  type InterruptionType,
+  type ExecutionEvent,
+  type ExecutionEventFilter,
+  type ExecutionEventType,
+  type ExecutionTimelineStats,
+  type ToolExecutionDetail,
+  type ToolExecutionFilter,
+  type ToolExecutionStats,
+  type ToolExecutionCallChain,
+  type ToolExecutionStatus,
+} from "./agent/resources/agent-loop-execution-history-api.js";
+
+export {
+  AgentLoopIterationAPI,
+  type ExtendedIterationDetail,
+  type ExtendedIterationHistorySummary,
+  type DecisionOutcome,
+  type ToolDependency,
+  type ExecutionPath,
+  type LLMReasoningRecord,
+  type ErrorContextRecord,
+  type ResourceUsageRecord,
+  type ExtendedIterationFilter,
+  type DecisionAnalysis,
+  type ExecutionPathAnalysis,
+} from "./agent/resources/agent-loop-iteration-api.js";
+
 // ============================================================================
 // Shared - Types
 // ============================================================================

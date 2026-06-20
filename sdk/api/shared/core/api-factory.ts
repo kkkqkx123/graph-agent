@@ -30,6 +30,12 @@ import { WorkflowGraphQueryAPI } from "../resources/graphs/workflow-graph-query-
 import { StorageDiagnosticsAPI } from "../resources/diagnostics/storage-diagnostics-api.js";
 import { SearchAPI } from "../resources/search/search-api.js";
 import { FileCheckpointResourceAPI } from "../../workflow/resources/file-checkpoints/file-checkpoint-resource-api.js";
+import { AgentLoopRegistryAPI } from "../../agent/resources/agent-loop-registry-api.js";
+import { AgentLoopResourceAPI } from "../../agent/resources/agent-loop-resource-api.js";
+import { AgentLoopCheckpointResourceAPI } from "../../agent/resources/checkpoint-resource-api.js";
+import { AgentLoopMessageResourceAPI } from "../../agent/resources/message-resource-api.js";
+import { AgentLoopExecutionHistoryAPI } from "../../agent/resources/agent-loop-execution-history-api.js";
+import { AgentLoopIterationAPI } from "../../agent/resources/agent-loop-iteration-api.js";
 import { APIDependencyManager } from "./sdk-dependencies.js";
 
 /**
@@ -74,6 +80,18 @@ export interface AllAPIs {
   search: SearchAPI;
   /** File Checkpoint API */
   fileCheckpoints: FileCheckpointResourceAPI;
+  /** Agent Loop Registry API */
+  agentLoopRegistry: AgentLoopRegistryAPI;
+  /** Agent Loop Resource API */
+  agentLoopResource: AgentLoopResourceAPI;
+  /** Agent Loop Checkpoint API */
+  agentLoopCheckpoints: AgentLoopCheckpointResourceAPI;
+  /** Agent Loop Message API */
+  agentLoopMessages: AgentLoopMessageResourceAPI;
+  /** Agent Execution History API (includes tool execution tracking) */
+  agentExecutionHistory: AgentLoopExecutionHistoryAPI;
+  /** Agent Loop Iteration API */
+  agentLoopIteration: AgentLoopIterationAPI;
 }
 
 /**
@@ -285,6 +303,73 @@ export class APIFactory {
   }
 
   /**
+   * Create an Agent Loop Registry API
+   * @returns AgentLoopRegistryAPI instance
+   */
+  public createAgentLoopRegistryAPI(): AgentLoopRegistryAPI {
+    return this.createAPI("agentLoopRegistry", AgentLoopRegistryAPI);
+  }
+
+  /**
+   * Create an Agent Loop Resource API
+   * @returns AgentLoopResourceAPI instance
+   */
+  public createAgentLoopResourceAPI(): AgentLoopResourceAPI {
+    // Check cache first
+    const cached = this.apiInstances["agentLoopResource"];
+    if (cached) {
+      return cached as AgentLoopResourceAPI;
+    }
+
+    // Create new instance and cache it
+    const instance = new AgentLoopResourceAPI();
+    (this.apiInstances as Record<keyof AllAPIs, AllAPIs[keyof AllAPIs]>)["agentLoopResource"] = instance;
+    return instance;
+  }
+
+  /**
+   * Create an Agent Loop Checkpoint API
+   * @returns AgentLoopCheckpointResourceAPI instance
+   */
+  public createAgentLoopCheckpointAPI(): AgentLoopCheckpointResourceAPI {
+    // Check cache first
+    const cached = this.apiInstances["agentLoopCheckpoints"];
+    if (cached) {
+      return cached as AgentLoopCheckpointResourceAPI;
+    }
+
+    // Create new instance and cache it
+    const instance = new AgentLoopCheckpointResourceAPI();
+    (this.apiInstances as Record<keyof AllAPIs, AllAPIs[keyof AllAPIs]>)["agentLoopCheckpoints"] = instance;
+    return instance;
+  }
+
+  /**
+   * Create an Agent Loop Message API
+   * @returns AgentLoopMessageResourceAPI instance
+   */
+  public createAgentLoopMessageAPI(): AgentLoopMessageResourceAPI {
+    return this.createAPI("agentLoopMessages", AgentLoopMessageResourceAPI);
+  }
+
+  /**
+   * Create an Agent Execution History API
+   * (includes error, interruption, and tool execution tracking)
+   * @returns AgentLoopExecutionHistoryAPI instance
+   */
+  public createAgentExecutionHistoryAPI(): AgentLoopExecutionHistoryAPI {
+    return this.createAPI("agentExecutionHistory", AgentLoopExecutionHistoryAPI);
+  }
+
+  /**
+   * Create an Agent Loop Iteration API
+   * @returns AgentLoopIterationAPI instance
+   */
+  public createAgentLoopIterationAPI(): AgentLoopIterationAPI {
+    return this.createAPI("agentLoopIteration", AgentLoopIterationAPI);
+  }
+
+  /**
    * Create all API instances
    * @returns All API instances
    */
@@ -309,6 +394,12 @@ export class APIFactory {
       diagnostics: this.createStorageDiagnosticsAPI(),
       search: this.createSearchAPI(),
       fileCheckpoints: this.createFileCheckpointAPI(),
+      agentLoopRegistry: this.createAgentLoopRegistryAPI(),
+      agentLoopResource: this.createAgentLoopResourceAPI(),
+      agentLoopCheckpoints: this.createAgentLoopCheckpointAPI(),
+      agentLoopMessages: this.createAgentLoopMessageAPI(),
+      agentExecutionHistory: this.createAgentExecutionHistoryAPI(),
+      agentLoopIteration: this.createAgentLoopIterationAPI(),
     };
   }
 

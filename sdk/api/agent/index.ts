@@ -80,3 +80,39 @@ export {
   type AgentLoopMessageFilter,
   type AgentLoopMessageStats,
 } from "./resources/message-resource-api.js";
+
+export {
+  AgentLoopExecutionHistoryAPI,
+  type AgentErrorRecord,
+  type AgentErrorFilter,
+  type AgentErrorStats,
+  type AgentInterruptionRecord,
+  type AgentInterruptionFilter,
+  type AgentInterruptionStats,
+  type InterruptionResolutionStatus,
+  type InterruptionType,
+  type ExecutionEvent,
+  type ExecutionEventFilter,
+  type ExecutionEventType,
+  type ExecutionTimelineStats,
+  type ToolExecutionDetail,
+  type ToolExecutionFilter,
+  type ToolExecutionStats,
+  type ToolExecutionCallChain,
+  type ToolExecutionStatus,
+} from "./resources/agent-loop-execution-history-api.js";
+
+export {
+  AgentLoopIterationAPI,
+  type ExtendedIterationDetail,
+  type ExtendedIterationHistorySummary,
+  type DecisionOutcome,
+  type ToolDependency,
+  type ExecutionPath,
+  type LLMReasoningRecord,
+  type ErrorContextRecord,
+  type ResourceUsageRecord,
+  type ExtendedIterationFilter,
+  type DecisionAnalysis,
+  type ExecutionPathAnalysis,
+} from "./resources/agent-loop-iteration-api.js";
