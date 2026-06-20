@@ -3,7 +3,7 @@
  * Renders command templates by injecting runtime arguments
  */
 
-import { renderTemplate } from "../../utils/template-renderer/index.js";
+import { renderTemplate, getUnresolvedPlaceholders } from "../../../core/utils/template-renderer/index.js";
 import type { ScriptArgument } from "@wf-agent/types";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
 
@@ -102,20 +102,12 @@ export class ScriptTemplateEngine {
 
     try {
       const command = renderTemplate(template, variables);
-
-      const unresolved: string[] = [];
-      const placeholderRegex = /\{\{([^#/][^}]*?)\}\}/g;
-      let match: RegExpExecArray | null;
-      while ((match = placeholderRegex.exec(command)) !== null) {
-        if (match[1]) {
-          unresolved.push(match[1].trim());
-        }
-      }
+      const unresolvedPlaceholders = getUnresolvedPlaceholders(command);
 
       return {
         command,
-        resolved: unresolved.length === 0,
-        unresolvedPlaceholders: unresolved,
+        resolved: unresolvedPlaceholders.length === 0,
+        unresolvedPlaceholders,
       };
     } catch (error) {
       logger.error("Template rendering failed", {

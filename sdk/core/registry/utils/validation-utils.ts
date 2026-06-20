@@ -220,3 +220,61 @@ export function combineValidationResults(results: ValidationResult[]): Validatio
 export function isRegistryValidationError(error: unknown): error is RegistryValidationError {
   return error instanceof RegistryValidationError;
 }
+
+/**
+ * Validate a prompt template.
+ * Ensures template has valid ID and content.
+ */
+export function validatePromptTemplate(template: { id?: unknown; content?: unknown }): void {
+  if (!template.id || typeof template.id !== "string") {
+    throw new RegistryValidationError(
+      "Template ID is required and must be a non-empty string",
+      "id",
+    );
+  }
+
+  if (!template.content || typeof template.content !== "string") {
+    throw new RegistryValidationError(
+      `Template '${template.id}' content is required and must be a non-empty string`,
+      "content",
+    );
+  }
+}
+
+/**
+ * Validate a system prompt fragment.
+ * Ensures fragment has valid ID and content, and validates variable usage.
+ */
+export function validateFragment(
+  fragment: { id?: unknown; content?: unknown; variables?: unknown },
+  logger?: { warn: (msg: string) => void },
+): void {
+  if (!fragment.id || typeof fragment.id !== "string") {
+    throw new RegistryValidationError(
+      "Fragment ID is required and must be a non-empty string",
+      "id",
+    );
+  }
+
+  if (!fragment.content || typeof fragment.content !== "string") {
+    throw new RegistryValidationError(
+      `Fragment '${fragment.id}' content is required and must be a non-empty string`,
+      "content",
+    );
+  }
+
+  const variables = fragment.variables as Array<{ name: string; required?: boolean }> | undefined;
+  if (variables && variables.length > 0) {
+    const content = fragment.content as string;
+    for (const variable of variables) {
+      const placeholder = `{{${variable.name}}}`;
+      const isUsed = content.includes(placeholder);
+      if (!isUsed && variable.required && logger) {
+        logger.warn(
+          `Fragment '${fragment.id}' declares required variable '${variable.name}' ` +
+            `but it is not used in the content`,
+        );
+      }
+    }
+  }
+}

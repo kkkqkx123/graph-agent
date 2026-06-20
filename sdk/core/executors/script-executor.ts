@@ -13,13 +13,13 @@ import type {
   ExecutorMode,
 } from "@wf-agent/types";
 import { getTerminalService, type TerminalService } from "../../services/terminal/index.js";
-import { ScriptTemplateEngine } from "../script/engine/script-template.js";
-import { DirectExecutor } from "../script/executors/direct-executor.js";
-import { SharedExecutor } from "../script/executors/shared-executor.js";
-import { SandboxShellExecutor } from "../script/executors/sandbox-shell-executor.js";
-import { SandboxPythonExecutor } from "../script/executors/sandbox-python-executor.js";
-import { SandboxJavaScriptExecutor } from "../script/executors/sandbox-javascript-executor.js";
-import type { BaseExecutor } from "../script/executors/base-executor.js";
+import { ScriptTemplateEngine } from "../../services/script/engine/script-template.js";
+import { DirectExecutor } from "../../services/script/executors/direct-executor.js";
+import { SharedExecutor } from "../../services/script/executors/shared-executor.js";
+import { SandboxShellExecutor } from "../../services/script/executors/sandbox-shell-executor.js";
+import { SandboxPythonExecutor } from "../../services/script/executors/sandbox-python-executor.js";
+import { SandboxJavaScriptExecutor } from "../../services/script/executors/sandbox-javascript-executor.js";
+import type { BaseExecutor } from "../../services/script/executors/base-executor.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "ScriptExecutor" });

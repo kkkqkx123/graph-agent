@@ -7,6 +7,7 @@
 import type { NodeHook } from "@wf-agent/types";
 import type { HookEvaluationContext } from "./context-builder.js";
 import { renderTemplate } from "../../../../core/utils/template-renderer/index.js";
+import { stringToTypedValue } from "../../../../core/utils/type-utils.js";
 
 /**
  * Generate event payload
@@ -75,10 +76,6 @@ function resolveTemplateVariable(template: string, evalContext: HookEvaluationCo
   // Use unified template renderer
   const result = renderTemplate(template, evalContext as unknown as Record<string, unknown>);
 
-  // Try to convert result to number or boolean
-  if (result === "true") return true;
-  if (result === "false") return false;
-  if (/^-?\d+\.?\d*$/.test(result)) return parseFloat(result);
-
-  return result;
+  // Try to convert result to typed value
+  return stringToTypedValue(result);
 }

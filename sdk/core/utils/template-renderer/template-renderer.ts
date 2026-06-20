@@ -37,6 +37,39 @@ function isThisVariable(variableName: string): boolean {
   return variableName === "this" || variableName.startsWith("this.");
 }
 
+/**
+ * Validate loop special variable usage.
+ * @param variableName The variable name to validate
+ * @param context The context where the variable is being used (for error messages)
+ * @param inLoop Whether we are currently inside a loop
+ * @throws {TemplateRenderError} If the variable is invalid
+ */
+function validateLoopSpecialVar(
+  variableName: string,
+  context: string,
+  inLoop: boolean = false,
+): void {
+  if (!isLoopSpecialVar(variableName)) {
+    return;
+  }
+
+  if (!inLoop) {
+    throw new TemplateRenderError(
+      `The loop special variable '${variableName}' can only be used inside a {{#each}} loop`,
+      variableName,
+      context,
+    );
+  }
+
+  if (!isSupportedLoopSpecialVar(variableName)) {
+    throw new TemplateRenderError(
+      `Unsupported loop special variable '${variableName}'. Supported variables: ${Array.from(SUPPORTED_LOOP_SPECIAL_VARS).join(", ")}`,
+      variableName,
+      context,
+    );
+  }
+}
+
 export class TemplateRenderError extends Error {
   constructor(
     message: string,
@@ -106,20 +139,7 @@ function renderConditionals(
     let value: unknown;
 
     if (isLoopSpecialVar(trimmedName)) {
-      if (!inLoop) {
-        throw new TemplateRenderError(
-          `The loop special variable '${trimmedName}' can only be used inside a {{#each}} loop`,
-          trimmedName,
-          "{{#if}}",
-        );
-      }
-      if (!isSupportedLoopSpecialVar(trimmedName)) {
-        throw new TemplateRenderError(
-          `Unsupported loop special variables '${trimmedName}'. Supported variables: ${Array.from(SUPPORTED_LOOP_SPECIAL_VARS).join(", ")}`,
-          trimmedName,
-          "{{#if}}",
-        );
-      }
+      validateLoopSpecialVar(trimmedName, "{{#if}}", inLoop);
       value = getVariableValue(trimmedName, variables);
     } else if (isThisVariable(trimmedName)) {
       if (!inLoop) {
@@ -224,20 +244,7 @@ function renderSimpleVariables(
     const trimmedName = variableName.trim();
 
     if (isLoopSpecialVar(trimmedName)) {
-      if (!inLoop) {
-        throw new TemplateRenderError(
-          `The loop special variable '${trimmedName}' can only be used inside a {{#each}} loop`,
-          trimmedName,
-          "variable",
-        );
-      }
-      if (!isSupportedLoopSpecialVar(trimmedName)) {
-        throw new TemplateRenderError(
-          `Unsupported loop special variable '${trimmedName}'. Supported variables: ${Array.from(SUPPORTED_LOOP_SPECIAL_VARS).join(", ")}`,
-          trimmedName,
-          "variable",
-        );
-      }
+      validateLoopSpecialVar(trimmedName, "variable", inLoop);
       return match;
     }
 
@@ -271,23 +278,8 @@ function checkInvalidSpecialVars(template: string, inLoop: boolean): void {
     if (!variableName) continue;
 
     if (isLoopSpecialVar(variableName)) {
-      if (!inLoop) {
-        throw new TemplateRenderError(
-          `The loop special variable '${variableName}' can only be used inside the {{#each}} loop`,
-          variableName,
-          "variable",
-        );
-      }
-      if (!isSupportedLoopSpecialVar(variableName)) {
-        throw new TemplateRenderError(
-          `Unsupported loop special variable '${variableName}'. Supported variables: ${Array.from(SUPPORTED_LOOP_SPECIAL_VARS).join(", ")}`,
-          variableName,
-          "variable",
-        );
-      }
-    }
-
-    if (isThisVariable(variableName) && !inLoop) {
+      validateLoopSpecialVar(variableName, "variable", inLoop);
+    } else if (isThisVariable(variableName) && !inLoop) {
       throw new TemplateRenderError(
         `The '${variableName}' variable can only be used inside the {{#each}} loop`,
         variableName,
@@ -343,4 +335,25 @@ export function validateTemplateVariables(
   }
 
   return Array.from(missingVariablesSet);
+}
+
+/**
+ * Get unresolved placeholders from a template string.
+ * Returns the list of placeholder variable names that were not substituted.
+ *
+ * @param template The template string to check
+ * @returns Array of unresolved placeholder names
+ */
+export function getUnresolvedPlaceholders(template: string): string[] {
+  const unresolved: string[] = [];
+  const placeholderRegex = /\{\{([^#/][^}]*?)\}\}/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = placeholderRegex.exec(template)) !== null) {
+    if (match[1]) {
+      unresolved.push(match[1].trim());
+    }
+  }
+
+  return unresolved;
 }

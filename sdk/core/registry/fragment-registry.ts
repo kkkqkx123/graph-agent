@@ -8,10 +8,11 @@
  */
 
 import type { SystemPromptFragment } from "@wf-agent/types";
-import { renderTemplate } from "../utils/template-renderer/index.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
 import { createRegistry } from "./utils/registry-utils.js";
-import { validateRequiredString } from "./utils/validation-utils.js";
+import { renderTemplate } from "../utils/template-renderer/index.js";
+import type { MutableRegistry } from "./types.js";
+import { validateFragment } from "./utils/validation-utils.js";
 
 const logger = createContextualLogger({ component: "FragmentRegistry" });
 
@@ -29,93 +30,47 @@ export interface UnregisterResult {
  * - Unregister with cascade info: Reports affected dependent templates
  */
 export class FragmentRegistry {
-  private items = createRegistry<SystemPromptFragment>();
+  private items: MutableRegistry<SystemPromptFragment>;
   /** Tracks which templates reference each fragment (fragmentId → Set<templateId>) */
   private dependents = new Map<string, Set<string>>();
 
-  /**
-   * Validate a fragment before registration.
-   *
-   * Validates:
-   * - Fragment ID is non-empty
-   * - Fragment content is non-empty
-   * - Required variables are used in content (warning only)
-   *
-   * @param fragment Fragment definition
-   * @throws {Error} If validation fails
-   */
-  private validate(fragment: SystemPromptFragment): void {
-    validateRequiredString(fragment as unknown as Record<string, unknown>, "id", "Fragment ID is required and must be a non-empty string");
-    validateRequiredString(fragment as unknown as Record<string, unknown>, "content", `Fragment '${fragment.id}' content is required and must be a non-empty string`);
-
-    if (fragment.variables && fragment.variables.length > 0) {
-      for (const variable of fragment.variables) {
-        const placeholder = `{{${variable.name}}}`;
-        const isUsed = fragment.content.includes(placeholder);
-        if (!isUsed && variable.required) {
-          logger.warn(
-            `Fragment '${fragment.id}' declares required variable '${variable.name}' ` +
-              `but it is not used in the content`,
-          );
-        }
-      }
-    }
+  constructor() {
+    this.items = createRegistry<SystemPromptFragment>();
   }
 
   /**
-   * Register a fragment.
+   * Register a fragment with validation.
    *
    * @param key Fragment ID
-   * @param fragment Fragment definition
+   * @param fragment The fragment definition
    * @param options Registration options
-   * @throws Error if validation fails or fragment already exists
+   * @throws Error if fragment already exists and skipIfExists is not set
    */
   register(key: string, fragment: SystemPromptFragment, options?: { skipIfExists?: boolean }): void {
-    // Validate fragment
-    this.validate(fragment);
-
-    // Check for existing fragment
     if (this.items.has(key)) {
       if (options?.skipIfExists) {
         return;
       }
-      throw new Error(`Fragment '${key}' already exists`);
+      throw new Error(`Item '${key}' already exists`);
     }
 
+    validateFragment(fragment, logger);
     this.items.set(key, fragment);
   }
 
   /**
-   * Register a fragment asynchronously with storage persistence (write-through).
-   *
-   * @param key Fragment ID
-   * @param fragment Fragment definition
+   * Batch register multiple items.
+   * @param items Array of items to register
    * @param options Registration options
    */
-  async registerAsync(
-    key: string,
-    fragment: SystemPromptFragment,
-    options?: { skipIfExists?: boolean },
-  ): Promise<void> {
-    this.register(key, fragment, options);
-    // Storage persistence can be added here if needed in the future
-  }
-
-  /**
-   * Batch register multiple fragments.
-   *
-   * @param fragments Array of fragment definitions
-   * @param options Registration options
-   */
-  registerAll(fragments: SystemPromptFragment[], options?: { skipIfExists?: boolean }): void {
-    for (const fragment of fragments) {
-      this.register(fragment.id, fragment, options);
+  registerAll(items: SystemPromptFragment[], options?: { skipIfExists?: boolean }): void {
+    for (const item of items) {
+      this.register(item.id, item, options);
     }
   }
 
   /**
    * Get a fragment by ID.
-   *
    * @param key Fragment ID
    * @returns The fragment or undefined if not found
    */
@@ -125,7 +80,6 @@ export class FragmentRegistry {
 
   /**
    * Check if a fragment exists.
-   *
    * @param key Fragment ID
    * @returns Whether the fragment exists
    */
@@ -135,7 +89,6 @@ export class FragmentRegistry {
 
   /**
    * Get all fragments.
-   *
    * @returns Array of all fragments
    */
   list(): SystemPromptFragment[] {
@@ -144,7 +97,6 @@ export class FragmentRegistry {
 
   /**
    * Get all fragment IDs.
-   *
    * @returns Array of all fragment IDs
    */
   keys(): string[] {
@@ -159,6 +111,26 @@ export class FragmentRegistry {
   }
 
   /**
+   * Batch render multiple fragments with optional variable maps.
+   *
+   * @param ids Fragment IDs to render
+   * @param variablesMap Optional map of fragment ID to variable values
+   * @returns Array of rendered content strings (empty strings for missing fragments)
+   */
+  renderAll(ids: string[], variablesMap?: Map<string, Record<string, unknown>>): string[] {
+    return ids.map(id => {
+      const fragment = this.get(id);
+      if (!fragment) return "";
+
+      const vars = variablesMap?.get(id);
+      if (!vars || Object.keys(vars).length === 0) {
+        return fragment.content;
+      }
+      return renderTemplate(fragment.content, vars);
+    });
+  }
+
+  /**
    * Get fragments by category.
    *
    * @param category Fragment category
@@ -169,39 +141,9 @@ export class FragmentRegistry {
   }
 
   /**
-   * Render fragment content with variable substitution.
+   * Unregister a fragment by ID.
    *
-   * @param id Fragment ID
-   * @param variables Variable values to substitute
-   * @returns Rendered content string, or undefined if fragment not found
-   */
-  render(id: string, variables?: Record<string, unknown>): string | undefined {
-    const fragment = this.get(id);
-    if (!fragment) return undefined;
-    if (!variables || !fragment.variables || fragment.variables.length === 0) {
-      return fragment.content;
-    }
-    return renderTemplate(fragment.content, variables);
-  }
-
-  /**
-   * Batch render multiple fragments with optional variable maps.
-   *
-   * @param ids Fragment IDs to render
-   * @param variablesMap Optional map of fragment ID to variable values
-   * @returns Array of rendered content strings (empty strings for missing fragments)
-   */
-  renderAll(ids: string[], variablesMap?: Map<string, Record<string, unknown>>): string[] {
-    return ids.map(id => {
-      const vars = variablesMap?.get(id);
-      return this.render(id, vars) ?? "";
-    });
-  }
-
-  /**
-   * Unregister a fragment.
-   *
-   * @param key Fragment ID
+   * @param key Fragment ID to remove
    * @param options Unregister options
    * @returns Whether the fragment was removed
    */
@@ -225,6 +167,14 @@ export class FragmentRegistry {
   }
 
   /**
+   * Clear all fragments and dependency tracking.
+   */
+  clear(): void {
+    this.items.clear();
+    this.dependents.clear();
+  }
+
+  /**
    * Record that a template references a fragment.
    *
    * @param fragmentId The fragment ID being referenced
@@ -245,13 +195,5 @@ export class FragmentRegistry {
    */
   getDependents(fragmentId: string): string[] {
     return Array.from(this.dependents.get(fragmentId) ?? []);
-  }
-
-  /**
-   * Clear all fragments and dependency tracking.
-   */
-  clear(): void {
-    this.items.clear();
-    this.dependents.clear();
   }
 }

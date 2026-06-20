@@ -8,10 +8,12 @@
  */
 
 import type { PromptTemplate } from "@wf-agent/types";
-import { renderTemplate } from "../utils/template-renderer/index.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
 import type { FragmentRegistry } from "./fragment-registry.js";
 import { createRegistry } from "./utils/registry-utils.js";
+import type { MutableRegistry } from "./types.js";
+import { renderTemplate } from "../utils/template-renderer/index.js";
+import { validatePromptTemplate } from "./utils/validation-utils.js";
 
 const logger = createContextualLogger({ component: "PromptTemplateRegistry" });
 
@@ -24,9 +26,13 @@ const logger = createContextualLogger({ component: "PromptTemplateRegistry" });
  * - Category-based querying
  */
 export class PromptTemplateRegistry {
-  private items = createRegistry<PromptTemplate>();
+  private items: MutableRegistry<PromptTemplate>;
   private fragmentRegistry: FragmentRegistry | null = null;
   private initialized = false;
+
+  constructor() {
+    this.items = createRegistry<PromptTemplate>();
+  }
 
   /**
    * Set the fragment registry for cross-registry reference validation.
@@ -55,7 +61,7 @@ export class PromptTemplateRegistry {
   }
 
   /**
-   * Register a prompt template.
+   * Register a prompt template with cross-registry validation.
    *
    * @param key Unique template ID
    * @param template The template definition
@@ -63,13 +69,14 @@ export class PromptTemplateRegistry {
    * @throws Error if template already exists and skipIfExists is not set
    */
   register(key: string, template: PromptTemplate, options?: { skipIfExists?: boolean }): void {
-    // Check for existing template
     if (this.items.has(key)) {
       if (options?.skipIfExists) {
         return;
       }
-      throw new Error(`Template with id '${key}' already exists`);
+      throw new Error(`Item '${key}' already exists`);
     }
+
+    validatePromptTemplate(template);
 
     // Validate cross-registry references: if template references fragments,
     // check they exist in the fragment registry (if one is configured).
@@ -91,58 +98,73 @@ export class PromptTemplateRegistry {
   }
 
   /**
-   * Batch registration template
-   * @param templates Array of templates
+   * Batch register multiple items.
+   * @param items Array of items to register
+   * @param options Registration options
    */
-  registerAll(templates: PromptTemplate[]): void {
-    for (const template of templates) {
-      this.register(template.id, template);
+  registerAll(items: PromptTemplate[], options?: { skipIfExists?: boolean }): void {
+    for (const item of items) {
+      this.register(item.id, item, options);
     }
   }
 
   /**
-   * Get a template by ID.
-   *
-   * @param key Template ID
-   * @returns The template or undefined if not found
+   * Get an item by ID.
+   * @param key Item ID
+   * @returns The item or undefined if not found
    */
   get(key: string): PromptTemplate | undefined {
     return this.items.get(key);
   }
 
   /**
-   * Check if a template exists.
-   *
-   * @param key Template ID
-   * @returns Whether the template exists
+   * Check if an item exists.
+   * @param key Item ID
+   * @returns Whether the item exists
    */
   has(key: string): boolean {
     return this.items.has(key);
   }
 
   /**
-   * Get all templates.
-   *
-   * @returns Array of all templates
+   * Get all items.
+   * @returns Array of all items
    */
   list(): PromptTemplate[] {
     return this.items.list();
   }
 
   /**
-   * Get all template IDs.
-   *
-   * @returns Array of all template IDs
+   * Get all item IDs.
+   * @returns Array of all item IDs
    */
   keys(): string[] {
     return this.items.keys();
   }
 
   /**
-   * Get the number of registered templates.
+   * Get the number of registered items.
    */
   get size(): number {
     return this.items.size;
+  }
+
+  /**
+   * Unregister an item by ID.
+   * @param key Item ID to remove
+   * @returns Whether the item was removed
+   */
+  unregister(key: string): boolean {
+    return this.items.delete(key);
+  }
+
+  /**
+   * Clear all items.
+   */
+  clear(): void {
+    this.items.clear();
+    this.initialized = false;
+    this.fragmentRegistry = null;
   }
 
   /**
@@ -154,17 +176,20 @@ export class PromptTemplateRegistry {
   }
 
   /**
-   * Render template
-   * @param id: Template ID
-   * @param variables: Template variables
-   * @returns: The rendered string; returns null if the template does not exist
+   * Render item content with variable substitution.
+   * @param id Item ID
+   * @param variables Variable values to substitute (optional)
+   * @returns Rendered content string, or null if item not found
    */
-  render(id: string, variables: Record<string, unknown>): string | null {
-    const template = this.get(id);
-    if (!template) {
-      return null;
+  render(id: string, variables?: Record<string, unknown>): string | null {
+    const item = this.get(id);
+    if (!item) return null;
+
+    if (!variables || Object.keys(variables).length === 0) {
+      return item.content;
     }
-    return renderTemplate(template.content, variables);
+
+    return renderTemplate(item.content, variables);
   }
 
   /**
@@ -180,37 +205,11 @@ export class PromptTemplateRegistry {
   }
 
   /**
-   * Clear all templates.
-   */
-  /**
-   * Unregister a template by ID.
-   *
-   * @param key Template ID to remove
-   * @returns Whether the template was removed
-   */
-  unregister(key: string): boolean {
-    const removed = this.items.delete(key);
-    if (removed) {
-      logger.debug("Template unregistered", { templateId: key });
-    }
-    return removed;
-  }
-
-  /**
    * Get all registered template IDs.
    *
    * @returns Array of all template IDs
    */
   getTemplateIds(): string[] {
-    return this.items.keys();
-  }
-
-  /**
-   * Clear all templates.
-   */
-  clear(): void {
-    this.items.clear();
-    this.initialized = false;
-    this.fragmentRegistry = null;
+    return this.keys();
   }
 }

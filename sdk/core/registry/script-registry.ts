@@ -19,18 +19,8 @@
  * - SearchableRegistry<Script>: Search and filter operations
  */
 
-import type {
-  Script,
-  ScriptExecutionOptions,
-  ScriptExecutionResult,
-  ScriptFlow,
-} from "@wf-agent/types";
-import {
-  ScriptNotFoundError,
-  ScriptExecutionError,
-} from "@wf-agent/types";
+// Internal imports
 import { createContextualLogger } from "../../utils/contextual-logger.js";
-import type { ScriptStorageAdapter } from "@wf-agent/storage";
 import {
   persistScript,
   removeScript,
@@ -54,6 +44,24 @@ import {
   validatePositiveNumber,
   validateBoolean,
 } from "./utils/validation-utils.js";
+import type { Result } from "@wf-agent/types";
+import { ok, err, all } from "@wf-agent/common-utils";
+import { ScriptExecutor as ScriptExecutor_ } from "../executors/script-executor.js";
+import { ScriptEngine } from "../../services/script/engine/script-engine.js";
+import { ScriptFlowEngine } from "../../services/script/engine/script-flow-engine.js";
+
+// External imports
+import type {
+  Script,
+  ScriptExecutionOptions,
+  ScriptExecutionResult,
+  ScriptFlow,
+} from "@wf-agent/types";
+import {
+  ScriptNotFoundError,
+  ScriptExecutionError,
+} from "@wf-agent/types";
+import type { ScriptStorageAdapter } from "@wf-agent/storage";
 
 const logger = createContextualLogger({ component: "ScriptRegistry" });
 
@@ -468,7 +476,7 @@ class ScriptRegistry
    * @returns Flow execution result
    * @throws RegistryNotFoundError If the flow does not exist
    */
-  async executeFlow(flowName: string): Promise<import("../script/engine/script-flow-engine.js").FlowExecutionResult> {
+  async executeFlow(flowName: string): Promise<import("../../services/script/engine/script-flow-engine.js").FlowExecutionResult> {
     const executionService = new ScriptExecutionService();
     return executionService.executeFlow(flowName, this);
   }
@@ -701,7 +709,7 @@ class ScriptExecutionService {
   async executeFlow(
     flowName: string,
     registry: ScriptRegistry,
-  ): Promise<import("../script/engine/script-flow-engine.js").FlowExecutionResult> {
+  ): Promise<import("../../services/script/engine/script-flow-engine.js").FlowExecutionResult> {
     const flow = registry.getFlow(flowName);
 
     if (!this.scriptEngine) {
@@ -734,13 +742,6 @@ class ScriptExecutionService {
     return all(results);
   }
 }
-
-// Re-export types for convenience
-import type { Result } from "@wf-agent/types";
-import { ok, err, all } from "@wf-agent/common-utils";
-import { ScriptExecutor as ScriptExecutor_ } from "../executors/script-executor.js";
-import { ScriptEngine } from "../script/engine/script-engine.js";
-import { ScriptFlowEngine } from "../script/engine/script-flow-engine.js";
 
 export { ScriptRegistry, ScriptExecutionService };
 

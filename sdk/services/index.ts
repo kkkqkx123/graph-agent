@@ -408,6 +408,18 @@ export {
 } from "./sandbox/index.js";
 
 // ============================================================================
+// Script Service (Execution Engine)
+// ============================================================================
+export {
+  ScriptEngine,
+  type ScriptEngineOptions,
+  ScriptFlowEngine,
+  type FlowExecutionResult,
+  type BranchExecutionResult,
+  ScriptTemplateEngine,
+} from "./script/index.js";
+
+// ============================================================================
 // VFS Service
 // ============================================================================
 export { SandboxVFS, type VFSEntry, type VFSOperations } from "./vfs/index.js";

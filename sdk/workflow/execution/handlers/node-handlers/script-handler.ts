@@ -49,7 +49,7 @@ export async function scriptHandler(
     if (config.flowId) {
       result = await scriptExecutor.executeFlow(config.flowId, scriptService);
     } else if (config.template) {
-      const { ScriptEngine } = await import("../../../../core/script/engine/script-engine.js");
+      const { ScriptEngine } = await import("../../../../services/script/engine/script-engine.js");
       const engine = new ScriptEngine();
 
       // Resolve executor mode: if sandboxConfig is provided, auto-select sandbox mode.

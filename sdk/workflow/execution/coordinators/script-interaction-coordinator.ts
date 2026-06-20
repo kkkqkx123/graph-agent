@@ -24,7 +24,7 @@ import type {
 import * as Identifiers from "../../../core/di/service-identifiers.js";
 import type { ScriptRegistry } from "../../../core/registry/script-registry.js";
 import type { GlobalContext } from "../../../core/global-context.js";
-import { ScriptTemplateEngine } from "../../../core/script/engine/script-template.js";
+import { ScriptTemplateEngine } from "../../../services/script/engine/script-template.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
 import { getTerminalService } from "../../../services/terminal/index.js";
 
