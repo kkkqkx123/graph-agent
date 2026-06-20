@@ -11,6 +11,7 @@ import { initializeFormatter } from "./utils/formatter.js";
 import { initLogger, initSDKLogger } from "./utils/logger.js";
 import { loadConfigWithEnvOverride } from "./config/index.js";
 import { createSDK } from "@wf-agent/sdk/api";
+import { registerAllIndexResolvers } from "@wf-agent/config-processor";
 import { ExitManager } from "./utils/exit-manager.js";
 import { isHeadless, getMode, getOutputFormat } from "./utils/mode-detector.js";
 import {
@@ -125,13 +126,21 @@ program
     sdkInstance = createSDK({
       debug: options.debug,
       logging: {
-        level: options.debug ? "debug" : options.verbose ? "info" : "warn",
+        // P2 修复: 优先使用配置文件中的 logLevel，其次使用命令行参数
+        level: config.logLevel ||
+               (options.debug ? "debug" : options.verbose ? "info" : "warn"),
       },
       presets: config.presets,
       checkpointStorageAdapter: storageManager?.getCheckpointStorage() ?? undefined,
       workflowStorageAdapter: storageManager?.getWorkflowStorage() ?? undefined,
       taskStorageAdapter: storageManager?.getTaskStorage() ?? undefined,
       workflowExecutionStorageAdapter: storageManager?.getWorkflowExecutionStorage() ?? undefined,
+      // P1 修复: 传递默认超时配置
+      defaultTimeout: config.defaultTimeout,
+      // P1 修复: 传递工作流执行配置
+      workflowExecution: {
+        maxConcurrentExecutions: config.maxConcurrentExecutions,
+      },
       // Enable graceful shutdown (default is true, but explicit for clarity)
       gracefulShutdown: {
         enabled: true,
@@ -163,6 +172,9 @@ program
       );
       await ExitManager.exit(1);
     }
+
+    // Register all configuration index resolvers
+    registerAllIndexResolvers();
 
     // 8. Initialize User Interaction Handler for interactive tools
     const interactionHandler = new CLIUserInteractionManager();

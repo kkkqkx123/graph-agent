@@ -22,8 +22,6 @@ export type { PresetsConfig };
  * Complete CLI Configuration
  */
 export interface CLIConfig {
-  apiUrl?: string;
-  apiKey?: string;
   defaultTimeout: number;
   verbose: boolean;
   debug: boolean;

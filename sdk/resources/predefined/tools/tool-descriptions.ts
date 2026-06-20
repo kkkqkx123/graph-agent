@@ -63,8 +63,6 @@ import { LIST_FILES_TOOL_DESCRIPTION } from "./stateless/filesystem/list-files/i
 import { GREP_TOOL_DESCRIPTION } from "./stateless/filesystem/grep/index.js";
 import { GLOB_TOOL_DESCRIPTION } from "./stateless/filesystem/glob/index.js";
 import { RUN_SHELL_TOOL_DESCRIPTION } from "./stateless/shell/run-shell/index.js";
-// TODO: RUN_SLASH_COMMAND_TOOL_DESCRIPTION not implemented yet
-// import { RUN_SLASH_COMMAND_TOOL_DESCRIPTION } from "./stateless/utility/run-slash-command/index.js";
 import { SKILL_TOOL_DESCRIPTION } from "./builtin/skill/index.js";
 import { UPDATE_TODO_LIST_TOOL_DESCRIPTION } from "./stateless/utility/update-todo-list/index.js";
 import { USE_MCP_TOOL_DESCRIPTION } from "./builtin/use-mcp/index.js";
@@ -99,8 +97,6 @@ export const ALL_PREDEFINED_TOOL_DESCRIPTIONS = [
   RUN_SHELL_TOOL_DESCRIPTION,
 
   // Interaction tools (stateless)
-  // TODO: RUN_SLASH_COMMAND_TOOL_DESCRIPTION not implemented yet
-  // RUN_SLASH_COMMAND_TOOL_DESCRIPTION,
   SKILL_TOOL_DESCRIPTION,
   UPDATE_TODO_LIST_TOOL_DESCRIPTION,
   USE_MCP_TOOL_DESCRIPTION,

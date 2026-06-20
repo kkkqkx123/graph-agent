@@ -1,13 +1,37 @@
 /**
  * Load Configuration Index
  *
- * General-purpose function for loading configuration index files.
- * This function was documented but not implemented in the original codebase.
+ * General-purpose API for loading configuration index files.
+ *
+ * Implementation:
+ * - API contract defined here in SDK (pure, no I/O)
+ * - Actual file I/O and resolvers provided by packages/config-processor
+ * - Resolvers registered during application initialization
  *
  * Design:
- * - Provides the API contract for index loading
- * - Actual file I/O is handled by apps/config-processor
- * - This module is pure (no side effects)
+ * - Uses registration pattern for loose coupling between SDK and implementations
+ * - Supports 9 index types (see IndexType)
+ * - Parallel loading via loadMultipleConfigIndexes()
+ *
+ * Usage:
+ * ```ts
+ * import { registerAllIndexResolvers } from "@wf-agent/config-processor";
+ * import { loadConfigIndex } from "@wf-agent/sdk/api";
+ *
+ * // During app initialization
+ * registerAllIndexResolvers();
+ *
+ * // Load an index
+ * const workflowIndex = await loadConfigIndex(
+ *   "workflows",
+ *   "./configs/workflows/index.json"
+ * );
+ *
+ * console.log(`Loaded ${workflowIndex.entries.length} workflows`);
+ * workflowIndex.entries.forEach(entry => {
+ *   console.log(`  - ${entry.id}: ${entry.name}`);
+ * });
+ * ```
  */
 
 import type {

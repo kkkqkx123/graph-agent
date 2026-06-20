@@ -97,3 +97,16 @@ export {
   filterByCategory,
   findEntryById,
 } from "./config-index-loader.js";
+
+// Preset-based index loaders
+export {
+  resolveMcpPresetsIndex,
+  resolveSkillPresetsIndex,
+  resolveInfrastructurePresetsIndex,
+} from "./preset-index-loaders.js";
+
+// Configuration index resolver factory and registration
+export {
+  createIndexResolver,
+  registerAllIndexResolvers,
+} from "./config-index-resolver.js";

@@ -20,8 +20,6 @@ import {
  * Complete Configuration Schema
  */
 export const CLIConfigSchema = z.object({
-  apiUrl: z.string().url().optional(),
-  apiKey: z.string().optional(),
   defaultTimeout: z.number().positive().default(30000),
   verbose: z.boolean().default(false),
   debug: z.boolean().default(false),
