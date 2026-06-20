@@ -33,6 +33,7 @@ import type {
   CheckpointDelta,
   CheckpointErrorStrategy,
   CheckpointErrorContext,
+  CheckpointFormatVersion,
 } from "@wf-agent/types";
 import type { WorkflowExecutionRegistry } from "../stores/workflow-execution-registry.js";
 import type { WorkflowRegistry } from "../stores/workflow-registry.js";
@@ -45,13 +46,15 @@ import { WorkflowExecutionEntity } from "../entities/workflow-execution-entity.j
 import { ExecutionState } from "../state-managers/execution-state.js";
 import { WorkflowStateCoordinator } from "../state-managers/workflow-state-coordinator.js";
 import { BaseDeltaRestorer } from "../../core/checkpoint/base-delta-restorer.js";
-import { mergeMetadata } from "../../utils/index.js";
+import { buildCheckpointMetadata } from "../../core/checkpoint/utils/metadata-builder.js";
 import { BaseCheckpointCoordinator } from "../../core/checkpoint/base-checkpoint-coordinator.js";
 import type { CheckpointDependencies as BaseCheckpointDependencies } from "../../core/checkpoint/types.js";
 import type { ExecutionHierarchyRegistry } from "../../core/registry/execution-hierarchy-registry.js";
 import type { FileCheckpointManager } from "@wf-agent/common-utils";
 import { HierarchyIntegrityService } from "../../core/execution/hierarchy-integrity-service.js";
 import { CheckpointErrorHandler } from "../../core/checkpoint/checkpoint-error-handler.js";
+import { CheckpointVersionManager } from "../../core/checkpoint/checkpoint-version-manager.js";
+import { CURRENT_CHECKPOINT_FORMAT_VERSION } from "@wf-agent/types";
 
 const logger = createContextualLogger({ component: "CheckpointCoordinator" });
 
@@ -68,6 +71,8 @@ export interface WorkflowCheckpointDependencies {
   deltaConfig?: DeltaStorageConfig;
   stateCoordinatorMap?: Map<string, WorkflowStateCoordinator>;
   fileCheckpointManager?: FileCheckpointManager;
+  /** Conversation manager for message persistence (optional - can be provided here or as parameter) */
+  conversationManager?: ConversationSession;
 }
 
 /**
@@ -121,6 +126,15 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
   private restoreContext?: RestoreContext;
   private checkpointErrorHandler?: CheckpointErrorHandler;
   private checkpointErrorStrategy: CheckpointErrorStrategy = "warn";
+  /**
+   * Version manager for format compatibility and migration
+   */
+  private versionManager: CheckpointVersionManager;
+
+  constructor() {
+    super();
+    this.versionManager = new CheckpointVersionManager(logger);
+  }
 
   // ============================================================================
   // Public Instance Methods - Workflow-specific entry points
@@ -131,7 +145,7 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
    * @param entity Workflow execution entity
    * @param dependencies Workflow checkpoint dependencies
    * @param options Checkpoint options
-   * @param conversationManager Optional conversation manager
+   * @param conversationManager Optional conversation manager (parameter takes precedence over dependencies)
    * @returns Checkpoint ID
    */
   async createWorkflowCheckpoint(
@@ -143,9 +157,11 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
     this.currentDeps = dependencies;
     this.currentConversationManager =
       conversationManager ??
+      dependencies.conversationManager ??
       dependencies.stateCoordinatorMap?.get(entity.id)?.getConversationManager();
 
     const metadata = this.buildMetadata(options);
+
     const checkpointId = await super.createCheckpoint(
       entity,
       this.toBaseDeps(dependencies),
@@ -195,11 +211,14 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
   /**
    * Restore workflow from checkpoint (workflow-specific restoration)
    *
-   * This method handles the complete 20-step restore process:
-   * 1-4: Load, validate, restore delta chain, get graph
-   * 5-7: Create entity and restore state
-   * 8-14: Create conversation, restore messages, create coordinator, restore triggers/context
-   * 15-20: Restore operations, infer fork/join, validate hierarchy, register, file checkpoint
+   * This method handles the complete 13-step restore process:
+   * 1-2: Load and validate checkpoint
+   * 3: Check version compatibility and migrate if needed
+   * 4: Restore full state (handles delta chains)
+   * 5: Get WorkflowGraph
+   * 6-8: Create entity, restore state, and variables
+   * 9-12: Create conversation, restore messages/marks, and state coordinator
+   * 13: Post-restore operations (operations, fork/join, hierarchy, registry, file checkpoint)
    *
    * @param checkpointId Checkpoint ID
    * @param dependencies Workflow checkpoint dependencies
@@ -224,7 +243,29 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
     // Step 2: Validate checkpoint
     this.validateCheckpoint(checkpoint);
 
-    // Steps 3-4: Restore full state (handles delta chains)
+    // Step 3: Check version compatibility and migrate if needed
+    const formatVersion = (checkpoint.metadata?.customFields?.["formatVersion"] as CheckpointFormatVersion) || CURRENT_CHECKPOINT_FORMAT_VERSION;
+    if (!formatVersion) {
+      logger.warn("Checkpoint missing version metadata, treating as v1.0", { checkpointId });
+    }
+
+    const compatibility = this.versionManager.checkCompatibility(formatVersion);
+    if (!compatibility.compatible) {
+      throw new Error(`Checkpoint version not compatible: ${compatibility.reason}`);
+    }
+
+    if (compatibility.requiresMigration) {
+      logger.info("Checkpoint requires migration, starting migration process", {
+        checkpointId,
+        reason: compatibility.reason,
+      });
+      const migrationResult = await this.versionManager.migrateCheckpoint(checkpoint);
+      if (!migrationResult.success) {
+        throw new Error(`Checkpoint migration failed: ${migrationResult.errors?.join(", ")}`);
+      }
+    }
+
+    // Step 4: Restore full state (handles delta chains)
     let workflowExecutionState: WorkflowExecutionStateSnapshot;
     if (checkpoint.type === "DELTA") {
       const restorer = new BaseDeltaRestorer<Checkpoint, WorkflowExecutionStateSnapshot>(id =>
@@ -244,7 +285,7 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
     }
     const graph = processedWorkflow;
 
-    // Steps 6-7: Create entity and restore state
+    // Step 6: Create entity and restore initial state
     const nodeResultsArray = Object.values(workflowExecutionState.nodeResults || {});
     const workflowExecution: Partial<WorkflowExecution> = {
       id: checkpoint.executionId,
@@ -317,7 +358,7 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
       checkpoint,
     };
 
-    // Steps 12-20: Post-restore operations
+    // Step 12-13: Post-restore operations
     await this.postRestore(entity, dependencies);
 
     return {
@@ -576,13 +617,9 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
   // ============================================================================
 
   /**
-   * Post-restore operations (steps 15-20 of the 20-step restore process)
-   * - Step 15: Restore operation state
-   * - Step 16: Infer FORK/JOIN completion
-   * - Step 17: Validate hierarchy
-   * - Step 18: Reestablish parent-child relationships
-   * - Step 19: Register with registry
-   * - Step 20: File checkpoint restoration
+   * Post-restore operations (steps 12-13 of the 13-step restore process)
+   * - Step 12: Restore execution state and infer FORK/JOIN completion
+   * - Step 13: Validate hierarchy, restore child workflows, register with registry, restore file checkpoint
    */
   private async postRestore(
     entity: WorkflowExecutionEntity,
@@ -590,10 +627,9 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
   ): Promise<void> {
     const ctx = this.restoreContext!;
 
-    // Step 15: Restore operation state (already done in buildEntityFromSnapshot for basic case)
-    // For workflow-specific path, this is handled in restoreWorkflowFromCheckpoint
-
-    // Step 16: Infer FORK/JOIN completion status (if current node is JOIN)
+    // Step 12: Restore execution state and infer FORK/JOIN completion
+    // (Execution state is already handled in buildEntityFromSnapshot for basic case)
+    // Infer FORK/JOIN completion status if current node is JOIN
     if (entity.getGraph()) {
       const currentNode = entity.getGraph().getNode(entity.getCurrentNodeId());
       if (currentNode && currentNode.type === "JOIN") {
@@ -613,7 +649,7 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
       }
     }
 
-    // Step 17: Validate hierarchy integrity
+    // Validate hierarchy integrity
     const { hierarchyRegistry } = dependencies;
     if (hierarchyRegistry) {
       const hierarchyMetadata = entity.getHierarchyMetadata();
@@ -632,7 +668,8 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
       }
     }
 
-    // Step 18: Reestablish parent-child relationship for child workflows
+    // Step 13: Restore child workflows, register with registry, and file checkpoint
+    // Reestablish parent-child relationship for child workflows
     const childExecutionIds = ((ctx.checkpoint.metadata?.customFields as Record<string, unknown>) ||
       {})["childExecutionIds"];
     if (childExecutionIds && Array.isArray(childExecutionIds)) {
@@ -667,14 +704,14 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
       }
     }
 
-    // Step 19: Register with registry
+    // Register with registry
     dependencies.workflowExecutionRegistry.register(entity);
     dependencies.workflowExecutionRegistry.registerStateCoordinator(
       entity.id,
       ctx.stateCoordinator,
     );
 
-    // Step 20: Restore file checkpoint
+    // Restore file checkpoint
     if (dependencies.fileCheckpointManager) {
       try {
         const fileCheckpoints = await dependencies.fileCheckpointManager
@@ -879,6 +916,22 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
     return this.checkpointErrorHandler;
   }
 
+  /**
+   * Get version manager for compatibility checks and migrations
+   */
+  getVersionManager(): CheckpointVersionManager {
+    return this.versionManager;
+  }
+
+  /**
+   * Check if checkpoint needs version migration
+   */
+  needsVersionMigration(checkpoint: Checkpoint): boolean {
+    const formatVersion = (checkpoint.metadata?.customFields?.["formatVersion"] as CheckpointFormatVersion) || CURRENT_CHECKPOINT_FORMAT_VERSION;
+    const compatibility = this.versionManager.checkCompatibility(formatVersion);
+    return compatibility.requiresMigration;
+  }
+
   // ============================================================================
   // Private Helpers
   // ============================================================================
@@ -889,25 +942,20 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
   private buildMetadata(options?: CheckpointOptions): CheckpointMetadata | undefined {
     if (!options) return undefined;
 
-    return {
-      ...options.metadata,
+    const customFields: Record<string, unknown> = {};
+    if (options.nodeId) {
+      customFields.nodeId = options.nodeId;
+    }
+    if (options.toolId) {
+      customFields.toolId = options.toolId;
+    }
+
+    return buildCheckpointMetadata({
+      metadata: options.metadata,
       description: options.description ?? options.metadata?.description,
       tags: options.tags ?? options.metadata?.tags,
-      ...(options.nodeId
-        ? {
-            customFields: mergeMetadata(options.metadata?.customFields || {}, {
-              nodeId: options.nodeId,
-            }),
-          }
-        : {}),
-      ...(options.toolId
-        ? {
-            customFields: mergeMetadata(options.metadata?.customFields || {}, {
-              toolId: options.toolId,
-            }),
-          }
-        : {}),
-    } as CheckpointMetadata;
+      customFields: Object.keys(customFields).length > 0 ? customFields : undefined,
+    });
   }
 
   /**

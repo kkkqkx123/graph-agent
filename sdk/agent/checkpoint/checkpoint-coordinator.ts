@@ -18,12 +18,17 @@ import type {
   AgentLoopDelta,
   AgentCheckpointContentConfig,
   CheckpointFormatVersion,
+  CheckpointErrorStrategy,
+  CheckpointErrorContext,
 } from "@wf-agent/types";
 import { AgentCheckpointError, CURRENT_CHECKPOINT_FORMAT_VERSION } from "@wf-agent/types";
 import { BaseCheckpointCoordinator } from "../../core/checkpoint/base-checkpoint-coordinator.js";
 import type { CheckpointDependencies as BaseCheckpointDependencies } from "../../core/checkpoint/types.js";
 import { CheckpointVersionManager } from "../../core/checkpoint/checkpoint-version-manager.js";
+import { CheckpointErrorHandler } from "../../core/checkpoint/checkpoint-error-handler.js";
+import { buildCheckpointMetadata } from "../../core/checkpoint/utils/metadata-builder.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
+import type { FileCheckpointManager } from "@wf-agent/common-utils";
 
 const logger = createContextualLogger({ component: "AgentLoopCheckpointCoordinator" });
 
@@ -53,6 +58,10 @@ export interface CheckpointDependencies extends BaseCheckpointDependencies<Agent
   listCheckpoints: (agentLoopId: string) => Promise<string[]>;
   /** Incremental storage configuration (optional) */
   deltaConfig?: DeltaStorageConfig;
+  /** Conversation manager for message persistence (optional) */
+  conversationManager?: any; // Allow for optional conversation manager injection
+  /** File checkpoint manager for persisting external file state (optional) */
+  fileCheckpointManager?: FileCheckpointManager;
 }
 
 /**
@@ -83,6 +92,16 @@ export class AgentLoopCheckpointCoordinator extends BaseCheckpointCoordinator<
   private versionManager: CheckpointVersionManager;
 
   /**
+   * Error handler for checkpoint operations
+   */
+  private checkpointErrorHandler?: CheckpointErrorHandler;
+
+  /**
+   * Error handling strategy
+   */
+  private checkpointErrorStrategy: CheckpointErrorStrategy = "warn";
+
+  /**
    * @param config AgentLoopRuntimeConfig for restoration (must be provided for restore operations)
    */
   constructor(config?: AgentLoopRuntimeConfig) {
@@ -110,24 +129,36 @@ export class AgentLoopCheckpointCoordinator extends BaseCheckpointCoordinator<
     dependencies: CheckpointDependencies,
     options?: CheckpointOptions,
   ): Promise<string> {
-    const mergedMetadata: CheckpointMetadata | undefined = options
-      ? {
-          ...options.metadata,
-          description: options.description ?? options.metadata?.description,
-          tags: options.tags ?? options.metadata?.tags,
-          customFields: {
-            ...options.metadata?.customFields,
-            formatVersion: CURRENT_CHECKPOINT_FORMAT_VERSION,
-            createdAt: Date.now(),
-          },
-        }
-      : undefined;
+    const mergedMetadata = buildCheckpointMetadata({
+      metadata: options?.metadata,
+      description: options?.description,
+      tags: options?.tags,
+    });
 
     // Store contentConfig for use in extractState
     this.currentContentConfig = options?.contentConfig;
 
     try {
-      return await super.createCheckpoint(entity, dependencies, mergedMetadata);
+      const checkpointId = await super.createCheckpoint(entity, dependencies, mergedMetadata);
+
+      // Create file checkpoint if manager is available
+      if (dependencies.fileCheckpointManager) {
+        try {
+          await dependencies.fileCheckpointManager.createCheckpoint(entity.id);
+          logger.info("File checkpoint created alongside agent loop checkpoint", {
+            agentLoopId: entity.id,
+            checkpointId,
+          });
+        } catch (error) {
+          logger.warn("File checkpoint creation failed (non-fatal, agent checkpoint saved)", {
+            agentLoopId: entity.id,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          // Don't rethrow - agent checkpoint is what matters, file checkpoint is optional
+        }
+      }
+
+      return checkpointId;
     } finally {
       // Clear after checkpoint is created
       this.currentContentConfig = undefined;
@@ -180,7 +211,38 @@ export class AgentLoopCheckpointCoordinator extends BaseCheckpointCoordinator<
         }
       }
 
-      return await super.restoreFromCheckpoint(checkpointId, dependencies);
+      // Use parent's restore logic to get the entity
+      const entity = await super.restoreFromCheckpoint(checkpointId, dependencies);
+
+      // Restore file checkpoint if manager is available
+      if (dependencies.fileCheckpointManager) {
+        try {
+          const fileCheckpoints = await dependencies.fileCheckpointManager
+            .getStorage()
+            .listByEntity(entity.id, { limit: 1 });
+          if (fileCheckpoints.length > 0) {
+            const result = await dependencies.fileCheckpointManager.restoreCheckpoint(
+              entity.id,
+              fileCheckpoints[0]!.id,
+            );
+            logger.info("File checkpoint restored alongside agent loop checkpoint", {
+              agentLoopId: entity.id,
+              checkpointId,
+              restoredCount: result.restoredCount,
+              deletedCount: result.deletedCount,
+              skippedCount: result.skippedCount,
+            });
+          }
+        } catch (error) {
+          logger.warn("File checkpoint restore failed (non-fatal, agent state restored)", {
+            agentLoopId: entity.id,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          // Don't rethrow - agent state is what matters, file checkpoint is optional
+        }
+      }
+
+      return entity;
     } catch (error) {
       if (error instanceof Error && error.message.includes("Checkpoint not found")) {
         throw new AgentCheckpointError(
@@ -459,5 +521,63 @@ export class AgentLoopCheckpointCoordinator extends BaseCheckpointCoordinator<
     const formatVersion = (checkpoint.metadata?.customFields?.["formatVersion"] as CheckpointFormatVersion) || CURRENT_CHECKPOINT_FORMAT_VERSION;
     const compatibility = this.versionManager.checkCompatibility(formatVersion);
     return compatibility.requiresMigration;
+  }
+
+  /**
+   * Set checkpoint error handling configuration
+   *
+   * Enable custom error handling strategy for checkpoint operations.
+   * Supports multiple strategies: silent, warn, strict, callback.
+   *
+   * @param errorStrategy Error handling strategy
+   * @param onError Optional callback for "callback" strategy
+   */
+  setCheckpointErrorHandling(
+    errorStrategy: CheckpointErrorStrategy,
+    onError?: (error: Error, context: CheckpointErrorContext) => void | Promise<void>,
+  ): void {
+    this.checkpointErrorStrategy = errorStrategy;
+    this.checkpointErrorHandler = new CheckpointErrorHandler(
+      { strategy: errorStrategy, onError },
+      logger,
+    );
+
+    logger.debug("Agent checkpoint error handling configured", {
+      strategy: errorStrategy,
+      hasCallback: !!onError,
+    });
+  }
+
+  /**
+   * Set checkpoint error handling strategy at runtime
+   * @param strategy Error handling strategy
+   */
+  setCheckpointErrorStrategy(strategy: CheckpointErrorStrategy): void {
+    this.checkpointErrorStrategy = strategy;
+
+    if (!this.checkpointErrorHandler) {
+      this.checkpointErrorHandler = new CheckpointErrorHandler(
+        { strategy },
+        logger,
+      );
+    } else {
+      this.checkpointErrorHandler.setStrategy(strategy);
+    }
+
+    logger.debug("Agent checkpoint error strategy updated", { strategy });
+  }
+
+  /**
+   * Get current checkpoint error handling strategy
+   */
+  getCheckpointErrorStrategy(): CheckpointErrorStrategy {
+    return this.checkpointErrorStrategy;
+  }
+
+  /**
+   * Get checkpoint error handler (for advanced usage)
+   */
+  getCheckpointErrorHandler(): CheckpointErrorHandler | undefined {
+    return this.checkpointErrorHandler;
   }
 }

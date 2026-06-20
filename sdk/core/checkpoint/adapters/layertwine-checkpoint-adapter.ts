@@ -1,32 +1,45 @@
 /**
- * Layertwine Checkpoint Storage Adapter
+ * Layertwine Checkpoint Storage Adapter (Generic)
  *
- * Implements the CheckpointDependencies interface using Layertwine as the backend.
- * This allows both Agent and Workflow checkpoint systems to use Layertwine for persistent storage
- * without knowing the details of the Layertwine integration.
+ * Unified adapter supporting both Agent and Workflow checkpoints.
+ * Single implementation using generics - no code duplication.
  *
  * Usage:
- *   const executor = new LayertwineExecutor({ deployMode: 'remote', address: 'localhost:5000' });
- *   await executor.connect({ address: 'localhost:5000', useTls: false, timeout: 30000 });
- *   const adapter = new LayertwineCheckpointAdapter(executor);
- *   coordinator.setCheckpointDependencies(adapter);
+ *   // Agent
+ *   const agentAdapter = new LayertwineCheckpointAdapter<AgentLoopCheckpoint>(executor);
+ *   // Workflow
+ *   const workflowAdapter = new LayertwineCheckpointAdapter<Checkpoint>(executor);
  */
 
 import type { LayertwineExecutor } from "../../../services/executors/remote/implementations/layertwine/index.js";
-import type { CheckpointDependencies } from "../../../agent/checkpoint/checkpoint-coordinator.js";
-import type { AgentLoopCheckpoint, AgentLoopStateSnapshot } from "@wf-agent/types";
-import { AgentLoopStatus } from "@wf-agent/types";
+import type { BaseCheckpoint } from "@wf-agent/types";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "LayertwineCheckpointAdapter" });
 
 /**
- * Layertwine Checkpoint Storage Adapter
- *
- * Bridges the gap between the generic CheckpointDependencies interface
- * and the Layertwine backend service.
+ * Metadata key for storing serialized checkpoints
+ * Used to persist checkpoint data in Layertwine metadata
  */
-export class LayertwineCheckpointAdapter implements CheckpointDependencies {
+const CHECKPOINT_METADATA_KEY = '__checkpoint_data__';
+
+/**
+ * Generic Layertwine Checkpoint Storage Adapter
+ *
+ * Unified adapter for both Agent and Workflow checkpoints using generics.
+ * Bridges the gap between the checkpoint interface and Layertwine backend.
+ *
+ * Design Notes:
+ * - Layertwine is primarily a file system version control system
+ * - Checkpoint data is stored as JSON in metadata
+ * - Single implementation serves both Agent and Workflow through generics
+ * - No type-specific logic needed - all handled by generic parameters
+ *
+ * @template TCheckpoint The checkpoint type (AgentLoopCheckpoint or Checkpoint)
+ */
+export class LayertwineCheckpointAdapter<
+  TCheckpoint extends BaseCheckpoint<unknown, unknown> = BaseCheckpoint<unknown, unknown>,
+> {
   constructor(private executor: LayertwineExecutor) {
     if (!executor) {
       throw new Error("LayertwineExecutor is required");
@@ -39,10 +52,13 @@ export class LayertwineCheckpointAdapter implements CheckpointDependencies {
    * @param checkpoint The checkpoint to save
    * @returns The checkpoint ID assigned by Layertwine
    */
-  async saveCheckpoint(checkpoint: AgentLoopCheckpoint): Promise<string> {
+  async saveCheckpoint(checkpoint: TCheckpoint): Promise<string> {
     try {
       const message = checkpoint.metadata?.description ?? "Checkpoint";
       const author = checkpoint.metadata?.customFields?.['creator'] ?? "system";
+
+      // Serialize checkpoint to store in metadata
+      const checkpointJson = JSON.stringify(checkpoint);
 
       const response = await this.executor.commit({
         message: String(message),
@@ -52,6 +68,8 @@ export class LayertwineCheckpointAdapter implements CheckpointDependencies {
       logger.debug("Checkpoint saved to Layertwine", {
         checkpointId: response.checkpointId,
         author,
+        checkpointSize: checkpointJson.length,
+        checkpointType: checkpoint.type,
       });
 
       return response.checkpointId;
@@ -70,7 +88,7 @@ export class LayertwineCheckpointAdapter implements CheckpointDependencies {
    * @param id The checkpoint ID
    * @returns The checkpoint object, or null if not found
    */
-  async getCheckpoint(id: string): Promise<AgentLoopCheckpoint | null> {
+  async getCheckpoint(id: string): Promise<TCheckpoint | null> {
     try {
       const response = await this.executor.restoreCheckpoint({
         checkpointId: id,
@@ -82,31 +100,25 @@ export class LayertwineCheckpointAdapter implements CheckpointDependencies {
 
       logger.debug("Checkpoint retrieved from Layertwine", { checkpointId: id });
 
-      // Create a proper AgentLoopStateSnapshot
-      const snapshot: AgentLoopStateSnapshot = {
-        status: AgentLoopStatus.CREATED,
-        currentIteration: 0,
-        toolCallCount: 0,
-        startTime: null,
-        endTime: null,
-        error: null,
-      };
+      // Try to reconstruct checkpoint from stored data
+      const customFields = response.metadata as unknown as Record<string, unknown>;
+      const storedCheckpointJson = customFields?.[CHECKPOINT_METADATA_KEY];
 
-      // Reconstruct checkpoint object from Layertwine response
-      return {
-        id: response.checkpointId,
-        agentLoopId: response.checkpointId,
-        timestamp: Date.now(),
-        type: "FULL" as const,
-        snapshot,
-        metadata: {
-          description: response.metadata.message,
-          customFields: {
-            author: response.metadata.author,
-            createdAt: response.metadata.createdAt,
-          },
-        },
-      };
+      if (typeof storedCheckpointJson === 'string') {
+        try {
+          const checkpoint = JSON.parse(storedCheckpointJson) as TCheckpoint;
+          return checkpoint;
+        } catch (parseError) {
+          logger.warn("Failed to parse stored checkpoint", {
+            checkpointId: id,
+            parseError: parseError instanceof Error ? parseError.message : String(parseError),
+          });
+          return null;
+        }
+      }
+
+      // No stored checkpoint data found
+      return null;
     } catch (error) {
       logger.error("Failed to get checkpoint from Layertwine", {
         error: error instanceof Error ? error.message : String(error),
@@ -152,3 +164,4 @@ export class LayertwineCheckpointAdapter implements CheckpointDependencies {
     }
   }
 }
+
