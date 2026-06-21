@@ -96,29 +96,7 @@ export async function executeAgentTriggers(
   const config: TriggerExecutorConfig = {
     errorHandling: "log",
     executionContext,
-    stateManager: {
-      getTriggerState: (triggerId: string) => {
-        const state = entity.triggerStateManager.getState(triggerId);
-        if (!state) return undefined;
-        return {
-          fireCount: state.fireCount,
-          lastFiredAt: state.lastFiredAt,
-          ...state.metadata,
-        };
-      },
-      setTriggerState: (triggerId: string, state: Record<string, unknown>) => {
-        const currentState = entity.triggerStateManager.getState(triggerId);
-        entity.triggerStateManager.setState(triggerId, {
-          triggerId,
-          fireCount: (state['fireCount'] as number) || currentState?.fireCount || 0,
-          lastFiredAt: (state['lastFiredAt'] as number) || currentState?.lastFiredAt,
-          metadata: {
-            ...currentState?.metadata,
-            ...state,
-          },
-        });
-      },
-    },
+    stateManager: entity.triggerStateManager,
   };
 
   // Execute triggers with state management

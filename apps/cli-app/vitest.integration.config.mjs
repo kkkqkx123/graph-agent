@@ -5,21 +5,27 @@
 import { defineConfig } from "vitest/config";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
+import { baseTestConfig } from "../../vitest.config.base.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   test: {
-    // 测试环境
-    environment: "node",
+    ...baseTestConfig,
 
-    // 测试文件匹配模式
+    // Test file matching pattern
     include: ["**/__tests__/integration/**/*.test.ts"],
 
-    // 排除文件
+    // Excluded files
     exclude: ["node_modules", "dist", "coverage", "**/*.d.ts"],
 
-    // 覆盖率配置
+    // Test timeout (milliseconds)
+    testTimeout: 60000,
+
+    // Teardown timeout
+    teardownTimeout: 10000,
+
+    // Coverage configuration
     coverage: {
       provider: "v8",
       reporter: ["text", "lcov", "html"],
@@ -27,23 +33,7 @@ export default defineConfig({
       exclude: ["**/*.d.ts", "**/*.test.ts", "**/*.spec.ts", "**/index.ts"],
     },
 
-    // 集成测试超时时间
-    testTimeout: 60000,
-
-    // 清理超时时间
-    teardownTimeout: 10000,
-
-    // 详细输出
-    reporters: ["verbose"],
-
-    // 清除模拟
-    clearMocks: true,
-    restoreMocks: true,
-
-    // 全局配置
-    globals: true,
-
-    // Setup 文件
+    // Setup files
     setupFiles: ["./__tests__/setup.ts"],
   },
 

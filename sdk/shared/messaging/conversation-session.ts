@@ -79,7 +79,10 @@ export interface ConversationState extends MessageHistoryState {
   tokenUsage?: TokenUsageStats | null;
   /** Usage of the Token for the current request */
   currentRequestUsage?: TokenUsageStats | null;
-  /** Turn-based execution states (Persistent) */
+  /** Turn-based execution states (Persistent)
+   * Stores execution context per turn, accessible via getTurnState(turnIndex, key)
+   * Used for Hook/Trigger conditions that depend on execution context
+   */
   turnStates?: Record<number, Record<string, unknown>>;
   /** Message metadata for checkpoint integrity verification */
   messageMetadata?: MessageMetadata;
@@ -602,7 +605,7 @@ export class ConversationSession extends MessageHistory implements StateManager<
 
   /**
    * Get conversation state for checkpointing
-   * @returns Current conversation state
+   * @returns Current conversation state including all messages
    */
   getState(): ConversationState {
     const baseState = this.createSnapshot();
@@ -616,6 +619,7 @@ export class ConversationSession extends MessageHistory implements StateManager<
 
     return {
       ...baseState,
+      messages,
       tokenUsage: this.tokenUsageTracker.getCumulativeUsage(),
       currentRequestUsage: this.tokenUsageTracker.getCurrentRequestUsage(),
       turnStates: serializedTurnStates,

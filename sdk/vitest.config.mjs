@@ -52,6 +52,8 @@ export default defineConfig({
       "@api": resolve(__dirname, "api"),
       "@sdk/core": resolve(__dirname, "core"),
       "@sdk/core/(.*)": resolve(__dirname, "core/$1"),
+      "@sdk/shared": resolve(__dirname, "shared"),
+      "@sdk/shared/(.*)": resolve(__dirname, "shared/$1"),
       "@sdk/services": resolve(__dirname, "services"),
       "@sdk/services/(.*)": resolve(__dirname, "services/$1"),
       "@sdk/utils": resolve(__dirname, "utils"),

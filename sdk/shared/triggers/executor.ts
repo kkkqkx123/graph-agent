@@ -22,6 +22,7 @@ import type {
   TriggerHandler,
   TriggerExecutionResult,
 } from "./types.js";
+import type { TriggerStateManager } from "./trigger-state-manager.js";
 import { matchTriggers } from "./matcher.js";
 import { incrementTriggerCount } from "./limiter.js";
 import { getGlobalLogger } from "@wf-agent/common-utils";
@@ -42,10 +43,7 @@ export interface TriggerExecutorConfig {
   /** Execution context for variable resolution in trigger conditions */
   executionContext?: Record<string, unknown>;
   /** State manager for trigger limit tracking (optional) */
-  stateManager?: {
-    getTriggerState(triggerId: string): Record<string, unknown> | undefined;
-    setTriggerState(triggerId: string, state: Record<string, unknown>): void;
-  };
+  stateManager?: TriggerStateManager;
 }
 
 /**
@@ -92,10 +90,7 @@ export async function executeTriggers<T extends BaseTriggerDefinition>(
 
       // Track trigger state if state manager is provided
       if (config.stateManager) {
-        const state = config.stateManager.getTriggerState(trigger.id) || {};
-        state['fireCount'] = ((state['fireCount'] as number) || 0) + 1;
-        state['lastFiredAt'] = Date.now();
-        config.stateManager.setTriggerState(trigger.id, state);
+        config.stateManager.incrementFireCount(trigger.id);
       }
 
       results.push(result);

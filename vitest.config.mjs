@@ -1,25 +1,31 @@
 /**
  * Vitest Configuration File (ESM)
- * Suitable for monorepo architecture
+ * Root monorepo configuration for unit and integration tests
  */
 
 import { defineConfig } from "vitest/config";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
+import { baseTestConfig } from "./vitest.config.base.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export default defineConfig({
   test: {
-    // Test environment
-    environment: "node",
+    ...baseTestConfig,
 
     // Test file match patterns
     include: ["**/__tests__/**/*.ts", "**/?(*.)+(spec|test).ts"],
 
     // Excluded files
     exclude: ["node_modules", "dist", "coverage", "**/*.d.ts", "**/test-d/**/*"],
+
+    // Test timeout (milliseconds)
+    testTimeout: 30000,
+
+    // Hook timeout (milliseconds)
+    hookTimeout: 30000,
 
     // Coverage configuration
     coverage: {
@@ -35,22 +41,6 @@ export default defineConfig({
         statements: 80,
       },
     },
-
-    // Test timeout (milliseconds)
-    testTimeout: 30000,
-
-    // Hook timeout (milliseconds)
-    hookTimeout: 30000,
-
-    // Detailed reporting
-    reporters: ["verbose"],
-
-    // Clear mocks
-    clearMocks: true,
-    restoreMocks: true,
-
-    // Global configuration
-    globals: true,
 
     // Auto-exit configuration
     // Prevent test processes from hanging due to unclosed connections

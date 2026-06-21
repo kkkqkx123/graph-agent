@@ -1,22 +1,19 @@
 import { defineConfig } from "vitest/config";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
+import { baseTestConfig } from "../vitest.config.base.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export default defineConfig({
   test: {
+    ...baseTestConfig,
     root: __dirname,
-    environment: "node",
     include: ["__tests__/e2e/**/*.e2e.test.ts"],
     exclude: ["node_modules", "dist", "coverage", "**/*.d.ts", "**/__shared/**"],
     testTimeout: 60000,
     hookTimeout: 30000,
-    reporters: ["verbose"],
-    clearMocks: true,
-    restoreMocks: true,
-    globals: true,
     sequence: {
       concurrent: false,
     },
@@ -35,6 +32,8 @@ export default defineConfig({
       "@api": resolve(__dirname, "api"),
       "@sdk/core": resolve(__dirname, "core"),
       "@sdk/core/(.*)": resolve(__dirname, "core/$1"),
+      "@sdk/shared": resolve(__dirname, "shared"),
+      "@sdk/shared/(.*)": resolve(__dirname, "shared/$1"),
       "@sdk/services": resolve(__dirname, "services"),
       "@sdk/services/(.*)": resolve(__dirname, "services/$1"),
       "@sdk/utils": resolve(__dirname, "utils"),

@@ -351,6 +351,25 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
       conversationManager,
     });
 
+    // ✅ FIX: Step 11.5 - Restore trigger states from checkpoint
+    // Previously: Trigger states were saved but not restored, causing limits to reset
+    if (
+      workflowExecutionState.triggerStates &&
+      workflowExecutionState.triggerStates instanceof Map &&
+      workflowExecutionState.triggerStates.size > 0
+    ) {
+      // Convert Map to object for restore
+      const triggerStateObj: Record<string, unknown> = {};
+      workflowExecutionState.triggerStates.forEach((value, key) => {
+        triggerStateObj[key] = value;
+      });
+      entity.restoreTriggerState({ triggers: Object.values(triggerStateObj) });
+      logger.debug("Restored trigger states from checkpoint", {
+        executionId: entity.id,
+        triggerCount: Object.keys(triggerStateObj).length,
+      });
+    }
+
     // Store context for post-restore
     this.restoreContext = {
       conversationManager,
