@@ -11,7 +11,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { ExecutionPool, type Executor, type ExecutorFactory } from "../../execution/execution-pool.js";
+import { ExecutionPool, type Executor, type ExecutorFactory } from "@sdk/shared/execution/execution-pool.js";
 
 describe("Integration: Execution Pool and Context Isolation", () => {
   beforeEach(() => {

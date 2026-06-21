@@ -17,13 +17,13 @@ import type {
   BaseHookDefinition,
   BaseHookContext,
   BaseEventData,
-} from "../../triggers/types.js";
-import type { TriggerExecutorConfig } from "../../triggers/executor.js";
-import { executeTriggers } from "../../triggers/executor.js";
-import { executeHooks } from "../../hooks/executor.js";
-import type { HookExecutorConfig } from "../../hooks/types.js";
-import { ConversationSession } from "../../messaging/conversation-session.js";
-import { EventRegistry } from "../../registry/event-registry.js";
+} from "@sdk/shared/triggers/types.js";
+import type { TriggerExecutorConfig } from "@sdk/shared/triggers/executor.js";
+import { executeTriggers } from "@sdk/shared/triggers/executor.js";
+import { executeHooks } from "@sdk/shared/hooks/executor.js";
+import type { HookExecutorConfig } from "@sdk/shared/hooks/types.js";
+import { ConversationSession } from "@sdk/shared/messaging/conversation-session.js";
+import { EventRegistry } from "@sdk/shared/registry/event-registry.js";
 import type { LLMMessage } from "@wf-agent/types";
 
 describe("Integration: Hooks and Triggers Execution Flow", () => {

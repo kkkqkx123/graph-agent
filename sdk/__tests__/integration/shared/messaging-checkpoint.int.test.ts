@@ -18,11 +18,11 @@ import type {
   AgentLoopStateSnapshot,
 } from "@wf-agent/types";
 import { AgentLoopStatus } from "@wf-agent/types";
-import { ConversationSession } from "../../messaging/conversation-session.js";
-import { AgentLoopEntity } from "../../../agent/entities/agent-loop-entity.js";
-import { AgentLoopState } from "../../../agent/state-managers/agent-loop-state.js";
-import { ExecutionHierarchyRegistry } from "../../registry/execution-hierarchy-registry.js";
-import { AgentStateCoordinator } from "../../../agent/state-managers/agent-state-coordinator.js";
+import { ConversationSession } from "@sdk/shared/messaging/conversation-session.js";
+import { AgentLoopEntity } from "@sdk/agent/entities/agent-loop-entity.js";
+import { AgentLoopState } from "@sdk/agent/state-managers/agent-loop-state.js";
+import { ExecutionHierarchyRegistry } from "@sdk/shared/registry/execution-hierarchy-registry.js";
+import { AgentStateCoordinator } from "@sdk/agent/state-managers/agent-state-coordinator.js";
 
 describe("Integration: Messaging & Checkpoint Lifecycle", () => {
   let conversationSession: ConversationSession;

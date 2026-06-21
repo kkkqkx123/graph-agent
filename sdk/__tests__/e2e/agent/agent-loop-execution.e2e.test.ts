@@ -24,7 +24,7 @@ import {
   MockLLMClient,
   createMockLLMOptions,
   setupMockContextProvider,
-} from "../__shared/mock-llm.js";
+} from "../__shared/agent/index.js";
 
 // =============================================================================
 // Constants
