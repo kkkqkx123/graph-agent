@@ -24,7 +24,7 @@ export {
 } from "./execution.js";
 
 // Execution Entity Interface - Unified contract for all execution entities
-export { type IExecutionEntity, type ExecutionStatus } from "./execution-entity.js";
+export { type IExecutionEntity, type ExecutionStatus, type Abortable } from "./execution-entity.js";
 
 // Pool types - Worker and Execution Pool Definitions
 export {
@@ -38,12 +38,8 @@ export {
 // State Manager Interfaces
 export { type StateManager, type StateManagerMetadata } from "./state-manager.js";
 
-// Abortable Interface
-export { type Abortable } from "./abortable.js";
-
 // Timeout Management Types - Internal SDK timeout system
 export * from "./timeout.js";
-export * from "./timeout-config.js";
 export * from "./timeout-tags.js";
 
 // Task Snapshot Types - Serializable task data for persistence
