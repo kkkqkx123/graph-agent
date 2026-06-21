@@ -4,6 +4,14 @@
  */
 
 // ============================================================================
+// Builders - Configuration Builders
+// ============================================================================
+
+export {
+  AgentLoopConfigBuilder,
+} from "./builders/index.js";
+
+// ============================================================================
 // Commands - Command Operations
 // ============================================================================
 
@@ -78,6 +86,21 @@ export {
   type AgentLoopMessageFilter,
   type AgentLoopMessageStats,
 } from "./resources/message-resource-api.js";
+
+export {
+  AgentVariableResourceAPI,
+  type AgentVariableFilter,
+  type AgentVariableUpdateOptions,
+  type AgentVariableDefinition,
+  type AgentContextVariable,
+} from "./resources/agent-variable-resource-api.js";
+
+export {
+  AgentUserInteractionResourceAPI,
+  type AgentUserInteractionConfig,
+  type AgentUserInteractionFilter,
+  type AgentUserInteractionEventRecord,
+} from "./resources/agent-user-interaction-resource-api.js";
 
 export {
   AgentLoopExecutionHistoryAPI,

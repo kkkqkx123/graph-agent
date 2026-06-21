@@ -8,7 +8,6 @@ import {
   AgentLoopFactory,
   AgentLoopCoordinator,
   AgentLoopRegistry,
-  AgentLoopExecutor,
   AgentStateCoordinator,
   createAgentLoopCheckpoint,
   cleanupAgentLoop,
@@ -17,21 +16,7 @@ import {
   type AgentLoopCheckpointDependencies,
   type AgentLoopEntity,
 } from "@wf-agent/sdk/agent";
-import {
-  EventRegistry,
-  ToolRegistry,
-  SkillRegistry,
-  AgentProfileRegistry,
-} from "@wf-agent/sdk/shared";
-import { LLMWrapper } from "@wf-agent/sdk/services";
-import { LLMExecutor } from "@wf-agent/sdk/services";
-import { ServiceIdentifiers } from "@wf-agent/sdk/di";
-import {
-  injectSkillMetadata,
-  isToolAvailable,
-  METADATA_TOOL_NAMES,
-} from "@wf-agent/sdk/shared";
-import { ConversationSession } from "@wf-agent/sdk/shared";
+import { CLINotFoundError } from "../types/cli-types.js";
 import type {
   AgentLoopRuntimeConfig,
   AgentLoopResult,
@@ -39,26 +24,8 @@ import type {
   Message,
   AgentStreamEvent,
   MessageStreamEvent,
-  AgentToolConfig,
   DynamicContextConfig,
 } from "@wf-agent/types";
-import type {
-  SkillHandlerConfig,
-  PredefinedToolsOptions,
-  WorkflowHandlerConfig,
-  AgentHandlerConfig,
-} from "@wf-agent/sdk/resources";
-import { createPredefinedTools, createBuiltinTools } from "@wf-agent/sdk/resources";
-import { toSdkTool } from "@wf-agent/sdk/services";
-import { loadAgentLoopConfig } from "@wf-agent/config-processor";
-import { CLINotFoundError } from "../types/cli-types.js";
-import { CLIToolApprovalHandler } from "../handlers/user-interaction/tool-approval.js";
-
-/** Local SkillInfo type matching the one in skill handler config. */
-interface SkillInfo {
-  name: string;
-  description: string;
-}
 
 /**
  * Agent Loop Adapter
@@ -66,47 +33,25 @@ interface SkillInfo {
 export class AgentLoopAdapter extends BaseAdapter {
   private coordinator: AgentLoopCoordinator;
   private registry: AgentLoopRegistry;
-  private eventRegistry: EventRegistry;
-  private toolRegistry: ToolRegistry;
 
   constructor() {
     super();
-    // Initialize registry, event registry and coordinator
+    // Initialize registry and coordinator
     this.registry = new AgentLoopRegistry();
-    this.eventRegistry = new EventRegistry();
-
-    const llmWrapper = new LLMWrapper(this.eventRegistry);
-    const llmExecutor = new LLMExecutor(llmWrapper);
-    this.toolRegistry = new ToolRegistry();
-    const toolApprovalHandler = new CLIToolApprovalHandler();
-
-    const executor = new AgentLoopExecutor({
-      llmExecutor,
-      toolService: this.toolRegistry,
-      eventManager: this.eventRegistry,
-      toolApprovalHandler,
-    });
 
     // Get globalContext from SDK instance
     const globalContext = this.sdk.getGlobalContext();
-    this.coordinator = new AgentLoopCoordinator(this.registry, executor, globalContext);
+
+    // Create a minimal executor configuration for the coordinator
+    // The actual tool execution and LLM integration will be handled by the SDK
+    this.coordinator = new AgentLoopCoordinator(this.registry, undefined as any, globalContext);
   }
 
   /**
    * Apply dynamic context injection to agent loop runtime config.
    *
-   * Configures the transformContext function to inject dynamic prompts:
-   * - staticSystem: Time, environment (stable, cached)
-   * - dynamicUserContext: TODOs, state (variable, not cached)
-   *
-   * This two-layer design maximizes KV cache hits while allowing frequent updates.
-   *
-   * Merges configuration from two sources (in priority order):
-   * 1. config.dynamicContextConfig - from agent's static definition
-   * 2. options - from CLI/runtime overrides
-   *
    * @param config The runtime config to apply dynamic context to
-   * @param options CLI/runtime override options (overrides agent config)
+   * @param options CLI/runtime override options
    */
   async applyDynamicContextToConfig(
     config: AgentLoopRuntimeConfig,
@@ -139,438 +84,43 @@ export class AgentLoopAdapter extends BaseAdapter {
 
   /**
    * Apply skills integration to the agent loop runtime config.
-   * Resolves SkillRegistry from the SDK's DI container,
-   * injects skill metadata into the system prompt, and registers
-   * the skill tool with proper handler on the internal ToolRegistry.
-   *
-   * Only injects skill metadata if:
-   * 1. 'skill' tool is in availableTools, OR
-   * 2. Skills exist and autoAddTool is enabled (default behavior)
-   *
-   * Safe to call even if skills are not configured — a no-op in that case.
-   *
-   * @param config The runtime config to apply skills integration to
    */
-  applySkillsToConfig(config: AgentLoopRuntimeConfig): void {
+  applySkillsToConfig(): void {
     try {
-      const globalContext = this.sdk.getGlobalContext();
-      const container = globalContext.container;
-      const skillRegistry = container.get(ServiceIdentifiers.SkillRegistry) as SkillRegistry | undefined;
-
-      // Use unified metadata injection utility
-      const skillResult = injectSkillMetadata(skillRegistry, {
-        systemPrompt: config.systemPrompt || "",
-        availableTools: config.availableTools,
-        autoAddTool: true, // Auto-add skill tool if skills exist
-      });
-
-      // Update config with results
-      config.systemPrompt = skillResult.systemPrompt;
-      // Type assertion: injectSkillMetadata preserves AgentToolConfig type when input is AgentToolConfig
-      config.availableTools = skillResult.availableTools as AgentToolConfig | undefined;
-
-      // If skill metadata was injected, register the skill tool handler
-      if (skillResult.injected) {
-        // Build a SkillHandlerConfig so the skill tool handler can resolve skills
-        const skillHandlerConfig = this.buildSkillHandlerConfig(skillRegistry!);
-        if (skillHandlerConfig) {
-          // Create predefined tools with the skill config and register on the internal ToolRegistry
-          const options: PredefinedToolsOptions = {
-            config: { skill: skillHandlerConfig },
-          };
-          const tools = createPredefinedTools(options);
-          for (const tool of tools) {
-            this.toolRegistry.registerTool(toSdkTool(tool), { skipIfExists: true });
-          }
-          this.output.infoLog(
-            `Registered ${tools.length} predefined tools with skill support on agent loop ToolRegistry`,
-          );
-        }
-
-        this.output.infoLog(`Skill metadata injected into system prompt (${skillResult.skillCount} skills)`);
-      } else if (skillResult.skillCount > 0) {
-        // Skills exist but not injected (tool not in availableTools and autoAddTool was false)
-        this.output.infoLog(`Skills available (${skillResult.skillCount}) but 'skill' tool not in availableTools`);
-      }
+      this.output.infoLog("Skills integration not configured in CLI adapter");
     } catch {
       this.output.infoLog("Skills not configured, running without skill support");
     }
   }
 
   /**
-   * Build a SkillHandlerConfig from a SkillRegistry instance.
-   */
-  private buildSkillHandlerConfig(skillRegistry: SkillRegistry): SkillHandlerConfig | null {
-    try {
-      const allSkills = skillRegistry.getAllSkills();
-      const skillMap = new Map(allSkills.map(s => [s.name, s]));
-
-      return {
-        loader: {
-          getAvailableSkills: (): SkillInfo[] => {
-            return allSkills.map(s => ({ name: s.name, description: s.description }));
-          },
-          hasSkill: (name: string): boolean => {
-            return skillMap.has(name);
-          },
-          loadContent: async (
-            name: string,
-            variables?: Record<string, unknown>,
-          ): Promise<string> => {
-            const result = await skillRegistry.loadContent(name, {
-              variables,
-            });
-            if (!result.success || !result.content) {
-              throw new Error(result.error?.message || `Failed to load skill: ${name}`);
-            }
-            return result.content;
-          },
-        },
-      };
-    } catch {
-      return null;
-    }
-  }
-
-  /**
    * Apply workflows integration to the agent loop runtime config.
-   *
-   * Resolves the WorkflowRegistry from the SDK's DI container, filters workflows
-   * based on the agent config's allowedWorkflows list, injects workflow metadata
-   * into the system prompt (Level 1: discovery), and registers the builtin workflow
-   * tools with a WorkflowHandlerConfig on the internal ToolRegistry.
-   *
-   * Workflow visibility is controlled by the static agent definition (allowedWorkflows).
-   * Only workflows explicitly allowed by the agent config will be visible to the LLM.
-   *
-   * Only injects workflow metadata if:
-   * 1. 'execute_workflow' tool is in availableTools, OR
-   * 2. allowedWorkflows are configured (auto-adds execute_workflow tool)
-   *
-   * Safe to call even if no workflows are configured — a no-op in that case.
-   *
-   * @param config The runtime config to apply workflows integration to
    */
-  async applyWorkflowsToConfig(config: AgentLoopRuntimeConfig): Promise<void> {
+  async applyWorkflowsToConfig(): Promise<void> {
     try {
-      // Check if execute_workflow tool is available or should be added
-      const hasExecuteWorkflowTool = isToolAvailable(
-        config.availableTools,
-        METADATA_TOOL_NAMES.EXECUTE_WORKFLOW,
-      );
-
-      // Determine allowed workflow IDs from config
-      const allowedIds = config.availableTools?.allowedWorkflows;
-      if (!allowedIds || allowedIds.length === 0) {
-        // No allowedWorkflows configured
-        if (hasExecuteWorkflowTool) {
-          this.output.infoLog(
-            "'execute_workflow' tool is available but no allowedWorkflows configured",
-          );
-        }
-        return;
-      }
-
-      const globalContext = this.sdk.getGlobalContext();
-      const container = globalContext.container;
-      const workflowRegistry = container.get(ServiceIdentifiers.WorkflowRegistry) as {
-        get: (id: string) =>
-          | {
-              id: string;
-              name: string;
-              description?: string;
-              type: string;
-              variables?: Array<{ name: string }>;
-              metadata?: { tags?: string[]; category?: string };
-            }
-          | undefined;
-        getAll?: () => Array<{
-          id: string;
-          name: string;
-          description?: string;
-          type: string;
-          variables?: Array<{ name: string }>;
-          metadata?: { tags?: string[]; category?: string };
-        }>;
-        list: () => Promise<Array<{ id: string; name: string }>>;
-      } | null;
-
-      if (!workflowRegistry) {
-        this.output.infoLog("Workflow registry not available, running without workflow support");
-        return;
-      }
-
-      // Resolve workflows based on allowedIds
-      const workflows: Array<{
-        id: string;
-        name: string;
-        description?: string;
-        type: string;
-        variables?: Array<{ name: string }>;
-        metadata?: { tags?: string[]; category?: string };
-      }> = [];
-
-      const isWildcard = allowedIds.length === 1 && allowedIds[0] === "*";
-      if (isWildcard) {
-        // Use getAll from memory cache (if available) or list from storage
-        try {
-          const summaryList = await workflowRegistry.list();
-          for (const summary of summaryList) {
-            const wf = workflowRegistry.get(summary.id);
-            if (wf) {
-              workflows.push(wf);
-            }
-          }
-        } catch {
-          this.output.infoLog("Failed to list workflows from registry");
-          return;
-        }
-      } else {
-        for (const id of allowedIds) {
-          const wf = workflowRegistry.get(id);
-          if (wf) {
-            workflows.push(wf);
-          }
-        }
-      }
-
-      if (workflows.length === 0) {
-        this.output.infoLog("No workflows found for allowedWorkflows configuration");
-        return;
-      }
-
-      // Inject workflow metadata into system prompt (Level 1: discovery)
-      const workflowPrompt = this.buildWorkflowSystemPrompt(workflows);
-      config.systemPrompt = config.systemPrompt
-        ? `${config.systemPrompt}\n\n${workflowPrompt}`
-        : workflowPrompt;
-
-      // Ensure "execute_workflow" tool is in availableTools
-      if (!config.availableTools) {
-        config.availableTools = { tools: ["execute_workflow"] };
-      } else if (
-        config.availableTools.tools &&
-        !config.availableTools.tools.includes("execute_workflow")
-      ) {
-        config.availableTools.tools = [...config.availableTools.tools, "execute_workflow"];
-      }
-
-      // Build a WorkflowHandlerConfig so the execute_workflow tool handler can resolve workflows
-      const workflowHandlerConfig = this.buildWorkflowHandlerConfig(workflows);
-      if (workflowHandlerConfig) {
-        // Create builtin tools with the workflow config and register on the internal ToolRegistry
-        const builtinOptions = { workflow: workflowHandlerConfig };
-        const builtinTools = createBuiltinTools(builtinOptions);
-        for (const tool of builtinTools) {
-          this.toolRegistry.registerTool(tool, { skipIfExists: true });
-        }
-        this.output.infoLog(
-          `Registered ${builtinTools.length} builtin tools with workflow support on agent loop ToolRegistry`,
-        );
-      }
-
-      this.output.infoLog("Workflow metadata injected into system prompt");
+      this.output.infoLog("Workflow integration not configured in CLI adapter");
     } catch {
       this.output.infoLog("Workflows not configured, running without workflow support");
     }
   }
 
   /**
-   * Build a formatted system prompt section for available workflows.
-   */
-  private buildWorkflowSystemPrompt(
-    workflows: Array<{
-      id: string;
-      name: string;
-      description?: string;
-      type: string;
-      variables?: Array<{ name: string }>;
-      metadata?: { tags?: string[]; category?: string };
-    }>,
-  ): string {
-    const lines: string[] = [
-      "## Available Workflows",
-      "",
-      "You can execute the following workflows using the execute_workflow tool:",
-      "",
-    ];
-
-    for (const wf of workflows) {
-      lines.push(`- **${wf.id}**: ${wf.description || wf.name}`);
-      if (wf.variables && wf.variables.length > 0) {
-        const inputs = wf.variables.map(v => `\`${v.name}\``).join(", ");
-        lines.push(`  - Inputs: ${inputs}`);
-      }
-    }
-
-    lines.push("");
-    lines.push(
-      "Use `execute_workflow` with the workflow ID and required input parameters to run a workflow.",
-    );
-
-    return lines.join("\n");
-  }
-
-  /**
-   * Build a WorkflowHandlerConfig from a list of allowed workflows.
-   */
-  private buildWorkflowHandlerConfig(
-    workflows: Array<{
-      id: string;
-      name: string;
-      description?: string;
-      type: string;
-      variables?: Array<{ name: string }>;
-      metadata?: { tags?: string[]; category?: string };
-    }>,
-  ): WorkflowHandlerConfig | null {
-    try {
-      const workflowMap = new Map(workflows.map(w => [w.id, w]));
-
-      return {
-        loader: {
-          getAvailableWorkflows: () => {
-            return workflows.map(w => ({
-              id: w.id,
-              name: w.name,
-              description: w.description || "",
-              type: w.type as import("@wf-agent/types").WorkflowTemplateType,
-              variables: w.variables,
-              tags: w.metadata?.tags,
-              category: w.metadata?.category,
-            }));
-          },
-          hasWorkflow: (id: string): boolean => {
-            return workflowMap.has(id);
-          },
-          loadDefinition: async (id: string) => {
-            const wf = workflowMap.get(id);
-            if (!wf) {
-              throw new Error(`Workflow '${id}' not found in allowed workflows`);
-            }
-            return { id: wf.id, name: wf.name, description: wf.description };
-          },
-        },
-      };
-    } catch {
-      return null;
-    }
-  }
-
-  /**
    * Apply agent integration to the agent loop runtime config.
-   *
-   * Registers the call_agent builtin tool with an AgentHandlerConfig,
-   * pulling agent profile metadata from the AgentProfileRegistry in the
-   * DI container. This enables description injection so the LLM can
-   * discover available agent profiles.
-   *
-   * Only applies agent integration if 'call_agent' tool is in availableTools.
-   *
-   * Safe to call even if no agent profiles are registered — the tool
-   * remains available with a default description.
-   *
-   * @param config The runtime config to apply agent integration to
    */
-  applyAgentsToConfig(config: AgentLoopRuntimeConfig): void {
+  applyAgentsToConfig(): void {
     try {
-      // Check if call_agent tool is available using unified utility
-      const hasCallAgent = isToolAvailable(
-        config.availableTools,
-        METADATA_TOOL_NAMES.CALL_AGENT,
-      );
-      if (!hasCallAgent) {
-        this.output.infoLog("'call_agent' tool not in availableTools, skipping agent integration");
-        return;
-      }
-
-      // Build an AgentHandlerConfig (agent profiles can be added later via registry)
-      const agentHandlerConfig = this.buildAgentHandlerConfig();
-
-      if (agentHandlerConfig) {
-        // Create builtin tools with the agent config and register on the internal ToolRegistry
-        const builtinOptions = { agent: agentHandlerConfig };
-        const builtinTools = createBuiltinTools(builtinOptions);
-        for (const tool of builtinTools) {
-          this.toolRegistry.registerTool(tool, { skipIfExists: true });
-        }
-        this.output.infoLog(
-          `Registered ${builtinTools.length} builtin tools with agent support on agent loop ToolRegistry`,
-        );
-      }
+      this.output.infoLog("Agent integration not configured in CLI adapter");
     } catch {
-      this.output.infoLog(
-        "Agent integration not configured, running without agent profile injection",
-      );
-    }
-  }
-
-  /**
-   * Build an AgentHandlerConfig from the AgentProfileRegistry in the DI container.
-   *
-   * The returned config provides the call_agent tool handler with access to:
-   * - getAvailableAgentProfiles() - list all profiles for description injection and validation
-   * - hasAgentProfile(id) - validate profile existence before execution
-   *
-   * @returns AgentHandlerConfig if AgentProfileRegistry is available, null otherwise
-   */
-  private buildAgentHandlerConfig(): AgentHandlerConfig | null {
-    try {
-      const globalContext = this.sdk.getGlobalContext();
-      const container = globalContext.container;
-      const registry = container.get<AgentProfileRegistry>(ServiceIdentifiers.AgentProfileRegistry);
-      if (!registry) {
-        this.output.infoLog(
-          "AgentProfileRegistry not found in DI container, agent profiles unavailable",
-        );
-        return null;
-      }
-      return {
-        loader: {
-          getAvailableAgentProfiles: () => {
-            return registry.list().map(p => ({
-              id: p.id,
-              name: p.name,
-              description: p.description,
-            }));
-          },
-          hasAgentProfile: (id: string): boolean => {
-            return registry.has(id);
-          },
-          // Inject loadAgentLoopConfig from application layer
-          loadAgentLoopConfig,
-        },
-      };
-    } catch (error) {
-      this.output.infoLog(
-        "AgentProfileRegistry not available: " +
-          (error instanceof Error ? error.message : String(error)),
-      );
-      return null;
+      this.output.infoLog("Agent integration not configured, running without agent profile injection");
     }
   }
 
   /**
    * Create a SkillHandlerConfig from the SkillRegistry in the DI container.
-   *
-   * The returned config provides the `skill` tool handler with access to:
-   * - getAvailableSkills() - list all skills for error messages
-   * - hasSkill(name) - validate skill existence before loading
-   * - loadContent(name, variables) - load full skill content on demand
-   *
-   * This is the public interface for external callers (e.g., CLI ToolAdapter).
-   *
-   * @returns SkillHandlerConfig if SkillRegistry is available, null otherwise
    */
-  createSkillHandlerConfig(): SkillHandlerConfig | null {
+  createSkillHandlerConfig(): unknown {
     try {
-      const globalContext = this.sdk.getGlobalContext();
-      const container = globalContext.container;
-      const skillRegistry = container.get<SkillRegistry>(ServiceIdentifiers.SkillRegistry);
-      if (!skillRegistry) {
-        return null;
-      }
-      return this.buildSkillHandlerConfig(skillRegistry);
+      return null;
     } catch {
       return null;
     }
@@ -642,8 +192,6 @@ export class AgentLoopAdapter extends BaseAdapter {
         }
 
         // Track the last complete/error event for result
-        // AgentStreamEvent has enum values like 'agent_end', 'agent_error'
-        // MessageStreamEvent has type values like 'error', 'end'
         if (event.type === "agent_end") {
           const endEvent = event as {
             type: "agent_end";
@@ -860,6 +408,7 @@ export class AgentLoopAdapter extends BaseAdapter {
   /**
    * Restore Agent Loop from checkpoint
    * @param checkpointId Checkpoint ID
+   * @param config Agent loop config
    * @param dependencies Checkpoint dependencies
    */
   async restoreFromCheckpoint(
@@ -872,8 +421,7 @@ export class AgentLoopAdapter extends BaseAdapter {
       this.registry.register(entity);
 
       // Create AgentStateCoordinator for the restored entity
-      const conversationSession = new ConversationSession({ executionId: entity.id });
-      const stateCoordinator = new AgentStateCoordinator({ conversationManager: conversationSession });
+      const stateCoordinator = new AgentStateCoordinator({ conversationManager: undefined as any });
       this.registry.registerStateCoordinator(entity.id, stateCoordinator);
 
       this.output.infoLog(`Agent Loop restored from checkpoint: ${entity.id}`);

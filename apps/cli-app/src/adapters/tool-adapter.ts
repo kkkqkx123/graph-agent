@@ -6,7 +6,7 @@
 import { BaseAdapter } from "./base-adapter.js";
 import { resolve, join, extname } from "path";
 import type { Tool, ToolExecutionOptions } from "@wf-agent/types";
-import { StaticValidatorAPI, parseToml, parseJson, getData, isFailure, getError } from "@wf-agent/sdk/api";
+import { StaticValidatorAPI, parseToml, parseJson } from "@wf-agent/sdk/api";
 import { loadConfigFile } from "@wf-agent/config-processor";
 import type { ConfigurationValidationError } from "@wf-agent/types";
 import { CLINotFoundError } from "../types/cli-types.js";
@@ -115,13 +115,7 @@ export class ToolAdapter extends BaseAdapter {
   async listTools(filter?: Record<string, unknown>): Promise<Tool[]> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.tools;
-      const result = await api.getAll(filter);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      return getData(result) as Tool[];
+      return await api.getAll(filter);
     }, "List tools");
   }
 
@@ -131,17 +125,12 @@ export class ToolAdapter extends BaseAdapter {
   async getTool(id: string): Promise<Tool> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.tools;
-      const result = await api.get(id);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      const tool = getData(result);
+      const tool = await api.get(id);
+
       if (!tool) {
         throw new CLINotFoundError(`Tool not found: ${id}`, "Tool", id);
       }
-      
+
       return tool as Tool;
     }, "Get tool");
   }
@@ -163,23 +152,14 @@ export class ToolAdapter extends BaseAdapter {
   async updateTool(id: string, updates: Partial<Tool>): Promise<Tool> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.tools;
-      const updateResult = await api.update(id, updates);
-      
-      if (isFailure(updateResult)) {
-        throw getError(updateResult);
-      }
-      
-      const getResult = await api.get(id);
-      
-      if (isFailure(getResult)) {
-        throw getError(getResult);
-      }
-      
-      const tool = getData(getResult);
+      await api.update(id, updates);
+
+      const tool = await api.get(id);
+
       if (!tool) {
         throw new CLINotFoundError(`Tool not found: ${id}`, "Tool", id);
       }
-      
+
       this.output.infoLog(`Tool updated: ${id}`);
       return tool as Tool;
     }, "Update tool");

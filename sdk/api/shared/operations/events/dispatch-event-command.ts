@@ -9,7 +9,7 @@ import {
   ManagementCommand,
   type CommandMetadataDefinition,
 } from "../../types/command.js";
-import { validateEventDispatchParams } from "../../shared/operations/validators/shared-validators.js";
+import { validateEventDispatchParams } from "../validators/shared-validators.js";
 import type { CommandValidationResult } from "../../types/command.js";
 import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
 import type { Event } from "@wf-agent/types";

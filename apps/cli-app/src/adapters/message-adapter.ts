@@ -5,7 +5,6 @@
 
 import { BaseAdapter } from "./base-adapter.js";
 import type { LLMMessage } from "@wf-agent/types";
-import { getData, isFailure, getError } from "@wf-agent/sdk/api";
 import { CLINotFoundError } from "../types/cli-types.js";
 
 /**
@@ -34,13 +33,7 @@ export class MessageAdapter extends BaseAdapter {
   async listMessages(filter?: MessageFilter): Promise<LLMMessage[]> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.messages;
-      const result = await api.getAll(filter);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      return getData(result) as LLMMessage[];
+      return await api.getAll(filter);
     }, "List Messages");
   }
 
@@ -50,17 +43,12 @@ export class MessageAdapter extends BaseAdapter {
   async getMessage(id: string): Promise<LLMMessage> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.messages;
-      const result = await api.get(id);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      const message = getData(result);
+      const message = await api.get(id);
+
       if (!message) {
         throw new CLINotFoundError(`Message not found: ${id}`, "Message", id);
       }
-      
+
       return message as LLMMessage;
     }, "Get Message");
   }
@@ -71,13 +59,7 @@ export class MessageAdapter extends BaseAdapter {
   async listMessagesByExecution(executionId: string): Promise<LLMMessage[]> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.messages;
-      const result = await api.getAll({ executionId });
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      return getData(result) as LLMMessage[];
+      return await api.getAll({ executionId });
     }, "List Execution Messages");
   }
 

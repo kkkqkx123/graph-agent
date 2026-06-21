@@ -44,6 +44,11 @@ export {
   Subscription,
   BaseSubscription,
   SubscriptionMetadata,
+  OnEventSubscription,
+  OnceEventSubscription,
+  WaitForEventSubscription,
+  createExecutionScopedSubscription,
+  createExecutionScopedOnceSubscription,
 } from "./shared/types/subscription.js";
 
 // Harmonization of types

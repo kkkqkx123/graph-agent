@@ -8,7 +8,6 @@ import { CheckpointState } from "../../../workflow/checkpoint/checkpoint-state-m
 import type { Checkpoint, CheckpointMetadata } from "@wf-agent/types";
 import { CheckpointCoordinator } from "../../../workflow/checkpoint/checkpoint-coordinator.js";
 import type { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
-import { getErrorMessage, isSuccess, getData } from "../../shared/types/execution-result.js";
 import type { EventRegistry } from "../../../shared/registry/event-registry.js";
 import type { Timestamp } from "@wf-agent/types";
 import { WorkflowExecutionStatus } from "@wf-agent/types";
@@ -294,12 +293,7 @@ export class CheckpointResourceAPI extends SimplifiedCrudResourceAPI<Checkpoint,
    * @returns: Array of checkpoints
    */
   async getWorkflowExecutionCheckpoints(executionId: string): Promise<Checkpoint[]> {
-    const result = await this.getAll({ executionId });
-    if (!isSuccess(result)) {
-      throw new Error(getErrorMessage(result) || "Failed to get workflow execution checkpoints");
-    }
-    const checkpoints = getData(result);
-    return checkpoints || [];
+    return this.getAll({ executionId });
   }
 
   /**
@@ -327,11 +321,7 @@ export class CheckpointResourceAPI extends SimplifiedCrudResourceAPI<Checkpoint,
     byExecution: Record<string, number>;
     byWorkflow: Record<string, number>;
   }> {
-    const result = await this.getAll();
-    if (!isSuccess(result)) {
-      throw new Error(getErrorMessage(result) || "Failed to get checkpoint statistics");
-    }
-    const checkpoints = getData(result) || [];
+    const checkpoints = await this.getAll();
 
     const byExecution: Record<string, number> = {};
     const byWorkflow: Record<string, number> = {};

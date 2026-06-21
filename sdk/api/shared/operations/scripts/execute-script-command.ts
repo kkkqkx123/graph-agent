@@ -12,7 +12,7 @@ import {
   validationFailure,
   type CommandMetadataDefinition,
 } from "../../types/command.js";
-import { validateScriptExecutionParams } from "../../shared/operations/validators/shared-validators.js";
+import { validateScriptExecutionParams } from "../validators/shared-validators.js";
 import type { ScriptOptions } from "../../types/code-types.js";
 import type { ScriptExecutionResult } from "@wf-agent/types";
 import type { APIDependencyManager } from "../../core/sdk-dependencies.js";

@@ -10,7 +10,6 @@
 
 import { SimplifiedCrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
 import type { AgentLoopCheckpoint, ID } from "@wf-agent/types";
-import { getErrorMessage, isSuccess, getData } from "../../shared/types/execution-result.js";
 import type { AgentLoopEntity } from "../../../agent/entities/agent-loop-entity.js";
 import {
   AgentLoopCheckpointCoordinator,
@@ -313,11 +312,7 @@ export class AgentLoopCheckpointResourceAPI extends SimplifiedCrudResourceAPI<
     byAgentLoop: Record<string, number>;
     byType: Record<string, number>;
   }> {
-    const result = await this.getAll();
-    if (!isSuccess(result)) {
-      throw new Error(getErrorMessage(result) || "Failed to get checkpoint statistics");
-    }
-    const checkpoints = getData(result) || [];
+    const checkpoints = await this.getAll();
 
     const byAgentLoop: Record<string, number> = {};
     const byType: Record<string, number> = {};

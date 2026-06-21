@@ -13,7 +13,6 @@ import type { AgentLoopRegistry } from "../../../agent/stores/agent-loop-registr
 import type { AgentLoopEntity } from "../../../agent/entities/agent-loop-entity.js";
 import { AgentLoopStatus, type ID } from "@wf-agent/types";
 import type { ToolCallRecord } from "@wf-agent/types";
-import { getErrorMessage, isSuccess, getData } from "../../shared/types/execution-result.js";
 import type { APIDependencyManager } from "@sdk/api/shared/core/sdk-dependencies.js";
 
 /**
@@ -178,11 +177,7 @@ export class AgentLoopRegistryAPI extends SimplifiedCrudResourceAPI<AgentLoopEnt
    * @returns Agent Loop digest array
    */
   async getAgentLoopSummaries(filter?: AgentLoopFilter): Promise<AgentLoopSummary[]> {
-    const result = await this.getAll(filter);
-    if (!isSuccess(result)) {
-      throw new Error(getErrorMessage(result) || "Failed to get agent loop summaries");
-    }
-    const entities = getData(result) || [];
+    const entities = await this.getAll(filter);
 
     return entities.map(entity => {
       const startTime = entity.state.startTime;
@@ -205,11 +200,7 @@ export class AgentLoopRegistryAPI extends SimplifiedCrudResourceAPI<AgentLoopEnt
    * @returns the state, or null if it doesn't exist.
    */
   async getAgentLoopStatus(id: ID): Promise<AgentLoopStatus | null> {
-    const result = await this.get(id);
-    if (!isSuccess(result)) {
-      throw new Error(getErrorMessage(result) || "Failed to get agent loop status");
-    }
-    const entity = getData(result);
+    const entity = await this.get(id);
     if (!entity) {
       return null;
     }
@@ -256,11 +247,7 @@ export class AgentLoopRegistryAPI extends SimplifiedCrudResourceAPI<AgentLoopEnt
     total: number;
     byStatus: Record<AgentLoopStatus, number>;
   }> {
-    const result = await this.getAll();
-    if (!isSuccess(result)) {
-      throw new Error(getErrorMessage(result) || "Failed to get agent loop statistics");
-    }
-    const entities = getData(result) || [];
+    const entities = await this.getAll();
 
     const byStatus: Record<AgentLoopStatus, number> = {
       [AgentLoopStatus.CREATED]: 0,

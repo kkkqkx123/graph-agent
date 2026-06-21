@@ -7,7 +7,6 @@ import { BaseAdapter } from "./base-adapter.js";
 import type { BaseEvent } from "@wf-agent/types";
 import type { EventFilter } from "@wf-agent/sdk/api";
 import { CLINotFoundError } from "../types/cli-types.js";
-import { getData, isFailure, getError } from "@wf-agent/sdk/api";
 
 /**
  * Event Adapter
@@ -19,13 +18,7 @@ export class EventAdapter extends BaseAdapter {
   async listEvents(filter?: EventFilter): Promise<BaseEvent[]> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.events;
-      const result = await api.getAll(filter);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      return getData(result) as BaseEvent[];
+      return await api.getAll(filter);
     }, "List events");
   }
 
@@ -35,17 +28,12 @@ export class EventAdapter extends BaseAdapter {
   async getEvent(id: string): Promise<BaseEvent> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.events;
-      const result = await api.get(id);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      const event = getData(result);
+      const event = await api.get(id);
+
       if (!event) {
         throw new CLINotFoundError(`Event not found: ${id}`, "Event", id);
       }
-      
+
       return event as BaseEvent;
     }, "Get the event");
   }

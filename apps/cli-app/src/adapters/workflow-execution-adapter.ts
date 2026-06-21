@@ -5,12 +5,14 @@
 
 import { BaseAdapter } from "./base-adapter.js";
 import { CLINotFoundError } from "../types/cli-types.js";
-import { getData, isFailure, getError } from "@wf-agent/sdk/api";
 import {
   ExecuteWorkflowCommand,
   PauseWorkflowCommand,
   ResumeWorkflowCommand,
   CancelWorkflowCommand,
+  isSuccess,
+  getData,
+  getError,
 } from "@wf-agent/sdk/api";
 import type { WorkflowExecution, WorkflowExecutionResult, WorkflowExecutionStatus } from "@wf-agent/types";
 
@@ -37,18 +39,17 @@ export class WorkflowExecutionAdapter extends BaseAdapter {
       const command = new ExecuteWorkflowCommand({ workflowId, options: { input } }, dependencies);
       const result = await this.sdk.executeCommand(command);
 
-      if (isFailure(result)) {
+      if (!isSuccess(result)) {
         throw getError(result);
       }
 
-      const executionResult = getData(result) as WorkflowExecutionResult;
-      
+      const executionResult = getData(result);
       if (!executionResult) {
         throw new Error("Workflow execution result is null");
       }
-      
+
       this.output.infoLog(`Workflow execution started successfully`);
-      
+
       // Convert to WorkflowSummary format
       return {
         ...executionResult,
@@ -66,13 +67,13 @@ export class WorkflowExecutionAdapter extends BaseAdapter {
     return this.executeWithErrorHandling(async () => {
       // Create and execute pause command
       const dependencies = this.sdk.getFactory().getDependencies();
-      const command = new PauseWorkflowCommand(executionId, dependencies);
+      const command = new PauseWorkflowCommand({ executionId }, dependencies);
       const result = await this.sdk.executeCommand(command);
-      
-      if (isFailure(result)) {
+
+      if (!isSuccess(result)) {
         throw getError(result);
       }
-      
+
       this.output.infoLog(`Workflow execution paused: ${executionId}`);
     }, "Pause workflow execution");
   }
@@ -84,13 +85,13 @@ export class WorkflowExecutionAdapter extends BaseAdapter {
     return this.executeWithErrorHandling(async () => {
       // Create and execute resume command
       const dependencies = this.sdk.getFactory().getDependencies();
-      const command = new ResumeWorkflowCommand(executionId, dependencies);
+      const command = new ResumeWorkflowCommand({ executionId }, dependencies);
       const result = await this.sdk.executeCommand(command);
-      
-      if (isFailure(result)) {
+
+      if (!isSuccess(result)) {
         throw getError(result);
       }
-      
+
       this.output.infoLog(`Workflow execution resumed: ${executionId}`);
     }, "Resume workflow execution");
   }
@@ -102,13 +103,13 @@ export class WorkflowExecutionAdapter extends BaseAdapter {
     return this.executeWithErrorHandling(async () => {
       // Create and execute cancel command
       const dependencies = this.sdk.getFactory().getDependencies();
-      const command = new CancelWorkflowCommand(executionId, dependencies);
+      const command = new CancelWorkflowCommand({ executionId }, dependencies);
       const result = await this.sdk.executeCommand(command);
-      
-      if (isFailure(result)) {
+
+      if (!isSuccess(result)) {
         throw getError(result);
       }
-      
+
       this.output.infoLog(`Workflow execution stopped: ${executionId}`);
     }, "Stop workflow execution");
   }
@@ -119,26 +120,18 @@ export class WorkflowExecutionAdapter extends BaseAdapter {
   async listWorkflowExecutions(filter?: Record<string, unknown>): Promise<WorkflowSummary[]> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.executions;
-      
-      // Convert filter to WorkflowExecutionFilter type
-      const executionFilter = filter ? {
-        ids: filter['ids'] as string[] | undefined,
-        workflowId: filter['workflowId'] as string | undefined,
-        status: filter['status'] as WorkflowExecutionStatus | undefined,
-        executionType: filter['executionType'] as 'MAIN' | 'FORK_JOIN' | 'TRIGGERED_SUBWORKFLOW' | undefined,
-      } : undefined;
-      
-      const result = await api.getAll(executionFilter);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      const executions = getData(result);
 
-      if (!executions) {
-        return [];
-      }
+      // Convert filter to WorkflowExecutionFilter type
+      const executionFilter = filter
+        ? {
+            ids: (filter["ids"] as string[] | undefined),
+            workflowId: (filter["workflowId"] as string | undefined),
+            status: (filter["status"] as WorkflowExecutionStatus | undefined),
+            executionType: (filter["executionType"] as "MAIN" | "FORK_JOIN" | "TRIGGERED_SUBWORKFLOW" | undefined),
+          }
+        : undefined;
+
+      const executions = await api.getAll(executionFilter);
 
       // Convert to WorkflowSummary format
       return (executions as WorkflowExecution[]).map((execution) => {
@@ -158,13 +151,7 @@ export class WorkflowExecutionAdapter extends BaseAdapter {
   async getWorkflowExecution(executionId: string): Promise<WorkflowSummary> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.executions;
-      const result = await api.get(executionId);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      const execution = getData(result);
+      const execution = await api.get(executionId);
 
       if (!execution) {
         throw new CLINotFoundError(`Workflow execution not found: ${executionId}`, "WorkflowExecution", executionId);

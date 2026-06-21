@@ -5,7 +5,6 @@
 
 import { BaseAdapter } from "./base-adapter.js";
 import type { Trigger, TriggerTemplateFilter } from "@wf-agent/types";
-import { getData, isFailure, getError } from "@wf-agent/sdk/api";
 import { CLINotFoundError } from "../types/cli-types.js";
 
 /**
@@ -18,13 +17,7 @@ export class TriggerAdapter extends BaseAdapter {
   async listTriggers(filter?: TriggerTemplateFilter): Promise<Trigger[]> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.triggers;
-      const result = await api.getAll(filter);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      return getData(result) as Trigger[];
+      return await api.getAll(filter);
     }, "List triggers");
   }
 
@@ -34,17 +27,12 @@ export class TriggerAdapter extends BaseAdapter {
   async getTrigger(id: string): Promise<Trigger> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.triggers;
-      const result = await api.get(id);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      const trigger = getData(result);
+      const trigger = await api.get(id);
+
       if (!trigger) {
         throw new CLINotFoundError(`Trigger not found: ${id}`, "Trigger", id);
       }
-      
+
       return trigger as Trigger;
     }, "Get trigger");
   }

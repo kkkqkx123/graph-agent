@@ -6,7 +6,7 @@
 import { BaseAdapter } from "./base-adapter.js";
 import { resolve, join, extname } from "path";
 import type { Script, ScriptExecutionOptions } from "@wf-agent/types";
-import { parseScript, getData, isFailure, getError } from "@wf-agent/sdk/api";
+import { parseScript } from "@wf-agent/sdk/api";
 import { loadConfigFile } from "@wf-agent/config-processor";
 import { CLINotFoundError } from "../types/cli-types.js";
 
@@ -107,13 +107,7 @@ export class ScriptAdapter extends BaseAdapter {
   async listScripts(filter?: Record<string, unknown>): Promise<Script[]> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.scripts;
-      const result = await api.getAll(filter);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      return getData(result) as Script[];
+      return await api.getAll(filter);
     }, "List scripts");
   }
 
@@ -123,17 +117,12 @@ export class ScriptAdapter extends BaseAdapter {
   async getScript(id: string): Promise<Script> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.scripts;
-      const result = await api.get(id);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      const script = getData(result);
+      const script = await api.get(id);
+
       if (!script) {
         throw new CLINotFoundError(`Script not found: ${id}`, "Script", id);
       }
-      
+
       return script as Script;
     }, "Get script");
   }
@@ -155,23 +144,14 @@ export class ScriptAdapter extends BaseAdapter {
   async updateScript(id: string, updates: Partial<Script>): Promise<Script> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.scripts;
-      const updateResult = await api.update(id, updates);
-      
-      if (isFailure(updateResult)) {
-        throw getError(updateResult);
-      }
-      
-      const getResult = await api.get(id);
-      
-      if (isFailure(getResult)) {
-        throw getError(getResult);
-      }
-      
-      const script = getData(getResult);
+      await api.update(id, updates);
+
+      const script = await api.get(id);
+
       if (!script) {
         throw new CLINotFoundError(`Script not found: ${id}`, "Script", id);
       }
-      
+
       this.output.infoLog(`Script updated: ${id}`);
       return script as Script;
     }, "Update script");

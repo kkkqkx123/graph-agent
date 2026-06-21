@@ -5,7 +5,6 @@
 
 import { BaseAdapter } from "./base-adapter.js";
 import { CLINotFoundError } from "../types/cli-types.js";
-import { getData, isFailure, getError } from "@wf-agent/sdk/api";
 import { CheckpointResourceAPI } from "@wf-agent/sdk/api";
 import type { Checkpoint, WorkflowCheckpointTriggerType } from "@wf-agent/types";
 
@@ -43,18 +42,12 @@ export class WorkflowExecutionCheckpointAdapter extends BaseAdapter {
       const checkpointId = await this.getCheckpointAPI().createWorkflowExecutionCheckpoint(executionId, {
         description: name || `Checkpoint ${new Date().toISOString()}`,
       });
-      
+
       this.output.infoLog(`Checkpoint created: ${checkpointId}`);
-      
+
       // Return the created checkpoint details
-      const result = await this.getCheckpointAPI().get(checkpointId);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      const checkpoint = getData(result);
-      
+      const checkpoint = await this.getCheckpointAPI().get(checkpointId);
+
       if (!checkpoint) {
         throw new CLINotFoundError(
           `Checkpoint not found: ${checkpointId}`,
@@ -62,7 +55,7 @@ export class WorkflowExecutionCheckpointAdapter extends BaseAdapter {
           checkpointId,
         );
       }
-      
+
       // Add createdAt field for formatter compatibility
       return {
         ...checkpoint,
@@ -77,13 +70,7 @@ export class WorkflowExecutionCheckpointAdapter extends BaseAdapter {
    */
   async loadCheckpoint(checkpointId: string): Promise<void> {
     return this.executeWithErrorHandling(async () => {
-      const result = await this.getCheckpointAPI().get(checkpointId);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      const checkpoint = getData(result);
+      const checkpoint = await this.getCheckpointAPI().get(checkpointId);
 
       if (!checkpoint) {
         throw new CLINotFoundError(
@@ -106,26 +93,18 @@ export class WorkflowExecutionCheckpointAdapter extends BaseAdapter {
   async listCheckpoints(filter?: Record<string, unknown>): Promise<CheckpointWithMetadata[]> {
     return this.executeWithErrorHandling(async () => {
       // Convert filter to CheckpointFilter type
-      const checkpointFilter = filter ? {
-        ids: filter['ids'] as string[] | undefined,
-        executionId: filter['executionId'] as string | undefined,
-        workflowId: filter['workflowId'] as string | undefined,
-        triggerType: filter['triggerType'] as WorkflowCheckpointTriggerType | undefined,
-        creator: filter['creator'] as string | undefined,
-        tags: filter['tags'] as string[] | undefined,
-      } : undefined;
-      
-      const result = await this.getCheckpointAPI().getAll(checkpointFilter);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      const checkpoints = getData(result);
+      const checkpointFilter = filter
+        ? {
+            ids: (filter["ids"] as string[] | undefined),
+            executionId: (filter["executionId"] as string | undefined),
+            workflowId: (filter["workflowId"] as string | undefined),
+            triggerType: (filter["triggerType"] as WorkflowCheckpointTriggerType | undefined),
+            creator: (filter["creator"] as string | undefined),
+            tags: (filter["tags"] as string[] | undefined),
+          }
+        : undefined;
 
-      if (!checkpoints) {
-        return [];
-      }
+      const checkpoints = await this.getCheckpointAPI().getAll(checkpointFilter);
 
       // Convert to CheckpointWithMetadata format
       return checkpoints.map((cp) => ({
@@ -141,13 +120,7 @@ export class WorkflowExecutionCheckpointAdapter extends BaseAdapter {
    */
   async getCheckpoint(checkpointId: string): Promise<CheckpointWithMetadata> {
     return this.executeWithErrorHandling(async () => {
-      const result = await this.getCheckpointAPI().get(checkpointId);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      const checkpoint = getData(result);
+      const checkpoint = await this.getCheckpointAPI().get(checkpointId);
 
       if (!checkpoint) {
         throw new CLINotFoundError(
@@ -209,13 +182,8 @@ export class WorkflowExecutionCheckpointAdapter extends BaseAdapter {
   async getWorkflowExecutionCheckpoints(executionId: string): Promise<unknown[]> {
     return this.executeWithErrorHandling(async () => {
       // Get all checkpoints and filter by executionId
-      const result = await this.getCheckpointAPI().getAll();
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      const allCheckpoints = getData(result) as unknown as Array<{ executionId: string }>;
+      const allCheckpoints = await this.getCheckpointAPI().getAll();
+
       return allCheckpoints.filter((cp) => cp.executionId === executionId);
     }, "Get workflow execution checkpoint list");
   }

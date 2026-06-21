@@ -4,7 +4,6 @@
  */
 
 import { BaseAdapter } from "./base-adapter.js";
-import { getData, isFailure, getError } from "@wf-agent/sdk/api";
 
 /**
  * Variable Adapter
@@ -16,13 +15,7 @@ export class VariableAdapter extends BaseAdapter {
   async getVariable(executionId: string, variableName: string): Promise<unknown> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.variables;
-      const result = await api.get(`${executionId}:${variableName}`);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      return getData(result);
+      return await api.get(`${executionId}:${variableName}`);
     }, "Get variable");
   }
 
@@ -32,12 +25,8 @@ export class VariableAdapter extends BaseAdapter {
   async setVariable(executionId: string, variableName: string, value: unknown): Promise<void> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.variables;
-      const result = await api.setVariable(executionId, variableName, value);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
+      await api.setVariable(executionId, variableName, value);
+
       this.output.infoLog(`Variable set: ${variableName}`);
     }, "Set variable");
   }
@@ -48,13 +37,7 @@ export class VariableAdapter extends BaseAdapter {
   async listVariables(executionId: string): Promise<Record<string, unknown>> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.variables;
-      const result = await api.getAll({ executionId });
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      return getData(result) as unknown as Record<string, unknown>;
+      return await api.getAll({ executionId }) as unknown as Record<string, unknown>;
     }, "List variables");
   }
 
@@ -64,12 +47,8 @@ export class VariableAdapter extends BaseAdapter {
   async deleteVariable(executionId: string, variableName: string): Promise<void> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.variables;
-      const result = await api.deleteVariable(executionId, variableName);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
+      await api.deleteVariable(executionId, variableName);
+
       this.output.infoLog(`Variable deleted: ${variableName}`);
     }, "Delete variable");
   }

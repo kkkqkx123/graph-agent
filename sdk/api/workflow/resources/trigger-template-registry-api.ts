@@ -6,7 +6,6 @@
 
 import type { TriggerTemplate, TriggerReference } from "@wf-agent/types";
 import { SimplifiedCrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
-import { isSuccess, getData } from "../../shared/types/execution-result.js";
 import type { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
 import type { Timestamp, UnregisterOptions } from "@wf-agent/types";
 import { ConfigurationValidationError } from "@wf-agent/types";
@@ -279,12 +278,8 @@ export class TriggerTemplateRegistryAPI extends SimplifiedCrudResourceAPI<
    * @returns Array of trigger template summaries
    */
   async getTemplateSummaries(filter?: TriggerTemplateFilter): Promise<TriggerTemplateSummary[]> {
-    const result = await this.getAll(filter);
-    if (!isSuccess(result)) {
-      return [];
-    }
+    const templates = await this.getAll(filter);
 
-    const templates = getData(result) || [];
     return templates.map((template: TriggerTemplate) => {
       const summary: TriggerTemplateSummary = {
         name: template.name,

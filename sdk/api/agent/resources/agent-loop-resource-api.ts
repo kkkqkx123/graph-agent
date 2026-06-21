@@ -12,7 +12,6 @@ import { SimplifiedCrudResourceAPI } from "../../shared/resources/generic-resour
 import type { ID, AgentLoopStatus } from "@wf-agent/types";
 import type { AgentLoopEntity } from "../../../agent/entities/agent-loop-entity.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
-import { isSuccess, getData } from "../../shared/types/execution-result.js";
 
 const logger = createContextualLogger({ operation: "AgentLoopResourceAPI" });
 
@@ -291,13 +290,7 @@ export class AgentLoopResourceAPI extends SimplifiedCrudResourceAPI<
    * @returns Array of summaries
    */
   async listSummaries(filter?: AgentLoopFilter): Promise<AgentLoopSummary[]> {
-    const result = await this.getAll();
-
-    if (!isSuccess(result) || !getData(result)) {
-      return [];
-    }
-
-    const entities = getData(result)!;
+    const entities = await this.getAll();
     const filteredEntities = filter ? this.applyFilter(entities, filter) : entities;
 
     return filteredEntities.map(entity => ({
@@ -319,16 +312,7 @@ export class AgentLoopResourceAPI extends SimplifiedCrudResourceAPI<
     total: number;
     byStatus: Record<AgentLoopStatus, number>;
   }> {
-    const result = await this.getAll();
-
-    if (!isSuccess(result) || !getData(result)) {
-      return {
-        total: 0,
-        byStatus: {} as Record<AgentLoopStatus, number>,
-      };
-    }
-
-    const entities = getData(result)!;
+    const entities = await this.getAll();
     const byStatus: Record<string, number> = {};
 
     for (const entity of entities) {

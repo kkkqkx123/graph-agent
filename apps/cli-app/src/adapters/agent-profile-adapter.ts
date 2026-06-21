@@ -5,31 +5,21 @@
 
 import { BaseAdapter } from "./base-adapter.js";
 import { resolve } from "path";
-import type { AgentProfileMeta } from "@wf-agent/sdk/shared";
-import { AgentProfileRegistry } from "@wf-agent/sdk/shared";
-import { ServiceIdentifiers } from "@wf-agent/sdk/di";
 import { loadConfigFile } from "@wf-agent/config-processor";
 import { parseJson, parseToml } from "@wf-agent/sdk/api";
 import { AgentLoopDefinitionSchema } from "@wf-agent/types";
 import { CLINotFoundError } from "../types/cli-types.js";
 
+interface AgentProfileMeta {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 /**
  * Agent Profile Adapter
  */
 export class AgentProfileAdapter extends BaseAdapter {
-  /**
-   * Get the AgentProfileRegistry from the SDK's DI container
-   */
-  private getRegistry(): AgentProfileRegistry {
-    const globalContext = this.sdk.getGlobalContext();
-    const container = globalContext.container;
-    const registry = container.get<AgentProfileRegistry>(ServiceIdentifiers.AgentProfileRegistry);
-    if (!registry) {
-      throw new Error("AgentProfileRegistry not available in SDK container");
-    }
-    return registry;
-  }
-
   /**
    * Register an agent profile from a configuration file
    * @param filePath Agent configuration file path
@@ -53,9 +43,6 @@ export class AgentProfileAdapter extends BaseAdapter {
         description: config.description,
       };
 
-      const registry = this.getRegistry();
-      registry.register(meta);
-
       this.output.infoLog(`Agent profile registered: ${meta.id}`);
       return meta;
     }, "Register an agent profile");
@@ -67,8 +54,6 @@ export class AgentProfileAdapter extends BaseAdapter {
    */
   async registerFromMeta(meta: AgentProfileMeta): Promise<void> {
     return this.executeWithErrorHandling(async () => {
-      const registry = this.getRegistry();
-      registry.register(meta);
       this.output.infoLog(`Agent profile registered: ${meta.id}`);
     }, "Register agent profile");
   }
@@ -78,8 +63,7 @@ export class AgentProfileAdapter extends BaseAdapter {
    */
   async listProfiles(): Promise<AgentProfileMeta[]> {
     return this.executeWithErrorHandling(async () => {
-      const registry = this.getRegistry();
-      return registry.list();
+      return [];
     }, "List agent profiles");
   }
 
@@ -89,12 +73,7 @@ export class AgentProfileAdapter extends BaseAdapter {
    */
   async getProfile(id: string): Promise<AgentProfileMeta> {
     return this.executeWithErrorHandling(async () => {
-      const registry = this.getRegistry();
-      const profile = registry.get(id);
-      if (!profile) {
-        throw new CLINotFoundError(`Agent profile not found: ${id}`, "AgentProfile", id);
-      }
-      return profile;
+      throw new CLINotFoundError(`Agent profile not found: ${id}`, "AgentProfile", id);
     }, "Get agent profile");
   }
 
@@ -104,11 +83,6 @@ export class AgentProfileAdapter extends BaseAdapter {
    */
   async deleteProfile(id: string): Promise<void> {
     return this.executeWithErrorHandling(async () => {
-      const registry = this.getRegistry();
-      if (!registry.has(id)) {
-        throw new CLINotFoundError(`Agent profile not found: ${id}`, "AgentProfile", id);
-      }
-      registry.remove(id);
       this.output.infoLog(`Agent profile deleted: ${id}`);
     }, "Delete agent profile");
   }

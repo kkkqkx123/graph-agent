@@ -14,7 +14,7 @@ import {
   NodeTemplateNotFoundError,
 } from "@wf-agent/types";
 import { SimplifiedCrudResourceAPI } from "../generic-resource-api.js";
-import { isSuccess, getData } from "../../types/execution-result.js";
+import { isSuccess } from "../../types/execution-result.js";
 import { getErrorMessage } from "@wf-agent/common-utils";
 
 /**
@@ -316,11 +316,7 @@ export class LLMProfileRegistryAPI extends SimplifiedCrudResourceAPI<LLMProfile,
    * @returns JSON string
    */
   async exportAllProfiles(): Promise<string> {
-    const result = await this.getAll();
-    if (!isSuccess(result)) {
-      throw new Error(getErrorMessage(result) || "Failed to get profiles for export");
-    }
-    const profiles = getData(result) || [];
+    const profiles = await this.getAll();
     const exportData = profiles.map((profile: LLMProfile) => ({
       ...profile,
       apiKey: "***HIDDEN***",

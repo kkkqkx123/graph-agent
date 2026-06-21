@@ -12,7 +12,7 @@ import {
   validationFailure,
   type CommandMetadataDefinition,
 } from "../../types/command.js";
-import { validateToolExecutionParams } from "../../shared/operations/validators/shared-validators.js";
+import { validateToolExecutionParams } from "../validators/shared-validators.js";
 import type { ID, ToolExecutionResult } from "@wf-agent/types";
 import type { ToolOptions } from "../../resources/tools/tool-registry-api.js";
 import type { APIDependencyManager } from "../../core/sdk-dependencies.js";

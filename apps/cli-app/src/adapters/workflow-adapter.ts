@@ -6,7 +6,7 @@
 import { BaseAdapter } from "./base-adapter.js";
 import { resolve, join, extname } from "path";
 import { CLINotFoundError } from "../types/cli-types.js";
-import { getData, isFailure, getError, parseWorkflow } from "@wf-agent/sdk/api";
+import { parseWorkflow } from "@wf-agent/sdk/api";
 import { loadConfigFile } from "@wf-agent/config-processor";
 import type { WorkflowTemplate } from "@wf-agent/types";
 
@@ -33,13 +33,7 @@ export class WorkflowAdapter extends BaseAdapter {
 
       // Using an instance of the inherited SDK
       const api = this.sdk.workflows;
-      const result = await api.create(workflow);
-
-      // Check if the operation was successful
-      if (isFailure(result)) {
-        const error = getError(result);
-        throw error;
-      }
+      await api.create(workflow);
 
       // Output to stdout for user visibility and test verification, also log for audit
       this.logOperation(`Workflow is registered: ${workflow.name} (${workflow.id})`);
@@ -94,12 +88,7 @@ export class WorkflowAdapter extends BaseAdapter {
         try {
           const { content, format } = await loadConfigFile(file);
           const workflow = await parseWorkflow(content, format, options.parameters);
-          const createResult = await api.create(workflow);
-          // Check if the operation was successful
-          if (isFailure(createResult)) {
-            const error = getError(createResult);
-            throw error;
-          }
+          await api.create(workflow);
           success.push(workflow);
           // Output to stdout for user visibility and test verification, also log for audit
           this.logOperation(`Workflow is registered: ${workflow.name} (${workflow.id})`);
@@ -132,7 +121,7 @@ export class WorkflowAdapter extends BaseAdapter {
   }>> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.workflows;
-      
+
       // Convert filter to WorkflowFilter type
       const workflowFilter = filter ? {
         ids: filter['ids'] as string[] | undefined,
@@ -142,9 +131,8 @@ export class WorkflowAdapter extends BaseAdapter {
         category: filter['category'] as string | undefined,
         version: filter['version'] as string | undefined,
       } : undefined;
-      
-      const result = await api.getAll(workflowFilter);
-      const workflows = getData(result) || [];
+
+      const workflows = await api.getAll(workflowFilter) || [];
 
       // Transform workflows into summary format.
       const summaries = workflows.map((wf: WorkflowTemplate) => ({
@@ -168,8 +156,7 @@ export class WorkflowAdapter extends BaseAdapter {
   async getWorkflow(id: string): Promise<WorkflowTemplate & { type: string }> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.workflows;
-      const result = await api.get(id);
-      const workflow = getData(result);
+      const workflow = await api.get(id);
 
       if (!workflow) {
         throw new CLINotFoundError(`Workflow not found: ${id}`, "Workflow", id);

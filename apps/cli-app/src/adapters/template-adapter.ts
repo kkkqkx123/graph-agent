@@ -6,7 +6,7 @@
 import { BaseAdapter } from "./base-adapter.js";
 import { resolve, join, extname } from "path";
 import { CLINotFoundError } from "../types/cli-types.js";
-import { parseNodeTemplate, parseTriggerTemplate, getData, isFailure, getError } from "@wf-agent/sdk/api";
+import { parseNodeTemplate, parseTriggerTemplate } from "@wf-agent/sdk/api";
 import { loadConfigFile } from "@wf-agent/config-processor";
 import type { NodeTemplate, TriggerTemplate, NodeTemplateSummary, TriggerTemplateSummary } from "@wf-agent/types";
 
@@ -194,7 +194,7 @@ export class TemplateAdapter extends BaseAdapter {
   async listNodeTemplates(filter?: Record<string, unknown>): Promise<NodeTemplateSummary[]> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.nodeTemplates;
-      
+
       // Convert filter to NodeTemplateFilter type
       const nodeFilter = filter ? {
         name: filter['name'] as string | undefined,
@@ -202,14 +202,8 @@ export class TemplateAdapter extends BaseAdapter {
         category: filter['category'] as string | undefined,
         tags: filter['tags'] as string[] | undefined,
       } : undefined;
-      
-      const result = await api.getAll(nodeFilter);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      const templates = getData(result) as NodeTemplate[];
+
+      const templates = await api.getAll(nodeFilter);
 
       // Transform templates into summary format.
       const summaries: NodeTemplateSummary[] = templates.map((tmpl: NodeTemplate) => ({
@@ -232,7 +226,7 @@ export class TemplateAdapter extends BaseAdapter {
   async listTriggerTemplates(filter?: Record<string, unknown>): Promise<TriggerTemplateSummary[]> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.triggerTemplates;
-      
+
       // Convert filter to TriggerTemplateFilter type
       const triggerFilter = filter ? {
         name: filter['name'] as string | undefined,
@@ -241,14 +235,8 @@ export class TemplateAdapter extends BaseAdapter {
         category: filter['category'] as string | undefined,
         tags: filter['tags'] as string[] | undefined,
       } : undefined;
-      
-      const result = await api.getAll(triggerFilter);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      const templates = getData(result) as TriggerTemplate[];
+
+      const templates = await api.getAll(triggerFilter);
 
       // Transform the text into summary format.
       const summaries: TriggerTemplateSummary[] = templates.map((tmpl: TriggerTemplate) => ({
@@ -270,13 +258,7 @@ export class TemplateAdapter extends BaseAdapter {
   async getNodeTemplate(id: string): Promise<NodeTemplate> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.nodeTemplates;
-      const result = await api.get(id);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      const template = getData(result);
+      const template = await api.get(id);
 
       if (!template) {
         throw new CLINotFoundError(`Node template not found: ${id}`, "NodeTemplate", id);
@@ -292,13 +274,7 @@ export class TemplateAdapter extends BaseAdapter {
   async getTriggerTemplate(id: string): Promise<TriggerTemplate> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.triggerTemplates;
-      const result = await api.get(id);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      const template = getData(result);
+      const template = await api.get(id);
 
       if (!template) {
         throw new CLINotFoundError(`Trigger template not found: ${id}`, "TriggerTemplate", id);

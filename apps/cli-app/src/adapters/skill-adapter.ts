@@ -11,7 +11,7 @@
 import { BaseAdapter } from "./base-adapter.js";
 import type { SkillMetadata, SkillResourceType } from "@wf-agent/types";
 import { CLINotFoundError } from "../types/cli-types.js";
-import { getData, isFailure, getError } from "@wf-agent/sdk/api";
+import { isSuccess, getData, getError } from "@wf-agent/sdk/api";
 
 /**
  * Skill Adapter
@@ -27,11 +27,7 @@ export class SkillAdapter extends BaseAdapter {
     return this.executeWithErrorHandling(async () => {
       // Use the public scanSkills API method
       const api = this.sdk.skills;
-      const result = await api.scanSkills(skillsDir);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
+      await api.scanSkills(skillsDir);
 
       const skills = await this.listSkills();
       this.output.infoLog(`Initialized ${skills.length} Skill(s)`);
@@ -50,13 +46,7 @@ export class SkillAdapter extends BaseAdapter {
   }): Promise<SkillMetadata[]> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.skills;
-      const result = await api.getAll(filter);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      return getData(result) as SkillMetadata[];
+      return await api.getAll(filter);
     }, "List Skills");
   }
 
@@ -68,13 +58,7 @@ export class SkillAdapter extends BaseAdapter {
   async getSkill(name: string): Promise<SkillMetadata | null> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.skills;
-      const result = await api.get(name);
-      
-      if (isFailure(result)) {
-        throw getError(result);
-      }
-      
-      return getData(result) as SkillMetadata | null;
+      return await api.get(name);
     }, "Get Skill");
   }
 
@@ -91,12 +75,17 @@ export class SkillAdapter extends BaseAdapter {
         context: variables ? { variables } : undefined,
       });
 
-      if (isFailure(result)) {
+      if (!isSuccess(result)) {
+        throw getError(result);
+      }
+
+      const content = getData(result);
+      if (!content) {
         throw new CLINotFoundError(`Skill not found: ${name}`, "Skill", name);
       }
 
       this.output.infoLog(`Skill content loaded: ${name}`);
-      return getData(result) as string;
+      return content;
     }, "Load Skill Content");
   }
 
@@ -114,7 +103,12 @@ export class SkillAdapter extends BaseAdapter {
       const api = this.sdk.skills;
       const result = await api.loadResources(name, resourceType);
 
-      if (isFailure(result)) {
+      if (!isSuccess(result)) {
+        throw getError(result);
+      }
+
+      const resources = getData(result);
+      if (!resources) {
         throw new CLINotFoundError(
           `Skill resource not found: ${name}, ${resourceType}`,
           "SkillResource",
@@ -123,7 +117,7 @@ export class SkillAdapter extends BaseAdapter {
       }
 
       this.output.infoLog(`Skill resources loaded: ${name}, ${resourceType}`);
-      return getData(result) as Map<string, string | Buffer>;
+      return resources;
     }, "Load Skill Resources");
   }
 
@@ -137,11 +131,16 @@ export class SkillAdapter extends BaseAdapter {
       const api = this.sdk.skills;
       const result = await api.toPrompt(name);
 
-      if (isFailure(result)) {
+      if (!isSuccess(result)) {
+        throw getError(result);
+      }
+
+      const prompt = getData(result);
+      if (!prompt) {
         throw new CLINotFoundError(`Skill not found: ${name}`, "Skill", name);
       }
 
-      return getData(result) as string;
+      return prompt;
     }, "Convert Skill to prompt");
   }
 
@@ -166,12 +165,17 @@ export class SkillAdapter extends BaseAdapter {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.skills;
       const result = await api.listResources(name, resourceType);
-      
-      if (isFailure(result)) {
+
+      if (!isSuccess(result)) {
         throw getError(result);
       }
-      
-      return getData(result) as string[];
+
+      const resources = getData(result);
+      if (!resources) {
+        return [];
+      }
+
+      return resources;
     }, "List Skill Resources");
   }
 
@@ -237,11 +241,7 @@ export class SkillAdapter extends BaseAdapter {
   async enable(name: string): Promise<void> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.skills;
-      const result = await api.enable(name);
-
-      if (isFailure(result)) {
-        throw getError(result);
-      }
+      await api.enable(name);
 
       this.output.infoLog(`Skill enabled: ${name}`);
     }, "Enable Skill");
@@ -254,11 +254,7 @@ export class SkillAdapter extends BaseAdapter {
   async disable(name: string): Promise<void> {
     return this.executeWithErrorHandling(async () => {
       const api = this.sdk.skills;
-      const result = await api.disable(name);
-
-      if (isFailure(result)) {
-        throw getError(result);
-      }
+      await api.disable(name);
 
       this.output.infoLog(`Skill disabled: ${name}`);
     }, "Disable Skill");
