@@ -1,40 +1,60 @@
 /**
- * ResumeWorkflowCommand - Command to resume a workflow execution
+ * ResumeWorkflowCommand - Resume Workflow Execution Command
+ *
+ * Category: Management
+ * Resumes a paused workflow execution
  */
 
 import {
-  BaseCommand,
+  ManagementCommand,
   CommandValidationResult,
   validationSuccess,
   validationFailure,
+  type CommandMetadataDefinition,
 } from "../../../shared/types/command.js";
+import { validateRequiredId } from "../../../shared/operations/validation-utils.js";
 import type { WorkflowExecutionResult } from "@wf-agent/types";
-import { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
 
 /**
- * Workflow execution resume command
+ * Resume workflow command parameters
  */
-export class ResumeWorkflowCommand extends BaseCommand<WorkflowExecutionResult> {
+export interface ResumeWorkflowParams {
+  /** Workflow execution ID (required) */
+  executionId: string;
+}
+
+/**
+ * Resume Workflow Execution Command
+ */
+export class ResumeWorkflowCommand extends ManagementCommand<WorkflowExecutionResult> {
   constructor(
-    private readonly workflowExecutionId: string,
+    private readonly params: ResumeWorkflowParams,
     private readonly dependencies: APIDependencyManager,
   ) {
     super();
   }
 
+  protected override getMetadataDefinition(): CommandMetadataDefinition {
+    return {
+      name: "ResumeWorkflowCommand",
+      description: "Resume a paused workflow execution",
+      category: "management",
+      requiresAuth: false,
+      version: "1.0.0",
+      supportUndo: true,
+      idempotent: false,
+    };
+  }
+
   protected async executeInternal(): Promise<WorkflowExecutionResult> {
     const lifecycleCoordinator = this.dependencies.getWorkflowLifecycleCoordinator();
-    const result = await lifecycleCoordinator.resumeWorkflowExecution(this.workflowExecutionId);
+    const result = await lifecycleCoordinator.resumeWorkflowExecution(this.params.executionId);
     return result;
   }
 
   validate(): CommandValidationResult {
-    const errors: string[] = [];
-
-    if (!this.workflowExecutionId || this.workflowExecutionId.trim().length === 0) {
-      errors.push("Execution ID cannot be empty");
-    }
-
+    const errors = validateRequiredId(this.params.executionId, "Execution ID");
     return errors.length > 0 ? validationFailure(errors) : validationSuccess();
   }
 }

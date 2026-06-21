@@ -13,7 +13,7 @@ import {
   ConfigurationValidationError,
   NodeTemplateNotFoundError,
 } from "@wf-agent/types";
-import { CrudResourceAPI } from "../generic-resource-api.js";
+import { SimplifiedCrudResourceAPI } from "../generic-resource-api.js";
 import { isSuccess, getData } from "../../types/execution-result.js";
 import { getErrorMessage } from "@wf-agent/common-utils";
 
@@ -52,7 +52,7 @@ export interface LLMProfileFilter {
  * - Maintain all existing API methods to ensure backward compatibility.
  * - Add enhancements such as caching, logging, and validation.
  */
-export class LLMProfileRegistryAPI extends CrudResourceAPI<LLMProfile, string, LLMProfileFilter> {
+export class LLMProfileRegistryAPI extends SimplifiedCrudResourceAPI<LLMProfile, string, LLMProfileFilter> {
   private profileManager: ProfileManager;
   private templates: Map<string, LLMProfileTemplate> = new Map();
 

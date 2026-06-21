@@ -1,38 +1,57 @@
 /**
  * CancelWorkflowCommand - Cancel Workflow Execution Command
+ *
+ * Category: Management
+ * Cancels a running or paused workflow execution
  */
 
 import {
-  BaseCommand,
+  ManagementCommand,
   CommandValidationResult,
   validationSuccess,
   validationFailure,
+  type CommandMetadataDefinition,
 } from "../../../shared/types/command.js";
-import { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
+import { validateRequiredId } from "../../../shared/operations/validation-utils.js";
+import type { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
+
+/**
+ * Cancel workflow command parameters
+ */
+export interface CancelWorkflowParams {
+  /** Workflow execution ID (required) */
+  executionId: string;
+}
 
 /**
  * Cancel workflow execution command
  */
-export class CancelWorkflowCommand extends BaseCommand<void> {
+export class CancelWorkflowCommand extends ManagementCommand<void> {
   constructor(
-    private readonly workflowExecutionId: string,
+    private readonly params: CancelWorkflowParams,
     private readonly dependencies: APIDependencyManager,
   ) {
     super();
   }
 
+  protected override getMetadataDefinition(): CommandMetadataDefinition {
+    return {
+      name: "CancelWorkflowCommand",
+      description: "Cancel a running or paused workflow execution",
+      category: "management",
+      requiresAuth: false,
+      version: "1.0.0",
+      idempotent: false,
+    };
+  }
+
   protected async executeInternal(): Promise<void> {
     const lifecycleCoordinator = this.dependencies.getWorkflowLifecycleCoordinator();
-    await lifecycleCoordinator.stopWorkflowExecution(this.workflowExecutionId);
+    await lifecycleCoordinator.stopWorkflowExecution(this.params.executionId);
   }
 
   validate(): CommandValidationResult {
-    const errors: string[] = [];
-
-    if (!this.workflowExecutionId || this.workflowExecutionId.trim().length === 0) {
-      errors.push("Execution ID cannot be empty.");
-    }
-
+    const errors = validateRequiredId(this.params.executionId, "Execution ID");
     return errors.length > 0 ? validationFailure(errors) : validationSuccess();
   }
 }

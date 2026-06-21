@@ -5,7 +5,7 @@
  */
 
 import type { TriggerTemplate, TriggerReference } from "@wf-agent/types";
-import { CrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
+import { SimplifiedCrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
 import { isSuccess, getData } from "../../shared/types/execution-result.js";
 import type { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
 import type { Timestamp, UnregisterOptions } from "@wf-agent/types";
@@ -57,7 +57,7 @@ export interface TriggerTemplateSummary {
  * - Retain all existing API methods to maintain backward compatibility.
  * - Add enhanced features such as caching, logging, and validation.
  */
-export class TriggerTemplateRegistryAPI extends CrudResourceAPI<
+export class TriggerTemplateRegistryAPI extends SimplifiedCrudResourceAPI<
   TriggerTemplate,
   string,
   TriggerTemplateFilter

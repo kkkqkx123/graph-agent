@@ -1,36 +1,51 @@
 /**
- * RestoreFromCheckpointCommand - Restore a workflow execution from a checkpoint
+ * RestoreFromCheckpointCommand - Restore Workflow Execution from Checkpoint Command
+ *
+ * Category: Management
+ * Restores a workflow execution state from a previously created checkpoint
  */
 
 import {
-  BaseCommand,
+  ManagementCommand,
   CommandValidationResult,
   validationSuccess,
   validationFailure,
+  type CommandMetadataDefinition,
 } from "../../../shared/types/command.js";
 import { CheckpointCoordinator } from "../../../../workflow/checkpoint/checkpoint-coordinator.js";
 import type { WorkflowExecution } from "@wf-agent/types";
-
 import type { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
 import type { WorkflowExecutionRegistry } from "../../../../workflow/stores/workflow-execution-registry.js";
 
 /**
- * Restore parameters from the checkpoint.
+ * Restore from checkpoint command parameters
  */
 export interface RestoreFromCheckpointParams {
-  /** Checkpoint ID */
+  /** Checkpoint ID to restore from */
   checkpointId: string;
 }
 
 /**
- * RestoreFromCheckpointCommand - Restore a workflow execution from a checkpoint
+ * RestoreFromCheckpointCommand - Restore workflow execution from a checkpoint
  */
-export class RestoreFromCheckpointCommand extends BaseCommand<WorkflowExecution> {
+export class RestoreFromCheckpointCommand extends ManagementCommand<WorkflowExecution> {
   constructor(
     private readonly params: RestoreFromCheckpointParams,
     private readonly dependencies: APIDependencyManager,
   ) {
     super();
+  }
+
+  protected override getMetadataDefinition(): CommandMetadataDefinition {
+    return {
+      name: "RestoreFromCheckpointCommand",
+      description: "Restore workflow execution state from a checkpoint",
+      category: "management",
+      requiresAuth: false,
+      version: "1.0.0",
+      supportUndo: false,
+      idempotent: false,
+    };
   }
 
   /**

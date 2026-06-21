@@ -1,10 +1,10 @@
 /**
  * VariableResourceAPI - Variable Resource Management API
- * inherits from ReadonlyResourceAPI, providing read-only operations
+ * inherits from QueryableResourceAPI, providing read-only operations
  */
 
 import { now } from "@wf-agent/common-utils";
-import { ReadonlyResourceAPI } from "../../shared/resources/generic-resource-api.js";
+import { QueryableResourceAPI } from "../../shared/resources/generic-resource-api.js";
 import type { WorkflowExecutionRegistry } from "../../../workflow/stores/workflow-execution-registry.js";
 import { NotFoundError, WorkflowExecutionNotFoundError, SDKError } from "@wf-agent/types";
 import type { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
@@ -58,7 +58,7 @@ export interface VariableDefinition {
 /**
  * VariableResourceAPI - Variable Resource Management API
  */
-export class VariableResourceAPI extends ReadonlyResourceAPI<unknown, string, VariableFilter> {
+export class VariableResourceAPI extends QueryableResourceAPI<unknown, string, VariableFilter> {
   private registry: WorkflowExecutionRegistry;
 
   constructor(deps: APIDependencyManager) {

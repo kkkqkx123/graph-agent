@@ -12,7 +12,7 @@ import {
 import type { Tool } from "@wf-agent/types";
 import { ToolType } from "@wf-agent/types";
 import { ToolNotFoundError, NotFoundError } from "@wf-agent/types";
-import { CrudResourceAPI } from "../generic-resource-api.js";
+import { SimplifiedCrudResourceAPI } from "../generic-resource-api.js";
 import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
 import type { Timestamp } from "@wf-agent/types";
 
@@ -82,7 +82,7 @@ export interface ToolTestResult {
  * - Unified filtering logic
  * - Maintains backward compatibility
  */
-export class ToolRegistryAPI extends CrudResourceAPI<Tool, string, ToolFilter> {
+export class ToolRegistryAPI extends SimplifiedCrudResourceAPI<Tool, string, ToolFilter> {
   private dependencies: APIDependencyManager;
 
   constructor(dependencies: APIDependencyManager) {

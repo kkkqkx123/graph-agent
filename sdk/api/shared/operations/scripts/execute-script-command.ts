@@ -1,50 +1,72 @@
 /**
  * ExecuteScriptCommand - Execute a script command
+ *
+ * Category: Execution
+ * Validates script existence, executes with options, returns execution result
  */
 
-import { now, diffTimestamp } from "@wf-agent/common-utils";
 import {
-  BaseCommand,
+  ExecutionCommand,
   CommandValidationResult,
   validationSuccess,
   validationFailure,
+  type CommandMetadataDefinition,
 } from "../../types/command.js";
 import type { ScriptOptions } from "../../types/code-types.js";
 import type { ScriptExecutionResult } from "@wf-agent/types";
 import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
 
 /**
- * Execute the script command
+ * Script execution command parameters
  */
-export class ExecuteScriptCommand extends BaseCommand<ScriptExecutionResult> {
+export interface ExecuteScriptParams {
+  /** Script name to execute */
+  scriptName: string;
+  /** Execution options (timeout, retries, environment, etc.) */
+  options?: ScriptOptions;
+}
+
+/**
+ * Execute script command
+ */
+export class ExecuteScriptCommand extends ExecutionCommand<ScriptExecutionResult> {
   constructor(
-    private readonly scriptName: string,
-    private readonly options: ScriptOptions | undefined,
+    private readonly params: ExecuteScriptParams,
     private readonly dependencies: APIDependencyManager,
   ) {
     super();
   }
 
+  protected override getMetadataDefinition(): CommandMetadataDefinition {
+    return {
+      name: "ExecuteScriptCommand",
+      description: "Execute a script with options",
+      category: "execution",
+      requiresAuth: false,
+      version: "1.0.0",
+      supportCancellation: true,
+      idempotent: false,
+    };
+  }
+
   protected async executeInternal(): Promise<ScriptExecutionResult> {
-    const startTime = now();
     const executionOptions = {
-      timeout: this.options?.timeout,
-      retries: this.options?.retries,
-      retryDelay: this.options?.retryDelay,
-      workingDirectory: this.options?.workingDirectory,
-      environment: this.options?.environment,
-      sandbox: this.options?.sandbox,
+      timeout: this.params.options?.timeout,
+      retries: this.params.options?.retries,
+      retryDelay: this.params.options?.retryDelay,
+      workingDirectory: this.params.options?.workingDirectory,
+      environment: this.params.options?.environment,
+      sandbox: this.params.options?.sandbox,
     };
 
     // Verify the script exists and is valid
-    const script = this.dependencies.getScriptService().getScript(this.scriptName);
+    const script = this.dependencies.getScriptService().getScript(this.params.scriptName);
     this.dependencies.getScriptService().validateScript(script);
 
     // Execute the script.
     const result = await this.dependencies
       .getScriptExecutor()
-      .execute(this.scriptName, executionOptions, this.dependencies.getScriptService());
-    const executionTime = diffTimestamp(startTime, now());
+      .execute(this.params.scriptName, executionOptions, this.dependencies.getScriptService());
 
     // Handle the Result type, either extracting the successful result or throwing an error.
     if (result.isErr()) {
@@ -53,7 +75,7 @@ export class ExecuteScriptCommand extends BaseCommand<ScriptExecutionResult> {
 
     const executionResult: ScriptExecutionResult = {
       ...result.value,
-      executionTime,
+      executionTime: 0,
     };
 
     return executionResult;
@@ -62,7 +84,7 @@ export class ExecuteScriptCommand extends BaseCommand<ScriptExecutionResult> {
   validate(): CommandValidationResult {
     const errors: string[] = [];
 
-    if (!this.scriptName || this.scriptName.trim().length === 0) {
+    if (!this.params.scriptName || this.params.scriptName.trim().length === 0) {
       errors.push("Script name cannot be empty");
     }
 

@@ -1,51 +1,50 @@
 /**
  * CancelAgentLoopCommand - Cancel Agent Loop Command
  *
- * Responsibilities:
- * - Encapsulates Agent Loop cancellation operation as Command pattern
- * - Provides unified API layer interface
- * - Supports parameter validation
- *
- * Design Principles:
- * - Follows Command pattern, inherits BaseCommand
- * - Uses dependency injection for AgentLoopRegistry
- * - Parameter validation is completed in validate() method
+ * Category: Management
+ * Cancels a running or paused agent loop execution
  */
 
 import {
-  BaseCommand,
+  ManagementCommand,
   CommandValidationResult,
   validationSuccess,
   validationFailure,
+  type CommandMetadataDefinition,
 } from "../../shared/types/command.js";
 import type { ID } from "@wf-agent/types";
 import type { APIDependencyManager } from "@sdk/api/shared/core/sdk-dependencies.js";
 
 /**
- * Cancel the Agent loop command parameter
+ * Cancel Agent Loop command parameters
  */
 export interface CancelAgentLoopParams {
-  /** Agent Loop ID */
+  /** Agent Loop ID to cancel */
   agentLoopId: ID;
-  /** Reason for cancellation: */
+  /** Optional reason for cancellation */
   reason?: string;
 }
 
 /**
  * Cancel Agent Loop Command
- *
- * Workflow:
- * 1. Validate parameters (agentLoopId is required)
- * 2. Get AgentLoopEntity
- * 3. Call stop() method to cancel execution
- * 4. Return cancellation result
  */
-export class CancelAgentLoopCommand extends BaseCommand<void> {
+export class CancelAgentLoopCommand extends ManagementCommand<void> {
   constructor(
     private readonly params: CancelAgentLoopParams,
     private readonly dependencies: APIDependencyManager,
   ) {
     super();
+  }
+
+  protected override getMetadataDefinition(): CommandMetadataDefinition {
+    return {
+      name: "CancelAgentLoopCommand",
+      description: "Cancel a running or paused agent loop",
+      category: "management",
+      requiresAuth: false,
+      version: "1.0.0",
+      idempotent: false,
+    };
   }
 
   protected async executeInternal(): Promise<void> {

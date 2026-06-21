@@ -1,30 +1,51 @@
 /**
- * EnableTriggerCommand - Enable Trigger
+ * EnableTriggerCommand - Enable Trigger Command
+ *
+ * Category: Management
+ * Enables a trigger for a workflow execution
  */
 
-import { BaseCommand, CommandValidationResult } from "../../../shared/types/command.js";
+import {
+  ManagementCommand,
+  CommandValidationResult,
+  validationFailure,
+  validationSuccess,
+  type CommandMetadataDefinition,
+} from "../../../shared/types/command.js";
 import { WorkflowExecutionNotFoundError } from "@wf-agent/types";
 import type { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
 
 /**
- * Enabling Trigger Parameters
+ * Enable trigger command parameters
  */
 export interface EnableTriggerParams {
-  /** Execution ID */
+  /** Workflow execution ID */
   executionId: string;
-  /** Trigger ID */
+  /** Trigger ID to enable */
   triggerId: string;
 }
 
 /**
  * EnableTriggerCommand - Enable Trigger
  */
-export class EnableTriggerCommand extends BaseCommand<void> {
+export class EnableTriggerCommand extends ManagementCommand<void> {
   constructor(
     private readonly params: EnableTriggerParams,
     private readonly dependencies: APIDependencyManager,
   ) {
     super();
+  }
+
+  protected override getMetadataDefinition(): CommandMetadataDefinition {
+    return {
+      name: "EnableTriggerCommand",
+      description: "Enable a trigger for a workflow execution",
+      category: "management",
+      requiresAuth: false,
+      version: "1.0.0",
+      supportUndo: true,
+      idempotent: false,
+    };
   }
 
   /**
@@ -41,14 +62,11 @@ export class EnableTriggerCommand extends BaseCommand<void> {
       errors.push("Trigger ID cannot be empty.");
     }
 
-    return {
-      valid: errors.length === 0,
-      errors,
-    };
+    return errors.length > 0 ? validationFailure(errors) : validationSuccess();
   }
 
   /**
-   * execute a command
+   * Execute command
    */
   protected async executeInternal(): Promise<void> {
     const triggerManager = (await this.getTriggerManager(this.params.executionId)) as {

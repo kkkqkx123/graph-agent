@@ -6,7 +6,7 @@
  * This API is only available when file checkpointing is enabled in SDKOptions.
  */
 
-import { CrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
+import { SimplifiedCrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
 import type { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
 import type { FileCheckpointMetadata, FileCheckpointInfo } from "@wf-agent/types";
 import type {
@@ -30,7 +30,7 @@ export interface FileCheckpointFilter {
 /**
  * FileCheckpointResourceAPI - File checkpoint resource management API
  */
-export class FileCheckpointResourceAPI extends CrudResourceAPI<
+export class FileCheckpointResourceAPI extends SimplifiedCrudResourceAPI<
   FileCheckpointMetadata,
   string,
   FileCheckpointFilter
@@ -90,7 +90,7 @@ export class FileCheckpointResourceAPI extends CrudResourceAPI<
   }
 
   // ============================================================================
-  // Implement CrudResourceAPI abstract methods
+  // Implement SimplifiedCrudResourceAPI abstract methods
   // ============================================================================
 
   protected async getResource(id: string): Promise<FileCheckpointMetadata | null> {

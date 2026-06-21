@@ -8,7 +8,7 @@
  * - Provides checkpoint statistics
  */
 
-import { CrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
+import { SimplifiedCrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
 import type { AgentLoopCheckpoint, ID } from "@wf-agent/types";
 import { getErrorMessage, isSuccess, getData } from "../../shared/types/execution-result.js";
 import type { AgentLoopEntity } from "../../../agent/entities/agent-loop-entity.js";
@@ -55,7 +55,7 @@ export interface CheckpointStorage {
 /**
  * AgentLoopCheckpointResourceAPI - Agent Loop Checkpoint Resource Management API
  */
-export class AgentLoopCheckpointResourceAPI extends CrudResourceAPI<
+export class AgentLoopCheckpointResourceAPI extends SimplifiedCrudResourceAPI<
   AgentLoopCheckpoint,
   string,
   AgentLoopCheckpointFilter

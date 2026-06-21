@@ -1,6 +1,11 @@
 /**
  * Core Interface of the Command Pattern
- * Defines a unified interface for command execution
+ * Defines a unified interface for command execution with improved architecture
+ *
+ * Three-Layer Architecture:
+ * 1. Command Classification: ExecutionCommand, ManagementCommand, QueryCommand, StreamingCommand
+ * 2. Parameter Management: Unified params interface, early validation
+ * 3. Dependency Resolution: Single DependencyManager pattern with type-safe accessors
  */
 
 import type { ExecutionResult } from "./execution-result.js";
@@ -8,20 +13,33 @@ import { SDKError, ExecutionError as SDKExecutionError } from "@wf-agent/types";
 import { ok, err, isError, now, diffTimestamp } from "@wf-agent/common-utils";
 
 /**
- * Command metadata
+ * Extended command metadata with support information
  */
-export interface CommandMetadata {
+export interface CommandMetadataDefinition {
   /** Command Name */
   name: string;
   /** Command Description */
   description: string;
-  /** Command Classification */
-  category: "execution" | "monitoring" | "management";
+  /** Command Classification: execution (long-running), management (CRUD), query (read-only) */
+  category: "execution" | "management" | "query";
   /** Is authentication required? */
   requiresAuth: boolean;
   /** Command Version */
   version: string;
+  /** Support cancellation for execution commands */
+  supportCancellation?: boolean;
+  /** Support undo/redo for management commands */
+  supportUndo?: boolean;
+  /** Estimated duration in milliseconds */
+  estimatedDuration?: number;
+  /** Is the command idempotent? */
+  idempotent?: boolean;
 }
+
+/**
+ * Command metadata (runtime representation)
+ */
+export interface CommandMetadata extends CommandMetadataDefinition {}
 
 /**
  * Command validation results
@@ -59,7 +77,7 @@ export interface Command<T> {
   execute(): Promise<ExecutionResult<T>>;
 
   /**
-   * Cancel command (optional)
+   * Cancel command (optional) - for management commands with undo support
    * @returns Cancel result
    */
   undo?(): Promise<ExecutionResult<void>>;
@@ -79,13 +97,13 @@ export interface Command<T> {
 
 /**
  * Abstract Command Base Class
- * Provides a general implementation for commands
+ * Provides unified error handling and execution pipeline for all commands
  */
 export abstract class BaseCommand<T> implements Command<T> {
   protected readonly startTime: number = now();
 
   /**
-   * Execute the command - unify the error handling entry point
+   * Execute the command - unified error handling entry point
    */
   async execute(): Promise<ExecutionResult<T>> {
     const startTime = now();
@@ -98,7 +116,8 @@ export abstract class BaseCommand<T> implements Command<T> {
   }
 
   /**
-   * Internal Execution Method - The subclass implements the specific execution logic.
+   * Internal Execution Method - Subclass implements specific execution logic.
+   * All validation should be done in validate() method, NOT here.
    */
   protected abstract executeInternal(): Promise<T>;
 
@@ -116,21 +135,29 @@ export abstract class BaseCommand<T> implements Command<T> {
 
   /**
    * Verify command parameters
+   * All parameter validation MUST be done here, not in executeInternal()
    */
   abstract validate(): CommandValidationResult;
 
   /**
-   * Get command metadata
-   * Subclasses can override this method to provide more detailed metadata
+   * Get command metadata definition
+   * Each concrete command should override this with its specific metadata
    */
-  getMetadata(): CommandMetadata {
+  protected getMetadataDefinition(): CommandMetadataDefinition {
     return {
       name: this.constructor.name,
-      description: "",
+      description: "No description provided",
       category: "execution",
       requiresAuth: false,
       version: "1.0.0",
     };
+  }
+
+  /**
+   * Get command metadata (final implementation)
+   */
+  getMetadata(): CommandMetadata {
+    return this.getMetadataDefinition();
   }
 
   /**
@@ -142,19 +169,13 @@ export abstract class BaseCommand<T> implements Command<T> {
 
   /**
    * Unified error handling method
-   * @param error Error object
-   * @param startTime Start time
-   * @returns Execution result
    */
   protected handleError<T>(error: unknown, startTime: number): ExecutionResult<T> {
     let sdkError: SDKError;
 
-    // If it is already an SDKError (including all its subclasses), use it directly.
     if (error instanceof SDKError) {
       sdkError = error;
-    }
-    // If it's a regular error, convert it to SDKExecutionError.
-    else if (isError(error)) {
+    } else if (isError(error)) {
       sdkError = new SDKExecutionError(
         error.message,
         undefined,
@@ -165,18 +186,15 @@ export abstract class BaseCommand<T> implements Command<T> {
         },
         error,
       );
-    }
-    // For other types, convert to SDKExecutionError.
-    else {
+    } else {
       sdkError = new SDKExecutionError(String(error), undefined, undefined, undefined, undefined);
     }
 
-    // Return a failure result with detailed error information.
     return this.failure(sdkError, diffTimestamp(startTime, now()));
   }
 
   /**
-   * Creation successful.
+   * Create successful result
    */
   protected success<T>(data: T, executionTime: number): ExecutionResult<T> {
     return {
@@ -186,12 +204,101 @@ export abstract class BaseCommand<T> implements Command<T> {
   }
 
   /**
-   * Creation failed.
+   * Create failed result
    */
   protected failure<T>(error: SDKError, executionTime: number): ExecutionResult<T> {
     return {
       result: err(error),
       executionTime,
+    };
+  }
+}
+
+/**
+ * Execution Command Base Class
+ * For long-running operations like agent loops and workflow execution
+ * Supports: cancellation, streaming, progress tracking
+ */
+export abstract class ExecutionCommand<T> extends BaseCommand<T> {
+  /**
+   * Override metadata with execution-specific defaults
+   */
+  override protected getMetadataDefinition(): CommandMetadataDefinition {
+    return {
+      ...super.getMetadataDefinition(),
+      category: "execution",
+      supportCancellation: true,
+    };
+  }
+}
+
+/**
+ * Management Command Base Class
+ * For CRUD operations and resource management
+ * Supports: undo/redo (if implemented), transaction semantics
+ */
+export abstract class ManagementCommand<T> extends BaseCommand<T> {
+  /**
+   * Override metadata with management-specific defaults
+   */
+  override protected getMetadataDefinition(): CommandMetadataDefinition {
+    return {
+      ...super.getMetadataDefinition(),
+      category: "management",
+      supportUndo: false, // Subclasses can override if they support undo
+    };
+  }
+
+  /**
+   * Override undo to provide meaningful error if not supported
+   */
+  override async undo(): Promise<ExecutionResult<void>> {
+    if (!this.getMetadata().supportUndo) {
+      const startTime = now();
+      try {
+        throw new Error(
+          `Command ${this.getMetadata().name} does not support undo. ` +
+          `Set supportUndo: true in metadata if undo is implemented.`,
+        );
+      } catch (error) {
+        return this.handleError(error, startTime);
+      }
+    }
+    return super.undo();
+  }
+}
+
+/**
+ * Query Command Base Class
+ * For read-only operations
+ * Features: caching, no undo support
+ */
+export abstract class QueryCommand<T> extends BaseCommand<T> {
+  /**
+   * Override metadata with query-specific defaults
+   */
+  override protected getMetadataDefinition(): CommandMetadataDefinition {
+    return {
+      ...super.getMetadataDefinition(),
+      category: "query",
+      idempotent: true,
+    };
+  }
+}
+
+/**
+ * Streaming Command Base Class
+ * For operations that return AsyncGenerator (streaming results)
+ * Example: ExecuteWorkflowStreamCommand, RunAgentLoopStreamCommand
+ */
+export abstract class StreamingCommand<T> extends ExecutionCommand<T> {
+  /**
+   * Streaming-specific metadata
+   */
+  override protected getMetadataDefinition(): CommandMetadataDefinition {
+    return {
+      ...super.getMetadataDefinition(),
+      supportCancellation: true,
     };
   }
 }

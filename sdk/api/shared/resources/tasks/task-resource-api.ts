@@ -9,7 +9,7 @@
  * - Wraps TaskRegistry from the SDK core layer
  */
 
-import { CrudResourceAPI } from "../generic-resource-api.js";
+import { SimplifiedCrudResourceAPI } from "../generic-resource-api.js";
 import type { TaskStatus, TaskInfo } from "../../../../shared/types/index.js";
 import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
 import { createContextualLogger } from "../../../../utils/contextual-logger.js";
@@ -73,7 +73,7 @@ export interface TaskStats {
 /**
  * TaskResourceAPI - Task Resource Management API
  */
-export class TaskResourceAPI extends CrudResourceAPI<TaskInfo, string, TaskFilter> {
+export class TaskResourceAPI extends SimplifiedCrudResourceAPI<TaskInfo, string, TaskFilter> {
   private registry: import("../../../../workflow/stores/task/task-registry.js").TaskRegistry;
 
   constructor(deps: APIDependencyManager) {

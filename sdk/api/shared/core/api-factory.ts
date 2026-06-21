@@ -4,11 +4,17 @@
  * Design patterns used:
  * - Factory pattern: Responsible for creating API instances in a unified manner.
  * - Instance-level caching: Ensures that each API type has only one instance per APIFactory.
+ * - Consistent Cache Management: All APIs use the same caching strategy
  *
  * Architecture:
  * - Each SDKInstance creates its own APIFactory
  * - APIFactory caches API instances internally (instance-level singleton)
  * - Multiple SDKInstances can coexist with fully isolated API factories
+ *
+ * Cache Strategy:
+ * - All APIs use the same createAPI() method for consistency
+ * - Some APIs don't require dependencies; they use a wrapper approach
+ * - No hand-written cache logic - all delegated to createAPI()
  */
 
 import { WorkflowRegistryAPI } from "../../workflow/resources/workflow-registry-api.js";
@@ -129,9 +135,9 @@ export class APIFactory {
   }
 
   /**
-   * General method for creating an API instance with caching
+   * General method for creating an API instance with consistent caching
    * @param key: The key name of the API instance
-   * @param APIConstructor: The API constructor
+   * @param APIConstructor: The API constructor (requires dependencies parameter)
    * @returns: The API instance (cached if already created)
    */
   private createAPI<T extends AllAPIs[keyof AllAPIs]>(
@@ -146,6 +152,30 @@ export class APIFactory {
 
     // Create new instance and cache it
     const newInstance: T = new APIConstructor(this.dependencies);
+    (this.apiInstances as Record<keyof AllAPIs, AllAPIs[keyof AllAPIs]>)[key] = newInstance;
+    return newInstance;
+  }
+
+  /**
+   * General method for creating API instances without dependencies with consistent caching
+   * @param key: The key name of the API instance
+   * @param APIConstructor: The API constructor (no parameters required)
+   * @returns: The API instance (cached if already created)
+   *
+   * This method handles APIs that don't require dependencies from APIDependencyManager
+   */
+  private createAPIWithoutDeps<T extends AllAPIs[keyof AllAPIs]>(
+    key: keyof AllAPIs,
+    APIConstructor: new () => T,
+  ): T {
+    // Check cache first
+    const cachedInstance = this.apiInstances[key];
+    if (cachedInstance) {
+      return cachedInstance as T;
+    }
+
+    // Create new instance and cache it
+    const newInstance: T = new APIConstructor();
     (this.apiInstances as Record<keyof AllAPIs, AllAPIs[keyof AllAPIs]>)[key] = newInstance;
     return newInstance;
   }
@@ -313,35 +343,21 @@ export class APIFactory {
   /**
    * Create an Agent Loop Resource API
    * @returns AgentLoopResourceAPI instance
+   *
+   * Note: This API doesn't require dependencies, using createAPIWithoutDeps for consistency
    */
   public createAgentLoopResourceAPI(): AgentLoopResourceAPI {
-    // Check cache first
-    const cached = this.apiInstances["agentLoopResource"];
-    if (cached) {
-      return cached as AgentLoopResourceAPI;
-    }
-
-    // Create new instance and cache it
-    const instance = new AgentLoopResourceAPI();
-    (this.apiInstances as Record<keyof AllAPIs, AllAPIs[keyof AllAPIs]>)["agentLoopResource"] = instance;
-    return instance;
+    return this.createAPIWithoutDeps("agentLoopResource", AgentLoopResourceAPI);
   }
 
   /**
    * Create an Agent Loop Checkpoint API
    * @returns AgentLoopCheckpointResourceAPI instance
+   *
+   * Note: This API doesn't require dependencies, using createAPIWithoutDeps for consistency
    */
   public createAgentLoopCheckpointAPI(): AgentLoopCheckpointResourceAPI {
-    // Check cache first
-    const cached = this.apiInstances["agentLoopCheckpoints"];
-    if (cached) {
-      return cached as AgentLoopCheckpointResourceAPI;
-    }
-
-    // Create new instance and cache it
-    const instance = new AgentLoopCheckpointResourceAPI();
-    (this.apiInstances as Record<keyof AllAPIs, AllAPIs[keyof AllAPIs]>)["agentLoopCheckpoints"] = instance;
-    return instance;
+    return this.createAPIWithoutDeps("agentLoopCheckpoints", AgentLoopCheckpointResourceAPI);
   }
 
   /**

@@ -11,7 +11,7 @@ import {
 } from "../../shared/validation/validation-strategy.js";
 
 import { now } from "@wf-agent/common-utils";
-import { CrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
+import { SimplifiedCrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
 import type { WorkflowTemplate } from "@wf-agent/types";
 import { WorkflowNotFoundError } from "@wf-agent/types";
 import type { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
@@ -71,7 +71,7 @@ export interface WorkflowSummary {
 /**
  * WorkflowRegistryAPI - Workflow Registry API
  */
-export class WorkflowRegistryAPI extends CrudResourceAPI<WorkflowTemplate, string, WorkflowFilter> {
+export class WorkflowRegistryAPI extends SimplifiedCrudResourceAPI<WorkflowTemplate, string, WorkflowFilter> {
   private dependencies: APIDependencyManager;
 
   constructor(dependencies: APIDependencyManager) {

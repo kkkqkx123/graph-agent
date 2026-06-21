@@ -5,10 +5,9 @@
 
 // General Resources API Base Classes and Interfaces
 import {
-  ReadonlyResourceAPI,
-  CrudResourceAPI,
+  QueryableResourceAPI,
+  SimplifiedCrudResourceAPI,
   BaseResourceAPI,
-  type ReadableResourceAPI,
   type WritableResourceAPI,
   type ClearableResourceAPI,
 } from "./generic-resource-api.js";
@@ -79,10 +78,9 @@ import type { APIDependencyManager } from "@sdk/api/shared/core/sdk-dependencies
 
 // Reexport all resource management APIs
 export {
-  ReadonlyResourceAPI,
-  CrudResourceAPI,
+  QueryableResourceAPI,
+  SimplifiedCrudResourceAPI,
   BaseResourceAPI,
-  type ReadableResourceAPI,
   type WritableResourceAPI,
   type ClearableResourceAPI,
 };

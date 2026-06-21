@@ -1,45 +1,68 @@
 /**
  * ExecuteToolCommand - Execute a tool command
+ *
+ * Category: Execution
+ * Validates tool parameters, executes with options, returns execution result
  */
 
-import { diffTimestamp, now } from "@wf-agent/common-utils";
 import {
-  BaseCommand,
+  ExecutionCommand,
   CommandValidationResult,
   validationSuccess,
   validationFailure,
+  type CommandMetadataDefinition,
 } from "../../types/command.js";
-import type { ID } from "@wf-agent/types";
+import type { ID, ToolExecutionResult } from "@wf-agent/types";
 import type { ToolOptions } from "../../resources/tools/tool-registry-api.js";
-import type { ToolExecutionResult } from "@wf-agent/types";
 import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
 
 /**
- * Execute the tool command.
+ * Tool execution command parameters
  */
-export class ExecuteToolCommand extends BaseCommand<ToolExecutionResult> {
+export interface ExecuteToolParams {
+  /** Tool ID to execute */
+  toolId: ID;
+  /** Tool input parameters */
+  parameters: Record<string, unknown>;
+  /** Execution options (timeout, retries, etc.) */
+  options?: ToolOptions;
+}
+
+/**
+ * Execute tool command
+ */
+export class ExecuteToolCommand extends ExecutionCommand<ToolExecutionResult> {
   constructor(
-    private readonly toolId: ID,
-    private readonly parameters: Record<string, unknown>,
-    private readonly options: ToolOptions | undefined,
+    private readonly params: ExecuteToolParams,
     private readonly dependencies: APIDependencyManager,
   ) {
     super();
   }
 
+  protected override getMetadataDefinition(): CommandMetadataDefinition {
+    return {
+      name: "ExecuteToolCommand",
+      description: "Execute a tool with parameters and optional execution settings",
+      category: "execution",
+      requiresAuth: false,
+      version: "1.0.0",
+      supportCancellation: true,
+      idempotent: false,
+    };
+  }
+
   protected async executeInternal(): Promise<ToolExecutionResult> {
-    const startTime = now();
     const executionOptions = {
-      timeout: this.options?.timeout,
-      maxRetries: this.options?.maxRetries,
-      retryDelay: this.options?.retryDelay,
-      enableLogging: this.options?.enableLogging ?? true,
+      timeout: this.params.options?.timeout,
+      maxRetries: this.params.options?.maxRetries,
+      retryDelay: this.params.options?.retryDelay,
+      enableLogging: this.params.options?.enableLogging ?? true,
     };
 
     // Verify tool parameters
     const validation = this.dependencies
       .getToolService()
-      .validateParameters(this.toolId, this.parameters);
+      .validateParameters(this.params.toolId, this.params.parameters);
     if (!validation.valid) {
       throw new Error(`Parameter validation failed: ${validation.errors.join(", ")}`);
     }
@@ -47,8 +70,7 @@ export class ExecuteToolCommand extends BaseCommand<ToolExecutionResult> {
     // Execution Tool
     const result = await this.dependencies
       .getToolService()
-      .execute(this.toolId, this.parameters, executionOptions);
-    const executionTime = diffTimestamp(startTime, now());
+      .execute(this.params.toolId, this.params.parameters, executionOptions);
 
     // Handle the Result type, extracting the successful result or throwing an error.
     if (result.isErr()) {
@@ -58,7 +80,7 @@ export class ExecuteToolCommand extends BaseCommand<ToolExecutionResult> {
     const executionResult: ToolExecutionResult = {
       success: true,
       result: result.value.result,
-      executionTime,
+      executionTime: 0,
       retryCount: 0,
     };
 
@@ -68,11 +90,11 @@ export class ExecuteToolCommand extends BaseCommand<ToolExecutionResult> {
   validate(): CommandValidationResult {
     const errors: string[] = [];
 
-    if (!this.toolId || this.toolId.trim().length === 0) {
+    if (!this.params.toolId || this.params.toolId.trim().length === 0) {
       errors.push("The tool ID cannot be empty.");
     }
 
-    if (!this.parameters) {
+    if (!this.params.parameters) {
       errors.push("The parameter cannot be null.");
     }
 

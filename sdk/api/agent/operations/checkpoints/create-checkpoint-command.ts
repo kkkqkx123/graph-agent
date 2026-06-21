@@ -1,22 +1,16 @@
 /**
  * CreateCheckpointCommand - Create Agent Loop Checkpoint Command
  *
- * Responsibilities:
- * - Encapsulates checkpoint creation operation as Command pattern
- * - Provides unified API layer interface
- * - Supports parameter validation
- *
- * Design Principles:
- * - Follows Command pattern, inherits BaseCommand
- * - Uses dependency injection for AgentLoopRegistry and CheckpointResourceAPI
- * - Parameter validation is completed in validate() method
+ * Category: Management
+ * Creates a checkpoint of the current agent loop execution state
  */
 
 import {
-  BaseCommand,
+  ManagementCommand,
   CommandValidationResult,
   validationSuccess,
   validationFailure,
+  type CommandMetadataDefinition,
 } from "../../../shared/types/command.js";
 import type { ID, CheckpointMetadata } from "@wf-agent/types";
 import { AgentLoopCheckpointResourceAPI } from "../../resources/checkpoint-resource-api.js";
@@ -34,14 +28,8 @@ export interface CreateCheckpointParams {
 
 /**
  * Create Checkpoint Command
- *
- * Workflow:
- * 1. validate parameters (agentLoopId required)
- * 2. Get AgentLoopEntity
- * 3. Call CheckpointResourceAPI to create a checkpoint. 4.
- * 4. Return the checkpoint ID
  */
-export class CreateCheckpointCommand extends BaseCommand<string> {
+export class CreateCheckpointCommand extends ManagementCommand<string> {
   private checkpointAPI: AgentLoopCheckpointResourceAPI;
 
   constructor(
@@ -51,6 +39,18 @@ export class CreateCheckpointCommand extends BaseCommand<string> {
   ) {
     super();
     this.checkpointAPI = checkpointAPI ?? new AgentLoopCheckpointResourceAPI();
+  }
+
+  protected override getMetadataDefinition(): CommandMetadataDefinition {
+    return {
+      name: "CreateCheckpointCommand",
+      description: "Create a checkpoint of agent loop execution state",
+      category: "management",
+      requiresAuth: false,
+      version: "1.0.0",
+      supportUndo: false,
+      idempotent: false,
+    };
   }
 
   protected async executeInternal(): Promise<string> {

@@ -1,13 +1,13 @@
 /**
  * AgentLoopMessageResourceAPI - Agent Loop Message Resource Management API
- * Inherits ReadonlyResourceAPI, provides read-only operations
+ * Inherits QueryableResourceAPI, provides read-only operations
  *
  * Responsibilities:
  * - Encapsulates MessageHistory, provides message history management functionality
  * - Supports message query, search, statistics and other functionalities
  */
 
-import { ReadonlyResourceAPI } from "../../shared/resources/generic-resource-api.js";
+import { QueryableResourceAPI } from "../../shared/resources/generic-resource-api.js";
 import type { LLMMessage, ID } from "@wf-agent/types";
 import type { AgentLoopRegistry } from "../../../agent/stores/agent-loop-registry.js";
 import type { APIDependencyManager } from "@sdk/api/shared/core/sdk-dependencies.js";
@@ -39,7 +39,7 @@ export interface AgentLoopMessageStats {
 /**
  * AgentLoopMessageResourceAPI - Agent Loop Message Resource Management API
  */
-export class AgentLoopMessageResourceAPI extends ReadonlyResourceAPI<
+export class AgentLoopMessageResourceAPI extends QueryableResourceAPI<
   LLMMessage,
   string,
   AgentLoopMessageFilter

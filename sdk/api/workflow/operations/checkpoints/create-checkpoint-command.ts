@@ -1,27 +1,21 @@
 /**
  * CreateCheckpointCommand - Create Workflow Execution Checkpoint Command
  *
- * Responsibilities:
- * - Encapsulates checkpoint creation operation as Command pattern
- * - Provides unified API layer interface
- * - Supports parameter validation
- *
- * Design Principles:
- * - Follows Command pattern, inherits BaseCommand
- * - Uses dependency injection for APIDependencyManager
- * - Parameter validation is completed in validate() method
+ * Category: Management
+ * Creates a checkpoint of the current workflow execution state
  */
 
 import {
-  BaseCommand,
+  ManagementCommand,
   CommandValidationResult,
   validationSuccess,
   validationFailure,
+  type CommandMetadataDefinition,
 } from "../../../shared/types/command.js";
 import type { CheckpointMetadata } from "@wf-agent/types";
+import { WorkflowExecutionNotFoundError } from "@wf-agent/types";
 import { CheckpointCoordinator } from "../../../../workflow/checkpoint/checkpoint-coordinator.js";
 import type { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
-import { WorkflowExecutionNotFoundError } from "@wf-agent/types";
 import type { WorkflowExecutionRegistry } from "../../../../workflow/stores/workflow-execution-registry.js";
 
 /**
@@ -36,19 +30,25 @@ export interface CreateCheckpointParams {
 
 /**
  * Create Checkpoint Command
- *
- * Workflow:
- * 1. Validate parameters (executionId required)
- * 2. Get WorkflowExecutionEntity from WorkflowExecutionRegistry
- * 3. Call CheckpointCoordinator to create checkpoint
- * 4. Return the checkpoint ID
  */
-export class CreateCheckpointCommand extends BaseCommand<string> {
+export class CreateCheckpointCommand extends ManagementCommand<string> {
   constructor(
     private readonly params: CreateCheckpointParams,
     private readonly dependencies: APIDependencyManager,
   ) {
     super();
+  }
+
+  protected override getMetadataDefinition(): CommandMetadataDefinition {
+    return {
+      name: "CreateCheckpointCommand",
+      description: "Create a checkpoint of workflow execution state",
+      category: "management",
+      requiresAuth: false,
+      version: "1.0.0",
+      supportUndo: false,
+      idempotent: false,
+    };
   }
 
   protected async executeInternal(): Promise<string> {

@@ -20,7 +20,7 @@ import {
 } from "../../shared/validation/validation-strategy.js";
 
 import { now, diffTimestamp } from "@wf-agent/common-utils";
-import { CrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
+import { SimplifiedCrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
 import type { ExecutionResult } from "../../shared/types/execution-result.js";
 import { success, failure } from "../../shared/types/execution-result.js";
 import type {
@@ -61,7 +61,7 @@ export interface UserInteractionFilter {
 /**
  * User Interaction Resource Management API
  */
-export class UserInteractionResourceAPI extends CrudResourceAPI<
+export class UserInteractionResourceAPI extends SimplifiedCrudResourceAPI<
   UserInteractionConfig,
   string,
   UserInteractionFilter

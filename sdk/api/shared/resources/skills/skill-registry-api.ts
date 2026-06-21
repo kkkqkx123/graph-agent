@@ -14,7 +14,7 @@ import {
 
 import type { SkillMetadata, SkillResourceType, Skill } from "@wf-agent/types";
 import { NotFoundError, ExecutionError, SDKError } from "@wf-agent/types";
-import { ReadonlyResourceAPI } from "../generic-resource-api.js";
+import { QueryableResourceAPI } from "../generic-resource-api.js";
 import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
 import type { ExecutionResult } from "../../types/execution-result.js";
 import { success, failure } from "../../types/execution-result.js";
@@ -54,7 +54,7 @@ export interface SkillLoadOptions {
  * - Level 2: loadContent() - on-demand content loading
  * - Level 3: loadResources() - nested resource loading
  */
-export class SkillRegistryAPI extends ReadonlyResourceAPI<SkillMetadata, string, SkillFilter> {
+export class SkillRegistryAPI extends QueryableResourceAPI<SkillMetadata, string, SkillFilter> {
   private dependencies: APIDependencyManager;
 
   constructor(dependencies: APIDependencyManager) {

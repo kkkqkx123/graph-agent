@@ -1,30 +1,55 @@
 /**
- * GenerateCommand - LLM generates commands
+ * GenerateCommand - LLM Generate Text Command
+ *
+ * Category: Execution (LLM operations can be long-running)
+ * Implements unified parameter pattern for consistency
  */
 
 import {
-  BaseCommand,
+  ExecutionCommand,
   CommandValidationResult,
   validationSuccess,
   validationFailure,
+  type CommandMetadataDefinition,
 } from "../types/command.js";
 import type { LLMRequest, LLMResult } from "@wf-agent/types";
-import { APIDependencyManager } from "@sdk/api/shared/core/sdk-dependencies.js";
+import type { APIDependencyManager } from "@sdk/api/shared/core/sdk-dependencies.js";
 
 /**
- * LLM generation command
+ * LLM generation command parameters
  */
-export class GenerateCommand extends BaseCommand<LLMResult> {
+export interface GenerateParams {
+  /** LLM request configuration */
+  request: LLMRequest;
+}
+
+/**
+ * LLM generate command
+ * Executes LLM text generation with parameter validation
+ */
+export class GenerateCommand extends ExecutionCommand<LLMResult> {
   constructor(
-    private readonly request: LLMRequest,
+    private readonly params: GenerateParams,
     private readonly dependencies: APIDependencyManager,
   ) {
     super();
   }
 
+  protected override getMetadataDefinition(): CommandMetadataDefinition {
+    return {
+      name: "GenerateCommand",
+      description: "Execute LLM text generation with messages and options",
+      category: "execution",
+      requiresAuth: false,
+      version: "1.0.0",
+      supportCancellation: true,
+      idempotent: false,
+    };
+  }
+
   protected async executeInternal(): Promise<LLMResult> {
     const llmWrapper = this.dependencies.getLLMWrapper();
-    const result = await llmWrapper.generate(this.request);
+    const result = await llmWrapper.generate(this.params.request);
 
     // Handle the Result type, either extract the successful result or throw an error.
     if (result.isErr()) {
@@ -37,7 +62,9 @@ export class GenerateCommand extends BaseCommand<LLMResult> {
   validate(): CommandValidationResult {
     const errors: string[] = [];
 
-    if (!this.request.messages || this.request.messages.length === 0) {
+    if (!this.params.request) {
+      errors.push("LLM request must be provided.");
+    } else if (!this.params.request.messages || this.params.request.messages.length === 0) {
       errors.push("The message list cannot be empty.");
     }
 

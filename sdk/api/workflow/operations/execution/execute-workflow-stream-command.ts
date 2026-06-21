@@ -1,30 +1,20 @@
 /**
  * ExecuteWorkflowStreamCommand - Execute Workflow Stream Command
  *
- * Responsibilities:
- * - Encapsulates workflow streaming execution as Command pattern
- * - Provides unified API layer interface
- * - Supports streaming workflow execution via event system
- *
- * Design Principles:
- * - Follows Command pattern, inherits BaseCommand
- * - Uses dependency injection for APIDependencyManager
- * - Returns AsyncGenerator for streaming processing
- *
- * Streaming Event Architecture:
- * - Yields BaseEvent types from EventRegistry
- * - Workflow lifecycle events: WORKFLOW_STARTED, WORKFLOW_COMPLETED, etc.
- * - Node events: NODE_STARTED, NODE_COMPLETED, etc.
+ * Category: Execution (Streaming)
+ * Executes workflow while streaming events in real-time
  */
 
 import {
-  BaseCommand,
+  StreamingCommand,
   CommandValidationResult,
   validationSuccess,
   validationFailure,
+  type CommandMetadataDefinition,
 } from "../../../shared/types/command.js";
+import { validateRequiredId } from "../../../shared/operations/validation-utils.js";
 import type { WorkflowExecutionOptions, BaseEvent } from "@wf-agent/types";
-import { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
 import type { WorkflowExecutionBuildResult } from "../../../../workflow/execution/factories/workflow-execution-builder.js";
 import * as ServiceIdentifiers from "../../../../di/service-identifiers.js";
 
@@ -40,23 +30,26 @@ export interface ExecuteWorkflowStreamParams {
 
 /**
  * Execute Workflow Stream Command
- *
- * Workflow:
- * 1. Validate parameters (workflowId is required)
- * 2. Build WorkflowExecutionEntity using WorkflowExecutionBuilder
- * 3. Register WorkflowExecutionEntity
- * 4. Execute workflow while yielding events
- * 5. Return final result
- *
- * The stream yields events from the EventRegistry during execution,
- * allowing callers to process events in real-time.
+ * Executes workflow and yields events as they occur
  */
-export class ExecuteWorkflowStreamCommand extends BaseCommand<AsyncGenerator<BaseEvent>> {
+export class ExecuteWorkflowStreamCommand extends StreamingCommand<AsyncGenerator<BaseEvent>> {
   constructor(
     private readonly params: ExecuteWorkflowStreamParams,
     private readonly dependencies: APIDependencyManager,
   ) {
     super();
+  }
+
+  protected override getMetadataDefinition(): CommandMetadataDefinition {
+    return {
+      name: "ExecuteWorkflowStreamCommand",
+      description: "Execute a workflow and stream events in real-time",
+      category: "execution",
+      requiresAuth: false,
+      version: "1.0.0",
+      supportCancellation: true,
+      idempotent: false,
+    };
   }
 
   protected async executeInternal(): Promise<AsyncGenerator<BaseEvent>> {
@@ -173,12 +166,7 @@ export class ExecuteWorkflowStreamCommand extends BaseCommand<AsyncGenerator<Bas
   }
 
   validate(): CommandValidationResult {
-    const errors: string[] = [];
-
-    if (!this.params.workflowId || this.params.workflowId.trim().length === 0) {
-      errors.push("workflowId must be provided");
-    }
-
+    const errors = validateRequiredId(this.params.workflowId, "Workflow ID");
     return errors.length > 0 ? validationFailure(errors) : validationSuccess();
   }
 }

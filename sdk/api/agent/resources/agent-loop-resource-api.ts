@@ -8,7 +8,7 @@
  * - Provides filtering and querying capabilities
  */
 
-import { CrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
+import { SimplifiedCrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
 import type { ID, AgentLoopStatus } from "@wf-agent/types";
 import type { AgentLoopEntity } from "../../../agent/entities/agent-loop-entity.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
@@ -74,7 +74,7 @@ export interface AgentLoopStorage {
 /**
  * AgentLoopResourceAPI - Agent Loop Entity Resource Management API
  */
-export class AgentLoopResourceAPI extends CrudResourceAPI<
+export class AgentLoopResourceAPI extends SimplifiedCrudResourceAPI<
   AgentLoopEntity,
   string,
   AgentLoopFilter

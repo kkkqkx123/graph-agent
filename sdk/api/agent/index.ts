@@ -7,7 +7,7 @@
 // Commands - Command Operations
 // ============================================================================
 
-// execute a command
+// execution commands
 export {
   RunAgentLoopCommand,
   type RunAgentLoopParams,
@@ -17,7 +17,7 @@ export {
   type RunAgentLoopStreamParams,
 } from "./operations/run-agent-loop-stream-command.js";
 
-// control
+// control commands
 export {
   CancelAgentLoopCommand,
   type CancelAgentLoopParams,
@@ -31,7 +31,7 @@ export {
   type ResumeAgentLoopParams,
 } from "./operations/resume-agent-loop-command.js";
 
-// checkpoint command
+// checkpoint commands
 export {
   CreateCheckpointCommand,
   type CreateCheckpointParams,

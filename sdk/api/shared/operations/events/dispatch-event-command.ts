@@ -1,11 +1,17 @@
 /**
- * DispatchEventCommand - Dispatch Event
+ * DispatchEventCommand - Dispatch Event Command
  *
- * Note: This is now a shared command as event dispatching is a cross-module concern
- * used by Graph, Agent, and other modules.
+ * Category: Management
+ * Cross-module event dispatching for Graph, Agent, and other modules
  */
 
-import { BaseCommand, CommandValidationResult } from "../../types/command.js";
+import {
+  ManagementCommand,
+  CommandValidationResult,
+  validationFailure,
+  validationSuccess,
+  type CommandMetadataDefinition,
+} from "../../types/command.js";
 import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
 import type { Event } from "@wf-agent/types";
 import { emit } from "../../../../shared/utils/event/emit-event.js";
@@ -14,19 +20,31 @@ import { emit } from "../../../../shared/utils/event/emit-event.js";
  * Dispatch event parameters
  */
 export interface DispatchEventParams {
-  /** Event object */
+  /** Event object to dispatch */
   event: Event;
 }
 
 /**
  * DispatchEventCommand - Dispatch Event
+ * Sends an event to the event manager for distribution
  */
-export class DispatchEventCommand extends BaseCommand<void> {
+export class DispatchEventCommand extends ManagementCommand<void> {
   constructor(
     private readonly params: DispatchEventParams,
     private readonly dependencies: APIDependencyManager,
   ) {
     super();
+  }
+
+  protected override getMetadataDefinition(): CommandMetadataDefinition {
+    return {
+      name: "DispatchEventCommand",
+      description: "Dispatch an event to the event manager",
+      category: "management",
+      requiresAuth: false,
+      version: "1.0.0",
+      idempotent: false,
+    };
   }
 
   /**
@@ -41,14 +59,11 @@ export class DispatchEventCommand extends BaseCommand<void> {
       errors.push("Event type cannot be empty");
     }
 
-    return {
-      valid: errors.length === 0,
-      errors,
-    };
+    return errors.length > 0 ? validationFailure(errors) : validationSuccess();
   }
 
   /**
-   * Execute command
+   * Execute command - dispatch the event
    */
   protected async executeInternal(): Promise<void> {
     const eventManager = this.dependencies.getEventManager();

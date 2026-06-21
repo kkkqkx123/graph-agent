@@ -9,7 +9,7 @@
  * - Execution flow visualization data
  */
 
-import { ReadonlyResourceAPI } from "../../shared/resources/generic-resource-api.js";
+import { QueryableResourceAPI } from "../../shared/resources/generic-resource-api.js";
 import type { APIDependencyManager } from "@sdk/api/shared/core/sdk-dependencies.js";
 import type { ID, IterationRecord } from "@wf-agent/types";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
@@ -396,7 +396,7 @@ export interface ExecutionPathAnalysis {
 /**
  * AgentLoopIterationAPI - Agent Loop Iteration History & Analysis API
  */
-export class AgentLoopIterationAPI extends ReadonlyResourceAPI<
+export class AgentLoopIterationAPI extends QueryableResourceAPI<
   ExtendedIterationDetail,
   string,
   ExtendedIterationFilter

@@ -11,7 +11,7 @@
  * used by Graph, Agent, and other modules.
  */
 
-import { ReadonlyResourceAPI } from "../generic-resource-api.js";
+import { QueryableResourceAPI } from "../generic-resource-api.js";
 import type { Event, EventType, Timestamp, BaseEvent } from "@wf-agent/types";
 import { DispatchEventCommand } from "../../operations/events/dispatch-event-command.js";
 import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
@@ -143,7 +143,7 @@ export interface ExecutionTimelineSummary {
  * - Provides real-time event query and statistics functionality
  * - Uses circular buffer pattern for bounded memory usage
  */
-export class EventResourceAPI extends ReadonlyResourceAPI<Event, string, EventFilter> {
+export class EventResourceAPI extends QueryableResourceAPI<Event, string, EventFilter> {
   private dependencies: APIDependencyManager;
 
   // Event storage

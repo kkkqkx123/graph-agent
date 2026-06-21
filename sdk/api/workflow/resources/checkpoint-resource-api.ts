@@ -3,7 +3,7 @@
  *  Inherits from GenericResourceAPI, providing unified CRUD operations
  */
 
-import { CrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
+import { SimplifiedCrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
 import { CheckpointState } from "../../../workflow/checkpoint/checkpoint-state-manager.js";
 import type { Checkpoint, CheckpointMetadata } from "@wf-agent/types";
 import { CheckpointCoordinator } from "../../../workflow/checkpoint/checkpoint-coordinator.js";
@@ -101,7 +101,7 @@ export interface CheckpointChainAnalysis {
 /**
  * CheckpointResourceAPI - Checkpoint resource management API
  */
-export class CheckpointResourceAPI extends CrudResourceAPI<Checkpoint, string, CheckpointFilter> {
+export class CheckpointResourceAPI extends SimplifiedCrudResourceAPI<Checkpoint, string, CheckpointFilter> {
   private stateManager: CheckpointState;
   private eventManager?: EventRegistry;
   private deps: APIDependencyManager;

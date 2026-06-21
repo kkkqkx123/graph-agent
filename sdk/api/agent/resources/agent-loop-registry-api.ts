@@ -8,7 +8,7 @@
  * - Refer to the design pattern of WorkflowExecutionRegistryAPI.
  */
 
-import { CrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
+import { SimplifiedCrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
 import type { AgentLoopRegistry } from "../../../agent/stores/agent-loop-registry.js";
 import type { AgentLoopEntity } from "../../../agent/entities/agent-loop-entity.js";
 import { AgentLoopStatus, type ID } from "@wf-agent/types";
@@ -60,7 +60,7 @@ export interface AgentLoopSummary {
  * - Provide registration, query and deletion of instances.
  * - Provide statistical information
  */
-export class AgentLoopRegistryAPI extends CrudResourceAPI<AgentLoopEntity, ID, AgentLoopFilter> {
+export class AgentLoopRegistryAPI extends SimplifiedCrudResourceAPI<AgentLoopEntity, ID, AgentLoopFilter> {
   private registry: AgentLoopRegistry;
 
   /**

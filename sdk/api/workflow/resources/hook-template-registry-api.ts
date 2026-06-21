@@ -7,7 +7,7 @@ import type { HookTemplate } from "@wf-agent/types";
 import { ValidationError, ConfigurationValidationError } from "@wf-agent/types";
 import type { Result } from "@wf-agent/types";
 import { ok, err } from "@wf-agent/common-utils";
-import { CrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
+import { SimplifiedCrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
 import type { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
 import type { Timestamp } from "@wf-agent/types";
 
@@ -48,7 +48,7 @@ export interface HookTemplateSummary {
 /**
  * HookTemplateRegistryAPI - Hook Template Registry API
  */
-export class HookRegistryAPI extends CrudResourceAPI<HookTemplate, string, HookTemplateFilter> {
+export class HookRegistryAPI extends SimplifiedCrudResourceAPI<HookTemplate, string, HookTemplateFilter> {
   private dependencies: APIDependencyManager;
 
   constructor(dependencies: APIDependencyManager) {

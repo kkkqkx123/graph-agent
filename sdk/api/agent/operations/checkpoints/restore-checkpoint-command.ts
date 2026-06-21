@@ -1,43 +1,33 @@
 /**
  * RestoreCheckpointCommand - Restore Agent Loop From Checkpoint Command
  *
- * Responsibilities:
- * - Encapsulates checkpoint restoration operation as Command pattern
- * - Provides unified API layer interface
- * - Supports parameter validation
- *
- * Design Principles:
- * - Follows Command pattern, inherits BaseCommand
- * - Uses dependency injection for CheckpointResourceAPI
- * - Parameter validation is completed in validate() method
+ * Category: Management
+ * Restores an agent loop execution state from a previously created checkpoint
  */
 
 import {
-  BaseCommand,
+  ManagementCommand,
   CommandValidationResult,
   validationSuccess,
   validationFailure,
+  type CommandMetadataDefinition,
 } from "../../../shared/types/command.js";
 import type { AgentLoopEntity } from "../../../../agent/entities/agent-loop-entity.js";
 import { AgentLoopCheckpointResourceAPI } from "../../resources/checkpoint-resource-api.js";
 
 /**
- * Command parameters for restoring from a checkpoint
+ * Restore checkpoint command parameters
  */
 export interface RestoreCheckpointParams {
-  /** Checkpoint ID */
+  /** Checkpoint ID to restore from */
   checkpointId: string;
 }
 
 /**
- * Command to restore from a checkpoint
- *
- * Workflow:
- * 1. Verify the parameters (checkpointId is required)
- * 2. Call the CheckpointResourceAPI to restore the checkpoint
- * 3. Return the restored AgentLoopEntity
+ * Restore Checkpoint Command
+ * Restores agent loop execution state from a checkpoint
  */
-export class RestoreCheckpointCommand extends BaseCommand<AgentLoopEntity> {
+export class RestoreCheckpointCommand extends ManagementCommand<AgentLoopEntity> {
   private checkpointAPI: AgentLoopCheckpointResourceAPI;
 
   constructor(
@@ -46,6 +36,18 @@ export class RestoreCheckpointCommand extends BaseCommand<AgentLoopEntity> {
   ) {
     super();
     this.checkpointAPI = checkpointAPI ?? new AgentLoopCheckpointResourceAPI();
+  }
+
+  protected override getMetadataDefinition(): CommandMetadataDefinition {
+    return {
+      name: "RestoreCheckpointCommand",
+      description: "Restore agent loop execution state from a checkpoint",
+      category: "management",
+      requiresAuth: false,
+      version: "1.0.0",
+      supportUndo: false,
+      idempotent: false,
+    };
   }
 
   protected async executeInternal(): Promise<AgentLoopEntity> {

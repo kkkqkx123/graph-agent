@@ -1,49 +1,49 @@
 /**
  * PauseAgentLoopCommand - Pause Agent Loop Command
  *
- * Responsibilities:
- * - Encapsulates Agent Loop pause operation as Command pattern
- * - Provides unified API layer interface
- * - Supports parameter validation
- *
- * Design Principles:
- * - Follows Command pattern, inherits BaseCommand
- * - Uses dependency injection for AgentLoopRegistry
- * - Parameter validation is completed in validate() method
+ * Category: Management
+ * Pauses a running agent loop execution
  */
 
 import {
-  BaseCommand,
+  ManagementCommand,
   CommandValidationResult,
   validationSuccess,
   validationFailure,
+  type CommandMetadataDefinition,
 } from "../../shared/types/command.js";
 import type { ID } from "@wf-agent/types";
 import type { APIDependencyManager } from "@sdk/api/shared/core/sdk-dependencies.js";
 
 /**
- * Pause Agent Loop Command Parameters
+ * Pause Agent Loop command parameters
  */
 export interface PauseAgentLoopParams {
-  /** Agent Loop ID */
+  /** Agent Loop ID to pause */
   agentLoopId: ID;
 }
 
 /**
  * Pause Agent Loop Command
- *
- * Workflow:
- * 1. Validate parameters (agentLoopId is required)
- * 2. Get AgentLoopEntity
- * 3. Call pause() method to pause execution
- * 4. Return pause result
  */
-export class PauseAgentLoopCommand extends BaseCommand<void> {
+export class PauseAgentLoopCommand extends ManagementCommand<void> {
   constructor(
     private readonly params: PauseAgentLoopParams,
     private readonly dependencies: APIDependencyManager,
   ) {
     super();
+  }
+
+  protected override getMetadataDefinition(): CommandMetadataDefinition {
+    return {
+      name: "PauseAgentLoopCommand",
+      description: "Pause a running agent loop",
+      category: "management",
+      requiresAuth: false,
+      version: "1.0.0",
+      supportUndo: true,
+      idempotent: false,
+    };
   }
 
   protected async executeInternal(): Promise<void> {

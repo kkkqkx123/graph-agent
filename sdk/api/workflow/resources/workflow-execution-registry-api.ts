@@ -9,7 +9,7 @@ import type {
   WorkflowExecutionResult,
   WorkflowExecutionStatus,
 } from "@wf-agent/types";
-import { CrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
+import { SimplifiedCrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
 import type { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
 import type { Timestamp } from "@wf-agent/types";
 
@@ -65,7 +65,7 @@ export interface WorkflowExecutionSummary {
  * - Implement all abstract methods to adapt to WorkflowExecutionRegistry.
  * - Add enhancements such as caching, logging, validation, etc.
  */
-export class WorkflowExecutionRegistryAPI extends CrudResourceAPI<
+export class WorkflowExecutionRegistryAPI extends SimplifiedCrudResourceAPI<
   WorkflowExecution,
   string,
   WorkflowExecutionFilter

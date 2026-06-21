@@ -1,30 +1,51 @@
 /**
- * DisableTriggerCommand - Disable the trigger
+ * DisableTriggerCommand - Disable Trigger Command
+ *
+ * Category: Management
+ * Disables a trigger for a workflow execution
  */
 
-import { BaseCommand, CommandValidationResult } from "../../../shared/types/command.js";
+import {
+  ManagementCommand,
+  CommandValidationResult,
+  validationFailure,
+  validationSuccess,
+  type CommandMetadataDefinition,
+} from "../../../shared/types/command.js";
 import { WorkflowExecutionNotFoundError } from "@wf-agent/types";
 import type { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
 
 /**
- * Disable trigger parameters
+ * Disable trigger command parameters
  */
 export interface DisableTriggerParams {
-  /** Execution ID */
+  /** Workflow execution ID */
   executionId: string;
-  /** Trigger ID */
+  /** Trigger ID to disable */
   triggerId: string;
 }
 
 /**
- * DisableTriggerCommand - Disables the trigger.
+ * DisableTriggerCommand - Disable Trigger
  */
-export class DisableTriggerCommand extends BaseCommand<void> {
+export class DisableTriggerCommand extends ManagementCommand<void> {
   constructor(
     private readonly params: DisableTriggerParams,
     private readonly dependencies: APIDependencyManager,
   ) {
     super();
+  }
+
+  protected override getMetadataDefinition(): CommandMetadataDefinition {
+    return {
+      name: "DisableTriggerCommand",
+      description: "Disable a trigger for a workflow execution",
+      category: "management",
+      requiresAuth: false,
+      version: "1.0.0",
+      supportUndo: true,
+      idempotent: false,
+    };
   }
 
   /**
@@ -41,10 +62,7 @@ export class DisableTriggerCommand extends BaseCommand<void> {
       errors.push("Trigger ID cannot be null");
     }
 
-    return {
-      valid: errors.length === 0,
-      errors,
-    };
+    return errors.length > 0 ? validationFailure(errors) : validationSuccess();
   }
 
   /**

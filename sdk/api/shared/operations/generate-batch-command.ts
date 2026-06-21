@@ -1,30 +1,56 @@
 /**
- * GenerateBatchCommand - LLM batch generation command
+ * GenerateBatchCommand - LLM Batch Generation Command
+ *
+ * Category: Execution
+ * Processes multiple LLM requests in parallel
  */
 
 import {
-  BaseCommand,
+  ExecutionCommand,
   CommandValidationResult,
   validationSuccess,
   validationFailure,
+  type CommandMetadataDefinition,
 } from "../types/command.js";
 import type { LLMRequest, LLMResult } from "@wf-agent/types";
-import { APIDependencyManager } from "@sdk/api/shared/core/sdk-dependencies.js";
+import type { APIDependencyManager } from "@sdk/api/shared/core/sdk-dependencies.js";
 
 /**
- * LLM batch generation commands
+ * LLM batch generation command parameters
  */
-export class GenerateBatchCommand extends BaseCommand<LLMResult[]> {
+export interface GenerateBatchParams {
+  /** Array of LLM requests to process */
+  requests: LLMRequest[];
+}
+
+/**
+ * LLM batch generation command
+ */
+export class GenerateBatchCommand extends ExecutionCommand<LLMResult[]> {
   constructor(
-    private readonly requests: LLMRequest[],
+    private readonly params: GenerateBatchParams,
     private readonly dependencies: APIDependencyManager,
   ) {
     super();
   }
 
+  protected override getMetadataDefinition(): CommandMetadataDefinition {
+    return {
+      name: "GenerateBatchCommand",
+      description: "Execute batch LLM text generation for multiple requests",
+      category: "execution",
+      requiresAuth: false,
+      version: "1.0.0",
+      supportCancellation: true,
+      idempotent: false,
+    };
+  }
+
   protected async executeInternal(): Promise<LLMResult[]> {
     const llmWrapper = this.dependencies.getLLMWrapper();
-    const results = await Promise.all(this.requests.map(request => llmWrapper.generate(request)));
+    const results = await Promise.all(
+      this.params.requests.map(request => llmWrapper.generate(request)),
+    );
 
     // Handle the Result type, either extracting the successful result or throwing an error.
     const llmResults: LLMResult[] = [];
@@ -41,14 +67,14 @@ export class GenerateBatchCommand extends BaseCommand<LLMResult[]> {
   validate(): CommandValidationResult {
     const errors: string[] = [];
 
-    if (!this.requests || this.requests.length === 0) {
+    if (!this.params.requests || this.params.requests.length === 0) {
       errors.push("The request list cannot be empty");
-    }
-
-    for (let i = 0; i < this.requests.length; i++) {
-      const request = this.requests[i];
-      if (!request || !request.messages || request.messages.length === 0) {
-        errors.push(`Request ${i} message list cannot be empty`);
+    } else {
+      for (let i = 0; i < this.params.requests.length; i++) {
+        const request = this.params.requests[i];
+        if (!request || !request.messages || request.messages.length === 0) {
+          errors.push(`Request ${i} message list cannot be empty`);
+        }
       }
     }
 

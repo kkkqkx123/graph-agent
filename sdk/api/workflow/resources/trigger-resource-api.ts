@@ -1,9 +1,9 @@
 /**
  * TriggerResourceAPI - Trigger Resource Management API
- *  Inherits from ReadonlyResourceAPI, providing read-only operations
+ *  Inherits from QueryableResourceAPI, providing read-only operations
  */
 
-import { ReadonlyResourceAPI } from "../../shared/resources/generic-resource-api.js";
+import { QueryableResourceAPI } from "../../shared/resources/generic-resource-api.js";
 import type { WorkflowExecutionRegistry } from "../../../workflow/stores/workflow-execution-registry.js";
 import type { Trigger } from "@wf-agent/types";
 import { NotFoundError, WorkflowExecutionNotFoundError } from "@wf-agent/types";
@@ -27,7 +27,7 @@ export interface TriggerFilter {
 /**
  * TriggerResourceAPI - Trigger Resource Management API
  */
-export class TriggerResourceAPI extends ReadonlyResourceAPI<Trigger, string, TriggerFilter> {
+export class TriggerResourceAPI extends QueryableResourceAPI<Trigger, string, TriggerFilter> {
   private registry: WorkflowExecutionRegistry;
 
   constructor(deps: APIDependencyManager) {

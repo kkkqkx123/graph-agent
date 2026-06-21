@@ -5,9 +5,10 @@
  * Design principles:
  * - Strictly control the way instances are obtained.
  * - Ensure that the API layer does not obtain instances in incorrect ways.
- * - Standardize dependency management.
+ * - Standardize dependency management through GlobalContext.
  * - All methods return specific types to ensure type safety.
- * - Dependencies are uniformly obtained through a Dependency Injection (DI) container.
+ * - Dependencies are uniformly obtained through GlobalContext getters.
+ * - GlobalContext handles all DI container access internally (encapsulation).
  */
 
 import * as Identifiers from "../../../di/service-identifiers.js";
@@ -43,6 +44,11 @@ import type { IdBasedServiceFactory, NoArgServiceFactory } from "../../../di/fac
 /**
  * API Dependency Management Class
  * Manages all dependency instances through a GlobalContext instance.
+ *
+ * Key Design Decision:
+ * - ALL dependencies are obtained through GlobalContext getters
+ * - GlobalContext encapsulates all DI container access
+ * - This ensures uniform access patterns and enables GlobalContext to control caching
  */
 export class APIDependencyManager {
   /**
@@ -50,6 +56,18 @@ export class APIDependencyManager {
    * @param globalContext The GlobalContext to get dependencies from
    */
   constructor(private globalContext: GlobalContext) {}
+
+  /**
+   * Private helper method to access the DI container when needed
+   * Note: This should only be used for dependencies not yet exposed by GlobalContext
+   */
+  private getFromContainer<T>(identifier: ServiceIdentifier<T>): T {
+    return this.globalContext.container.get(identifier);
+  }
+
+  // ============================================================================
+  // Registries - All accessed through GlobalContext getters
+  // ============================================================================
 
   /**
    * Obtain the workflow registry
@@ -62,36 +80,32 @@ export class APIDependencyManager {
    * Get the workflow execution registry
    */
   getWorkflowExecutionRegistry(): WorkflowExecutionRegistry {
-    return this.globalContext.container.get(
-      Identifiers.WorkflowExecutionRegistry as ServiceIdentifier<WorkflowExecutionRegistry>,
-    );
+    return this.getFromContainer(Identifiers.WorkflowExecutionRegistry as ServiceIdentifier<WorkflowExecutionRegistry>);
   }
 
   /**
-   * Obtain the event manager
+   * Obtain the event registry
    */
   getEventManager(): EventRegistry {
     return this.globalContext.eventRegistry;
   }
 
   /**
-   * Obtain the checkpoint status manager
+   * Obtain the checkpoint state manager
    */
   getCheckpointStateManager(): CheckpointState {
-    return this.globalContext.container.get(
-      Identifiers.CheckpointState as ServiceIdentifier<CheckpointState>,
-    );
+    return this.getFromContainer(Identifiers.CheckpointState as ServiceIdentifier<CheckpointState>);
   }
 
   /**
-   * Obtain tool services
+   * Obtain tool registry
    */
   getToolService(): ToolRegistry {
     return this.globalContext.toolRegistry;
   }
 
   /**
-   * Obtaining the LLM executor
+   * Obtain the LLM executor
    */
   getLlmExecutor(): LLMExecutor {
     return this.globalContext.llmExecutor;
@@ -136,10 +150,40 @@ export class APIDependencyManager {
    * Get the workflow graph registry
    */
   getWorkflowGraphRegistry(): WorkflowGraphRegistry {
-    return this.globalContext.container.get(
-      Identifiers.WorkflowGraphRegistry as ServiceIdentifier<WorkflowGraphRegistry>,
-    );
+    return this.getFromContainer(Identifiers.WorkflowGraphRegistry as ServiceIdentifier<WorkflowGraphRegistry>);
   }
+
+  /**
+   * Get the Metrics Registry
+   */
+  getMetricsRegistry(): MetricsRegistry {
+    return this.getFromContainer(Identifiers.MetricsRegistry as ServiceIdentifier<MetricsRegistry>);
+  }
+
+  /**
+   * Get the Skill registry
+   */
+  getSkillRegistry(): SkillRegistry {
+    return this.getFromContainer(Identifiers.SkillRegistry as ServiceIdentifier<SkillRegistry>);
+  }
+
+  /**
+   * Obtain the Agent Loop registry
+   */
+  getAgentLoopRegistry(): AgentLoopRegistry {
+    return this.getFromContainer(Identifiers.AgentLoopRegistry as ServiceIdentifier<AgentLoopRegistry>);
+  }
+
+  /**
+   * Get the Task Registry
+   */
+  getTaskRegistry(): TaskRegistry {
+    return this.getFromContainer(Identifiers.TaskRegistry as ServiceIdentifier<TaskRegistry>);
+  }
+
+  // ============================================================================
+  // Coordinators - Factory-based coordinators
+  // ============================================================================
 
   /**
    * Obtain the workflow lifecycle coordinator
@@ -149,39 +193,12 @@ export class APIDependencyManager {
    * resolves the factory and creates a coordinator instance.
    */
   getWorkflowLifecycleCoordinator(): WorkflowLifecycleCoordinator {
-    const factory = this.globalContext.container.get(
+    const factory = this.getFromContainer(
       Identifiers.WorkflowLifecycleCoordinator as ServiceIdentifier<
         IdBasedServiceFactory<WorkflowLifecycleCoordinator>
       >,
     );
     return (factory as unknown as IdBasedServiceFactory<WorkflowLifecycleCoordinator>).create("");
-  }
-
-  /**
-   * Obtain the LLM wrapper
-   */
-  getLLMWrapper(): LLMWrapper {
-    return this.globalContext.container.get(
-      Identifiers.LLMWrapper as ServiceIdentifier<LLMWrapper>,
-    );
-  }
-
-  /**
-   * Get the Skill registry
-   */
-  getSkillRegistry(): SkillRegistry {
-    return this.globalContext.container.get(
-      Identifiers.SkillRegistry as ServiceIdentifier<SkillRegistry>,
-    );
-  }
-
-  /**
-   * Obtain the Agent Loop registry
-   */
-  getAgentLoopRegistry(): AgentLoopRegistry {
-    return this.globalContext.container.get(
-      Identifiers.AgentLoopRegistry as ServiceIdentifier<AgentLoopRegistry>,
-    );
   }
 
   /**
@@ -192,29 +209,33 @@ export class APIDependencyManager {
    * resolves the factory and creates a coordinator instance.
    */
   getAgentLoopCoordinator(): AgentLoopCoordinator {
-    const factory = this.globalContext.container.get(
-      Identifiers.AgentLoopCoordinator as ServiceIdentifier<
-        NoArgServiceFactory<AgentLoopCoordinator>
-      >,
+    const factory = this.getFromContainer(
+      Identifiers.AgentLoopCoordinator as ServiceIdentifier<NoArgServiceFactory<AgentLoopCoordinator>>,
     );
     return (factory as unknown as NoArgServiceFactory<AgentLoopCoordinator>).create();
   }
 
+  // ============================================================================
+  // Wrappers
+  // ============================================================================
+
   /**
-   * Get the Task Registry
+   * Obtain the LLM wrapper
    */
-  getTaskRegistry(): TaskRegistry {
-    return this.globalContext.container.get(
-      Identifiers.TaskRegistry as ServiceIdentifier<TaskRegistry>,
-    );
+  getLLMWrapper(): LLMWrapper {
+    return this.getFromContainer(Identifiers.LLMWrapper as ServiceIdentifier<LLMWrapper>);
   }
+
+  // ============================================================================
+  // Storage Adapters - Optional adapters with graceful fallback
+  // ============================================================================
 
   /**
    * Get the Checkpoint Storage Adapter (may be null if not configured)
    */
   getCheckpointStorageAdapter(): CheckpointStorageAdapter | null {
     try {
-      return this.globalContext.container.get(
+      return this.getFromContainer(
         Identifiers.CheckpointStorageAdapter as ServiceIdentifier<CheckpointStorageAdapter>,
       ) as CheckpointStorageAdapter | null;
     } catch {
@@ -227,7 +248,7 @@ export class APIDependencyManager {
    */
   getWorkflowStorageAdapter(): WorkflowStorageAdapter | null {
     try {
-      return this.globalContext.container.get(
+      return this.getFromContainer(
         Identifiers.WorkflowStorageAdapter as ServiceIdentifier<WorkflowStorageAdapter>,
       ) as WorkflowStorageAdapter | null;
     } catch {
@@ -240,7 +261,7 @@ export class APIDependencyManager {
    */
   getWorkflowExecutionStorageAdapter(): WorkflowExecutionStorageAdapter | null {
     try {
-      return this.globalContext.container.get(
+      return this.getFromContainer(
         Identifiers.WorkflowExecutionStorageAdapter as ServiceIdentifier<WorkflowExecutionStorageAdapter>,
       ) as WorkflowExecutionStorageAdapter | null;
     } catch {
@@ -253,7 +274,7 @@ export class APIDependencyManager {
    */
   getTaskStorageAdapter(): TaskStorageAdapter | null {
     try {
-      return this.globalContext.container.get(
+      return this.getFromContainer(
         Identifiers.TaskStorageAdapter as ServiceIdentifier<TaskStorageAdapter>,
       ) as TaskStorageAdapter | null;
     } catch {
@@ -266,7 +287,7 @@ export class APIDependencyManager {
    */
   getFileCheckpointManager(): FileCheckpointManager | undefined {
     try {
-      return this.globalContext.container.get(
+      return this.getFromContainer(
         Identifiers.FileCheckpointManager as ServiceIdentifier<FileCheckpointManager>,
       ) as FileCheckpointManager | undefined;
     } catch {
@@ -274,19 +295,14 @@ export class APIDependencyManager {
     }
   }
 
+  // ============================================================================
+  // Context Access
+  // ============================================================================
+
   /**
    * Get the GlobalContext instance
    */
   getGlobalContext(): GlobalContext {
     return this.globalContext;
-  }
-
-  /**
-   * Get the Metrics Registry
-   */
-  getMetricsRegistry(): MetricsRegistry {
-    return this.globalContext.container.get(
-      Identifiers.MetricsRegistry as ServiceIdentifier<MetricsRegistry>,
-    );
   }
 }

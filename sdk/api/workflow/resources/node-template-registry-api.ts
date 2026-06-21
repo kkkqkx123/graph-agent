@@ -8,7 +8,7 @@ import type { NodeTemplate, StaticNode } from "@wf-agent/types";
 import { ValidationError, ConfigurationValidationError, StaticNodeType } from "@wf-agent/types";
 import type { Result } from "@wf-agent/types";
 import { ok, err, getErrorMessage } from "@wf-agent/common-utils";
-import { CrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
+import { SimplifiedCrudResourceAPI } from "../../shared/resources/generic-resource-api.js";
 import type { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
 import type { Timestamp } from "@wf-agent/types";
 import { validateNodeByType } from "../../../workflow/validation/node-validation/index.js";
@@ -56,7 +56,7 @@ export interface NodeTemplateSummary {
  * - Implement all abstract methods to adapt to NodeTemplateRegistry.
  * - Add caching, logging, validation and other enhancements.
  */
-export class NodeRegistryAPI extends CrudResourceAPI<NodeTemplate, string, NodeTemplateFilter> {
+export class NodeRegistryAPI extends SimplifiedCrudResourceAPI<NodeTemplate, string, NodeTemplateFilter> {
   private dependencies: APIDependencyManager;
 
   constructor(dependencies: APIDependencyManager) {

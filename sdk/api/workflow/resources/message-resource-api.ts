@@ -1,9 +1,9 @@
 /**
  * MessageResourceAPI - Message Resource Management API
- *  Inherits from ReadonlyResourceAPI, providing read-only operations
+ *  Inherits from QueryableResourceAPI, providing read-only operations
  */
 
-import { ReadonlyResourceAPI } from "../../shared/resources/generic-resource-api.js";
+import { QueryableResourceAPI } from "../../shared/resources/generic-resource-api.js";
 import type { WorkflowExecutionRegistry } from "../../../workflow/stores/workflow-execution-registry.js";
 import type { LLMMessage } from "@wf-agent/types";
 import { WorkflowExecutionNotFoundError } from "@wf-agent/types";
@@ -40,7 +40,7 @@ export interface MessageStats {
 /**
  * MessageResourceAPI - Message Resource Management API
  */
-export class MessageResourceAPI extends ReadonlyResourceAPI<LLMMessage, string, MessageFilter> {
+export class MessageResourceAPI extends QueryableResourceAPI<LLMMessage, string, MessageFilter> {
   private registry: WorkflowExecutionRegistry;
 
   constructor(deps: APIDependencyManager) {

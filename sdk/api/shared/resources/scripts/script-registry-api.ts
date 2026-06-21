@@ -11,7 +11,7 @@ import {
 
 import type { Script } from "@wf-agent/types";
 import { NotFoundError } from "@wf-agent/types";
-import { CrudResourceAPI } from "../generic-resource-api.js";
+import { SimplifiedCrudResourceAPI } from "../generic-resource-api.js";
 import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
 import type { ScriptFilter } from "../../types/code-types.js";
 
@@ -25,7 +25,7 @@ import type { ScriptFilter } from "../../types/code-types.js";
  * - Unified filtering logic
  * - Maintains backward compatibility
  */
-export class ScriptRegistryAPI extends CrudResourceAPI<Script, string, ScriptFilter> {
+export class ScriptRegistryAPI extends SimplifiedCrudResourceAPI<Script, string, ScriptFilter> {
   private dependencies: APIDependencyManager;
 
   constructor(dependencies: APIDependencyManager) {

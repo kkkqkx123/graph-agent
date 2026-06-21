@@ -1,31 +1,20 @@
 /**
  * ExecuteWorkflowCommand - Execute Workflow Command
  *
- * Responsibilities:
- * - Receives workflow ID and execution options as input
- * - Delegates to WorkflowLifecycleCoordinator to execute workflow
- * - Returns WorkflowExecutionResult as execution result
- *
- * Design Principles:
- * - Follows Command pattern, inherits BaseCommand
- * - Uses dependency injection for ExecutionContext and WorkflowLifecycleCoordinator
- * - Parameter validation is completed in validate() method
- * - Actual execution logic is implemented in executeInternal()
- *
- * Note:
- * - This command is only responsible for executing workflows, not for registering workflow definitions
- * - Workflow registration should be done through a separate API
- * - WorkflowExecution is an execution instance of workflow template
+ * Category: Execution
+ * Long-running workflow execution with full lifecycle management
  */
 
 import {
-  BaseCommand,
+  ExecutionCommand,
   CommandValidationResult,
   validationSuccess,
   validationFailure,
+  type CommandMetadataDefinition,
 } from "../../../shared/types/command.js";
+import { validateRequiredId } from "../../../shared/operations/validation-utils.js";
 import type { WorkflowExecutionResult, WorkflowExecutionOptions } from "@wf-agent/types";
-import { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
 
 /**
  * Execute workflow command parameters
@@ -39,18 +28,26 @@ export interface ExecuteWorkflowParams {
 
 /**
  * Execute Workflow Command
- *
- * Workflow:
- * 1. Validate parameters (workflowId is required)
- * 2. Execute workflow using WorkflowLifecycleCoordinator
- * 3. Return WorkflowExecutionResult
+ * Executes a workflow and returns the execution result
  */
-export class ExecuteWorkflowCommand extends BaseCommand<WorkflowExecutionResult> {
+export class ExecuteWorkflowCommand extends ExecutionCommand<WorkflowExecutionResult> {
   constructor(
     private readonly params: ExecuteWorkflowParams,
     private readonly dependencies: APIDependencyManager,
   ) {
     super();
+  }
+
+  protected override getMetadataDefinition(): CommandMetadataDefinition {
+    return {
+      name: "ExecuteWorkflowCommand",
+      description: "Execute a workflow by ID with optional execution parameters",
+      category: "execution",
+      requiresAuth: false,
+      version: "1.0.0",
+      supportCancellation: true,
+      idempotent: false,
+    };
   }
 
   protected async executeInternal(): Promise<WorkflowExecutionResult> {
@@ -67,13 +64,7 @@ export class ExecuteWorkflowCommand extends BaseCommand<WorkflowExecutionResult>
   }
 
   validate(): CommandValidationResult {
-    const errors: string[] = [];
-
-    // Verification: The workflowId must be provided.
-    if (!this.params.workflowId || this.params.workflowId.trim().length === 0) {
-      errors.push("The workflowId must be provided.");
-    }
-
+    const errors = validateRequiredId(this.params.workflowId, "Workflow ID");
     return errors.length > 0 ? validationFailure(errors) : validationSuccess();
   }
 }

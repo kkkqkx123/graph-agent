@@ -14,9 +14,14 @@
 export {
   Command,
   BaseCommand,
+  ExecutionCommand,
+  ManagementCommand,
+  QueryCommand,
+  StreamingCommand,
   SyncCommand,
   BaseSyncCommand,
   CommandMetadata,
+  CommandMetadataDefinition,
   CommandValidationResult,
   validationSuccess,
   validationFailure,
@@ -99,7 +104,12 @@ export {
 } from "./shared/resources/events/event-resource-api.js";
 
 // Common Resource API Base Classes and Tools
-export { ReadonlyResourceAPI, CrudResourceAPI } from "./shared/resources/generic-resource-api.js";
+export {
+  QueryableResourceAPI,
+  SimplifiedCrudResourceAPI,
+  type WritableResourceAPI,
+  type ClearableResourceAPI,
+} from "./shared/resources/generic-resource-api.js";
 export { createSharedResourceAPIs, type SharedResourceAPIs } from "./shared/resources/index.js";
 
 // Metrics Resource API
@@ -278,6 +288,8 @@ export { ExecuteToolCommand } from "./shared/operations/tools/execute-tool-comma
 // ============================================================================
 // Agent - Commands
 // ============================================================================
+
+// Execution Commands
 export {
   RunAgentLoopCommand,
   type RunAgentLoopParams,
@@ -288,6 +300,7 @@ export {
   type RunAgentLoopStreamParams,
 } from "./agent/operations/run-agent-loop-stream-command.js";
 
+// Control Commands
 export {
   CancelAgentLoopCommand,
   type CancelAgentLoopParams,
@@ -389,6 +402,15 @@ export type { CommandError } from "./shared/types/command-error.js";
 // Shared - Utilities
 // ============================================================================
 export { Observable, create, type Observer } from "./shared/utils/observable.js";
+
+// Validation utilities for Commands
+export {
+  validateRequiredString,
+  validateRequiredId,
+  validateOptionalPositiveInt,
+  validateRequiredEntity,
+  combineErrors,
+} from "./shared/operations/validation-utils.js";
 
 // ============================================================================
 // Shared - Configuration Parsing Utilities

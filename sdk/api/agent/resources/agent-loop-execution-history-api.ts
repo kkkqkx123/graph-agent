@@ -15,7 +15,7 @@
  * - Event filtering and aggregation
  */
 
-import { ReadonlyResourceAPI } from "../../shared/resources/generic-resource-api.js";
+import { QueryableResourceAPI } from "../../shared/resources/generic-resource-api.js";
 import type { APIDependencyManager } from "@sdk/api/shared/core/sdk-dependencies.js";
 import type { ID, ToolCallRecord } from "@wf-agent/types";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
@@ -381,7 +381,7 @@ export interface ExecutionTimelineStats {
  * Provides unified access to all execution events (errors and interruptions)
  * during agent loop execution
  */
-export class AgentLoopExecutionHistoryAPI extends ReadonlyResourceAPI<
+export class AgentLoopExecutionHistoryAPI extends QueryableResourceAPI<
   ExecutionEvent,
   string,
   ExecutionEventFilter

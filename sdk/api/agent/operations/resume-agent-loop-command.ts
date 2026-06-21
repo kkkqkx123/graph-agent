@@ -1,49 +1,49 @@
 /**
  * ResumeAgentLoopCommand - Resume Agent Loop Command
  *
- * Responsibilities:
- * - Encapsulates Agent Loop resume operation as Command pattern
- * - Provides unified API layer interface
- * - Supports parameter validation
- *
- * Design Principles:
- * - Follows Command pattern, inherits BaseCommand
- * - Uses dependency injection for AgentLoopRegistry
- * - Parameter validation is completed in validate() method
+ * Category: Management
+ * Resumes a paused agent loop execution
  */
 
 import {
-  BaseCommand,
+  ManagementCommand,
   CommandValidationResult,
   validationSuccess,
   validationFailure,
+  type CommandMetadataDefinition,
 } from "../../shared/types/command.js";
 import type { ID } from "@wf-agent/types";
 import type { APIDependencyManager } from "@sdk/api/shared/core/sdk-dependencies.js";
 
 /**
- * Restore Agent loop command parameters
+ * Resume Agent Loop command parameters
  */
 export interface ResumeAgentLoopParams {
-  /** Agent Loop ID */
+  /** Agent Loop ID to resume */
   agentLoopId: ID;
 }
 
 /**
  * Resume Agent Loop Command
- *
- * Workflow:
- * 1. Validate parameters (agentLoopId is required)
- * 2. Get AgentLoopEntity
- * 3. Call resume() method to resume execution
- * 4. Return resume result
  */
-export class ResumeAgentLoopCommand extends BaseCommand<void> {
+export class ResumeAgentLoopCommand extends ManagementCommand<void> {
   constructor(
     private readonly params: ResumeAgentLoopParams,
     private readonly dependencies: APIDependencyManager,
   ) {
     super();
+  }
+
+  protected override getMetadataDefinition(): CommandMetadataDefinition {
+    return {
+      name: "ResumeAgentLoopCommand",
+      description: "Resume a paused agent loop",
+      category: "management",
+      requiresAuth: false,
+      version: "1.0.0",
+      supportUndo: true,
+      idempotent: false,
+    };
   }
 
   protected async executeInternal(): Promise<void> {
