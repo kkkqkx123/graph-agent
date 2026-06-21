@@ -195,52 +195,56 @@ export {
 } from "./workflow/resources/user-interaction-resource-api.js";
 
 // ============================================================================
-// Workflow - Command class (with side-effect operations)
+// Commands - Unified Command Interface
 // ============================================================================
 
-// Execution Commands
-export { ExecuteWorkflowCommand } from "./workflow/operations/execution/execute-workflow-command.js";
-export type { ExecuteWorkflowParams } from "./workflow/operations/execution/execute-workflow-command.js";
+// Shared Commands
+export { GenerateCommand, type GenerateParams } from "./shared/operations/generate-command.js";
+export { GenerateBatchCommand, type GenerateBatchParams } from "./shared/operations/generate-batch-command.js";
+export { ExecuteToolCommand, type ExecuteToolParams } from "./shared/operations/tools/execute-tool-command.js";
+export { ExecuteScriptCommand, type ExecuteScriptParams } from "./shared/operations/scripts/execute-script-command.js";
+export { DispatchEventCommand, type DispatchEventParams } from "./shared/operations/events/dispatch-event-command.js";
 
-export { ExecuteWorkflowStreamCommand } from "./workflow/operations/execution/execute-workflow-stream-command.js";
-export type { ExecuteWorkflowStreamParams } from "./workflow/operations/execution/execute-workflow-stream-command.js";
+// Workflow Commands
+export { ExecuteWorkflowCommand, type ExecuteWorkflowParams } from "./workflow/operations/execution/execute-workflow-command.js";
+export { ExecuteWorkflowStreamCommand, type ExecuteWorkflowStreamParams } from "./workflow/operations/execution/execute-workflow-stream-command.js";
+export { PauseWorkflowCommand, type PauseWorkflowParams } from "./workflow/operations/execution/pause-workflow-command.js";
+export { ResumeWorkflowCommand, type ResumeWorkflowParams } from "./workflow/operations/execution/resume-workflow-command.js";
+export { CancelWorkflowCommand, type CancelWorkflowParams } from "./workflow/operations/execution/cancel-workflow-command.js";
+export { CreateCheckpointCommand as WorkflowCreateCheckpointCommand, type CreateCheckpointParams as WorkflowCreateCheckpointParams } from "./workflow/operations/checkpoints/create-checkpoint-command.js";
+export { RestoreFromCheckpointCommand, type RestoreFromCheckpointParams } from "./workflow/operations/checkpoints/restore-from-checkpoint-command.js";
+export { EnableTriggerCommand, type EnableTriggerParams } from "./workflow/operations/triggers/enable-trigger-command.js";
+export { DisableTriggerCommand, type DisableTriggerParams } from "./workflow/operations/triggers/disable-trigger-command.js";
 
-export { PauseWorkflowCommand } from "./workflow/operations/execution/pause-workflow-command.js";
+// Agent Commands
+export { RunAgentLoopCommand, type RunAgentLoopParams } from "./agent/operations/run-agent-loop-command.js";
+export { RunAgentLoopStreamCommand, type RunAgentLoopStreamParams } from "./agent/operations/run-agent-loop-stream-command.js";
+export { CancelAgentLoopCommand, type CancelAgentLoopParams } from "./agent/operations/cancel-agent-loop-command.js";
+export { PauseAgentLoopCommand, type PauseAgentLoopParams } from "./agent/operations/pause-agent-loop-command.js";
+export { ResumeAgentLoopCommand, type ResumeAgentLoopParams } from "./agent/operations/resume-agent-loop-command.js";
+export { CreateCheckpointCommand as AgentCreateCheckpointCommand, type CreateCheckpointParams as AgentCreateCheckpointParams } from "./agent/operations/checkpoints/create-checkpoint-command.js";
+export { RestoreCheckpointCommand as AgentRestoreCheckpointCommand, type RestoreCheckpointParams as AgentRestoreCheckpointParams } from "./agent/operations/checkpoints/restore-checkpoint-command.js";
 
-export { ResumeWorkflowCommand } from "./workflow/operations/execution/resume-workflow-command.js";
-
-export { CancelWorkflowCommand } from "./workflow/operations/execution/cancel-workflow-command.js";
-
-// Checkpoint Commands
-export { CreateCheckpointCommand as WorkflowCreateCheckpointCommand } from "./workflow/operations/checkpoints/create-checkpoint-command.js";
-export type { CreateCheckpointParams as WorkflowCreateCheckpointParams } from "./workflow/operations/checkpoints/create-checkpoint-command.js";
-
-export { RestoreFromCheckpointCommand } from "./workflow/operations/checkpoints/restore-from-checkpoint-command.js";
-export type { RestoreFromCheckpointParams } from "./workflow/operations/checkpoints/restore-from-checkpoint-command.js";
-
-// Trigger Commands
-export { EnableTriggerCommand } from "./workflow/operations/triggers/enable-trigger-command.js";
-export type { EnableTriggerParams } from "./workflow/operations/triggers/enable-trigger-command.js";
-
-export { DisableTriggerCommand } from "./workflow/operations/triggers/disable-trigger-command.js";
-export type { DisableTriggerParams } from "./workflow/operations/triggers/disable-trigger-command.js";
-
-// Subscriptions
+// Command Validators
 export {
-  OnEventSubscription,
-  OnceEventSubscription,
-  WaitForEventSubscription,
-  createExecutionScopedSubscription,
-  createExecutionScopedOnceSubscription,
-} from "./shared/types/subscription.js";
-
-// ============================================================================
-// Shared - Command class (with side-effect operations)
-// ============================================================================
-
-// Event Commands - Shared across all modules
-export { DispatchEventCommand } from "./shared/operations/events/dispatch-event-command.js";
-export type { DispatchEventParams } from "./shared/operations/events/dispatch-event-command.js";
+  validateGenerateParams,
+  validateToolExecutionParams,
+  validateScriptExecutionParams,
+  validateEventDispatchParams,
+} from "./shared/operations/validators/shared-validators.js";
+export {
+  validateWorkflowExecutionParams,
+  validateWorkflowLifecycleParams,
+  validateCheckpointCreationParams,
+  validateCheckpointRestorationParams,
+  validateTriggerParams,
+} from "./shared/operations/validators/workflow-validators.js";
+export {
+  validateAgentLoopRunParams,
+  validateAgentLoopControlParams,
+  validateAgentCheckpointCreationParams,
+  validateAgentCheckpointRestorationParams,
+} from "./shared/operations/validators/agent-validators.js";
 
 // ============================================================================
 // Workflow - Builder
@@ -269,63 +273,6 @@ export {
   validateTriggerReference as validateTriggerReferenceAPI,
   validateTriggers as validateTriggersAPI,
 } from "../shared/validation/index.js";
-
-// ============================================================================
-// Shared - Commands (LLM, Tool, Script)
-// ============================================================================
-
-// LLM Commands
-export { GenerateCommand } from "./shared/operations/generate-command.js";
-
-export { GenerateBatchCommand } from "./shared/operations/generate-batch-command.js";
-
-// Script Commands
-export { ExecuteScriptCommand } from "./shared/operations/scripts/execute-script-command.js";
-
-// Tool Commands
-export { ExecuteToolCommand } from "./shared/operations/tools/execute-tool-command.js";
-
-// ============================================================================
-// Agent - Commands
-// ============================================================================
-
-// Execution Commands
-export {
-  RunAgentLoopCommand,
-  type RunAgentLoopParams,
-} from "./agent/operations/run-agent-loop-command.js";
-
-export {
-  RunAgentLoopStreamCommand,
-  type RunAgentLoopStreamParams,
-} from "./agent/operations/run-agent-loop-stream-command.js";
-
-// Control Commands
-export {
-  CancelAgentLoopCommand,
-  type CancelAgentLoopParams,
-} from "./agent/operations/cancel-agent-loop-command.js";
-
-export {
-  PauseAgentLoopCommand,
-  type PauseAgentLoopParams,
-} from "./agent/operations/pause-agent-loop-command.js";
-
-export {
-  ResumeAgentLoopCommand,
-  type ResumeAgentLoopParams,
-} from "./agent/operations/resume-agent-loop-command.js";
-
-// Agent Checkpoint Commands
-export {
-  CreateCheckpointCommand,
-  type CreateCheckpointParams,
-} from "./agent/operations/checkpoints/create-checkpoint-command.js";
-
-export {
-  RestoreCheckpointCommand,
-  type RestoreCheckpointParams,
-} from "./agent/operations/checkpoints/restore-checkpoint-command.js";
 
 // ============================================================================
 // Agent - Resources

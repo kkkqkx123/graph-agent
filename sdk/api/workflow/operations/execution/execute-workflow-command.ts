@@ -7,12 +7,10 @@
 
 import {
   ExecutionCommand,
-  CommandValidationResult,
-  validationSuccess,
-  validationFailure,
   type CommandMetadataDefinition,
 } from "../../../shared/types/command.js";
-import { validateRequiredId } from "../../../shared/operations/validation-utils.js";
+import { validateWorkflowExecutionParams } from "../../../shared/operations/validators/workflow-validators.js";
+import type { CommandValidationResult } from "../../../shared/types/command.js";
 import type { WorkflowExecutionResult, WorkflowExecutionOptions } from "@wf-agent/types";
 import type { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
 
@@ -64,7 +62,6 @@ export class ExecuteWorkflowCommand extends ExecutionCommand<WorkflowExecutionRe
   }
 
   validate(): CommandValidationResult {
-    const errors = validateRequiredId(this.params.workflowId, "Workflow ID");
-    return errors.length > 0 ? validationFailure(errors) : validationSuccess();
+    return validateWorkflowExecutionParams(this.params.workflowId);
   }
 }

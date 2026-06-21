@@ -7,11 +7,10 @@
 
 import {
   ManagementCommand,
-  CommandValidationResult,
-  validationSuccess,
-  validationFailure,
   type CommandMetadataDefinition,
 } from "../../shared/types/command.js";
+import { validateAgentLoopControlParams } from "../../shared/operations/validators/agent-validators.js";
+import type { CommandValidationResult } from "../../shared/types/command.js";
 import type { ID } from "@wf-agent/types";
 import type { APIDependencyManager } from "@sdk/api/shared/core/sdk-dependencies.js";
 
@@ -66,13 +65,6 @@ export class CancelAgentLoopCommand extends ManagementCommand<void> {
   }
 
   validate(): CommandValidationResult {
-    const errors: string[] = [];
-
-    // Verification: The agentLoopId must be provided.
-    if (!this.params.agentLoopId) {
-      errors.push("agentLoopId must be provided");
-    }
-
-    return errors.length > 0 ? validationFailure(errors) : validationSuccess();
+    return validateAgentLoopControlParams(this.params.agentLoopId);
   }
 }

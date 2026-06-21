@@ -7,12 +7,10 @@
 
 import {
   StreamingCommand,
-  CommandValidationResult,
-  validationSuccess,
-  validationFailure,
   type CommandMetadataDefinition,
 } from "../../../shared/types/command.js";
-import { validateRequiredId } from "../../../shared/operations/validation-utils.js";
+import { validateWorkflowExecutionParams } from "../../../shared/operations/validators/workflow-validators.js";
+import type { CommandValidationResult } from "../../../shared/types/command.js";
 import type { WorkflowExecutionOptions, BaseEvent } from "@wf-agent/types";
 import type { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
 import type { WorkflowExecutionBuildResult } from "../../../../workflow/execution/factories/workflow-execution-builder.js";
@@ -166,7 +164,6 @@ export class ExecuteWorkflowStreamCommand extends StreamingCommand<AsyncGenerato
   }
 
   validate(): CommandValidationResult {
-    const errors = validateRequiredId(this.params.workflowId, "Workflow ID");
-    return errors.length > 0 ? validationFailure(errors) : validationSuccess();
+    return validateWorkflowExecutionParams(this.params.workflowId);
   }
 }

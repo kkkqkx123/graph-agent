@@ -12,6 +12,7 @@ import {
   validationFailure,
   type CommandMetadataDefinition,
 } from "../../types/command.js";
+import { validateScriptExecutionParams } from "../../shared/operations/validators/shared-validators.js";
 import type { ScriptOptions } from "../../types/code-types.js";
 import type { ScriptExecutionResult } from "@wf-agent/types";
 import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
@@ -59,10 +60,6 @@ export class ExecuteScriptCommand extends ExecutionCommand<ScriptExecutionResult
       sandbox: this.params.options?.sandbox,
     };
 
-    // Verify the script exists and is valid
-    const script = this.dependencies.getScriptService().getScript(this.params.scriptName);
-    this.dependencies.getScriptService().validateScript(script);
-
     // Execute the script.
     const result = await this.dependencies
       .getScriptExecutor()
@@ -82,12 +79,22 @@ export class ExecuteScriptCommand extends ExecutionCommand<ScriptExecutionResult
   }
 
   validate(): CommandValidationResult {
-    const errors: string[] = [];
-
-    if (!this.params.scriptName || this.params.scriptName.trim().length === 0) {
-      errors.push("Script name cannot be empty");
+    // Use shared validator for parameter validation
+    const result = validateScriptExecutionParams(this.params.scriptName);
+    if (!result.valid) {
+      return result;
     }
 
-    return errors.length > 0 ? validationFailure(errors) : validationSuccess();
+    // Verify the script exists and is valid
+    const script = this.dependencies.getScriptService().getScript(this.params.scriptName);
+    try {
+      this.dependencies.getScriptService().validateScript(script);
+    } catch (error) {
+      return validationFailure([
+        `Script validation failed: ${error instanceof Error ? error.message : String(error)}`,
+      ]);
+    }
+
+    return validationSuccess();
   }
 }

@@ -7,13 +7,11 @@
 
 import {
   ManagementCommand,
-  CommandValidationResult,
-  validationSuccess,
-  validationFailure,
   type CommandMetadataDefinition,
 } from "../../../shared/types/command.js";
+import { validateAgentCheckpointCreationParams } from "../../../shared/operations/validators/agent-validators.js";
+import type { CommandValidationResult } from "../../../shared/types/command.js";
 import type { ID, CheckpointMetadata } from "@wf-agent/types";
-import { AgentLoopCheckpointResourceAPI } from "../../resources/checkpoint-resource-api.js";
 import type { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
 
 /**
@@ -30,15 +28,11 @@ export interface CreateCheckpointParams {
  * Create Checkpoint Command
  */
 export class CreateCheckpointCommand extends ManagementCommand<string> {
-  private checkpointAPI: AgentLoopCheckpointResourceAPI;
-
   constructor(
     private readonly params: CreateCheckpointParams,
     private readonly dependencies: APIDependencyManager,
-    checkpointAPI?: AgentLoopCheckpointResourceAPI,
   ) {
     super();
-    this.checkpointAPI = checkpointAPI ?? new AgentLoopCheckpointResourceAPI();
   }
 
   protected override getMetadataDefinition(): CommandMetadataDefinition {
@@ -54,6 +48,7 @@ export class CreateCheckpointCommand extends ManagementCommand<string> {
   }
 
   protected async executeInternal(): Promise<string> {
+    const checkpointAPI = this.dependencies.getAgentLoopCheckpointResourceAPI();
     const registry = this.dependencies.getAgentLoopRegistry();
 
     // Getting the Agent Loop Entity
@@ -63,19 +58,12 @@ export class CreateCheckpointCommand extends ManagementCommand<string> {
     }
 
     // Creating Checkpoints
-    const checkpointId = await this.checkpointAPI.createCheckpoint(entity, this.params.metadata);
+    const checkpointId = await checkpointAPI.createCheckpoint(entity, this.params.metadata);
 
     return checkpointId;
   }
 
   validate(): CommandValidationResult {
-    const errors: string[] = [];
-
-    // Validation: agentLoopId must be provided
-    if (!this.params.agentLoopId) {
-      errors.push("Must provide agentLoopId");
-    }
-
-    return errors.length > 0 ? validationFailure(errors) : validationSuccess();
+    return validateAgentCheckpointCreationParams(this.params.agentLoopId);
   }
 }

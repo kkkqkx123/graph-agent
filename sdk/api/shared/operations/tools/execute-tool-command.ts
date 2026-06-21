@@ -12,6 +12,7 @@ import {
   validationFailure,
   type CommandMetadataDefinition,
 } from "../../types/command.js";
+import { validateToolExecutionParams } from "../../shared/operations/validators/shared-validators.js";
 import type { ID, ToolExecutionResult } from "@wf-agent/types";
 import type { ToolOptions } from "../../resources/tools/tool-registry-api.js";
 import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
@@ -59,15 +60,7 @@ export class ExecuteToolCommand extends ExecutionCommand<ToolExecutionResult> {
       enableLogging: this.params.options?.enableLogging ?? true,
     };
 
-    // Verify tool parameters
-    const validation = this.dependencies
-      .getToolService()
-      .validateParameters(this.params.toolId, this.params.parameters);
-    if (!validation.valid) {
-      throw new Error(`Parameter validation failed: ${validation.errors.join(", ")}`);
-    }
-
-    // Execution Tool
+    // Execute Tool
     const result = await this.dependencies
       .getToolService()
       .execute(this.params.toolId, this.params.parameters, executionOptions);
@@ -88,16 +81,20 @@ export class ExecuteToolCommand extends ExecutionCommand<ToolExecutionResult> {
   }
 
   validate(): CommandValidationResult {
-    const errors: string[] = [];
-
-    if (!this.params.toolId || this.params.toolId.trim().length === 0) {
-      errors.push("The tool ID cannot be empty.");
+    // Use shared validator for parameter validation
+    const result = validateToolExecutionParams(this.params.toolId, this.params.parameters);
+    if (!result.valid) {
+      return result;
     }
 
-    if (!this.params.parameters) {
-      errors.push("The parameter cannot be null.");
+    // Validate tool parameters with the tool service
+    const toolValidation = this.dependencies
+      .getToolService()
+      .validateParameters(this.params.toolId, this.params.parameters);
+    if (!toolValidation.valid) {
+      return validationFailure(toolValidation.errors);
     }
 
-    return errors.length > 0 ? validationFailure(errors) : validationSuccess();
+    return validationSuccess();
   }
 }

@@ -40,6 +40,7 @@ import type { GlobalContext } from "../../../shared/global-context.js";
 import type { LLMWrapper } from "../../../services/llm/wrapper.js";
 import type { WorkflowLifecycleCoordinator } from "../../../workflow/execution/coordinators/workflow-lifecycle-coordinator.js";
 import type { IdBasedServiceFactory, NoArgServiceFactory } from "../../../di/factory-types.js";
+import { AgentLoopCheckpointResourceAPI } from "../../agent/resources/checkpoint-resource-api.js";
 
 /**
  * API Dependency Management Class
@@ -293,6 +294,18 @@ export class APIDependencyManager {
     } catch {
       return undefined;
     }
+  }
+
+  // ============================================================================
+  // Resource APIs
+  // ============================================================================
+
+  /**
+   * Get the Agent Loop Checkpoint Resource API
+   * Provides checkpoint CRUD operations for agent loops
+   */
+  getAgentLoopCheckpointResourceAPI(): AgentLoopCheckpointResourceAPI {
+    return new AgentLoopCheckpointResourceAPI();
   }
 
   // ============================================================================

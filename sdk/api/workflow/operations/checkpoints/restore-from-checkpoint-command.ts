@@ -7,11 +7,10 @@
 
 import {
   ManagementCommand,
-  CommandValidationResult,
-  validationSuccess,
-  validationFailure,
   type CommandMetadataDefinition,
 } from "../../../shared/types/command.js";
+import { validateCheckpointRestorationParams } from "../../../shared/operations/validators/workflow-validators.js";
+import type { CommandValidationResult } from "../../../shared/types/command.js";
 import { CheckpointCoordinator } from "../../../../workflow/checkpoint/checkpoint-coordinator.js";
 import type { WorkflowExecution } from "@wf-agent/types";
 import type { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
@@ -49,16 +48,10 @@ export class RestoreFromCheckpointCommand extends ManagementCommand<WorkflowExec
   }
 
   /**
-   * Verify command parameters
+   * Verify command parameters using shared validator
    */
   validate(): CommandValidationResult {
-    const errors: string[] = [];
-
-    if (!this.params.checkpointId || this.params.checkpointId.trim() === "") {
-      errors.push("Checkpoint ID cannot be null");
-    }
-
-    return errors.length > 0 ? validationFailure(errors) : validationSuccess();
+    return validateCheckpointRestorationParams(this.params.checkpointId);
   }
 
   /**

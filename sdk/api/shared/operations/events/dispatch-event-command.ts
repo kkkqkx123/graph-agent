@@ -7,11 +7,10 @@
 
 import {
   ManagementCommand,
-  CommandValidationResult,
-  validationFailure,
-  validationSuccess,
   type CommandMetadataDefinition,
 } from "../../types/command.js";
+import { validateEventDispatchParams } from "../../shared/operations/validators/shared-validators.js";
+import type { CommandValidationResult } from "../../types/command.js";
 import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
 import type { Event } from "@wf-agent/types";
 import { emit } from "../../../../shared/utils/event/emit-event.js";
@@ -48,18 +47,10 @@ export class DispatchEventCommand extends ManagementCommand<void> {
   }
 
   /**
-   * Validate command parameters
+   * Validate command parameters using shared validator
    */
   validate(): CommandValidationResult {
-    const errors: string[] = [];
-
-    if (!this.params.event) {
-      errors.push("Event object cannot be empty");
-    } else if (!this.params.event.type) {
-      errors.push("Event type cannot be empty");
-    }
-
-    return errors.length > 0 ? validationFailure(errors) : validationSuccess();
+    return validateEventDispatchParams(this.params.event);
   }
 
   /**

@@ -223,7 +223,7 @@ export abstract class ExecutionCommand<T> extends BaseCommand<T> {
   /**
    * Override metadata with execution-specific defaults
    */
-  override protected getMetadataDefinition(): CommandMetadataDefinition {
+  protected override getMetadataDefinition(): CommandMetadataDefinition {
     return {
       ...super.getMetadataDefinition(),
       category: "execution",
@@ -241,7 +241,7 @@ export abstract class ManagementCommand<T> extends BaseCommand<T> {
   /**
    * Override metadata with management-specific defaults
    */
-  override protected getMetadataDefinition(): CommandMetadataDefinition {
+  protected override getMetadataDefinition(): CommandMetadataDefinition {
     return {
       ...super.getMetadataDefinition(),
       category: "management",
@@ -277,7 +277,7 @@ export abstract class QueryCommand<T> extends BaseCommand<T> {
   /**
    * Override metadata with query-specific defaults
    */
-  override protected getMetadataDefinition(): CommandMetadataDefinition {
+  protected override getMetadataDefinition(): CommandMetadataDefinition {
     return {
       ...super.getMetadataDefinition(),
       category: "query",
@@ -295,7 +295,7 @@ export abstract class StreamingCommand<T> extends ExecutionCommand<T> {
   /**
    * Streaming-specific metadata
    */
-  override protected getMetadataDefinition(): CommandMetadataDefinition {
+  protected override getMetadataDefinition(): CommandMetadataDefinition {
     return {
       ...super.getMetadataDefinition(),
       supportCancellation: true,

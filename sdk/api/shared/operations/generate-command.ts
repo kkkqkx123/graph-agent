@@ -8,10 +8,9 @@
 import {
   ExecutionCommand,
   CommandValidationResult,
-  validationSuccess,
-  validationFailure,
   type CommandMetadataDefinition,
 } from "../types/command.js";
+import { validateGenerateParams } from "./validators/index.js";
 import type { LLMRequest, LLMResult } from "@wf-agent/types";
 import type { APIDependencyManager } from "@sdk/api/shared/core/sdk-dependencies.js";
 
@@ -60,14 +59,6 @@ export class GenerateCommand extends ExecutionCommand<LLMResult> {
   }
 
   validate(): CommandValidationResult {
-    const errors: string[] = [];
-
-    if (!this.params.request) {
-      errors.push("LLM request must be provided.");
-    } else if (!this.params.request.messages || this.params.request.messages.length === 0) {
-      errors.push("The message list cannot be empty.");
-    }
-
-    return errors.length > 0 ? validationFailure(errors) : validationSuccess();
+    return validateGenerateParams(this.params.request);
   }
 }

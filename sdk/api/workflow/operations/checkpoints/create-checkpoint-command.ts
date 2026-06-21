@@ -7,11 +7,10 @@
 
 import {
   ManagementCommand,
-  CommandValidationResult,
-  validationSuccess,
-  validationFailure,
   type CommandMetadataDefinition,
 } from "../../../shared/types/command.js";
+import { validateCheckpointCreationParams } from "../../../shared/operations/validators/workflow-validators.js";
+import type { CommandValidationResult } from "../../../shared/types/command.js";
 import type { CheckpointMetadata } from "@wf-agent/types";
 import { WorkflowExecutionNotFoundError } from "@wf-agent/types";
 import { CheckpointCoordinator } from "../../../../workflow/checkpoint/checkpoint-coordinator.js";
@@ -82,12 +81,6 @@ export class CreateCheckpointCommand extends ManagementCommand<string> {
   }
 
   validate(): CommandValidationResult {
-    const errors: string[] = [];
-
-    if (!this.params.executionId || this.params.executionId.trim().length === 0) {
-      errors.push("executionId must be provided");
-    }
-
-    return errors.length > 0 ? validationFailure(errors) : validationSuccess();
+    return validateCheckpointCreationParams(this.params.executionId);
   }
 }

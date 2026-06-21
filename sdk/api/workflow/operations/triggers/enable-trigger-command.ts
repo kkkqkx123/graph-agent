@@ -7,11 +7,10 @@
 
 import {
   ManagementCommand,
-  CommandValidationResult,
-  validationFailure,
-  validationSuccess,
   type CommandMetadataDefinition,
 } from "../../../shared/types/command.js";
+import { validateTriggerParams } from "../../../shared/operations/validators/workflow-validators.js";
+import type { CommandValidationResult } from "../../../shared/types/command.js";
 import { WorkflowExecutionNotFoundError } from "@wf-agent/types";
 import type { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
 
@@ -49,20 +48,10 @@ export class EnableTriggerCommand extends ManagementCommand<void> {
   }
 
   /**
-   * Verifying Command Parameters
+   * Verify command parameters using shared validator
    */
   validate(): CommandValidationResult {
-    const errors: string[] = [];
-
-    if (!this.params.executionId || this.params.executionId.trim() === "") {
-      errors.push("Execution ID cannot be empty.");
-    }
-
-    if (!this.params.triggerId || this.params.triggerId.trim() === "") {
-      errors.push("Trigger ID cannot be empty.");
-    }
-
-    return errors.length > 0 ? validationFailure(errors) : validationSuccess();
+    return validateTriggerParams(this.params.executionId, this.params.triggerId);
   }
 
   /**

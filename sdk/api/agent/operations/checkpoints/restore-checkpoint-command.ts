@@ -7,13 +7,12 @@
 
 import {
   ManagementCommand,
-  CommandValidationResult,
-  validationSuccess,
-  validationFailure,
   type CommandMetadataDefinition,
 } from "../../../shared/types/command.js";
+import { validateAgentCheckpointRestorationParams } from "../../../shared/operations/validators/agent-validators.js";
+import type { CommandValidationResult } from "../../../shared/types/command.js";
 import type { AgentLoopEntity } from "../../../../agent/entities/agent-loop-entity.js";
-import { AgentLoopCheckpointResourceAPI } from "../../resources/checkpoint-resource-api.js";
+import type { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
 
 /**
  * Restore checkpoint command parameters
@@ -28,14 +27,11 @@ export interface RestoreCheckpointParams {
  * Restores agent loop execution state from a checkpoint
  */
 export class RestoreCheckpointCommand extends ManagementCommand<AgentLoopEntity> {
-  private checkpointAPI: AgentLoopCheckpointResourceAPI;
-
   constructor(
     private readonly params: RestoreCheckpointParams,
-    checkpointAPI?: AgentLoopCheckpointResourceAPI,
+    private readonly dependencies: APIDependencyManager,
   ) {
     super();
-    this.checkpointAPI = checkpointAPI ?? new AgentLoopCheckpointResourceAPI();
   }
 
   protected override getMetadataDefinition(): CommandMetadataDefinition {
@@ -51,19 +47,13 @@ export class RestoreCheckpointCommand extends ManagementCommand<AgentLoopEntity>
   }
 
   protected async executeInternal(): Promise<AgentLoopEntity> {
+    const checkpointAPI = this.dependencies.getAgentLoopCheckpointResourceAPI();
     // Restore from a checkpoint
-    const entity = await this.checkpointAPI.restoreFromCheckpoint(this.params.checkpointId);
+    const entity = await checkpointAPI.restoreFromCheckpoint(this.params.checkpointId);
     return entity;
   }
 
   validate(): CommandValidationResult {
-    const errors: string[] = [];
-
-    // Verification: The checkpointId must be provided.
-    if (!this.params.checkpointId || this.params.checkpointId.trim() === "") {
-      errors.push("The checkpoint ID cannot be empty.");
-    }
-
-    return errors.length > 0 ? validationFailure(errors) : validationSuccess();
+    return validateAgentCheckpointRestorationParams(this.params.checkpointId);
   }
 }
