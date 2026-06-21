@@ -39,6 +39,13 @@ export interface TriggerExecutorConfig {
    * - "throw": Re-throw immediately, stop processing remaining triggers
    */
   errorHandling?: "silent" | "log" | "throw";
+  /** Execution context for variable resolution in trigger conditions */
+  executionContext?: Record<string, unknown>;
+  /** State manager for trigger limit tracking (optional) */
+  stateManager?: {
+    getTriggerState(triggerId: string): Record<string, unknown> | undefined;
+    setTriggerState(triggerId: string, state: Record<string, unknown>): void;
+  };
 }
 
 /**
@@ -74,14 +81,23 @@ export async function executeTriggers<T extends BaseTriggerDefinition>(
   } as Required<TriggerExecutorConfig>;
   const results: TriggerExecutionResult[] = [];
 
-  // Step 1: Match triggers using matcher + limiter
-  const matchedTriggers = matchTriggers(triggers, event);
+  // Step 1: Match triggers using matcher + limiter (with execution context)
+  const matchedTriggers = matchTriggers(triggers, event, undefined, config.executionContext);
 
   // Step 2: Execute matched triggers in serial (keeping predictable ordering)
   for (const trigger of matchedTriggers) {
     try {
       const result = await handler(trigger, event);
       incrementTriggerCount(trigger);
+
+      // Track trigger state if state manager is provided
+      if (config.stateManager) {
+        const state = config.stateManager.getTriggerState(trigger.id) || {};
+        state['fireCount'] = ((state['fireCount'] as number) || 0) + 1;
+        state['lastFiredAt'] = Date.now();
+        config.stateManager.setTriggerState(trigger.id, state);
+      }
+
       results.push(result);
     } catch (error) {
       const errorResult: TriggerExecutionResult = {

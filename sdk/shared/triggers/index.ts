@@ -33,3 +33,7 @@ export {
 // Executor
 export { executeTriggers } from "./executor.js";
 export type { TriggerExecutorConfig } from "./executor.js";
+
+// Trigger State Manager
+export { TriggerStateManager } from "./trigger-state-manager.js";
+export type { TriggerState } from "./trigger-state-manager.js";

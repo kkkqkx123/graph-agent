@@ -28,6 +28,7 @@ import type { AgentHook } from "./hooks.js";
 import type { AgentLoopStatus, AgentLoopResult } from "./types.js";
 import type { AgentToolConfig } from "../agent/tool-config.js";
 import type { DynamicContextConfig } from "../dynamic-context.js";
+import type { AgentTrigger } from "./triggers.js";
 
 // =============================================================================
 // Dynamic Prompt Injection (Two-Layer Design)
@@ -161,6 +162,9 @@ export interface AgentLoopRuntimeConfig {
 
   /** Hook configuration list (with parsed Condition objects) */
   hooks?: AgentHook[];
+
+  /** Trigger configuration list (with parsed Condition objects) */
+  triggers?: AgentTrigger[];
 
   // ========== Dynamic System Prompt Generation ==========
 

@@ -61,6 +61,16 @@ export interface AgentLoopStateSnapshot {
   /** Pending tool call IDs that were in-flight at checkpoint time */
   pendingToolCallIds?: string[];
 
+  // ========== Trigger state (for tracking trigger fires and limits) ==========
+
+  /** Trigger state snapshot (serialized from TriggerStateManager) */
+  triggerState?: Record<string, {
+    triggerId: string;
+    fireCount: number;
+    lastFiredAt?: number;
+    metadata?: Record<string, unknown>;
+  }>;
+
   /** Allow additional properties for extensibility */
   [key: string]: unknown;
 }

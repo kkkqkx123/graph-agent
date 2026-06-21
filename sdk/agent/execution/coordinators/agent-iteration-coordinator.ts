@@ -47,6 +47,7 @@ import {
   buildMessageAddedEvent,
 } from "../../../shared/utils/event/builders/index.js";
 import { ToolExecutionCoordinator } from "./tool-execution-coordinator.js";
+import { executeAgentTriggers } from "../handlers/trigger-handlers/index.js";
 
 /**
  * Agent Loop Stream Event (union of message-level and agent-level stream events)
@@ -209,6 +210,7 @@ export class AgentIterationCoordinator {
 
       entity.state.endIteration(response.content);
       await executeAgentHook(entity, "AFTER_ITERATION", this.emitAgentEvent, this.stateCoordinator);
+      await this.executeIterationCompletionTriggers(entity, true);
       entity.state.complete();
 
       return { success: true, shouldContinue: false, content: response.content };
@@ -225,6 +227,7 @@ export class AgentIterationCoordinator {
     );
     entity.state.endIteration(response.content);
     await executeAgentHook(entity, "AFTER_ITERATION", this.emitAgentEvent, this.stateCoordinator);
+    await this.executeIterationCompletionTriggers(entity, true);
 
     return { success: true, shouldContinue: true, content: response.content };
   }
@@ -340,6 +343,7 @@ export class AgentIterationCoordinator {
 
     entity.state.endIteration(finalResult.content);
     await executeAgentHook(entity, "AFTER_ITERATION", this.emitAgentEvent, this.stateCoordinator);
+    await this.executeIterationCompletionTriggers(entity, true);
 
     return true;
   }
@@ -554,6 +558,58 @@ export class AgentIterationCoordinator {
         agentLoopId: entity.id,
         role,
         error,
+      });
+    }
+  }
+
+  // ============ Trigger Execution ============
+
+  /**
+   * Execute triggers after iteration completes
+   */
+  private async executeIterationCompletionTriggers(
+    entity: AgentLoopEntity,
+    iterationSuccess: boolean,
+  ): Promise<void> {
+    const triggers = entity.config.triggers;
+    if (!triggers || triggers.length === 0) {
+      return;
+    }
+
+    const event = {
+      type: "on_iteration_complete",
+      eventName: "on_iteration_complete",
+      timestamp: Date.now(),
+      sourceId: entity.id,
+      data: {
+        iteration: entity.state.currentIteration,
+        success: iterationSuccess,
+      },
+    };
+
+    try {
+      await executeAgentTriggers(
+        entity,
+        triggers,
+        event,
+        async (trigger, _event) => {
+          logger.debug("Trigger handler executed", {
+            triggerId: trigger.id,
+            actionType: trigger.action.type,
+          });
+
+          return {
+            triggerId: trigger.id,
+            success: true,
+            action: trigger.action,
+            executionTime: 0,
+          };
+        },
+        this.stateCoordinator,
+      );
+    } catch (error) {
+      logger.warn("Failed to execute iteration completion triggers", {
+        error: error instanceof Error ? error.message : String(error),
       });
     }
   }

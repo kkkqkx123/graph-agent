@@ -20,20 +20,22 @@ const logger = getGlobalLogger().child("TriggerMatcher", { module: "core/trigger
 const depManager = new DependencyManager();
 
 /**
- * Build an EvaluationContext from a BaseEventData for expression evaluation.
+ * Build an EvaluationContext from a BaseEventData and optional execution context.
  *
  * Maps:
  *   - event fields (type, eventName, timestamp, sourceId) → variables
  *   - event.data → input
+ *   - executionContext → variables (merged, takes precedence)
  *   - output → empty (not applicable at match time)
  */
-function buildEvalContext(event: BaseEventData): EvaluationContext {
+function buildEvalContext(event: BaseEventData, executionContext?: Record<string, unknown>): EvaluationContext {
   return {
     variables: {
       type: event.type,
       eventName: event.eventName,
       timestamp: event.timestamp,
       sourceId: event.sourceId,
+      ...(executionContext || {}),
     },
     input: (event.data as Record<string, unknown>) ?? {},
     output: {},
@@ -49,14 +51,17 @@ function buildEvalContext(event: BaseEventData): EvaluationContext {
  * 3. If the condition includes an expression condition (condition.condition),
  *    it is evaluated using the ConditionEvaluator from common-utils for
  *    richer matching (e.g., "data.status == 'completed'").
+ * 4. Execution context is available for condition evaluation (e.g., "iteration >= 5").
  *
  * @param condition - Trigger condition
  * @param event - Event data
+ * @param executionContext - Optional execution context for condition evaluation
  * @returns Whether a match was found
  */
 export const defaultTriggerMatcher: TriggerMatcher = (
   condition: BaseTriggerCondition,
   event: BaseEventData,
+  executionContext?: Record<string, unknown>,
 ): boolean => {
   // Step 1: Check the event type.
   if (condition.eventType !== event.type) {
@@ -78,7 +83,7 @@ export const defaultTriggerMatcher: TriggerMatcher = (
 
   // Step 3: If the condition includes an expression condition, evaluate it.
   if (condition.condition) {
-    const ctx = buildEvalContext(event);
+    const ctx = buildEvalContext(event, executionContext);
     try {
       // Handle discriminated union Condition type
       const conditionRecord = (condition.condition as unknown) as Record<string, unknown>;
@@ -143,12 +148,14 @@ export function clearConditionCache(): void {
  * @param triggers - List of triggers
  * @param event - Event data
  * @param matcher - Matcher (optional, default is defaultTriggerMatcher)
+ * @param executionContext - Optional execution context for condition evaluation
  * @returns List of matched triggers
  */
 export function matchTriggers<T extends BaseTriggerDefinition>(
   triggers: T[],
   event: BaseEventData,
   matcher: TriggerMatcher = defaultTriggerMatcher,
+  executionContext?: Record<string, unknown>,
 ): T[] {
   return triggers.filter(trigger => {
     // Skip disabled / expired triggers (delegates to limiter).
@@ -156,7 +163,20 @@ export function matchTriggers<T extends BaseTriggerDefinition>(
       return false;
     }
 
-    return matcher(trigger.condition, event);
+    // For backward compatibility, if matcher only takes 2 params, use old signature
+    if (matcher.length === 2) {
+      return (matcher as (condition: BaseTriggerCondition, event: BaseEventData) => boolean)(
+        trigger.condition,
+        event,
+      );
+    }
+
+    // New signature with execution context
+    return (matcher as (condition: BaseTriggerCondition, event: BaseEventData, ctx?: Record<string, unknown>) => boolean)(
+      trigger.condition,
+      event,
+      executionContext,
+    );
   });
 }
 

@@ -297,6 +297,11 @@ export class AgentLoopCheckpointCoordinator extends BaseCheckpointCoordinator<
       // For now, we include only the state fields
     }
 
+    // Include trigger state by default for tracking trigger fires and limits
+    if (contentConfig?.includeState !== false) {
+      snapshot['triggerState'] = entity.exportTriggerState();
+    }
+
     return snapshot as AgentLoopStateSnapshot;
   }
 

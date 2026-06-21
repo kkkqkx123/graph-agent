@@ -50,6 +50,7 @@ import type { ToolFailureProtectionConfig } from "../../shared/state-managers/to
 import type { InterruptionState } from "../../shared/utils/interruption/interruption-state.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
 import { TimeoutManager } from "../../shared/state-managers/timeout-manager.js";
+import { TriggerStateManager } from "../../shared/triggers/trigger-state-manager.js";
 
 const logger = createContextualLogger({ component: "AgentLoopEntity" });
 
@@ -105,6 +106,9 @@ export class AgentLoopEntity implements IExecutionEntity {
 
   /** Timeout Manager for managing execution timeouts */
   readonly timeoutManager: TimeoutManager;
+
+  /** Trigger State Manager for tracking trigger fires and limits */
+  readonly triggerStateManager: TriggerStateManager;
 
   /** Abort Controller */
   abortController?: AbortController;
@@ -165,6 +169,28 @@ export class AgentLoopEntity implements IExecutionEntity {
 
     // Initialize timeout manager for this execution
     this.timeoutManager = new TimeoutManager();
+
+    // Initialize trigger state manager for tracking trigger fires
+    this.triggerStateManager = new TriggerStateManager();
+  }
+
+  /**
+   * Restore trigger state from checkpoint data
+   * @param triggerState Serialized trigger state from checkpoint
+   */
+  restoreTriggerState(triggerState?: Record<string, any>): void {
+    if (triggerState) {
+      for (const [triggerId, state] of Object.entries(triggerState)) {
+        this.triggerStateManager.setState(triggerId, state as any);
+      }
+    }
+  }
+
+  /**
+   * Export trigger state for checkpoint
+   */
+  exportTriggerState(): Record<string, any> {
+    return this.triggerStateManager.toJSON();
   }
 
   // Status Access
@@ -805,6 +831,11 @@ export class AgentLoopEntity implements IExecutionEntity {
 
     // Create entity with provided config and restored state
     const entity = new AgentLoopEntity(id, config, state);
+
+    // Restore trigger state from snapshot
+    if (snapshot['triggerState']) {
+      entity.restoreTriggerState(snapshot['triggerState'] as Record<string, any>);
+    }
 
     // Invalidate cache after restoration to ensure fresh computation
     entity.cachedAvailableTools = undefined;
