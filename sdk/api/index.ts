@@ -229,6 +229,8 @@ export { PauseAgentLoopCommand, type PauseAgentLoopParams } from "./agent/operat
 export { ResumeAgentLoopCommand, type ResumeAgentLoopParams } from "./agent/operations/resume-agent-loop-command.js";
 export { CreateCheckpointCommand as AgentCreateCheckpointCommand, type CreateCheckpointParams as AgentCreateCheckpointParams } from "./agent/operations/checkpoints/create-checkpoint-command.js";
 export { RestoreCheckpointCommand as AgentRestoreCheckpointCommand, type RestoreCheckpointParams as AgentRestoreCheckpointParams } from "./agent/operations/checkpoints/restore-checkpoint-command.js";
+export { EnableAgentTriggerCommand, type EnableAgentTriggerParams } from "./agent/operations/triggers/enable-agent-trigger-command.js";
+export { DisableAgentTriggerCommand, type DisableAgentTriggerParams } from "./agent/operations/triggers/disable-agent-trigger-command.js";
 
 // Command Validators
 export {
@@ -257,6 +259,17 @@ export {
 export { WorkflowBuilder, ExecutionBuilder } from "./workflow/builders/index.js";
 export { NodeTemplateBuilder } from "./workflow/builders/node-template-builder.js";
 export { TriggerTemplateBuilder } from "./workflow/builders/trigger-template-builder.js";
+
+// ============================================================================
+// Agent - Builders
+// ============================================================================
+export {
+  AgentLoopConfigBuilder,
+  AgentDefinitionBuilder,
+  AgentToolConfigBuilder,
+  AgentHookBuilder,
+  AgentTriggerBuilder,
+} from "./agent/builders/index.js";
 
 // ============================================================================
 // Workflow - Validation API
@@ -344,6 +357,49 @@ export {
   type DecisionAnalysis,
   type ExecutionPathAnalysis,
 } from "./agent/resources/agent-loop-iteration-api.js";
+
+export {
+  AgentVariableResourceAPI,
+  type AgentVariableFilter,
+  type AgentVariableUpdateOptions,
+  type AgentVariableDefinition,
+  type AgentContextVariable,
+} from "./agent/resources/agent-variable-resource-api.js";
+
+export {
+  AgentUserInteractionResourceAPI,
+  type AgentUserInteractionConfig,
+  type AgentUserInteractionFilter,
+  type AgentUserInteractionEventRecord,
+} from "./agent/resources/agent-user-interaction-resource-api.js";
+
+export {
+  AgentTriggerResourceAPI,
+  type AgentTriggerFilter,
+} from "./agent/resources/agent-trigger-resource-api.js";
+
+export {
+  AgentFileCheckpointResourceAPI,
+  type AgentFileCheckpointFilter,
+} from "./agent/resources/agent-file-checkpoint-resource-api.js";
+
+export {
+  AgentTriggerTemplateRegistryAPI,
+  type AgentTriggerTemplateFilter,
+  type AgentTriggerTemplateSummary,
+} from "./agent/resources/agent-trigger-template-registry-api.js";
+
+export {
+  AgentHookTemplateRegistryAPI,
+  type AgentHookTemplateFilter,
+  type AgentHookTemplateSummary,
+} from "./agent/resources/agent-hook-template-registry-api.js";
+
+export {
+  AgentTemplateRegistryAPI,
+  type AgentTemplateFilter,
+  type AgentTemplateSummary,
+} from "./agent/resources/agent-template-registry-api.js";
 
 // ============================================================================
 // Shared - Types

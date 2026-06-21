@@ -778,6 +778,22 @@ export class SDKInstance {
   }
 
   /**
+   * Get Agent Variable API
+   */
+  get agentVariables() {
+    this.ensureReady();
+    return this.apiFactory.createAgentVariableAPI();
+  }
+
+  /**
+   * Get Agent User Interaction API
+   */
+  get agentUserInteractions() {
+    this.ensureReady();
+    return this.apiFactory.createAgentUserInteractionAPI();
+  }
+
+  /**
    * Get the GlobalContext for this SDK instance
    *
    * This provides access to the instance-specific DI container and all registered services.

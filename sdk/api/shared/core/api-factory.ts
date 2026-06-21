@@ -42,6 +42,8 @@ import { AgentLoopCheckpointResourceAPI } from "../../agent/resources/checkpoint
 import { AgentLoopMessageResourceAPI } from "../../agent/resources/message-resource-api.js";
 import { AgentLoopExecutionHistoryAPI } from "../../agent/resources/agent-loop-execution-history-api.js";
 import { AgentLoopIterationAPI } from "../../agent/resources/agent-loop-iteration-api.js";
+import { AgentVariableResourceAPI } from "../../agent/resources/agent-variable-resource-api.js";
+import { AgentUserInteractionResourceAPI } from "../../agent/resources/agent-user-interaction-resource-api.js";
 import { APIDependencyManager } from "./sdk-dependencies.js";
 
 /**
@@ -98,6 +100,10 @@ export interface AllAPIs {
   agentExecutionHistory: AgentLoopExecutionHistoryAPI;
   /** Agent Loop Iteration API */
   agentLoopIteration: AgentLoopIterationAPI;
+  /** Agent Variable API */
+  agentVariables: AgentVariableResourceAPI;
+  /** Agent User Interaction API */
+  agentUserInteractions: AgentUserInteractionResourceAPI;
 }
 
 /**
@@ -386,6 +392,24 @@ export class APIFactory {
   }
 
   /**
+   * Create an Agent Variable API
+   * @returns AgentVariableResourceAPI instance
+   */
+  public createAgentVariableAPI(): AgentVariableResourceAPI {
+    return this.createAPI("agentVariables", AgentVariableResourceAPI);
+  }
+
+  /**
+   * Create an Agent User Interaction API
+   * @returns AgentUserInteractionResourceAPI instance
+   *
+   * Note: This API doesn't require dependencies, using createAPIWithoutDeps for consistency
+   */
+  public createAgentUserInteractionAPI(): AgentUserInteractionResourceAPI {
+    return this.createAPIWithoutDeps("agentUserInteractions", AgentUserInteractionResourceAPI);
+  }
+
+  /**
    * Create all API instances
    * @returns All API instances
    */
@@ -416,6 +440,8 @@ export class APIFactory {
       agentLoopMessages: this.createAgentLoopMessageAPI(),
       agentExecutionHistory: this.createAgentExecutionHistoryAPI(),
       agentLoopIteration: this.createAgentLoopIterationAPI(),
+      agentVariables: this.createAgentVariableAPI(),
+      agentUserInteractions: this.createAgentUserInteractionAPI(),
     };
   }
 

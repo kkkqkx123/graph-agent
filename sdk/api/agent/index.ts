@@ -9,6 +9,10 @@
 
 export {
   AgentLoopConfigBuilder,
+  AgentDefinitionBuilder,
+  AgentToolConfigBuilder,
+  AgentHookBuilder,
+  AgentTriggerBuilder,
 } from "./builders/index.js";
 
 // ============================================================================
@@ -48,6 +52,16 @@ export {
   RestoreCheckpointCommand,
   type RestoreCheckpointParams,
 } from "./operations/checkpoints/restore-checkpoint-command.js";
+
+// trigger commands
+export {
+  EnableAgentTriggerCommand,
+  type EnableAgentTriggerParams,
+} from "./operations/triggers/enable-agent-trigger-command.js";
+export {
+  DisableAgentTriggerCommand,
+  type DisableAgentTriggerParams,
+} from "./operations/triggers/disable-agent-trigger-command.js";
 
 // ============================================================================
 // Subscriptions - Event Subscriptions (from shared types)
@@ -137,3 +151,31 @@ export {
   type DecisionAnalysis,
   type ExecutionPathAnalysis,
 } from "./resources/agent-loop-iteration-api.js";
+
+export {
+  AgentTriggerResourceAPI,
+  type AgentTriggerFilter,
+} from "./resources/agent-trigger-resource-api.js";
+
+export {
+  AgentFileCheckpointResourceAPI,
+  type AgentFileCheckpointFilter,
+} from "./resources/agent-file-checkpoint-resource-api.js";
+
+export {
+  AgentTriggerTemplateRegistryAPI,
+  type AgentTriggerTemplateFilter,
+  type AgentTriggerTemplateSummary,
+} from "./resources/agent-trigger-template-registry-api.js";
+
+export {
+  AgentHookTemplateRegistryAPI,
+  type AgentHookTemplateFilter,
+  type AgentHookTemplateSummary,
+} from "./resources/agent-hook-template-registry-api.js";
+
+export {
+  AgentTemplateRegistryAPI,
+  type AgentTemplateFilter,
+  type AgentTemplateSummary,
+} from "./resources/agent-template-registry-api.js";
