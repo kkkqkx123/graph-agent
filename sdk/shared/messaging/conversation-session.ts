@@ -22,6 +22,7 @@ import type { StateManager } from "../types/state-manager.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
 import { emit } from "../utils/event/emit-event.js";
 import { now } from "@wf-agent/common-utils";
+import { createSHA256Algorithm } from "@wf-agent/common-utils";
 import {
   buildTokenLimitExceededEvent,
   buildContextCompressionRequestedEvent,
@@ -32,6 +33,11 @@ import { executeOperation } from "../utils/messages/message-operation-utils.js";
 import type { MessageOperationConfig, MessageOperationResult } from "@wf-agent/types";
 
 const logger = createContextualLogger();
+
+/**
+ * SHA256 hash algorithm instance for message fingerprinting
+ */
+const sha256Hasher = createSHA256Algorithm();
 
 /**
  * Conversation Session Configuration
@@ -54,6 +60,18 @@ export interface ConversationSessionConfig {
 }
 
 /**
+ * Message Metadata for Checkpoint Integrity
+ */
+export interface MessageMetadata {
+  /** Total number of messages */
+  count: number;
+  /** SHA256 fingerprint of all messages */
+  fingerprint: string;
+  /** ID of the last message (for quick validation) */
+  lastMessageId?: string;
+}
+
+/**
  * Dialogue State (for checkpoints)
  */
 export interface ConversationState extends MessageHistoryState {
@@ -63,6 +81,8 @@ export interface ConversationState extends MessageHistoryState {
   currentRequestUsage?: TokenUsageStats | null;
   /** Turn-based execution states (Persistent) */
   turnStates?: Record<number, Record<string, unknown>>;
+  /** Message metadata for checkpoint integrity verification */
+  messageMetadata?: MessageMetadata;
 }
 
 /**
@@ -565,11 +585,28 @@ export class ConversationSession extends MessageHistory implements StateManager<
   }
 
   /**
+   * Calculate message fingerprint for checkpoint integrity verification
+   * @param messages Messages to fingerprint
+   * @returns Message metadata including fingerprint
+   */
+  private calculateMessageMetadata(messages: LLMMessage[]): MessageMetadata {
+    const messageString = JSON.stringify(messages);
+    const fingerprint = sha256Hasher.hash(messageString);
+
+    return {
+      count: messages.length,
+      fingerprint,
+      lastMessageId: messages[messages.length - 1]?.id,
+    };
+  }
+
+  /**
    * Get conversation state for checkpointing
    * @returns Current conversation state
    */
   getState(): ConversationState {
     const baseState = this.createSnapshot();
+    const messages = this.getAllMessages();
 
     // Convert Map to plain object for serialization
     const serializedTurnStates: Record<number, Record<string, unknown>> = {};
@@ -582,12 +619,14 @@ export class ConversationSession extends MessageHistory implements StateManager<
       tokenUsage: this.tokenUsageTracker.getCumulativeUsage(),
       currentRequestUsage: this.tokenUsageTracker.getCurrentRequestUsage(),
       turnStates: serializedTurnStates,
+      messageMetadata: this.calculateMessageMetadata(messages),
     };
   }
 
   /**
    * Restore conversation state from checkpoint
    * @param state State to restore
+   * @throws Error if message fingerprint validation fails
    */
   restoreState(state: ConversationState): void {
     this.restoreFromSnapshot(state);
@@ -604,5 +643,37 @@ export class ConversationSession extends MessageHistory implements StateManager<
       });
       logger.debug("Restored turn states", { count: this.turnStates.size });
     }
+
+    // Verify message fingerprint if metadata is present
+    if (state.messageMetadata) {
+      this.verifyMessageIntegrity(state.messageMetadata);
+    }
+  }
+
+  /**
+   * Verify message integrity against stored fingerprint
+   * @param metadata Message metadata from checkpoint
+   * @throws Error if fingerprint mismatch is detected
+   */
+  private verifyMessageIntegrity(metadata: MessageMetadata): void {
+    const currentMessages = this.getAllMessages();
+    const currentMetadata = this.calculateMessageMetadata(currentMessages);
+
+    if (currentMetadata.fingerprint !== metadata.fingerprint) {
+      logger.error("Message integrity verification failed", {
+        storedCount: metadata.count,
+        restoredCount: currentMetadata.count,
+        storedFingerprint: metadata.fingerprint,
+        restoredFingerprint: currentMetadata.fingerprint,
+      });
+      throw new Error(
+        `Message integrity check failed. Expected ${metadata.count} messages with fingerprint ${metadata.fingerprint}, but got ${currentMetadata.count} messages with fingerprint ${currentMetadata.fingerprint}`,
+      );
+    }
+
+    logger.debug("Message integrity verified", {
+      messageCount: currentMetadata.count,
+      fingerprint: currentMetadata.fingerprint,
+    });
   }
 }

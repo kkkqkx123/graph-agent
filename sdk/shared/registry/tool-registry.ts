@@ -73,6 +73,22 @@ class ToolRegistry
   private builtinExecutor: BuiltinExecutor;
   private restExecutorConfig: RestExecutorConfig;
 
+  // Tool availability management for execution-level scoping
+  private toolAvailability: Map<string, {
+    available: boolean;
+    reason?: string;
+    restrictions?: {
+      executionIds?: string[];
+      excluded?: string[];
+    };
+  }> = new Map();
+
+  private availabilityObservers: Set<(change: {
+    toolId: string;
+    available: boolean;
+    reason?: string;
+  }) => void> = new Set();
+
   constructor(
     restExecutorConfig: RestExecutorConfig = {},
     private readonly storageAdapter: ToolStorageAdapter | null = null,
@@ -707,6 +723,99 @@ class ToolRegistry
       { parameters },
       error instanceof Error ? error : undefined,
     );
+  }
+
+  // ============================================================
+  // Tool Availability Management
+  // ============================================================
+
+  /**
+   * Get available tools for a specific execution
+   * @param executionId - Execution ID for filtering
+   * @returns Array of available tools for this execution
+   */
+  getAvailableFor(executionId: string): Tool[] {
+    return this.list().filter(tool => this.isAvailableFor(tool.id, executionId));
+  }
+
+  /**
+   * Check if a tool is available for a specific execution
+   * @param toolId - Tool ID
+   * @param executionId - Execution ID
+   * @returns true if the tool is available for this execution
+   */
+  isAvailableFor(toolId: string, executionId: string): boolean {
+    const availability = this.toolAvailability.get(toolId);
+
+    // If no availability record, tool is available by default
+    if (!availability) return true;
+
+    // If explicitly marked as unavailable, it's not available
+    if (availability.available === false) return false;
+
+    // Check execution-specific restrictions
+    if (availability.restrictions?.executionIds) {
+      return availability.restrictions.executionIds.includes(executionId);
+    }
+
+    if (availability.restrictions?.excluded) {
+      return !availability.restrictions.excluded.includes(executionId);
+    }
+
+    return true;
+  }
+
+  /**
+   * Set tool availability
+   * @param toolId - Tool ID
+   * @param available - Whether the tool is available
+   * @param options - Additional availability options
+   */
+  setAvailability(
+    toolId: string,
+    available: boolean,
+    options?: {
+      reason?: string;
+      restrictions?: {
+        executionIds?: string[];
+        excluded?: string[];
+      };
+    },
+  ): void {
+    const availability = {
+      available,
+      reason: options?.reason,
+      restrictions: options?.restrictions,
+    };
+
+    this.toolAvailability.set(toolId, availability);
+
+    // Notify observers
+    this.availabilityObservers.forEach(observer => {
+      observer({
+        toolId,
+        available,
+        reason: options?.reason,
+      });
+    });
+
+    logger.debug("Tool availability updated", {
+      toolId,
+      available,
+      reason: options?.reason,
+    });
+  }
+
+  /**
+   * Subscribe to tool availability changes
+   * @param callback - Callback function for availability changes
+   * @returns Unsubscribe function
+   */
+  onAvailabilityChange(
+    callback: (change: { toolId: string; available: boolean; reason?: string }) => void,
+  ): () => void {
+    this.availabilityObservers.add(callback);
+    return () => this.availabilityObservers.delete(callback);
   }
 }
 

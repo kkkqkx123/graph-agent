@@ -2,6 +2,9 @@
  * Generic Cache Manager
  * High-performance caching using xxHash (WebAssembly)
  * Supports LRU eviction and TTL
+ *
+ * Note: Always use createCache() factory function to create instances.
+ * Hash algorithm initialization happens automatically.
  */
 
 import { LRUCache } from 'lru-cache';
@@ -13,17 +16,13 @@ export class CacheManager<K = string, V = unknown> {
   private hashAlgorithm: IHashAlgorithm;
   private config: Required<CacheConfig>;
   private stats: CacheStats;
-  private initPromise?: Promise<void>;
 
-  constructor(config: CacheConfig) {
+  constructor(config: CacheConfig, hashAlgorithm: IHashAlgorithm) {
     this.config = this.normalizeConfig(config);
+    this.hashAlgorithm = hashAlgorithm;
     this.cache = new LRUCache<string, CacheEntry<V>>({
       max: this.config.maxSize,
     });
-
-    // Create hash algorithm (type determined by hashBits config)
-    const hashType = this.config.hashBits === 32 ? 'xxhash32' : 'xxhash64';
-    this.hashAlgorithm = createHashAlgorithm(hashType);
 
     this.stats = {
       size: 0,
@@ -37,25 +36,13 @@ export class CacheManager<K = string, V = unknown> {
   }
 
   /**
-   * Initialize the hash algorithm (must be called once before using cache)
-   * Recommended: Call during application startup (absorbs ~2ms one-time cost)
+   * Ensure hash algorithm is initialized
+   * @private
    */
-  async initialize(): Promise<void> {
-    if (this.initPromise) {
-      return this.initPromise;
+  private ensureInitialized(): void {
+    if (!this.hashAlgorithm.isInitialized?.()) {
+      throw new Error('CacheManager hash algorithm not initialized.');
     }
-
-    if (this.hashAlgorithm.isInitialized?.()) {
-      return;
-    }
-
-    this.initPromise = (async () => {
-      if (this.hashAlgorithm.initialize) {
-        await this.hashAlgorithm.initialize();
-      }
-    })();
-
-    return this.initPromise;
   }
 
   /**
@@ -214,38 +201,22 @@ export class CacheManager<K = string, V = unknown> {
     const total = this.stats.hits + this.stats.misses;
     this.stats.hitRate = total > 0 ? this.stats.hits / total : 0;
   }
-
-  /**
-   * Ensure hash algorithm is initialized
-   * Throws error if not called initialize() first
-   */
-  private ensureInitialized(): void {
-    if (!this.hashAlgorithm.isInitialized?.()) {
-      throw new Error(
-        'CacheManager not initialized. Call initialize() before using cache operations.'
-      );
-    }
-  }
 }
 
 /**
  * Factory function for creating and initializing cache managers
+ * Automatically initializes hash algorithm and returns ready-to-use cache
+ *
+ * @example
+ * const cache = await createCache({ maxSize: 1000 });
+ * const value = cache.get(key);  // ready to use immediately
  */
 export async function createCache<K = string, V = unknown>(
   config: CacheConfig
 ): Promise<CacheManager<K, V>> {
-  const cache = new CacheManager<K, V>(config);
-  await cache.initialize();
-  return cache;
-}
+  const hashType = config.hashBits === 32 ? 'xxhash32' : 'xxhash64';
+  const hashAlgorithm = createHashAlgorithm(hashType);
+  await hashAlgorithm.initialize?.();
 
-/**
- * Create cache without automatic initialization
- * Useful when you need to initialize multiple caches at once
- * Must call initialize() before using the cache
- */
-export function createCacheSync<K = string, V = unknown>(
-  config: CacheConfig
-): CacheManager<K, V> {
-  return new CacheManager<K, V>(config);
+  return new CacheManager<K, V>(config, hashAlgorithm);
 }

@@ -64,6 +64,12 @@ export interface HookExecutorConfig {
   warnOnConditionFailure?: boolean;
   /** Abort signal for interruption support */
   abortSignal?: AbortSignal;
+  /** Execution context for variable resolution in conditions and payloads */
+  executionContext?: Record<string, unknown>;
+  /** Conversation session for accessing messages (optional) */
+  conversationSession?: {
+    getMessages: () => any[];
+  };
 }
 
 /**

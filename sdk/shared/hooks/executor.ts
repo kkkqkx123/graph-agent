@@ -118,7 +118,21 @@ export async function executeSingleHook<TContext extends BaseHookContext>(
     } as TContext;
 
     // Constructing an evaluation context
-    const evalContext = buildEvalContext(enhancedContext);
+    let evalContext = buildEvalContext(enhancedContext);
+
+    // Enhance with execution context if provided
+    if (config.executionContext) {
+      evalContext = {
+        ...evalContext,
+        ...config.executionContext,
+      };
+
+      // Add conversation session messages if available
+      if (config.conversationSession) {
+        evalContext['messages'] = config.conversationSession.getMessages();
+        evalContext['messageCount'] = config.conversationSession.getMessages().length;
+      }
+    }
 
     // Evaluation criteria
     if (!evaluateHookCondition(hook, evalContext, config.warnOnConditionFailure)) {

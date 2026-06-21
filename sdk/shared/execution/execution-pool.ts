@@ -9,8 +9,10 @@
  *
  * Design Principles:
  * - Generic design supporting any executor type.
+ * - Per-instance pools managed by GlobalContext (no global singletons).
  * - Dynamic scaling: Creates new executors based on load.
  * - Idle executors are reclaimed after a timeout to avoid resource waste.
+ * - Each SDK instance has its own isolated pool instances.
  */
 
 import {
@@ -49,8 +51,6 @@ export interface ExecutorFactory<T> {
  * @template T - The execution instance type (e.g., WorkflowExecutionEntity, AgentLoopEntity)
  */
 export class ExecutionPool<T> {
-  private static instances: Map<string, ExecutionPool<unknown>> = new Map();
-
   /**
    * All executors
    */
@@ -100,9 +100,9 @@ export class ExecutionPool<T> {
   private poolId: string;
 
   /**
-   * Private constructor to prevent direct instantiation
+   * Constructor - now public for DI container and GlobalContext usage
    */
-  private constructor(
+  constructor(
     poolId: string,
     executorFactory: ExecutorFactory<T>,
     config?: ExecutionPoolConfig,
@@ -118,45 +118,6 @@ export class ExecutionPool<T> {
 
     // Initialize the minimum number of executors.
     this.initializeMinExecutors();
-  }
-
-  /**
-   * Get a singleton instance for a specific pool
-   * @param poolId Pool identifier
-   * @param executorFactory The executor factory function
-   * @param config The configuration
-   * @returns The singleton instance
-   */
-  static getInstance<T>(
-    poolId: string,
-    executorFactory: ExecutorFactory<T>,
-    config?: ExecutionPoolConfig,
-  ): ExecutionPool<T> {
-    if (!ExecutionPool.instances.has(poolId)) {
-      ExecutionPool.instances.set(poolId, new ExecutionPool(poolId, executorFactory, config));
-    }
-    return ExecutionPool.instances.get(poolId)!;
-  }
-
-  /**
-   * Reset a specific pool instance (for testing purposes)
-   * @param poolId Pool identifier
-   */
-  static resetInstance(poolId: string): void {
-    const instance = ExecutionPool.instances.get(poolId);
-    if (instance) {
-      instance.shutdown();
-      ExecutionPool.instances.delete(poolId);
-    }
-  }
-
-  /**
-   * Reset all pool instances (for testing purposes)
-   */
-  static resetAllInstances(): void {
-    for (const [poolId] of ExecutionPool.instances) {
-      ExecutionPool.resetInstance(poolId);
-    }
   }
 
   /**

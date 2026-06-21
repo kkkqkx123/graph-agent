@@ -2,20 +2,49 @@
  * xxHash implementation using WebAssembly (xxhash-wasm)
  * High-performance hashing: 90-140x faster than FNV-1a
  * Industry-standard collision resistance (64-bit safe)
+ *
+ * Design: Static import strategy for better API simplicity and consistency
+ * with SHA256Algorithm. xxHash is used frequently in CacheManager,
+ * making lazy-loading inefficient. Initialization happens once at module load.
  */
 
 import type { IHashAlgorithm } from './types.js';
+import xxhash from 'xxhash-wasm';
 
-type XXHashInstance = {
-  h32(input: string, seed?: number): number;
-  h32ToString(input: string, seed?: number): string;
-  h32Raw(input: Uint8Array, seed?: number): number;
-  h64(input: string, seed?: bigint): bigint;
-  h64ToString(input: string, seed?: bigint): string;
-  h64Raw(input: Uint8Array, seed?: bigint): bigint;
-  create32(seed?: number): { update(data: string | Uint8Array): any; digest(): number };
-  create64(seed?: bigint): { update(data: string | Uint8Array): any; digest(): bigint };
-};
+type XXHashInstance = Awaited<ReturnType<typeof xxhash>>;
+
+/**
+ * Global xxHash instance (initialized once at module load)
+ */
+let xxhashInstance: XXHashInstance | null = null;
+let initPromise: Promise<XXHashInstance> | null = null;
+
+/**
+ * Initialize xxHash WASM instance
+ * Called automatically at module load, safe to call multiple times
+ */
+function ensureInitialized(): Promise<XXHashInstance> {
+  if (!initPromise) {
+    initPromise = (async () => {
+      if (!xxhashInstance) {
+        try {
+          xxhashInstance = await xxhash();
+        } catch (error) {
+          throw new Error(
+            `Failed to initialize xxhash-wasm: ${error instanceof Error ? error.message : String(error)}`
+          );
+        }
+      }
+      return xxhashInstance!;
+    })();
+  }
+  return initPromise;
+}
+
+/**
+ * Start initialization at module load (non-blocking)
+ */
+const initializationPromise = ensureInitialized();
 
 /**
  * XXHash implementation (32-bit)
@@ -24,30 +53,25 @@ type XXHashInstance = {
  */
 export class XXHash32Algorithm implements IHashAlgorithm {
   readonly name = 'xxHash-32 (WebAssembly)';
-  private hasher?: XXHashInstance;
 
   async initialize(): Promise<void> {
-    if (this.hasher) return;
-
-    try {
-      const xxhash = await import('xxhash-wasm');
-      this.hasher = await xxhash.default();
-    } catch (error) {
-      throw new Error(`Failed to initialize xxhash-wasm: ${error}`);
-    }
+    await initializationPromise;
   }
 
   hash(input: unknown): string {
-    if (!this.hasher) {
-      throw new Error('XXHash32Algorithm not initialized. Call initialize() first.');
+    if (!xxhashInstance) {
+      throw new Error(
+        'XXHash32Algorithm not initialized. ' +
+        'This should not happen - ensure initialize() was called.'
+      );
     }
 
     const str = typeof input === 'string' ? input : JSON.stringify(input);
-    return this.hasher.h32ToString(str);
+    return xxhashInstance.h32ToString(str);
   }
 
   isInitialized(): boolean {
-    return Boolean(this.hasher);
+    return xxhashInstance !== null;
   }
 }
 
@@ -58,30 +82,25 @@ export class XXHash32Algorithm implements IHashAlgorithm {
  */
 export class XXHash64Algorithm implements IHashAlgorithm {
   readonly name = 'xxHash-64 (WebAssembly)';
-  private hasher?: XXHashInstance;
 
   async initialize(): Promise<void> {
-    if (this.hasher) return;
-
-    try {
-      const xxhash = await import('xxhash-wasm');
-      this.hasher = await xxhash.default();
-    } catch (error) {
-      throw new Error(`Failed to initialize xxhash-wasm: ${error}`);
-    }
+    await initializationPromise;
   }
 
   hash(input: unknown): string {
-    if (!this.hasher) {
-      throw new Error('XXHash64Algorithm not initialized. Call initialize() first.');
+    if (!xxhashInstance) {
+      throw new Error(
+        'XXHash64Algorithm not initialized. ' +
+        'This should not happen - ensure initialize() was called.'
+      );
     }
 
     const str = typeof input === 'string' ? input : JSON.stringify(input);
-    return this.hasher.h64ToString(str);
+    return xxhashInstance.h64ToString(str);
   }
 
   isInitialized(): boolean {
-    return Boolean(this.hasher);
+    return xxhashInstance !== null;
   }
 }
 
@@ -91,38 +110,33 @@ export class XXHash64Algorithm implements IHashAlgorithm {
  */
 export class StreamingXXHash64Algorithm implements IHashAlgorithm {
   readonly name = 'xxHash-64 Streaming (WebAssembly)';
-  private hasher?: XXHashInstance;
 
   async initialize(): Promise<void> {
-    if (this.hasher) return;
-
-    try {
-      const xxhash = await import('xxhash-wasm');
-      this.hasher = await xxhash.default();
-    } catch (error) {
-      throw new Error(`Failed to initialize xxhash-wasm: ${error}`);
-    }
+    await initializationPromise;
   }
 
   hash(input: unknown): string {
-    if (!this.hasher) {
-      throw new Error('StreamingXXHash64Algorithm not initialized. Call initialize() first.');
+    if (!xxhashInstance) {
+      throw new Error(
+        'StreamingXXHash64Algorithm not initialized. ' +
+        'This should not happen - ensure initialize() was called.'
+      );
     }
 
     const str = typeof input === 'string' ? input : JSON.stringify(input);
 
     if (str.length < 100_000) {
-      return this.hasher.h64ToString(str);
+      return xxhashInstance.h64ToString(str);
     }
 
-    const hasher = this.hasher.create64();
+    const hasher = xxhashInstance.create64();
     hasher.update(str);
     const digest = hasher.digest();
     return digest.toString(16).padStart(16, '0');
   }
 
   isInitialized(): boolean {
-    return Boolean(this.hasher);
+    return xxhashInstance !== null;
   }
 }
 
@@ -143,4 +157,3 @@ export function createHashAlgorithm(
       return new XXHash64Algorithm();
   }
 }
-

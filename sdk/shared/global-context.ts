@@ -4,6 +4,7 @@
  * Manages shared resources for a specific SDK instance:
  * - Registries (workflows, tools, scripts, events, templates)
  * - Executors (LLM, tool call, workflow)
+ * - Execution pools (per-SDK-instance isolation)
  * - Utilities (serialization, parsing)
  * - Factory methods for per-execution components
  *
@@ -11,6 +12,7 @@
  * - One instance per SDK instance (not process-wide singleton)
  * - Initialized with a specific DI container
  * - All services come from the associated container
+ * - Execution pools are per-context, preventing cross-SDK pollution
  * - No global singleton state
  */
 
@@ -18,6 +20,7 @@ import { Container } from "@wf-agent/common-utils";
 import * as Identifiers from "@sdk/di/service-identifiers.js";
 import type { ServiceIdentifier } from "@wf-agent/common-utils";
 import type { ExecutionEntityServiceFactory, IdBasedServiceFactory } from "@sdk/di/factory-types.js";
+import { ExecutionPool, type ExecutorFactory } from "./execution/execution-pool.js";
 
 // Import types
 import type { WorkflowRegistry } from "../workflow/stores/workflow-registry.js";
@@ -37,6 +40,7 @@ import type { WorkflowStateTransitor } from "../workflow/execution/coordinators/
 import { CheckpointCoordinator } from "../workflow/checkpoint/checkpoint-coordinator.js";
 import type { WorkflowExecutionEntity } from "../workflow/entities/workflow-execution-entity.js";
 import type { MetricsRegistry } from "@sdk/metrics/metrics-registry.js";
+import type { ExecutionPoolConfig } from "./types/index.js";
 
 /**
  * Global Context Class
@@ -58,6 +62,9 @@ export class GlobalContext {
   private _toolCallExecutor?: ToolCallExecutor;
   private _workflowExecutor?: WorkflowExecutor;
   private _metricsRegistry?: MetricsRegistry;
+
+  // Execution pool management - per-context isolation
+  private executionPools: Map<string, ExecutionPool<unknown>> = new Map();
 
   /**
    * Create a new GlobalContext instance
@@ -224,4 +231,36 @@ export class GlobalContext {
     const coordinator = new CheckpointCoordinator();
     return coordinator;
   }
+
+  /**
+   * Get or create an execution pool for a specific pool ID
+   * Pools are per-context, ensuring multiple SDK instances don't share pools
+   * @param poolId Pool identifier
+   * @param executorFactory Factory for creating executors
+   * @param config Pool configuration
+   * @returns The execution pool instance for this context
+   */
+  getExecutionPool<T>(
+    poolId: string,
+    executorFactory: ExecutorFactory<T>,
+    config?: ExecutionPoolConfig,
+  ): ExecutionPool<T> {
+    if (!this.executionPools.has(poolId)) {
+      this.executionPools.set(poolId, new ExecutionPool(poolId, executorFactory, config));
+    }
+    return this.executionPools.get(poolId) as ExecutionPool<T>;
+  }
+
+  /**
+   * Shutdown all execution pools and cleanup resources
+   * Call this when the SDK instance is being destroyed
+   */
+  async shutdownExecutionPools(): Promise<void> {
+    const pools = Array.from(this.executionPools.values());
+    for (const pool of pools) {
+      await (pool as any).shutdown?.();
+    }
+    this.executionPools.clear();
+  }
 }
+
