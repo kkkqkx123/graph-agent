@@ -7,7 +7,7 @@
 
 import type { Tool } from "@wf-agent/types";
 import type { ToolRegistry } from "../../../../../shared/registry/tool-registry.js";
-import type { McpConnectionManager } from "../../shared/connection-manager.js";
+import type { McpConnectionManager } from "../../core/connection-manager.js";
 import type { McpToolInfo } from "../metadata/tool-metadata-exporter.js";
 import { McpToolMetadataExporter } from "../metadata/tool-metadata-exporter.js";
 import { createContextualLogger } from "../../../../../utils/contextual-logger.js";

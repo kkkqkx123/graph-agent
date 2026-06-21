@@ -7,7 +7,7 @@
 
 import type { RemoteConnectionConfig, RemoteExecutorStatus } from "../remote/types.js";
 import { BaseRemoteExecutor } from "../remote/BaseRemoteExecutor.js";
-import { McpConnectionManager } from "./shared/index.js";
+import { McpConnectionManager } from "./core/index.js";
 import type { McpServerConfig } from "./types.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
 

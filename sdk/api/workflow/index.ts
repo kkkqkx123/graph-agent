@@ -19,50 +19,50 @@ export {
   WorkflowExecutionRegistryAPI,
   type WorkflowExecutionFilter,
   type WorkflowExecutionSummary,
-} from "./resources/executions/workflow-execution-registry-api.js";
+} from "./resources/workflow-execution-registry-api.js";
 
 export {
   WorkflowRegistryAPI,
   type WorkflowFilter,
   type WorkflowSummary,
-} from "./resources/workflows/workflow-registry-api.js";
+} from "./resources/workflow-registry-api.js";
 
 export {
   MessageResourceAPI,
   type MessageFilter,
   type MessageStats,
-} from "./resources/messages/message-resource-api.js";
+} from "./resources/message-resource-api.js";
 
 export {
   VariableResourceAPI,
   type VariableFilter,
   type VariableDefinition,
-} from "./resources/variables/variable-resource-api.js";
+} from "./resources/variable-resource-api.js";
 
 export {
   TriggerResourceAPI,
   type TriggerFilter,
-} from "./resources/triggers/trigger-resource-api.js";
+} from "./resources/trigger-resource-api.js";
 
-export { CheckpointResourceAPI } from "./resources/checkpoints/checkpoint-resource-api.js";
+export { CheckpointResourceAPI } from "./resources/checkpoint-resource-api.js";
 
 export {
   NodeRegistryAPI,
   type NodeTemplateFilter,
   type NodeTemplateSummary,
-} from "./resources/templates/node-template-registry-api.js";
+} from "./resources/node-template-registry-api.js";
 
 export {
   TriggerTemplateRegistryAPI,
   type TriggerTemplateFilter,
   type TriggerTemplateSummary,
-} from "./resources/templates/trigger-template-registry-api.js";
+} from "./resources/trigger-template-registry-api.js";
 
 export {
   UserInteractionResourceAPI,
   type UserInteractionConfig,
   type UserInteractionFilter,
-} from "./resources/user-interaction/user-interaction-resource-api.js";
+} from "./resources/user-interaction-resource-api.js";
 
 // Operations - Execution
 export {

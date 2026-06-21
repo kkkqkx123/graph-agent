@@ -944,10 +944,10 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
 
     const customFields: Record<string, unknown> = {};
     if (options.nodeId) {
-      customFields.nodeId = options.nodeId;
+      customFields['nodeId'] = options.nodeId;
     }
     if (options.toolId) {
-      customFields.toolId = options.toolId;
+      customFields['toolId'] = options.toolId;
     }
 
     return buildCheckpointMetadata({

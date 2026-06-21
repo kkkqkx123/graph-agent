@@ -25,7 +25,7 @@ import {
   validationFailure,
 } from "../../../shared/types/command.js";
 import type { WorkflowExecutionResult, WorkflowExecutionOptions } from "@wf-agent/types";
-import { APIDependencyManager } from "../../../shared/shared/sdk-dependencies.js";
+import { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
 
 /**
  * Execute workflow command parameters

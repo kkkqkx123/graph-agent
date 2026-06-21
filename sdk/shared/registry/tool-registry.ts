@@ -19,7 +19,7 @@ import {
   ToolNotFoundError,
   RuntimeValidationError,
 } from "@wf-agent/types";
-import type { IToolExecutor } from "../**SHARED**/interfaces.js";
+import type { IToolExecutor } from "../../services/tools/core/interfaces.js";
 import type { ToolExecutionOptions, ToolExecutionResult } from "@wf-agent/types";
 import type { RestExecutorConfig } from "../../services/tools/executors/rest.js";
 import { StatelessExecutor } from "../../services/tools/executors/stateless.js";
@@ -525,8 +525,8 @@ class ToolRegistry
       return err(this.convertToToolError(result.error, toolId, tool.type, parameters));
     }
 
-    logger.debug("Tool execution completed", { toolId, success: result.value.success });
-    return ok(result.value);
+    logger.debug("Tool execution completed", { toolId, success: (result.value as ToolExecutionResult).success });
+    return ok(result.value as ToolExecutionResult);
   }
 
   /**

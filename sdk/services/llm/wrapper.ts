@@ -18,13 +18,13 @@ import {
 } from "@wf-agent/common-utils";
 import { ConfigurationError, LLMError } from "@wf-agent/types";
 import type { Result } from "@wf-agent/types";
-import type { EventRegistry } from "../registry/event-registry.js";
-import { isAbortError } from "../utils/error-utils.js";
+import type { EventRegistry } from "@sdk/shared/registry/event-registry.js";
+import { isAbortError } from "@sdk/shared/utils/error-utils.js";
 
 import {
   buildLLMStreamAbortedEvent,
   buildLLMStreamErrorEvent,
-} from "../utils/event/builders/index.js";
+} from "@sdk/shared/utils/event/builders/index.js";
 
 /**
  * LLM Wrapper Class

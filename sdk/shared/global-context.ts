@@ -15,9 +15,9 @@
  */
 
 import { Container } from "@wf-agent/common-utils";
-import * as Identifiers from "../../di/service-identifiers.js";
+import * as Identifiers from "@sdk/di/service-identifiers.js";
 import type { ServiceIdentifier } from "@wf-agent/common-utils";
-import type { ExecutionEntityServiceFactory, IdBasedServiceFactory } from "../../di/factory-types.js";
+import type { ExecutionEntityServiceFactory, IdBasedServiceFactory } from "@sdk/di/factory-types.js";
 
 // Import types
 import type { WorkflowRegistry } from "../workflow/stores/workflow-registry.js";
@@ -29,14 +29,14 @@ import type { TriggerTemplateRegistry } from "./registry/trigger-template-regist
 import type { HookTemplateRegistry } from "./registry/hook-template-registry.js";
 import type { PromptTemplateRegistry } from "./registry/prompt-template-registry.js";
 import type { FragmentRegistry } from "./registry/fragment-registry.js";
-import type { LLMExecutor } from "./executors/llm-executor.js";
-import type { ToolCallExecutor } from "./executors/tool-call-executor.js";
+import type { LLMExecutor } from "@sdk/services/executors/llm-executor.js";
+import type { ToolCallExecutor } from "@sdk/services/executors/tool-call-executor.js";
 import type { WorkflowExecutor } from "../workflow/execution/executors/workflow-executor.js";
 import type { WorkflowExecutionCoordinator } from "../workflow/execution/coordinators/workflow-execution-coordinator.js";
 import type { WorkflowStateTransitor } from "../workflow/execution/coordinators/workflow-state-transitor.js";
 import { CheckpointCoordinator } from "../workflow/checkpoint/checkpoint-coordinator.js";
 import type { WorkflowExecutionEntity } from "../workflow/entities/workflow-execution-entity.js";
-import type { MetricsRegistry } from "../../metrics/metrics-registry.js";
+import type { MetricsRegistry } from "@sdk/metrics/metrics-registry.js";
 
 /**
  * Global Context Class

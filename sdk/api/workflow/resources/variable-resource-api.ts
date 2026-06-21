@@ -7,7 +7,7 @@ import { now } from "@wf-agent/common-utils";
 import { ReadonlyResourceAPI } from "../../shared/resources/generic-resource-api.js";
 import type { WorkflowExecutionRegistry } from "../../../workflow/stores/workflow-execution-registry.js";
 import { NotFoundError, WorkflowExecutionNotFoundError, SDKError } from "@wf-agent/types";
-import type { APIDependencyManager } from "../../shared/shared/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
 import type { ExecutionResult } from "../../shared/types/execution-result.js";
 import { success, failure } from "../../shared/types/execution-result.js";
 

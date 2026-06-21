@@ -5,7 +5,7 @@
  * This module handles the business logic for sandbox global config without file I/O.
  *
  * Following the project architecture pattern:
- * - All configuration processing happens in api/shared/config layer
+ * - All configuration processing happens in a../shared/core/config layer
  * - Pure functions, no side effects
  * - No file I/O operations
  */

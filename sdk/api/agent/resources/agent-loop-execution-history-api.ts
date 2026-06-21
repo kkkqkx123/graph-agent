@@ -16,7 +16,7 @@
  */
 
 import { ReadonlyResourceAPI } from "../../shared/resources/generic-resource-api.js";
-import type { APIDependencyManager } from "../../shared/shared/sdk-dependencies.js";
+import type { APIDependencyManager } from "@sdk/api/shared/core/sdk-dependencies.js";
 import type { ID, ToolCallRecord } from "@wf-agent/types";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
 

@@ -63,7 +63,7 @@ export {
   pathExists,
   setPath,
   setArrayItemByKey,
-} from "./shared/index.js";
+} from "@sdk/services/evaluation/shared/index.js";
 
 export type { EvaluationContext } from "@wf-agent/types";
 

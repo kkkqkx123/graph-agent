@@ -4,7 +4,7 @@
  *
  * Design principles:
  * - Stateless design, all functions are pure functions.
- * - Configuration validation uses the validator in sdk/shared/validation.
+ * - Configuration validation uses the validator in s../shared/core/validation.
  * - This module is only responsible for parsing and converting configuration content.
  * - No direct operation of the registry, configuration registration is the responsibility of the application layer.
  * - Supports multiple configuration types: workflows, node templates, trigger templates, scripts, LLM Profiles.
@@ -175,7 +175,7 @@ export {
   exportReadFileConfig,
 } from "./processors/index.js";
 
-// MCP Configuration — consolidated under api/shared/config as the single config entry point
+// MCP Configuration — consolidated under a../shared/core/config as the single config entry point
 export {
   loadServerConfigs,
   createDefaultMcpSettings,

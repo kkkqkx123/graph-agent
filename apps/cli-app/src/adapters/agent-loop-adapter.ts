@@ -19,17 +19,19 @@ import {
 } from "@wf-agent/sdk/agent";
 import {
   EventRegistry,
-  LLMWrapper,
-  LLMExecutor,
   ToolRegistry,
   SkillRegistry,
   AgentProfileRegistry,
-  ServiceIdentifiers,
+} from "@wf-agent/sdk/shared";
+import { LLMWrapper } from "@wf-agent/sdk/services";
+import { LLMExecutor } from "@wf-agent/sdk/services";
+import { ServiceIdentifiers } from "@wf-agent/sdk/di";
+import {
   injectSkillMetadata,
   isToolAvailable,
   METADATA_TOOL_NAMES,
-  ConversationSession,
-} from "@wf-agent/sdk/core";
+} from "@wf-agent/sdk/shared";
+import { ConversationSession } from "@wf-agent/sdk/shared";
 import type {
   AgentLoopRuntimeConfig,
   AgentLoopResult,

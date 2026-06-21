@@ -23,25 +23,25 @@
  */
 
 import { getErrorOrNew } from "@wf-agent/common-utils";
-import { combineAbortSignals } from "../utils/interruption/index.js";
+import { combineAbortSignals } from "@sdk/shared/utils/interruption/index.js";
 import {
   checkExecutionInterruption,
   type ExecutionInterruptionCheckResult,
-} from "../utils/interruption/index.js";
-import type { ToolRegistry } from "../registry/tool-registry.js";
-import type { EventRegistry } from "../registry/event-registry.js";
+} from "@sdk/shared/utils/interruption/index.js";
+import type { ToolRegistry } from "@sdk/shared/registry/tool-registry.js";
+import type { EventRegistry } from "@sdk/shared/registry/event-registry.js";
 import type { Tool, ID, Event } from "@wf-agent/types";
 import { now, diffTimestamp, generateId } from "@wf-agent/common-utils";
-import type { ConversationSession } from "../messaging/conversation-session.js";
+import type { ConversationSession } from "@sdk/shared/messaging/conversation-session.js";
 import { WorkflowCheckpointError } from "@wf-agent/types";
-import { MessageBuilder } from "../messaging/message-builder.js";
+import { MessageBuilder } from "@sdk/shared/messaging/message-builder.js";
 import type { CheckpointDependencies } from "../../workflow/checkpoint/checkpoint-coordinator.js";
-import type { GlobalContext } from "../global-context.js";
+import type { GlobalContext } from "@sdk/shared/global-context.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
-import type { ToolFailureProtectionState } from "../state-managers/tool-failure-protection-state.js";
-import type { ToolMetricsCollector } from "../metrics/tool-collector.js";
-import { isAbortError } from "../utils/error-utils.js";
-import { InterruptedException } from "../types/interruption-types.js";
+import type { ToolFailureProtectionState } from "@sdk/shared/state-managers/tool-failure-protection-state.js";
+import type { ToolMetricsCollector } from "@sdk/metrics/tool-collector.js";
+import { isAbortError } from "@sdk/shared/utils/error-utils.js";
+import { InterruptedException } from "@sdk/shared/types/interruption-types.js";
 
 const logger = createContextualLogger({ component: "ToolCallExecutor" });
 

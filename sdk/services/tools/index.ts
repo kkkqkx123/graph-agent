@@ -12,15 +12,15 @@
 // ============================================================================
 // Core Interfaces & Base Classes
 // ============================================================================
-export { IToolExecutor } from "./shared/interfaces.js";
+export { IToolExecutor } from "@sdk/services/tools/core/interfaces.js";
 export {
   BaseExecutor,
   ParameterValidator,
   RetryStrategy,
   TimeoutController,
   type RetryStrategyConfig,
-} from "./shared/base.js";
-export { ToolType, ExecutorConfig, ExecutorMetadata } from "./shared/types.js";
+} from "@sdk/services/tools/core/base.js";
+export { ToolType, ExecutorConfig, ExecutorMetadata } from "@sdk/services/tools/core/types.js";
 
 // ============================================================================
 // Tool Executor Implementations

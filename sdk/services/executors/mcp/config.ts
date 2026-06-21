@@ -10,5 +10,5 @@ export {
   createDefaultMcpSettings,
   mergeServerConfigs,
   resolveServerLifecycle,
-} from "../mcp-connection-processor.js";
-export type { ResolvedLifecycle } from "../mcp-connection-processor.js";
+} from "./mcp-connection-processor.js";
+export type { ResolvedLifecycle } from "./mcp-connection-processor.js";

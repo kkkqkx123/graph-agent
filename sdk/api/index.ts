@@ -58,10 +58,10 @@ export {
 } from "./shared/types/execution-options.js";
 
 // Two-Layer Architecture SDK Exports
-export { createSDK } from "./shared/shared/sdk.js";
+export { createSDK } from "./shared/core/sdk.js";
 
 // SDK Instance Type
-export type { SDKInstance } from "./shared/shared/sdk-instance.js";
+export type { SDKInstance } from "./shared/core/sdk-instance.js";
 
 // Global Context exports (for advanced use cases)
 export type { GlobalContext } from "../shared/global-context.js";
@@ -74,7 +74,7 @@ export type {
 } from "./shared/types/core-types.js";
 
 // API Factory
-export { APIFactory, type AllAPIs } from "./shared/shared/api-factory.js";
+export { APIFactory, type AllAPIs } from "./shared/core/api-factory.js";
 
 // ============================================================================
 // Shared - Resource Management API (CRUD Operations) - Shared Resources

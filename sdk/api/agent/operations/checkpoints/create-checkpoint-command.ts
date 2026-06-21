@@ -20,7 +20,7 @@ import {
 } from "../../../shared/types/command.js";
 import type { ID, CheckpointMetadata } from "@wf-agent/types";
 import { AgentLoopCheckpointResourceAPI } from "../../resources/checkpoint-resource-api.js";
-import type { APIDependencyManager } from "../../../shared/shared/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
 
 /**
  * Create Checkpoint Command Parameters

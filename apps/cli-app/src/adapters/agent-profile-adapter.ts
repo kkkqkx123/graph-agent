@@ -5,8 +5,9 @@
 
 import { BaseAdapter } from "./base-adapter.js";
 import { resolve } from "path";
-import type { AgentProfileMeta } from "@wf-agent/sdk/core";
-import { AgentProfileRegistry, ServiceIdentifiers } from "@wf-agent/sdk/core";
+import type { AgentProfileMeta } from "@wf-agent/sdk/shared";
+import { AgentProfileRegistry } from "@wf-agent/sdk/shared";
+import { ServiceIdentifiers } from "@wf-agent/sdk/di";
 import { loadConfigFile } from "@wf-agent/config-processor";
 import { parseJson, parseToml } from "@wf-agent/sdk/api";
 import { AgentLoopDefinitionSchema } from "@wf-agent/types";

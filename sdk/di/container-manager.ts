@@ -28,7 +28,7 @@
 
 import { Container } from "@wf-agent/common-utils";
 import { configureContainerBindings, type ContainerStorageConfig } from "./container-config.js";
-import { generateId } from "../../utils/id-utils.js";
+import { generateId } from "@sdk/utils/id-utils.js";
 
 /**
  * Container Manager - Manages multiple DI container instances

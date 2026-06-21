@@ -14,7 +14,7 @@ import {
   TimeoutError,
   CircuitBreakerOpenError,
 } from "@wf-agent/types";
-import { BaseExecutor } from "../shared/base.js";
+import { BaseExecutor } from "../core/base.js";
 import { HttpClient, InterceptorManager } from "../../transport/http/index.js";
 import type { HttpResponse } from "@wf-agent/types";
 

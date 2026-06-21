@@ -11,7 +11,7 @@ import type { Result, EventType } from "@wf-agent/types";
 import { Observable, create, type Observer } from "../../shared/utils/observable.js";
 import { ExecuteWorkflowCommand } from "../operations/execution/execute-workflow-command.js";
 import { ExecutionError as SDKExecutionError } from "@wf-agent/types";
-import { APIDependencyManager } from "../../shared/shared/sdk-dependencies.js";
+import { APIDependencyManager } from "../../shared/core/sdk-dependencies.js";
 import { GlobalContext } from "../../../shared/global-context.js";
 
 /**

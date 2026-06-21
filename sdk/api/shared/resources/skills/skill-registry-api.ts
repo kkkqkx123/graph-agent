@@ -15,7 +15,7 @@ import {
 import type { SkillMetadata, SkillResourceType, Skill } from "@wf-agent/types";
 import { NotFoundError, ExecutionError, SDKError } from "@wf-agent/types";
 import { ReadonlyResourceAPI } from "../generic-resource-api.js";
-import type { APIDependencyManager } from "../../shared/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
 import type { ExecutionResult } from "../../types/execution-result.js";
 import { success, failure } from "../../types/execution-result.js";
 import { now, diffTimestamp } from "@wf-agent/common-utils";

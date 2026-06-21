@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
-import type { APIDependencyManager } from "../../shared/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
 import {
   createOnEventSubscription,
   createOnceEventSubscription,

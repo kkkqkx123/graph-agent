@@ -6,7 +6,7 @@
 
 import type { EvaluationContext } from "@wf-agent/types";
 import type { CompiledUnit, IExecutor } from "./types/index.js";
-import { resolveContextPath } from "./shared/path-resolver.js";
+import { resolveContextPath } from "@sdk/services/evaluation/shared/path-resolver.js";
 import { getGlobalLogger } from "@wf-agent/common-utils";
 
 export abstract class BaseExecutor implements IExecutor {

@@ -16,10 +16,10 @@ import type {
 import type { ToolSchema } from "@wf-agent/types";
 import type { FormatterConfig, BuildRequestResult, ParseStreamChunkResult } from "./types.js";
 import { convertToolsToOpenAIFormat } from "./tool-converter.js";
-import { ToolDeclarationFormatter } from "../../utils/tools/index.js";
+import { ToolDeclarationFormatter } from "@sdk/shared/utils/tools/index.js";
 import { getToolCallParserOptions } from "./tool-format-selector.js";
 import { ToolCallParser } from "./tool-call-parser.js";
-import { HistoryConverter } from "../../messaging/history-converter.js";
+import { HistoryConverter } from "@sdk/shared/messaging/history-converter.js";
 
 /**
  * OpenAI Chat Format Converter

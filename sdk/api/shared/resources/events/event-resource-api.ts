@@ -14,7 +14,7 @@
 import { ReadonlyResourceAPI } from "../generic-resource-api.js";
 import type { Event, EventType, Timestamp, BaseEvent } from "@wf-agent/types";
 import { DispatchEventCommand } from "../../operations/events/dispatch-event-command.js";
-import type { APIDependencyManager } from "../../shared/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
 import { createContextualLogger } from "../../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "EventResourceAPI" });

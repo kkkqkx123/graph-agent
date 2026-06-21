@@ -11,49 +11,51 @@
 import type { ServiceIdentifier } from "@wf-agent/common-utils";
 
 // Import actual service types for type safety (using aliases to avoid naming conflicts)
-import type { WorkflowGraphRegistry as WorkflowGraphRegistryType } from "../../workflow/stores/workflow-graph-registry.js";
-import type { WorkflowExecutionRegistry as WorkflowExecutionRegistryType } from "../../workflow/stores/workflow-execution-registry.js";
-import type { EventRegistry as EventRegistryType } from "../registry/event-registry.js";
-import type { ToolRegistry as ToolRegistryType } from "../registry/tool-registry.js";
-import type { ScriptRegistry as ScriptRegistryType, ScriptExecutionService as ScriptExecutionServiceType } from "../registry/script-registry.js";
-import type { WorkflowRegistry as WorkflowRegistryType } from "../../workflow/stores/workflow-registry.js";
-import type { WorkflowRelationshipRegistry as WorkflowRelationshipRegistryType } from "../../workflow/stores/workflow-relationship-registry.js";
-import type { NodeTemplateRegistry as NodeTemplateRegistryType } from "../registry/node-template-registry.js";
-import type { TriggerTemplateRegistry as TriggerTemplateRegistryType } from "../registry/trigger-template-registry.js";
-import type { HookTemplateRegistry as HookTemplateRegistryType } from "../registry/hook-template-registry.js";
-import type { TaskRegistry as TaskRegistryType } from "../../workflow/stores/task/task-registry.js";
-import type { GlobalContext as GlobalContextType } from "../global-context.js";
-import type { WorkflowExecutionBuilder as WorkflowExecutionBuilderType } from "../../workflow/execution/factories/workflow-execution-builder.js";
-import type { WorkflowExecutor as WorkflowExecutorType } from "../../workflow/execution/executors/workflow-executor.js";
-import type { WorkflowLifecycleCoordinator as WorkflowLifecycleCoordinatorType } from "../../workflow/execution/coordinators/workflow-lifecycle-coordinator.js";
-import type { WorkflowStateTransitor as WorkflowStateTransitorType } from "../../workflow/execution/coordinators/workflow-state-transitor.js";
-import type { CheckpointState as CheckpointStateType } from "../../workflow/checkpoint/checkpoint-state-manager.js";
-import type { ConversationSession as GraphConversationSessionType } from "../messaging/conversation-session.js";
-import type { LLMExecutor as LLMExecutorType } from "../executors/llm-executor.js";
-import type { ToolCallExecutor as ToolCallExecutorType } from "../executors/tool-call-executor.js";
-import type { ToolApprovalCoordinator as ToolApprovalCoordinatorType } from "../coordinators/tool-approval-coordinator.js";
-import type { WorkflowExecutionCoordinator as WorkflowExecutionCoordinatorType } from "../../workflow/execution/coordinators/workflow-execution-coordinator.js";
-import type { VariableCoordinator as VariableCoordinatorType } from "../../workflow/execution/coordinators/variable-coordinator.js";
-import type { TriggerCoordinator as TriggerCoordinatorType } from "../../workflow/execution/coordinators/trigger-coordinator.js";
-import type { NodeExecutionCoordinator as NodeExecutionCoordinatorType } from "../../workflow/execution/coordinators/node-execution-coordinator.js";
-import type { LLMExecutionCoordinator as LLMExecutionCoordinatorType } from "../../workflow/execution/coordinators/llm-execution-coordinator.js";
-import type { CheckpointCoordinator as CheckpointCoordinatorType } from "../../workflow/checkpoint/checkpoint-coordinator.js";
-import type { ConversationSession as ConversationSessionType } from "../messaging/conversation-session.js";
-import type { TriggerState as TriggerStateType } from "../../workflow/state-managers/trigger-state.js";
-import type { InterruptionState as InterruptionStateType } from "../utils/interruption/interruption-state.js";
-import type { SDKInstance as SDKInstanceType } from "../**SHARED**/sdk-instance.js";
-import type { TriggeredSubworkflowHandler as TriggeredSubworkflowHandlerType } from "../../workflow/execution/handlers/triggered-subworkflow-handler.js";
-import type { WorkflowExecutionPool as WorkflowExecutionPoolType } from "../../workflow/execution/workflow-execution-pool.js";
-import type { LLMWrapper as LLMWrapperType } from "../llm/wrapper.js";
-import type { AgentLoopRegistry as AgentLoopRegistryType } from "../../agent/stores/agent-loop-registry.js";
-import type { IAgentExecutionRegistry as AgentExecutionRegistryType } from "../../agent/stores/agent-execution-registry.js";
-import type { ExecutionHierarchyRegistry as ExecutionHierarchyRegistryType } from "../registry/execution-hierarchy-registry.js";
-import type { AgentLoopExecutor as AgentLoopExecutorType } from "../../agent/execution/executors/agent-loop-executor.js";
-import type { AgentLoopCoordinator as AgentLoopCoordinatorType } from "../../agent/execution/coordinators/agent-loop-coordinator.js";
-import type { SkillRegistry as SkillRegistryType } from "../registry/skill-registry.js";
-import type { AgentProfileRegistry as AgentProfileRegistryType } from "../registry/agent-profile-registry.js";
-import type { PromptTemplateRegistry as PromptTemplateRegistryType } from "../registry/prompt-template-registry.js";
-import type { FragmentRegistry as FragmentRegistryType } from "../registry/fragment-registry.js";
+import type { WorkflowGraphRegistry as WorkflowGraphRegistryType } from "@sdk/workflow/stores/workflow-graph-registry.js";
+import type { WorkflowExecutionRegistry as WorkflowExecutionRegistryType } from "@sdk/workflow/stores/workflow-execution-registry.js";
+import type { EventRegistry as EventRegistryType } from "@sdk/shared/registry/event-registry.js";
+import type { ToolRegistry as ToolRegistryType } from "@sdk/shared/registry/tool-registry.js";
+import type { ScriptRegistry as ScriptRegistryType, ScriptExecutionService as ScriptExecutionServiceType } from "@sdk/shared/registry/script-registry.js";
+import type { WorkflowRegistry as WorkflowRegistryType } from "@sdk/workflow/stores/workflow-registry.js";
+import type { WorkflowRelationshipRegistry as WorkflowRelationshipRegistryType } from "@sdk/workflow/stores/workflow-relationship-registry.js";
+import type { NodeTemplateRegistry as NodeTemplateRegistryType } from "@sdk/shared/registry/node-template-registry.js";
+import type { TriggerTemplateRegistry as TriggerTemplateRegistryType } from "@sdk/shared/registry/trigger-template-registry.js";
+import type { HookTemplateRegistry as HookTemplateRegistryType } from "@sdk/shared/registry/hook-template-registry.js";
+import type { TaskRegistry as TaskRegistryType } from "@sdk/workflow/stores/task/task-registry.js";
+import type { GlobalContext as GlobalContextType } from "@sdk/shared/global-context.js";
+import type { WorkflowExecutionBuilder as WorkflowExecutionBuilderType } from "@sdk/workflow/execution/factories/workflow-execution-builder.js";
+import type { WorkflowExecutor as WorkflowExecutorType } from "@sdk/workflow/execution/executors/workflow-executor.js";
+import type { WorkflowLifecycleCoordinator as WorkflowLifecycleCoordinatorType } from "@sdk/workflow/execution/coordinators/workflow-lifecycle-coordinator.js";
+import type { WorkflowStateTransitor as WorkflowStateTransitorType } from "@sdk/workflow/execution/coordinators/workflow-state-transitor.js";
+import type { CheckpointState as CheckpointStateType } from "@sdk/workflow/checkpoint/checkpoint-state-manager.js";
+import type { ConversationSession as GraphConversationSessionType } from "@sdk/shared/messaging/conversation-session.js";
+import type { LLMExecutor as LLMExecutorType } from "@sdk/services/executors/llm-executor.js";
+import type { ToolCallExecutor as ToolCallExecutorType } from "@sdk/services/executors/tool-call-executor.js";
+import type { ToolApprovalCoordinator as ToolApprovalCoordinatorType } from "@sdk/shared/coordinators/tool-approval-coordinator.js";
+import type { WorkflowExecutionCoordinator as WorkflowExecutionCoordinatorType } from "@sdk/workflow/execution/coordinators/workflow-execution-coordinator.js";
+import type { VariableCoordinator as VariableCoordinatorType } from "@sdk/workflow/execution/coordinators/variable-coordinator.js";
+import type { VariableManager as VariableManagerType } from "@sdk/workflow/state-managers/variable-manager.js";
+import type { TriggerCoordinator as TriggerCoordinatorType } from "@sdk/workflow/execution/coordinators/trigger-coordinator.js";
+import type { NodeExecutionCoordinator as NodeExecutionCoordinatorType } from "@sdk/workflow/execution/coordinators/node-execution-coordinator.js";
+import type { LLMExecutionCoordinator as LLMExecutionCoordinatorType } from "@sdk/workflow/execution/coordinators/llm-execution-coordinator.js";
+import type { CheckpointCoordinator as CheckpointCoordinatorType } from "@sdk/workflow/checkpoint/checkpoint-coordinator.js";
+import type { ConversationSession as ConversationSessionType } from "@sdk/shared/messaging/conversation-session.js";
+import type { TriggerState as TriggerStateType } from "@sdk/workflow/state-managers/trigger-state.js";
+import type { InterruptionState as InterruptionStateType } from "@sdk/shared/utils/interruption/interruption-state.js";
+import type { SDKInstance as SDKInstanceType } from "@sdk/api/shared/core/sdk-instance.js";
+import type { SDKOptions as SDKOptionsType } from "@sdk/api/shared/types/core-types.js";
+import type { TriggeredSubworkflowHandler as TriggeredSubworkflowHandlerType } from "@sdk/workflow/execution/handlers/triggered-subworkflow-handler.js";
+import type { WorkflowExecutionPool as WorkflowExecutionPoolType } from "@sdk/workflow/execution/workflow-execution-pool.js";
+import type { LLMWrapper as LLMWrapperType } from "@sdk/services/llm/wrapper.js";
+import type { AgentLoopRegistry as AgentLoopRegistryType } from "@sdk/agent/stores/agent-loop-registry.js";
+import type { IAgentExecutionRegistry as AgentExecutionRegistryType } from "@sdk/agent/stores/agent-execution-registry.js";
+import type { ExecutionHierarchyRegistry as ExecutionHierarchyRegistryType } from "@sdk/shared/registry/execution-hierarchy-registry.js";
+import type { AgentLoopExecutor as AgentLoopExecutorType } from "@sdk/agent/execution/executors/agent-loop-executor.js";
+import type { AgentLoopCoordinator as AgentLoopCoordinatorType } from "@sdk/agent/execution/coordinators/agent-loop-coordinator.js";
+import type { SkillRegistry as SkillRegistryType } from "@sdk/shared/registry/skill-registry.js";
+import type { AgentProfileRegistry as AgentProfileRegistryType } from "@sdk/shared/registry/agent-profile-registry.js";
+import type { PromptTemplateRegistry as PromptTemplateRegistryType } from "@sdk/shared/registry/prompt-template-registry.js";
+import type { FragmentRegistry as FragmentRegistryType } from "@sdk/shared/registry/fragment-registry.js";
 import type {
   CheckpointStorageAdapter as CheckpointStorageAdapterType,
   WorkflowStorageAdapter as WorkflowStorageAdapterType,
@@ -69,9 +71,9 @@ import type {
   FileCheckpointStorageAdapter as FileCheckpointStorageAdapterType,
 } from "@wf-agent/storage";
 import type { FileCheckpointManager as FileCheckpointManagerType } from "@wf-agent/common-utils";
-import type { MetricsRegistry as MetricsRegistryType } from "../metrics/metrics-registry.js";
-import type { ToolPermissionManager as ToolPermissionManagerType } from "../coordinators/tool-permission-manager.js";
-import type { RejectionMessageBuilder as RejectionMessageBuilderType } from "../coordinators/rejection-message-builder.js";
+import type { MetricsRegistry as MetricsRegistryType } from "@sdk/metrics/metrics-registry.js";
+import type { ToolPermissionManager as ToolPermissionManagerType } from "@sdk/shared/coordinators/tool-permission-manager.js";
+import type { RejectionMessageBuilder as RejectionMessageBuilderType } from "@sdk/shared/coordinators/rejection-message-builder.js";
 
 // ============================================================
 // Storage Layer Service
@@ -307,9 +309,7 @@ export const ConversationSession: ServiceIdentifier<ConversationSessionType> =
  * VariableManager - Unified Variable State Manager
  * Manages variable definitions, values, and scope stacks in a single Map structure
  */
-export const VariableManager: ServiceIdentifier<
-  import("../../workflow/state-managers/variable-manager.js").VariableManager
-> = Symbol("VariableManager");
+export const VariableManager: ServiceIdentifier<VariableManagerType> = Symbol("VariableManager");
 
 /**
  * TriggerState - Trigger State Manager
@@ -338,9 +338,7 @@ export const SDK: ServiceIdentifier<SDKInstanceType> = Symbol("SDK");
  * SDKOptions - SDK Configuration Options
  * Stores the configuration options passed during SDK initialization
  */
-export const SDKOptions: ServiceIdentifier<
-  import("../../api/shared/types/core-types.js").SDKOptions
-> = Symbol("SDKOptions");
+export const SDKOptions: ServiceIdentifier<SDKOptionsType> = Symbol("SDKOptions");
 
 /**
  * TriggeredSubworkflowHandler - Manages the execution of triggered sub-workflows

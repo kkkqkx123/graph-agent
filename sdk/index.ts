@@ -6,7 +6,7 @@
  * Usage patterns:
  *
  * 1. Import from specific submodules (recommended):
- *    import { EventRegistry } from "@wf-agent/sdk/core";
+ *    import { EventRegistry } from "@wf-agent/sdk/shared";
  *    import { AgentLoopExecutor } from "@wf-agent/sdk/agent";
  *    import { GracefulShutdownManager } from "@wf-agent/sdk/services";
  *
@@ -16,7 +16,7 @@
 
 // Main SDK instance and factory (primary exports)
 export { SDKInstance } from "./api/index.js";
-export { createSDK } from "./api/shared/shared/sdk.js";
+export { createSDK } from "./api/shared/core/sdk.js";
 
 // Re-export module namespaces for organized access
 export * as api from "./api/index.js";

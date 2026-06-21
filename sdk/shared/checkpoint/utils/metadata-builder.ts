@@ -32,7 +32,7 @@ export interface BuildCheckpointMetadataOptions {
 export function buildCheckpointMetadata(
   options?: BuildCheckpointMetadataOptions,
 ): CheckpointMetadata | undefined {
-  if (!options && !options?.metadata) {
+  if (!options || !options?.metadata) {
     return undefined;
   }
 

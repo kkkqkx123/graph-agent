@@ -19,7 +19,7 @@
 
 import type { EvaluationContext } from "@wf-agent/types";
 import type { CompiledUnit } from "./types/index.js";
-import { resolveContextPath } from "./shared/path-resolver.js";
+import { resolveContextPath } from "@sdk/services/evaluation/shared/path-resolver.js";
 import { getGlobalLogger } from "@wf-agent/common-utils";
 import { createHashAlgorithm, type IHashAlgorithm } from "@wf-agent/common-utils/cache";
 import { LRUCache } from "lru-cache";

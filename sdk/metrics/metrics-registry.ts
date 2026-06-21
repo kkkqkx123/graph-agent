@@ -24,7 +24,7 @@ import { AgentLoopMetricsCollector } from "./agent-loop-collector.js";
 import { TimeoutMetricsCollector } from "./timeout-collector.js";
 import type { MetricCollectorConfig, MetricReport, MetricType } from "./types.js";
 import { BaseMetricCollector } from "./base-collector.js";
-import { createContextualLogger } from "../../utils/contextual-logger.js";
+import { createContextualLogger } from "@sdk/utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "MetricsRegistry" });
 

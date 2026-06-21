@@ -13,7 +13,7 @@ import type { Tool } from "@wf-agent/types";
 import { ToolType } from "@wf-agent/types";
 import { ToolNotFoundError, NotFoundError } from "@wf-agent/types";
 import { CrudResourceAPI } from "../generic-resource-api.js";
-import type { APIDependencyManager } from "../../shared/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
 import type { Timestamp } from "@wf-agent/types";
 
 /**

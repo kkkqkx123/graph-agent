@@ -21,7 +21,7 @@ import {
   MessageStreamReasoningTextEvent,
 } from "@wf-agent/types";
 import { getErrorOrNew } from "@wf-agent/common-utils";
-import { createContextualLogger } from "../../utils/contextual-logger.js";
+import { createContextualLogger } from "@sdk/utils/contextual-logger.js";
 import {
   DeadLoopDetector,
   DeadLoopDetectionResult,

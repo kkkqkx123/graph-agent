@@ -6,7 +6,7 @@
  */
 
 import type { ExecutionDomainContext } from "@wf-agent/types";
-import type { WorkflowExecutionEntity } from "../../workflow/entities/workflow-execution-entity.js";
+import type { WorkflowExecutionEntity } from "@sdk/workflow/entities/workflow-execution-entity.js";
 
 /**
  * Generic factory interface for creating service instances

@@ -11,7 +11,7 @@ import {
 } from "../../types/command.js";
 import type { ScriptOptions } from "../../types/code-types.js";
 import type { ScriptExecutionResult } from "@wf-agent/types";
-import type { APIDependencyManager } from "../../shared/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
 
 /**
  * Execute the script command

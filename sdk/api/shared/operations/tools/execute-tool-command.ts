@@ -12,7 +12,7 @@ import {
 import type { ID } from "@wf-agent/types";
 import type { ToolOptions } from "../../resources/tools/tool-registry-api.js";
 import type { ToolExecutionResult } from "@wf-agent/types";
-import type { APIDependencyManager } from "../../shared/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../core/sdk-dependencies.js";
 
 /**
  * Execute the tool command.

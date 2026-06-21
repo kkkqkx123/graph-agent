@@ -4,7 +4,7 @@
 
 import { BaseCommand, CommandValidationResult } from "../../../shared/types/command.js";
 import { WorkflowExecutionNotFoundError } from "@wf-agent/types";
-import type { APIDependencyManager } from "../../../shared/shared/sdk-dependencies.js";
+import type { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
 
 /**
  * Enabling Trigger Parameters

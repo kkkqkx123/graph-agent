@@ -12,7 +12,7 @@ import { BaseMetricCollector } from "./base-collector.js";
 import type { MetricCollectorConfig } from "./types.js";
 import { NODE_METRICS, TEMPLATE_METRICS, SUBGRAPH_METRICS } from "./constants.js";
 import { PrometheusFormatter, type PrometheusMetric } from "./utils/prometheus-formatter.js";
-import { createContextualLogger } from "../../utils/contextual-logger.js";
+import { createContextualLogger } from "@sdk/utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "NodeMetricsCollector" });
 

@@ -24,7 +24,7 @@ import {
   validationFailure,
 } from "../../../shared/types/command.js";
 import type { WorkflowExecutionOptions, BaseEvent } from "@wf-agent/types";
-import { APIDependencyManager } from "../../../shared/shared/sdk-dependencies.js";
+import { APIDependencyManager } from "../../../shared/core/sdk-dependencies.js";
 import type { WorkflowExecutionBuildResult } from "../../../../workflow/execution/factories/workflow-execution-builder.js";
 import * as ServiceIdentifiers from "../../../../di/service-identifiers.js";
 

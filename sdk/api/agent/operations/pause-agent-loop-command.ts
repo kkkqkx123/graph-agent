@@ -19,7 +19,7 @@ import {
   validationFailure,
 } from "../../shared/types/command.js";
 import type { ID } from "@wf-agent/types";
-import type { APIDependencyManager } from "../../shared/shared/sdk-dependencies.js";
+import type { APIDependencyManager } from "@sdk/api/shared/core/sdk-dependencies.js";
 
 /**
  * Pause Agent Loop Command Parameters

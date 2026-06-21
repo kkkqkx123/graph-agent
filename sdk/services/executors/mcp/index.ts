@@ -13,9 +13,9 @@ export { McpServerExecutor } from "./mcp-server-executor.js";
 export { McpExecutorFactory } from "./mcp-executor-factory.js";
 
 // Core connection management
-export { McpConnectionManager } from "./shared/index.js";
-export { McpClient } from "./shared/index.js";
-export { McpServerRegistry, getMcpManager, releaseMcpManager } from "./shared/index.js";
+export { McpConnectionManager } from "./core/index.js";
+export { McpClient } from "./core/index.js";
+export { McpServerRegistry, getMcpManager, releaseMcpManager } from "./core/index.js";
 
 // State management
 export {
@@ -30,7 +30,7 @@ export {
   updateLastActivity,
   updateLastHealthCheck,
   isIdleBeyond,
-} from "./shared/index.js";
+} from "./core/index.js";
 
 // Features - Context Provider
 export { McpToolsDynamicContextProvider, createMcpToolsContextProvider } from "./features/metadata/dynamic-context-provider.js";
