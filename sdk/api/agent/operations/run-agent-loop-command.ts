@@ -20,6 +20,8 @@ import {
 import type { AgentLoopRuntimeConfig, AgentLoopResult } from "@wf-agent/types";
 import type { AgentLoopCoordinator } from "../../../agent/execution/coordinators/agent-loop-coordinator.js";
 import type { AgentLoopEntityOptions } from "../../../agent/execution/factories/agent-loop-factory.js";
+import { createContextualLogger } from "../../../utils/contextual-logger.js";
+import { withExecutionTimeout } from "../../shared/utils/timeout-execution.js";
 
 /**
  * Run Agent Loop Command Parameters
@@ -29,6 +31,8 @@ export interface RunAgentLoopParams {
   config: AgentLoopRuntimeConfig;
   /** Implementation options */
   options?: AgentLoopEntityOptions;
+  /** Optional execution timeout in milliseconds */
+  timeoutMs?: number;
 }
 
 /**
@@ -56,7 +60,52 @@ export class RunAgentLoopCommand extends ExecutionCommand<AgentLoopResult> {
   }
 
   protected async executeInternal(): Promise<AgentLoopResult> {
-    return this.coordinator.execute(this.params.config, this.params.options);
+    const logger = createContextualLogger({
+      component: "RunAgentLoopCommand",
+      commandName: "RunAgentLoopCommand",
+    });
+
+    const startTime = Date.now();
+    const maxIterations = this.params.config?.maxIterations ?? 10;
+    const estimatedDefaultTimeout = maxIterations * 30000; // 30s per iteration
+
+    logger.info("Command execution started", {
+      maxIterations,
+      profileId: this.params.config?.profileId,
+      timeoutMs: this.params.timeoutMs ?? estimatedDefaultTimeout,
+    });
+
+    try {
+      const result = await withExecutionTimeout(
+        this.coordinator.execute(this.params.config, this.params.options),
+        this.params.timeoutMs ?? estimatedDefaultTimeout,
+        "Agent Loop Execution"
+      );
+
+      const duration = Date.now() - startTime;
+      logger.info("Command execution completed successfully", undefined, {
+        iterations: result.iterations,
+        success: result.success,
+        toolCallCount: result.toolCallCount,
+        duration,
+      });
+
+      return result;
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      const errorMsg = error instanceof Error ? error.message : String(error);
+
+      if (errorMsg.includes("timeout")) {
+        logger.warn("Command execution timeout", undefined, {
+          duration,
+          timeoutMs: this.params.timeoutMs ?? estimatedDefaultTimeout,
+        });
+      } else {
+        logger.error("Command execution failed", undefined, { duration }, error as Error);
+      }
+
+      throw error;
+    }
   }
 
   validate(): CommandValidationResult {

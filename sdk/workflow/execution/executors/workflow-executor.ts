@@ -28,6 +28,7 @@ import type { WorkflowExecutionEntity } from "../../entities/workflow-execution-
 import type { WorkflowGraphRegistry } from "../../stores/workflow-graph-registry.js";
 import type { WorkflowExecutionCoordinator } from "../coordinators/workflow-execution-coordinator.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
+import { ExecutionError } from "@wf-agent/types";
 
 const logger = createContextualLogger({ component: "workflow-executor" });
 
@@ -87,7 +88,11 @@ export class WorkflowExecutor {
     // Verify the existence of the workflow graph.
     const workflowGraph = this.workflowGraphRegistry.get(workflowId);
     if (!workflowGraph) {
-      throw new Error(`Workflow graph not found for workflow: ${workflowId}`);
+      throw new ExecutionError(
+        `Workflow graph not found for workflow: ${workflowId}`,
+        undefined,
+        workflowId
+      );
     }
 
     // Create a WorkflowExecutionCoordinator using a factory and execute it.

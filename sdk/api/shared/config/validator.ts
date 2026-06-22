@@ -202,6 +202,86 @@ export class FieldValidator {
   }
 
   /**
+   * Validate string length
+   */
+  static length(
+    value: string,
+    fieldName: string,
+    min?: number,
+    max?: number,
+  ): string | null {
+    if (min !== undefined && value.length < min) {
+      return `${fieldName} must be at least ${min} characters`;
+    }
+    if (max !== undefined && value.length > max) {
+      return `${fieldName} must be at most ${max} characters`;
+    }
+    return null;
+  }
+
+  /**
+   * Validate URL format
+   */
+  static url(value: string, fieldName: string): string | null {
+    try {
+      new URL(value);
+      return null;
+    } catch {
+      return `${fieldName} must be a valid URL`;
+    }
+  }
+
+  /**
+   * Validate email format
+   */
+  static email(value: string, fieldName: string): string | null {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(value) ? null : `${fieldName} must be a valid email`;
+  }
+
+  /**
+   * Validate date is not in the past
+   */
+  static notPast(value: Date, fieldName: string): string | null {
+    if (value < new Date()) {
+      return `${fieldName} cannot be in the past`;
+    }
+    return null;
+  }
+
+  /**
+   * Validate JSON string
+   */
+  static json(value: string, fieldName: string): string | null {
+    try {
+      JSON.parse(value);
+      return null;
+    } catch {
+      return `${fieldName} must be valid JSON`;
+    }
+  }
+
+  /**
+   * Validate that value is not empty or whitespace
+   */
+  static notEmpty(value: string, fieldName: string): string | null {
+    if (!value || value.trim() === '') {
+      return `${fieldName} cannot be empty`;
+    }
+    return null;
+  }
+
+  /**
+   * Validate array is not empty
+   */
+  static arrayNotEmpty<T>(value: T[], fieldName: string): string | null {
+    if (!Array.isArray(value) || value.length === 0) {
+      return `${fieldName} cannot be empty`;
+    }
+    return null;
+  }
+
+  /**
    * Run multiple field validators and collect errors.
    */
   static validateFields(

@@ -13,6 +13,8 @@ import { validateAgentLoopControlParams } from "../../shared/operations/validato
 import type { CommandValidationResult } from "../../shared/types/command.js";
 import type { ID } from "@wf-agent/types";
 import type { APIDependencyManager } from "@sdk/api/shared/core/sdk-dependencies.js";
+import { ExecutionError } from "@wf-agent/types";
+import { createContextualLogger } from "../../../utils/contextual-logger.js";
 
 /**
  * Pause Agent Loop command parameters
@@ -46,21 +48,43 @@ export class PauseAgentLoopCommand extends ManagementCommand<void> {
   }
 
   protected async executeInternal(): Promise<void> {
-    const registry = this.dependencies.getAgentLoopRegistry();
+    const logger = createContextualLogger({
+      component: "PauseAgentLoopCommand",
+      commandName: "PauseAgentLoopCommand",
+      agentLoopId: this.params.agentLoopId,
+    });
 
-    // Getting the Agent Loop Entity
-    const entity = await registry.get(this.params.agentLoopId);
-    if (!entity) {
-      throw new Error(`Agent Loop not found: ${this.params.agentLoopId}`);
+    const startTime = Date.now();
+    logger.info("Command execution started", {
+      agentLoopId: this.params.agentLoopId,
+    });
+
+    try {
+      const registry = this.dependencies.getAgentLoopRegistry();
+
+      // Getting the Agent Loop Entity
+      const entity = await registry.get(this.params.agentLoopId);
+      if (!entity) {
+        throw new ExecutionError(`Agent Loop not found: ${this.params.agentLoopId}`);
+      }
+
+      // Check if you can pause
+      if (!entity.isRunning()) {
+        throw new ExecutionError(`Agent Loop is not running, cannot pause`);
+      }
+
+      // Perform a pause operation
+      entity.pause();
+
+      const duration = Date.now() - startTime;
+      logger.info("Command execution completed successfully", undefined, {
+        duration,
+      });
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      logger.error("Command execution failed", undefined, { duration }, error as Error);
+      throw error;
     }
-
-    // Check if you can pause
-    if (!entity.isRunning()) {
-      throw new Error(`Agent Loop is not running, cannot pause`);
-    }
-
-    // Perform a pause operation
-    entity.pause();
   }
 
   validate(): CommandValidationResult {

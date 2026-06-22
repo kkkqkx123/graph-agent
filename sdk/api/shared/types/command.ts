@@ -13,6 +13,22 @@ import { SDKError, ExecutionError as SDKExecutionError } from "@wf-agent/types";
 import { ok, err, isError, now, diffTimestamp } from "@wf-agent/common-utils";
 
 /**
+ * Extract meaningful error message from unknown error type
+ * Prevents [object Object] error messages in error handling
+ */
+function extractErrorMessage(error: unknown): string {
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object' && 'message' in error) {
+    return (error as any).message || '';
+  }
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+}
+
+/**
  * Extended command metadata with support information
  */
 export interface CommandMetadataDefinition {
@@ -169,6 +185,7 @@ export abstract class BaseCommand<T> implements Command<T> {
 
   /**
    * Unified error handling method
+   * Extracts meaningful error messages to prevent [object Object] errors
    */
   protected handleError<T>(error: unknown, startTime: number): ExecutionResult<T> {
     let sdkError: SDKError;
@@ -187,7 +204,9 @@ export abstract class BaseCommand<T> implements Command<T> {
         error,
       );
     } else {
-      sdkError = new SDKExecutionError(String(error), undefined, undefined, undefined, undefined);
+      // Extract meaningful error message to prevent [object Object]
+      const message = extractErrorMessage(error);
+      sdkError = new SDKExecutionError(message, undefined, undefined, undefined, undefined);
     }
 
     return this.failure(sdkError, diffTimestamp(startTime, now()));

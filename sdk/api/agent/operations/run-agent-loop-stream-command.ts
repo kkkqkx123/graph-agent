@@ -20,6 +20,7 @@ import {
 import { AgentLoopEntity } from "../../../agent/entities/agent-loop-entity.js";
 import { ConversationSession } from "../../../shared/messaging/conversation-session.js";
 import { AgentStateCoordinator } from "../../../agent/state-managers/agent-state-coordinator.js";
+import { createContextualLogger } from "../../../utils/contextual-logger.js";
 
 /**
  * Run Agent Loop Stream command parameters
@@ -54,6 +55,17 @@ export class RunAgentLoopStreamCommand extends StreamingCommand<AsyncGenerator<A
   }
 
   protected async executeInternal(): Promise<AsyncGenerator<AgentLoopStreamEvent>> {
+    const logger = createContextualLogger({
+      component: "RunAgentLoopStreamCommand",
+      commandName: "RunAgentLoopStreamCommand",
+    });
+
+    const startTime = Date.now();
+    logger.info("Stream command execution started", {
+      maxIterations: this.params.config?.maxIterations,
+      profileId: this.params.config?.profileId,
+    });
+
     const entity = new AgentLoopEntity(`command-${Date.now()}`, this.params.config);
     const conversationSession = new ConversationSession({
       executionId: entity.id,
@@ -61,7 +73,18 @@ export class RunAgentLoopStreamCommand extends StreamingCommand<AsyncGenerator<A
     const stateCoordinator = new AgentStateCoordinator({
       conversationManager: conversationSession,
     });
-    return this.agentLoopExecutor.executeStream(entity, stateCoordinator);
+
+    logger.debug("Streaming execution context initialized", undefined, {
+      entityId: entity.id,
+    });
+
+    try {
+      return this.agentLoopExecutor.executeStream(entity, stateCoordinator);
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      logger.error("Stream command execution failed", undefined, { duration }, error as Error);
+      throw error;
+    }
   }
 
   validate(): CommandValidationResult {

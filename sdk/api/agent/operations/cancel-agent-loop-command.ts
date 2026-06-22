@@ -13,6 +13,8 @@ import { validateAgentLoopControlParams } from "../../shared/operations/validato
 import type { CommandValidationResult } from "../../shared/types/command.js";
 import type { ID } from "@wf-agent/types";
 import type { APIDependencyManager } from "@sdk/api/shared/core/sdk-dependencies.js";
+import { ExecutionError } from "@wf-agent/types";
+import { createContextualLogger } from "../../../utils/contextual-logger.js";
 
 /**
  * Cancel Agent Loop command parameters
@@ -47,21 +49,50 @@ export class CancelAgentLoopCommand extends ManagementCommand<void> {
   }
 
   protected async executeInternal(): Promise<void> {
-    const registry = this.dependencies.getAgentLoopRegistry();
+    const logger = createContextualLogger({
+      component: "CancelAgentLoopCommand",
+      commandName: "CancelAgentLoopCommand",
+      agentLoopId: this.params.agentLoopId,
+    });
 
-    // Obtain the Agent Loop entity
-    const entity = await registry.get(this.params.agentLoopId);
-    if (!entity) {
-      throw new Error(`Agent Loop not found: ${this.params.agentLoopId}`);
+    const startTime = Date.now();
+    logger.info("Command execution started", {
+      agentLoopId: this.params.agentLoopId,
+      reason: this.params.reason,
+    });
+
+    try {
+      const registry = this.dependencies.getAgentLoopRegistry();
+
+      // Obtain the Agent Loop entity
+      const entity = await registry.get(this.params.agentLoopId);
+      if (!entity) {
+        throw new ExecutionError(`Agent Loop not found: ${this.params.agentLoopId}`);
+      }
+
+      // Check if it's possible to cancel.
+      if (!entity.isRunning() && !entity.isPaused()) {
+        throw new ExecutionError(`Agent Loop is not running or paused, cannot cancel`);
+      }
+
+      // Execute the cancel operation.
+      entity.stop();
+
+      const duration = Date.now() - startTime;
+      logger.info("Command execution completed successfully", undefined, {
+        duration,
+        reason: this.params.reason,
+      });
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      logger.error(
+        "Command execution failed",
+        undefined,
+        { duration, reason: this.params.reason },
+        error as Error
+      );
+      throw error;
     }
-
-    // Check if it's possible to cancel.
-    if (!entity.isRunning() && !entity.isPaused()) {
-      throw new Error(`Agent Loop is not running or paused, cannot cancel`);
-    }
-
-    // Execute the cancel operation.
-    entity.stop();
   }
 
   validate(): CommandValidationResult {

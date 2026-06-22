@@ -13,6 +13,8 @@ import { validateAgentLoopControlParams } from "../../shared/operations/validato
 import type { CommandValidationResult } from "../../shared/types/command.js";
 import type { ID } from "@wf-agent/types";
 import type { APIDependencyManager } from "@sdk/api/shared/core/sdk-dependencies.js";
+import { ExecutionError } from "@wf-agent/types";
+import { createContextualLogger } from "../../../utils/contextual-logger.js";
 
 /**
  * Resume Agent Loop command parameters
@@ -46,21 +48,43 @@ export class ResumeAgentLoopCommand extends ManagementCommand<void> {
   }
 
   protected async executeInternal(): Promise<void> {
-    const registry = this.dependencies.getAgentLoopRegistry();
+    const logger = createContextualLogger({
+      component: "ResumeAgentLoopCommand",
+      commandName: "ResumeAgentLoopCommand",
+      agentLoopId: this.params.agentLoopId,
+    });
 
-    // Obtain the Agent Loop entity
-    const entity = await registry.get(this.params.agentLoopId);
-    if (!entity) {
-      throw new Error(`Agent Loop not found: ${this.params.agentLoopId}`);
+    const startTime = Date.now();
+    logger.info("Command execution started", {
+      agentLoopId: this.params.agentLoopId,
+    });
+
+    try {
+      const registry = this.dependencies.getAgentLoopRegistry();
+
+      // Obtain the Agent Loop entity
+      const entity = await registry.get(this.params.agentLoopId);
+      if (!entity) {
+        throw new ExecutionError(`Agent Loop not found: ${this.params.agentLoopId}`);
+      }
+
+      // Check if it is possible to restore.
+      if (!entity.isPaused()) {
+        throw new ExecutionError(`Agent Loop is not paused, cannot resume`);
+      }
+
+      // Perform the recovery operation.
+      entity.resume();
+
+      const duration = Date.now() - startTime;
+      logger.info("Command execution completed successfully", undefined, {
+        duration,
+      });
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      logger.error("Command execution failed", undefined, { duration }, error as Error);
+      throw error;
     }
-
-    // Check if it is possible to restore.
-    if (!entity.isPaused()) {
-      throw new Error(`Agent Loop is not paused, cannot resume`);
-    }
-
-    // Perform the recovery operation.
-    entity.resume();
   }
 
   validate(): CommandValidationResult {
