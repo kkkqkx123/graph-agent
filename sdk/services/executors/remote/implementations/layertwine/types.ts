@@ -45,6 +45,7 @@ export interface LayertwinePartitionInfo {
 export interface LayertwineCommitRequest {
   message: string;
   author?: string;
+  parentId?: string;
 }
 
 export interface LayertwineCommitResponse {
@@ -70,9 +71,28 @@ export interface LayertwineCheckpointInfo {
   snapshots: string[];
   createdAt: number;
   gitAnchor?: string;
+  parentId?: string;
 }
 
 // ── Branch ──
+export interface LayertwineBranchCreateRequest {
+  name: string;
+}
+
+export interface LayertwineBranchCreateResponse {
+  name: string;
+  head: string;
+}
+
+export interface LayertwineBranchSwitchRequest {
+  name: string;
+}
+
+export interface LayertwineBranchSwitchResponse {
+  name: string;
+  checkpointId: string;
+}
+
 export interface LayertwineBranchListResponse {
   branches: LayertwineBranchInfo[];
   current?: string;
@@ -142,6 +162,7 @@ export interface LayertwineRestoreResponse {
     author: string;
     message: string;
     createdAt: number;
+    parentId?: string;
   };
 }
 
@@ -158,6 +179,7 @@ export interface LayertwineSelectiveRestoreResponse {
     author: string;
     message: string;
     createdAt: number;
+    parentId?: string;
   };
 }
 

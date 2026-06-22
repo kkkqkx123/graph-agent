@@ -20,9 +20,18 @@ describe("Layertwine Checkpoint Adapter (Generic)", () => {
         checkpointId: "test-checkpoint-123",
         message: "Test checkpoint",
       }),
+      edit: vi.fn().mockResolvedValue({ snapshotId: "snap-123" }),
       restoreCheckpoint: vi.fn().mockResolvedValue({
         checkpointId: "test-checkpoint-123",
-        snapshots: [],
+        snapshots: [
+          {
+            id: "snap-123",
+            source: ".checkpoints/test-checkpoint-123.json",
+            contentType: "application/json",
+            size: 1024,
+            createdAt: Date.now(),
+          },
+        ],
         ancestry: [],
         metadata: {
           author: "test-user",
@@ -30,18 +39,37 @@ describe("Layertwine Checkpoint Adapter (Generic)", () => {
           createdAt: Date.now(),
         },
       }),
+      getSnapshot: vi.fn().mockResolvedValue({
+        snapshotId: "snap-123",
+        source: ".checkpoints/test-checkpoint-123.json",
+        contentType: "application/json",
+        content: JSON.stringify({
+          id: "test-checkpoint-123",
+          type: "FULL",
+          snapshot: { status: "CREATED", currentIteration: 0 },
+        }),
+        size: 1024,
+      }),
       log: vi.fn().mockResolvedValue({
         checkpoints: [
           {
             id: "test-checkpoint-123",
             author: "test-agent",
-            message: "Test checkpoint",
+            message: "Test checkpoint [parent:agent-1] [type:FULL]",
             parents: [],
             snapshots: [],
             createdAt: Date.now(),
           },
         ],
         total: 1,
+      }),
+      branchCreate: vi.fn().mockResolvedValue({ name: "agent-loop/agent-1", head: "cp-0" }),
+      branchSwitch: vi.fn().mockResolvedValue({ name: "agent-loop/agent-1", checkpointId: "cp-0" }),
+      branchList: vi.fn().mockResolvedValue({
+        branches: [
+          { name: "main", head: "cp-0", updatedAt: new Date().toISOString(), isCurrent: true },
+        ],
+        current: "main",
       }),
     };
   });
