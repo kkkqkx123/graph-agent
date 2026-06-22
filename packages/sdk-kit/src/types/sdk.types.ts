@@ -3,7 +3,22 @@
  *
  * These types define the contract that the underlying SDK must satisfy.
  * Used for validation and type safety without requiring hard dependencies on SDK implementation.
+ *
+ * Phase 1 enhancement:
+ * - Stricter type definitions
+ * - Better SDK feature detection
+ * - Clearer API contracts
  */
+
+/**
+ * SDK Feature support detection
+ */
+export type SDKFeature =
+  | 'checkpoints'
+  | 'events'
+  | 'streaming'
+  | 'undo'
+  | 'cancellation';
 
 /**
  * Result type returned by SDK methods
@@ -106,6 +121,15 @@ export interface SDKFactory {
 }
 
 /**
+ * Base command interface
+ * Represents a command that can be executed by the SDK
+ */
+export interface BaseCommand {
+  type: string;
+  [key: string]: unknown;
+}
+
+/**
  * ExecuteWorkflowCommand constructor interface
  */
 export interface ExecuteWorkflowCommandConstructor {
@@ -132,14 +156,37 @@ export interface ExecuteWorkflowConfig {
 }
 
 /**
- * Main SDK interface
+ * Main SDK interface (Phase 1 enhancement)
+ *
+ * Provides a clearer contract for SDK implementations with:
+ * - Required version property
+ * - Strongly-typed executeCommand method
+ * - SDKFactory access
+ * - Required ExecuteWorkflowCommand
+ * - Feature detection support
  */
 export interface SDK {
-  version?: string;
-  executeCommand(command: any): Promise<SDKResult<any>>;
+  /** SDK version string (required, format: semver) */
+  readonly version: string;
+
+  /** Execute a command and return structured result */
+  executeCommand(command: BaseCommand): Promise<SDKResult<any>>;
+
+  /** Get SDK factory for accessing registries and dependencies */
   getFactory(): SDKFactory;
-  ExecuteWorkflowCommand?: ExecuteWorkflowCommandConstructor;
+
+  /** Execute workflow command constructor (required) */
+  readonly ExecuteWorkflowCommand: ExecuteWorkflowCommandConstructor;
+
+  /** Alternative API namespace for command constructors */
   api?: {
-    ExecuteWorkflowCommand?: ExecuteWorkflowCommandConstructor;
+    readonly ExecuteWorkflowCommand: ExecuteWorkflowCommandConstructor;
   };
+
+  /** Check if SDK supports a specific feature */
+  supports?(feature: SDKFeature): boolean;
+
+  /** SDK options/configuration (optional) */
+  options?: Record<string, unknown>;
 }
+

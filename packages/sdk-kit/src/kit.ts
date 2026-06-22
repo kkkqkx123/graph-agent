@@ -12,23 +12,26 @@ import { ResourceAPIImpl } from './api/resource.api.js';
 import { ExecutionRunner } from './executors/execution.executor.js';
 import { QueryExecutor } from './executors/query.executor.js';
 import { ResourceManager } from './managers/resource.manager.js';
+import { EventManager } from './managers/event.manager.js';
 import { KitError, KitErrorCode } from './converters/error.converter.js';
 import type { WorkflowAPI } from './api/workflow.api.js';
 import type { ExecutionAPI } from './api/execution.api.js';
 import type { QueryAPI } from './api/query.api.js';
 import type { ResourceAPI } from './types/resource.types.js';
 import type { SDK, ExecuteWorkflowCommandConstructor } from './types/sdk.types.js';
+import type { SDKKitOptions } from './types/options.types.js';
+import { mergeSDKKitOptions } from './types/options.types.js';
 
 /**
  * SDKKit - Main class providing high-level API access
  *
- * Phase 1 APIs:
+ * Core APIs:
  * - workflow(): WorkflowAPI - Define workflows programmatically
  * - execution(): ExecutionAPI - Execute workflows with simplified interface
  * - query(): QueryAPI - Query execution records with filters
  * - resource(): ResourceAPI - Manage workflow resources (CRUD + versioning)
- *
- * Improvement: Added SDK validation and command caching for performance
+ * - events(): EventManager - Subscribe to execution events
+ * - getConfig(): Get current configuration
  */
 export class SDKKit {
   private workflowAPI: WorkflowAPI;
@@ -38,18 +41,29 @@ export class SDKKit {
   private executionRunner: ExecutionRunner;
   private queryExecutor: QueryExecutor;
   private resourceManager: ResourceManager;
+  private eventManager: EventManager;
   private cachedExecuteCommand: ExecuteWorkflowCommandConstructor;
   private sdk: SDK;
+  private config: Required<SDKKitOptions>;
 
-  constructor(sdk: any) {
+  constructor(sdk: any, options?: SDKKitOptions) {
     // Validate SDK instance before using it
     this.validateSDK(sdk);
 
     // Store the SDK instance
     this.sdk = sdk;
 
+    // Merge user options with defaults
+    this.config = mergeSDKKitOptions(options);
+
     // Cache the ExecuteWorkflowCommand class to avoid repeated imports
     this.cachedExecuteCommand = this.cacheExecuteCommand(sdk);
+
+    // Initialize event manager for execution event monitoring
+    this.eventManager = new EventManager();
+
+    // Apply configuration to EventManager
+    this.applyEventConfig();
 
     // Initialize managers
     this.executionRunner = new ExecutionRunner(sdk, this.cachedExecuteCommand);
@@ -64,7 +78,19 @@ export class SDKKit {
   }
 
   /**
+   * Apply event configuration to EventManager
+   */
+  private applyEventConfig(): void {
+    if (this.config.events?.enableHistory === false) {
+      this.eventManager.setMaxHistorySize(0);
+    } else if (this.config.events?.maxHistorySize) {
+      this.eventManager.setMaxHistorySize(this.config.events.maxHistorySize);
+    }
+  }
+
+  /**
    * Validate SDK instance has required methods and properties
+   * Enhanced validation (Phase 1.3) with stricter checks
    */
   private validateSDK(sdk: any): asserts sdk is SDK {
     if (!sdk || typeof sdk !== 'object') {
@@ -74,6 +100,7 @@ export class SDKKit {
       );
     }
 
+    // Check for required methods
     if (typeof sdk.executeCommand !== 'function') {
       throw new KitError(
         'SDK missing executeCommand method',
@@ -88,10 +115,50 @@ export class SDKKit {
       );
     }
 
-    // Validate SDK version if available
-    if (sdk.version && !this.isCompatibleVersion(sdk.version)) {
+    // Validate SDK factory
+    try {
+      const factory = sdk.getFactory();
+      if (!factory || typeof factory !== 'object') {
+        throw new KitError(
+          'SDK.getFactory() must return a valid factory object',
+          KitErrorCode.INTERNAL_ERROR
+        );
+      }
+      if (typeof factory.getDependencies !== 'function') {
+        throw new KitError(
+          'SDK factory must have getDependencies method',
+          KitErrorCode.INTERNAL_ERROR
+        );
+      }
+    } catch (error) {
+      if (error instanceof KitError) throw error;
       throw new KitError(
-        `SDK version ${sdk.version} not compatible. Required: 1.0.0+`,
+        `Failed to validate SDK factory: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        KitErrorCode.INTERNAL_ERROR
+      );
+    }
+
+    // Validate SDK version if available (Phase 1.3 enhancement)
+    if (sdk.version !== undefined) {
+      if (typeof sdk.version !== 'string') {
+        throw new KitError(
+          `SDK version must be a string, got ${typeof sdk.version}`,
+          KitErrorCode.INTERNAL_ERROR
+        );
+      }
+      if (!this.isCompatibleVersion(sdk.version)) {
+        throw new KitError(
+          `SDK version ${sdk.version} not compatible. Required: 1.0.0+`,
+          KitErrorCode.INTERNAL_ERROR
+        );
+      }
+    }
+
+    // Validate ExecuteWorkflowCommand availability (stricter)
+    const hasExecuteCommand = !!sdk.ExecuteWorkflowCommand || !!sdk.api?.ExecuteWorkflowCommand;
+    if (!hasExecuteCommand) {
+      throw new KitError(
+        'ExecuteWorkflowCommand not found in SDK exports (must be at sdk.ExecuteWorkflowCommand or sdk.api.ExecuteWorkflowCommand)',
         KitErrorCode.INTERNAL_ERROR
       );
     }
@@ -99,10 +166,11 @@ export class SDKKit {
 
   /**
    * Check if SDK version is compatible (major version >= 1)
+   * Used during Phase 1.3 validation enhancement
    */
   private isCompatibleVersion(version?: string): boolean {
     if (!version || typeof version !== 'string') {
-      return true; // Allow undefined or non-string versions
+      return true; // Allow undefined or non-string versions (legacy SDKs)
     }
     try {
       const parts = version.split('.');
@@ -211,6 +279,54 @@ export class SDKKit {
    */
   resource(): ResourceAPI {
     return this.resourceAPI;
+  }
+
+  /**
+   * Get Execution Event Manager for subscribing to execution events
+   *
+   * Provides access to workflow execution events including:
+   * - Execution lifecycle events (start, progress, completed, failed)
+   * - Node execution events (node_started, node_completed, node_failed)
+   * - Event history and timeline queries
+   *
+   * @example
+   * ```typescript
+   * import { ExecutionEventType } from '@wf-agent/sdk-kit';
+   *
+   * // Subscribe to execution events
+   * kit.events().subscribe(
+   *   ExecutionEventType.EXECUTION_START,
+   *   (event) => console.log('Execution started:', event.executionId)
+   * );
+   *
+   * // Query event history
+   * const events = kit.events().getExecutionEvents(executionId);
+   * events.forEach(event => {
+   *   console.log(`[${event.type}] ${event.timestamp}`);
+   * });
+   * ```
+   *
+   * @returns EventManager instance for event subscription and history queries
+   */
+  events(): EventManager {
+    return this.eventManager;
+  }
+
+  /**
+   * Get current configuration
+   * Returns read-only copy of configuration
+   *
+   * @example
+   * ```typescript
+   * const config = kit.getConfig();
+   * console.log(config.events.maxHistorySize);  // 10000
+   * console.log(config.logging.level);          // 'info'
+   * ```
+   *
+   * @returns Readonly copy of the current SDK-Kit configuration
+   */
+  getConfig(): Readonly<Required<SDKKitOptions>> {
+    return Object.freeze(structuredClone(this.config));
   }
 
   /**
