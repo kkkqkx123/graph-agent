@@ -106,17 +106,25 @@ export class WorkflowRegistryAPI extends SimplifiedCrudResourceAPI<WorkflowTempl
   }
 
   /**
-   * Creating Workflows
+   * Creating Workflows - Returns Result pattern for error handling
    */
   protected async createResource(workflow: WorkflowTemplate): Promise<void> {
-    await this.dependencies.getWorkflowRegistry().registerAsync(workflow);
+    try {
+      await this.dependencies.getWorkflowRegistry().registerAsync(workflow);
+    } catch (error) {
+      this.throwCommandError(error, "CREATE_WORKFLOW");
+    }
   }
 
   /**
-   * Deleting workflows
+   * Deleting workflows - Returns Result pattern for error handling
    */
   protected async deleteResource(id: string): Promise<void> {
-    this.dependencies.getWorkflowRegistry().unregister(id);
+    try {
+      this.dependencies.getWorkflowRegistry().unregister(id);
+    } catch (error) {
+      this.throwCommandError(error, "DELETE_WORKFLOW");
+    }
   }
 
   /**
@@ -124,11 +132,33 @@ export class WorkflowRegistryAPI extends SimplifiedCrudResourceAPI<WorkflowTempl
    * Versioning by creating a new workflow instance based on the immutability principle
    */
   protected async updateResource(id: string, updates: Partial<WorkflowTemplate>): Promise<void> {
-    // Call createVersionedUpdate directly to implement the update operation.
-    await this.createVersionedUpdate(id, updates, {
-      keepOriginal: false,
-      force: false,
-    });
+    try {
+      // Call createVersionedUpdate directly to implement the update operation.
+      await this.createVersionedUpdate(id, updates, {
+        keepOriginal: false,
+        force: false,
+      });
+    } catch (error) {
+      this.throwCommandError(error, "UPDATE_WORKFLOW");
+    }
+  }
+
+  /**
+   * Helper to convert SDK errors to CommandError
+   */
+  private throwCommandError(error: unknown, operation: string): never {
+    const { CommandNotFoundError } = require("../../shared/types/command-error.js");
+
+    if (error instanceof Error) {
+      if (error.message.includes("not found") || error.message.includes("does not exist")) {
+        throw new CommandNotFoundError(
+          error.message,
+          { operation, originalError: error.message },
+          "error"
+        );
+      }
+    }
+    throw error;
   }
 
   /**

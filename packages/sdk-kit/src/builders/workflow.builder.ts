@@ -1,17 +1,31 @@
 /**
- * Workflow Builder - Programmatic workflow definition
+ * Workflow Builder - Programmatic workflow definition using Result pattern
+ *
+ * Design:
+ * - Builder returns Result<this, KitError> to enable chaining
+ * - build() collects and returns all validation errors at once
+ * - No exceptions thrown during building
+ * - Errors are values that can be handled via Result
  */
 
 import { KitError, KitErrorCode } from '../converters/error.converter.js';
 import type { WorkflowTemplate, Node, Edge, NodeConfig, EdgeCondition } from '../types/workflow.types.js';
+import type { Result } from '@wf-agent/common-utils';
+import { ok, err } from '@wf-agent/common-utils';
 
 /**
  * Workflow Builder implementation
+ *
+ * Methods return Result for error handling:
+ * - Chainable: result.andThen(builder => builder.node(...))
+ * - Safe: errors don't interrupt the chain
+ * - Flexible: apply conditional operations with map/andThen
  */
 export class WorkflowBuilder {
   private template: WorkflowTemplate;
   private nodes: Map<string, Node> = new Map();
   private edges: Edge[] = [];
+  private errors: KitError[] = [];
 
   constructor(id: string) {
     this.template = {
@@ -24,22 +38,26 @@ export class WorkflowBuilder {
 
   /**
    * Add a node to the workflow
+   *
+   * Returns Result for error handling without exceptions
    */
-  node(id: string, config: NodeConfig): this {
+  node(id: string, config: NodeConfig): Result<this, KitError> {
     // Validate node ID uniqueness
     if (this.nodes.has(id)) {
-      throw new KitError(
+      return err(new KitError(
         `Node with ID "${id}" already exists`,
-        KitErrorCode.DUPLICATE_NODE_ID
-      );
+        KitErrorCode.DUPLICATE_NODE_ID,
+        { nodeId: id }
+      ));
     }
 
     // Validate node type
     if (!config.type) {
-      throw new KitError(
-        'Node type is required',
-        KitErrorCode.VALIDATION_ERROR
-      );
+      return err(new KitError(
+        `Node type is required for node "${id}"`,
+        KitErrorCode.VALIDATION_ERROR,
+        { nodeId: id, field: 'type' }
+      ));
     }
 
     const node: Node = {
@@ -51,26 +69,31 @@ export class WorkflowBuilder {
     };
 
     this.nodes.set(id, node);
-    return this;
+    return ok(this);  // ✅ Chain continues on success
   }
 
   /**
    * Add an edge between two nodes
+   *
+   * Returns Result for error handling
    */
-  edge(from: string, to: string, condition?: EdgeCondition): this {
-    // Validate nodes exist
+  edge(from: string, to: string, condition?: EdgeCondition): Result<this, KitError> {
+    // Validate source node exists
     if (!this.nodes.has(from)) {
-      throw new KitError(
-        `Node "${from}" not found in workflow`,
-        KitErrorCode.NODE_NOT_FOUND
-      );
+      return err(new KitError(
+        `Source node "${from}" not found in workflow`,
+        KitErrorCode.NODE_NOT_FOUND,
+        { nodeId: from, operation: 'edge_from' }
+      ));
     }
 
+    // Validate target node exists
     if (!this.nodes.has(to)) {
-      throw new KitError(
-        `Node "${to}" not found in workflow`,
-        KitErrorCode.NODE_NOT_FOUND
-      );
+      return err(new KitError(
+        `Target node "${to}" not found in workflow`,
+        KitErrorCode.NODE_NOT_FOUND,
+        { nodeId: to, operation: 'edge_to' }
+      ));
     }
 
     // Validate no duplicate edges
@@ -78,10 +101,11 @@ export class WorkflowBuilder {
       (e) => e.from === from && e.to === to
     );
     if (edgeExists) {
-      throw new KitError(
+      return err(new KitError(
         `Edge from "${from}" to "${to}" already exists`,
-        KitErrorCode.VALIDATION_ERROR
-      );
+        KitErrorCode.VALIDATION_ERROR,
+        { from, to }
+      ));
     }
 
     const edge: Edge = {
@@ -91,59 +115,76 @@ export class WorkflowBuilder {
     };
 
     this.edges.push(edge);
-    return this;
+    return ok(this);  // ✅ Chain continues on success
   }
 
   /**
    * Set workflow metadata
    */
-  metadata(data: Record<string, unknown>): this {
+  metadata(data: Record<string, unknown>): Result<this, KitError> {
     this.template.metadata = data;
-    return this;
+    return ok(this);
   }
 
   /**
    * Set workflow name
    */
-  name(name: string): this {
+  name(name: string): Result<this, KitError> {
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      return err(new KitError(
+        'Workflow name must be a non-empty string',
+        KitErrorCode.VALIDATION_ERROR,
+        { field: 'name', value: name }
+      ));
+    }
     this.template.name = name;
-    return this;
+    return ok(this);
   }
 
   /**
    * Set workflow description
    */
-  description(description: string): this {
+  description(description: string): Result<this, KitError> {
     this.template.description = description;
-    return this;
+    return ok(this);
   }
 
   /**
    * Build and validate the workflow template
+   *
+   * Returns Result<WorkflowTemplate, KitError[]> to collect all validation errors
    */
-  build(): WorkflowTemplate {
+  build(): Result<WorkflowTemplate, KitError[]> {
+    const errors: KitError[] = [];
+
     // Validate workflow has nodes
     if (this.nodes.size === 0) {
-      throw new KitError(
+      errors.push(new KitError(
         'Workflow must have at least one node',
-        KitErrorCode.INVALID_WORKFLOW
-      );
+        KitErrorCode.INVALID_WORKFLOW,
+        { reason: 'no_nodes' }
+      ));
     }
 
     // Validate workflow has edges if more than one node
     if (this.nodes.size > 1 && this.edges.length === 0) {
-      throw new KitError(
+      errors.push(new KitError(
         'Workflow with multiple nodes must have at least one edge',
-        KitErrorCode.INVALID_WORKFLOW
-      );
+        KitErrorCode.INVALID_WORKFLOW,
+        { reason: 'no_edges', nodeCount: this.nodes.size }
+      ));
+    }
+
+    // Return all errors at once
+    if (errors.length > 0) {
+      return err(errors);
     }
 
     // Populate template
     this.template.nodes = Array.from(this.nodes.values());
     this.template.edges = this.edges;
 
-    // Return a copy of the template
-    return this.getTemplate();
+    return ok(this.getTemplate());
   }
 
   /**

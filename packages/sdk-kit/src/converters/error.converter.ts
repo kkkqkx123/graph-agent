@@ -1,124 +1,212 @@
 /**
- * Error Converter - Convert SDK errors to JS exceptions
+ * Error Converter - Unified error handling using Result pattern
+ *
+ * Key Design:
+ * - No exception throwing in normal flow, only Result values
+ * - Errors are values, not control flow
+ * - SDK errors are inherited, not wrapped
+ * - Supports error collection for validation (multiple errors at once)
  */
 
+import { CommandError, CommandValidationError, CommandNotFoundError, CommandTimeoutError } from '@wf-agent/sdk/api';
+import type { Result } from '@wf-agent/common-utils';
+import { ok, err } from '@wf-agent/common-utils';
+
 /**
- * Kit error codes
+ * Kit-specific error codes
+ * Extends SDK error codes with Kit-specific scenarios
  */
 export enum KitErrorCode {
+  // Kit-specific errors
+  DUPLICATE_NODE_ID = 'DUPLICATE_NODE_ID',
+  NODE_NOT_FOUND = 'NODE_NOT_FOUND',
+  INVALID_WORKFLOW = 'INVALID_WORKFLOW',
+  EXECUTION_NOT_FOUND = 'EXECUTION_NOT_FOUND',
+  VERSION_NOT_FOUND = 'VERSION_NOT_FOUND',
+
+  // SDK-compatible errors (inherit from SDK)
   WORKFLOW_NOT_FOUND = 'WORKFLOW_NOT_FOUND',
   EXECUTION_FAILED = 'EXECUTION_FAILED',
   VALIDATION_ERROR = 'VALIDATION_ERROR',
   TIMEOUT = 'TIMEOUT',
   INTERNAL_ERROR = 'INTERNAL_ERROR',
-  DUPLICATE_NODE_ID = 'DUPLICATE_NODE_ID',
-  NODE_NOT_FOUND = 'NODE_NOT_FOUND',
-  INVALID_WORKFLOW = 'INVALID_WORKFLOW',
-  EXECUTION_NOT_FOUND = 'EXECUTION_NOT_FOUND',
   RESOURCE_NOT_FOUND = 'RESOURCE_NOT_FOUND',
-  VERSION_NOT_FOUND = 'VERSION_NOT_FOUND',
+  PERMISSION_ERROR = 'PERMISSION_ERROR',
 }
 
 /**
- * Custom error class for SDK-Kit
+ * KitError - Inherits from CommandError for consistency with SDK
+ *
+ * Benefits:
+ * - Preserves SDK error hierarchy
+ * - Maintains context and severity information
+ * - Allows instanceof checks against both KitError and CommandError
+ * - No information loss in error conversion
  */
-export class KitError extends Error {
+export class KitError extends CommandError {
+  public readonly kitErrorCode: KitErrorCode;
+
   constructor(
     message: string,
-    public code: string,
-    public context?: Record<string, unknown>
+    kitErrorCode: KitErrorCode,
+    context?: Record<string, unknown>,
+    cause?: Error
   ) {
-    super(message);
+    super(message, kitErrorCode, context, undefined);
     this.name = 'KitError';
+    this.kitErrorCode = kitErrorCode;
     Object.setPrototypeOf(this, KitError.prototype);
+
+    // Maintain error chain for debugging
+    if (cause instanceof Error) {
+      this.cause = cause;
+    }
   }
 
-  override toString(): string {
-    return `${this.name}[${this.code}]: ${this.message}`;
+  override toJSON() {
+    return {
+      ...super.toJSON(),
+      kitErrorCode: this.kitErrorCode,
+    };
   }
 }
 
 /**
- * Error Converter - Converts SDK Result type to JS exceptions
+ * ErrorConverter - No exception-based conversion, only Result values
+ *
+ * Philosophy:
+ * - Errors are data, not exceptions
+ * - Support batch error collection for validation
+ * - Preserve SDK error information
+ * - Enable Result chaining
  */
 export class ErrorConverter {
   /**
-   * Convert SDK Result type to data or throw KitError
+   * Convert SDK Result type to Result<T, KitError>
+   *
+   * Returns Result, never throws
    */
-  convertResult<T>(result: any): T {
+  convertResult<T>(result: any): Result<T, KitError> {
     // Check if result has the SDK Result structure
     if (result && typeof result === 'object') {
-      // Check for success case (isSuccess function behavior)
+      // Check for success case
       if (this.isSuccessResult(result)) {
-        return this.getSuccessData(result);
+        return ok(this.getSuccessData(result));
       }
 
       // Check for failure case
       if (this.isFailureResult(result)) {
-        const error = this.getErrorData(result);
-        throw this.convertError(error);
+        const sdkError = this.getErrorData(result);
+        return err(this.toKitError(sdkError));
       }
     }
 
     // If it doesn't look like a Result type, return as-is
-    return result as T;
+    return ok(result);
   }
 
   /**
-   * Convert SDK error or any error to KitError
+   * Convert any error to KitError, preserving SDK error chain
+   *
+   * Returns KitError, preserving error information
    */
-  convertError(error: any): KitError {
+  toKitError(error: any): KitError {
     if (error instanceof KitError) {
       return error;
     }
 
-    let code = KitErrorCode.INTERNAL_ERROR;
-    let message = error?.message || 'Unknown error';
-    let context: Record<string, unknown> | undefined;
+    // If already a CommandError from SDK, wrap but preserve
+    if (error instanceof CommandError) {
+      return new KitError(
+        error.message,
+        (error.code as KitErrorCode) || KitErrorCode.INTERNAL_ERROR,
+        error.context,
+        error instanceof Error ? error : undefined
+      );
+    }
 
-    // Identify common SDK error codes
-    if (error?.code) {
-      switch (error.code) {
-        case 'WORKFLOW_NOT_FOUND':
-          code = KitErrorCode.WORKFLOW_NOT_FOUND;
-          break;
-        case 'EXECUTION_FAILED':
-          code = KitErrorCode.EXECUTION_FAILED;
-          break;
-        case 'VALIDATION_ERROR':
-          code = KitErrorCode.VALIDATION_ERROR;
-          break;
-        case 'TIMEOUT':
-          code = KitErrorCode.TIMEOUT;
-          break;
-        case 'DUPLICATE_NODE_ID':
-          code = KitErrorCode.DUPLICATE_NODE_ID;
-          break;
-        case 'NODE_NOT_FOUND':
-          code = KitErrorCode.NODE_NOT_FOUND;
-          break;
-        case 'INVALID_WORKFLOW':
-          code = KitErrorCode.INVALID_WORKFLOW;
-          break;
-        case 'EXECUTION_NOT_FOUND':
-          code = KitErrorCode.EXECUTION_NOT_FOUND;
-          break;
-        case 'RESOURCE_NOT_FOUND':
-          code = KitErrorCode.RESOURCE_NOT_FOUND;
-          break;
-        case 'VERSION_NOT_FOUND':
-          code = KitErrorCode.VERSION_NOT_FOUND;
-          break;
-        default:
-          code = KitErrorCode.INTERNAL_ERROR;
+    // Generic error handling
+    const message = error?.message || 'Unknown error';
+    const code = this.detectErrorCode(error);
+
+    return new KitError(
+      message,
+      code,
+      this.extractContext(error),
+      error instanceof Error ? error : undefined
+    );
+  }
+
+  /**
+   * Batch validation error collection
+   *
+   * Returns Result with all collected errors
+   */
+  collectValidationErrors(
+    validations: Array<{
+      field: string;
+      validator: () => Result<void, KitError>;
+    }>
+  ): Result<void, KitError[]> {
+    const errors: KitError[] = [];
+
+    for (const { validator } of validations) {
+      const result = validator();
+      if (result.isErr()) {
+        const error = result.unwrapOrElse(e => e);
+        errors.push(error);
       }
     }
 
-    if (error && typeof error === 'object') {
-      context = { originalError: error };
+    if (errors.length > 0) {
+      return err(errors);
     }
 
-    return new KitError(message, code, context);
+    return ok(undefined);
+  }
+
+  /**
+   * Detect error code from various error types
+   */
+  private detectErrorCode(error: any): KitErrorCode {
+    if (!error) {
+      return KitErrorCode.INTERNAL_ERROR;
+    }
+
+    const message = error.message?.toLowerCase() || '';
+    const code = error.code?.toUpperCase() || '';
+
+    // Try to match SDK error codes
+    if (code.includes('NOT_FOUND') || message.includes('not found')) {
+      return KitErrorCode.WORKFLOW_NOT_FOUND;
+    }
+    if (code.includes('VALIDATION') || message.includes('validation')) {
+      return KitErrorCode.VALIDATION_ERROR;
+    }
+    if (code.includes('TIMEOUT') || message.includes('timeout')) {
+      return KitErrorCode.TIMEOUT;
+    }
+    if (code.includes('EXECUTION') || message.includes('execution')) {
+      return KitErrorCode.EXECUTION_FAILED;
+    }
+    if (code.includes('PERMISSION') || message.includes('permission')) {
+      return KitErrorCode.PERMISSION_ERROR;
+    }
+
+    return KitErrorCode.INTERNAL_ERROR;
+  }
+
+  /**
+   * Extract context from error object
+   */
+  private extractContext(error: any): Record<string, unknown> {
+    if (error && typeof error === 'object') {
+      if (error.context) {
+        return error.context;
+      }
+      return { originalError: String(error) };
+    }
+    return {};
   }
 
   /**
