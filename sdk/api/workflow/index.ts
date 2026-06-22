@@ -84,6 +84,36 @@ export {
   type WorkflowExecutionTimelineStats,
 } from "./resources/execution-history-api.js";
 
+export {
+  WorkflowIterationAnalysisAPI,
+  type ExtendedNodeExecutionRecord,
+  type ToolDependency,
+  type ExecutionPath,
+  type ExecutionPathStep,
+  type LLMNodeMetadata,
+  type LLMReasoningRecord,
+  type ResourceUsageRecord,
+  type QualityMetrics,
+  type ExtendedNodeExecutionFilter,
+  type NodeExecutionStats,
+  type OptimizationOpportunity,
+} from "./resources/workflow-iteration-analysis-api.js";
+
+export {
+  WorkflowExecutionContextAPI,
+  type VariableDefinitionWithScope,
+  type VariableValueSnapshot,
+  type VariableSnapshot,
+  type VariableHistoryEntry,
+  type VariableHistory,
+  type NodeInputContext,
+  type ExecutionContextSnapshot,
+  type ContextStateTransition,
+  type ContextEvolution,
+  type VariableSnapshotFilter,
+  type ContextEvolutionFilter,
+} from "./resources/workflow-execution-context-api.js";
+
 // Operations - Execution
 export {
   ExecuteWorkflowCommand,

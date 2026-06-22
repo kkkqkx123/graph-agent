@@ -153,6 +153,38 @@ export {
 } from "./resources/agent-loop-iteration-api.js";
 
 export {
+  AgentExecutionStateAPI,
+  type AgentExecutionState,
+  type InputState,
+  type OutputState,
+  type VariableSnapshot,
+  type VariableStateSnapshot,
+  type ExecutionContextSnapshot,
+  type StackFrame,
+  type StateTransition,
+  type ExecutionTimelineEntry,
+  type ExecutionStateFilter,
+  type VariableSnapshotFilter,
+  type StateTransitionAnalysis,
+} from "./resources/agent-execution-state-api.js";
+
+export {
+  AgentExecutionGraphQueryAPI,
+  type DecisionNode,
+  type DecisionEdge,
+  type DecisionGraph,
+  type ExecutionPathStep,
+  type ExecutionPath as ExecutionGraphPath,
+  type AlternativeDecision,
+  type IterationAlternatives,
+  type DecisionRecord,
+  type DecisionSequence,
+  type DecisionGraphFilter,
+  type ExecutionPathFilter,
+  type DecisionSequenceFilter,
+} from "./resources/agent-execution-graph-query-api.js";
+
+export {
   AgentTriggerResourceAPI,
   type AgentTriggerFilter,
 } from "./resources/agent-trigger-resource-api.js";
