@@ -428,4 +428,69 @@ export class CheckpointResourceAPI extends SimplifiedCrudResourceAPI<Checkpoint,
 
     return chain;
   }
+
+  /**
+   * Query checkpoints by filter
+   * @param filter Filter criteria
+   * @returns Filtered checkpoints
+   */
+  async query(filter: CheckpointFilter): Promise<Checkpoint[]> {
+    const all = await this.getAll();
+    return this.applyFilter(all, filter);
+  }
+
+  /**
+   * Get checkpoints in time range
+   * @param executionId Execution ID
+   * @param startTime Start timestamp (ms)
+   * @param endTime End timestamp (ms)
+   * @returns Checkpoints in time range
+   */
+  async getByTimeRange(
+    executionId: string,
+    startTime: Timestamp,
+    endTime: Timestamp,
+  ): Promise<Checkpoint[]> {
+    return this.query({
+      executionId,
+      timestampRange: { start: startTime, end: endTime },
+    });
+  }
+
+  /**
+   * Get checkpoints by workflow ID and time range
+   * @param workflowId Workflow ID
+   * @param startTime Start timestamp (ms)
+   * @param endTime End timestamp (ms)
+   * @returns Checkpoints in time range
+   */
+  async getWorkflowCheckpointsByTimeRange(
+    workflowId: string,
+    startTime: Timestamp,
+    endTime: Timestamp,
+  ): Promise<Checkpoint[]> {
+    return this.query({
+      workflowId,
+      timestampRange: { start: startTime, end: endTime },
+    });
+  }
+
+  /**
+   * Get checkpoints by tags
+   * @param executionId Execution ID
+   * @param tags Tag array
+   * @returns Checkpoints with matching tags
+   */
+  async getByTags(executionId: string, tags: string[]): Promise<Checkpoint[]> {
+    return this.query({ executionId, tags });
+  }
+
+  /**
+   * Get checkpoints by multiple IDs
+   * @param ids Checkpoint ID list
+   * @returns Checkpoints with matching IDs
+   */
+  async getByIds(ids: string[]): Promise<Checkpoint[]> {
+    return this.query({ ids });
+  }
 }

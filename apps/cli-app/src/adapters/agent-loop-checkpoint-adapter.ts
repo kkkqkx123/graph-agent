@@ -209,4 +209,91 @@ export class AgentLoopCheckpointAdapter extends BaseAdapter {
         .map((cp: AgentLoopCheckpoint) => cp.id);
     }, "List checkpoint IDs from storage");
   }
+
+  /**
+   * Query checkpoints by filter
+   * @param agentLoopId Agent Loop ID
+   * @param filters Filter criteria
+   */
+  async queryCheckpoints(
+    agentLoopId: string,
+    filters?: {
+      startTime?: number;
+      endTime?: number;
+      type?: "FULL" | "DELTA";
+    },
+  ): Promise<
+    Array<{
+      id: string;
+      timestamp: number;
+      type: string;
+      metadata?: CheckpointMetadata;
+    }>
+  > {
+    return this.executeWithErrorHandling(async () => {
+      const filterObj: any = { agentLoopId };
+
+      if (filters?.startTime !== undefined || filters?.endTime !== undefined) {
+        filterObj.timestampRange = {
+          start: filters?.startTime,
+          end: filters?.endTime,
+        };
+      }
+
+      if (filters?.type) {
+        filterObj.type = filters.type;
+      }
+
+      const checkpoints = await this.checkpointAPI.query(filterObj);
+      return checkpoints.map((cp) => ({
+        id: cp.id,
+        timestamp: cp.timestamp,
+        type: cp.type,
+        metadata: cp.metadata,
+      }));
+    }, "Query checkpoints with filters");
+  }
+
+  /**
+   * Get checkpoints within time range
+   * @param agentLoopId Agent Loop ID
+   * @param startTime Start timestamp (ms)
+   * @param endTime End timestamp (ms)
+   */
+  async getCheckpointsByTimeRange(
+    agentLoopId: string,
+    startTime: number,
+    endTime: number,
+  ): Promise<AgentLoopCheckpoint[]> {
+    return this.executeWithErrorHandling(
+      () => this.checkpointAPI.getByTimeRange(agentLoopId, startTime, endTime),
+      "Get checkpoints by time range",
+    );
+  }
+
+  /**
+   * Get checkpoints by type
+   * @param agentLoopId Agent Loop ID
+   * @param type Type (FULL | DELTA)
+   */
+  async getCheckpointsByType(
+    agentLoopId: string,
+    type: "FULL" | "DELTA",
+  ): Promise<AgentLoopCheckpoint[]> {
+    return this.executeWithErrorHandling(
+      () => this.checkpointAPI.getByType(agentLoopId, type),
+      "Get checkpoints by type",
+    );
+  }
+
+  /**
+   * Get checkpoints by IDs
+   * @param ids Checkpoint ID list
+   */
+  async getCheckpointsById(ids: string[]): Promise<AgentLoopCheckpoint[]> {
+    return this.executeWithErrorHandling(
+      () => this.checkpointAPI.getByIds(ids),
+      "Get checkpoints by IDs",
+    );
+  }
 }

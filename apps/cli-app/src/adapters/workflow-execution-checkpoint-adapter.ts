@@ -211,4 +211,130 @@ export class WorkflowExecutionCheckpointAdapter extends BaseAdapter {
       return stats;
     }, "Get workflow execution checkpoint statistics");
   }
+
+  /**
+   * Query checkpoints by filter
+   * @param filter Filter criteria
+   */
+  async queryCheckpoints(filter?: Record<string, unknown>): Promise<CheckpointWithMetadata[]> {
+    return this.executeWithErrorHandling(async () => {
+      const checkpointFilter: any = filter
+        ? {
+            ids: (filter["ids"] as string[] | undefined),
+            executionId: (filter["executionId"] as string | undefined),
+            workflowId: (filter["workflowId"] as string | undefined),
+            triggerType: (filter["triggerType"] as WorkflowCheckpointTriggerType | undefined),
+            creator: (filter["creator"] as string | undefined),
+            tags: (filter["tags"] as string[] | undefined),
+            timestampRange: filter["timestampRange"] as
+              | { start?: number; end?: number }
+              | undefined,
+          }
+        : {};
+
+      const checkpoints = await this.getCheckpointAPI().query(checkpointFilter);
+      return checkpoints.map((cp) => ({
+        ...cp,
+        createdAt: cp.timestamp,
+      })) as CheckpointWithMetadata[];
+    }, "Query workflow execution checkpoints with filters");
+  }
+
+  /**
+   * Get checkpoints within time range
+   * @param executionId Execution ID
+   * @param startTime Start timestamp (ms)
+   * @param endTime End timestamp (ms)
+   */
+  async getCheckpointsByTimeRange(
+    executionId: string,
+    startTime: number,
+    endTime: number,
+  ): Promise<CheckpointWithMetadata[]> {
+    return this.executeWithErrorHandling(async () => {
+      const checkpoints = await this.getCheckpointAPI().getByTimeRange(executionId, startTime, endTime);
+      return checkpoints.map((cp) => ({
+        ...cp,
+        createdAt: cp.timestamp,
+      })) as CheckpointWithMetadata[];
+    }, "Get workflow execution checkpoints by time range");
+  }
+
+  /**
+   * Get workflow checkpoints within time range
+   * @param workflowId Workflow ID
+   * @param startTime Start timestamp (ms)
+   * @param endTime End timestamp (ms)
+   */
+  async getWorkflowCheckpointsByTimeRange(
+    workflowId: string,
+    startTime: number,
+    endTime: number,
+  ): Promise<CheckpointWithMetadata[]> {
+    return this.executeWithErrorHandling(async () => {
+      const checkpoints = await this.getCheckpointAPI().getWorkflowCheckpointsByTimeRange(
+        workflowId,
+        startTime,
+        endTime,
+      );
+      return checkpoints.map((cp) => ({
+        ...cp,
+        createdAt: cp.timestamp,
+      })) as CheckpointWithMetadata[];
+    }, "Get workflow checkpoints by time range");
+  }
+
+  /**
+   * Get checkpoints by tags
+   * @param executionId Execution ID
+   * @param tags Tag array
+   */
+  async getCheckpointsByTags(executionId: string, tags: string[]): Promise<CheckpointWithMetadata[]> {
+    return this.executeWithErrorHandling(async () => {
+      const checkpoints = await this.getCheckpointAPI().getByTags(executionId, tags);
+      return checkpoints.map((cp) => ({
+        ...cp,
+        createdAt: cp.timestamp,
+      })) as CheckpointWithMetadata[];
+    }, "Get workflow execution checkpoints by tags");
+  }
+
+  /**
+   * Get checkpoints by IDs
+   * @param ids Checkpoint ID list
+   */
+  async getCheckpointsById(ids: string[]): Promise<CheckpointWithMetadata[]> {
+    return this.executeWithErrorHandling(async () => {
+      const checkpoints = await this.getCheckpointAPI().getByIds(ids);
+      return checkpoints.map((cp) => ({
+        ...cp,
+        createdAt: cp.timestamp,
+      })) as CheckpointWithMetadata[];
+    }, "Get workflow execution checkpoints by IDs");
+  }
+
+  /**
+   * Get checkpoint chain analysis for an execution
+   * @param executionId Execution ID
+   */
+  async getCheckpointChain(executionId: string): Promise<unknown> {
+    return this.executeWithErrorHandling(async () => {
+      const chain = await this.getCheckpointAPI().getCheckpointChain(executionId);
+      return chain;
+    }, "Get workflow execution checkpoint chain");
+  }
+
+  /**
+   * Get checkpoint chain from a specific checkpoint
+   * @param checkpointId Checkpoint ID
+   */
+  async getCheckpointChainFrom(checkpointId: string): Promise<CheckpointWithMetadata[]> {
+    return this.executeWithErrorHandling(async () => {
+      const chain = await this.getCheckpointAPI().getCheckpointChainFrom(checkpointId);
+      return chain.map((cp) => ({
+        ...cp,
+        createdAt: cp.timestamp,
+      })) as CheckpointWithMetadata[];
+    }, "Get workflow execution checkpoint chain from a specific checkpoint");
+  }
 }

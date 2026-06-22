@@ -370,6 +370,56 @@ export class AgentLoopCheckpointResourceAPI extends SimplifiedCrudResourceAPI<
   }
 
   /**
+   * Query checkpoints by filter
+   * @param filter Filter criteria
+   * @returns Filtered checkpoints
+   */
+  async query(filter: AgentLoopCheckpointFilter): Promise<AgentLoopCheckpoint[]> {
+    const all = await this.getAll();
+    return this.applyFilter(all, filter);
+  }
+
+  /**
+   * Get checkpoints in time range
+   * @param agentLoopId Agent Loop ID
+   * @param startTime Start timestamp (ms)
+   * @param endTime End timestamp (ms)
+   * @returns Checkpoints in time range
+   */
+  async getByTimeRange(
+    agentLoopId: string,
+    startTime: number,
+    endTime: number,
+  ): Promise<AgentLoopCheckpoint[]> {
+    return this.query({
+      agentLoopId,
+      timestampRange: { start: startTime, end: endTime },
+    });
+  }
+
+  /**
+   * Get checkpoints by type
+   * @param agentLoopId Agent Loop ID
+   * @param type Checkpoint type (FULL | DELTA)
+   * @returns Checkpoints of specified type
+   */
+  async getByType(
+    agentLoopId: string,
+    type: "FULL" | "DELTA",
+  ): Promise<AgentLoopCheckpoint[]> {
+    return this.query({ agentLoopId, type });
+  }
+
+  /**
+   * Get checkpoints by multiple IDs
+   * @param ids Checkpoint ID list
+   * @returns Checkpoints with matching IDs
+   */
+  async getByIds(ids: string[]): Promise<AgentLoopCheckpoint[]> {
+    return this.query({ ids });
+  }
+
+  /**
    * Get the storage instance
    * @returns Storage instance
    */
