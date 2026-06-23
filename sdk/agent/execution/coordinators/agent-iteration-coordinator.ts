@@ -290,6 +290,24 @@ export class AgentIterationCoordinator {
       toolCalls: finalResult.toolCalls,
     });
 
+    // NEW: Post-check for interruption after LLM call (similar to non-stream mode)
+    const postCheck = checkAgentInterruption(entity.getAbortSignal(), entity.state.currentIteration);
+    if (postCheck.type === "paused" || postCheck.type === "stopped") {
+      logger.info("Agent stream iteration interrupted after LLM call", {
+        agentLoopId,
+        iteration: entity.state.currentIteration,
+        interruptionType: postCheck.type,
+      });
+
+      yield this.createIterationCompleteEvent(agentLoopId, entity.state.currentIteration, false);
+      await this.emitToRegistry(
+        this.createIterationCompleteEvent(agentLoopId, entity.state.currentIteration, false),
+        entity,
+      );
+
+      return false;
+    }
+
     // Track token usage from stream LLM response
     if (finalResult.usage) {
       conversationManager.updateTokenUsage(finalResult.usage as LLMUsage);

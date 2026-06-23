@@ -137,22 +137,38 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
 
     // If already aborted, abort immediately
     if (signal.aborted) {
+      logger.debug("External abort signal already aborted, aborting stream immediately", {
+        requestId: this.requestId,
+        reason: String(signal.reason),
+      });
       this.abort();
       return;
     }
 
-    // Listen for abort event on external signal
+    // Create abort handler
     const abortHandler = () => {
       if (!this.aborted && !this.ended) {
+        logger.debug("MessageStream abort triggered by external signal", {
+          requestId: this.requestId,
+          reason: String(signal.reason),
+        });
         this.abort();
       }
     };
 
+    // Listen for abort event on external signal
     signal.addEventListener("abort", abortHandler, { once: true });
 
-    // Clean up listener when stream ends
-    this.on("end", () => {
+    // Cleanup: remove listener when stream ends to prevent memory leaks
+    this.endPromise.finally(() => {
       signal.removeEventListener("abort", abortHandler);
+      logger.debug("MessageStream signal cleanup completed", {
+        requestId: this.requestId,
+      });
+    });
+
+    logger.debug("External abort signal linked to MessageStream", {
+      requestId: this.requestId,
     });
   }
 

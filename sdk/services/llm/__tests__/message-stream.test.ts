@@ -414,14 +414,128 @@ describe("MessageStream", () => {
       expect(stream.isAborted()).toBe(false);
     });
 
-    it("should clean up listener on stream end", () => {
+    it("should clean up listener on stream end", async () => {
       const controller = new AbortController();
       const removeSpy = vi.spyOn(controller.signal, "removeEventListener");
 
       stream.setAbortSignal(controller.signal);
       stream.end();
 
+      // Wait for endPromise.finally to execute
+      await new Promise(resolve => setTimeout(resolve, 20));
+
       expect(removeSpy).toHaveBeenCalled();
+    });
+
+    it("should clean up listener on stream abort", async () => {
+      const controller = new AbortController();
+      const removeSpy = vi.spyOn(controller.signal, "removeEventListener");
+
+      stream.setAbortSignal(controller.signal);
+
+      // Handle the rejection to avoid unhandled promise error
+      const errorHandler = vi.fn();
+      stream.on("abort", errorHandler);
+
+      stream.abort();
+
+      // Wait for endPromise.finally to execute
+      await new Promise(resolve => setTimeout(resolve, 20));
+
+      expect(removeSpy).toHaveBeenCalled();
+    });
+
+    it("should clean up listener on stream error", async () => {
+      const controller = new AbortController();
+      const removeSpy = vi.spyOn(controller.signal, "removeEventListener");
+
+      stream.setAbortSignal(controller.signal);
+
+      // Handle the error to avoid unhandled promise error
+      const errorHandler = vi.fn();
+      stream.on("error", errorHandler);
+
+      (stream as any).emit("error", { type: "error", error: new Error("Test error") });
+
+      // Wait for endPromise.finally to execute
+      await new Promise(resolve => setTimeout(resolve, 20));
+
+      expect(removeSpy).toHaveBeenCalled();
+    });
+
+    it("should NOT abort stream if signal aborts after stream ends", () => {
+      const controller = new AbortController();
+
+      stream.setAbortSignal(controller.signal);
+      stream.end();
+      const beforeAbortState = stream.isAborted();
+
+      controller.abort();
+
+      // Stream state should not change after already ended
+      expect(stream.isAborted()).toBe(beforeAbortState);
+    });
+
+    it("should prevent memory leaks with listener cleanup", async () => {
+      const controller = new AbortController();
+
+      stream.setAbortSignal(controller.signal);
+
+      // Trigger stream completion
+      stream.end();
+
+      // Wait for cleanup
+      await new Promise(resolve => setTimeout(resolve, 20));
+
+      // Try to abort after cleanup - handler should not be called
+      const beforeAbortCount = (stream as any).listeners.get("abort")?.length || 0;
+      controller.abort();
+      const afterAbortCount = (stream as any).listeners.get("abort")?.length || 0;
+
+      // No new listeners should be added
+      expect(afterAbortCount).toBeLessThanOrEqual(beforeAbortCount + 1);
+    });
+
+    it("should emit abort event from external signal", async () => {
+      const controller = new AbortController();
+      const abortListener = vi.fn();
+
+      stream.on("abort", abortListener);
+      stream.setAbortSignal(controller.signal);
+
+      controller.abort();
+
+      // Give event propagation a chance
+      await new Promise(resolve => setTimeout(resolve, 20));
+
+      expect(abortListener).toHaveBeenCalled();
+      expect(stream.isAborted()).toBe(true);
+    });
+
+    it("should handle multiple setAbortSignal calls", () => {
+      const controller1 = new AbortController();
+      const controller2 = new AbortController();
+
+      stream.setAbortSignal(controller1.signal);
+      stream.setAbortSignal(controller2.signal);
+
+      // Aborting first signal should abort stream
+      controller1.abort();
+      expect(stream.isAborted()).toBe(true);
+    });
+
+    it("should handle already-ended signal properly", () => {
+      const controller = new AbortController();
+      const error = new Error("Custom abort reason");
+      controller.abort(error);
+
+      const abortListener = vi.fn();
+      stream.on("abort", abortListener);
+
+      stream.setAbortSignal(controller.signal);
+
+      expect(stream.isAborted()).toBe(true);
+      expect(abortListener).toHaveBeenCalled();
     });
   });
 

@@ -42,6 +42,12 @@ import type { ToolFailureProtectionState } from "@sdk/shared/state-managers/tool
 import type { ToolMetricsCollector } from "@sdk/metrics/tool-collector.js";
 import { isAbortError } from "@sdk/shared/utils/error-utils.js";
 import { InterruptedException } from "@sdk/shared/types/interruption-types.js";
+import {
+  createToolExecutionSignal,
+  isToolExecutionTimeout,
+  isToolExecutionExternalAbort,
+  getToolExecutionTimeoutMs,
+} from "@sdk/shared/utils/tools/tool-execution-signal.js";
 
 const logger = createContextualLogger({ component: "ToolCallExecutor" });
 
@@ -623,16 +629,22 @@ export class ToolCallExecutor {
     }
 
     // Build execution options that support reading from tool configuration.
+    const timeout = (toolConfig?.config as { timeout?: number })?.timeout || 30000;
+    const { signal: executionSignal, cleanup: cleanupSignal } = createToolExecutionSignal(
+      options?.abortSignal,
+      timeout
+    );
+
     const executionOptions: {
       timeout: number;
       retries: number;
       retryDelay: number;
       signal?: AbortSignal;
     } = {
-      timeout: (toolConfig?.config as { timeout?: number })?.timeout || 30000,
+      timeout: 0, // Let combined signal handle timeout
       retries: (toolConfig?.config as { maxRetries?: number })?.maxRetries || 0,
       retryDelay: (toolConfig?.config as { retryDelay?: number })?.retryDelay || 1000,
-      signal: options?.abortSignal, // Pass the AbortSignal
+      signal: executionSignal, // Use combined signal
     };
 
     // Check if this is an interactive tool
@@ -951,6 +963,26 @@ export class ToolCallExecutor {
         executionTime,
       };
     } catch (error) {
+      // Enhanced error handling for timeout vs external abort
+      if (isAbortError(error)) {
+        const reasonError = executionSignal.reason as Error & { source?: string };
+
+        if (isToolExecutionTimeout(reasonError)) {
+          logger.warn("Tool execution timeout", {
+            toolName: toolCall.name,
+            timeoutMs: getToolExecutionTimeoutMs(reasonError),
+            toolCallId: toolCall.id,
+            executionId,
+          });
+        } else if (isToolExecutionExternalAbort(reasonError)) {
+          logger.info("Tool execution interrupted externally", {
+            toolName: toolCall.name,
+            toolCallId: toolCall.id,
+            executionId,
+          });
+        }
+      }
+
       // On exception, clear operation state if interrupted
       if (hasOperationState && executionRegistry && executionId) {
         const executionEntity = executionRegistry.get(executionId);
@@ -966,6 +998,9 @@ export class ToolCallExecutor {
         }
       }
       throw error;
+    } finally {
+      // Clean up combined signal resources
+      cleanupSignal();
     }
   }
 }

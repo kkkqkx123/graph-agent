@@ -22,6 +22,8 @@
 import type { LLMMessage, LLMResult, ToolSchema } from "@wf-agent/types";
 import { LLMWrapper } from "../llm/wrapper.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
+import { now, diffTimestamp } from "@wf-agent/common-utils";
+import { isAbortError } from "@sdk/shared/utils/error-utils.js";
 
 const logger = createContextualLogger({ component: "LLMExecutor" });
 
@@ -128,6 +130,19 @@ export class LLMExecutor {
       // Link external abort signal to MessageStream for fine-grained interruption
       if (options?.abortSignal) {
         messageStream.setAbortSignal(options.abortSignal);
+
+        // NEW: Add listener for abort events to improve observability
+        options.abortSignal.addEventListener(
+          "abort",
+          () => {
+            logger.info("LLM stream abort signal triggered", {
+              profileId: requestData.profileId,
+              executionId: options?.executionId,
+              reason: String(options.abortSignal?.reason),
+            });
+          },
+          { once: true }
+        );
       }
 
       // Note: MessageStream events can be listened to by callers if needed.
@@ -139,9 +154,34 @@ export class LLMExecutor {
       // await messageStream.done();
       // ```
 
-      // Wait for the stream to complete
-      // The stream processes events internally via event listeners
-      await messageStream.done();
+      // Wait for the stream to complete with timing measurements
+      const streamStartTime = now();
+      try {
+        await messageStream.done();
+        const streamDuration = diffTimestamp(streamStartTime, now());
+        logger.debug("LLM stream completed successfully", {
+          profileId: requestData.profileId,
+          executionId: options?.executionId,
+          durationMs: streamDuration,
+        });
+      } catch (error) {
+        const streamDuration = diffTimestamp(streamStartTime, now());
+        if (isAbortError(error)) {
+          logger.info("LLM stream interrupted", {
+            profileId: requestData.profileId,
+            executionId: options?.executionId,
+            durationMs: streamDuration,
+          });
+        } else {
+          logger.warn("LLM stream error", {
+            profileId: requestData.profileId,
+            executionId: options?.executionId,
+            durationMs: streamDuration,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+        throw error;
+      }
 
       // Get the final result after stream completion
       finalResult = await messageStream.getFinalResult();

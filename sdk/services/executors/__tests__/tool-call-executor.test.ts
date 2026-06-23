@@ -5,6 +5,7 @@
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ToolCallExecutor } from "../tool-call-executor.js";
+import { InterruptedException } from "@sdk/shared/types/interruption-types.js";
 import type { ToolRegistry } from "../../registry/tool-registry.js";
 import type { ConversationSession } from "../../messaging/conversation-session.js";
 import type { Tool } from "@wf-agent/types";
@@ -713,7 +714,6 @@ describe("ToolCallExecutor", () => {
       (mockToolRegistry.getTool as any).mockReturnValue(mockTool);
 
       // Simulate InterruptedException with PAUSE type from tool execution
-      const { InterruptedException } = await import("../../types/interruption-types.js");
       const pauseError = new InterruptedException("Tool execution paused by user request", "PAUSE");
       (mockToolRegistry.execute as any).mockRejectedValue(pauseError);
 
@@ -813,6 +813,196 @@ describe("ToolCallExecutor", () => {
         "exec-1",
         undefined,
       );
+    });
+
+    it("should NOT record interruption as failure in failure protection", async () => {
+      const mockFailureProtection = {
+        recordFailure: vi.fn(),
+        recordSuccess: vi.fn(),
+        canExecuteTool: vi.fn(() => ({ allowed: true })),
+      };
+
+      const executorWithFailureProtection = new ToolCallExecutor(mockToolRegistry as unknown as ToolRegistry, {
+        toolFailureProtection: mockFailureProtection as any,
+      });
+
+      const toolCalls = [
+        {
+          id: "call_1",
+          name: "test-tool",
+          arguments: "{}",
+        },
+      ];
+
+      const mockTool: Tool = {
+        id: "test-tool",
+        type: "STATELESS",
+        description: "A test tool",
+        parameters: { type: "object", properties: {}, required: [] },
+      };
+
+      (mockToolRegistry.getTool as any).mockReturnValue(mockTool);
+
+      // Simulate InterruptedException from tool execution
+      const pauseError = new InterruptedException("Tool execution paused", "PAUSE");
+      (mockToolRegistry.execute as any).mockResolvedValue(err(pauseError));
+
+      const results = await executorWithFailureProtection.executeToolCalls(
+        toolCalls,
+        mockConversationSession as unknown as ConversationSession,
+        "exec-1",
+        "node-1",
+      );
+
+      // Verify result is failure
+      expect(results[0]?.success).toBe(false);
+
+      // Verify failure protection was NOT called for interruption
+      expect(mockFailureProtection.recordFailure).not.toHaveBeenCalled();
+    });
+
+    it("should record real failures in failure protection", async () => {
+      const mockFailureProtection = {
+        recordFailure: vi.fn(),
+        recordSuccess: vi.fn(),
+        canExecuteTool: vi.fn(() => ({ allowed: true })),
+      };
+
+      const executorWithFailureProtection = new ToolCallExecutor(mockToolRegistry as unknown as ToolRegistry, {
+        toolFailureProtection: mockFailureProtection as any,
+      });
+
+      const toolCalls = [
+        {
+          id: "call_1",
+          name: "test-tool",
+          arguments: "{}",
+        },
+      ];
+
+      const mockTool: Tool = {
+        id: "test-tool",
+        type: "STATELESS",
+        description: "A test tool",
+        parameters: { type: "object", properties: {}, required: [] },
+      };
+
+      (mockToolRegistry.getTool as any).mockReturnValue(mockTool);
+
+      // Simulate real tool execution error
+      (mockToolRegistry.execute as any).mockResolvedValue(
+        err(new Error("Network timeout"))
+      );
+
+      const results = await executorWithFailureProtection.executeToolCalls(
+        toolCalls,
+        mockConversationSession as unknown as ConversationSession,
+        "exec-1",
+        "node-1",
+      );
+
+      // Verify result is failure
+      expect(results[0]?.success).toBe(false);
+
+      // Verify failure protection WAS called for real failure
+      expect(mockFailureProtection.recordFailure).toHaveBeenCalledWith(
+        "test-tool",
+        "Network timeout"
+      );
+    });
+
+    it("should trigger progress callback for interruption", async () => {
+      const progressCallback = vi.fn();
+
+      const toolCalls = [
+        {
+          id: "call_1",
+          name: "test-tool",
+          arguments: "{}",
+        },
+      ];
+
+      const mockTool: Tool = {
+        id: "test-tool",
+        type: "STATELESS",
+        description: "A test tool",
+        parameters: { type: "object", properties: {}, required: [] },
+      };
+
+      (mockToolRegistry.getTool as any).mockReturnValue(mockTool);
+
+      // Simulate InterruptedException from tool execution
+      const pauseError = new InterruptedException("Tool execution paused", "PAUSE");
+      (mockToolRegistry.execute as any).mockResolvedValue(err(pauseError));
+
+      const results = await executor.executeToolCalls(
+        toolCalls,
+        mockConversationSession as unknown as ConversationSession,
+        "exec-1",
+        "node-1",
+        {
+          onProgress: progressCallback,
+        },
+      );
+
+      // Verify result
+      expect(results[0]?.success).toBe(false);
+
+      // Verify progress callback was called with interrupted status
+      expect(progressCallback).toHaveBeenCalledWith(
+        "call_1",
+        expect.objectContaining({
+          status: "interrupted",
+          toolName: "test-tool",
+          interruptionType: "PAUSE",
+        })
+      );
+    });
+
+    it("should NOT trigger progress callback with interrupted status for real failures", async () => {
+      const progressCallback = vi.fn();
+
+      const toolCalls = [
+        {
+          id: "call_1",
+          name: "test-tool",
+          arguments: "{}",
+        },
+      ];
+
+      const mockTool: Tool = {
+        id: "test-tool",
+        type: "STATELESS",
+        description: "A test tool",
+        parameters: { type: "object", properties: {}, required: [] },
+      };
+
+      (mockToolRegistry.getTool as any).mockReturnValue(mockTool);
+
+      // Simulate real tool execution error
+      (mockToolRegistry.execute as any).mockResolvedValue(
+        err(new Error("Network timeout"))
+      );
+
+      const results = await executor.executeToolCalls(
+        toolCalls,
+        mockConversationSession as unknown as ConversationSession,
+        "exec-1",
+        "node-1",
+        {
+          onProgress: progressCallback,
+        },
+      );
+
+      // Verify result
+      expect(results[0]?.success).toBe(false);
+
+      // Verify progress callback was NOT called for real failure
+      // (no callback means no progress update during failure handling)
+      const interruptedCalls = progressCallback.mock.calls.filter(
+        call => call[1]?.status === "interrupted"
+      );
+      expect(interruptedCalls).toHaveLength(0);
     });
   });
 });
