@@ -6,8 +6,8 @@
  */
 
 import { now } from "@wf-agent/common-utils";
-import type { WorkflowExecutionStatus } from "@wf-agent/types";
-import { RuntimeValidationError } from "@wf-agent/types";
+import type { WorkflowExecutionStatus, ExecutionErrorRecord } from "@wf-agent/types";
+import { RuntimeValidationError, EXECUTION_STATE_MAX_ERROR_RECORDS } from "@wf-agent/types";
 import type { StateManager } from "../../shared/types/state-manager.js";
 
 /**
@@ -57,6 +57,7 @@ export interface WorkflowExecutionStateSnapshot {
   error: unknown;
   interrupted: boolean;
   currentOperation: OperationState | null;
+  errorRecords: ExecutionErrorRecord[];
 }
 
 /**
@@ -95,6 +96,9 @@ export class WorkflowExecutionState implements StateManager<WorkflowExecutionSta
 
   /** Current operation state (if any) */
   private _currentOperation: OperationState | null = null;
+
+  /** Error records accumulated during execution */
+  private _errorRecords: ExecutionErrorRecord[] = [];
 
   /**
    * Get the current status
@@ -342,6 +346,107 @@ export class WorkflowExecutionState implements StateManager<WorkflowExecutionSta
     this._currentOperation = null;
   }
 
+  // ========== Error Chain Tracking ==========
+
+  /**
+   * Record an error with automatic error chain building
+   *
+   * Automatically establishes relationships between errors:
+   * - Sets parentErrorId to the last error
+   * - Builds errorChain array
+   * - Identifies root cause
+   */
+  recordError(error: ExecutionErrorRecord): void {
+    // 1. Standardize error ID if not provided
+    const errorId = error.id || `error:${Date.now()}:${Math.random().toString(36).slice(2, 9)}`;
+    error.id = errorId;
+
+    // 2. Build error chain relationships
+    if (this._errorRecords.length > 0) {
+      const lastError = this._errorRecords[this._errorRecords.length - 1]!;
+
+      // 2a. Set parent error
+      error.parentErrorId = lastError.id;
+
+      // 2b. Build error chain
+      if (lastError.errorChain) {
+        error.errorChain = [...lastError.errorChain, errorId];
+      } else {
+        // First time establishing chain
+        error.errorChain = [lastError.id, errorId];
+      }
+
+      // 2c. Quick reference to root cause
+      error.rootCauseId = lastError.rootCauseId || lastError.id;
+    } else {
+      // This is the first error, it is the root cause
+      error.errorChain = [errorId];
+      error.rootCauseId = errorId;
+    }
+
+    // 3. Limit record count
+    const MAX_ERRORS = EXECUTION_STATE_MAX_ERROR_RECORDS;
+    if (this._errorRecords.length >= MAX_ERRORS) {
+      this._errorRecords.shift();
+    }
+
+    // 4. Add to records
+    this._errorRecords.push(error);
+  }
+
+  /**
+   * Get all error records
+   */
+  getErrorRecords(): ExecutionErrorRecord[] {
+    return [...this._errorRecords];
+  }
+
+  /**
+   * Get the complete error chain for a specific error
+   *
+   * Returns all errors in the chain starting from the root cause
+   * up to and including the specified error.
+   */
+  getErrorChain(fromErrorId?: string): ExecutionErrorRecord[] {
+    if (this._errorRecords.length === 0) {
+      return [];
+    }
+
+    const targetErrorId = fromErrorId || this._errorRecords[this._errorRecords.length - 1]!.id;
+    const targetError = this._errorRecords.find(e => e.id === targetErrorId);
+
+    if (!targetError) {
+      return [];
+    }
+
+    if (!targetError.errorChain) {
+      return [targetError];
+    }
+
+    return targetError.errorChain
+      .map(id => this._errorRecords.find(e => e.id === id))
+      .filter((e): e is ExecutionErrorRecord => Boolean(e));
+  }
+
+  /**
+   * Get the root cause error
+   *
+   * Returns the first error in the chain that triggered all subsequent errors.
+   */
+  getRootCauseError(): ExecutionErrorRecord | null {
+    if (this._errorRecords.length === 0) {
+      return null;
+    }
+
+    const lastError = this._errorRecords[this._errorRecords.length - 1];
+    if (!lastError) {
+      return null;
+    }
+
+    const rootCauseId = lastError.rootCauseId || lastError.id;
+    return this._errorRecords.find(e => e.id === rootCauseId) || lastError;
+  }
+
   /**
    * Serialize operation state for checkpoint
    */
@@ -377,6 +482,7 @@ export class WorkflowExecutionState implements StateManager<WorkflowExecutionSta
       error: this._error,
       interrupted: this._interrupted,
       currentOperation: this._currentOperation ? { ...this._currentOperation } : null,
+      errorRecords: [...this._errorRecords],
     };
   }
 
@@ -393,6 +499,7 @@ export class WorkflowExecutionState implements StateManager<WorkflowExecutionSta
     this._error = snapshot.error;
     this._interrupted = snapshot.interrupted;
     this._currentOperation = snapshot.currentOperation ? { ...snapshot.currentOperation } : null;
+    this._errorRecords = [...(snapshot.errorRecords ?? [])];
   }
 
   /**
@@ -423,6 +530,7 @@ export class WorkflowExecutionState implements StateManager<WorkflowExecutionSta
     this._error = null;
     this._interrupted = false;
     this._currentOperation = null;
+    this._errorRecords = [];
   }
 
   /**
@@ -438,6 +546,7 @@ export class WorkflowExecutionState implements StateManager<WorkflowExecutionSta
     cloned._error = this._error;
     cloned._interrupted = this._interrupted;
     cloned._currentOperation = this._currentOperation ? { ...this._currentOperation } : null;
+    cloned._errorRecords = [...this._errorRecords];
     return cloned;
   }
 }

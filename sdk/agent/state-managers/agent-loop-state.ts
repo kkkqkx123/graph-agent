@@ -68,14 +68,36 @@ import type { LLMMessage } from "@wf-agent/types";
 import { RuntimeValidationError } from "@wf-agent/types";
 import type { StateManager } from "../../shared/types/state-manager.js";
 
+// ============================================================================
+// Error Chain Analysis Types
+// ============================================================================
+
+/**
+ * Error pattern analysis result
+ */
+export interface ErrorPattern {
+  /** Pattern type: none, single, or chain */
+  type: 'none' | 'single' | 'chain';
+  /** Total error count */
+  count: number;
+  /** All error records */
+  errors: ExecutionErrorRecord[];
+  /** Distribution of errors by type */
+  typeDistribution: Record<string, number>;
+  /** Tools causing most errors */
+  toolProblems: Array<{ name: string; count: number }>;
+  /** Distribution by severity */
+  severityBreakdown: Record<string, number>;
+}
+
 /**
  * AgentLoopState - Agent Loop Execution Status Manager
  *
  * Core Responsibilities:
  * - Manages the transition of execution states
  * - Logs the history of iterations and tool calls
- * - Tracks streaming state (NEW)
- * - Tracks pending tool calls (NEW)
+ * - Tracks streaming state for LLM responses
+ * - Tracks pending tool calls during execution
  *
  * Design Principles:
  * - Separated from persistent data
@@ -114,7 +136,7 @@ export class AgentLoopState implements StateManager<AgentLoopStateSnapshot> {
   /** Stop sign */
   private _shouldStop: boolean = false;
 
-  // ========== Streaming State (NEW) ==========
+  // ========== Streaming State ==========
 
   /**
    * Partial message during streaming
@@ -210,7 +232,7 @@ export class AgentLoopState implements StateManager<AgentLoopStateSnapshot> {
     return [...this._iterationHistory];
   }
 
-  // ========== Streaming State Getters (NEW) ==========
+  // ========== Streaming State Getters ==========
 
   /**
    * Get the streaming message
@@ -328,7 +350,7 @@ export class AgentLoopState implements StateManager<AgentLoopStateSnapshot> {
       this._currentIterationRecord.toolCalls.push(record);
     }
 
-    // Add to pending set (NEW)
+    // Track pending tool calls for streaming coordination
     this._pendingToolCalls.add(id);
 
     return record;
@@ -351,11 +373,11 @@ export class AgentLoopState implements StateManager<AgentLoopStateSnapshot> {
     }
     this._toolCallCount++;
 
-    // Remove from pending set (NEW)
+    // Clean up pending tool call tracking
     this._pendingToolCalls.delete(id);
   }
 
-  // ========== Streaming State Methods (NEW) ==========
+  // ========== Streaming State Methods ==========
 
   /**
    * Start streaming
@@ -493,6 +515,203 @@ export class AgentLoopState implements StateManager<AgentLoopStateSnapshot> {
    */
   getEventRecords(): ExecutionEventRecord[] {
     return [...this._eventRecords];
+  }
+
+  // ========== Error Chain Tracking ==========
+
+  /**
+   * Record an error with automatic error chain building
+   *
+   * Automatically establishes relationships between errors:
+   * - Sets parentErrorId to the last error
+   * - Builds errorChain array
+   * - Identifies root cause
+   *
+   * @param error Error record to add
+   */
+  recordError(error: ExecutionErrorRecord): void {
+    // 1. Standardize error ID if not provided
+    const errorId = error.id || `error:${Date.now()}:${Math.random().toString(36).slice(2, 9)}`;
+    error.id = errorId;
+
+    // 2. Build error chain relationships
+    if (this._errorRecords.length > 0) {
+      const lastError = this._errorRecords[this._errorRecords.length - 1]!;
+
+      // 2a. Set parent error
+      error.parentErrorId = lastError.id;
+
+      // 2b. Build error chain
+      if (lastError.errorChain) {
+        error.errorChain = [...lastError.errorChain, errorId];
+      } else {
+        // First time establishing chain
+        error.errorChain = [lastError.id, errorId];
+      }
+
+      // 2c. Quick reference to root cause
+      error.rootCauseId = lastError.rootCauseId || lastError.id;
+    } else {
+      // This is the first error, it is the root cause
+      error.errorChain = [errorId];
+      error.rootCauseId = errorId;
+    }
+
+    // 3. Limit record count
+    const MAX_ERRORS = EXECUTION_STATE_MAX_ERROR_RECORDS;
+    if (this._errorRecords.length >= MAX_ERRORS) {
+      this._errorRecords.shift();
+    }
+
+    // 4. Add to records
+    this._errorRecords.push(error);
+  }
+
+  /**
+   * Get complete error chain for a specific error
+   *
+   * Returns all errors in the chain starting from the root cause
+   * up to and including the specified error.
+   *
+   * @param fromErrorId Error ID to get chain for (default: last error)
+   * @returns Array of errors in chain order
+   */
+  getErrorChain(fromErrorId?: string): ExecutionErrorRecord[] {
+    if (this._errorRecords.length === 0) {
+      return [];
+    }
+
+    const targetErrorId = fromErrorId || this._errorRecords[this._errorRecords.length - 1]!.id;
+    const targetError = this._errorRecords.find(e => e.id === targetErrorId);
+
+    if (!targetError) {
+      return [];
+    }
+
+    if (!targetError.errorChain) {
+      return [targetError];
+    }
+
+    return targetError.errorChain
+      .map(id => this._errorRecords.find(e => e.id === id))
+      .filter((e): e is ExecutionErrorRecord => Boolean(e));
+  }
+
+  /**
+   * Get the root cause error
+   *
+   * Returns the first error in the chain that triggered all subsequent errors.
+   *
+   * @returns Root cause error, or null if no errors
+   */
+  getRootCauseError(): ExecutionErrorRecord | null {
+    if (this._errorRecords.length === 0) {
+      return null;
+    }
+
+    const lastError = this._errorRecords[this._errorRecords.length - 1];
+    if (!lastError) {
+      return null;
+    }
+
+    const rootCauseId = lastError.rootCauseId || lastError.id;
+    return this._errorRecords.find(e => e.id === rootCauseId) || lastError;
+  }
+
+  /**
+   * Analyze error pattern in the error chain
+   *
+   * Provides statistics about error distribution:
+   * - Total error count
+   * - Errors grouped by type
+   * - Problem tools causing most errors
+   * - Error severity levels
+   *
+   * @returns Error pattern analysis
+   */
+  analyzeErrorPattern(): ErrorPattern {
+    if (this._errorRecords.length === 0) {
+      return {
+        type: 'none',
+        count: 0,
+        errors: [],
+        typeDistribution: {},
+        toolProblems: [],
+        severityBreakdown: {},
+      };
+    }
+
+    const errors = this._errorRecords;
+    const typeCount: Record<string, number> = {};
+    const toolCount: Record<string, number> = {};
+    const severityCount: Record<string, number> = {};
+
+    errors.forEach(err => {
+      // Count by error type
+      typeCount[err.errorType] = (typeCount[err.errorType] ?? 0) + 1;
+
+      // Count by tool
+      if (err.context.toolName) {
+        toolCount[err.context.toolName] = (toolCount[err.context.toolName] ?? 0) + 1;
+      }
+
+      // Count by severity
+      severityCount[err.severity] = (severityCount[err.severity] ?? 0) + 1;
+    });
+
+    return {
+      type: errors.length > 1 ? 'chain' : 'single',
+      count: errors.length,
+      errors,
+      typeDistribution: typeCount,
+      toolProblems: Object.entries(toolCount)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5)
+        .map(([name, count]) => ({ name, count })),
+      severityBreakdown: severityCount,
+    };
+  }
+
+  /**
+   * Check if errors can be recovered from
+   *
+   * Analyzes if the error chain can be recovered through suggested recovery actions.
+   *
+   * @returns true if all errors in chain are recoverable
+   */
+  canRecoverFromErrors(): boolean {
+    return this._errorRecords.every(e => e.isRecoverable);
+  }
+
+  /**
+   * Get recommended recovery action for the error chain
+   *
+   * Based on the error chain, returns the most appropriate recovery action.
+   *
+   * @returns Recommended action: 'retry' | 'fallback' | 'manual_intervention' | 'abort'
+   */
+  getRecommendedRecoveryAction(): "retry" | "fallback" | "manual_intervention" | "abort" {
+    if (this._errorRecords.length === 0) {
+      return 'abort';
+    }
+
+    // Check if all recoverable errors suggest the same action
+    const retryCount = this._errorRecords.filter(e => e.recoveryAction === 'retry').length;
+    const fallbackCount = this._errorRecords.filter(e => e.recoveryAction === 'fallback').length;
+    const skipCount = this._errorRecords.filter(e => e.recoveryAction === 'skip').length;
+
+    // Prefer the most common recovery action
+    if (retryCount >= fallbackCount && retryCount >= skipCount) {
+      return 'retry';
+    }
+    if (fallbackCount >= skipCount) {
+      return 'fallback';
+    }
+    if (skipCount > 0) {
+      return 'retry'; // Use retry as fallback for skip
+    }
+
+    return 'manual_intervention';
   }
 
   /**

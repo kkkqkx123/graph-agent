@@ -40,6 +40,7 @@ import type { GlobalContext } from "../../../shared/global-context.js";
 import type { LLMWrapper } from "../../../services/llm/wrapper.js";
 import type { WorkflowLifecycleCoordinator } from "../../../workflow/execution/coordinators/workflow-lifecycle-coordinator.js";
 import type { IdBasedServiceFactory, NoArgServiceFactory } from "../../../di/factory-types.js";
+import type { PersistenceLayer } from "./persistence-interfaces.js";
 import { AgentLoopCheckpointResourceAPI } from "../../agent/resources/checkpoint-resource-api.js";
 
 /**
@@ -293,6 +294,19 @@ export class APIDependencyManager {
       ) as FileCheckpointManager | undefined;
     } catch {
       return undefined;
+    }
+  }
+
+  /**
+   * Get the Persistence Layer (may be null if not configured)
+   */
+  getPersistenceLayer(): PersistenceLayer | null {
+    try {
+      return this.getFromContainer(
+        Identifiers.PersistenceLayer as ServiceIdentifier<PersistenceLayer>,
+      ) as PersistenceLayer | null;
+    } catch {
+      return null;
     }
   }
 

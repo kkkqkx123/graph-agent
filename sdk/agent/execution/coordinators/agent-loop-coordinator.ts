@@ -516,6 +516,7 @@ export class AgentLoopCoordinator {
         message: error instanceof Error ? error.message : String(error),
         code: error instanceof Error ? error.name : "UnknownError",
         severity: "error",
+        errorType: "execution_error",
         context: {
           operation: "agent_loop_execution",
         },

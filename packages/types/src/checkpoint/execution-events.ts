@@ -50,6 +50,9 @@ export interface ExecutionErrorRecord {
   /** Error code (optional, for machine-readable identification) */
   code?: string;
 
+  /** Error type: tool_error, validation_error, execution_error, timeout, etc. */
+  errorType: "tool_error" | "validation_error" | "execution_error" | "timeout" | "other";
+
   /** Error severity */
   severity: "error" | "warning" | "info";
 
@@ -79,6 +82,25 @@ export interface ExecutionErrorRecord {
 
   /** Additional error details */
   details?: Record<string, unknown>;
+
+  // ============ Error Chain Tracking ============
+
+  /** ID of the error that triggered this error (if part of a chain) */
+  parentErrorId?: string;
+
+  /** Complete error chain: [root_error_id, ..., this_error_id] */
+  errorChain?: string[];
+
+  /** Quick reference to the root cause error ID */
+  rootCauseId?: string;
+
+  /** Relationship between this error and the parent error */
+  causedBy?: {
+    /** Why this error was triggered by the parent error */
+    reason: string;
+    /** What handling was attempted */
+    handlingAttempt?: string;
+  };
 
   // Note: stackTrace is intentionally NOT included here.
   // Stack traces and detailed debugging info belong in logs, not in state.

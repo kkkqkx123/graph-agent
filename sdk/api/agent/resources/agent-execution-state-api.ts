@@ -16,6 +16,8 @@
 
 import { QueryableResourceAPI } from "../../shared/resources/generic-resource-api.js";
 import type { APIDependencyManager } from "@sdk/api/shared/core/sdk-dependencies.js";
+import type { PersistenceLayer } from "../../shared/core/persistence-interfaces.js";
+import { NoOpPersistenceLayer } from "../../shared/core/persistence-interfaces.js";
 import type { ID } from "@wf-agent/types";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
 
@@ -313,6 +315,7 @@ export class AgentExecutionStateAPI extends QueryableResourceAPI<
   private contextSnapshots: Map<ID, ExecutionContextSnapshot[]> = new Map();
   private stateTransitions: Map<ID, StateTransition[]> = new Map();
   private timelines: Map<ID, ExecutionTimelineEntry[]> = new Map();
+  private persistence: PersistenceLayer;
 
   /**
    * Constructor
@@ -320,7 +323,7 @@ export class AgentExecutionStateAPI extends QueryableResourceAPI<
    */
   constructor(deps: APIDependencyManager) {
     super();
-    void deps; // Acknowledge parameter
+    this.persistence = deps.getPersistenceLayer() || new NoOpPersistenceLayer();
   }
 
   // ============================================================================
@@ -389,6 +392,13 @@ export class AgentExecutionStateAPI extends QueryableResourceAPI<
    */
   async recordExecutionState(state: AgentExecutionState): Promise<void> {
     this.executionStates.set(state.executionId, state);
+
+    if (this.persistence) {
+      await this.persistence.saveExecutionStateSnapshot(state).catch((err) => {
+        logger.warn("Failed to persist execution state", { error: err });
+      });
+    }
+
     logger.debug("Recorded execution state", {
       executionId: state.executionId,
       status: state.status,
@@ -400,7 +410,20 @@ export class AgentExecutionStateAPI extends QueryableResourceAPI<
    * Get current execution state
    */
   async getExecutionState(executionId: ID): Promise<AgentExecutionState | null> {
-    return this.executionStates.get(executionId) ?? null;
+    // Prefer cached state
+    const cached = this.executionStates.get(executionId);
+    if (cached) return cached;
+
+    // Try to restore from persistence layer
+    if (this.persistence) {
+      const persisted = await this.persistence.getExecutionStateSnapshot(executionId);
+      if (persisted) {
+        this.executionStates.set(executionId, persisted);
+        return persisted;
+      }
+    }
+
+    return null;
   }
 
   /**

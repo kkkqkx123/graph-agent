@@ -74,6 +74,7 @@ import type { FileCheckpointManager as FileCheckpointManagerType } from "@wf-age
 import type { MetricsRegistry as MetricsRegistryType } from "@sdk/metrics/metrics-registry.js";
 import type { ToolPermissionManager as ToolPermissionManagerType } from "@sdk/shared/coordinators/tool-permission-manager.js";
 import type { RejectionMessageBuilder as RejectionMessageBuilderType } from "@sdk/shared/coordinators/rejection-message-builder.js";
+import type { PersistenceLayer as PersistenceLayerType } from "@sdk/api/shared/core/persistence-interfaces.js";
 
 // ============================================================
 // Storage Layer Service
@@ -571,3 +572,15 @@ export const ToolPermissionManager: ServiceIdentifier<ToolPermissionManagerType>
  */
 export const RejectionMessageBuilder: ServiceIdentifier<RejectionMessageBuilderType> =
   Symbol("RejectionMessageBuilder");
+
+// ============================================================
+// Persistence Layer Services
+// ============================================================
+
+/**
+ * PersistenceLayer - Persistence Layer
+ * Provides unified persistence interface for execution states, metrics, and events
+ */
+export const PersistenceLayer: ServiceIdentifier<PersistenceLayerType> =
+  Symbol("PersistenceLayer");
+

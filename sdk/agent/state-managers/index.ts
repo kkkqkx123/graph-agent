@@ -3,7 +3,7 @@
  * Provides state management classes for agent loop execution.
  */
 
-export { AgentLoopState } from "./agent-loop-state.js";
+export { AgentLoopState, type ErrorPattern } from "./agent-loop-state.js";
 export {
   AgentStateCoordinator,
   type AgentStateCoordinatorConfig,
