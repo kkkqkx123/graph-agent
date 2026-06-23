@@ -13,6 +13,7 @@ import { ExecutionRunner } from './executors/execution.executor.js';
 import { QueryExecutor } from './executors/query.executor.js';
 import { ResourceManager } from './managers/resource.manager.js';
 import { EventManager } from './managers/event.manager.js';
+import { ComparisonAnalysis, ProgressAnalysis } from './analysis/index.js';
 import { KitError, KitErrorCode } from './converters/error.converter.js';
 import type { WorkflowAPI } from './api/workflow.api.js';
 import type { ExecutionAPI } from './api/execution.api.js';
@@ -42,6 +43,8 @@ export class SDKKit {
   private queryExecutor: QueryExecutor;
   private resourceManager: ResourceManager;
   private eventManager: EventManager;
+  private comparisonAnalysis?: ComparisonAnalysis;
+  private progressAnalysis?: ProgressAnalysis;
   private cachedExecuteCommand: ExecuteWorkflowCommandConstructor;
   private sdk: SDK;
   private config: Required<SDKKitOptions>;
@@ -75,6 +78,13 @@ export class SDKKit {
     this.executionAPI = new ExecutionAPIImpl(this.executionRunner);
     this.queryAPI = new QueryAPIImpl(this.queryExecutor);
     this.resourceAPI = new ResourceAPIImpl(this.resourceManager);
+
+    // Initialize advanced APIs
+    const deps = sdk.getFactory()?.getDependencies?.();
+    if (deps) {
+      this.comparisonAnalysis = new ComparisonAnalysis(sdk);
+      this.progressAnalysis = new ProgressAnalysis(sdk);
+    }
   }
 
   /**
@@ -310,6 +320,29 @@ export class SDKKit {
    */
   events(): EventManager {
     return this.eventManager;
+  }
+
+  /**
+   * Get Analysis APIs for comparing and analyzing executions
+   *
+   * Provides analysis capabilities:
+   * - Compare executions (performance, errors, interruptions)
+   * - Track execution progress with time estimation
+   *
+   * @example
+   * ```typescript
+   * const comparison = await kit.analysis().comparison
+   *   .compare(exec1Id, exec2Id);
+   *
+   * const progress = kit.analysis().progress
+   *   .createTracker(executionId);
+   * ```
+   */
+  analysis() {
+    return {
+      comparison: this.comparisonAnalysis,
+      progress: this.progressAnalysis,
+    };
   }
 
   /**

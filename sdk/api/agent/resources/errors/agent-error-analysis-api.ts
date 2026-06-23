@@ -306,6 +306,94 @@ export class AgentErrorAnalysisAPI
   }
 
   /**
+   * Get advanced error analysis with frequency and patterns (P1 enhancement)
+   *
+   * Provides additional insights:
+   * - Error frequency by type over time
+   * - Error hot spots (most problematic tools)
+   * - Temporal patterns (errors increase/decrease)
+   *
+   * @param executionId Execution ID
+   * @returns Advanced error analysis
+   */
+  async getAdvancedErrorAnalysis(executionId: ID): Promise<AdvancedErrorAnalysis> {
+    logger.debug("Computing advanced error analysis", { executionId });
+
+    const errorRecords = await this.getExecutionErrorRecords(executionId);
+
+    if (errorRecords.length === 0) {
+      return {
+        totalErrors: 0,
+        errorFrequency: {},
+        errorHotspots: [],
+        temporalPattern: 'none',
+        mostProblematicTools: [],
+        errorTrend: 'stable',
+      };
+    }
+
+    // Analyze error frequency over time
+    const sortedErrors = [...errorRecords].sort((a, b) => a.timestamp - b.timestamp);
+    const errorFrequency: Record<string, number> = {};
+    const toolProblems: Record<string, number> = {};
+
+    sortedErrors.forEach(err => {
+      // Frequency by type
+      errorFrequency[err.errorType] = (errorFrequency[err.errorType] ?? 0) + 1;
+
+      // Tool problems
+      if (err.context.toolName) {
+        toolProblems[err.context.toolName] = (toolProblems[err.context.toolName] ?? 0) + 1;
+      }
+    });
+
+    // Get most problematic tools
+    const mostProblematicTools = Object.entries(toolProblems)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([name, count]) => ({ name, errorCount: count }));
+
+    // Analyze temporal pattern
+    const temporalPattern = this.analyzeTemporalPattern(sortedErrors);
+
+    // Analyze trend
+    const errorTrend = this.analyzeErrorTrend(sortedErrors);
+
+    // Find error hotspots (iterations with highest error rates)
+    const errorHotspots: ErrorHotspot[] = [];
+    const errorsByIteration: Record<number, ExecutionErrorRecord[]> = {};
+
+    sortedErrors.forEach(err => {
+      if (err.iteration !== undefined) {
+        if (!errorsByIteration[err.iteration]) {
+          errorsByIteration[err.iteration] = [];
+        }
+        errorsByIteration[err.iteration].push(err);
+      }
+    });
+
+    for (const [iteration, errors] of Object.entries(errorsByIteration)) {
+      if (errors.length > 0) {
+        errorHotspots.push({
+          iteration: parseInt(iteration),
+          errorCount: errors.length,
+          errorTypes: Array.from(new Set(errors.map(e => e.errorType))),
+          severity: errors[0]?.severity || 'error',
+        });
+      }
+    }
+
+    return {
+      totalErrors: errorRecords.length,
+      errorFrequency,
+      errorHotspots: errorHotspots.sort((a, b) => b.errorCount - a.errorCount),
+      temporalPattern,
+      mostProblematicTools,
+      errorTrend,
+    };
+  }
+
+  /**
    * Get recovery proposal for a specific error
    *
    * Analyzes an error and proposes recovery strategy.
@@ -483,6 +571,60 @@ export class AgentErrorAnalysisAPI
   }
 
   /**
+   * Analyze temporal pattern of errors
+   */
+  private analyzeTemporalPattern(sortedErrors: ExecutionErrorRecord[]): TemporalPattern {
+    if (sortedErrors.length < 2) {
+      return 'none';
+    }
+
+    const timeIntervals: number[] = [];
+    for (let i = 1; i < sortedErrors.length; i++) {
+      timeIntervals.push(sortedErrors[i]!.timestamp - sortedErrors[i - 1]!.timestamp);
+    }
+
+    const avgInterval = timeIntervals.reduce((a, b) => a + b, 0) / timeIntervals.length;
+
+    // If errors are getting closer together, pattern is 'accelerating'
+    const recent = timeIntervals.slice(-3);
+    const early = timeIntervals.slice(0, 3);
+
+    const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
+    const earlyAvg = early.reduce((a, b) => a + b, 0) / early.length;
+
+    if (recentAvg < earlyAvg * 0.7) {
+      return 'accelerating';
+    } else if (recentAvg > earlyAvg * 1.3) {
+      return 'decelerating';
+    }
+
+    return 'steady';
+  }
+
+  /**
+   * Analyze error trend (are errors increasing or decreasing?)
+   */
+  private analyzeErrorTrend(sortedErrors: ExecutionErrorRecord[]): ErrorTrend {
+    if (sortedErrors.length < 2) {
+      return 'stable';
+    }
+
+    const mid = Math.floor(sortedErrors.length / 2);
+    const firstHalf = sortedErrors.slice(0, mid);
+    const secondHalf = sortedErrors.slice(mid);
+
+    const ratio = secondHalf.length / firstHalf.length;
+
+    if (ratio > 1.3) {
+      return 'increasing';
+    } else if (ratio < 0.7) {
+      return 'decreasing';
+    }
+
+    return 'stable';
+  }
+
+  /**
    * Implementation of IErrorAnalysisProvider interface
    *
    * Fetches error records from AgentLoopState via AgentLoopRegistry
@@ -503,4 +645,60 @@ export class AgentErrorAnalysisAPI
       return [];
     }
   }
+}
+
+// ============================================================================
+// New Types for Advanced Error Analysis (P1)
+// ============================================================================
+
+/**
+ * Error hotspot - iteration with high error concentration
+ */
+export interface ErrorHotspot {
+  /** Iteration number */
+  iteration: number;
+  /** Number of errors in this iteration */
+  errorCount: number;
+  /** Types of errors */
+  errorTypes: string[];
+  /** Most severe error in this iteration */
+  severity: string;
+}
+
+/**
+ * Temporal pattern of errors
+ */
+export type TemporalPattern = 'none' | 'steady' | 'accelerating' | 'decelerating';
+
+/**
+ * Error trend (increasing/decreasing/stable)
+ */
+export type ErrorTrend = 'increasing' | 'decreasing' | 'stable';
+
+/**
+ * Problematic tool entry
+ */
+export interface ProblematicTool {
+  /** Tool name */
+  name: string;
+  /** Number of errors */
+  errorCount: number;
+}
+
+/**
+ * Advanced error analysis result
+ */
+export interface AdvancedErrorAnalysis {
+  /** Total error count */
+  totalErrors: number;
+  /** Error frequency by type */
+  errorFrequency: Record<string, number>;
+  /** Iterations with high error concentration */
+  errorHotspots: ErrorHotspot[];
+  /** Temporal pattern of errors */
+  temporalPattern: TemporalPattern;
+  /** Most problematic tools */
+  mostProblematicTools: ProblematicTool[];
+  /** Trend of errors over execution */
+  errorTrend: ErrorTrend;
 }

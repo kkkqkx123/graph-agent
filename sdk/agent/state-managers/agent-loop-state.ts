@@ -511,6 +511,79 @@ export class AgentLoopState implements StateManager<AgentLoopStateSnapshot> {
   }
 
   /**
+   * Get interruption history with optional filtering
+   * @param filter Optional filter: 'pause' | 'resume' | 'stop' | 'timeout'
+   * @returns Filtered interruption records
+   */
+  getInterruptionHistory(filter?: 'pause' | 'resume' | 'stop' | 'timeout'): ExecutionInterruptionRecord[] {
+    if (!filter) {
+      return this.getInterruptionRecords();
+    }
+    return this._interruptionRecords.filter(record => record.type === filter);
+  }
+
+  /**
+   * Get interruption statistics
+   * @returns Statistics about interruptions: frequency, duration, recovery rate
+   */
+  getInterruptionStatistics(): {
+    total: number;
+    byType: Record<string, number>;
+    averageDuration?: number;
+    recoveryAttempts: number;
+    successfulRecoveries: number;
+    recoveryRate: number;
+  } {
+    if (this._interruptionRecords.length === 0) {
+      return {
+        total: 0,
+        byType: {},
+        recoveryAttempts: 0,
+        successfulRecoveries: 0,
+        recoveryRate: 0,
+      };
+    }
+
+    const records = this._interruptionRecords;
+    const byType: Record<string, number> = {};
+    let totalDuration = 0;
+    let durationCount = 0;
+    let recoveryAttempts = 0;
+    let successfulRecoveries = 0;
+
+    records.forEach(record => {
+      // Count by type
+      byType[record.type] = (byType[record.type] ?? 0) + 1;
+
+      // Calculate duration if available
+      if (record.resumedAt && record.timestamp) {
+        const duration = record.resumedAt - record.timestamp;
+        totalDuration += duration;
+        durationCount++;
+      }
+
+      // Track recovery attempts
+      if (record.type === 'pause') {
+        recoveryAttempts++;
+      }
+
+      // Track successful recoveries
+      if (record.resumeReason === 'manual_resume' || record.resumeReason === 'auto_resume') {
+        successfulRecoveries++;
+      }
+    });
+
+    return {
+      total: records.length,
+      byType,
+      averageDuration: durationCount > 0 ? totalDuration / durationCount : undefined,
+      recoveryAttempts,
+      successfulRecoveries,
+      recoveryRate: recoveryAttempts > 0 ? (successfulRecoveries / recoveryAttempts) * 100 : 0,
+    };
+  }
+
+  /**
    * Get event records
    */
   getEventRecords(): ExecutionEventRecord[] {
@@ -526,6 +599,10 @@ export class AgentLoopState implements StateManager<AgentLoopStateSnapshot> {
    * - Sets parentErrorId to the last error
    * - Builds errorChain array
    * - Identifies root cause
+   *
+   * NOTE: As of v2.0, error records are unlimited to ensure complete error history.
+   * Previous versions had a limit of EXECUTION_STATE_MAX_ERROR_RECORDS (100),
+   * which would drop earliest errors. Now all errors are retained.
    *
    * @param error Error record to add
    */
@@ -557,13 +634,10 @@ export class AgentLoopState implements StateManager<AgentLoopStateSnapshot> {
       error.rootCauseId = errorId;
     }
 
-    // 3. Limit record count
-    const MAX_ERRORS = EXECUTION_STATE_MAX_ERROR_RECORDS;
-    if (this._errorRecords.length >= MAX_ERRORS) {
-      this._errorRecords.shift();
-    }
-
-    // 4. Add to records
+    // 3. Add to records (unlimited retention for complete error history)
+    // Previous limit: EXECUTION_STATE_MAX_ERROR_RECORDS = 100 (deprecated)
+    // Migration: All errors are now retained, users should implement their own
+    // retention policies at the persistence layer if needed
     this._errorRecords.push(error);
   }
 

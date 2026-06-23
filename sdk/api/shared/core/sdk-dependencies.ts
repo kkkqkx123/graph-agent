@@ -42,6 +42,8 @@ import type { WorkflowLifecycleCoordinator } from "../../../workflow/execution/c
 import type { IdBasedServiceFactory, NoArgServiceFactory } from "../../../di/factory-types.js";
 import type { PersistenceLayer } from "./persistence-interfaces.js";
 import { AgentLoopCheckpointResourceAPI } from "../../agent/resources/checkpoint-resource-api.js";
+import { AgentPerformanceAnalysisAPI } from "../../agent/resources/agent-performance-analysis-api.js";
+import { AgentErrorAnalysisAPI } from "../../agent/resources/errors/agent-error-analysis-api.js";
 
 /**
  * API Dependency Management Class
@@ -308,6 +310,26 @@ export class APIDependencyManager {
     } catch {
       return null;
     }
+  }
+
+  // ============================================================================
+  // Analysis APIs
+  // ============================================================================
+
+  /**
+   * Get the Agent Performance Analysis API
+   * Provides performance profiling and bottleneck identification
+   */
+  getAgentPerformanceAnalysisAPI(): AgentPerformanceAnalysisAPI {
+    return new AgentPerformanceAnalysisAPI(this);
+  }
+
+  /**
+   * Get the Agent Error Analysis API
+   * Provides error statistics and advanced error analysis
+   */
+  getAgentErrorAnalysisAPI(): AgentErrorAnalysisAPI {
+    return new AgentErrorAnalysisAPI(this);
   }
 
   // ============================================================================
