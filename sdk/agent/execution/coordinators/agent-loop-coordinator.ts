@@ -35,6 +35,8 @@ import { buildAgentCheckpointLayers, resolveAgentCheckpointConfig, getAgentCheck
 import { CheckpointErrorHandler } from "../../../shared/checkpoint/checkpoint-error-handler.js";
 import { CheckpointMetricsCollector } from "../../../shared/checkpoint/checkpoint-metrics-collector.js";
 import type { CheckpointMetricsEvent, CheckpointErrorContext, CheckpointCreationMetrics } from "@wf-agent/types";
+import { getExecutionEventBus } from "../../../shared/events/execution-event-bus.js";
+import type { ExecutionErrorRecord } from "@wf-agent/types";
 
 const logger = createContextualLogger({ component: "AgentLoopCoordinator" });
 
@@ -506,7 +508,36 @@ export class AgentLoopCoordinator {
     } catch (error) {
       const duration = now() - startTime;
 
-      // Record error metrics
+      // Record error in execution state and publish event
+      const errorRecord: ExecutionErrorRecord = {
+        id: `err-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        timestamp: Date.now(),
+        iteration: entity.state.currentIteration,
+        message: error instanceof Error ? error.message : String(error),
+        code: error instanceof Error ? error.name : "UnknownError",
+        severity: "error",
+        context: {
+          operation: "agent_loop_execution",
+        },
+        isRecoverable: false,
+      };
+
+      // Add error to state for persistence
+      entity.state.addErrorRecord(errorRecord);
+
+      // Publish error event for metrics and logging
+      const eventBus = getExecutionEventBus();
+      await eventBus.publish({
+        type: "error_occurred",
+        executionId: entity.id,
+        timestamp: Date.now(),
+        error: errorRecord,
+        context: {
+          iteration: entity.state.currentIteration,
+        },
+      });
+
+      // Record execution complete for metrics (now event-driven, but still needed for old path)
       if (this.metricsCollector) {
         this.metricsCollector.recordExecutionComplete(
           entity.id,
@@ -515,11 +546,6 @@ export class AgentLoopCoordinator {
           entity.state.currentIteration,
           entity.state.toolCallCount,
           false,
-        );
-        this.metricsCollector.recordError(
-          entity.id,
-          error instanceof Error ? error.name : "UnknownError",
-          entity.state.currentIteration,
         );
       }
 

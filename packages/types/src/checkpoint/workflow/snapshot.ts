@@ -9,6 +9,7 @@ import type { TriggerRuntimeState } from "../../trigger/index.js";
 import type { TokenUsageStats } from "../../llm/index.js";
 import type { MessageMarkMap } from "../../message/index.js";
 import type { CheckpointVariableState } from "../variable-state.js";
+import type { ExecutionErrorRecord, ExecutionInterruptionRecord, ExecutionEventRecord } from "../execution-events.js";
 
 /**
  * Operation-level execution state
@@ -63,7 +64,7 @@ export interface WorkflowExecutionStateSnapshot {
   output: Record<string, unknown>;
   /** Node execution result mapping */
   nodeResults: Record<string, NodeExecutionResult>;
-  /** Error message array */
+  /** Error message array - DEPRECATED: use errorRecords for new code */
   errors: unknown[];
   /** Conversation state (stores the complete message history and index information, used for restoring the ConversationSession) */
   conversationState: {
@@ -103,4 +104,15 @@ export interface WorkflowExecutionStateSnapshot {
   triggeredSubworkflowContext?: TriggeredSubworkflowContext;
   /** Current operation state (for mid-node resume) */
   currentOperation?: OperationState;
+
+  // ========== Plan C: Execution Event Tracking ==========
+
+  /** Errors that occurred during execution (atomic with state) */
+  errorRecords?: ExecutionErrorRecord[];
+
+  /** Interruptions (pauses/stops) that occurred during execution */
+  interruptionRecords?: ExecutionInterruptionRecord[];
+
+  /** Recent execution events for timeline view (limited to prevent state bloat) */
+  eventRecords?: ExecutionEventRecord[];
 }

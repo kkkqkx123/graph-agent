@@ -69,3 +69,15 @@ export * from "./workflow/index.js";
 
 // Export Checkpoint Variable State
 export { CheckpointVariableState } from "./variable-state.js";
+
+// Export Execution Event Types (Plan C: State-driven architecture)
+export {
+  EXECUTION_STATE_MAX_EVENTS,
+  EXECUTION_STATE_MAX_ERROR_RECORDS,
+  EXECUTION_STATE_MAX_INTERRUPTION_RECORDS,
+} from "./execution-events.js";
+export type {
+  ExecutionErrorRecord,
+  ExecutionInterruptionRecord,
+  ExecutionEventRecord,
+} from "./execution-events.js";

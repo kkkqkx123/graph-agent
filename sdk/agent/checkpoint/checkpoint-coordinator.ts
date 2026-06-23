@@ -28,6 +28,7 @@ import { CheckpointVersionManager } from "../../shared/checkpoint/checkpoint-ver
 import { CheckpointErrorHandler } from "../../shared/checkpoint/checkpoint-error-handler.js";
 import { buildCheckpointMetadata } from "../../shared/checkpoint/utils/metadata-builder.js";
 import { createContextualLogger } from "../../utils/contextual-logger.js";
+import { getExecutionEventBus } from "../../shared/events/index.js";
 import type { FileCheckpointManager } from "@wf-agent/common-utils";
 
 const logger = createContextualLogger({ component: "AgentLoopCheckpointCoordinator" });
@@ -141,6 +142,21 @@ export class AgentLoopCheckpointCoordinator extends BaseCheckpointCoordinator<
     try {
       const checkpointId = await super.createCheckpoint(entity, dependencies, mergedMetadata);
 
+      // Publish checkpoint state change event (Plan C)
+      const eventBus = getExecutionEventBus();
+      await eventBus.publish({
+        type: "state_changed",
+        executionId: entity.id,
+        timestamp: Date.now(),
+        previousStatus: entity.state.status,
+        newStatus: entity.state.status,
+        changes: {
+          checkpointCreated: checkpointId,
+          description: options?.description,
+          tags: options?.tags,
+        },
+      });
+
       // Create file checkpoint if manager is available
       if (dependencies.fileCheckpointManager) {
         try {
@@ -214,6 +230,19 @@ export class AgentLoopCheckpointCoordinator extends BaseCheckpointCoordinator<
       // Use parent's restore logic to get the entity
       const entity = await super.restoreFromCheckpoint(checkpointId, dependencies);
 
+      // Publish state change event for restoration (Plan C)
+      const eventBus = getExecutionEventBus();
+      await eventBus.publish({
+        type: "state_changed",
+        executionId: entity.id,
+        timestamp: Date.now(),
+        newStatus: entity.state.status,
+        changes: {
+          restored: true,
+          checkpointId,
+        },
+      });
+
       // Restore file checkpoint if manager is available
       if (dependencies.fileCheckpointManager) {
         try {
@@ -274,27 +303,60 @@ export class AgentLoopCheckpointCoordinator extends BaseCheckpointCoordinator<
    * - includeToolCalls: Whether to include tool call records (default: true)
    * - toolCallLimit: Max number of tool calls to include
    *
+   * Plan C: Includes execution records (errors, interruptions, events) that are
+   * part of AgentLoopState and automatically serialized to checkpoint.
+   *
    * @param entity Agent Loop entity
    * @returns Status Snapshot
    */
   protected extractState(entity: AgentLoopEntity): AgentLoopStateSnapshot {
     const contentConfig = this.currentContentConfig;
+
+    // Get the full snapshot from AgentLoopState (includes all new Plan C fields)
+    const fullSnapshot = entity.state.createSnapshot();
     const snapshot: Record<string, unknown> = {};
 
     // Include execution state by default
     if (contentConfig?.includeState !== false) {
-      snapshot['status'] = entity.state.status;
-      snapshot['currentIteration'] = entity.state.currentIteration;
-      snapshot['toolCallCount'] = entity.state.toolCallCount;
-      snapshot['startTime'] = entity.state.startTime;
-      snapshot['endTime'] = entity.state.endTime;
-      snapshot['error'] = entity.state.error;
+      snapshot['status'] = fullSnapshot.status;
+      snapshot['currentIteration'] = fullSnapshot.currentIteration;
+      snapshot['toolCallCount'] = fullSnapshot.toolCallCount;
+      snapshot['startTime'] = fullSnapshot.startTime;
+      snapshot['endTime'] = fullSnapshot.endTime;
+      snapshot['error'] = fullSnapshot.error;
+
+      // Plan C: Include execution records
+      if (fullSnapshot.errorRecords) {
+        snapshot['errorRecords'] = fullSnapshot.errorRecords;
+      }
+      if (fullSnapshot.interruptionRecords) {
+        snapshot['interruptionRecords'] = fullSnapshot.interruptionRecords;
+      }
+      if (fullSnapshot.eventRecords) {
+        snapshot['eventRecords'] = fullSnapshot.eventRecords;
+      }
     }
 
     // Include tool calls by default, unless explicitly disabled
     if (contentConfig?.includeToolCalls !== false) {
-      // Note: Message and tool call inclusion would require extending AgentLoopEntity interface
-      // For now, we include only the state fields
+      // Include iteration history and current iteration record
+      if (fullSnapshot.iterationHistory) {
+        snapshot['iterationHistory'] = fullSnapshot.iterationHistory;
+      }
+      if (fullSnapshot.currentIterationRecord) {
+        snapshot['currentIterationRecord'] = fullSnapshot.currentIterationRecord;
+      }
+    }
+
+    // Include streaming state fields
+    if (fullSnapshot.isStreaming) {
+      snapshot['isStreaming'] = fullSnapshot.isStreaming;
+    }
+    if (fullSnapshot.streamMessage) {
+      snapshot['streamMessage'] = fullSnapshot.streamMessage;
+    }
+    if (fullSnapshot.pendingToolCallIds) {
+      snapshot['pendingToolCallIds'] = fullSnapshot.pendingToolCallIds;
     }
 
     // Include trigger state by default for tracking trigger fires and limits

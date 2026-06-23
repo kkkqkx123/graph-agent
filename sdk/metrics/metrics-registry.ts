@@ -25,6 +25,8 @@ import { TimeoutMetricsCollector } from "./timeout-collector.js";
 import type { MetricCollectorConfig, MetricReport, MetricType } from "./types.js";
 import { BaseMetricCollector } from "./base-collector.js";
 import { createContextualLogger } from "@sdk/utils/contextual-logger.js";
+import { getExecutionEventBus } from "../shared/events/execution-event-bus.js";
+import type { ErrorOccurredEvent, ToolExecutedEvent, IterationStartedEvent, IterationCompletedEvent } from "../shared/events/execution-event-bus.js";
 
 const logger = createContextualLogger({ component: "MetricsRegistry" });
 
@@ -297,6 +299,101 @@ export class MetricsRegistry {
 
     await Promise.allSettled(flushPromises);
     logger.debug("All metrics flushed");
+  }
+
+  /**
+   * Subscribe to execution events for automatic metrics collection
+   * Enables event-driven metrics updates when execution events occur.
+   * Call this once after creating the metrics registry to activate.
+   */
+  subscribeToEvents(): void {
+    const eventBus = getExecutionEventBus();
+
+    // Subscribe to error events
+    eventBus.on("error_occurred", (event: ErrorOccurredEvent) => {
+      const agentLoopCollector = this.getAgentLoopCollector();
+      const errorCollector = this.getErrorCollector();
+
+      if (agentLoopCollector) {
+        agentLoopCollector.recordError(
+          event.executionId,
+          event.error.code || "UNKNOWN_ERROR",
+          event.context?.iteration,
+        );
+      }
+
+      if (errorCollector) {
+        errorCollector.recordError(
+          event.error.code || "UNKNOWN_ERROR",
+          event.executionId,
+          event.context?.nodeId,
+          event.error.message,
+        );
+      }
+
+      logger.debug("Error metrics recorded via event", {
+        executionId: event.executionId,
+        errorCode: event.error.code,
+      });
+    });
+
+    // Subscribe to tool executed events
+    eventBus.on("tool_executed", (event: ToolExecutedEvent) => {
+      const toolCollector = this.getToolCollector();
+
+      if (toolCollector) {
+        toolCollector.recordToolCallComplete(
+          event.toolName,
+          event.executionId,
+          event.duration,
+          event.status === "success",
+        );
+      }
+
+      logger.debug("Tool execution metrics recorded via event", {
+        executionId: event.executionId,
+        toolName: event.toolName,
+        status: event.status,
+        duration: event.duration,
+      });
+    });
+
+    // Subscribe to iteration events
+    eventBus.on("iteration_started", (event: IterationStartedEvent) => {
+      const agentLoopCollector = this.getAgentLoopCollector();
+
+      if (agentLoopCollector) {
+        agentLoopCollector.recordIterationStart(event.executionId, event.iteration);
+      }
+
+      logger.debug("Iteration start metrics recorded via event", {
+        executionId: event.executionId,
+        iteration: event.iteration,
+      });
+    });
+
+    eventBus.on("iteration_completed", (event: IterationCompletedEvent) => {
+      const agentLoopCollector = this.getAgentLoopCollector();
+
+      if (agentLoopCollector) {
+        // Extract duration from result if available
+        const duration = (event.result?.["duration"] as number) || 0;
+        const toolCallCount = (event.result?.["toolCallCount"] as number) || 0;
+        agentLoopCollector.recordIterationComplete(
+          event.executionId,
+          event.iteration,
+          duration,
+          toolCallCount,
+        );
+      }
+
+      logger.debug("Iteration completion metrics recorded via event", {
+        executionId: event.executionId,
+        iteration: event.iteration,
+      });
+    });
+
+    logger.info("Event-driven metrics collection initialized");
   }
 
   /**

@@ -19,6 +19,7 @@
 
 import { AgentLoopStatus } from "../../agent-execution/types.js";
 import type { IterationRecord } from "../../agent-execution/types.js";
+import type { ExecutionErrorRecord, ExecutionInterruptionRecord, ExecutionEventRecord } from "../execution-events.js";
 
 /**
  * Agent Loop Status Snapshot
@@ -27,6 +28,17 @@ import type { IterationRecord } from "../../agent-execution/types.js";
  * Does NOT include:
  * - `config`: Must be re-provided by application (contains callbacks)
  * - `messages`: Managed by ConversationSession, not AgentLoopState
+ *
+ * ## Plan C Changes
+ *
+ * Added execution-related arrays to ensure all execution data is persisted
+ * atomically with the state:
+ * - `errors`: Errors that occurred during execution (was in ExecutionHistoryAPI)
+ * - `interruptions`: Pauses/stops during execution (was in ExecutionHistoryAPI)
+ * - `events`: Significant execution events for timeline tracking (was in ExecutionHistoryAPI)
+ *
+ * This eliminates the separate ExecutionHistoryAPI storage and ensures data
+ * consistency and disaster recovery.
  */
 export interface AgentLoopStateSnapshot {
   /** Execution status */
@@ -39,8 +51,19 @@ export interface AgentLoopStateSnapshot {
   startTime: number | null;
   /** Execution end timestamp (ms) */
   endTime: number | null;
-  /** Error data (if execution failed) */
+  /** Error data (if execution failed) - DEPRECATED: use errors array */
   error: unknown;
+
+  // ========== Plan C: Execution Event Tracking ==========
+
+  /** Errors that occurred during execution (atomic with state) */
+  errorRecords?: ExecutionErrorRecord[];
+
+  /** Interruptions (pauses/stops) that occurred during execution */
+  interruptionRecords?: ExecutionInterruptionRecord[];
+
+  /** Recent execution events for timeline view (limited to prevent state bloat) */
+  eventRecords?: ExecutionEventRecord[];
 
   // ========== Extended fields for complete state capture ==========
 

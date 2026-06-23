@@ -57,6 +57,12 @@ import {
   type ToolCallRecord,
   type IterationRecord,
   type AgentLoopStateSnapshot,
+  type ExecutionErrorRecord,
+  type ExecutionInterruptionRecord,
+  type ExecutionEventRecord,
+  EXECUTION_STATE_MAX_ERROR_RECORDS,
+  EXECUTION_STATE_MAX_INTERRUPTION_RECORDS,
+  EXECUTION_STATE_MAX_EVENTS,
 } from "@wf-agent/types";
 import type { LLMMessage } from "@wf-agent/types";
 import { RuntimeValidationError } from "@wf-agent/types";
@@ -127,6 +133,26 @@ export class AgentLoopState implements StateManager<AgentLoopStateSnapshot> {
    * Indicates if currently streaming LLM response
    */
   private _isStreaming: boolean = false;
+
+  // ========== Plan C: Execution Event Tracking ==========
+
+  /**
+   * Error records during execution
+   * Stores all errors that occurred, persisted with state
+   */
+  private _errorRecords: ExecutionErrorRecord[] = [];
+
+  /**
+   * Interruption records during execution
+   * Stores all pauses and stops, persisted with state
+   */
+  private _interruptionRecords: ExecutionInterruptionRecord[] = [];
+
+  /**
+   * Event records during execution
+   * Stores significant events for timeline tracking
+   */
+  private _eventRecords: ExecutionEventRecord[] = [];
 
   /**
    * Get the current status
@@ -408,6 +434,67 @@ export class AgentLoopState implements StateManager<AgentLoopStateSnapshot> {
     this._pendingToolCalls.clear();
   }
 
+  // ========== Execution Records Management (Plan C) ==========
+
+  /**
+   * Add an error record
+   * @param record Error record to add
+   */
+  addErrorRecord(record: ExecutionErrorRecord): void {
+    this._errorRecords.push(record);
+    // Keep only the latest N records to prevent state bloat
+    if (this._errorRecords.length > EXECUTION_STATE_MAX_ERROR_RECORDS) {
+      this._errorRecords = this._errorRecords.slice(-EXECUTION_STATE_MAX_ERROR_RECORDS);
+    }
+  }
+
+  /**
+   * Add an interruption record
+   * @param record Interruption record to add
+   */
+  addInterruptionRecord(record: ExecutionInterruptionRecord): void {
+    this._interruptionRecords.push(record);
+    // Keep only the latest N records to prevent state bloat
+    if (this._interruptionRecords.length > EXECUTION_STATE_MAX_INTERRUPTION_RECORDS) {
+      this._interruptionRecords = this._interruptionRecords.slice(
+        -EXECUTION_STATE_MAX_INTERRUPTION_RECORDS,
+      );
+    }
+  }
+
+  /**
+   * Add an event record
+   * @param record Event record to add
+   */
+  addEventRecord(record: ExecutionEventRecord): void {
+    this._eventRecords.push(record);
+    // Keep only the latest N records to prevent state bloat
+    if (this._eventRecords.length > EXECUTION_STATE_MAX_EVENTS) {
+      this._eventRecords = this._eventRecords.slice(-EXECUTION_STATE_MAX_EVENTS);
+    }
+  }
+
+  /**
+   * Get error records
+   */
+  getErrorRecords(): ExecutionErrorRecord[] {
+    return [...this._errorRecords];
+  }
+
+  /**
+   * Get interruption records
+   */
+  getInterruptionRecords(): ExecutionInterruptionRecord[] {
+    return [...this._interruptionRecords];
+  }
+
+  /**
+   * Get event records
+   */
+  getEventRecords(): ExecutionEventRecord[] {
+    return [...this._eventRecords];
+  }
+
   /**
    * Pause execution
    */
@@ -534,6 +621,9 @@ export class AgentLoopState implements StateManager<AgentLoopStateSnapshot> {
     this._streamMessage = null;
     this._pendingToolCalls.clear();
     this._isStreaming = false;
+    this._errorRecords = [];
+    this._interruptionRecords = [];
+    this._eventRecords = [];
   }
 
   /**
@@ -570,6 +660,9 @@ export class AgentLoopState implements StateManager<AgentLoopStateSnapshot> {
     this._streamMessage = null;
     this._pendingToolCalls.clear();
     this._isStreaming = false;
+    this._errorRecords = [];
+    this._interruptionRecords = [];
+    this._eventRecords = [];
     this._status = AgentLoopStatus.CREATED;
   }
 
@@ -590,6 +683,9 @@ export class AgentLoopState implements StateManager<AgentLoopStateSnapshot> {
       ...record,
       toolCalls: record.toolCalls.map(tc => ({ ...tc })),
     }));
+    cloned._errorRecords = [...this._errorRecords];
+    cloned._interruptionRecords = [...this._interruptionRecords];
+    cloned._eventRecords = [...this._eventRecords];
     // Note: Runtime-only fields are not cloned (isStreaming, pendingToolCalls, streamMessage)
     return cloned;
   }
@@ -604,6 +700,10 @@ export class AgentLoopState implements StateManager<AgentLoopStateSnapshot> {
    *   - `isStreaming`: Whether the agent was in the middle of streaming an LLM response
    *   - `streamMessage`: The partial/incomplete streamed message content (serialized as unknown)
    *   - `pendingToolCallIds`: Array of tool call IDs that were in-flight at snapshot time
+   * - Includes execution records (Plan C):
+   *   - `errorRecords`: Errors that occurred (atomic with state)
+   *   - `interruptionRecords`: Interruptions/pauses that occurred
+   *   - `eventRecords`: Timeline events
    *
    * @returns State snapshot
    */
@@ -631,6 +731,10 @@ export class AgentLoopState implements StateManager<AgentLoopStateSnapshot> {
       streamMessage: this._streamMessage ? { ...this._streamMessage } : undefined,
       pendingToolCallIds:
         this._pendingToolCalls.size > 0 ? Array.from(this._pendingToolCalls) : undefined,
+      // Execution records (Plan C)
+      errorRecords: this._errorRecords.length > 0 ? [...this._errorRecords] : undefined,
+      interruptionRecords: this._interruptionRecords.length > 0 ? [...this._interruptionRecords] : undefined,
+      eventRecords: this._eventRecords.length > 0 ? [...this._eventRecords] : undefined,
     };
   }
 
@@ -682,6 +786,11 @@ export class AgentLoopState implements StateManager<AgentLoopStateSnapshot> {
     } else {
       this._currentIterationRecord = null;
     }
+
+    // Restore execution records (Plan C)
+    this._errorRecords = snapshot.errorRecords ? [...snapshot.errorRecords] : [];
+    this._interruptionRecords = snapshot.interruptionRecords ? [...snapshot.interruptionRecords] : [];
+    this._eventRecords = snapshot.eventRecords ? [...snapshot.eventRecords] : [];
 
     // Reset runtime state that cannot be restored
     this._shouldPause = false;

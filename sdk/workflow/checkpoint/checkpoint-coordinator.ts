@@ -55,6 +55,7 @@ import { HierarchyIntegrityService } from "../../shared/execution/hierarchy-inte
 import { CheckpointErrorHandler } from "../../shared/checkpoint/checkpoint-error-handler.js";
 import { CheckpointVersionManager } from "../../shared/checkpoint/checkpoint-version-manager.js";
 import { CURRENT_CHECKPOINT_FORMAT_VERSION } from "@wf-agent/types";
+import { getExecutionEventBus } from "../../shared/events/index.js";
 
 const logger = createContextualLogger({ component: "CheckpointCoordinator" });
 
@@ -167,6 +168,22 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
       this.toBaseDeps(dependencies),
       metadata,
     );
+
+    // Publish checkpoint state change event (Plan C)
+    const eventBus = getExecutionEventBus();
+    await eventBus.publish({
+      type: "state_changed",
+      executionId: entity.id,
+      timestamp: Date.now(),
+      newStatus: entity.getStatus(),
+      changes: {
+        checkpointCreated: checkpointId,
+        description: options?.description,
+        nodeId: options?.nodeId,
+        toolId: options?.toolId,
+        tags: options?.tags,
+      },
+    });
 
     // Create file checkpoint if manager is available
     if (dependencies.fileCheckpointManager) {
@@ -380,6 +397,19 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
     // Step 12-13: Post-restore operations
     await this.postRestore(entity, dependencies);
 
+    // Publish state change event for restoration (Plan C)
+    const eventBus = getExecutionEventBus();
+    await eventBus.publish({
+      type: "state_changed",
+      executionId: entity.id,
+      timestamp: Date.now(),
+      newStatus: entity.getStatus(),
+      changes: {
+        restored: true,
+        checkpointId,
+      },
+    });
+
     return {
       workflowExecutionEntity: entity,
       stateCoordinator,
@@ -393,6 +423,9 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
 
   /**
    * Extract state from entity for checkpoint creation
+   *
+   * Plan C: Now includes execution records (errors, interruptions, events)
+   * that are persisted with state for disaster recovery.
    */
   protected extractState(entity: WorkflowExecutionEntity): WorkflowExecutionStateSnapshot {
     const workflowExecution = entity.getWorkflowExecutionData();
@@ -439,6 +472,13 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
       variables: Object.fromEntries(vmSnapshot.variables.entries()),
     };
 
+    // Plan C: Get execution records (if available from entity's execution state)
+    // Note: Workflow's ExecutionState currently doesn't have centralized execution records
+    // like AgentLoopState does. These fields will be populated progressively.
+    const errorRecords = undefined;
+    const interruptionRecords = undefined;
+    const eventRecords = undefined;
+
     return {
       status: entity.getStatus(),
       currentNodeId: workflowExecution.currentNodeId,
@@ -459,6 +499,10 @@ export class CheckpointCoordinator extends BaseCheckpointCoordinator<
       forkJoinContext: workflowExecution.forkJoinContext,
       triggeredSubworkflowContext: workflowExecution.triggeredSubworkflowContext,
       currentOperation: operationState ?? undefined,
+      // Plan C: Include execution records
+      errorRecords,
+      interruptionRecords,
+      eventRecords,
     };
   }
 
