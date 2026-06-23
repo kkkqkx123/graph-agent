@@ -9,6 +9,7 @@ import {
   combineAbortSignals,
   withAbortSignal,
   checkInterruption,
+  type WithAbortSignalResult,
 } from "../abort-signal-utils.js";
 
 describe("isAborted", () => {
@@ -32,6 +33,12 @@ describe("createNeverAbortSignal", () => {
   it("should return a signal that never aborts", () => {
     const signal = createNeverAbortSignal();
     expect(signal.aborted).toBe(false);
+  });
+
+  it("should return the same signal instance (singleton pattern)", () => {
+    const signal1 = createNeverAbortSignal();
+    const signal2 = createNeverAbortSignal();
+    expect(signal1).toBe(signal2);
   });
 });
 
@@ -80,6 +87,18 @@ describe("combineAbortSignals", () => {
     c1.abort(reason);
     expect(combined.reason).toBe(reason);
   });
+
+  it("should use AbortSignal.any when available", () => {
+    // Verify that AbortSignal.any is available in Node.js 22+
+    expect(typeof AbortSignal.any).toBe("function");
+
+    const c1 = new AbortController();
+    const c2 = new AbortController();
+    const combined = combineAbortSignals([c1.signal, c2.signal]);
+
+    c1.abort("from any");
+    expect(combined.aborted).toBe(true);
+  });
 });
 
 describe("checkInterruption", () => {
@@ -110,14 +129,29 @@ describe("checkInterruption", () => {
 
 describe("withAbortSignal", () => {
   it("should return ok with value when operation succeeds", async () => {
-    const result = await withAbortSignal(async () => "success");
+    const result = await withAbortSignal(async (signal) => "success");
     expect(result).toEqual({ ok: true, value: "success" });
   });
 
   it("should return ok with value when signal is provided and not aborted", async () => {
     const controller = new AbortController();
-    const result = await withAbortSignal(async () => 42, controller.signal);
+    const result = await withAbortSignal(async (signal) => {
+      expect(signal).toBe(controller.signal);
+      return 42;
+    }, controller.signal);
     expect(result).toEqual({ ok: true, value: 42 });
+  });
+
+  it("should pass signal parameter to function for periodic checks", async () => {
+    const controller = new AbortController();
+    let receivedSignal: AbortSignal | undefined;
+
+    await withAbortSignal(async (signal) => {
+      receivedSignal = signal;
+      return "done";
+    }, controller.signal);
+
+    expect(receivedSignal).toBe(controller.signal);
   });
 
   it("should return error when signal is already aborted before execution", async () => {
@@ -125,18 +159,18 @@ describe("withAbortSignal", () => {
     const reason = new Error("Already stopped");
     controller.abort(reason);
 
-    const result = await withAbortSignal(async () => "won't run", controller.signal);
+    const result = await withAbortSignal(async (signal) => "won't run", controller.signal);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error.message).toBe("Already stopped");
+      expect(result.isAborted).toBe(true);
     }
   });
 
   it("should return error if signal aborts after execution completes", async () => {
-    // This tests the post-execution check
     const controller = new AbortController();
 
-    const result = await withAbortSignal(async () => {
+    const result = await withAbortSignal(async (signal) => {
       controller.abort(new Error("paused after result"));
       return "done";
     }, controller.signal);
@@ -144,18 +178,20 @@ describe("withAbortSignal", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error.message).toBe("paused after result");
+      expect(result.isAborted).toBe(true);
     }
   });
 
   it("should return wrapped error when operation throws non-abort error", async () => {
     const controller = new AbortController();
-    const result = await withAbortSignal(async () => {
+    const result = await withAbortSignal(async (signal) => {
       throw new Error("operation failed");
     }, controller.signal);
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error.message).toBe("operation failed");
+      expect(result.isAborted).toBe(false);
     }
   });
 
@@ -164,10 +200,112 @@ describe("withAbortSignal", () => {
     const originalError = new Error("original reason");
     controller.abort(originalError);
 
-    const result = await withAbortSignal(async () => "fail", controller.signal);
+    const result = await withAbortSignal(async (signal) => "fail", controller.signal);
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error.cause).toBe(originalError);
+      expect(result.isAborted).toBe(true);
+    }
+  });
+
+  it("should support periodic interruption checks within function", async () => {
+    const controller = new AbortController();
+    let iterationsRun = 0;
+
+    const result = await withAbortSignal(
+      async (signal) => {
+        for (let i = 0; i < 1000; i++) {
+          if (signal?.aborted) {
+            break;
+          }
+          iterationsRun++;
+          if (i === 10) {
+            controller.abort(new Error("interrupted at iteration 10"));
+          }
+        }
+        return iterationsRun;
+      },
+      controller.signal,
+    );
+
+    expect(iterationsRun).toBeLessThan(100);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.isAborted).toBe(true);
+    }
+  });
+
+  it("should distinguish between interruption and business errors", async () => {
+    const controller = new AbortController();
+
+    // Test business error case
+    const businessErrorResult = await withAbortSignal(async (signal) => {
+      throw new Error("business logic failed");
+    }, controller.signal);
+
+    expect(businessErrorResult.ok).toBe(false);
+    if (!businessErrorResult.ok) {
+      expect(businessErrorResult.error.message).toBe("business logic failed");
+      expect(businessErrorResult.isAborted).toBe(false);
+    }
+
+    // Test interruption case
+    controller.abort(new Error("user cancelled"));
+    const abortedResult = await withAbortSignal(async (signal) => "should not run", controller.signal);
+
+    expect(abortedResult.ok).toBe(false);
+    if (!abortedResult.ok) {
+      expect(abortedResult.error.message).toBe("user cancelled");
+      expect(abortedResult.isAborted).toBe(true);
+    }
+  });
+
+  it("should handle async operations with interruption", async () => {
+    const controller = new AbortController();
+    let completedOperations = 0;
+
+    const result = await withAbortSignal(
+      async (signal) => {
+        for (let i = 0; i < 5; i++) {
+          if (signal?.aborted) break;
+
+          await new Promise((resolve) => setTimeout(resolve, 10));
+          completedOperations++;
+
+          if (i === 2) {
+            controller.abort(new Error("interrupted after 3rd operation"));
+          }
+        }
+        return completedOperations;
+      },
+      controller.signal,
+    );
+
+    expect(completedOperations).toBeLessThanOrEqual(3);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.isAborted).toBe(true);
+    }
+  });
+
+  it("should handle timeout combined with other signals", async () => {
+    const abortController = new AbortController();
+    const timeoutSignal = AbortSignal.timeout(500);
+    const combined = combineAbortSignals([abortController.signal, timeoutSignal]);
+
+    // Should complete before timeout
+    const result = await withAbortSignal(
+      async (signal) => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        return "completed";
+      },
+      combined,
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value).toBe("completed");
     }
   });
 });
+
