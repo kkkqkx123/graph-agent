@@ -19,10 +19,7 @@
 import type { EventRegistry } from "../../registry/event-registry.js";
 import type { InterruptionType } from "../../types/interruption-types.js";
 import type { ExecutionDomainContext, BaseEvent } from "@wf-agent/types";
-import {
-  InterruptionHistoryManager,
-  type InterruptionHistoryEntry,
-} from "./interruption-history-manager.js";
+import { getExecutionEventBus } from "../../../shared/events/execution-event-bus.js";
 import { createContextualLogger } from "../../../utils/contextual-logger.js";
 
 const logger = createContextualLogger({ component: "InterruptionState" });
@@ -99,9 +96,6 @@ export class InterruptionState {
   /** Internal listeners for resume events specifically */
   private resumeListeners: Array<() => void> = [];
 
-  /** Interruption history manager */
-  private historyManager: InterruptionHistoryManager;
-
   /** Dispose flag to prevent use after disposal */
   private _disposed: boolean = false;
 
@@ -117,11 +111,10 @@ export class InterruptionState {
    * Constructor
    * @param config Configuration options
    */
-  constructor(config: InterruptionStateConfig & { historyMaxSize?: number }) {
+  constructor(config: InterruptionStateConfig) {
     this.contextId = config.contextId;
     this.context = config.context ?? { domain: "UNKNOWN" };
     this.eventRegistry = config.eventRegistry;
-    this.historyManager = new InterruptionHistoryManager(config.historyMaxSize ?? 1000);
 
     // If parent execution ID is provided, subscribe to parent's interruption events
     if (config.parentExecutionId && config.eventRegistry) {
@@ -160,8 +153,8 @@ export class InterruptionState {
     pauseReason.executionId = this.contextId;
     this.abortController.abort(pauseReason);
 
-    // Record to history
-    this.recordToHistory("PAUSE", "user");
+    // Publish event to ExecutionEventBus for state persistence and metrics
+    this.publishInterruptionEvent("PAUSE");
 
     // Emit event for cascade propagation and observability
     this.emitInterruptionEvent("PAUSE");
@@ -204,8 +197,8 @@ export class InterruptionState {
     stopReason.executionId = this.contextId;
     this.abortController.abort(stopReason);
 
-    // Record to history
-    this.recordToHistory("STOP", "user");
+    // Publish event to ExecutionEventBus for state persistence and metrics
+    this.publishInterruptionEvent("STOP");
 
     // Emit event for cascade propagation and observability
     this.emitInterruptionEvent("STOP");
@@ -241,15 +234,13 @@ export class InterruptionState {
 
     logger.info("Execution resumed", { contextId: this.contextId, context: this.context });
 
-    const pauseDuration = this.historyManager.getPauseDuration(this.contextId);
-
     this.interruptionType = null;
 
     // Create a new AbortController for fresh I/O cancellation
     this.abortController = new AbortController();
 
-    // Record to history
-    this.recordToHistory("RESUME", "user", pauseDuration ?? undefined);
+    // Publish event to ExecutionEventBus for state persistence and metrics
+    this.publishInterruptionEvent("RESUME");
 
     // Emit event for cascade propagation and observability
     this.emitInterruptionEvent("RESUME");
@@ -472,24 +463,6 @@ export class InterruptionState {
     return this.context;
   }
 
-  // ========== History ==========
-
-  /**
-   * Get interruption history
-   */
-  getHistory(
-    filter?: import("./interruption-history-manager.js").HistoryFilter,
-  ): InterruptionHistoryEntry[] {
-    return this.historyManager.getHistory(filter);
-  }
-
-  /**
-   * Get interruption statistics
-   */
-  getStatistics() {
-    return this.historyManager.getStatistics();
-  }
-
   // ========== Lifecycle ==========
 
   /**
@@ -531,34 +504,37 @@ export class InterruptionState {
   // ========== Private ==========
 
   /**
-   * Record an interruption event to history, extracting domain-specific fields
-   * from the typed ExecutionDomainContext using discriminated union narrowing.
+   * Publish interruption event to ExecutionEventBus for state persistence and metrics.
+   * This ensures interruptions are recorded in CheckpointState and tracked in metrics.
    */
-  private recordToHistory(
-    type: "PAUSE" | "STOP" | "RESUME",
-    triggeredBy: "user" | "system" | "timeout" | "error",
-    duration?: number,
-  ): void {
-    const entry: Omit<InterruptionHistoryEntry, "id" | "timestamp"> = {
-      type,
-      contextId: this.contextId,
-      triggeredBy,
-      duration,
-    };
+  private publishInterruptionEvent(type: "PAUSE" | "STOP" | "RESUME"): void {
+    try {
+      const eventBus = getExecutionEventBus();
 
-    // Extract domain-specific fields from the typed context
-    switch (this.context.domain) {
-      case "WORKFLOW_NODE":
-        entry.nodeId = this.context.nodeId;
-        break;
-      case "AGENT_LOOP":
-        entry.iteration = this.context.iteration;
-        break;
-      case "UNKNOWN":
-        break;
+      eventBus.publish({
+        type: "interruption_occurred",
+        executionId: this.contextId,
+        interruption: {
+          id: `interrupt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          timestamp: Date.now(),
+          type,
+          reason: `Execution ${type.toLowerCase()}`,
+          status: type === "PAUSE" ? "pending" : type === "RESUME" ? "resumed" : "pending",
+        },
+        context: this.context,
+      } as any);
+
+      logger.debug("Interruption event published to ExecutionEventBus", {
+        contextId: this.contextId,
+        type,
+      });
+    } catch (error) {
+      logger.warn("Failed to publish interruption event to ExecutionEventBus", {
+        contextId: this.contextId,
+        type,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
-
-    this.historyManager.record(entry);
   }
 
   /**

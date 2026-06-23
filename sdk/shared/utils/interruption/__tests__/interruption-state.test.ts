@@ -95,13 +95,6 @@ describe("InterruptionState", () => {
       const reason = signal.reason as Error & { interruptionType: string };
       expect(reason.interruptionType).toBe("PAUSE");
     });
-
-    it("should record to history", () => {
-      state.requestPause();
-      const history = state.getHistory();
-      expect(history).toHaveLength(1);
-      expect(history[0]!.type).toBe("PAUSE");
-    });
   });
 
   describe("requestStop", () => {
@@ -142,9 +135,8 @@ describe("InterruptionState", () => {
     it("should be a no-op when not previously paused (fresh resume)", () => {
       // Resume on a fresh state is now guarded: only allowed when actually paused
       expect(() => state.resume()).not.toThrow();
-      // State should remain unchanged (null), no history entry recorded
+      // State should remain unchanged (null)
       expect(state.getInterruptionType()).toBeNull();
-      expect(state.getHistory()).toHaveLength(0);
     });
   });
 
@@ -401,30 +393,6 @@ describe("InterruptionState", () => {
     it("should be idempotent", () => {
       state.dispose();
       expect(() => state.dispose()).not.toThrow();
-    });
-  });
-
-  describe("history and statistics", () => {
-    it("should track history across lifecycle", () => {
-      state.requestPause();
-      state.resume();
-      state.requestStop();
-
-      const history = state.getHistory();
-      expect(history).toHaveLength(3);
-      expect(history[0]!.type).toBe("STOP"); // newest first
-      expect(history[1]!.type).toBe("RESUME");
-      expect(history[2]!.type).toBe("PAUSE");
-    });
-
-    it("should return statistics", () => {
-      state.requestPause();
-      state.resume();
-
-      const stats = state.getStatistics();
-      expect(stats.pauseCount).toBe(1);
-      expect(stats.resumeCount).toBe(1);
-      expect(stats.totalEvents).toBe(2);
     });
   });
 });

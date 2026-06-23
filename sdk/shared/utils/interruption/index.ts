@@ -48,12 +48,9 @@ export type { InterruptionType } from "../../types/interruption-types.js";
 // Use TimeoutManager from s../shared/state-managers/timeout-manager.js instead.
 // See docs/refactoring/phase2-migration-guide.md for migration guide.
 
-// Interruption history manager
-export {
-  InterruptionHistoryManager,
-  type InterruptionHistoryEntry,
-  type HistoryFilter,
-} from "./interruption-history-manager.js";
+// NOTE: InterruptionHistoryManager has been removed (Phase 8 cleanup).
+// Interruption events are now published to ExecutionEventBus and persisted in CheckpointState.interruptionRecords.
+// For querying interruptions, use CheckpointState.interruptionRecords or subscribe to ExecutionEventBus events.
 
 // Recovery strategy manager
 export {
