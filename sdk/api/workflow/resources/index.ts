@@ -57,26 +57,6 @@ export {
 } from "./variable-resource-api.js";
 
 export {
-  WorkflowExecutionHistoryAPI,
-  type WorkflowErrorRecord,
-  type WorkflowErrorFilter,
-  type WorkflowErrorStats,
-  type NodeTransitionRecord,
-  type NodeExecutionRecord,
-  type NodeTransitionFilter,
-  type NodeTransitionStats,
-  type BranchDecisionRecord,
-  type BranchDecisionFilter,
-  type BranchDecisionStats,
-  type WorkflowToolExecutionDetail,
-  type WorkflowToolExecutionFilter,
-  type WorkflowToolExecutionStats,
-  type WorkflowExecutionEvent,
-  type WorkflowExecutionEventFilter,
-  type WorkflowExecutionTimelineStats,
-} from "./execution-history-api.js";
-
-export {
   WorkflowIterationAnalysisAPI,
   type ExtendedNodeExecutionRecord,
   type ToolDependency,

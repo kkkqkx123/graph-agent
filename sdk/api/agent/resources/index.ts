@@ -38,26 +38,6 @@ export {
   type AgentUserInteractionEventRecord,
 } from "./agent-user-interaction-resource-api.js";
 export {
-  AgentLoopExecutionHistoryAPI,
-  type AgentErrorRecord,
-  type AgentErrorFilter,
-  type AgentErrorStats,
-  type AgentInterruptionRecord,
-  type AgentInterruptionFilter,
-  type AgentInterruptionStats,
-  type InterruptionResolutionStatus,
-  type InterruptionType,
-  type ExecutionEvent,
-  type ExecutionEventFilter,
-  type ExecutionEventType,
-  type ExecutionTimelineStats,
-  type ToolExecutionDetail,
-  type ToolExecutionFilter,
-  type ToolExecutionStats,
-  type ToolExecutionCallChain,
-  type ToolExecutionStatus,
-} from "./agent-loop-execution-history-api.js";
-export {
   AgentLoopIterationAPI,
   type ExtendedIterationDetail,
   type ExtendedIterationHistorySummary,
