@@ -5,8 +5,7 @@
   },
   "include": [
     "apps/**/*",
-    "packages/**/*",
-    "sdk/**/*"
+    "packages/**/*"
   ],
   "exclude": ["node_modules", "dist", "ref"]
 }

@@ -55,9 +55,9 @@ if (args.length === 0) {
 				targetDir = path.join(process.cwd(), 'packages', match[1])
 				prefixToRemove = `packages/${match[1]}/`
 			}
-		} else if (firstArg.startsWith('sdk/')) {
-			targetDir = path.join(process.cwd(), 'sdk')
-			prefixToRemove = 'sdk/'
+		} else if (firstArg.startsWith('sdk/') || firstArg.startsWith('packages/sdk/')) {
+			targetDir = path.join(process.cwd(), 'packages', 'sdk')
+			prefixToRemove = firstArg.startsWith('packages/') ? 'packages/sdk/' : 'sdk/'
 		}
 
 		// 使用根目录的 vitest，因为所有包共享同一个 vitest 配置和版本

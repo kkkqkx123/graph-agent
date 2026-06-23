@@ -33,10 +33,10 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./sdk/*"],
-      "@wf-agent/*": ["packages/*/src", "sdk/*/src"]
+      "@/*": ["./packages/sdk/*"],
+      "@wf-agent/*": ["packages/*/src"]
     }
   },
-  "include": ["apps/**/*", "packages/**/*", "sdk/**/*"],
+  "include": ["apps/**/*", "packages/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts", "**/dist/**/*"]
 }
